@@ -1,0 +1,211 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH kmscfg 1M "2011 年 4 月 18 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+kmscfg \- PKCS#11 KMS プロバイダの構成
+.SH 形式
+.LP
+.nf
+\fBkmscfg\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-p\fR[\fBrofile\fR] \fIProfile_Name\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-a\fR[\fBgent\fR] \fIAgent_ID\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-i\fR[\fBpaddr\fR] \fIAgent_Address\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-t\fR[\fBimeout\fR] \fITransaction_Timeout\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-f\fR[\fBailover\fR] \fIFailover_Limit\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-d\fR[\fBiscovery\fR] \fIDiscovery_Freq\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBkmscfg\fR コマンドは、Solaris 暗号化フレームワークで使用できるように PKCS#11 KMS プロバイダ (\fBpkcs11_kms\fR) を初期化するために使用します。KMS プロバイダが Oracle Key Manager (OKM) と通信するためには、いくつかの構成情報が使用できるようになっている必要があります。この構成データには、使用されるプロファイルの名前、OKM エージェントの名前、OKM アプライアンス (KMA) の IP アドレス、ほかのいくつかのパラメータ (「\fB形式\fR」を参照) などの情報が含まれています。
+.sp
+.LP
+デフォルトでは、\fBkmscfg\fR はその構成情報を \fB/var/user/kms/$USERNAME\fR に格納します。このディレクトリが存在しない場合は、作成されます。構成が検出済みの場合、ユーザーが既存のデータを上書きすることも可能です。デフォルトの場所は、\fBKMSTOKEN_DIR\fR 環境変数を使って上書きできます。これは、\fBkmscfg\fR を呼び出す前に設定する必要があります。
+.sp
+.LP
+\fBkmscfg\fR を実行する前に、OKM 管理者はアプライアンスそのものに対して必要な初期化および構成手順を実行して、PKCS11 KMS コンシューマが使用する各プロファイルおよびエージェントを設定しておく必要があります。これらのプロファイルの設定手順は、Oracle の Web サイト (\fBhttp://docs.oracle.com\fR) にある『\fIOracle Key Manager Administration Guide\fR』で入手できます。
+.sp
+.LP
+管理者による KMA の設定が完了したら、Oracle Solaris クライアントで \fBkmscfg\fR を実行してプロバイダを初期化できるように、必要な識別情報 (プロファイル名、エージェント ID、IP アドレス) を提供する必要があります。
+.SH オプション
+.sp
+.LP
+次に示すオプションがサポートされています。コマンド行にプロファイル、エージェント ID、または KMA アドレスを指定しない場合、\fBkmscfg\fR によってこれらの項目を入力するように求められます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIAgent_ID\fR\fR
+.ad
+.sp .6
+.RS 4n
+OKM で設定されたユーザーエージェント ID。KMS トークンの設定に使用されます。プロファイルとエージェント ID が同じであることは珍しいことではありません (例: \fBMyAgent\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIDiscovery_Freq\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントが OKM クラスタでほかの KMA の使用状況を検出しようとする頻度 (単位は秒)。指定のない場合、\fIDiscovery_Freq\fR はデフォルトの 10 になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIFailover_Limit\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントが中止するまでに KMA との通信に失敗できる回数。指定のない場合、\fIFailover_Limit\fR はデフォルトの 3 になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIAgent_Addr\fR\fR
+.ad
+.sp .6
+.RS 4n
+KMA のアドレス。これは、IPv4 アドレス (\fIxxx\fR.\fIxxx\fR.\fIxxx\fR.\fIxxx\fR) でも IPv6 アドレスでもかまいません。クライアントで設定されたネームサービスによって解決できる名前であれば、完全修飾ホスト名も使用できます。OKM クラスタを使用している場合は、クラスタのメンバーのアドレスも指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIProfile_Name\fR\fR
+.ad
+.sp .6
+.RS 4n
+KMS トークンの設定に使用されるプロファイルの名前。プロファイル名とエージェント ID は同じである必要はありませんが、通常は同じにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fITransaction_Timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+個別の KMS コマンドのタイムアウト期間 (単位は秒)。指定のない場合、この値はデフォルトの 10 になります。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+要求された操作の完了後に、\fBkmscfg\fR は次のいずれかのステータス値を返して終了します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+終了に成功しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+失敗。要求された操作を完了できませんでした。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/kms/$USERNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトの KMS トークン構成ディレクトリ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB${KMSTOKEN_DIR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替の KMS トークン構成ディレクトリ。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+/system/library/security/crypto/pkcs11_kms
+T}
+_
+インタフェースの安定性流動的
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpktool\fR(1), \fBattributes\fR(5), \fBpkcs11_kms\fR(5)
+.sp
+.LP
+『\fIOracle Key Manager Administration Guide\fR』(\fBhttp://docs.oracle.com\fR)
+.SH 注意事項
+.sp
+.LP
+PKCS#11 クライアントでは、Oracle Key Manager ソフトウェアバージョン 2.4 が OKM にインストールされている必要があります。
+.sp
+.LP
+PKCS#11 クライアントが複数のシステムから同じエージェント ID を使用する場合は、そのエージェントをワンタイムパスフレーズフラグの設定なしで作成するようにしてください。このオプションは、一部のメンバーが 2.4 よりも前のバージョンの OKM ソフトウェアを実行している OKM クラスタでは使用できません。エージェントの作成方法については、『\fIOKM Administration Guide\fR』を参照してください。
+.sp
+.LP
+PKCS#11 クライアントによる鍵の作成に使用する前に、OKM エージェントにはデフォルトの鍵グループが割り当てられている必要があります。デフォルトの鍵グループがエージェントに割り当てられていない場合、操作は \fBCKR_PIN_INCORRECT\fR エラーで失敗します。鍵グループをエージェントに割り当てる方法については、『\fIOKM Administration Guide\fR』を参照してください。

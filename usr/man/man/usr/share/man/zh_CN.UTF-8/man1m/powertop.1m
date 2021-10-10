@@ -1,0 +1,212 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH powertop 1M "2011 年 8 月 22 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+powertop \- 报告和分析影响电源管理的事件
+.SH 用法概要
+.LP
+.nf
+\fBpowertop\fR [\fB-c\fR \fIprocessor_id\fR] [\fB-d\fR \fIcount\fR] [\fB-t\fR \fIinterval\fR] [\fB-v\fR] [\fB-h\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBPowerTOP\fR 是一个监测工具，可显示系统利用 CPU 电源管理功能的有效程度。通过在空闲系统上运行此工具，用户可以查看在不同电源状态下 CPU 可以运行多久。理想状态下，未使用的（空闲）系统将始终以最低电源状态运行，但是由于后台用户和内核活动（随机软件定期转醒以轮询状态），空闲系统的实际功耗会高于理想状态。
+.sp
+.LP
+此工具定期分析系统活动，并显示处理器在每个支持的电源状态下运行的时间长度的汇总。它还会显示最容易导致 CPU 转醒而耗能更多的活动。通过此报告，用户可以发现和诊断系统中存在问题的区域，并优化其电源效率。
+.sp
+.LP
+\fBPowerTOP\fR 将计算使 CPU 无法进入较低功耗状态的活动量的均值，并将其显示在 "Wakeups-from-idle per second"（每秒从空闲状态转醒的次数）字段中。该值等于转醒总次数除以当前间隔。请注意，屏幕上不会始终显示所有事件。
+.sp
+.LP
+在执行过程中，用户可以按 \fBR\fR 键强制刷新分析结果。间隔时间将恢复为缺省值或指定值。要退出此应用程序，用户必须按 \fBQ\fR 键。
+.sp
+.LP
+PowerTOP 允许您冻结其三个子窗口中的每个子窗口，以便更好地分析每个子窗口的内容。同时运行三个不同的 DTrace 脚本时，冻结子窗口可降低 CPU 消耗。在该工具运行时按 \fBi\fR、\fBf\fR 或 \fBe\fR 键可以激活此功能。按上述各键将分别冻结空闲、频率或事件报告。再一次按对应的键可取消冻结。在要分析的应用程序处于运行状态时调用此功能最为有用。
+.sp
+.LP
+\fBPowerTOP\fR 在某些虚拟域中运行。但是，空闲状态转换报告可能不准确，因为物理 CPU 可由不同的虚拟 CPU 共享。转醒计数和事件报告均显示有关当前虚拟化环境的信息。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR [\fIprocessor_id\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定该工具应监测的 CPU。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR [\fIcount\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将系统活动的 \fIcount\fR 分析结果转储到屏幕。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示命令的用法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [\fIinterval\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定该工具分析系统的间隔时间（以秒为单位）。可能的值在 1 到 30 范围内；缺省值为 5 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+切换到详细模式，包括事件报告中内核循环子系统的触发说明。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR设置时间间隔
+.sp
+.LP
+以下命令将间隔设置为两秒。
+
+.sp
+.in +2
+.nf
+% \fBpowertop -t 2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR分析和转储系统活动
+.sp
+.LP
+以下命令四次分析系统活动并将其转储至标准输出。
+
+.sp
+.in +2
+.nf
+% \fBpowertop -d 4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR报告循环子系统活动
+.sp
+.LP
+以下命令报告循环子系统活动。
+
+.sp
+.in +2
+.nf
+% \fBpowertop -v\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR分析特定处理器上的活动
+.sp
+.LP
+以下命令运行 PowerTOP 并仅显示 CPU 3 的数据：
+
+.sp
+.in +2
+.nf
+% \fBpowertop -c 3\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用方法不正确。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+体系结构x86、SPARC
+_
+可用性diagnostic/powertop
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBkstat\fR(1M)、\fBpsrinfo\fR(1M)、\fBuadmin\fR(2)、\fBlibdevinfo\fR(3LIB)、\fBattributes\fR(5)、\fBcpr\fR(7)、\fBpm\fR(7D)、\fBpm-components\fR(9P)、\fBremovable-media\fR(9P)
+.sp
+.LP
+非 SunOS 手册页中的 \fBxscreensaver(1)\fR 和 \fBdtpower(1M)\fR。
+.SH 用法
+.sp
+.LP
+您必须具有 \fBDTrace\fR 特权才能运行 \fBPowerTOP\fR，并且必须具有根用户（超级用户）特权或具有主管理员角色才能通过该工具获得改进系统的建议。

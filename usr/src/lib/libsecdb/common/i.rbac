@@ -1,0 +1,231 @@
+#!/bin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+# i.rbac
+#
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# class action script for "rbac" class files
+# installed by pkgadd
+#
+# Files in "rbac" class:
+#
+# /etc/security/{prof_attr,exec_attr,auth_attr}
+# /etc/user_attr
+#
+#  Allowable exit codes
+#
+# 0 - success
+# 2 - warning or possible error condition. Installation continues. A warning
+#     message is displayed at the time of completion.
+#
+
+umask 022
+
+tmp_dir=${TMPDIR:-/tmp}
+
+PATH="/usr/bin:/usr/sbin"
+export PATH
+
+# $1 is the "old/existing file"
+# $2 is the output file
+# returns 0 on success
+# returns 2 on error
+
+phrase="This line should be kept in this file or it will be overwritten."
+#
+# Preserve keeps the existing file as long as it contains
+# the phrase.  There are two arguments:
+# The current file and the output file.
+#
+preserve () {
+	if egrep "$phrase" "$1" > /dev/null 2>&1; then
+		commit=true
+		return
+	fi
+	commit=commit
+	cat > $2 <<-EOF
+	#
+	# The system provided entries are stored in different files
+	# under "/etc/security/${type}_attr.d".  They should not be
+	# copied to this file.
+	#
+	# Only local changes should be stored in this file.
+	# $phrase
+	#
+	EOF
+	old="$1.old_merged"
+	if [[ ! -f "$old" && -s "$1" ]]; then
+		cp -p "$1" "$old"
+		cat >> $2 <<-EOF
+		# An earlier, merged version of "$1" was detected.
+		# It was saved in "$old".  It may contain
+		# customizations which should be copied to "$1".
+		#
+		EOF
+	fi
+}
+
+#
+# Same calling conventions as preserve but upgrading user_attr is a bit more
+# work as there is permission to update the root entry and so we keep them.
+# Also, the number of system provided users is small and known so they
+# can easily be filtered out.
+#
+upgrade_userattr () {
+	if egrep "$phrase" "$1" > /dev/null 2>&1; then
+		commit=true
+		return
+	fi
+	commit=commit
+	cat > $2 <<-EOF
+	#
+	# The system provided entries are stored in different files
+	# under "/etc/user_attr.d".  They should not be copied to this file.
+	#
+	# Only local changes should be stored in this file.
+	# $phrase
+	#
+	EOF
+	#
+	# Keep the root entry, but remove the keys merged from /etc/user_attr.d
+	# that still have an earlier default setting.
+	#
+	egrep "^root:" $1 |
+	    sed \
+		-e 's/[ 	]*$/;/' \
+		-e 's/\([:;]\)profiles=Web Console Management,/\1profiles=/' \
+		-e 's/\([:;]\)profiles=All;/\1/' \
+		-e 's/\([:;]\)type=normal;/\1/' \
+		-e 's/\([:;]\)auths=solaris\.\*;/\1/' \
+		-e 's/\([:;]\)auths=solaris\.\*,solaris.grant;/\1/' \
+		-e 's/\([:;]\)auths=solaris\.\*,solaris.grant,All;/\1/' \
+		-e 's/\([:;]\)audit_flags=lo\\:no;/\1/' \
+		-e 's/\([:;]\)lock_after_retries=no;/\1/' \
+		-e 's/\([:;]\)min_label=admin_low;/\1/' \
+		-e 's/\([:;]\)clearance=admin_high;/\1/' \
+		-e 's/:RO:/::/' \
+		-e 's/;*$//' \
+		-e '/^root::::$/d' >> $2
+	#
+	# Remove old system supplied entries.
+	#
+	system_users='(root|adm|daemon|dladm|lp|netadm|netcfg|postgres|zfssnap)'
+	#
+	# The RO entries should exist in the fragments only and we remove them.
+	#
+	r="^($system_users:|#|[^:](:|::)RO::)"
+	egrep -v "$r" "$1" >> $2
+	return 0
+}
+
+# $1 is the merged file
+# $2 is the target file
+#
+commit() {
+	# Make sure that the last mv uses rename(2) by first moving to
+	# the same filesystem.
+	mv $1 $2.$$
+	mv $2.$$ $2
+	return $?
+}
+
+outfile=""
+type=""
+set_type_and_outfile() {
+	#
+	# Assumes basename $1 returns one of
+	# prof_attr, exec_attr, auth_attr, or user_attr
+	#
+	commit=commit
+	fname=$(basename $1)
+	type=${fname%_attr}
+	case "$type" in
+		"user") dbmerge=upgrade_userattr;;
+		"prof"|"exec"|"auth") dbmerge=preserve;;
+		*) return 2 ;;
+	esac
+
+	outfile=$tmp_dir/rbac_${PKGINST}_${fname}_merge.$$
+
+	return 0
+}
+
+cleanup() {
+	rm -f $outfile
+
+	return 0
+}
+
+exit_status=0
+
+# main
+
+while read newfile oldfile; do
+	if [[ -n "$PKGINST" ]]; then
+		# Install the file in the "fragment" directory.
+		mkdir -m 755 -p ${oldfile}.d
+		rm -f ${oldfile}.d/"$PKGINST"
+		cp $newfile ${oldfile}.d/"$PKGINST"
+
+		# Make sure that it is marked read-only.
+		chmod a-w,a+r ${oldfile}.d/"$PKGINST"
+
+		# We also execute the rest of the i.rbac script.
+	fi
+
+	if [[ ! -f $oldfile ]]; then
+		cp $newfile $oldfile
+	else
+		set_type_and_outfile $newfile ||
+			set_type_and_outfile $oldfile
+		if [ $? -ne 0 ]; then
+			echo "$0 : $newfile not one of" \
+			    " prof_attr, exec_attr, auth_attr, user_attr"
+			exit_status=2
+			continue
+		fi
+
+		$dbmerge $oldfile $outfile
+		if [ $? -ne 0 ]; then
+			echo "$0 : failed to merge $newfile with $oldfile"
+			cleanup
+			exit_status=2
+			continue
+		fi
+
+		$commit $outfile $oldfile
+		if [ $? -ne 0 ]; then
+			echo "$0 : failed to mv $outfile to $2"
+			cleanup
+			exit_status=2
+			continue
+		fi
+
+		cleanup
+	fi
+done
+
+if [[ "$1" == "ENDOFCLASS" ]]; then
+	exit 0
+fi
+
+exit $exit_status

@@ -1,0 +1,349 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH pcitool 1M "2010 年 6 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+pcitool \- 割り込み経路指定ツール
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR \fB-h\fR
+.fi
+
+.LP
+.nf
+x86:
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-i\fR \fIcpu#\fR,\fIino#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.LP
+.nf
+SPARC:
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-i\fR \fIino#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-m\fR \fImsi#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBPCItool\fR は、割り込み経路指定情報の取得および設定機能を提供する低レベルツールです。
+.SS "割り込み経路指定"
+.sp
+.LP
+\fBpcitool\fR \fB-i\fR コマンドは、指定したネクサス上の INO に関するデバイスおよび CPU 経路指定情報を表示し、指定した INO または INO グループを、指定した CPU へ再経路指定できます。
+.sp
+.LP
+SPARC プラットフォームでは、INO は割り込みモンドに対応付けられ、1 つまたは複数の MSI/X が 1 つの INO に対応付けられます。したがって、INO と MSI/X は別々に再ターゲット化できます。\fB-i\fR オプションを使用して、指定した INO を取得または再経路指定します。MSI/X の場合は \fB-m\fR オプションを使用します。
+.sp
+.LP
+\fIcpu#\fR の指定は、x86 プラットフォーム上で使用できます。\fIino#\fR と組み合わせた場合、これは排他的なベクトルを識別します。\fIcpu#\fR 引数は、SPARC プラットフォームではサポートされません。
+.SS "必要な特権"
+.sp
+.LP
+割り込み情報にアクセスするには、ユーザーはすべての特権を保有している必要があります。一般ユーザーは、\fBsu\fR(1M) を実行して root になるか、または \fBuser_attr\fR ファイルで「Maintenance and Repair」権利プロファイルが与えられている場合に、割り込み情報にアクセスできます。\fBuser_attr\fR(4) および \fBrbac\fR(5) を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの使用法を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーはメッセージとして表示されません。ただし、\fBpcitool\fR は、引き続き UNIX エラーコードを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR [\fB-c\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定したネクサスの INO について、デバイスおよび CPU 経路指定情報を表示します。表示される INO ごとに、各デバイスのデバイスパスとインスタンス番号が表示されます。一部のプラットフォームでは、ルートコンプレックス専用の割り込みは、そのパス名に付加された文字列 \fB(Internal)\fR で示されます。
+.sp
+\fB-c\fR を付けると、割り込みコントローラ情報をダンプします。
+.sp
+コマンド行で \fB-r\fR も \fB-w\fR も指定されない場合、\fB-r\fR が指定されたものとみなされます。「使用例」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細情報を出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIcpu#\fR [\fB-g\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定した INO または MSI/X を、指定した CPU に経路指定します。新しい経路指定情報と元の経路指定情報を表示します。INO または MSI/X を指定する必要があります。
+.sp
+一部のプラットフォーム (x86 など) では、単一の機能の複数の MSI 割り込みは一緒に再経路指定する必要があります。これを行うには \fB-g\fR を使用します。\fB-g\fR オプションは、サポート対象のプラットフォームでのみ、MSI 割り込みのグループにかぎり有効です (1 の「グループ」は受け入れられます)。\fB-g\fR を使用する場合、指定するベクトルは、グループの中でもっとも小さい番号のベクトルである必要があります。グループのサイズは内部で決定されます。「使用例」を参照してください。\fB\fR
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRすべての INO を表示する
+.sp
+.LP
+\fB/pci@0,0\fR のすべての INO を表示するコマンドは次のとおりです。
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i all\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR特定の INO の出力を表示する
+.sp
+.LP
+ルート \fB/pci@0,0\fR の INO \fB0x0,0x21\fR を表示するコマンドは、x86 プラットフォームと SPARC プラットフォームでは若干異なります。
+
+.sp
+.LP
+x86 プラットフォームの場合
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 0,21\fR
+0x0,0x21:                   mpt                          0
+/pci@7b,0/pci1022,7458@11/pci1000,3060@2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SPARC プラットフォームの場合
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 21\fR
+0x0,0x21:                   mpt                          0
+/pci@7b,0/pci1022,7458@11/pci1000,3060@2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の出力は一例であり、実際の出力とは異なる場合があります。
+
+.LP
+\fB例 3 \fR特定の MSI の出力を表示する
+.sp
+.LP
+ルート \fB/pci@0,0\fR の MSI \fB0x1\fR を表示するコマンドを、出力例とともに次に示します。
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -m 0x1\fR
+0x0,0x1: pcieb     0    /pci@7b,0/pci10de,5d@e
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRある CPU から別の CPU に INO を再経路指定する
+.sp
+.LP
+CPU 0 から CPU 1 に INO 21 を正しく再経路指定すると、次に示す出力が生成されます。
+
+.sp
+.LP
+x86 プラットフォームの場合
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 0,21 -w 1\fR
+0x0,0x21 -> 0x1,0x20
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SPARC プラットフォームの場合
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 21 -w 1\fR
+0x0,0x21 -> 0x1,0x20
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRある CPU から別の CPU に MSI を再経路指定する
+.sp
+.LP
+CPU 1 から CPU 0 に MSI 1 を正しく再経路指定すると、次に示す出力が生成されます。
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -m 1 -w 0\fR
+0x1,0x1 -> 0x0,0x1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRINO のグループを再経路指定する
+.sp
+.LP
+CPU 0 から CPU 1 に 24 から始まる INO のグループを正しく再経路指定すると、次に示す出力が生成されます。
+
+.sp
+.LP
+x86 プラットフォームの場合
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 3,24 -w 1 -g\fR
+0x3,0x24 => 0x1,0x22
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SPARC プラットフォームの場合
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 24 -w 1 -g\fR
+0x3,0x24 => 0x1,0x22
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーなし。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+範囲外、整列エラー、またはそのほかの無効な引数が渡されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBETIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しい CPU に割り込みを変更する前に、保留中の割り込みが処理されるのを待機しているときにタイムアウトが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+I/O エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+アーキテクチャPCI ベースのシステムに限定
+_
+使用条件system/management/pcitool
+_
+インタフェースの安定性流動的
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsu\fR(1M), \fBpci\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5), \fBrbac\fR(5)
+.sp
+.LP
+PCI 仕様 (\fBwww.pcisig.org\fR から入手可能)
+.SH 注意事項
+.sp
+.LP
+すべての値は 16 進数で入力します。
+.sp
+.LP
+すべてのコマンドが全プラットフォームに適用できるわけではありません。

@@ -1,0 +1,349 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved
+.TH pcitool 1M "30 Jun 2010" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+pcitool \- interrupt routing tool
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR \fB-h\fR
+.fi
+
+.LP
+.nf
+x86:
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-i\fR \fIcpu#\fR,\fIino#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.LP
+.nf
+SPARC:
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-i\fR \fIino#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-m\fR \fImsi#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBPCItool\fR is a low-level tool that provides a facility for getting and setting interrupt routing information.
+.SS "Interrupt Routing"
+.sp
+.LP
+The \fBpcitool\fR \fB-i\fR command displays device and CPU routing information for INOs on a given nexus, and allows rerouting of a given INO or INO group to a specific CPU.
+.sp
+.LP
+On SPARC platforms, the INO is mapped to an interrupt mondo, where as one or more MSI/Xs are mapped to an INO. So, INO and MSI/Xs are individually retargetable. Use the \fB-i\fR option to retrieve or reroute a given INO; use the \fB-m\fR option for MSI/Xs.
+.sp
+.LP
+Specifying \fIcpu#\fR is available on the x86 platform.  In combination with \fIino#\fR, this identifies an exclusive vector. The \fIcpu#\fR argument is not supported on the SPARC platform.
+.SS "Required Privileges"
+.sp
+.LP
+A user must have all privileges in order to access interrupt information. A regular user can access interrupt information following an \fBsu\fR(1M) to root or if he is granted the "Maintenance and Repair" rights profile in the \fBuser_attr\fR file. See \fBuser_attr\fR(4) and \fBrbac\fR(5).
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display command usage.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+No errors are displayed as messages. However, \fBpcitool\fR still returns Unix error codes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR [\fB-c\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Display device and CPU routing information for INOs on a given nexus. The device path and instance number of each device for each displayed INO is displayed. On some platforms,  interrupts dedicated to the root complex are indicated by the string \fB(Internal)\fR appended to their pathnames.
+.sp
+With \fB-c\fR, dump interrupt controller information.
+.sp
+If neither \fB-r\fR nor \fB-w\fR are provided on the command line, \fB-r\fR is assumed. See \fBExamples\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verbose output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIcpu#\fR [\fB-g\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Route the given INO or MSI/X to the given CPU. Display the new and original routing information. The INO or MSI/X must be specified.
+.sp
+On some platforms (such as x86) multiple MSI interrupts of a single function need to be rerouted together. Use \fB-g\fR to do this. The \fB-g\fR option works only on supported platforms and only for groups of MSI interrupts. (A "group" of 1 is accepted.) When \fB-g\fR is used, the vector provided must be the lowest-numbered vector of the group. The size of the group is determined internally. See \fBExamples\fR.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRDisplaying All INOs
+.sp
+.LP
+The command for showing all INOs on \fB/pci@0,0\fR is:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i all\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDisplaying Output for Specific INO
+.sp
+.LP
+The command for showing INO \fB0x0,0x21\fR on the root nexus \fB/pci@0,0\fR differs slightly between x86 and SPARC platforms.
+
+.sp
+.LP
+On an x86 platform:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 0,21\fR
+0x0,0x21:                   mpt                          0
+/pci@7b,0/pci1022,7458@11/pci1000,3060@2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+On a SPARC platform:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 21\fR
+0x0,0x21:                   mpt                          0
+/pci@7b,0/pci1022,7458@11/pci1000,3060@2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Output shown above is an example and might vary from your output.
+
+.LP
+\fBExample 3 \fRDisplaying Output for Specific MSI
+.sp
+.LP
+The command for showing MSI \fB0x1\fR on the root nexus \fB/pci@0,0\fR, along with sample output, is shown below.
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -m 0x1\fR
+0x0,0x1: pcieb     0    /pci@7b,0/pci10de,5d@e
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRRerouting an INO from One CPU to Another
+.sp
+.LP
+Successful rerouting INO 21 from CPU 0 to CPU 1 produces the output shown below.
+
+.sp
+.LP
+On an x86 platform:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 0,21 -w 1\fR
+0x0,0x21 -> 0x1,0x20
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+On a SPARC platform:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 21 -w 1\fR
+0x0,0x21 -> 0x1,0x20
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRRerouting an MSI from One CPU to Another
+.sp
+.LP
+Successful rerouting MSI 1 from CPU 1 to CPU 0 produces the output shown below.
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -m 1 -w 0\fR
+0x1,0x1 -> 0x0,0x1
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRRerouting a Group of INOs
+.sp
+.LP
+Successful rerouting of a group of INOs starting at 24 from CPU 0 to CPU 1 produces the output shown below.
+
+.sp
+.LP
+On an x86 platform:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 3,24 -w 1 -g\fR
+0x3,0x24 => 0x1,0x22
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+On a SPARC platform:
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 24 -w 1 -g\fR
+0x3,0x24 => 0x1,0x22
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+No error.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Out-of-range, misaligned, or otherwise invalid argument has been passed in.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBETIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+Timeout waiting for pending interrupt to settle before changing interrupts to a new CPU.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+An I/O error occurred.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitecturePCI-based systems
+_
+Availabilitysystem/management/pcitool
+_
+Interface StabilityVolatile
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsu\fR(1M), \fBpci\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5), \fBrbac\fR(5)
+.sp
+.LP
+PCI specification (available from \fBwww.pcisig.org\fR)
+.SH NOTES
+.sp
+.LP
+All values are entered in hex.
+.sp
+.LP
+Not all commands are applicable to all platforms.

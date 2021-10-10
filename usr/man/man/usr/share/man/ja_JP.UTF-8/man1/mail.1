@@ -1,0 +1,803 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2008, Sun Microsystems, Inc. All Rights Reserved
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH mail 1 "2008 年 7 月 24 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+mail, rmail \- メールの読み取りまたはユーザーへのメールの送信
+.SH 形式
+.SS "メールの送信"
+.LP
+.nf
+\fBmail\fR [\fB-tw\fR] [\fB-m\fR \fImessage_type\fR] \fIrecipient\fR...
+.fi
+
+.LP
+.nf
+\fBrmail\fR [\fB-tw\fR] [\fB-m\fR \fImessage_type\fR] \fIrecipient\fR...
+.fi
+
+.SS "メールの読み取り"
+.LP
+.nf
+\fBmail\fR [\fB-ehpPqr\fR] [\fB-f\fR \fIfile\fR]
+.fi
+
+.SS "デバッグ"
+.LP
+.nf
+\fBmail\fR [\fB-x\fR \fIdebug_level\fR] [\fIother_mail_options\fR] \fIrecipient\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fIrecipient\fR は通常、ドメイン形式 ("\fIuser\fR@\fImachine\fR") のアドレス、または \fBlogin\fR(1) が認識するユーザー名です。\fIrecipient\fR を指定すると、\fBmail\fR はメッセージを送信中であるとみなします。このコマンドは、標準入力からファイルの終端 (Control-d) まで、あるいは端末デバイスから読み取っている場合は、ピリオドだけの行に至るまで読み取りを続けます。ファイルの終端またはピリオドだけの行のいずれかを受信すると、\fBmail\fR は各 \fIrecipient\fR に対してレターをメールファイルに追加します。\fI\fR\fI\fR
+.sp
+.LP
+レターは、最初にヘッダー行が数行、次に空行、さらに本文が続きます。\fI\fR\fI\fR\fI\fRレターのヘッダー行セクションは、1 つまたは複数の UNIX ポストマークから構成されます。\fI\fR
+.sp
+.in +2
+.nf
+\fBFrom\fR \fIsender date_and_time\fR [\fBremote from\fR \fIremote_system_name\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この後に、次の形式の 1 つまたは複数の標準メッセージヘッダー行が続きます。
+.sp
+.in +2
+.nf
+\fIkeyword-name\fR\fB:\fR [\fIprintable text\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、\fIkeyword-name\fR は、コロン (`\fB:\fR') 以外の表示可能なスペース以外の文字から構成されます。\fBMIME-version:\fR ヘッダー行は、メッセージが RFC 2045 の記述に従ってフォーマットされていることを示します。本文のバイト数を示す \fBContent-Length:\fR ヘッダー行は、レターがメッセージ内容のないヘッダー行だけから構成されていないかぎり、常に存在します。\fI\fR \fBContent-Type:\fR ヘッダー行は本文 (テキスト、アプリケーション/オクテットストリームなど) のタイプを示し、常に存在します。ただし、レターがメッセージ内容のないヘッダー行だけから構成されている場合は例外です。\fI\fRヘッダー行は、その次の行がスペースで始まっている場合、次の行に継続できます。
+.SH オプション
+.SS "メールの送信"
+.sp
+.LP
+次のコマンド行引数は、メール送信に影響を与えます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fImessage_type\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBMessage-Type:\fR 行を、\fImessage_type\fR の値とともにメッセージヘッダーに追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 19n
+.rt  
+対象となる \fIrecipient\fR のそれぞれについて、\fBTo:\fR 行を、メッセージヘッダーに追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.RS 19n
+.rt  
+リモート送信プログラムの完了を待たずに、レターをリモート受信者に送信します。
+.RE
+
+.sp
+.LP
+レターが配送できないことがわかった場合、そのレターは障害の原因と性質を示す診断とともに送信者に返されます。入力中に \fBmail\fR が中断された場合、メッセージを \fBdead.letter\fR というファイルにセーブするので、後から編集と再送信を実行することもできます。\fBdead.letter\fR は常に追加されるので、以前の内容はすべて保存されます。\fBdead.letter\fR の追加 (または作成) は、まず、現在のディレクトリで行われます。これが失敗すると、ユーザーのログインディレクトリに \fBdead.letter\fR を追加 (または作成) しようとします。2 度目の試行も失敗した場合は、\fBdead.letter\fR の処理は一切行われません。
+.sp
+.LP
+\fBrmail\fR は、メールの送信だけ可能です。\fBuucp\fR(1C) は \fBrmail\fR をセキュリティー通知として使用します。メールメッセージを生成するアプリケーションプログラムは、メッセージの送信や配送、またはその両方において、必ず、\fBmail\fR ではなく \fBrmail\fR を起動する必要があります。
+.sp
+.LP
+ローカルシステムに Basic Networking Utilities をインストールしてある場合、ローカルシステムで利用可能な送信メカニズムに応じて、さまざまな方法でリモートシステム上の受信者にメールを送信できます。もっとも広く利用されているアドレス指定機構は、ドメイン形式と UUCP 形式の 2 つです。
+.sp
+.ne 2
+.mk
+.na
+\fBドメイン形式のアドレス指定\fR
+.ad
+.sp .6
+.RS 4n
+受信者名に `\fB@\fR' とドメイン (およびサブドメインもあり得る) 情報を追加してリモート受信者を指定します (たとえば、\fBuser@sf.att.com\fR)。(ローカルシステム上でどの規則が利用可能かについての詳細は、ローカルシステム管理者に相談する必要があります)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBUUCP 形式のアドレス指定\fR
+.ad
+.sp .6
+.RS 4n
+\fBsysa!user\fR のように、受信者名にリモートシステム名と感嘆符を接頭辞として付けてリモート受信者を指定します。\fBcsh\fR(1) がデフォルトシェルの場合、\fBsysa\e!user\fR を使用する必要があります。一連のシステム名を感嘆符で区切れば、拡張したネットワークを介してレターを出力できます (たとえば、\fBsysa!sysb!sysc!user\fR または \fBsysa\e!sysb\e!sysc\e!user\fR)。
+.RE
+
+.SS "メールの読み取り"
+.sp
+.LP
+次のコマンド行引数は、メールの読み取りに影響を与えます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 11n
+.rt  
+メールがあるかどうかをテストします。\fBmail\fR は何も表示しません。
+.sp
+ユーザーにメールがある場合、\fB0\fR の終了コードを返します。メールがない場合、\fB1\fR の終了コードを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.RS 11n
+.rt  
+\fB-e\fR と似ていますが、新しいメールがあるかどうかをテストします。\fB\fR
+.sp
+ユーザーに新しいメールがある場合、\fB0\fR の終了コードを返します。新しいメールがない場合、\fB1\fR の終了コードを返します。既読のメールがある場合、\fB2\fR の終了コードを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 11n
+.rt  
+最初に、最新のメッセージではなく、ヘッダーのウィンドウを表示します。ディスプレイの後に \fB?\fR プロンプトを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 11n
+.rt  
+配置を示すプロンプトなしに、すべてのメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.RS 11n
+.rt  
+デフォルトの選択したヘッダー行を表示する代わりに、ヘッダー行すべてを表示してから、すべてのメッセージを表示します。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 11n
+.rt  
+割り込みを受けたあと、\fBmail\fR は終了します。通常、割り込みによって発生することは、表示中のメッセージの終了だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 11n
+.rt  
+先入れ先出し方式でメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfile\fR\fR
+.ad
+.RS 11n
+.rt  
+デフォルトのメールファイルの代わりに、\fBmail\fR は、\fIfile\fR (たとえば、\fBmbox\fR) を使用します。\fI\fR
+.RE
+
+.sp
+.LP
+\fBmail\fR は、コマンド行引数の影響を特に受けないかぎり、後入れ先出し方式でユーザーのメールメッセージを表示します。メッセージ表示のデフォルトのモードは、至急必要なヘッダー行だけを表示することです。これらには、UNIX の \fBFrom\fR ポストマークおよび \fB>From\fR ポストマーク、\fBFrom:\fR ヘッダー行、\fBDate:\fR ヘッダー行、\fBSubject:\fR ヘッダー行、および \fBContent-Length:\fR ヘッダー行、ならびに \fBTo:\fR、\fBCc:\fR、\fBBcc:\fR などの受信者ヘッダー行が含まれますが、これに限定されるわけではありません。ヘッダー行を表示したあと、\fBmail\fR は、メッセージに表示できない文字がないかぎり、その内容 (本体) を表示します。表示できない文字がある場合、\fBmail\fR は、メッセージの内容がバイナリである旨の警告文を発行し、その内容を表示しません \fB\fR(これは、\fBp\fR コマンドで無効にできます)。 
+.sp
+.LP
+各メッセージにおいて、ユーザーは \fB?\fR というプロンプトを受け、標準入力から行が読み取られます。メッセージの配置を判別するときは、次のコマンドを利用できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB#\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のメッセージの数を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\fR\fR
+.ad
+.sp .6
+.RS 4n
+直前のメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB<復帰改行>、\fB+\fR、または \fBn\fR \fR
+.ad
+.sp .6
+.RS 4n
+次のメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fIcommand\fR\fR
+.ad
+.sp .6
+.RS 4n
+シェルにエスケープして、\fIcommand\fR を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmail\fR セッション中に到着したメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR または \fBdp\fR \fR
+.ad
+.sp .6
+.RS 4n
+現在のメッセージを削除し、次のメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIn\fR 番のメッセージを削除します。次のメッセージを表示しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdq\fR\fR
+.ad
+.sp .6
+.RS 4n
+メッセージを削除し、\fBmail\fR を終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のメッセージを中心としてヘッダーのウィンドウを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIn\fR 番のメッセージを中心としてヘッダーのウィンドウを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh a\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのメールファイルにすべてのメッセージのヘッダーを表示します。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh d\fR\fR
+.ad
+.sp .6
+.RS 4n
+削除予定のメッセージのヘッダーを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR [ \fIpersons\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIpersons\fR に現在のメッセージを送信 (および削除) します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIn\fR 番のメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のメッセージを再度表示し、バイナリ (つまり、表示不能) の内容の表示を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトの省略モードを無効にし、現在のメッセージを再表示して、ヘッダー行をすべて表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR または CTRL-D \fR
+.ad
+.sp .6
+.RS 4n
+\fI\fR削除を解除したメールをメールファイルに戻し、\fBmail\fR を終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR [ \fIusers\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+送信者とほかの \fIusers\fR に応答してから、メッセージを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR [ \fIfiles\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+メッセージを、指定された \fIfiles\fR (デフォルトは \fBmbox\fR) にメッセージの内容をヘッダー行なしでセーブし、メッセージを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR [ \fIn\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIn\fR 番のメッセージの削除を解除します (デフォルトは直前に読み取ったメッセージ)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR [ \fIfiles\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIfiles\fR (デフォルトは \fBmbox\fR) にメッセージの内容をヘッダー行なしでセーブし、メッセージを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBx\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fI\fRメールすべてを変更を加えずにメールファイルに戻し、\fBmail\fR を終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBy\fR [ \fIfiles\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fB-w\fR オプションと同じ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド要約を表示します。
+.RE
+
+.sp
+.LP
+通常、ユーザーがログインする際にメールが存在すれば、それが通知されます。また、\fBmail\fR を使用中に新しいメールが到着した場合でも通知されます。
+.sp
+.LP
+\fI\fR\fBchmod\fR(1) を使用し、2 種類の方法でメールファイルのアクセス権を処理すれば、\fBmail\fR の機能を変更できます。ファイルのその他のアクセス権を、読み取り書き込みともに可能 (\fB0666\fR)、読み取り専用 (\fB0664\fR)、または読み取り書き込みとも不可 (\fB0660\fR) とすることによって、プライバシをさまざまに調整できます。デフォルト (\fB0660\fR モード) 以外に変更すると、空の場合でもファイルは保存され、希望のアクセス権が永久的になります (管理者は \fBmailcnfg\fR の \fBDEL_EMPTY_MAILFILE\fR オプションを使用すれば、このファイル保存を無効にできます)。
+.sp
+.LP
+メールファイルのグループ \fBID\fR を \fBmail\fR として新しいメッセージを配送可能にし、メールファイルをグループ \fBmail\fR で書き込み可能にする必要があります。
+.SS "デバッグ"
+.sp
+.LP
+次のコマンド行引数によって、\fBmail\fR は、デバッグ情報を提供します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIdebug_level\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBmail\fR は、デバッグ情報の入ったトレースファイルを作成します。
+.RE
+
+.sp
+.LP
+\fB-x\fR オプションを指定すると、\fBmail\fR は \fB/tmp/MLDBG\fR\fIprocess_id\fR という名前のファイルを作成します。このファイルには、\fBmail\fR が現在のメッセージを処理した手順に関するデバッグ情報が入っています。\fIdebug_level\fR の絶対値はデバッグ情報の長さを制御します。\fB0\fR はデバッグなしを意味します。\fIdebug_level\fR が \fB0\fR より大きい場合、デバッグファイルが保持されるのは、\fBmail\fR のメッセージ処理中に問題が発生した場合だけです。\fI\fR\fIdebug_level\fR が \fB0\fR 未満の場合、常にデバッグファイルを保持します。\fB-x\fR で \fIdebug_level\fR を指定すると、\fB/etc/mail/mailcnfg\fR 内の \fBDEBUG\fR の指定すべてが無効になります。\fB-x\fR オプションの提供する情報は難解であり、役立つのはシステム管理者だけだと思われます。
+.SS "配送通知"
+.sp
+.LP
+メールの通知には、いくつかの形式があります。次の行をメッセージヘッダーに挿入することによって実現します。
+.sp
+.LP
+\fBTransport-Options:\fR [ \fB/\fR\fIoptions\fR ]
+.sp
+.LP
+\fBDefault-Options:\fR [ \fB/\fR\fIoptions\fR ]
+.sp
+.LP
+\fB>To:\fR \fIrecipient\fR [ \fB/\fR\fIoptions\fR ]
+.sp
+.LP
+ここで、"/\fIoptions\fR" には、次のうちの 1 つまたは複数が使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/delivery\fR\fR
+.ad
+.RS 15n
+.rt  
+メッセージが \fIrecipient\fR のメールボックスに正常に配送されたことを送信者に通知します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/nodelivery\fR\fR
+.ad
+.RS 15n
+.rt  
+配送が成功したことを送信者に通知しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/ignore\fR\fR
+.ad
+.RS 15n
+.rt  
+配送が失敗したことを送信者に通知しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/return\fR\fR
+.ad
+.RS 15n
+.rt  
+メール配送が失敗したかどうかを送信者に通知します。送信者に失敗メッセージを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/report\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB/return\fR と同じ。ただし、元のメッセージは返しません。
+.RE
+
+.sp
+.LP
+デフォルトは \fB/nodelivery/return\fR です。矛盾のあるオプションを使用すると、最初のオプションを認識し、その後の矛盾する条件を無視します。
+.SH オペランド
+.sp
+.LP
+メール送信には次のオペランドがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrecipient\fR\fR
+.ad
+.RS 13n
+.rt  
+ドメイン形式 ("\fIuser\fR@\fImachine\fR") のアドレス、または \fBlogin\fR(1) が認識するユーザーログイン名
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBmail\fR と \fBrmail\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 環境
+.sp
+.LP
+\fBmail\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.RS 6n
+.rt  
+日付と時間の文字列とともに使用するタイムゾーンを指定する
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+そのユーザー宛のメールがあり、処理は正常に終了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 6n
+.rt  
+ユーザー宛のメールがなかった、または初期化時にエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>1\fR\fR
+.ad
+.RS 6n
+.rt  
+初期化のあとでエラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdead.letter\fR\fR
+.ad
+.RS 20n
+.rt  
+メールできなかったテキスト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 20n
+.rt  
+送信者の識別および \fIrecipient\fR の発見用
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/mbox\fR\fR
+.ad
+.RS 20n
+.rt  
+セーブされたメール
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$MAIL\fR\fR
+.ad
+.RS 20n
+.rt  
+メールファイルのパス名を含む変数\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/tmp/MLDBG\fR*\fR
+.ad
+.RS 20n
+.rt  
+デバッグ・トレースファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/mail/*.lock\fR\fR
+.ad
+.RS 20n
+.rt  
+メールディレクトリのロック
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/mail/:saved\fR\fR
+.ad
+.RS 20n
+.rt  
+一時ファイルを保持し、システムクラッシュ時のデータ損失を防ぐためのディレクトリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/mail/\fIuser\fR\fR\fR
+.ad
+.RS 20n
+.rt  
+ユーザーに送られたメール (ユーザーに届いたメール)。すなわち、デフォルトのメールファイル\fI\fR\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvar/tmp/ma\fR*\fR
+.ad
+.RS 20n
+.rt  
+一時ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBchmod\fR(1), \fBcsh\fR(1), \fBlogin\fR(1), \fBmailx\fR(1), \fBuucp\fR(1C), \fBuuencode\fR(1C), \fBvacation\fR(1), \fBwrite\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5)
+.sp
+.LP
+\fI『Solaris Advanced User\&'s Guide』\fR
+.SH 注意事項
+.sp
+.LP
+前述の「配送通知」の節で説明したように、ヘッダー行による解釈と結果的な処置が発生するのは、配送 (または失敗) が行われたシステム上に、このバージョンの \fBmail\fR がインストールされている場合だけです。\fBmail\fR の初期のバージョンはどのタイプの配送通知もサポートしません。
+.sp
+.LP
+条件によっては、ロックファイルの削除が失敗することがあります。
+.sp
+.LP
+割り込み後、次のメッセージが表示されないことがあります。表示を強制するときは、\fBp\fR を入力します。

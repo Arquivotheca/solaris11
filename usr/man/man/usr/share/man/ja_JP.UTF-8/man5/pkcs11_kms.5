@@ -1,0 +1,207 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pkcs11_kms 5 "2011 年 5 月 11 日" "SunOS 5.11" "標準、環境、マクロ"
+.SH 名前
+pkcs11_kms \- Oracle Key Manager の RSA PKCS#11 プロバイダ
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/security/pkcs11_kms.so\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/security/64/pkcs11_kms.so\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpkcs11_kms.so\fR オブジェクトは、Oracle Key Manager (OKM) KMS エージェントプロトコルを使用して Oracle Key Manager アプライアンス (KMA) と対話するために、RSA Security Inc. PKCS#11 Cryptographic Token Interface (Cryptoki)、v2.20 仕様を実装します。このプロバイダは PKCS#11 仕様を実装し、(非公開) KMS クライアントプロトコルを使用してリモート OKM と通信します。
+.sp
+.LP
+このプロバイダでサポートされている PKCS#11 メカニズムは、\fBCKM_AES_KEY_GEN \fR、\fBCKM_AES_CBC_PAD\fR、および \fBCKM_AES_CBC\fR です。 
+.sp
+.LP
+このプロバイダでサポートされている PKCS#11 インタフェースは次のとおりです。 
+.sp
+.in +2
+.nf
+C_Initialize
+C_Finalize
+C_GetInfo
+C_GetAttributeValue
+C_SetAttributeValue
+C_GetFunctionList
+C_GetSlotList
+C_GetSlotInfo
+C_GetTokenInfo
+C_GetMechanismList
+C_GetMechanismInfo
+C_InitToken
+C_SetPIN
+C_Login
+C_Logout
+C_FindObjectsInit/C_FindObjects/C_FindObjectsFinal
+C_GenerateKey
+C_EncryptInit/C_Encrypt/C_EncryptFinal
+C_DecryptInit/C_Decrypt/C_DecryptFinal
+C_DestroyObject
+C_OpenSession
+C_CloseSession
+C_CloseAllSessions
+C_GetSessionInfo
+C_CreateObject
+C_CopyObject
+C_GetObjectSize
+C_EncryptUpdate
+C_DecryptUpdate
+.fi
+.in -2
+
+.sp
+.LP
+その他の関数を呼び出すと、すべて \fBCKR_FUNCTION_NOT_SUPPORTED\fR が返されます。
+.SS "前提条件"
+.sp
+.LP
+\fBpkcs11_kms\fR プロバイダは、OKM にアクセスできるシステムでのみ使用できます。OKM 管理者は、OKM にアクセスする各ユーザー (またはアプリケーション) について、エージェント ID を構成する必要があります。これには OKM 管理ツールに含まれている OKM ユーティリティーを使用します。これらのユーティリティーは Oracle Solaris には含まれていません。
+.sp
+.LP
+OKM 管理者が KMA を使用できるように構成し、パラメータをクライアント (Oracle Solaris のユーザーまたはアプリケーション) に通知したあと、Oracle Solaris PKCS#11 KMS プロバイダを初期化して使用できるようにします。
+.sp
+.LP
+KMS プロバイダの初期化には、\fBkmscfg\fR(1M) ユーティリティーを使用します。ローカルプロバイダの構成ファイルを使用できるように初期化するには、ユーザーは \fBkmscfg\fR に少なくともプロファイルの名前、OKM エージェント ID、プロファイルのセキュリティー保護に使用されている初期パスワード、および KMA の IP アドレスを入力する必要があります。詳細については、\fBkmscfg\fR(1M) のマニュアルページを参照してください。
+.sp
+.LP
+\fBkmscfg\fR を実行し、ローカルのトークン名前空間を構成したあと、ユーザーはトークンを使用するために初期化できます。トークンを初期化するには、\fBpktool\fR(1) コマンドを次のように使用します。
+.sp
+.in +2
+.nf
+$ pktool inittoken currlabel=KMS
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ユーザーは KMS プロバイダを使用するために初期化する前に、SO (セキュリティー責任者) のデフォルトの PIN を入力する必要があります。デフォルトの SO PIN は、OKM 管理者が最初に OKM エージェントを設定したときに使用したものです。トークンの初期化を行うユーザーは、このパスフレーズを知らなければプロバイダを初期化できません。
+.sp
+.LP
+プロバイダを初期化したあとは、ユーザー PIN をデフォルト値から変更できます。PIN の値を変更するには、再度 \fBpktool\fR(1) を使用します。
+.sp
+.LP
+ローカル PIN を変更するには、次のコマンドを使用します。
+.sp
+.in +2
+.nf
+$ pktool setpin token=KMS
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBpktool setpin\fR 操作または \fBC_Login()\fR 関数と \fBC_SetPIN()\fR 関数に設定する PIN には、長さが 1 から 256 までで、空文字を含まない、任意の文字列を使用できます。
+.sp
+.LP
+トークンへのアクセス
+.sp
+.LP
+ユーザーは自分のトークンを初期化したあと、\fBpktool\fR(1)、\fBdecrypt\fR(1)、\fBencrypt\fR(1) で、または PKCS11 アプリケーションを作成することにより、KMS トークンを指定してトークンの使用を開始できます。
+.SH 使用例
+.LP
+\fB例 1 \fROracle Key Manager に鍵を作成する
+.sp
+.LP
+次のコマンドは、Oracle Key Manager に鍵を作成します。
+
+.sp
+.in +2
+.nf
+$ pktool genkey token=KMS label=mykey1 keytype=aes keylen=256
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fROracle Key Manager の鍵を使用してファイルを暗号化する
+.sp
+.LP
+次のコマンドは、Oracle Key Manager の鍵を使用してファイルを暗号化します。
+
+.sp
+.in +2
+.nf
+$ encrypt -a aes -K mykey1 -T KMS -i input.txt -o output.enc
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fROracle Key Manager の鍵を使用してファイルを復号化する
+.sp
+.LP
+次のコマンドは、Oracle Key Manager の鍵を使用してファイルを復号化します。
+
+.sp
+.in +2
+.nf
+$ decrypt -a aes -K mykey1 -T KMS -i output.enc -o output.txt
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+/system/library/security/crypto/pkcs11_kms
+T}
+_
+インタフェースの安定性確実
+_
+MT レベルT{
+例外付きで MT-安全。下記を参照。
+T}
+_
+標準PKCS#11 v2.20 
+.TE
+
+.sp
+.LP
+「MT-安全」属性の例外については、RSA PKCS#11 v2.20 のセクション 6.6.2 を参照してください。
+.SH 関連項目
+.sp
+.LP
+\fBdecrypt\fR(1), \fBencrypt\fR(1), \fBpktool\fR(1), \fBcryptoadm\fR(1M), \fBkmscfg\fR(1M), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+『\fIKMS 2.2: Administration Guide\fR』
+.sp
+.LP
+『\fIOracle Key Manager (OKM) Administration Guide\fR』
+.SH 注意事項
+.sp
+.LP
+\fBpkcs11_kms.so\fR は、専用のディレクトリを使用して、構成ファイルおよび KMA への接続を初期化するために必要なほかのデータを保持します。この専用ディレクトリは、それが最初に作成されたホストに対してローカルなディレクトリです。デフォルトでは、KMS トークンのディレクトリ領域は \fB/var/user/kms/$USERNAME\fR です。デフォルトの KMS ディレクトリは、\fBkmscfg\fR(1M)、\fBdecrypt\fR(1)、\fBencrypt\fR(1)、および \fBpktool\fR(1) コマンドを使用する前に \fBKMSTOKEN_DIR\fR 環境変数を設定することによって上書きできます。
+.sp
+.LP
+PKCS#11 クライアントでは、Oracle Key Manager のソフトウェアバージョン 2.4 がインストールされていることが必要です。 
+.sp
+.LP
+PKCS#11 クライアントが、複数システムから同じエージェント ID を使用している場合、このエージェントは\fBワンタイムパスフレーズ\fRフラグを設定しないで作成する必要があります。このオプションは、OKM クラスタの一部のメンバーが 2.4 より前の OKM ソフトウェアバージョンを実行している場合は使用できません。エージェントの作成の詳細については、『\fIOracle Key Manager (OKM) Administration Guide\fR』を参照してください。
+.sp
+.LP
+OKM エージェントは、PKCS#11 クライアントの鍵の作成に使用される前に、\fBデフォルト鍵グループ\fRが割り当てられる必要があります。デフォルト鍵グループがエージェントに割り当てられない場合、操作は \fBCKR_PIN_INCORRECT\fR エラーで失敗します。エージェントへの鍵グループ割り当ての詳細については、『\fIOracle Key Manager (OKM) Administration Guide\fR』を参照してください。

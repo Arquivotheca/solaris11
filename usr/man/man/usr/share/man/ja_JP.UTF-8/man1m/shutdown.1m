@@ -1,0 +1,204 @@
+'\" te
+.\" Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH shutdown 1M "2011 年 5 月 19 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+shutdown \- システムのシャットダウンとシステム状態の変更
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/shutdown\fR [\fB-y\fR] [\fB-g\fR \fIgrace-period\fR] [\fB-r\fR | \fB-i\fR \fIinit-state\fR] 
+     [\fImessage\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBshutdown\fR は、マシンの状態を変更するために、スーパーユーザーが実行します。通常は、マルチユーザー状態 (state 2) からほかの状態に移行するために使用されます。
+.sp
+.LP
+デフォルトでは、\fBshutdown\fR は、コンソール以外はオペレーティングシステムにアクセスできないシステム状態にします。この状態はシングルユーザー状態と呼ばれます。
+.sp
+.LP
+デーモンをシャットダウンさせたりプロセスを強制終了させたりする前に、\fBshutdown\fR は警告メッセージを出力するとともに、デフォルトでは確認のための最終メッセージも出力します。\fImessage\fR は、標準の警告メッセージに続いて送信される文字列です: 
+.sp
+.in +2
+.nf
+The system will be shut down in .\|.\|.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この文字列に 2 つ以上の語句を含める場合は、一重引用符 (\fB\&'\fR) または二重引用符 (\fB"\fR) で囲む必要があります。
+.sp
+.LP
+この警告メッセージとユーザーが作成した \fImessage\fR は、\fBshutdown\fR コマンドが開始されるまでの残り時間が 7200 秒、3600 秒、1800 秒、1200 秒、600 秒、300 秒、120 秒、60 秒、および 30 秒の時点で出力されます。「\fB使用例\fR」を参照してください。
+.sp
+.LP
+各システム状態の定義は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBstate 0\fR
+.ad
+.RS 14n
+.rt  
+オペレーティングシステムを停止します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstate 1\fR
+.ad
+.RS 14n
+.rt  
+state 1 は管理状態と呼ばれます。state 1 では、マルチユーザーの操作に必要なファイルシステムがマウントされ、マルチユーザーファイルシステムにアクセスする必要があるログインを使用できます。システムがファームウェアモードから state 1 に移行する時はコンソールだけがアクティブであり、ほかのマルチユーザー (stete 2) サービスは使用できません。マルチユーザー状態から state 1 への移行時にすべてのユーザープロセスが停止されるわけではないことに注意してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstate s, S\fR
+.ad
+.RS 14n
+.rt  
+state s (または S) はシングルユーザー状態と呼ばれます。この状態への移行時にはすべてのユーザープロセスが停止されます。シングルユーザー状態では、マルチユーザーログインに必要なファイルシステムのマウントが解除され、システムへのアクセスはコンソールを介してしか行えません。マルチユーザーファイルシステムへアクセスする必要があるログインは使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstate 5\fR
+.ad
+.RS 14n
+.rt  
+電源を切っても安全なようにマシンを停止します。可能であれば電源を自動的に切断します。\fBrc0\fR プロシージャがこのために呼び出されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstate 6\fR
+.ad
+.RS 14n
+.rt  
+オペレーティングシステムを停止したあと、\fB/etc/inittab\fR の \fBinitdefault\fR エントリに定義されている状態でリブートします。\fBrc6\fR プロシージャがこのために呼び出されます。
+.RE
+
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの介入なしでコマンドが実行されるように、確認の問い合わせにあらかじめ応答します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fI grace-period\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトの 60 秒を、スーパーユーザーが変更できるようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fI init-state\fR\fR
+.ad
+.sp .6
+.RS 4n
+警告が表示された場合に、\fBinit\fR が移行する状態を \fIinit-state\fR に指定します。デフォルトは、システム状態 \fBs\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-i6\fR を指定することと同等です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBshutdown\fR の使用
+.sp
+.LP
+この例では、ホスト \fBfoo\fR で \fBshutdown\fR が実行されており、120 秒後にシャットダウンがスケジュールされています。警告メッセージは、最終の確認メッセージの 2 分前、1 分前、および 30 秒前に出力されます。
+
+.sp
+.in +2
+.nf
+example# shutdown -i S -g 120 "===== disk replacement ====="
+Shutdown started.   Tue Jun   7  14:51:40 PDT  1994
+
+Broadcast Message from root (pts/1) on foo Tue Jun  7 14:51:41.\|.\|.
+The system will be shut down in 2 minutes
+===== disk replacement =====
+Broadcast Message from root (pts/1) on foo Tue Jun  7 14:52:41.\|.\|.
+The system will be shut down in 1 minutes
+===== disk replacement =====
+Broadcast Message from root (pts/1) on foo Tue Jun  7 14:53:41.\|.\|.
+The system will be shut down in 30 seconds
+===== disk replacement =====
+Do you want to continue? (y or n):
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inittab\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBinit\fR によるプロセスディスパッチを制御します。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBboot\fR(1M), \fBhalt\fR(1M), \fB init\fR(1M), \fBkillall\fR(1M), \fBreboot\fR(1M), \fBufsdump\fR(1M), \fBinit.d\fR(4), \fBinittab\fR(4), \fBnologin\fR(4), \fBattributes\fR(5)
+.SH 注意事項
+.sp
+.LP
+システムが \fBS\fR または \fBs\fR 状態へ移行するときに、\fB/etc/nologin\fR ファイル (\fBnologin\fR(4) を参照) が作成されます。その後 state 2 (マルチユーザー状態) へ移行する時点で、このファイルは \fB/etc/rc2.d\fR ディレクトリにあるスクリプトによって削除されます。

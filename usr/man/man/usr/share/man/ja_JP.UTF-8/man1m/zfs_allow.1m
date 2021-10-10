@@ -1,0 +1,475 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zfs_allow 1M "2011 年 8 月 24 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+zfs_allow \- 特権のないユーザーに ZFS ファイルシステム管理アクセス権を委任する
+.SH 形式
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR [\fB-ldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] \fIperm\fR|\fI@setname\fR[,...] 
+     \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR [\fB-ld\fR] \fB-e\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fB-c\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fB-s\fR @\fIsetname\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-rldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] [\fIperm\fR|@\fIsetname\fR[,... ]] 
+     \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-rld\fR] \fB-e\fR [\fIperm\fR|@\fIsetname\fR[,... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-r\fR] \fB-c\fR [\fIperm\fR|@\fIsetname\fR[ ... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-r\fR] \fB-s\fR @\fIsetname\fR [\fIperm\fR|@\fIsetname\fR[,... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBzpool\fR(1M) で説明されているように、\fBzfs allow\fR コマンドを使用して、\fBZFS\fR ストレージプールで特権のないユーザーに ZFS ファイルシステムを管理するためのアクセス権を委任できます。\fBzfs unallow\fR コマンドを使用して、管理アクセス権を取り消すことができます。
+.sp
+.LP
+一般にアクセス権とは、\fBZFS\fR サブコマンドを使用する権限、または \fBZFS\fR プロパティーを変更する権限です。使用できるアクセス権は次のとおりです。
+.sp
+.in +2
+.nf
+NAME             TYPE           NOTES
+allow            subcommand     Must also have the permission that is
+                                being allowed
+clone            subcommand     Must also have the 'create' ability and
+                                'mount' ability in the origin file system
+create           subcommand     Must also have the 'mount' ability
+destroy          subcommand     Must also have the 'mount' ability
+diff             subcommand     Allows user to compare differences
+                                between snapshots of a ZFS dataset
+hold             subcommand     Allows adding a user hold to a snapshot
+key              subcommand     Allows key loading or unloading
+keychange        other          Allows wrapping key change and re-key
+mount            subcommand     Allows mount/umount of ZFS datasets
+promote          subcommand     Must also have the 'mount' and 'promote'
+                                ability in the origin file system
+receive          subcommand     Must also have the 'mount' and 'create' ability
+release          subcommand     Allows releasing a user hold which
+                                might destroy the snapshot
+rename           subcommand     Must also have the 'mount' and 'create'
+                                ability in the new parent
+rollback         subcommand
+send             subcommand
+share            subcommand     Allows sharing file systems over NFS or
+                                SMB protocols
+snapshot         subcommand
+groupquota       other          Allows accessing any groupquota@...
+                                property
+groupused        other          Allows reading any groupused@... property
+userprop         other          Allows changing any user property
+userquota        other          Allows accessing any userquota@... property
+userused         other          Allows reading any userused@... property
+aclinherit       property
+aclmode          property
+atime            property
+canmount         property
+casesensitivity  property
+checksum         property
+compression      property
+copies           property
+dedup            property
+devices          property
+encryption       property
+exec             property
+keysource        property
+logbias          property
+mlslabel         property
+mountpoint       property
+nbmand           property
+normalization    property
+primarycache     property
+quota            property
+readonly         property
+recordsize       property
+refquota         property
+refreservation   property
+reservation      property
+rstchown         property
+secondarycache   property
+setuid           property
+sharenfs         property
+sharesmb         property
+snapdir          property
+sync             property
+utf8only         property
+version          property
+volblocksize     property
+volsize          property
+vscan            property
+xattr            property
+zoned            property
+.fi
+.in -2
+.sp
+
+.SH サブコマンド
+.sp
+.LP
+状態を変更するサブコマンドはすべて、元の形式でプールに永続的に記録されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBzfs\fR コマンドの使用法情報を表示します。特定のコマンド、プロパティー、または委任アクセス権のヘルプを表示できます。特定のコマンドまたはプロパティーのヘルプを表示した場合、コマンド構文またはプロパティー値が表示されます。引数を何も付けずに \fBzfs help\fR を使用すると、\fBzfs\fR コマンドの完全なリストが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fIfilesystem\fR | \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムまたはボリューム上で委任されたアクセス権を表示します。詳細は、\fBzfs allow\fR のほかの形式を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR [\fB-ldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR| \fIvolume \fR\fR
+.ad
+.br
+.na
+\fB\fBzfs allow\fR [\fB-ld\fR] \fB-e\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR | \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムに対する \fBZFS\fR 管理アクセス権を非特権ユーザーに委任します。
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-ug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+アクセス権を委任するユーザーを指定します。複数のエンティティーをコンマ区切りのリストとして指定できます。どちらの \fB-ug\fR オプションも指定されていない場合、引数はキーワード \fBeveryone\fR、ユーザー名、最後にグループ名という優先順位で解釈されます。「everyone」という名前のユーザーまたはグループを指定するには、\fB-u\fR オプションまたは \fB-g\fR オプションを使用します。ユーザーと同じ名前のグループを指定するには、\fB-g\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-e\fR] \fIperm\fR|@\fIsetname\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+アクセス権を \fBeveryone\fR に委任することを指定します。複数のアクセス権をコンマ区切りのリストとして指定できます。アクセス権の名前は、\fBZFS\fR のサブコマンドおよびプロパティーの名前と同じです。下記のプロパティーリストを参照してください。プロパティーセットの名前を指定できます。プロパティーセット名はアットマーク記号 (\fB@\fR) で始まります。詳細については、下記の \fB-s\fR の形式を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-ld\fR] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクセス権を委任する場所を指定します。\fB-ld\fR オプションのどちらも指定されていない場合や、両方が指定されている場合は、ファイルシステムまたはボリュームおよびそのすべての子孫にアクセス権が許可されます。\fB-l\fR オプションのみが指定されている場合は、指定されたファイルシステムのみに「ローカルの」アクセス権が許可されます。\fB-d\fR オプションのみが指定されている場合は、子孫ファイルシステムのみにアクセス権が許可されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fB-c\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+「作成時」アクセス権を設定します。これらのアクセス権は、新しく作成された子孫ファイルシステムの作成者に (ローカルに) 付与されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fB-s\fR @\fIsetname\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクセス権セットにアクセス権を定義または追加します。このセットは、指定のファイルシステムとその子孫に対してほかの \fBzfs allow\fR コマンドで使用できます。セットは動的に評価されるため、セットに加えられた変更はすぐに反映されます。アクセス権セットは ZFS ファイルシステムと同じ命名規則に従いますが、名前はアットマーク記号 (\fB@\fR) で始まり、64 文字以下の長さにする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unallow\fR [\fB-rldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] [\fIperm\fR|@\fIsetname\fR[, ...]] \fIfilesystem\fR|\fI volume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB-rld\fR] \fB-e\fR [\fIperm\fR|@\fIsetname\fR [,...]] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB- r\fR] \fB-c\fR [\fIperm\fR|@\fIsetname\fR[,...]]\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBzfs allow\fR コマンドで付与されたアクセス権を削除します。どのアクセス権も明示的には拒否されないため、付与されているほかのアクセス権は引き続き有効です。たとえば、祖先によってアクセス権が付与されているとします。アクセス権が指定されていない場合は、指定された \fIuser\fR、\fIgroup\fR、または \fBeveryone\fR のすべてのアクセス権が削除されます。\fBeveryone\fR を指定すると (または、\fB-e\fR オプションを使用すると)、\fBeveryone\fR に付与されていたアクセス権のみが削除されます。すべてのユーザーおよびグループのすべてのアクセス権が削除されるわけではありません。\fBzfs allow\fR コマンドの \fB-ldugec\fR オプションの説明を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+このファイルシステムおよびすべての子孫から、アクセス権を再帰的に削除します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unallow\fR [\fB-r\fR] \fB-s\fR @\fIsetname\fR [\fIperm\fR|@\fIsetname\fR[,...]]\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクセス権セットからアクセス権を削除します。アクセス権が指定されていない場合は、すべてのアクセス権が削除されるため、セット全体が削除されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRZFS データセットの ZFS 管理アクセス権を委任する
+.sp
+.LP
+次の例は、ユーザー \fBanne\fR が \fBpool/home/anne\fR の作成、破棄、マウント、およびスナップショットの取得を行えるようにアクセス権を設定する方法を示しています。\fBpool/home/anne\fR に対するアクセス権も表示されています。
+
+.sp
+.in +2
+.nf
+# \fBzfs allow anne create,destroy,mount,snapshot pool/home/anne\fR
+# \fBzfs allow pool/home/anne\fR
+---- Permissions on pool/home/anne -----------------------------------
+Local+Descendent permissions:
+        user anne create,destroy,mount,snapshot
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBpool/home/anne\fR マウントポイントのアクセス権はデフォルトで 755 に設定されているため、ユーザー \fBanne\fR はファイルシステムを \fBpool/home/anne\fR にマウントできません。次の構文と同様の \fBACL\fR を設定して、マウントポイントにアクセスできるようにします。
+
+.sp
+.in +2
+.nf
+# \fBchmod A+user:anne:add_subdirectory:allow /pool/home/anne\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRZFS データセットの作成時アクセス権を委任する
+.sp
+.LP
+次の例は、\fBpool/home\fR にファイルシステムを作成するためのアクセス権をグループ \fBstaff\fR のメンバーに付与する方法を示しています。この構文では、staff のメンバーが自分のファイルシステムを破棄することは許可し、ほかのユーザーのファイルシステムを破棄することは許可していません。\fBpool/home\fR に対するアクセス権も表示されています。
+
+.sp
+.in +2
+.nf
+# \fBzfs allow staff create,mount pool/home\fR
+# \fBzfs allow -c destroy pool/home\fR
+# \fBzfs allow pool/home\fR
+---- Permissions on pool/home ----------------------------------------
+Create time permissions:
+        destroy
+Local+Descendent permissions:
+        group staff create,mount
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRZFS データセットのアクセス権セットを定義して付与する
+.sp
+.LP
+次の例は、\fBpool/home\fR ファイルシステムのアクセス権セットを定義して付与する方法を示しています。\fBpool/home\fR に対するアクセス権も表示されています。
+
+.sp
+.in +2
+.nf
+# \fBzfs allow -s @pset create,destroy,snapshot,mount pool/home\fR
+# \fBzfs allow staff @pset pool/home\fR
+# \fBzfs allow pool/home\fR
+---- Permissions on pool/home ----------------------------------------
+Permission sets:
+        @pset create,destroy,mount,snapshot
+Create time permissions:
+        destroy
+Local+Descendent permissions:
+        group staff @pset,create,mount
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRZFS データセットのプロパティーアクセス権を委任する
+.sp
+.LP
+次の例は、\fBtank/users\fR ファイルシステムに割り当てと予約を設定する能力を付与する方法を示しています。\fBtank/users\fR に対するアクセス権も表示されています。
+
+.sp
+.in +2
+.nf
+# \fBzfs allow mark quota,reservation tank/users\fR
+# \fBzfs allow tank/users\fR
+---- Permissions on tank/users ---------------------------------------
+Local+Descendent permissions:
+        user mark quota,reservation
+mark% zfs set quota=10G tank/users/tim   
+mark% zfs get quota tank/users/tim
+NAME            PROPERTY  VALUE  SOURCE
+tank/users/tim  quota     10G    local
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRZFS データセットの ZFS 委任アクセス権を削除する
+.sp
+.LP
+次の例は、\fBpool/home\fR ファイルシステムの \fBstaff\fR グループについて、\fB@pset\fR アクセス権セットからスナップショットアクセス権を削除する方法を示しています。\fBpool/home\fR に対するアクセス権も表示されています。
+
+.sp
+.in +2
+.nf
+# \fBzfs unallow -s @pset snapshot pool/home\fR
+# \fBzfs allow pool/home\fR
+---- Permissions on pool/home ----------------------------------------
+Permission sets:
+        @pset create,destroy,mount
+Create time permissions:
+        destroy
+Local+Descendent permissions:
+        group staff @pset,create,mount
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生した。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR \fR
+.ad
+.sp .6
+.RS 4n
+無効なコマンド行オプションが指定された。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/zfs
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBzfs\fR(1M), \fBzpool\fR(1M), \fBchmod\fR(2), \fBchown\fR(2), \fBattributes\fR(5)
+.sp
+.LP
+その他の \fBZFS\fR 機能の詳細は、\fBzfs_encrypt\fR(1M)、\fBzfs_share\fR(1M)、\fBzfs\fR(1M)、および\fI『『Oracle Solaris ZFS 管理ガイド』』\fRを参照してください。

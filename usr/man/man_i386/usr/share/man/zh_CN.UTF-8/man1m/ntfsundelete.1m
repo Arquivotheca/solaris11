@@ -1,0 +1,431 @@
+'\" te
+.\" 部分版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.\" 版权所有 (c) 2002-2006 Szabolcs Szakacsits
+.\" 版权所有 (c) 2002-2005 Anton Altaparmakov
+.\" 版权所有 (c) 2002-2003 Richard Russon
+.\" 版权所有 (c) 2007 Yura Pakhuchiy
+.\" 本程序是自由软件，您可以遵照自由软件基金会发布的 GNU 通用公共许可第 2 版或（根据您的选择）任何更高版本的条款重新发布和/或修改本程序。本程序本着为用户提供帮助的目的而发布，但不承担任何担保；即使是对适销性或特定用途适用性的暗示担保也不承担。有关详细信息，请参见 GNU 通用公共许可。您应当已随本程序接收到 GNU 通用公共许可的一份副本（在 Linux-NTFS 分发的主目录下的 COPYING 文件中）；如果没有，请致函：Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfsundelete 1M "2009 年 5 月 22 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ntfsundelete \- 恢复 NTFS 卷中已删除的文件
+.SH 用法概要
+.LP
+.nf
+\fBntfsundelete\fR [\fIoptions\fR] \fIdevice\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+在适当情况下，\fBntfsundelete\fR 实用程序可恢复 NTFS 卷中已删除的文件。该命令有三种操作模式：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBScan\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省模式 \fBscan\fR 仅读取 NTFS 卷并查找已删除的文件。然后它将显示一个列表，给出每个已删除文件的 inode 编号、名称和大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUndelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+"取消删除"模式将获取与正则表达式匹配的文件（选项 \fB-m\fR）或由 \fIinode-expressions\fR 指定的文件，并恢复尽可能多的数据。它将结果保存至另一位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCopy\fR\fR
+.ad
+.sp .6
+.RS 4n
+"向导"选项。将 MFT 的一部分保存至文件，这在调试 \fBntfsundelete\fR 时会很有用。
+.RE
+
+.sp
+.LP
+在很多情况下 \fBntfsundelete\fR 无法恢复文件。例如，请考虑以下情况。当删除某个文件时，MFT 记录标记为未使用，并会更新表示磁盘使用情况的位图。如果未立即关闭电源，此文件用于驻留的空闲空间可能会被覆盖。更糟糕的是，MFT 记录可能会重新用于其他文件。如果发生这种情况，将无法获知此文件在磁盘上的位置。
+.sp
+.LP
+即使并非文件的所有簇都在使用中，也不能保证它们不会被某些临时文件覆盖。
+.sp
+.LP
+\fBntfsundelete\fR 无法恢复压缩文件或加密文件。在扫描过程中，它会将这类文件显示为 0% 可恢复。
+.SS "语言环境"
+.sp
+.LP
+在 NTFS 中，所有文件名均存储为 Unicode。\fBntfsundelete\fR 会将文件名转换为当前语言环境以进行显示。该实用程序可成功显示中国象形文件名，然后正确恢复这些文件名。
+.SS "扩展 MFT 记录"
+.sp
+.LP
+在极少数情况下，单个 MFT 记录不够大，无法容纳描述文件的元数据（仅当文件具有数百个段时才会发生这种情况）。在这种情况下，一条 MFT 记录将存储文件名，另一条 MFT 记录将存储有关数据的信息。\fBntfsundelete\fR 不会尝试将这类记录合并在一起。它只会列出未命名的文件及数据。
+.SS "恢复的文件大小和创建日期"
+.sp
+.LP
+要恢复某个文件，\fBntfsundelete\fR 必须读取该文件的元数据。遗憾的是，删除某个文件时，元数据可能会处于不一致的状态。例如，文件大小可能记录为零；文件的创建日期可能设置为删除它时的时间或随机时间。在这种情况下，\fBntfsundelete\fR 将选择其发现的最大的文件大小，并将其写入磁盘。它还会尝试将文件的创建日期设置为上次修改的日期。该日期可能是正确的上次修改日期，也可能是其他某个意想不到的日期。
+.SH 选项
+.sp
+.LP
+下面列出了支持的选项。大多数选项都有单字母和全名两种形式。不接受参数的单字母选项可以多个组合到一起。例如，\fB-fv\fR 等效于 \fB-f\fR \fB-v\fR。全名选项可以缩写为其名称的唯一前缀。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR，\fB--byte\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fInum\fR 表示的字节填入不可恢复的文件簇部分。缺省值为零。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR，\fB--case\fR\fR
+.ad
+.sp .6
+.RS 4n
+在使用 \fB--match\fR 选项尝试进行匹配时使文件名搜索区分大小写。缺省的文件名搜索不区分大小写。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR，\fB--copy\fR \fIrange\fR\fR
+.ad
+.sp .6
+.RS 4n
+此"向导"选项将一个 MFT FILE 记录块写入文件中。缺省文件为 mft，该文件将在当前目录中创建。此选项可与 \fB--output\fR 和 \fB--destination\fR 选项结合使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR，\fB--destination\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fB--copy\fR 和 \fB--undelete\fR 选项指定输出文件的位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR，\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+覆盖一些明显的缺省值，如不覆盖现有文件。请谨慎使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR，\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示选项的列表及每个选项的简要说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR，\fB--inodes\fR \fIrange\fR\fR
+.ad
+.sp .6
+.RS 4n
+恢复指定 inode 编号范围内的文件。\fIrange\fR 可以是单个 inode 编号、由逗号分隔的多个编号或是由破折号 (\fB-\fR) 分隔的一个范围。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR，\fB--match\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过仅查找与 \fIpattern\fR 匹配的文件名过滤输出。模式 (pattern) 可包含与一个字符匹配的通配符 \fB?\fR，或者与零个或多个字符匹配的通配符 \fB*\fR。缺省情况下，匹配不区分大小写。要使搜索区分大小写，请使用 \fB--case\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR，\fB--optimistic\fR\fR
+.ad
+.sp .6
+.RS 4n
+恢复文件部分，即使它们当前标记为处于使用状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR，\fB--output\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置由 \fB--copy\fR 或 \fB--undelete\fR 选项创建的输出文件的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR，\fB--parent\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示已删除文件的父目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR，\fB--percentage\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过仅匹配具有百分之 \fInum\fR 可恢复内容的文件过滤 \fB--scan\fR 选项的输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR，\fB--quiet\fR\fR
+.ad
+.sp .6
+.RS 4n
+将输出量减少到最低限度。此选项与 \fB--scan\fR 选项一起使用时不起作用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR，\fB--scan\fR\fR
+.ad
+.sp .6
+.RS 4n
+搜索 NTFS 卷，并显示可恢复的文件列表。这是 \fBntfsundelete\fR 的缺省操作。此列表可通过分别使用 \fB--match\fR、\fB--size\fR、\fB--percent\fR 和 \fB--time\fR 选项按文件名、大小、可恢复百分比或上次修改时间进行过滤。
+.sp
+在此选项的输出中，\fB%age\fR（百分比）字段显示可在多大程度上恢复文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR，\fB--size\fR \fIrange\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过查找文件大小的特定范围过滤 \fB--scan\fR 选项的输出。\fIrange\fR 可指定为以连字符 (\fB-\fR) 分隔的两个数字。大小单位可使用缩写后缀 \fBk\fR、\fBm\fR、\fBg\fR 和 \fBt\fR，分别表示千字节、兆字节、千兆字节和兆兆字节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR，\fB--time\fR \fIsince\fR\fR
+.ad
+.sp .6
+.RS 4n
+过滤 \fB--scan\fR 选项的输出。仅匹配于此时间之后更改的文件。时间必须采用数字加后缀 \fBd\fR、\fBw\fR、\fBm\fR 或 \fBy\fR（分别表示天、周、月或年）的形式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR，\fB--truncate\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsundelete\fR 的缺省行为是将文件大小\fB向上\fR舍入为最接近的簇（为 512 字节的倍数）。如果实用程序具有关于文件大小的完整数据，此选项会将文件恢复至此大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR，\fB--undelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定取消删除模式。可通过使用 \fB--match\fR 或 \fB--inodes\fR 选项指定要恢复的文件。此选项可与 \fB--output\fR、\fB--destination\fR 和 \fB--byte\fR 结合使用。
+.sp
+恢复文件后，如果不使用 \fB--output\fR 选项，文件将采用其原始名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR，\fB--verbose\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+增加 \fBntfsundelete\fR 显示的输出量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR，\fB--version\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBntfsundelete\fR 的版本号、版权以及许可。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR搜索删除的文件
+.sp
+.LP
+以下命令将搜索特定设备上已删除的文件。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR扫描与通配符匹配的文件
+.sp
+.LP
+以下命令将搜索与 \fB*.doc\fR 匹配的已删除文件。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -s -m '*.doc'\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR搜索特定大小的文件
+.sp
+.LP
+以下命令将在 \fB/dev/dsk/c0d0p1\fR 中查找大小介于 5000 和 6000000 字节之间且至少可恢复 90% 数据的已删除文件。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -S 5k-6m -p 90\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR搜索最近更改的文件
+.sp
+.LP
+以下命令将搜索最近两天更改的已删除文件。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -t 2d\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR指定 inode 范围
+.sp
+.LP
+以下命令将取消删除设备 \fB/dev/sda1\fR 的 inode 2、5 和 100-131。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/sda1 -u -i 2,5,100-131\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR指定输出文件和目录
+.sp
+.LP
+以下命令将取消删除 inode 编号 3689，将文件命名为 \fBwork.doc\fR，并将其存储在用户的起始目录中。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -u -i 3689 -o work.doc -d ~\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR保存 MFT 记录
+.sp
+.LP
+以下命令将 MFT 记录 3689-3690 保存到文件 \fBdebug\fR 中。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -c 3689-3690 -o debug\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/ntfsprogs
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBntfsclone\fR(1M)、\fBntfsresize\fR(1M)、\fBparted\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 作者
+.sp
+.LP
+\fBntfsundelete\fR 由 Richard Russon 和 Holger Ohmacht 编写，Anton Altaparmakov 也对此作出了贡献。

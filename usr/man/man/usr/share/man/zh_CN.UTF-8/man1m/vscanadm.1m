@@ -1,0 +1,661 @@
+'\" te
+.\" 版权所有 (c) 2007，Oracle 和/或其附属公司。保留所有权利。
+.TH vscanadm 1M "2009 年 7 月 7 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+vscanadm \- vscan 服务配置实用程序
+.SH 用法概要
+.LP
+.nf
+\fBvscanadm\fR \fBset\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]...
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBget\fR [\fB-p\fR \fIproperty\fR]...
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBimport\fR \fB-p\fR \fIproperty\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBexport\fR \fB-p\fR \fIproperty\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBvalidate\fR \fB-p\fR \fIproperty\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBadd-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBremove-engine\fR \fIengine_id\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBset-engine\fR \fB-p\fR\fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBget-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... [\fIengine_id\fR]
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBshow\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBstats\fR [\fB-z\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBvscanadm\fR 命令可设置和显示 \fBvscan\fR 服务 (\fBvscand\fR(1M)) 的属性并提供扫描统计信息。
+.sp
+.LP
+可以使用合适的文件系统管理命令（例如 \fBzfs\fR(1M)）为每个文件系统配置文件系统的免病毒扫描。
+.sp
+.LP
+扫描引擎是位于外部主机上的第三方应用程序，它们对文件执行实际的病毒扫描操作。可以配置多个扫描引擎供 \fBvscan\fR 服务使用。建议至少配置两个扫描引擎。文件扫描请求将分布到所配置的各个扫描引擎中，以实现负载平衡。扫描引擎由其 \fIengine_id\fR 予以标识。\fIengine_id\fR 是用户定义的字符串，最多为 64 个字节。
+.sp
+.LP
+\fBvscan\fR 服务属性分为两类：扫描引擎属性（特定于扫描引擎定义）和常规属性（应用于该服务但不特定于扫描引擎）。
+.SH 子命令
+.sp
+.LP
+\fBvscanadm\fR 识别以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm set\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+设置 \fBvscan\fR 服务常规属性的值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+指定一个属性值
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm get\fR [\fB-p\fR \fIproperty\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBvscan\fR 服务常规属性的值。如果未指定任何属性，则显示所有 \fBvscan\fR 服务常规属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR\fR
+.ad
+.RS 15n
+.rt  
+指定一个属性值
+.RE
+
+.RE
+
+.sp
+.LP
+以下属性可用于 \fBvscanadm set\fR 和 \fBvscanadm get\fR 子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-size\fR\fR
+.ad
+.RS 19n
+.rt  
+应进行病毒扫描的文件的最大大小。不会扫描超过 \fImax-size\fR 的文件。\fImax-size-action\fR 属性决定了应允许还是拒绝访问超过 \fImax-size\fR 的文件。
+.sp
+\fImax-size\fR 的值是一个字符串，包含一个数字（十进制）组件和一个可选的用于指定单位大小的字母组件，格式为 "N[.N][KMGTP][B]"。
+.sp
+跟在数字组件后面的可选单位可以指定为一个或两个字符。例如，"K" 或 "KB" 都可用来指定千字节。单位说明符不区分大小写，必须紧跟在数字值后，中间不能有空格。
+.sp
+如果没有单位说明符，或单位说明符仅为 "B"，则假定数字值以字节为单位。缺省值为 1GB。 
+.sp
+请注意，当 \fBvscan\fR 服务定义了扫描的最大文件大小时，扫描引擎通常还会定义其自己的最大文件大小设置。建议将 \fImax-size\fR 设置为小于等于扫描引擎所定义的最大文件大小的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-size-action\fR\fR
+.ad
+.RS 19n
+.rt  
+指定允许还是拒绝访问大于 \fImax-size\fR 的文件。不会对大于 \fImax-size\fR 的文件进行病毒扫描。有效值包括：
+.sp
+.ne 2
+.mk
+.na
+\fBallow （允许列表）\fR
+.ad
+.RS 28n
+.rt  
+允许访问大于 \fImax-size\fR 的文件（无病毒扫描）。这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdeny\fR
+.ad
+.RS 28n
+.rt  
+拒绝访问大于 \fImax-size\fR 的文件（无病毒扫描）。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm import\fR \fB-p\fR \fIproperty\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+从指定的文件导入属性值。该文件必须包含指定了单个属性的值的单个行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm export\fR \fB-p\fR \fIproperty\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+将属性值导出到指定的文件。该文件必须包含指定了单个属性的值的单个行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm validate\fR \fB-p\fR \fIproperty\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+验证指定文件中的属性值。该文件必须包含指定了单个属性的值的单个行。
+.RE
+
+.sp
+.LP
+以下属性可用于 \fBvscanadm import\fR、\fBvscanadm export\fR 和 \fBvscanadm validate\fR 子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtypes\fR\fR
+.ad
+.RS 9n
+.rt  
+文件类型扩展名匹配规则的逗号分隔列表。此列表定义在病毒扫描期间要扫描哪些类型的文件以及应排除哪些类型的文件。每条规则都包含规则指示符 [+|-]，后跟要将文件的类型扩展名与之进行比较的文件类型 \fIexpresssion\fR。文件类型 \fIexpresssion\fR 不区分大小写，可以包含 ""*" 和 "？"通配符。规则指示符与文件类型 \fIexpresssion\fR 之间不应有空格。如果文件类型表达式内包含逗号，则必须使用 "\e"（反斜杠）对其进行转义。文件类型扩展名不包含其前面的点。
+.sp
+规则指示符是单个字符，可以是下面列出的项之一：
+.sp
+.in +2
+.nf
++ include file type in virus scanning
+- exclude file type from virus scanning
+.fi
+.in -2
+.sp
+
+对某个文件进行评估并确定它是要进行病毒扫描的候选文件后，会将其文件类型将与类型中定义的规则进行比较。将应用第一个相匹配的规则。如果未找到匹配项，将对该文件进行病毒扫描。类型字符串的总长度不能超过 4096 字节。类型列表的缺省内容为 "+*"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm add-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+添加由 \fIengine_id\fR 标识的一个新扫描引擎。对于未指定的任何扫描引擎，将为其使用缺省值。主机名缺省设置为 \fIengine_id\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+指定一个属性值
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm remove-engine\fR \fIengine_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除由 \fIengine_id\fR 标识的扫描引擎，进而删除其所有配置属性值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm set-engine\fR \fB-p\fR\fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fIengine_id\fR 标识的扫描引擎创建或更新配置属性值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+指定一个属性值
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm get-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... [\fIengine_id\fR]\fR
+.ad
+.sp .6
+.RS 4n
+为 \fIengine_id\fR 标识的扫描引擎显示指定的扫描引擎属性的值。如果未指定 \fIengine_id\fR，该子命令将为所有已配置的扫描引擎显示指定的扫描引擎属性值。如果未指定属性，该子命令将显示所有 \fBvscan\fR 服务扫描引擎属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+指定一个属性值
+.RE
+
+.RE
+
+.sp
+.LP
+以下属性可用于 \fBvscanadm add-engine\fR、\fBvscanadm remove-engine\fR、\fBvscanadm set-engine\fR 和 \fBvscanadm get-engine\fR 子命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR\fR
+.ad
+.RS 18n
+.rt  
+指定是启用还是禁用扫描引擎。有效值为 "on"（启用）和 "off"（禁用）。缺省值为 "on"（启用）。如果扫描引擎的 host（主机）属性无效，则无法启用该扫描引擎。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR\fR
+.ad
+.RS 18n
+.rt  
+扫描引擎的主机名或 \fBIPv4\fR 格式的 \fBIP\fR 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR\fR
+.ad
+.RS 18n
+.rt  
+扫描引擎的 \fBICAP\fR 端口号。该数字值的范围是 0 到 65535。缺省的 \fBICAP\fR 端口为 1344。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-connection\fR\fR
+.ad
+.RS 18n
+.rt  
+可以与一个扫描引擎建立的最大并发连接数。该数字值的范围是 1 到 512。该属性的缺省值为 8。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm show\fR\fR
+.ad
+.RS 23n
+.rt  
+显示所有 \fBvscan\fR 服务常规属性和扫描引擎属性的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm stats\fR [\fB-z\fR]\fR
+.ad
+.RS 23n
+.rt  
+显示或重置以下 \fBvscan\fR 服务统计信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+已扫描的文件数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+受感染的文件数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+失败的扫描请求数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+扫描错误（包括每个扫描引擎的错误计数）
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.RS 6n
+.rt  
+将 \fBvscan\fR 服务统计信息计数器重置为零
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR设置最大大小限制
+.sp
+.LP
+要将进行病毒扫描的文件的最大大小限制设置为 128 兆字节，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm set -p max-size=128M
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR允许访问文件
+.sp
+.LP
+要允许访问超过最大文件大小的文件，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm set -p max-size-action=allow
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR设置文件类型
+.sp
+.LP
+要设置类型以便仅对类型为 "odt"、"exe" 和 "jpg" 的文件进行病毒扫描，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm set -p types=+odt,+exe,+jpg,-*
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要设置类型以便对除 "doc" 之外的所有文件类型进行病毒扫描，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm set -p types=-doc,+*
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR显示文件类型列表
+.sp
+.LP
+要显示文件类型列表，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm get -p types
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR添加扫描引擎
+.sp
+.LP
+要使用缺省值添加扫描引擎 "\fBmy_eng\fR"，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm add-engine my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR禁用扫描引擎
+.sp
+.LP
+要禁用扫描引擎 "\fBmy_eng\fR"，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm set-engine -p enable=off my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR显示扫描引擎属性
+.sp
+.LP
+要显示扫描引擎 "\fBmy_eng\fR"的属性，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm get-engine my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR删除扫描引擎
+.sp
+.LP
+要删除扫描引擎 "\fBmy_eng\fR"，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm remove-engine my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR显示 Vscan 服务常规属性和扫描引擎属性
+.sp
+.LP
+要显示所有 vscan 服务常规属性和扫描引擎属性，请输入
+
+.sp
+.in +2
+.nf
+# vscanadm show
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 10n
+.rt  
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB非零\fR\fR
+.ad
+.RS 10n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/storage/virus-scan
+_
+接口稳定性Uncommitted（未确定）
+_
+实用程序输出格式Not-An-Interface（不是接口）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBvscand\fR(1M)、\fBzfs\fR(1M)、\fBattributes\fR(5), \fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+所有用户都可以使用 \fBvscanadm\fR 查看 \fBvscan\fR 属性和统计信息。要设置属性值或重置统计信息，需要以下授权：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.value.vscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改属性值或重置统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.manage.vscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+刷新服务以应用属性值更改
+.RE
+
+.sp
+.LP
+要添加或删除属性（\fBadd-engine\fR、\fBremove-engine\fR），需要以下授权：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify.application\fR\fR
+.ad
+.sp .6
+.RS 4n
+添加或删除属性组
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.manage.vscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+刷新服务以应用属性值更改
+.RE
+
+.sp
+.LP
+所有这些授权都包含在 "\fBVSCAN\fR Management"（VSCAN 管理）配置文件中。

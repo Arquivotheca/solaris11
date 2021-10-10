@@ -1,0 +1,976 @@
+'\" te
+.\" Copyright 1989 AT&T 
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH ed 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+ed, red \- テキストエディタ
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/ed\fR [\fB-s\fR | \fB-\fR] [\fB-p\fR \fIstring\fR] [\fIfile\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/ed\fR [\fB-s\fR | \fB-\fR] [\fB-p\fR \fIstring\fR] [\fIfile\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/ed\fR [\fB-s\fR | \fB-\fR] [\fB-p\fR \fIstring\fR] [\fIfile\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/red\fR [\fB-s\fR | \fB-\fR] [\fB-p\fR \fIstring\fR] [\fIfile\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBed\fR ユーティリティーは標準のテキストエディタです。\fIfile\fR が指定されていると \fBed\fR は \fBe\fR コマンド ( 下記参照 ) を指定されたファイルについてシミュレートします。その結果、このファイルは \fBed\fR のバッファーに読み込まれ、編集できるようになります。
+.sp
+.LP
+\fBed\fR ユーティリティは、編集されるファイルのコピーに 対して操作を行います。つまり、コピーに対して行われた変更は \fBw\fR ( write ) コマンドが実行されるまで、そのファイルに対して有効になりません。編集されるテキストのコピーは バッファという一時ファイルに存在します。\fI\fRバッファは1 つしかありません。
+.sp
+.LP
+\fBred\fR ユーティリティは \fBed\fR の制限付きバージョンです。red は現在のディレクトリ内のファイルしか編集できず、\fB!\fR\fIshell command\fR によるシェルコマンドの実行もできません。\fB\fRこれらの制限を無視しようとするとエラーメッセージ (\fIrestricted shell\fR) が表示されます。
+.sp
+.LP
+\fBed\fR と \fBred\fR は、両方とも \fBfspec\fR(4) フォーマット機能をサポートしています。デフォルトの端末モードは \fBstty\fR \fB-tabs\fR または \fBstty tab3\fR で、タブ位置は 8 カラムごとに設定されます (\fBstty\fR(1) を参照 ) 。ただし \fIfile\fR の先頭行にフォーマット指定が記述されていれば、その指定がデフォルトモードをオーバーライドします。たとえば、タブ位置を 5、10、15 に設定し、最大行長を 72 に設定するには、\fIfile\fR の最初の行に次のように指定します。
+.sp
+.in +2
+.nf
+\fB<:t5,10,15 s72:>\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBed\fR コマンドは単純で、その構造は規則的です。 最初に 0 から 2 個までのアドレス、次に 1 文字のコマンド、最後に(あれば) コマンドのパラメータが続きます。\fI\fR\fI\fRアドレスはバッファ内の 1 行または複数行を指定するものです。アドレスが必要なコマンドはすべてデフォルトのアドレスを持っているので、アドレスを省略することがよくあります。
+.sp
+.LP
+一般に、1 行に 1 つのコマンドだけ指定します。コマンドの中には、テキストを入力するものもあります。この時テキストは、バッファの中の適切な場所に格納されます。\fBed\fR がテキストを受け入れているときのことを「入力モード」であるといいます。\fI\fRこのモードではコマンドは認識されません。すべての入力がそのまま受け付けられるだけです。\fB\fR入力モードから抜けるには、行の先頭でピリオド ( \fB\&.\fR ) だけを入力して、キャリッジリターンを押します。
+.SS "/usr/bin/ed"
+.sp
+.LP
+\fBed\fR が引数のあるコマンドを実行する場合、デフォルトのシェル \fB/usr/bin/sh\fR が使われます (\fBsh\fR(1) 参照)。
+.SS "/usr/xpg4/bin/ed および /usr/xpg6/bin/ed"
+.sp
+.LP
+\fBed\fR が引数のあるコマンドを実行する場合、\fB/usr/xpg4/bin/sh\fR が使われます (\fBksh88\fR(1) を参照)。
+.SS "正規表現"
+.sp
+.LP
+\fBed\fR ユーティリティでは「正規表現」規則がサポートされていますが、ある程度制限されています。\fI\fR正規表現は、アドレスの中では行を指定するために、また、いくつかのコマンド ( たとえば、\fBs\fR) の中では行のうちの置換される部分を指定するために用いられます。\fBed\fR におけるアドレス指定方法を理解するには、常に「現在行」が存在することを認識する必要があります。\fI\fR一般に、現在行はコマンドによって影響を受けた最後の行です。現在行が受ける影響については、各コマンドの説明の箇所で述べます。
+.sp
+.LP
+国際化された標準の正規表現は、システムに与えられたすべてのロケールで 使用されます。詳細については \fBregex\fR(5) を参照してください。
+.SS "ed コマンド"
+.sp
+.LP
+コマンドには 0、1、または 2 個のアドレスを必要とします。アドレスを必要としないコマンドにアドレスを指定するとエラーになります。アドレスが必要なコマンドに必要な数のアドレスを指定しないと、デフォルトのアドレスが採用されます。必要以上にアドレスが指定されると、最後のアドレスの方から使用されます。
+.sp
+.LP
+通常、アドレスはコンマ ( \|\fB,\fR\| ) によってお互いに区切られます。セミコロン ( \|\fB;\fR\| ) によっても区切られます。後者の場合、最初のアドレスが計算され、現在行 ( \|\fB\&.\fR\| ) がその値に設定されます。その後、2 番目のアドレスが計算されます。この機能は、順方向および逆方向検索の開始行を決定するのに使用できます (前述の規則 5 および 6 を参照)。2 つのアドレスが指定されている場合には、2 番目のアドレスはバッファ内の特定の行、つまり最初のアドレスに対応する行に続く行に対応している必要があります。
+.sp
+.LP
+\fB/usr/xpg6/gbin/ed\fR の場合、区切り記号のコンマまたはセミコロンの前後では、アドレスを省略できます。アドレスを省略した場合は、アドレスは次のように解釈されます。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+指定結果
+_
+,1 , $
+_
+, addr1 , addr
+_
+addr ,addr , addr
+_
+;1 ; $
+_
+; addr1 ; addr
+_
+addr ;addr ; addr
+.TE
+
+.sp
+.LP
+アドレス、アドレス区切り記号、またはアドレスオフセット間にある空白は無視されます。\fI\fR
+.sp
+.LP
+以下に示す \fBed\fR コマンドのリストでは、コマンドの前の括弧はアドレスの一部ではなく、\fI\fRデフォルトのアドレスを示します。
+.sp
+.LP
+各アドレス部分の先頭には任意の 2 個の空白文字を付加できます。またコマンド文字の先頭にも任意の数の空白文字を付加できます。接尾文字(\fBl\fR 、\fBn\fR 、または \fBp\fR) を指定するのであれば、コマンドの直後に記述しなければなりません。
+.sp
+.LP
+\fBe\fR 、\fBE\fR 、\fBf\fR 、\fBr\fR 、\fBw\fR の各コマンドには、省略可能な \fIfile\fR パラメータがあります。これを指定する場合には、コマンド文字との間に最低 1 個の空白文字を置くことが必要です。
+.sp
+.LP
+バッファ全体を書き換えた最後の \fBw\fR コマンド実行後にバッファの内容が変更されているとき、\fBe\fR または \fBq\fR コマンドによりエディタバッファを破壊しようとすると、\fBed\fR は警告を発します。具体的には以下の文字列を標準出力に書き出します。\fB\fR
+.sp
+.in +2
+.nf
+"?\en"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+なお \fBH\fR コマンドにより「ヘルプモード」が起動されていれば、状況を説明するメッセージが続いて出力されます。この警告出力後も、ed はコマンドモードのままで、現在の行番号は変わりません。\fI\fRここで続けて \fBe\fR または \fBq\fR コマンドを再度入力すれば、そのコマンドが実行されます。\fB\fR
+.sp
+.LP
+標準入力から次のコマンドを読み込もうとして ファイルの終わりを検出した場合、\fBed\fR ユーティリティは \fBq\fR コマンドが入力された場合と同じように動作します。
+.sp
+.LP
+一般に、1 行に 2 つ以上のコマンドを指定するとエラーです。しかし、すべてのコマンド ( \fBe\fR、\fBf\fR 、\fBr\fR 、\fBw\fR を除く )は、\fBl\fR 、\fBn\fR 、または \fBp\fR コマンド( それぞれ、現在行をリストする、番号付けする、出力する ) を接尾辞として付けることができます ( \fBl\fR 、\fBn\fR 、および \fBp\fR コマンドを参照 ) 。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.)a\fR\fR
+.ad
+.br
+.na
+\fB<\fItext\fR> \fR
+.ad
+.br
+.na
+\fB\fB\&.\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBa\fRppend コマンドは、0 行以上のテキスト行を受け入れ、それをバッファー内のアドレスで指定された行の直後に追加します。現在行 (\fB\&.\fR) は、最後に挿入された行に設定されます。挿入行がない場合は、アドレスで指定された行に設定されます。このコマンドではアドレス 0 は有効です。この場合、バッファーの先頭にテキストを追加します。端末から入力できる最大文字数は 1 行あたり 256 文字です (復帰改行文字も含む)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)c\fR\fR
+.ad
+.br
+.na
+\fB<\fItext\fR>\fR
+.ad
+.br
+.na
+\fB\fB\&.\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBc\fRhange コマンドは、バッファからアドレスで指定された行を削除し、0 行以上のテキスト行をバッファ内に受け入れ、削除された行と置換します。現在行( \fB\&.\fR ) は最終入力行に設定されます。最終入力行がない場合は、削除されなかった最初の行に設定されます。バッファの最終行を削除した場合、現在の行番号は新たに最終行となった行のアドレスに設定されます。削除によりバッファ内に行が残っていなければ、現在の行番号はゼロに設定されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/xpg4/bin/ed\fR\fR
+.ad
+.RS 20n
+.rt  
+このコマンドでは、アドレス 0 は有効ではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/xpg6/bin/ed\fR\fR
+.ad
+.RS 20n
+.rt  
+このコマンドでは、アドレス 0 は有効です。この場合、アドレス 1 が指定されたと解釈されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)d\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBd\fRelete コマンドは、バッファからアドレスで指定された行を削除します。削除された最後の行の直後の行が現在行に設定されます。バッファの最終行を削除した場合、新たに最終行となった行が現在行になります。削除によりバッファ内に行が残っていなければ、現在の行番号はゼロに設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR \fIfile\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBe\fRdit コマンドは、バッファの全内容を削除して \fIfile\fR の内容をバッファ内に読み込みます。現在行 (\fB\&.\fR) は、バッファの最終行に設定されます。\fIfile\fR が指定されないと、( もし、あれば ) 現在記憶されているファイル名を使用します (\fBf\fR コマンド参照 ) 。\fB-s\fR オプションが指定された場合を除き、読み込んだバイト数が以下の形式で 標準出力に書き込まれます。
+.sp
+\fB"%d\en"\fR <\fI読み込んだバイト数\fR>
+.sp
+\fIfile\fR は、後で使用する \fBe\fR、\fBE\fR、\fBr\fR、および \fBw\fR コマンドのデフォルトのファイル名として記憶されます。\fIfile\fR の代わりに \fB!\fR を指定すると、! 以降の文字列はシェル (\fBsh\fR(1)) コマンドと見なされ、その出力が読み込まれます。このようなシェルコマンドは現在のファイル名として記憶されません。\fI\fR後述の「診断」も参照してください。\fBe\fR コマンドが正常に終了すると、すべてのマークは捨てられます。バッファ全体が最後に書き換えた後でその内容が変更されているとき、前述したように警告が発せられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBE\fR \fIfile\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBE\fRdit コマンドは、基本的に、\fBe\fRコマンドと同じです。ただし、最後の \fBw\fR コマンドを実行してからバッファの内容が変更されたか否かをチェックしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR \fIfile\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIfile\fR が指定されると、\fBf\fR コマンドは、現在記憶されているパス名を \fIfile\fR に変更します。次に、パス名を変更したか否かに関わらず、現在記憶されているパス名 ( 変更した場合は新しいパス名 )を以下の形式で標準出力に書き出します。\fB\fR
+.sp
+\fB"%s\en"\fR\fIパス名\fR
+.sp
+現在の行番号は変わりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(1,$)g/\fR\fIRE\fR\fB/\fR\fIcommand list\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBg\fRlobalコマンドは、まず \fIRE\fR で指定された正規表現と一致する各行をマークします。そして、該当するすべての行に対して、まず現在行 ( \fB\&.\fR ) をその行に設定してから、\fIcommand list\fRで指定したコマンドリストを実行します。\fBg\fR コマンドが終了したとき、現在の行番号の値は、コマンドリスト中の 最後のコマンドが指定した値となっています。一致する行が見つからなかった場合には、現在の行番号の値は変わりません。単一コマンドまたはコマンドリストの最初のコマンドは global コマンドと同一行に現われなければなりません。コマンドが複数行にまたがる場合、最終行以外の各行はバックスラッシュ (\fB\e\fR\|) で終わらなければなりません。\fBa\fR、\fBi\fR、および \fBc\fR コマンドおよび関連する入力が許可されます。入力モードを終了する \fB\&.\fR が \fIcommand\fR list の最後の行の場合、省略できます。空の \fIcommand list\fR は \fBp\fR コマンドと同等です。\fBg\fR、\fBG\fR 、\fBv\fR 、\fBV\fR 、および \fB!\fR コマンドは、\fIcommand list\fR 内に書くことができません。\fI\fR「注意事項」および「ファイル」の前の最後のパラグラフも参照してください。\fIRE\fR を区切る文字として、スラッシュの代わりに、スペースと復帰改行以外の任意の文字を使うことができます。また区切り文字を \fIRE\fR 中で実際の文字として使いたければ、その前にバックスラッシュを付加してください。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(1,$)G/\fR\fIRE\fR\fB/\fR\fR
+.ad
+.RS 26n
+.rt  
+対話型 \fBG\fRlobal コマンドでは、最初に、\fIRE\fR で指定された正規表現と一致する各行をマークします。そして、該当する各行について、その行が標準出力に書き込まれ、現在行 (\fB\&.\fR) がその行に変更され、この時点で、1 つのコマンド (\fBa\fR、\fBc\fR、\fBi\fR、\fBg\fR、\fBG\fR、\fBv\fR、および \fBV\fR コマンドをのぞく) が入力でき、入力されたコマンドは実行されます。\fI\fRコマンドが実行されると、次のマークされた行が出力され、以下同じ処理を繰り返します。復帰改行は NULL コマンドとして動作します。\fB&\fR は、現在起動中の \fBG\fR 内で、最後に実行された NULL でないコマンドを再実行します。\fB注意:\fR \fBG\fR コマンド実行中のコマンド入力はバッファ内のどの行でもアドレス指定したり、影響を与えたりできます。\fB\fR現在の行番号の最終的な値は、最後に正常終了したコマンドが設定した値です。 (なお \fBG\fR で入力したコマンドが失敗した場合、または NULL コマンドが入力された場合は、G 自身が「最後に正常終了したコマンド」となります )。一致する行が見つからなかった場合には、現在の行番号の値は変わりません。\fBG\fR コマンドは \fBSIGINT\fR シグナルによって終了させることができます。\fBG\fR コマンドは、割り込みシグナル (ASCII DEL または BREAK) で終了できます。\fIRE\fR を区切る文字として、スラッシュの代わりに、スペースと復帰改行以外の任意の文字を使うことができます。また区切り文字を \fIRE\fR 中で実際の文字として使いたければ、その前にバックスラッシュを付加してください。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBh\fRelp コマンドは、最後の \fB?\fR 診断の理由を説明する短いエラーメッセージを出力します。現在の行番号は変わりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBH\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBHelp\fR コマンドは、\fBed\fR を以後発生するすべての \fB?\fR 診断のエラーメッセージを出力するモードにします。もしあれば前の \fB?\fR も説明します。\fBH\fR コマンドは、このモードを交互にオンおよびオフにします。最初はオフです。現在の行番号は変わりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)i\fR\fR
+.ad
+.br
+.na
+\fB<\fItext\fR>\fR
+.ad
+.br
+.na
+\fB\fB\&.\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBi\fRnsert コマンドは、0 またはそれ以上の行のテキストを受け入れ、バッファー内のアドレス指定された行の前に挿入します。現在行 (\fB\&.\fR) は、最後に挿入された行に設定されます。挿入行がない場合は、アドレスで指定された行に設定されます。i コマンドと \fBa\fR コマンドは、入力テキストの挿入位置だけ異なります。端末から入力できる最大文字数は 1 行あたり 256 文字です (復帰改行文字も含む)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/xpg4/bin/ed\fR\fR
+.ad
+.RS 20n
+.rt  
+このコマンドでは、アドレス 0 は有効ではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/xpg6/bin/ed\fR\fR
+.ad
+.RS 20n
+.rt  
+このコマンドでは、アドレス 0 は有効です。この場合、アドレス 1 が指定されたと解釈されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.+1)j\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBj\fRoin コマンドは、適当な復帰改行文字を削除することによって連続する行を結合します。1 つのアドレスしか指定されないと j コマンドは何もしません。行の結合が行われると、現在の行番号は結合された側の行のアドレスに 設定されます。そうでない場合、現在の行番号は変わりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.)k\fR\fIx\fR\fR
+.ad
+.RS 26n
+.rt  
+mar\fBk\fR コマンドは、\fIx\fRという名前でアドレス行をマークします。x は ASCII の小文字 (\fBa\fR\fB-\fR\fBz\fR) でなければなりません。\fI\&'x\fRを指定すると、このマークされた行を指すようになります。現在行 (\fB\&.\fR) は変更されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)l\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBl\fRist コマンドは、アドレスされた行をすべての情報が見える形で標準出力へ書き出します。\fB\e\e\fR\|、\fB\e\|a\fR 、\fB\e\|b\fR 、\fB\e\|f\fR 、\fB\e\|r\fR 、\fB\e\|t\fR 、\fB\e\|v\fR はそれぞれ対応するエスケープシーケンスとして書き込まれます。テーブル中にある \fB\e\|n\fR は適用外です。テーブル中にない非印字文字に関しては、各バイトごとに (最上位バイトから) 3 桁の 8 進数で、前にバックスラッシュが付加された形式で出力されます。
+.sp
+長い行は折り返され、折り返しの発生地点はバックスラッシュと復帰改行文字の書き込みによって示されます。折り返し地点の長さは不特定ですが、出力装置に適した値になっています。各行の終わりは \fB$\fR でマークされます。\fB/usr/xpg6/bin/ed\fR コマンドを使用する場合、各行の終わりは折り返しを示す \fB$\fR でマークされます。また、テキスト内の \fB$\fR 文字の前にはバックスラッシュが付加されます。\fBl\fRコマンドは、\fBe\fR、\fBE\fR、\fBf\fR、\fBq\fR、\fBQ\fR、\fBr\fR、\fBw\fR、\fB!\fR 以外のすべてのコマンドの後に付けられます。現在の行番号は、最後に出力された行のアドレスに設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)m\fR\fIa\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBm\fRove コマンドは、アドレス行を \fIa\fRで示される行の後に移動します。アドレス 0 を \fIa\fR に書いても有効で、その場合アドレス行をファイルの先頭に移動します。アドレス \fIa\fR が移動する行の範囲内にあるとエラーになります。現在行 (\fB\&.\fR) は移動した最後の行に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)n\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBn\fRumber コマンドは、行番号とタブの後に、アドレス行を出力します。現在行 (\fB\&.\fR) は出力した最後の行に設定されます。\fBn\fR コマンドは \fBe\fR 、\fBE\fR 、\fBf\fR 、\fBq\fR 、\fBQ\fR、\fBr\fR 、\fBw\fR 、または \fB!\fR 以外のすべてのコマンドの後に続きます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)p\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBp\fRrint コマンドは、アドレス行を標準出力に出力します。現在行 (\fB\&.\fR) は出力した最後の行に設定されます。\fBp\fR コマンドは、\fBe\fR、\fBE\fR、\fBf\fR、\fBq\fR、\fBQ\fR、\fBr\fR、\fBw\fR、または \fB!\fR 以外のすべてのコマンドの後に付けられます。たとえば、\fBdp\fR というコマンドは、現在行を削除して新しい現在行を出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBP\fR コマンドは、後続のすべてのコマンドにアスタリスク(\fB*\fR) (\fB-p\fR 指定時は文字列) によるプロンプトをつけて入力を促します。\fB\fR\fI\fR\fBP\fR コマンドは、このモードを交互にオンまたはオフします。初期値は、\fB-p\fR オプション指定時はオン、省略時はオフです。現在行は変わりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBq\fRuit コマンドは、\fBed\fR を終了します。バッファ全体が書き換えられた後でバッファの内容が変更されていると、警告が発せられます。後述の「診断」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQ\fR\fR
+.ad
+.RS 26n
+.rt  
+エディタは、最後の \fBw\fR コマンドの後、バッファが変更されたか否かをチェックしないで終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB($)r\fR \fIfile\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBr\fRead コマンドは、\fIfile\fR の内容をバッファ内に読み込みます。\fIfile\fR が指定されないと、(もしあれば) 現在記憶されているファイル名を使用します (\fBe\fR および \fBf\fR コマンド参照)。\fIfile\fR が \fBed\fR 起動後参照された最初のファイル名でないかぎり、現在記憶されているファイル名は変更されません。\fB\fR\fBr\fR コマンドにはアドレス0 は有効です。この場合、バッファの先頭にファイルを読み込みます。読み込みに成功すると、\fB-s\fR オプションが省略されていれば、読み込まれた文字数が以下の形式で標準出力に書き込まれます。
+.sp
+.in +2
+.nf
+\fB%d\en\fR, <\fInumber of bytes read\fR>
+.fi
+.in -2
+.sp
+
+現在行 (\fB\&.\fR) は読み込まれた最後の行に設定されます。\fIfile\fR の代わりに \fB!\fR を指定すると、! 以降の文字列はシェルコマンド (\fBsh\fR(1) 参照) と見なされ、その出力が読み込まれます。たとえば、\fB$r !ls\fR は編集中のファイルの最後に現在のディレクトリを追加します。このようなシェルコマンドは現在のファイル名として記憶されません。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)s/\fR\fIRE\fR\fB/\fR\fIreplacement\fR\fB/\fR\fR
+.ad
+.br
+.na
+\fB\fB(.,.)s/\fR\fIRE\fR\fB/\fR\fIreplacement\fR\fB/\fR\fIcount\fR, \fIcount\fR=[\fB1-2047\fR]\fR
+.ad
+.br
+.na
+\fB\fB(.,.)s/\fR\fIRE\fR\fB /\fR\fIreplacement\fR\fB/g\fR\fR
+.ad
+.br
+.na
+\fB\fB(.,.)s/\fR\fIRE\fR\fB/\fR\fIreplacement\fR\fB/l\fR\fR
+.ad
+.br
+.na
+\fB\fB(.,.)s/\fR\fIRE\fR\fB/\fR\fIreplacement\fR\fB/n\fR\fR
+.ad
+.br
+.na
+\fB\fB(.,.)s/\fR\fIRE\fR\fB/\fR\fIreplacement\fR\fB /p\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBs\fRubstitute コマンドは、各アドレス行について、\fIRE\fR で示された正規表現を検索します。これらの置換コマンドは、任意の数だけ指定できます。一致が発生した各行に対して、グローバル置換指示子 \fBg\fR がコマンドの後にあれば、すべての ( 重ならない ) 一致した文字列を \fIreplacement\fR に置換します。グローバル指示子がなければ、一致した文字列の最初のものだけを置換します。数字 \fIcount\fR がコマンドの後にあれば、各アドレス行内で一致した文字列のうち \fIcount\fR番目のものだけを置換します。すべてのアドレス行について置換が失敗するとエラーになります。\fB\fR正規表現 \fIRE\fRと \fIreplacement\fR を区切るには、スラッシュ (\fB/\fR)の代わりにスペース文字と復帰改行以外のすべての文字が使用できます。現在行 ( \fB\&.\fR ) は置換が発生した最後の行に設定されます。また区切り文字を \fIRE\fR 中で実際の文字として使いたければ、その前にバックスラッシュを付加してください。\fI\fR「ファイル」 の前の最後のパラグラフも参照してください。
+.sp
+\fIreplacement\fR 内のアンパサンド(\fB&\fR) は、現在行上で正規表現 \fIRE\fR と一致した文字列に置き換えられます。この場合の \fB&\fR の特別な意味は、\fB\e\fR\| を前につけることによって抑制できます。\fB\e\fR\fIn\fR (\fIn\fR は数字) は、指定された正規表現 \fIRE\fR の \fB\e(\fR と \fB\e)\fR で囲まれた \fIn\fR 番目のサブ正規表現と一致するテキストに置換されます。ネストされた括弧付きサブ正規表現が存在する場合、\fIn\fR は左から数えた \fB\e\|(\fR の発生回数によって決まります。文字 \fB%\fR が \fIreplacement\fR 内の唯一の文字であるとき、最後の置換コマンドで使用した \fIreplacement\fR を現在の置換コマンドの \fIreplacement\fRとして使用します。ただしそれ以前に置換コマンドがなかった場合、このような \fB%\fR の使い方はエラーとなります。\fB%\fRは、複数の文字の置換文字内にあるとき、または \fB\e\fR\| が前に付くときには、その特別な意味を失います。\fIreplacement\fR を先頭から終端まで走査する際にバックスラッシュ (\e) が検出されると、後続の文字は特殊な意味を持っていたとしてもその意味を失います。\fB&\fR 、\fB\e\fR 、\fB%\fR および数字以外の文字に対し、どのような特殊な意味が与えられているかは不特定です。 
+.sp
+1 行を分割するには、復帰改行文字で置換します。\fIreplacement\fR 内の復帰改行文字は、\fB\e\fR\| を前に付けてエスケープしなければなりません。このような置換は、\fBg\fR または \fBv\fR コマンドリストの一部としては実行できません現在の行番号は、置換が行われた最後の行のアドレスに設定されます。置換がまったく行われないと、現在の行番号は変わりません。行が分割されると、新たな現在の行番号を決定するため、分割で発生した両方の行で置換が行われたものと見なされます。置換文字列が、置換後の文字列と同一である場合も、置換が行われたことになります。
+.sp
+置換コマンドは以下に示す指示子をサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.RS 9n
+.rt  
+各アドレス行で見つかった \fIRE\fRのうち、\fIcount\fR 番目のものだけを置換します。\fIcount\fRは \fB1\fR から \fB2047\fR までの値でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 9n
+.rt  
+最初のものだけでなく、すべての重なっていない \fIRE\fR を一括して置換します。\fBg\fR と \fIcount\fRの両方を指定した場合、結果は不確定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.RS 9n
+.rt  
+置換を行なった最後の行の内容を標準出力に書き出します。出力形式は \fBl\fR コマンドのものと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBn\fR\fR
+.ad
+.RS 9n
+.rt  
+置換を行なった最後の行の内容を標準出力に書き出します。出力形式は \fBn\fR コマンドのものと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 9n
+.rt  
+置換を行なった最後の行の内容を標準出力に書き出します。出力形式は \fBp\fR コマンドのものと同じです。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.,.)t\fR\fIa\fR\fR
+.ad
+.sp .6
+.RS 4n
+t コマンドは、\fBm\fR コマンドと同じように動作します。ただし、アドレス行のコピーがアドレス \fBa\fR ( 0 でもよい ) の後に置かれます。\fI\fR現在行 (\fB\&.\fR) はコピーされた最後の行に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBu\fRndo コマンドは、バッファの内容を変更した最後のコマンドの実行結果を無効にします。無効にできるコマンドは、最後に実行した \fBa\fR 、\fBc\fR 、\fBd\fR 、\fBg\fR、\fBi\fR 、\fBj\fR 、\fBm\fR 、\fBr\fR 、\fBs\fR 、\fBt\fR 、\fBu\fR、\fBv\fR 、\fBG\fR 、または \fBV\fR コマンドです。グローバルコマンドの \fBg\fR、\fBG\fR、\fBv\fR、または \fBV\fR でバッファーを変更していた場合、一括してその変更を無効にします。グローバルコマンドで変更が行われていない (たとえば \fBg/\fR \fIRE\fR\fB/p\fR) 場合、\fBu\fR コマンドは何も意味を持ちません。現在の行番号は、無効にしたコマンドの開始直前に設定されていた値に戻ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(1,$)v/\fR\fIRE\fR\fB/\fR\fIcommand list\fR\fR
+.ad
+.sp .6
+.RS 4n
+v コマンドは、基本的に、グローバルコマンド \fBg\fR と同じです。ただし、最初の段階でマークされる行は \fIRE\fR で示す正規表現に一致しない ものです。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(1,$)V/\fR\fIRE\fR\fB/\fR\fR
+.ad
+.sp .6
+.RS 4n
+V コマンドは、基本的に、対話型グローバルコマンド \fBG\fR と同じです。ただし、最初にマークされる行は \fIRE\fR で示す正規表現に一致しないものです。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(1,$)w\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBw\fRrite コマンドはアドレス行を \fIfile\fR に書き込みます。\fIfile\fR が存在しない場合は、ファイル生成マスクが他のモードで指定されていないかぎり、モード \fB666\fR (すべてのユーザーが読み込み、書き込み可能) で作成します。\fBsh\fR(1) 上での特殊コマンド \fBumask\fR の説明を参照してください。\fIfile\fR が \fBed\fR 起動後参照された最初のファイル名でないかぎり、現在記憶されているファイル名は変更されません。\fB\fRファイル名が指定されないと、現在記憶されているファイル名 (ある場合) を使用します (\fBe\fR および \fBf\fR コマンドを参照)。現在行 ( \fB\&.\fR ) は変更されません。コマンドが正常終了すると、\fB-s\fR オプションが省略されていれば、書き込まれた文字数が以下の形式で出力されます。
+.sp
+.in +2
+.nf
+\fB"%d\en",\fR<\fInumber of bytes written\fR>
+.fi
+.in -2
+.sp
+
+\fIfile\fR の代わりに \fB!\fR を指定した場合、! 以降のテキストは、アドレス行が標準入力であるシェル (\fBsh\fR(1) 参照) コマンドと見なされ、その出力が読み込まれます。このようなシェルコマンドは、現在のパス名として記憶されません。\fI\fRこのような \fB!\fR を伴った w コマンドは、「バッファ全体を書き換えた最後の \fBw\fR コマンド」と見なされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(1,$)W\fR \fIfile\fR\fR
+.ad
+.RS 19n
+.rt  
+W コマンドは基本的に上述の \fBw\fRrite コマンドと同じです。ただし、アドレス行を \fIfile\fR (\|存在する場合 ) の最後に追加します。\fIfile\fR が存在しない場合、上述の \fBw\fR コマンドで述べたようにファイルを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB($)=\fR\fR
+.ad
+.RS 19n
+.rt  
+アドレス行の行番号が、次に示す形式で標準出力に表示されます。
+.sp
+.in +2
+.nf
+\fB"%d\en"\fR<\fIline number\fR>
+.fi
+.in -2
+.sp
+
+このコマンドによって、現在の行番号は変更されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fIshell command\fR\fR
+.ad
+.RS 19n
+.rt  
+\fB!\fR 以降のテキストを UNIX システムシェル( \fBsh\fR(1) 参照 ) に送信し、コマンドとして解釈します。コマンドテキストにエスケープされていない \fB%\fR 文字を指定すると、記憶されているファイル名に置換されます。\fB!\fR がシェルコマンドの最初の文字として現われる場合、それは前のシェルコマンドのテキストで置換されます。つまり、\fB!!\fR は最後のシェルコマンドを繰り返します。\fB%\fR または \fB!\fR による置換が実行されると、変更された行の内容が \fIcommand\fR の実行前に標準出力に書き込まれます。\fB!\fR コマンドは以下のメッセージを書き出します。
+.sp
+\fB"!\en"\fR
+.sp
+\fB-s\fR オプションが省略されていれば、終了時に標準出力に書き出します。現在の行番号は変わりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(.+1)\fR<new-line>\fR
+.ad
+.RS 19n
+.rt  
+行にアドレスだけを指定すると、そのアドレス行を出力します。復帰改行文字だけの場合、\fB\&.+1p\fR と同じです。つまり、バッファ内を進むのに使用します。現在の行番号は、書き出した行のアドレスに設定されます。
+.RE
+
+.sp
+.LP
+割り込みシグナル (ASCII DEL または BREAK) が送信されると、\fBed\fR は \fB"?\en"\fR を出力して、そのコマンドレベルに戻ります。\fB\fR
+.sp
+.LP
+\fBed\fR ユーティリティーはすべてのシグナルに対して標準的な動作を行います。ただし次の 2 つのシグナルは例外です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSIGINT\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBed\fR ユーティリティーは現在の動作を中断し、文字列 \fB"?\en"\fR を標準出力に書き出し、コマンドモードに戻ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSIGHUP\fR\fR
+.ad
+.RS 10n
+.rt  
+バッファが空でなく、最後の書き込み処理以降に変更されている場合、\fBed\fR ユーティリティはファイル中にバッファのコピーを生成しようとします。その対象ファイルとして、まず現在のディレクトリ中の \fBed.hup\fR というファイルが選ばれます。それが失敗すると、環境変数 \fBHOME\fR が示すディレクトリ中の \fBed.hup\fR というファイルが選ばれます。いずれの場合も \fBed\fR は、コマンドモードに戻らないで終了します。
+.RE
+
+.sp
+.LP
+いくつかのサイズ制限があります。 1 行は 512 文字以下、グローバル・コマンドリストは 256 文字以下、ファイルのパス名は255 文字以下です ( スラッシュを含む ) 。行数の制限はユーザーのメモリ容量によって異なります。1 行には 1 ワード必要です。
+.sp
+.LP
+ファイルを読むとき、\fBed\fR は \fBASCII\fR と \fBNUL\fR 文字を破棄します。
+.sp
+.LP
+ファイルが復帰改行文字で終了していないとき、\fBed\fR はそれを追加して、その旨を説明するメッセージを表示します。
+.sp
+.LP
+正規表現 \fBRE\fR または置換文字列の終端区切り文字 ( たとえば、\fB/\fR ) が復帰改行文字の直前の文字のとき、区切り文字は省略できます。いずれの場合もアドレスされた行が出力されます。次の各組のコマンドは同等です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs/s1/s2\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBs/s1/s2/p\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg/s1\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBg/s1/p\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?s1\fR\fR
+.ad
+.RS 11n
+.rt  
+\fB?s1?\fR
+.RE
+
+.sp
+.LP
+不正なコマンドが投入されると、\fBed\fR は以下の文字列を書き出します。
+.sp
+.LP
+\fB"?\en"\fR
+.sp
+.LP
+このとき \fBH\fR コマンドにより「ヘルプモード」が有効になっていれば、状況を説明するメッセージが付加されます。前述の文字列を標準出力に出力後、ed はコマンドモードを継続します。現在の行番号は変わりません。\fI\fR
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fI string\fR \fR
+.ad
+.RS 14n
+.rt  
+ユーザーがプロンプト文字列を指定するのを許可します。デフォルトではプロンプト文字列はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR | \fB-;\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBe\fR、\fBr\fR、および \fBw\fR コマンドによる文字カウント、\fBe\fR および \fBq\fR コマンドからの診断、および \fB!\fR\fIshell command\fR の後の \fB!\fR プロンプトを出力しません。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+この \fIfile\fR 引数を指定すると、\fBed\fR は、標準入力からコマンドを読み込む前に、パス名 \fIfile\fR で示されるファイルに \fBe\fR コマンドを適用したかのように動作します。
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBed\fR と \fBred\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 環境
+.sp
+.LP
+\fBed\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBHOME\fR、\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_COLLATE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイルにもコマンドにもエラーはなく、正常終了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$TMPDIR\fR\fR
+.ad
+.RS 12n
+.rt  
+この環境変数が \fINULL\fR でない場合、その値は一時作業ファイルのディレクトリ名として \fB/var/tmp\fR の代わりに使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/tmp\fR\fR
+.ad
+.RS 12n
+.rt  
+\fB/var/tmp\fR が存在する場合、一時作業ファイルのディレクトリ名として使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/tmp\fR\fR
+.ad
+.RS 12n
+.rt  
+環境変数 \fBTMPDIR\fR が存在しないか \fINULL\fR で、さらに \fB/var/tmp\fR が存在しない場合、\fB/tmp\fR が一時作業ファイルのディレクトリ名として使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBed.hup\fR\fR
+.ad
+.RS 12n
+.rt  
+端末がハングアップしたとき、作業ファイルがここに保存されます。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/ed, /usr/bin/red"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+.TE
+
+.SS "/usr/xpg4/bin/ed"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SS "/usr/xpg6/bin/ed"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu6
+_
+CSI有効
+_
+インタフェースの安定性標準
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBbfs\fR(1), \fBedit\fR(1), \fBex\fR(1), \fBgrep\fR(1), \fBksh88\fR(1), \fBsed\fR(1), \fBsh\fR(1), \fBstty\fR(1), \fBumask\fR(1), \fBvi\fR(1), \fBfspec\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5), \fBregex\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.RS 9n
+.rt  
+コマンドエラー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fIfile\fR\fR
+.ad
+.RS 9n
+.rt  
+アクセス不可能なファイル ( 詳細については \fBh\fRelp および \fBH\fRelp コマンドを使用してください )。
+.RE
+
+.sp
+.LP
+最後に \fBw\fR コマンドを使用して全バッファーを書き出した後にバッファーの内容が変更された場合、\fBe\fR または \fBq\fR コマンドによって \fBed\fR のバッファーの内容を破棄しようとすると、\fBed\fR はユーザーに対して警告を発します。\fB?\fR を出力して編集を続行するか否かを聞いてきます。ここで再度 \fBe\fR または \fBq\fR コマンドを入力すると、これらのコマンドは実行されます。\fB-s\fR コマンド行オプションは、上述の機能を禁止します。
+.SH 注意事項
+.sp
+.LP
+\fB-\fRオプションは、サポートはされていますが、ドキュメント内では コマンド構文規格に準拠する \fB-s\fR オプションで置き換えました (\fBIntro\fR(1) 参照) 。\fB\fR
+.sp
+.LP
+\fBg\fR または \fBv\fR コマンドに対して \fB!\fR コマンドは無効です。
+.sp
+.LP
+\fB!\fR コマンドと \fBe\fR、\fBr\fR、および \fBw\fR コマンドからのエスケープコマンド \fB!\fR は、エディタが制限付きシェル (\fBsh\fR(1) 参照) から起動されているときには使用できません。
+.sp
+.LP
+正規表現 \fBRE\fR 内の \fB\e\|n\fR シーケンスは復帰改行文字と一致しません。
+.sp
+.LP
+エディタの入力がコマンドファイル (たとえば、\fBed\fR \fIfile\fR \fB<\fR \fIed_cmd_file\fR) からの場合、最初にエラーが発生した時点でエディタは終了します。
+.sp
+.LP
+\fB/usr/bin/ed\fR の場合、環境変数 \fBLD_PRELOAD\fRを使用して代替の \fBmalloc()\fR ライブラリを読み込むと、問題が発生することがあります。

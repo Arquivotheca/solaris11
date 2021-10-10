@@ -1,0 +1,759 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright 1992, X/Open Company Limited All Rights Reserved
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 部分版权所有 (c) 1982-2007 AT&T Knowledge Ventures
+.\" Oracle Corporation 衷心感谢开放组 (The Open Group) 允许复制版权归其所有的部分文档。开放组提供的原始文档可在网上获取，网址为：http://www.opengroup.org/bookstore/。
+.\" 电气与电子工程师协会和开放组已向我们授予重印其部分文档的权限。在以下陈述中，短语"此文本"指部分的系统文档。Sun 操作系统参考手册中以电子形式从以下来源翻印和复制了此文本的一部分：IEEE Std 1003.1, 2004 Edition，Standard for Information Technology -- Portable Operating System Interface (POSIX)，The Open Group Base Specifications Issue 6, 版权所有 (C) 2001-2004，美国电气及电子工程师学会与开放组。如果这些版本与原始 IEEE 和开放组标准之间存在任何差异，请以原始 IEEE 和开放组标准为准。原始标准可通过 http://www.opengroup.org/unix/online.html 在线访问。在所有包含该资料的产品中都应提供此声明。
+.TH getopts 1 "2011 年 7 月 12 日" "SunOS 5.11" "用户命令"
+.SH 名称
+getopts \- 解析实用程序选项
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/getopts\fR \fIoptstring\fR \fIname\fR [\fIarg\fR...]
+.fi
+
+.SS "sh"
+.LP
+.nf
+\fBgetopts\fR \fIoptstring\fR \fIname\fR [\fIargument\fR]...
+.fi
+
+.SS "ksh88"
+.LP
+.nf
+\fBgetopts\fR \fIoptstring\fR \fIname\fR [\fIarg\fR]...
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fBgetopts\fR [\fB-a\fR \fIname\fR] \fIoptstring\fR \fIname\fR [\fIarg\fR]...
+.fi
+
+.SH 描述
+.SS "/usr/bin/getopts"
+.sp
+.LP
+\fBgetopts\fR 实用程序可用于从参数列表中检索选项和选项参数。
+.sp
+.LP
+每次被调用时，\fBgetopts\fR 实用程序都会将下一选项的值放入 \fIname\fR 操作数指定的 shell 变量中，将要处理的下一参数的索引放入 shell 变量 \fBOPTIND\fR 中。每当调用 shell 时，\fBOPTIND\fR 都将初始化为 \fB1\fR。
+.sp
+.LP
+如果某个选项需要选项参数，\fBgetopts\fR 实用程序会将其放置在 shell 变量 \fBOPTARG\fR 中。如果未找到选项，或找到的选项没有选项参数，则取消设置 \fBOPTARG\fR。
+.sp
+.LP
+如果在需要选项字符的位置发现了 \fIoptstring\fR 操作数中未包含的选项字符，由 \fIname\fR 指定的 shell 变量将设置为问号 ( \fB?\fR ) 字符。在此情况下，如果 \fIoptstring\fR 中的第一个字符是冒号 (\fB:\fR)，则 shell 变量 \fBOPTARG\fR 将设置为所找到的选项字符，但不会有任何输出写入到标准错误；其他情况下，将取消设置 shell 变量 \fBOPTARG\fR 并将一条诊断信息写入到标准错误。此情况将被视为在将参数提供给调用应用程序时检测到的错误，而不是 \fBgetopts\fR 处理中的错误。
+.sp
+.LP
+如果缺少某个选项参数：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果 \fIoptstring\fR 的第一个字符是冒号，则由 \fIname\fR 指定的 shell 变量将设置为冒号字符，shell 变量 \fBOPTARG\fR 将设置为找到的选项字符。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+其他情况下，由 \fIname\fR 指定的 shell 变量设置为问号字符 (\fB?\fR)，将取消设置 shell 变量 \fBOPTARG\fR，并且会将一条诊断消息写入标准错误。此情况将被视为在将参数提供给调用应用程序时检测到的错误，而不是 \fBgetopts \fR 处理中的错误；诊断消息将编写为有状态的，但退出状态为零。
+.RE
+.sp
+.LP
+当遇到选项结尾时，\fBgetopts\fR 实用程序将以一个大于零的返回值退出；shell 变量 \fBOPTIND\fR 将设置为第一个非选项参数的索引（如果第一个 \fB\(mi\|\(mi \fR 参数之前没有其他非选项参数出现，则会将该参数视为选项参数）或设置为值 \fB$#\fR + 1（如果没有非选项参数）；\fIname\fR 变量将设置为问号符号。以下任意项都表示选项的结尾：特殊选项 \fB\(mi\|\(mi\fR，发现未以 \fB\(mi\fR 开头的参数，或遇到错误。
+.sp
+.LP
+shell 变量 \fBOPTIND\fR 和 \fBOPTARG\fR 对于 \fBgetopts\fR 的调用者而言是本地的，且缺省情况下不会导出。
+.sp
+.LP
+由 \fIname\fR 操作数指定的 shell 变量、\fBOPTIND\fR 和 \fBOPTARG\fR 会影响当前的 shell 执行环境。
+.sp
+.LP
+如果应用程序将 \fBOPTIND\fR 设置为值 1，则可使用一个新的参数集：当前的位置参数或新的 \fIarg\fR 值均可。对于尝试在单个 shell 执行环境中多次调用 \fBgetopts\fR 的其他情况，如果所使用的参数（位置参数或 \fIarg\fR 操作数）不是在所有调用中都相同，或者使用了修改为非 1 值的 \fBOPTIND\fR 值，则会产生意外的结果。
+.SS "sh"
+.sp
+.LP
+\fBgetopts\fR 是一个内置 Bourne shell 命令，用于解析位置参数和检查有效选项。请参见 \fBsh\fR(1)。它支持命令语法标准的所有适用规则（请参见 \fBIntro\fR(1) 中的规则 3 至 10）。应该使用该命令来替代 \fBgetopt\fR 命令。
+.sp
+.LP
+\fIoptstring\fR 必须包含使用 \fBgetopts\fR 的命令可以识别的选项字母。如果某个字母后面跟有冒号，则该选项需要有一个参数或一组参数，必须使用空格将其与参数隔开。
+.sp
+.LP
+每次被调用时，\fBgetopts\fR 会将下一个选项放在 shell 变量 \fIname\fR 中，将下一个要处理的参数的索引放在 shell 变量 \fBOPTIND\fR 中。只要调用 shell 或 shell 脚本，就会将 \fBOPTIND\fR 初始化为 \fB1\fR。
+.sp
+.LP
+如果某个选项需要选项参数，\fBgetopts\fR 会将其放置在 shell 变量 \fBOPTARG\fR 中。
+.sp
+.LP
+如果遇到非法选项，会将 \fB?\fR 放置在 \fIname\fR 中。
+.sp
+.LP
+当遇到选项的结尾时，\fBgetopts\fR 将以非零退出状态退出。可使用特殊选项 \fB-\fR 来限定选项的结尾。
+.sp
+.LP
+缺省情况下，\fBgetopts\fR 解析位置参数。如果在 (\fIargument\fR .\|.\|.)  \fBgetopts\fR 命令行上指定了额外的参数 (argument .,\|.\|.)，\fBgetopts\fR 将改而对它们进行解析。
+.sp
+.LP
+\fB/usr/lib/getoptcvt\fR 读取 \fIfilename\fR 中的 shell 脚本，将其转换为使用 \fBgetopts\fR 而不是 \fBgetopt\fR，然后在标准输出中写入结果。
+.sp
+.LP
+这样，所有新命令将遵循 \fBIntro\fR(1) 中介绍的命令语法标准，它们应该使用 \fBgetopts\fR 或 \fBgetopt\fR 来解析位置参数和检查对该命令有效的选项。
+.sp
+.LP
+如果 \fBgetopts\fR 遇到不包括在 \fIoptstring\fR 中的选项字母，将会在标准错误上输出一条错误消息。
+.sp
+.LP
+尽管在当前实现中，允许放宽以下命令语法规则（请参见 \fBIntro\fR(1)），但也不应使用这些语法规则，因为系统的将来发行版可能不支持它们。如下面的"示例"部分所示，\fB-a\fR 和 \fB-b\fR 均为选项，选项 \fB- o\fR 需要一个选项参数。 
+.sp
+.LP
+以下示例违反了规则 5：具有选项参数的选项不得与其他选项组合在一起：
+.sp
+.in +2
+.nf
+example% \fBcmd -aboxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下示例违反了规则 6：在接受选项参数的选项后面必须有空格：
+.sp
+.in +2
+.nf
+example% \fBcmd -ab oxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+更改 shell 变量 \fBOPTIND\fR 的值或解析不同的参数集合可能会导致意外结果。
+.SS "ksh88"
+.sp
+.LP
+检查 \fIarg\fR 是否具有合法选项。如果省略了 \fIarg\fR，则会使用位置参数。选项参数以 \fB+\fR 或 \fB\(mi\fR 开头。未以 \fB+\fR 或 \fB\(mi\fR 开头的选项或者参数 \fB-\fR 表示选项的结尾。\fIoptstring\fR 包含 \fBgetopts\fR 可识别的字母。如果字母后面跟有一个 \fB:\fR，则该选项需要有一个参数。选项与参数之间可以用空格隔开。
+.sp
+.LP
+每次在有前缀 \fB+\fR 的情况下被调用时，如果 \fIarg\fR 以 \fB+\fR 开头，则 \fBgetopts\fR 会将它发现的下一个选项字母放置在变量 \fIname\fR 中。下一个 \fIarg\fR 的索引存储在 \fBOPTIND\fR 中。选项参数（如果有）存储在 \fBOPTARG\fR 中。
+.sp
+.LP
+\fIoptstring\fR 中的前导 \fB:\fR 将导致 \fBgetopts\fR 将无效选项的字母存储在 \fBOPTARG\fR 中，并针对未知选项将 \fIname\fR 设置为 \fB?\fR，而在缺少某个必需的选项时将 name 设置为 \fB:\fR。其他情况下，\fBgetopts\fR 将显示一条错误消息。如果没有更多选项，则退出状态是\fB非零的\fR。
+.sp
+.LP
+\fBgetopts\fR 支持传统的单字符短选项和由 Sun 的命令行接口范例 (Command Line Interface Paradigm, \fBCLIP\fR) 定义的长选项。 
+.sp
+.LP
+每个长选项都是短选项的别名，是在紧跟在其等效短选项后的括号中指定的。例如，可以使用以下脚本行将长选项 \fBfile\fR 指定为短选项 \fBf\fR 的别名：
+.sp
+.in +2
+.nf
+getopts "f(file)" opt
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在命令行上，请在长选项之前加上前缀 \fB--\fR 或 \fB++\fR。在上面的示例中，命令行上的 \fB--file\fR 等同于 \fB-f\fR，而命令行上的 \fB++file\fR 等同于 \fB+f\fR。
+.sp
+.LP
+每个短选项可以有多个长选项等效体，但是这有违 CLIP 规范，应谨慎使用。必须将每个长选项等效体都放置到括号中，如下所示：
+.sp
+.in +2
+.nf
+getopts "f:(file)(input-file)o:(output-file)"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在上面的示例中，\fB--file\fR 和 \fB--input-file \fR 均等同于 \fB-f\fR，而 \fB--output-file \fR 等同于 \fB-o\fR。
+.sp
+.LP
+变量 name 始终设置为短选项。当在命令行上指定长选项时，name 将被设置为其短选项等效体。
+.sp
+.LP
+有关 Korn shell 的 \fBgetopts\fR 内置命令的进一步讨论，请参见本手册页中之前 Bourne shell (\fBsh\fR) 部分中的讨论。
+.SS "ksh"
+.sp
+.LP
+\fBgetopts\fR 实用程序可用于从 \fIarg\fR 指定的参数列表或从位置参数（如果省略了 \fIarg\fR）检索选项和参数。它还可以基于 \fIoptstring\fR 中的信息为命令生成用法消息和手册页。 
+.sp
+.LP
+每次被调用时，\fBgetopts\fR 实用程序都会将下一选项的值放入 \fIname\fR 操作数指定的 shell 变量中，将要处理的下一参数的索引放入 shell 变量 \fBOPTIND\fR 中。当调用 shell 时，\fBOPTIND\fR 将初始化为 \fB1\fR。当选项需要或允许选项参数时，\fBgetopts\fR 会将选项参数置于 shell 变量 \fBOPTARG\fR 中。其他情况下，\fBOPTARG\fR 将设置为 \fB1\fR（当设置了该选项时）或 \fB0\fR（当\fB取消设置\fR该选项时）。
+.sp
+.LP
+\fIoptstring\fR 字符串包含字母数字字符、特殊字符 \fB+\fR、\fB-\fR、\fB?\fR、\fB:\fR 以及空格或包含在 \fB[...]\fR 中的字符组。字符组可以嵌套在 \fB{...}\fR 中。在 \fB[...]\fR 组以外，后跟零个或多个空格的单个 NEWLINE 将被忽略。一个或多个空白行将选项与命令参数概要隔开。 
+.sp
+.LP
+每个 \fB[...]\fR 组包含一个可选标签、由 \fB:\fR 分隔的可选属性以及跟在 \fB?\fR 后面的可选描述字符串。对于选项解析和简短用法消息，从 \fB?\fR 到下一个 \fB]\fR 结尾之间的字符将被忽略。它们用于生成详细帮助或手册页。\fB:\fR 字符不能出现在标签中。\fB?\fR 字符在标签中必须指定为 \fB??\fR，\fB]\fR 字符在描述字符串中必须指定为 \fB]]\fR。文本位于两个 \fB\eb\fR (backspace) 字符之间表示该文本在显示时应使用粗体。文本位于两个 \fB\ea\fR (bell) 字符之间表示该文本在显示时应进行强调或使用斜体。文本位于两个 \fB\ev\fR (vertical tab) 字符之间表示该文本应以定宽字体显示。位于两个 \fB\ef\fR (form feed) 字符之间的文本将由其名称是被围文本的 shell 函数的输出替换。
+.sp
+.LP
+此接口的所有输出都将写入到标准错误。
+.sp
+.LP
+有多种组类型：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+格式为 
+.sp
+.in +2
+.nf
+\fB[-[\fR\fIversion\fR][\fIflag\fR[\fInumber\fR\fB]]...[?\fR\fItext\fR\fB]]\fR
+.fi
+.in -2
+.sp
+
+的组，作为第一个组出现，用以启用扩展的接口。 
+.sp
+\fIversion\fR 指定接口版本，目前为 1。若省略版本，则将使用最新版本。将来的增强可能会递增 \fIversion\fR，但所有版本均受支持。\fItext\fR 通常指定一个 SCCS 或 CVS 标识字符串。可以指定零个或多个带有可选数值的标志来控制选项解析。这些标志包括：
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 5n
+.rt  
+缓存此 \fIoptstring\fR 以用于多个解析。用于优化在同一进程内可能会调用多次的内置项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+在生成帮助时忽略此 \fIoptstring\fR。在组合来自多个传递的 \fIoptstring\fR 值时使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.RS 5n
+.rt  
+仅在帮助消息中显示长选项名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+\fB-\fR 选项字符前缀是可选的。这支持过时的 \fBps\fR(1) 选项语法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+该数字指定必须在长选项名称之前添加的 \fB-\fR 字符的数目。缺省值为 \fB2\fR。\fB 0\fR、\fB1\fR 或 \fB2\fR 都是可以接受的，例如 \fBp0\fR 用于\fBdd\fR(1M)，\fBp1\fR 用于\fBfind\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 5n
+.rt  
+该数字指定手册页节编号，缺省值为 \fB1\fR。
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+格式为 \fB[\fR\fI option\fR\fB[!][=\fR\fInumber\fR\fB ][:\fR\fIlongname\fR\fB][?\fR\fI text\fR\fB]]\fR 的选项规范。在此情况下，第一个字段是选项字符，是当选项匹配时在 name 操作数中返回的值。如果没有选项字符，则应当指定两个或多个数字。如果长选项匹配，该数字将返回为 name 操作数的值。如果选项后跟有一个 \fB!\fR，则选项字符的意思将是 \fIlongname\fR 意思的反义。对于不接受值的选项，对于 \fB!\fR 反义的选项字符，\fBOPTARG\fR 将设置为 \fB0\fR，其他情况下将设置为 \fB1\fR。\fI =number\fR 是可选的，它指定要在 \fIname\fR 操作数中返回一个数字而不是返回选项字符。\fIlongname \fR是由 \fB--longname\fR 指定的，并与所有长选项的最短非二义性前缀匹配。\fBlongname\fR 字段中的 \fB*\fR 表示仅截至到此点的字符需要匹配，并假定任何其他字符完全匹配。对于没有 \fBlongname\fR 或描述性文本的选项，最外层的 \fB[\fR 和 \fB]\fR 可以省略。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+选项参数规范。接受参数的选项的后面可以跟有 \fB:\fR（指示字符串值）或 \fB#\fR（指示数字值），以及选项参数规范。选项参数规范由选项参数名称（如 field 1）组成。其余由 : 分隔的字段是类型名和特殊属性词 \fBlistof\fR、\fBoneof\fR 和 \fBignorecase\fR 中的零个或多个。缺省选项值可以在最后的字段中指定为 :=default。选项参数规范的后面可以跟有用大括号括起的选项值描述列表。接受参数的长选项将指定为 \fB--longname=\fR\fI value\fR。 如果 \fB:\fR 或 \fB#\fR 后跟有 \fB?\fR，则选项参数是可选的。如果仅指定了选项字符格式，且下一个参数以 \fB-\fR 或 \fB+\fR 开头，则不会设置可选参数值。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+选项值描述。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+参数规范。可以通过将有效选项参数值括在选项参数规范后的 \fB{...}\fR 内来指定有效选项参数值的列表。每个允许的值可以使用 \fB[...]\fR（在其中包含值以及跟在值后的描述）来指定。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[+\fR\fB\e\fR\fI n\fR\fB\&...]\fR 格式的组，以定宽字体显示代表 \fB\&...\fR 的字符且不换行。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[+\fR\fIname\fR\fB ?\fR\fItext\fR\fB]\fR 格式的组，指定节名称与描述性文本。如果省略了 \fIname\fR，则会将 \fItext\fR 置于新段落中。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[-\fR\fIname\fR\fB ?\fR\fItext\fR\fB]\fR 格式的组，指定\fB实现\fR部分的条目。
+.RE
+.sp
+.LP
+如果 \fIoptstring\fR 的前导字符是 \fB+\fR，则以 \fB+\fR 开头的参数也将被视为选项。
+.sp
+.LP
+\fIoptstring\fR 中的前导 \fB:\fR 字符或跟随在前导 \fB+\fR 后的 : 字符会影响错误的处理方式。如果在处理选项时遇到 \fIoptstring\fR 中未指定的选项字符或 \fBlongname\fR 参数，则其名称是 name 的 shell 变量将设置为 \fB?\fR 字符。shell 变量 \fBOPTARG\fR 将设置为找到的字符。如果某个选项参数缺失或具有无效值，则 name 将设置为 \fB:\fR 字符，shell 变量 \fBOPTARG\fR 将设置为找到的选项字符。若无前导 \fB:\fR，在遇到错误时，\fIname\fR 将设置为 \fB?\fR 字符，\fBOPTARG\fR 将取消设置，且会将一条错误消息写入到标准错误。
+.sp
+.LP
+以下任一情况都表示选项的结尾：
+.RS +4
+.TP
+1.
+遇到特殊参数 \fB--\fR。
+.RE
+.RS +4
+.TP
+2.
+遇到未以 \fB-\fR 开头的参数。
+.RE
+.RS +4
+.TP
+3.
+指定了帮助参数。
+.RE
+.RS +4
+.TP
+4.
+遇到了错误。
+.RE
+.sp
+.LP
+如果 \fBOPTIND\fR 设置为值 \fB1\fR，则可以使用新的参数集合。
+.sp
+.LP
+\fBgetopts\fR 还可用于生成帮助消息，其中包含命令用法和详细的描述。将 \fIargs\fR 指定为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来生成用法概要。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来生成详细的用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??man\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来生成格式化的手册页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??api\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来生成易于解析的用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??html\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来生成 \fBhtml\fR 格式的手册页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??nroff\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来生成 \fBnroff\fR 格式的手册页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??使用\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来列出当前的 \fBoptstring\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--???name\fR\fR
+.ad
+.RS 14n
+.rt  
+这用来列出 \fBversion=\fR\fIn\fR，其中 \fIn\fR 大于 \fB0\fR（如果 \fBgetopts\fR 可以识别选项 \fIname\fR）。
+.RE
+
+.sp
+.LP
+当遇到选项结尾时，\fBgetopts\fR 将以\fB非零\fR返回值退出，变量 \fBOPTIND\fR 将设置为第一个非选项参数的索引。
+.SH 选项
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR 支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIname\fR\fR
+.ad
+.RS 11n
+.rt  
+使用 \fIname\fR 而不是用法消息中的命令名称。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIoptstring\fR\fR
+.ad
+.RS 13n
+.rt  
+一个包含调用 \fBgetopts\fR 的实用程序可识别的选项字符的字符串。如果某个字符后跟有一个冒号，则该选项需要有一个参数，该参数应作为单独的参数提供。应用程序应将选项字符及其选项参数指定为单独的参数，但 \fBgetopts\fR 会将跟随在需要参数的选项字符后的字符解释为参数，无论实际情况是否如此。在调用 \fBgetopts\fR 时，如果显式的空选项参数不是作为单独的参数提供的，则无需识别该参数；请参见\fBgetopt\fR(3C)。 应用程序不得使用问号字符 (\fB?\fR) 和冒号字符 (\fB:\fR) 作为选项字符。使用非字母数字的其他选项字符会产生意外结果。如果选项参数不是作为与选项字符隔开的参数提供的，则 \fBOPTARG\fR 中的值会被除去选项字符和 \fB\(mi\fR。\fIoptstring\fR 中的第一个字符决定了当某个选项字符未知或缺少某个选项参数时 \fBgetopts\fR 的行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.RS 13n
+.rt  
+shell 变量的名称，由 \fBgetopts\fR 实用程序设置为发现的选项字符。
+.RE
+
+.sp
+.LP
+缺省情况下，\fBgetopts\fR 实用程序解析传递到调用方 shell 过程的位置参数。如果指定了 \fIarg\fR，则将解析这些参数而不解析位置参数。
+.SH 用法
+.sp
+.LP
+因为 \fBgetopts\fR 会影响当前的 shell 执行环境，因此，它通常是作为 shell 常规内置项提供的。如果它是在一个子 shell 或单独的实用程序执行环境中调用的，例如下面所示的环境之一：
+.sp
+.in +2
+.nf
+      (getopts abc value "$@")
+       nohup getopts ...
+       find . -exec getopts ... \e;
+.fi
+.in -2
+
+.sp
+.LP
+则它不会影响调用者的环境中的 shell 变量。
+.sp
+.LP
+请注意，尽管位置参数已更改，但 shell 函数与调用方 shell 共享 \fBOPTIND\fR。想使用 \fBgetopts\fR 来解析参数的函数通常希望将 \fBOPTIND\fR 的值保存在条目上并在返回之前对其进行还原。然而，有时候函数希望为调用方 shell 更改 \fBOPTIND\fR。
+.SH 示例
+.LP
+\fB示例 1 \fR解析并显示参数
+.sp
+.LP
+以下示例脚本将解析并显示其参数：
+
+.sp
+.in +2
+.nf
+aflag=
+bflag=
+while getopts ab: name
+do
+     case $name in
+     a)      aflag=1;;
+     b)      bflag=1
+             bval="$OPTARG";;
+     ?)     printf "Usage: %s: [-a] [-b value] args\en"  $0
+            exit 2;;
+     esac
+done
+if [ ! -z "$aflag" ]; then
+   printf "Option -a specified\en"
+fi
+if [ ! -z "$bflag" ]; then
+     printf 'Option -b "%s" specified\en' "$bval"
+fi
+shift $(($OPTIND - 1))
+printf "Remaining arguments are: %s\en" "$*"
+.fi
+.in -2
+
+.LP
+\fB示例 2 \fR为带选项的命令处理参数
+.sp
+.LP
+以下 shell 程序片段为可以接受选项 \fB-a\fR 或 \fB-b\fR 的命令处理参数。它还将处理选项 \fB-o\fR，该选项需要一个选项参数：
+
+.sp
+.in +2
+.nf
+while getopts abo: c
+do
+      case $c in
+     a | b)   FLAG=$c;;
+     o)       OARG=$OPTARG;;
+     \e?)      echo $USAGE
+        exit 2;;
+     esac
+done
+shift `expr $OPTIND \(mi 1`
+.fi
+.in -2
+
+.LP
+\fB示例 3 \fR等效的代码表达式
+.sp
+.LP
+此代码示例将下列各个输入视为等效的：
+
+.sp
+.in +2
+.nf
+cmd -a -b -o "xxx z yy" filename
+cmd -a -b -o "xxx z yy" -- filename
+cmd -ab -o xxx,z,yy filename
+cmd -ab -o "xxx z yy" filename
+cmd -o xxx,z,yy -b -a filename
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR使用 \fBksh getops\fR 语法
+.sp
+.LP
+有关如何使用 \fBksh getopts\fR 语法的示例，请参考 \fB/usr/demo/ksh/src\fR 中的脚本。
+
+.SH 环境变量
+.sp
+.LP
+有关影响 \fBgetopts\fR 执行的以下环境变量的描述，请参见 \fBenviron\fR(5)：\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR 和 \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOPTIND\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBgetopts\fR 将该变量用作要处理的下一个参数的索引。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOPTARG\fR\fR
+.ad
+.RS 10n
+.rt  
+如果某个选项使用了参数，\fBgetopts\fR 将使用该变量来存储参数。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+找到了一个选项，可能是也可能不是由 \fIoptstring\fR 指定的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+遇到选项的结尾，或发生错误。
+.RE
+
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR 返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+找到指定的选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+遇到选项结尾。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+已生成用法或信息消息。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.SS "/usr/bin/getopts、sh、ksh88"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+_
+标准请参见 \fBstandards\fR(5)。
+.TE
+
+.SS "ksh"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBIntro\fR(1)、\fBgetoptcvt\fR(1)、\fBksh\fR(1)、\fBksh88\fR(1)、\fBps\fR(1)、\fBsh\fR(1)、\fBgetopt\fR(3C)、\fBattributes\fR(5)、\fBenviron\fR(5)、\fBstandards\fR(5)
+.SH 诊断
+.sp
+.LP
+无论何时检测到错误，如果 \fIoptstring\fR 操作数中的第一个字符不是冒号 (\fB:\fR)，则都会向标准错误写入一条诊断消息，其中以未指定格式包含以下信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+消息中标识了调用方程序的名称。调用方程序名称是调用 \fBgetopts\fR 实用程序时 shell 特殊参数 \fB0\fR 的值。可以使用
+.sp
+.in +2
+.nf
+\fIbasename\fR "$0"
+.fi
+.in -2
+
+的名称等效体。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果发现了未在 \fIoptstring\fR 中指定的某个选项，则会在消息中标识该错误并标识无效的选项字符。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果发现了需要选项参数的某个选项，但未发现选项参数，则会在消息中标识该错误并标识无效的选项字符。
+.RE

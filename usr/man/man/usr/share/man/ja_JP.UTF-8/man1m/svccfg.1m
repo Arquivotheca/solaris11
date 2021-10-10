@@ -1,0 +1,1047 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH svccfg 1M "2011 年 6 月 6 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+svccfg \- サービス構成のインポート、エクスポート、および変更
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR] \fIsubcommand\fR [\fBargs\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR] \fB-f\fR \fIcommand-file\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsvccfg\fR コマンドは、サービス構成リポジトリ内のデータを操作します。\fBsvccfg\fR は、個別のサブコマンドを使用するか、一連のサブコマンドが格納されているコマンドファイルを指定することで、対話形式で呼び出すことができます。
+.sp
+.LP
+通常、リポジトリ内の既存のサービスに加えた変更は、次にサービスインスタンスが更新されるまでサービスに反映されません。詳細については、\fBsvcadm\fR( 1M) マニュアルページの \fBrefresh\fR サブコマンドを参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvccfg\fR サブコマンドを \fIcommand-file\fR から読み込んで実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+サブコマンドを実行する前に、\fIFMRI\fR (障害管理リソース識別子) で指定されているエンティティーを選択します。\fBsmf\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+サブコマンドは、あとに続くサブセクションに指定されたカテゴリに分けられます。
+.sp
+.LP
+\fIFMRI\fR を受け入れるサブコマンドはすべて、省略形や展開パターンも受け入れます。インスタンスおよびサービスは、インスタンス名、またはサービス名の最後の部分を指定する方法で、省略して入力することができます。たとえば、次のような \fIFMRI\fR を仮定します。
+.sp
+.in +2
+.nf
+svc:/network/smtp:sendmail
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、次に示す省略形はすべて有効です。 
+.sp
+.in +2
+.nf
+sendmail 
+:sendmail 
+smtp 
+smtp:sendmail 
+network/smtp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これに対し、次のものは無効です。
+.sp
+.in +2
+.nf
+mail
+network
+network/smt
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIFMRI\fR の省略形は不安定なので、スクリプトやその他の長期に渡って使用するツールには使用しないでください。パターンが複数のインスタンスまたはサービスに一致する場合は、エラーメッセージが表示され、処理は行われません。
+.SS "一般的なサブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.br
+.na
+\fB\fBexit\fR\fR
+.ad
+.br
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+すぐに終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrepository\fR [\fB-p\fR \fIprefix\fR] \fIrepfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIrepfile\fR をリポジトリとして使用します。デフォルトでは、\fBsvccfg\fR(1M) はシステムリポジトリを使用します。
+.sp
+リポジトリは、現在実行しているのと同一バージョンの Solaris のファイル (パッチを含む) とのみ使用してください。このサブコマンドをシステムリポジトリ \fB/etc/svc/repository.db\fR とともに使用しないでください。
+.sp
+\fBsvccfg repository\fR を使用して、導入時間の前に SMF リポジトリを事前に生成する場合は、\fB-p\fR オプションを使用して、\fBimport\fR でインポートされたマニフェストのシステム標準の場所にルートプレフィックスを指定します。リポジトリを稼働中のシステムに配置すると、このプレフィックスは \fB/lib/svc/manifest \fR および \fB/var/svc/manifest\fR で置き換えられます。\fB-p\fR ディレクトリにあるマニフェストが実行時にシステム標準の場所に表示されない場合は、これに関連付けられたサービスが削除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR [\fB-v\fR|\fB-V\fR]\fR
+.ad
+.sp .6
+.RS 4n
+オプション動作を設定します。オプションが何も指定されていない場合、set は現在有効になっているオプションを表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細表示モードを有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細表示モードを無効にします。
+.RE
+
+.RE
+
+.SS "サービスマニフェストおよびプロファイルのサブコマンド "
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapply\fR [\fB-n\fR] [\fB-v\fR] \fIfile\fR | \fIdirectory\fR\fR
+.ad
+.sp .6
+.RS 4n
+引数がサービスプロファイルまたはマニフェストの場合は、構成を SMF リポジトリの管理レイヤーに適用します。必要に応じて、サービス、インスタンス、プロパティーグループ、およびプロパティーが作成されます。
+.sp
+あるプロパティーまたはプロパティーグループのタイプ属性を指定しなかった場合、既存のタイプ設定やサービステンプレートからそのタイプを判定する試みが行われます。タイプの決定に失敗すると警告が発せられ、サービスやインスタンスに不整合なデータが導入されないようにそのサービスがスキップされます。存在しないサービスやインスタンスは無視されます。
+.sp
+プロファイル内で制限が緩和された要素定義を使用するには、\fBDOCTYPE\fR エントリに次の定義を追加する必要があります。
+.sp
+.in +2
+.nf
+<!ENTITY % profile "INCLUDE">
+<!ENTITY % manifest "IGNORE">
+.fi
+.in -2
+.sp
+
+プロファイルによって変更されたサービスやインスタンスは更新されます。\fB-n\fR を指定した場合、プロファイルは処理されますが、変更は SMF リポジトリに適用されません。構文エラーが見つかると必ず標準エラー出力に報告され、終了コード \fB1\fR が返されます。サービスプロファイルについては、\fB smf\fR(5) を参照してください。このコマンドでは、サービスやインスタンスのプロパティーを変更する特権が必要です。プロパティーを変更するために必要な特権については、\fB smf_security\fR(5) を参照してください。
+.sp
+マニフェスト内およびリポジトリ内のテンプレートデータに基づいてマニフェストまたはプロファイル内のサービスやインスタンスが検証され、テンプレート違反が検出されると必ず警告が発行されます。テンプレートの説明については、\fBsmf_template\fR(5) を参照してください。\fB-V\fR オプションを指定した場合、定義されているテンプレートに違反したマニフェストのインポートが失敗します。\fBsvccfg\fR の対話型呼び出しでは、\fB-V\fR がデフォルトの動作になります。
+.sp
+\fBapply\fR の引数がディレクトリである場合、そのディレクトリツリーの下で見つかったすべてのプロファイルが前述のように適用されます。指定したファイルや、指定したディレクトリの下で見つかったいずれかのファイルがサービスプロファイルでなかった場合、このサブコマンドは失敗します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextract\fR [\fB-a\fR] [\fB-l\fR \fIlayer\fR] [\fI> file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+システム上のローカルカスタマイズを表示するサービスプロファイルを出力します。  
+.sp
+\fB-l\fR を指定すると、値をエクスポートするレイヤーの一覧を選択できます。\fB-l\fR オプションにはレイヤー名が必要であり、引数として \fBmanifest\fR、\fBsystem-profile\fR、\fBsite-profile\fR、\fBadmin\fR、\fBcurrent\fR、\fBall\fR を指定します。\fBcurrent\fR と \fBall\fR は同義語であり、最上位レイヤー値を意味します。\fBlistprop\fR サブコマンドでは整合性のために両方が提供されます。 複数のレイヤーを指定するには、コンマで区切るか、複数の \fB-l\fR オプションを使います。
+.sp
+\fB-l\fR が指定されていない場合、デフォルトは \fB-l\fR \fBadmin,site-profile\fR です。
+.sp
+複数選択されたレイヤーでプロパティーが定義されている場合は、最上位レイヤーのみがプロファイルでエクスポートされます。
+.sp
+\fB-a\fR オプションを指定しないと、保護された情報 (\fBread_authorization\fR プロパティーの存在によって識別される。\fBsmf_security\fR(5) を参照) を含むプロパティーグループがプロパティー値なしで抽出されます。\fB-a\fR オプションを指定すると、すべての値が抽出されます。これらの値を読み取るための特権が不十分である場合は、エラーが発生します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-a\fR] \fIservice_FMRI\fR [\fI>file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvccfg export\fR の実行は以下と同等です。
+.sp
+.in +2
+.nf
+svccfg extract -l current [-a] \fIservice_FMRI\fR [>\fIfile\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR [\fB-V\fR] [\fIfile\fR | \fIdirectory\fR]\fR
+.ad
+.sp .6
+.RS 4n
+システムで管理されたファイルシステムの場所  (\fB/lib/svc/manifest\fR および \fB/var/svc/manifest\fR のサブディレクトリ) にあるファイルに \fBsvccfg import\fR を配置すると、\fBsvcadm restart manifest-import\fR が起動されます。
+.sp
+マニフェストをインポートするには、システムで管理された場所にマニフェストを配置し、\fBsvcadm restart manifest-import\fR を起動する方法をお勧めします。
+.sp
+その他の場所にあるファイルに \fBsvccfg import\fR を配置すると、プロパティーが管理カスタマイズとして管理レイヤーにインポートされます。 以下の処理と同じ結果になります。
+.sp
+.in +2
+.nf
+svccfg apply [\fIfile\fR | \fIdirectory\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinventory\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIfile\fR がサービスマニフェストまたはプロファイルであると判定された場合は、\fBfile\fR で指定されているサービスおよびインスタンスの \fIFMRI\fR が出力されます。各サービスについて、そのインスタンスの \fBFMRI\fR に続いてサービスの \fBFMRI\fR が表示されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalidate\fR [\fIfile\fR | \fIfmri\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBvalidate\fR サブコマンドで処理できるのは、マニフェストファイル、インスタンス FMRI、現在のインスタンスエンティティー選択、現在のスナップショットエンティティー選択のいずれかです。引数が指定された場合、\fBsvccfg\fR はその指定されたファイルが存在するかどうかをチェックします。ファイルが存在する場合は、ファイルが検証されます。指定された名前のファイルが存在しない場合、その引数は FMRI パターンとして処理されます。ファイル名と FMRI との間で競合が発生する場合には、\fBsvc:\fR および \fBfile:\fR 接頭辞を使用して引数の解釈方法を \fBsvccfg\fR に知らせます。
+.sp
+ユーザーがファイルを指定した場合、そのファイルは \fBimport\fR \fB-V\fR と同様の方法で処理されますが、リポジトリの変更は一切行われません。エラーが検出された場合、\fBsvccfg\fR はエラーを表示し、ゼロ以外の終了ステータスで終了します。
+.sp
+インスタンス \fIfmri\fR、インスタンスエンティティー選択、スナップショットエンティティー選択のいずれかの場合、指定された合成形式のインスタンス (\fBsmf\fR(5) の「プロパティーおよびプロパティーグループ」を参照) が、リポジトリ内のテンプレートデータに基づいて検証されます。インスタンス FMRI とインスタンスエンティティー選択の場合、「実行中の」スナップショットが検証に使用されます。テンプレート違反が検出されると必ず警告が発行されます。テンプレートの説明については、\fBsmf_template\fR(5) を参照してください。
+.sp
+サービスまたはインスタンスがマニフェストまたはプロファイル内にある場合、そのサービスまたはインスタンスは非表示になります。\fBsmf\fR(5) を参照してください。
+.RE
+
+.SS "エンティティーの選択、変更、およびナビゲーションのサブコマンド"
+.sp
+.LP
+「エンティティー」とは、スコープ、サービス、またはサービスインスタンスを指します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容の子として、指定された名前で新しいエンティティーが作成されます。エンティティーを作成するために必要な特権については、\fBsmf_security\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-f\fR] \fB{\fIname\fR | \fIfmri\fR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR で指定されている現在の選択内容の子、または fmri で指定されているエンティティーが削除されます。\fB-f\fR フラグを指定しない限り、「online」状態または「degraded」状態のサービスインスタンスを削除しようとすると失敗します。サービスまたはサービスインスタンスが「framework」タイプの「dependents」プロパティーグループを持っている場合は、その中の「astring」タイプまたは「fmri」タイプの各プロパティーが調べられ、そのプロパティーがサービスまたはサービスインスタンスの名前を指定する 1 つの値を持っているときは、指定されたサービスまたはサービスインスタンスの、プロパティーと同じ名前を持つ dependency プロパティーグループが削除されます。サービス構成を削除するために必要な特権については、\fBsmf_security \fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容の子エンティティーのうち、 glob パターン \fIpattern\fR に一致する名前を持つものが表示されます (\fBfnmatch\fR(5) を参照)。 プロパティーを持つエンティティー、すなわちサービスおよびサービスインスタンスには、「:properties」も一覧表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR {\fIname\fR | \fIfmri\fR}\fR
+.ad
+.sp .6
+.RS 4n
+引数で現在の選択内容の子が指定されている場合は、それが現在の選択内容になります。それ以外の場合、引数は \fBFMRI\fR であると解釈され、引数で指定されているエンティティーが現在の選択内容になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunselect\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容の親が現在の選択内容になります。 
+.RE
+
+.SS "プロパティーの検査および変更のサブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddpg\fR \fIname\fR \fItype\fR [\fIflags\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前 \fIname\fR と type で、プロパティーグループを現在の選択内容に追加します。\fIflags\fR は、プロパティーグループの作成に使用するフラグを指定する文字列です。「P」は \fBSCF_PG_FLAG_NONPERSISTENT\fR を表します (\fBscf_service_add_pg\fR(3SCF) を参照)。プロパティーグループを作成するために必要な特権については、\fBsmf_security\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddpropvalue\fR \fIpg\fR\fI/name\fR [\fItype:\fR] \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された値をプロパティーに追加します。\fItype\fR が指定されている場合で、プロパティーが存在しているときは、そのプロパティーのタイプが \fItype\fR と一致しないと、このサブコマンドは失敗します。\fI\fR値は二重引用符で囲まれる場合があります。二重引用符やバックスラッシュを含んでいる文字列値は、二重引用符で囲む必要があります。また、文字列値に含まれている二重引用符とバックスラッシュは、バックスラッシュでエスケープする必要があります。存在していないプロパティーは作成されますが、その場合は \fItype\fR 指定子が指定されている必要があります。使用可能なプロパティータイプのリストについては、\fBscf_value_create\fR(3SCF) を参照してください。プロパティーを変更するために必要な特権については、\fB smf_security\fR(5) を参照してください。新しい値は、プロパティーに関連付けられたプロパティー値のリストの末尾に追加されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelcust\fR [\fB-M\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在選択されている管理カスタマイズを削除します。引数が指定されている場合、それは glob パターンと見なされ、引数に一致する名前を持つプロパティーグループおよびプロパティーだけが削除されます。
+.sp
+\fB-M\fR が指定されている場合は、「マスクされた」エンティティーのみが削除されます。
+.sp
+\fBdelcust\fR で削除されるカスタマイズを確認するには、\fBlistcust\fR に同じオプションを付けて使用します。\fBdelcust\fR を使うとすべての管理カスタマイズが削除される可能性があるため、常に \fBlistcust\fR を最初に実行して、意図どおりのものを削除しようとしていることを確認します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelpg\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容のプロパティーグループ \fIname\fR を削除します。プロパティーグループを削除するために必要な特権については、\fBsmf_security\fR(5) を参照してください。
+.sp
+プロパティーグループがマニフェストまたはプロファイル内にある場合、そのプロパティーグループは非表示になります。\fBsmf\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelprop\fR \fIpg\fR[\fI/name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容のプロパティーグループまたはプロパティーのうち、name で指定されているものを削除します。プロパティーを削除するために必要な特権については、\fBsmf_security\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelpropvalue\fR \fIpg/name\fR \fIglobpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロパティー値のうち、\fIglob\fRパターンに一致するものをすべて削除します。一致する値がなくても、成功します。プロパティーを変更するために必要な特権については、\fB smf_security\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdescribe\fR [\fB-v\fR] [\fB-t\fR] [\fIpropertygroup\fR/\fIproperty\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の設定、使用可能な設定のいずれかについて説明します。
+.sp
+\fBdescribe\fR を引数なしで呼び出した場合、現在選択されているエンティティーおよび現在設定されているすべてのプロパティーグループやプロパティーの基本的な説明 (使用可能な場合) が表示されます。プロパティーグループや特定のプロパティーのクエリーを行うには、プロパティーグループ名か、プロパティーグループ名とプロパティー名をスラッシュ (\fB/\fR) で区切ったものを、引数として指定します。
+.sp
+\fB-v\fR オプションを指定すると、現在の設定、制約、使用可能なその他の設定オプションの説明など、使用可能なすべての情報が提供されます。
+.sp
+\fB-t\fR オプションを指定した場合は、選択内容のテンプレートデータのみが表示され (\fBsmf_template\fR(5) を参照)、プロパティーグループやプロパティーの現在の設定は表示されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeditprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容のプロパティーグループおよびプロパティーを再生成するためのコマンドのコメントが一時ファイルに格納され、それを編集するために \fBEDITOR\fR 環境変数で指定されているプログラムが呼び出されます。完了すると、一時ファイル内のコマンドが実行されます。デフォルトのエディタは \fBvi\fR(1) です。プロパティーを作成、変更、または削除するために必要な特権については、\fBsmf_security \fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistpg\fR [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容のプロパティーグループの名前、タイプ、およびフラグを表示します。引数が指定されている場合、それは glob パターンと見なされ、引数に一致する名前を持つプロパティーグループだけが一覧表示されます。
+.sp
+対話モードでは、プロパティーグループの基本的な説明も提供されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistprop\fR [\fB-l\fR \fIlayer\fR...] [\fB-f\fR | \fB-o\fR \fIformat\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容のプロパティーグループとプロパティーを一覧表示します。プロパティーグループの場合は、名前、タイプ、およびフラグが一覧表示されます。プロパティーの場合は、名前 (プロパティーグループ名とスラッシュ (/) が前に付加される)、タイプ、および値が一覧表示されます。使用可能なプロパティータイプのリストについては、\fBscf_value_create\fR(3SCF) を参照してください。引数が指定されている場合、それは glob パターンと見なされ、引数に一致する名前を持つプロパティーグループおよびプロパティーだけが一覧表示されます。
+.sp
+\fB-l\fR オプションを指定すると、値の定義元のレイヤーが出力されます。\fB-l\fR オプションにはレイヤーが必要であり、引数として \fBmanifest\fR、\fBsystem-profile\fR、\fBsite-profile\fR、\fBadmin\fR、\fBcurrent\fR、\fBall\fR を指定します。\fBcurrent\fR は、\fB-l\fR を付けない \fBlistprop\fR と同じプロパティー値を、値が定義されたレイヤーとともに出力します。
+.sp
+\fB-f\fR と \fB-o\fR オプションを同時に指定することはできません。\fB-f\fR は、プロパティーが定義されたファイルが存在する場合にそのファイルを出力します。\fB-o\fR ではフィールドの選択が可能です。 選択可能なフィールドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpropname\fR\fR
+.ad
+.RS 15n
+.rt  
+プロパティー名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpgname\fR\fR
+.ad
+.RS 15n
+.rt  
+プロパティーグループ名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstname\fR\fR
+.ad
+.RS 15n
+.rt  
+インスタンス名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBservicename\fR\fR
+.ad
+.RS 15n
+.rt  
+サービス名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlayer\fR\fR
+.ad
+.RS 15n
+.rt  
+レイヤー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproptype\fR\fR
+.ad
+.RS 15n
+.rt  
+プロパティータイプ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalue\fR\fR
+.ad
+.RS 15n
+.rt  
+プロパティー値
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.RS 15n
+.rt  
+ソースファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmasked\fR\fR
+.ad
+.RS 15n
+.rt  
+プロパティーグループまたはプロパティーが現在非表示であるかどうか
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtime\fR\fR
+.ad
+.RS 15n
+.rt  
+このプロパティーが最後に変更された時刻 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistcust\fR [\fB-L\fR] [\fB-M\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+サイトプロファイルおよび管理レイヤーのカスタマイズと、現在選択されている非表示のエンティティーを出力します。引数が指定されている場合、それは glob パターンと見なされ、引数に一致する名前を持つプロパティーグループおよびプロパティーだけが一覧表示されます。現在の選択がない場合は、すべてのサーバーのすべてのカスタマイズが一覧表示されます。
+.sp
+\fB-M\fR が指定されている場合は、非表示のエンティティーのみが出力されます。
+.sp
+\fB-L\fR が指定されている場合は、すべてのローカルカスタマイズ (管理レイヤーとサイトプロファイルレイヤーの両方にあるものを含む) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetenv\fR [\fB-i\fR | \fB-s\fR] [\fB-m\fR \fImethod_name\fR] \fIenvvar value\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fImethod_name\fR プロパティーグループのタイプが「method」の場合は、そのプロパティーグループの「environment」プロパティーを変更することにより、サービスまたはインスタンスのメソッドの環境変数を設定します。\fImethod_name\fR が指定されていない場合で、\fB-i\fR オプションが使用されているときは、現在インスタンスが選択されていれば「method_context」プロパティーグループが使用されます。\fB-s\fR オプションが使用されている場合で、現在サービスが選択されているときは、その「method_context」プロパティーグループが使用されます。\fB-s\fR オプションが使用されている場合で、現在インスタンスが選択されているときは、その親の「method_context」プロパティーグループが使用されます。\fB-i\fR オプションと \fB-s\fR オプションのどちらも使用されていない場合は、現在選択されているエンティティー内で「start」プロパティーグループが検索されます。また、現在インスタンスが選択されている場合は、その親も検索されます。「inetd_start」プロパティーグループが見つからない場合は、同様の方法で検索されます。
+.sp
+プロパティーが見つかると、「\fIenvvar\fR=」で始まる値がすべて削除され、値「\fIenvvar\fR=\fIvalue\fR」が追加されます。プロパティーを変更するために必要な特権については、\fB smf_security\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetprop\fR \fIpg/name\fR = [\fItype:\fR] \fIvalue\fR\fR
+.ad
+.br
+.na
+\fBsetprop \fIpg/name\fR = [\fItype:\fR] ([\fIvalues ...\fR])\fR
+.ad
+.sp .6
+.RS 4n
+現在の選択内容の \fIpg\fR プロパティーグループの \fIname\fR プロパティーを、タイプ \fItype\fR の指定された値に設定します。使用可能なプロパティータイプのリストについては、\fBscf_value_create\fR(3SCF) を参照してください。プロパティーがすでに存在している場合は、そのプロパティーに既存の \fItype\fR が \fItype\fR と一致しないと、このサブコマンドは失敗します。値は二重引用符で囲まれる場合があります。二重引用符やバックスラッシュを含んでいる文字列値は、二重引用符で囲む必要があります。また、文字列値に含まれている二重引用符とバックスラッシュは、バックスラッシュでエスケープする必要があります。name で指定されたプロパティーが存在しない場合は、type が指定されていればプロパティーが作成されます。プロパティーを作成または変更するために必要な特権については、\fBsmf_security\fR(5) を参照してください。複数の値は、指定された順番に格納されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunsetenv\fR [\fB-i\fR | \fB-s\fR] [\fB-m\fR \fImethod_name\fR] \fIenvvar value\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fImethod_name\fR プロパティーグループのタイプが「method」の場合は、そのプロパティーグループの「environment」プロパティーを変更することにより、サービスまたはインスタンスのメソッドの環境変数を削除します。\fImethod_name\fR が指定されていない場合で、\fB-i\fR オプションが使用されているときは、現在インスタンスが選択されていれば「method_context」プロパティーグループが使用されます。\fB-s\fR オプションが使用されている場合で、現在サービスが選択されているときは、その「method_context」プロパティーグループが使用されます。\fB-s\fR オプションが使用されている場合で、現在インスタンスが選択されているときは、その親の「method_context」プロパティーグループが使用されます。\fB-i\fR オプションと \fB-s\fR オプションのどちらも使用されていない場合は、現在選択されているエンティティー内で「start」プロパティーグループが検索されます。また、現在インスタンスが選択されている場合は、その親も検索されます。「inetd_start」プロパティーグループが見つからない場合は、同様の方法で検索されます。
+.sp
+プロパティーが見つかると、「\fIenvvar\fR=」で始まる値がすべて削除されます。プロパティーを変更するために必要な特権については、\fB smf_security\fR(5) を参照してください。
+.RE
+
+.SS "通知パラメータのサブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetnotify\fR {[\fB-g\fR] \fItset\fR | \fIclass\fR} \fInotification_parameters\fR\fR
+.ad
+.sp .6
+.RS 4n
+ソフトウェアイベントや障害管理問題ライフサイクルイベントの通知パラメータを、SMF リポジトリに設定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+SMF 状態遷移に対するシステム全体の通知パラメータを設定するために使用されます。\fBsmf\fR(5) を参照してください。これらの通知パラメータは、\fBsvccfg\fR の現在の選択内容にかかわらず \fBsvc:/system/svc/global:default\fR 内に設定されます。このサブコマンドは、変更対象のインスタンスをすべて更新します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+FMA イベントのクラスまたは別名のコンマ区切りリスト。\fBsmf\fR(5) の「通知パラメータ」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItset\fR\fR
+.ad
+.sp .6
+.RS 4n
+SMF 状態遷移のコンマ区切りリスト。\fBsmf\fR(5) の「通知パラメータ」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInotification_parameters\fR\fR
+.ad
+.sp .6
+.RS 4n
+実装されている各通知メカニズムの URI 形式。SMTP の場合は次を使用します。
+.sp
+.in +2
+.nf
+mailto:\fIaddr\fR[?\fIheader1\fR=\fIvalue1\fR[&\fIheader2\fR=\fIvalue2\fR]]
+.fi
+.in -2
+.sp
+
+または
+.sp
+.in +2
+.nf
+mailto:{[active]|inactive}
+.fi
+.in -2
+.sp
+
+SNMP トラップの場合は次を使用します。
+.sp
+.in +2
+.nf
+snmp:{[active]|inactive}
+.fi
+.in -2
+.sp
+
+\fBsmtp-notify\fR(1M) で定義されているパラメータ \fBmsg_template\fR は、\fBmailto\fR URI のヘッダー値として設定できます。例: 
+.sp
+.in +2
+.nf
+mailto:root@localhost?msg_template=\fI<path to template file>\fR
+.fi
+.in -2
+.sp
+
+SNMP トラップは、\fB/etc/net-snmp/snmp/snmpd.conf\fR 内の \fBtrapsink\fR 指令で定義されたホスト、または SNMP トラップ通知デーモンで指定されたホストに送られます。\fBsmtp-notify \fR(1M) を参照してください。
+.sp
+通知パラメータは、指定された class または tset に固有のものであり、事前に存在していた通知パラメータは上書きされます。active/inactive 形式は以前の通知パラメータを上書きしません。この形式では、指定された class または tset に対する通知メカニズムのオン/オフが切り替わるだけです。通知パラメータを設定すると、それらのパラメータが暗黙的にアクティブに設定されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistnotify\fR [\fB-g\fR] [\fItset\fR] | \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された class または tset の既存の通知パラメータを表示します。\fB-g\fR オプションを指定すると、\fBsvc:/system/svc/global:default\fR の通知パラメータが表示されます。tset を省略すると、\fBall\fR が指定されたものとみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelnotify\fR [\fB-g\fR] \fItset\fR | \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された class または tset の既存の通知パラメータを削除します。\fB-g\fR オプションを指定すると、\fBsvc:/system/svc/global:default\fR の通知パラメータが削除されます。
+.RE
+
+.SS "スナップショットのナビゲーションおよび選択のサブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistsnap\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在選択されているインスタンスで使用可能なスナップショットを表示します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fIsnapshot\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在選択されているインスタンスとそのサービスの管理カスタマイズを、指定されたスナップショットに記録されているプロパティーに戻します。引数が何も指定されていない場合は、現在選択されているスナップショットを使用し、成功時にそれを選択解除します。変更したプロパティー値は、\fBsvcadm\fR(1M) の \fBrefresh\fR サブコマンドを使用してアクティブにすることができます。プロパティーを変更するために必要な特権については、\fBsmf_security \fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselectsnap\fR [\fIname\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在のスナップショットを、\fIname\fR で指定されたスナップショットに変更します。\fIname\fR が指定されていない場合は、現在選択されているスナップショットを選択解除します。スナップショットは読み取り専用です。
+.RE
+
+.SS "インスタンスのサブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成に含まれる値を実行中のスナップショットに確定し、現在選択されているインスタンスがそれらの値を使用できるようにします。repository サブコマンドを使用せずにリポジトリが選択された場合、更新された構成を読み直すように、インスタンスのリスタータに指示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRサービス記述のインポート
+.sp
+.LP
+次の例では、コマンド行で指定した XML マニフェストに含まれる \fBseismic\fR サービスのサービス説明をインポートします。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg import /var/svc/manifest/site/seismic.xml\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+マニフェストは \fBservice_bundle\fR(4) に指定されている形式に従う必要があります。
+
+.LP
+\fB例 2 \fRサービス説明のエクスポート
+.sp
+.LP
+サービス説明をローカルシステムにエクスポートするには、次のように指定します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg export dumpadm >/tmp/dump.xml\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRサービスインスタンスの削除
+.sp
+.LP
+サービスインスタンスを削除するには、次のように指定します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg delete network/inetd-upgrade:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR代替リポジトリに含まれるプロパティーの検査
+.sp
+.LP
+代替リポジトリをロードしたあとでサービスのプロパティーの状態を調べるには、次に示す一連のコマンドを使用します。このようなコマンドを使用して、たとえば、特定のリポジトリのバックアップ内でサービスが有効になっていたかどうかを調べることができます。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg\fR
+svc:> \fBrepository /etc/svc/repository-boot\fR
+svc:> \fBselect telnet:default\fR
+svc:/network/telnet:default> \fBlistprop general/enabled\fR
+general/enabled  boolean  false
+svc:/network/telnet:default> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRデバッグの有効化
+.sp
+.LP
+start メソッドの \fBLD_PRELOAD\fR を変更し、デバッグ機能が有効になっている \fBlibumem\fR(3LIB) を使用できるようにするには、次のように指定します。
+
+.sp
+.in +2
+.nf
+$ \fBsvccfg -s system/service setenv LD_PRELOAD libumem.so\fR
+$ \fBsvccfg -s system/service setenv UMEM_DEBUG default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR\fBdescribe\fR サブコマンドの使用
+.sp
+.LP
+次のコマンドは、\fBdescribe\fR サブコマンドの使用法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s console-login describe ttymon\fR
+ttymon                      application
+ttymon/device               astring  /dev/console
+   \fBterminal device to be used for the console login prompt\fR
+ttymon/label                astring  console
+   \fBappropriate entry from /etc/ttydefs\fR
+   ...
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR通知設定の構成
+.sp
+.LP
+次のコマンドは、SMF サービス状態遷移イベントの通知パラメータを構成します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify -g from-online,to-maintenance \e\fR
+\fBmailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRSNMP 通知の有効化
+.sp
+.LP
+次のコマンドは、障害管理イベントの SNMP 通知を有効にします。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify problem-diagnosed,problem-updated \e\fR
+\fBmailto:admin@somehost.com snmp:\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR通知設定の一覧表示
+.sp
+.LP
+次のコマンドは、障害管理イベントの通知設定を一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg listnotify problem-diagnosed,problem-updated\fR
+Event: problem-diagnosed
+  Notification Type: smtp
+    active: true
+   to: admin@somehost.com
+  Notification Type: snmp
+    active: true
+
+Event: problem-updated
+  Notification Type: smtp
+    active: true
+   to: admin@somehost.com
+  Notification Type: snmp
+    active: true
+.fi
+.in -2
+.sp
+
+.SH 環境変数
+.sp
+.ne 2
+.mk
+.na
+\fBEDITOR\fR
+.ad
+.sp .6
+.RS 4n
+\fBeditprop\fR サブコマンドが使用されたときに実行するコマンド。デフォルトのエディタは \fBvi\fR(1) です。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つまたは複数のサブコマンドが失敗しました。エラーメッセージが標準エラーストリームに書き込まれます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効なコマンド行オプションが指定されました。 
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+対話型出力は「不確実」です。呼び出しおよび非対話型出力は「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBsvcprop\fR(1), \fBsvcs\fR(1), \fBsmtp-notify\fR(1M), \fBsvcadm\fR(1M), \fBsvc.configd\fR(1M), \fBlibscf\fR(3LIB), \fBlibumem\fR(3LIB), \fBscf_service_add_pg\fR(3SCF), \fBscf_value_create\fR(3SCF), \fBcontract\fR(4), \fBservice_bundle\fR(4), \fBattributes \fR(5), \fBfnmatch\fR(5), \fBsmf\fR(5), \fBsmf_method\fR(5), \fBsmf_security\fR(5), \fBsmf_template\fR(5)

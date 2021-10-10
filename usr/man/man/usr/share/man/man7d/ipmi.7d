@@ -1,0 +1,481 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ipmi 7D "24 Feb 2011" "SunOS 5.11" "Devices"
+.SH NAME
+ipmi \- service processor driver interface using IPMI
+.SH SYNOPSIS
+.sp
+.LP
+\fB#include <sys/ipmi.h>\fR
+.sp
+.LP
+\fBopen("/dev/ipmi0", mode);\fR
+.SH DESCRIPTION
+.sp
+.LP
+The \fBipmi\fR driver provides access to a system's service processor using an IPMI (Intelligent Platform Management Interface) standard interface. This driver is OpenIPMI compliant and supports the service processor's watchdog timer.
+.sp
+.LP
+\fBipmi\fR supplies a standard way to access and monitor system sensors, the FRU database, and the overall environmental state and health of the system. 
+.sp
+.LP
+The primary method for communication between user land and the driver is through the use of \fBioctl\fR(2). 
+.sp
+.LP
+This driver follows the pseudo OpenIPMI standard. See http://openipmi.sourceforge.net for details of the OpenIPMI and its uses.
+.sp
+.LP
+\fBipmi\fR supplies the new functionality of the OpenIPMI compatible driver module. If you only need the functionality of the legacy \fBbmc\fR driver, use the \fBbmc\fR module. 
+.SS "Properties"
+.sp
+.LP
+The impi module      supplies an OpenIPMI compatible driver module. If you need this      new functionality then this is the driver module that you should use. 
+.sp
+.LP
+If you only need the functionality of the legacy bmc driver, use the bmc module.
+.sp
+.LP
+If you want the extended features of the new OpenIPMI driver, but still require legacy \fBbmc\fR driver functionality you have the choice of using the new \fBsbmc/ipmi\fR driver module pair. This new pair offers an OpenIPMI compatible driver (\fBipmi\fR) and a legacy \fBbmc\fR compatible driver, \fBsbmc\fR, both of which can be used at the same time. 
+.sp
+.in +2
+.nf
+Driver Module  Functionality         Enable Property
+
+bmc            Legacy bmc driver     bmc.conf/bmc-enable
+ipmi           OpenIPMI driver       ipmi.conf/ipmi-enable
+sbmc           bmc compatibility     sbmc.conf/sbmc-enable
+                for OpenIPMI
+.fi
+.in -2
+
+.sp
+.LP
+The above properties can be set to either \fB1\fR (enable) or \fB0\fR (disable). If you need OpenIPMI with legacy support then \fBipmi-anable=1\fR should be in the file \fBipmi.conf\fR. Also \fBsbmc-enable=1\fR should be in the file \fBsbmc.conf\fR. and \fBbmc-enable=0\fR must be in the file \fBbmc.conf\fR.
+.sp
+.LP
+The driver properties are set by editing the related configuration file. For the \fBipmi\fR driver the file is \fBipmi.conf\fR. 
+.sp
+.LP
+The following properties are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmi-enable\fR\fR
+.ad
+.RS 17n
+.rt  
+Enables or disables the \fBipmi\fR driver. When the driver is disabled it does not attach and is not active.
+.sp
+When set to \fB1\fR the \fBipmi\fR driver is enabled. The default is disabled. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmi-polltime\fR\fR
+.ad
+.RS 17n
+.rt  
+The time in milliseconds between polls to check for asynchronous events.
+.sp
+If this value is set to \fB0\fR then asynchronous event notification is disabled. The default value is \fB1\fR second. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmi-wdtime\fR\fR
+.ad
+.RS 17n
+.rt  
+The initial value for the watch-dog time out period in seconds. The watch-dog counts down from this value until it reaches \fB0\fR, at which time the system resets. 
+.sp
+The default for is \fB90\fR seconds. If this value is set to \fB0\fR the watch-dog feature is disabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmi-wdupdate\fR\fR
+.ad
+.RS 17n
+.rt  
+The driver watch-dog update period in seconds. The driver watch-dog update period is the number of seconds between the time that the driver resets the watch-dog timer back to its initial value. 
+.sp
+If this value is set to \fB0\fR the watch-dog feature is disabled. The default for this value is \fB30\fR seconds.
+.RE
+
+.SH IOCTLS
+.sp
+.LP
+The following ioctls are supported: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_GET_MY_ADDRESS_CMD:\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (unsigned int *)\fR. Gets the slave address for source messages.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_GET_TIMING_PARMS_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_timing_parms *)\fR. Gets the retry and error timeout metrics for an open session. The time value is in milliseconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_RECEIVE_MSG\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_recv *)\fR. \fBioctl\fR(2) receives a message. If the received message is too large to fit in the buffer an error is returned.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_RECEIVE_MSG_TRUNC\fR\fR
+.ad
+.sp .6
+.RS 4n
+Like \fBIPMICTL_RECEIVE_MSG\fR with the exception that if the message does not fit in the buffer it is truncated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_REGISTER_FOR_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_cmdspec *)\fR. Registers to receive a specific command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_SEND_COMMAND\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_req *)\fR. \fBioctl\fR(2) is used to send a request to the interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_SEND_COMMAND_SETTIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_req_settime *)\fR. Like \fBIPMICTL_SEND_COMMAND\fR but also sets the retries and error timeout value passed in for this request only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_SET_GETS_EVENTS_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (int)\fR. This is passed a boolean which when set to \fBnone\fR. \fBzero\fR causes the interface to deliver asynchronous events to this open session.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_SET_MY_ADDRESS_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (unsigned int *)\fR. Sets the slave address for source messages.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_SET_MY_LUN_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (unsigned int *)\fR. Sets the slave address for source messages.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_SET_TIMING_PARMS_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_timing_parms *)\fR. Sets the retry and error timeout metrics for an open session. The time value is in milliseconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMICTL_UNREGISTER_FOR_CMD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Passed an argument of \fBtype (struct ipmi_cmdspec *)\fR. Unregisters to receive a specific command.
+.RE
+
+.SH ERRORS
+.sp
+.LP
+An \fBopen\fR(2) fails if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEAGAIN\fR\fR
+.ad
+.RS 10n
+.rt  
+There are too many open instances. Try again later.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEIO\fR\fR
+.ad
+.RS 10n
+.rt  
+There is a hardware initialization problem.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENXIO\fR\fR
+.ad
+.RS 10n
+.rt  
+There is a problem and the driver is not available.
+.RE
+
+.sp
+.LP
+An \fBioctl\fR(2) fails if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEAGAIN\fR\fR
+.ad
+.RS 12n
+.rt  
+None available. Try again later.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCESS\fR\fR
+.ad
+.RS 12n
+.rt  
+The operation violates permissions.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEFAULT\fR\fR
+.ad
+.RS 12n
+.rt  
+An address is invalid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOIOCTL\fR\fR
+.ad
+.RS 12n
+.rt  
+Invalid ioctl.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/bmc\fR\fR
+.ad
+.RS 28n
+.rt  
+Legacy \fBbmc\fR driver file node
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/ipmi0\fR\fR
+.ad
+.RS 28n
+.rt  
+OpenIPMI compatible driver file node
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/bmc.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBbmc\fR configuration file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/ipmi.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBipmi\fR configuration file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sbmc.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBbmc\fR compatibility module for OpenIPMI configuration file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/bmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit x86 kernel \fBbmc\fR driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/ipmi\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit x86 kernel OpenIPMI driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/sbmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit x86 kernel \fBbmc\fR compatible driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/bmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit SPARC kernel \fBbmc\fR driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/ipmi\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit SPARC kernel OpenIPMI driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/sbmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit SPARC kernel \fBbmc\fR compatible driver module
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureSPARC, x86
+_
+Availability\fBdriver/management/bmc\fR
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBclose\fR(2), \fBioctl\fR(2), \fBopen\fR(2), \fBpoll\fR(2),\fBattributes\fR(5), \fBbmc\fR(7D)
+.sp
+.LP
+http://openipmi.sourceforge.net

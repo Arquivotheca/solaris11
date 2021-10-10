@@ -1,0 +1,485 @@
+'\" te
+.\" Copyright (c) 2008 Broadcom Corporation. All Rights Reserved. 
+.\" Portions Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH bnx 7D "16 Aug 2011" " SunOS 5.11" "Devices"
+.SH NAME
+bnx \- Broadcom NetXtreme II Gigabit Ethernet Device Driver
+.SH SYNOPSIS
+.LP
+.nf
+/dev/bnx
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBbnx\fR Gigabit Ethernet driver is a multi-threaded, loadable, clonable, GLD v3-based STREAMS driver supporting the Data Link Provider Interface, \fBdlpi\fR(7P), over Broadcom NetXtreme II Ethernet controllers, including the BCM5706, BCM5708 and BCM5709 controllers. Driver functions include controller initialization, frame transmit and receive, promiscuous and multicast support and error recovery and reporting.
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The cloning, character-special device \fB/dev/bnx\fR is used to access all Broadcom NetXtreme II Ethernet devices installed within the system.
+.sp
+.LP
+The \fBbnx\fR driver is dependent on \fB/kernel/misc/mac\fR, a loadable kernel module that provides the \fBbnx\fR driver with the DLPI and STREAMS functionality required of a \fBLAN\fR driver. 
+.sp
+.LP
+The values returned by the driver in the \fBDL_INFO_ACK\fR primitive in response to the \fBDL_INFO_REQ\fR are:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum \fBSDU\fR (with jumbo frame) is 9000.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum \fBSDU\fR is \fB0\fR. The driver pads to 60-byte minimum packet size.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDSLAP\fR address length is \fB8\fR bytes.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMAC\fR type is \fBDL_ETHER.\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSAP\fR length value is -2, meaning the physical address component is followed immediately by a 2-byte sap component within the DLSAP address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Version is \fBDL_VERSION_2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Broadcast address value is Ethernet/IEEE broadcast address (\fBFF:FF:FF:FF:FF:FF\fR).
+.RE
+.SH CONFIGURATION
+.sp
+.LP
+By default, the \fBbnx\fR driver performs auto-negotiation to select the link speed and mode. Link speed and mode can be any of the following: 
+.sp
+.LP
+2500 Mbps, full-duplex (fiber physical interface controller only)
+.sp
+.LP
+1000 Mbps, full-duplex
+.sp
+.LP
+100 Mbps, full-duplex
+.sp
+.LP
+100 Mbps, half-duplex
+.sp
+.LP
+10 Mbps, full-duplex
+.sp
+.LP
+10 Mbps, half-duplex
+.sp
+.LP
+To customize the driver parameters, edit the \fB/kernel/drv/bnx.conf\fR file. The driver properties are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadv_*\fR\fR
+.ad
+.sp .6
+.RS 4n
+The adv parameters are advertised to the link partner and include:
+.sp
+.in +2
+.nf
+ 
+adv_autoneg_cap
+adv_pause_cap
+adv_2500fdx_cap
+adv_1000fdx_cap
+adv_1000hdx_cap
+adv_100fdx_cap
+adv_100hdx_cap
+adv_10fdx_cap
+adv_10hdx_cap
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransfer_speed\fR\fR
+.ad
+.sp .6
+.RS 4n
+The driver attempts to auto-negotiate but is restricted to the specified speed. Duplex mode is determined through auto-negotiation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBspeed\fR\fR
+.ad
+.br
+.na
+\fB\fBfull-duplex\fR\fR
+.ad
+.sp .6
+.RS 4n
+Forces speed and duplex mode to a fixed value. This value take precedence over others.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBspeed\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures link (or instance) to a designated speed. By default, \fBAutoNegotiate\fR (\fB0\fR) is set. The setup is based on the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 20n
+.rt  
+AutoNegotiate.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB10\fR\fR
+.ad
+.RS 20n
+.rt  
+10 Mbps speed mode (Copper only).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB100\fR\fR
+.ad
+.RS 20n
+.rt  
+100 Mbps speed mode (Copper only).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB1000\fR
+.ad
+.RS 20n
+.rt  
+1000 Mbps speed mode (Copper and fiber).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2500\fR\fR
+.ad
+.RS 20n
+.rt  
+2500 Mbps speed mode (Fiber only).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFlow\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures flow control parameters of a link. The setup is based on the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBTx\fR and \fBRx\fR flow control are disabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBTx\fR flow control is enabled. Pause frames are sent if resource is low, but device does not process \fBRx\fR Pause Frame.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 20n
+.rt  
+Only \fBRx\fR flow control is enabled. If device receives Pause Frame, it stops sending.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBRx\fR and \fBTX\fR flow control are enabled. Pause frames are sent if resource is low. If device receives Pause Frame, it stops sending.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 20n
+.rt  
+Advertise \fBRx\fR and \fBTX\fR flow control are enabled and negotiating with link partner. If link AutoNegotiate is not enabled, \fBTx\fR and \fBRx\fR Flow Control are disabled.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBJumbo\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures Jumbo Frame link feature. Valid range for this parameter is \fB0\fR to \fB3800\fR. If value configured is less then \fB1500\fR, Jumbo Frame feature is disabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRxBufs\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of \fBRx\fR packet descriptor. The valid value is \fB32\fR to \fB1024\fR. More system memory resource is used for larger number of \fBRx\fR Packet Descriptors. Default value is \fB500\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRxTicks\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of \fBRx\fR Host Coalescing Ticks in microseconds. This determines the maximum time interval in which the device generates an interrupt if one or more frames are received. The default value is \fB25\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCoalesce\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of \fBTx/Rx\fR Maximum Coalesced Frames parameters. This determines the maximum number of buffer descriptors the device processes before it generates an interrupt. The default value is \fB16\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTxTicks\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of \fBTx\fR Host Coalescing Ticks in microseconds. This determines the maximum time interval in which the device generates an interrupt if one or more frames are sent. The default value is 45.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTxMaxCoalescedFrames\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of \fBTx\fR Maximum Coalesced Frames parameters. This determines the maximum number of \fBTx\fR buffer descriptors the device processes before it generates an interrupt. The default value is \fB80\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRxTicksInt\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of \fBRx\fR Host Coalescing Ticks in microseconds during interrupt. This determines the maximum time interval in which the device generates interrupt if one or more frames are received during interrupt handling. The default value is \fB15\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTxTicksInt\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures number of Tx Host Coalescing Ticks in microseconds during interrupt. This determines the maximum time interval in which the device generates an interrupt if one or more frames are received during interrupt handling. The default value is 15.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBStatsTicks\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures how often adapter statistics are DMA'd to host memory in microsecond. Default is \fB1000000\fR. 
+.RE
+
+.SS "Configuring with \fBndd\fR(1M)"
+.sp
+.LP
+You can also perform configuration tasks using \fBndd\fR(1M). For example, to prevent the device \fBbnx1\fR from advertising gigabit capabilities, do the following as super-user:
+.sp
+.in +2
+.nf
+# ndd -set /dev/bnx1 adv_1000fdx_cap 0
+.fi
+.in -2
+
+.sp
+.LP
+All capabilities default to enabled and that changing any parameter causes the link to go down while the link partners renegotiate the link speed/duplex. To view current parameters, use \fBndd-get\fR. In addition, the driver exports the current state, speed, duplex setting and working mode of the link by way of the \fBndd\fR parameters, which are read only and cannot be changed. For example, to check the state of device \fBbnx0\fR:
+.sp
+.in +2
+.nf
+# ndd -get /dev/bnx0 link_status
+1
+# ndd -get /dev/bnx0 link_speed
+100
+# ndd -get /dev/bnx0 link_duplex
+2
+.fi
+.in -2
+
+.sp
+.LP
+The output above indicates that the link is up and running at 100Mbps full-duplex.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/bnx\fR\fR
+.ad
+.RS 25n
+.rt  
+Special character device
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/bnx\fR\fR
+.ad
+.RS 25n
+.rt  
+32-bit ELF kernel module (x86)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/bnx\fR\fR
+.ad
+.RS 25n
+.rt  
+64-bit ELF Kernel module (x86)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/bnx.conf\fR\fR
+.ad
+.RS 25n
+.rt  
+Driver configuration file
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) cw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+Availabilitydriver/network/ethernet/bnx
+Architecturex86
+Interface StabilitySee below.
+.TE
+
+.sp
+.LP
+The \fBbnx\fR driver is Committed. The \fB/kernel/drv/bnx.conf\fR configuration file is Uncommitted. 
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBndd\fR(1M), \fBattributes\fR(5), \fBstreamio\fR(7I), \fBdlpi\fR(7P)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR
+.sp
+.LP
+\fINetwork Interfaces Programmer's Guide\fR

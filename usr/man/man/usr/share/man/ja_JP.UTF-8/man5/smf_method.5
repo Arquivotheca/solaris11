@@ -1,0 +1,520 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved.
+.TH smf_method 5 "2009 年 5 月 20 日" "SunOS 5.11" "標準、環境、マクロ"
+.SH 名前
+smf_method \- サービス管理フレームワークのメソッド規約
+.SH 機能説明
+.sp
+.LP
+サービス管理フレームワーク \fBsmf\fR(5) で \fBsvc.startd\fR(1M) によって管理されるサービスのクラスは、単純な \fBfork\fR(2)-\fBexec\fR(2) モデルに適合するアプリケーションから成ります。\fBsvc.startd\fR(1M) マスターデーモンとほかのリスタータは \fBfork\fR(2)-\fBexec\fR(2) モデルをサポートしており、追加の機能を備えている場合もあります。\fBsvc.startd\fR(1M) デーモンとほかのリスタータにとっては、サービスインスタンスのアクティブ化、操作、または検査を行うメソッドがこのマニュアルページで説明されている規約に従っている必要があります。
+.SS "呼び出しの形式"
+.sp
+.LP
+メソッド呼び出しの形式は規約で規定されていません。メソッドの呼び出しは、デーモンまたはサービスを提供するほかの実行可能バイナリの直接呼び出しの場合もあります。実行可能スクリプトなどの間接実行可能ファイルを使用する場合は、規約では次の形式が推奨されています。
+.sp
+.in +2
+.nf
+/path/to/method_executable abbr_method_name
+.fi
+.in -2
+
+.sp
+.LP
+この推奨形式の \fIabbr_method_name\fR は、\fBstart\fR や \fBstop\fR など、サポートされているメソッドです。リスタータでサポートされているメソッドセットについては、そのリスタータの関連ページで説明されています。\fBsvc.startd\fR(1M) デーモンは \fBstart\fR、\fBstop\fR、および \fBrefresh\fR メソッドをサポートしています。
+.sp
+.LP
+リスタータには、このページで説明するメソッドのほかにも各種のメソッドが定義されていることがあります。そのような拡張も含めた規約はリスタータによって定義され、ここで説明する規約とは異なる場合があります。
+.SS "環境変数"
+.sp
+.LP
+リスタータは、メソッド呼び出しのコンテキストを決定する 4 つの環境変数をメソッドに提供します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+メソッド呼び出しの対象であるインスタンスのサービス障害管理リソース識別子 (FMRI)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_METHOD\fR\fR
+.ad
+.sp .6
+.RS 4n
+呼び出されるメソッドの完全な名前。\fBstart\fR や \fBstop\fR など。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_RESTARTER\fR\fR
+.ad
+.sp .6
+.RS 4n
+メソッドを呼び出すリスタータのサービス FMRI。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_ZONENAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+メソッドが実行されているゾーンの名前。これは \fBzonename\fR(1) コマンドでも取得できます。
+.RE
+
+.sp
+.LP
+メソッドで永続的プロセスを呼び出す場合は、その前にこれらの変数を環境から削除するようにしてください。サービスの作成者が Bourne 互換のシェルスクリプトを使用して後述のインクルードファイルにサービスメソッドを合成できるように、簡易シェル関数 \fBsmf_clear_env\fR が用意されています。
+.sp
+.LP
+後述のとおり、メソッドコンテキストによってほかの環境変数が設定されることもあります。
+.SS "メソッドの定義"
+.sp
+.LP
+メソッドは、\fBmethod\fR タイプのプロパティーグループの 3 つのプロパティーで最小限定義されます。 
+.sp
+.LP
+これらのプロパティーは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBexec (\fIastring\fR)\fR
+.ad
+.RS 27n
+.rt  
+メソッドの実行可能ファイルの文字列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtimeout_seconds (\fIcount\fR)\fR
+.ad
+.RS 27n
+.rt  
+メソッドがタイムアウトするまでの秒数。詳細については、「タイムアウト」の節を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtype (\fIastring\fR)\fR
+.ad
+.RS 27n
+.rt  
+メソッドのタイプ。現在は常に \fBmethod\fR に設定されます。
+.RE
+
+.sp
+.LP
+メソッドコンテキストを定義して、メソッドの実行環境をより詳細に指定することもできます。詳細については、「メソッドコンテキスト」の節を参照してください。\fB\fR
+.SS "メソッドトークン"
+.sp
+.LP
+リスタータ \fBsvc.startd\fR によってメソッドの \fBexec\fR 文字列に一連のトークンが定義されている場合は、それらが解析され、適切な値で展開されます。ほかのリスタータはメソッドトークンをサポートしていない場合があります。inet サービスの委任リスタータ \fBinetd\fR(1M) は、次のメソッド展開をサポートしていません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%%\fR\fR
+.ad
+.sp .6
+.RS 4n
+%
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%r\fR\fR
+.ad
+.sp .6
+.RS 4n
+リスタータの名前。\fBsvc.startd\fR など。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%m\fR\fR
+.ad
+.sp .6
+.RS 4n
+呼び出されるメソッドの完全な名前。\fBstart\fR や \fBstop\fR など。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%s\fR\fR
+.ad
+.sp .6
+.RS 4n
+サービスの名前
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%i\fR\fR
+.ad
+.sp .6
+.RS 4n
+インスタンスの名前
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB%f\fR\fR
+.ad
+.sp .6
+.RS 4n
+インスタンスの FMRI
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%{prop[:,]}\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの値。\fBprop\fR は、プロパティーの FMRI、プロパティーグループ名とプロパティー名を \fB/\fR で区切ったもの、または \fBapplication\fR プロパティーグループ内のプロパティー名です。これらの値のあとに \fB,\fR (コンマ) または \fB:\fR (コロン) が続く場合があります。ある場合、その区切り文字が複数の値を区切るために使用されます。ない場合は、スペースが使用されます。次に示すシェルのメタキャラクタが文字列値の中に見つかった場合は、\ (バックスラッシュ) でクォートされます。
+.sp
+.in +2
+.nf
+; & ( ) | ^ < > newline space tab  \  " '
+.fi
+.in -2
+
+展開が正しくないとメソッドの失敗を招きます。
+.RE
+
+.sp
+.LP
+メソッドコマンドの代わりに、2 つの明示的なトークンを使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB:kill [-signal]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたシグナルを主インスタンス契約のすべてのプロセスに送信します。デフォルトのシグナルは \fBSIGTERM\fR です。常に \fBSMF_EXIT_OK\fR を返します。このトークンは、一般的な \fBpkill\fR の呼び出しの代わりに使用するようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB:true\fR\fR
+.ad
+.sp .6
+.RS 4n
+常に \fBSMF_EXIT_OK\fR を返します。このトークンは、リスタータには必要であっても、特定のサービス実装には必要のないメソッドに使用するようにしてください。
+.RE
+
+.SS "終了と終了ステータス"
+.sp
+.LP
+start メソッドは、サービスインスタンスが要求に応答できる状態になるか、あるいは機能するまで、終了を遅らせる必要があります。
+.sp
+.LP
+次の終了ステータスコードが \fB<libscf.h>\fR とシェルサポートファイルに定義されています。
+.sp
+
+.sp
+.TS
+tab();
+lw(1.74i) lw(.9i) lw(2.86i) 
+lw(1.74i) lw(.9i) lw(2.86i) 
+.
+\fBSMF_EXIT_OK\fR\fB0\fRT{
+メソッドは処理を正常に実行して終了しました。
+T}
+\fBSMF_EXIT_ERR_FATAL\fR\fB95\fRT{
+メソッドで致命的な失敗が発生し、管理者の操作なしでは回復不可能です。
+T}
+\fBSMF_EXIT_ERR_CONFIG\fR\fB96\fRT{
+回復不可能な構成エラーです。一般に、この終了ステータスが返されるのは、有効になっているサービスインスタンスに必要な構成ファイルが見つからない場合です。
+T}
+\fBSMF_EXIT_ERR_NOSMF\fR\fB99\fRT{
+メソッドは誤って \fBsmf\fR(5) 機能の外部で呼び出されました。\fBsmf\fR(5) の機能に依存しているサービスは、このステータス値で終了するようにしてください。
+T}
+\fBSMF_EXIT_ERR_PERM\fR\fB100\fRT{
+メソッドには、ファイルのアクセス権、特権、承認、資格情報といった形式の特権が必要ですが、呼び出し時には使用できませんでした。
+T}
+\fBSMF_EXIT_ERR_OTHER\fR\fB0 以外\fRT{
+メソッドから 0 以外の終了ステータスが返された場合、それは不明なエラーとして扱われます。一連の不明なエラーは、リスタータで、あるいはリスタータに代わって、障害として診断できます。
+T}
+.TE
+
+.sp
+.LP
+正確な終了コードを使用することで、担当のリスタータでエラー応答を診断して、再起動が適切と考えられる断続的なエラーと、管理者の操作を必要とする永続的なエラーとに分類できます。
+.SS "タイムアウト"
+.sp
+.LP
+メソッドごとに個別のタイムアウトを秒単位で設定できます。特定のタイムアウトを選択する場合は、メソッドが応答しなくなったことによるメソッド失敗をサイトで検出できる見込みに基づくようにしてください。たとえば、複製されたファイルシステムなどのフェイルオーバーリソースを備えたサイトでは、メソッドのタイムアウトをデフォルト値より長くします。リモートリソースのないサイトでは、タイムアウトを短くすることができます。メソッドのタイムアウトは \fBtimeout_seconds\fR プロパティーで指定されます。
+.sp
+.LP
+メソッドに \fB0 timeout_seconds\fR を指定すると、サービスにはタイムアウトが存在しないことをリスタータに対して宣言することになります。この設定は推奨されませんが、どうしてもそれを必要とするサービスのために用意されています。
+.sp
+.LP
+\fB-1 timeout_seconds\fR も使用できますが、非推奨になった仕様です。
+.SS "シェルプログラムのサポート"
+.sp
+.LP
+前述の終了ステータス値を定義する一連の環境変数が、\fB/lib/svc/share/smf_include.sh\fR ファイル内の簡易シェル関数で提供されます。このファイルは Bourne シェルスクリプトであり、任意の Bourne 互換シェルのソース演算子を介したインクルードに適しています。
+.sp
+.LP
+SMF メソッドとして機能するスクリプトおよび \fB/etc/init.d\fR スクリプトの合成を容易にするために、\fBsmf_present()\fR シェル関数が用意されています。\fBsmf\fR(5) 機能を使用できない場合、\fBsmf_present()\fR は 0 以外の終了ステータスを返します。
+.sp
+.LP
+そのようなスクリプトの構造の例を次に示します。
+.sp
+.in +2
+.nf
+if smf_present; then
+      # Shell code to run application as managed service
+      ....
+
+      smf_clear_env
+else
+      # Shell code to run application as /etc/init.d script
+      ....
+fi
+.fi
+.in -2
+
+.sp
+.LP
+この例では、用意されている両方の簡易関数の使用方法が示されています。
+.SS "メソッドコンテキスト"
+.sp
+.LP
+サービス管理機能は、\fBfork\fR(2)-\fBexec\fR(2) モデルのサービスを実行するコンテキストを、共通のメカニズムセットに提供します。
+.sp
+.LP
+必要なメソッドコンテキストはサービス開発者が指定するようにしてください。セキュリティーが損なわれることをできるだけ防ぐために、すべてのサービスインスタンスは最低限の特権で実行されるべきです。
+.sp
+.LP
+メソッドコンテキストには次のプロパティーを含めることができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuse_profile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBuser\fR、\fBgroup\fR、\fBprivileges\fR、および \fBlimit_privileges\fR プロパティーの代わりにプロファイルを使用するかどうかを指定するブール値。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBenvironment\fR
+.ad
+.sp .6
+.RS 4n
+メソッドの環境に挿入する環境変数を、いくつかの \fBNAME=value\fR 文字列で指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofile\fR\fR
+.ad
+.sp .6
+.RS 4n
+RBAC (役割に基づくアクセス制御) プロファイルの名前。メソッドの実行可能ファイルとの組み合わせで、\fBexec_attr\fR(4) 内のエントリを識別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+数値またはテキスト形式のユーザー ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+数値またはテキスト形式のグループ ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsupp_groups\fR\fR
+.ad
+.sp .6
+.RS 4n
+補助グループメンバーシップを数値またはテキスト形式の ID で指定する、省略可能な文字列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivileges\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBprivileges\fR(5) で定義されている特権セットを指定する、省略可能な文字列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimit_privileges\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBprivileges\fR(5) で定義されている制限特権セットを指定する、省略可能な文字列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBworking_directory\fR\fR
+.ad
+.sp .6
+.RS 4n
+メソッドを起動するホームディレクトリ。トークンとして \fB:home\fR を使用すると、メソッドの起動に使用された \fBuid\fR に該当するユーザーのホームディレクトリを指定できます。このプロパティーが設定されていない場合は、\fB:home\fR が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcorefile_pattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcoreadm\fR(1M) に従ってサービスに使用するコアファイルパターンを指定する、省略可能な文字列。ほとんどのリスタータにはデフォルトが用意されています。このプロパティーの設定は、グローバルなコアパターンをローカルでカスタマイズした設定よりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproject\fR\fR
+.ad
+.sp .6
+.RS 4n
+数値またはテキスト形式のプロジェクト ID。トークンとして \fB:default\fR を使用すると、メソッドの起動に使用された \fBuid\fR に該当するユーザーの、\fBgetdefaultproj\fR(3PROJECT) で識別されるプロジェクトを指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBresource_pool\fR\fR
+.ad
+.sp .6
+.RS 4n
+メソッドを起動するリソースプールの名前。トークンとして \fB:default\fR を使用すると、上記の \fBproject\fR 属性で示された \fBproject\fR(4) エントリに指定されているプールを指定できます。
+.RE
+
+.sp
+.LP
+サービスまたはインスタンスの \fBmethod_context\fR プロパティーグループを指定することにより、サービスインスタンス全体のメソッドコンテキストを設定できます。メソッドプロパティーグループのメソッドコンテキストプロパティーを指定することで、メソッドがインスタンスのメソッドコンテキストを上書きする場合もあります。
+.sp
+.LP
+メソッドコンテキストの設定が正しくないと、メソッドは常に失敗しますが、環境変数が無効な場合は警告が発行されます。
+.sp
+.LP
+上記で定義されるコンテキストに加え、\fBfork\fR(2)-\fBexec\fR(2) モデルのリスタータは、実行可能ファイルをメソッドとして呼び出すときに次の規約も使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB引数配列\fR
+.ad
+.sp .6
+.RS 4n
+\fBargv[]\fR 内の引数は、\fBexec\fR 文字列の \fB/bin/sh -c\fR の結果と一致するように設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBファイル記述子\fR
+.ad
+.sp .6
+.RS 4n
+ファイル記述子 \fB0\fR は \fB/dev/null\fR です。ファイル記述子 \fB1\fR と \fB2\fR は、サービスごとのログファイルに推奨されます。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/svc/share/smf_include.sh\fR\fR
+.ad
+.sp .6
+.RS 4n
+終了ステータス値の定義。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/libscf.h\fR\fR
+.ad
+.sp .6
+.RS 4n
+終了ステータスコードの定義。
+.RE
+
+.SH 関連項目
+.sp
+.LP
+\fBzonename\fR(1), \fBcoreadm\fR(1M), \fBinetd\fR(1M), \fBsvccfg\fR(1M), \fBsvc.startd\fR(1M), \fBexec\fR(2), \fBfork\fR(2), \fBgetdefaultproj\fR(3PROJECT), \fBexec_attr\fR(4), \fBproject\fR(4), \fBservice_bundle\fR(4), \fBattributes\fR(5), \fBprivileges\fR(5), \fBrbac\fR(5), \fBsmf\fR(5), \fBsmf_bootstrap\fR(5), \fBzones\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBsmf\fR(5) の現在のバージョンでは、複数のリポジトリはサポートされていません。
+.sp
+.LP
+サービスが \fBlimit_privileges\fR とは異なる特権で root ユーザーとして起動するように構成されている場合、結果として得られるプロセスは特権に対応したものになります。これは、\fBseteuid(<non-zero UID>)\fR によって特権が basic 以下に下がると考えている開発者には予期しないことです。 

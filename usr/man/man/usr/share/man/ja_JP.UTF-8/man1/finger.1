@@ -1,0 +1,324 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1980 Regents of the University of California. All rights reserved. The Berkeley software License Agreement specifies the terms and conditions for redistribution.
+.\"  Copyright (c) 2000, Sun Microsystems, Inc. All Rights Reserved.
+.TH finger 1 "2000 年 11 月 6 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+finger \- ローカルユーザーとリモートユーザーに関する情報の表示
+.SH 形式
+.LP
+.nf
+\fBfinger\fR [\fB-bfhilmpqsw\fR] [\fIusername\fR]...
+.fi
+
+.LP
+.nf
+\fBfinger\fR [\fB-l\fR] 
+     [\fIusername@hostname\fR 1 [\fI@hostname\fR 2 \fI\&..\fR \fI\&.@hostname\fR n]...]
+.fi
+
+.LP
+.nf
+\fBfinger\fR [\fB-l\fR] [\fI@hostname\fR 1 [\fI@hostname\fR 2 \fI\&..\fR \fI\&.@hostname\fR n]...]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+引数を省略した場合、 \fBfinger\fR は複数行のフォーマットでログインしている全ユーザーに関して以下の情報を表示します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザー名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+正式な氏名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+端末名 (書き込み権が拒否されていると先頭に * が付く)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+アイドル時間
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ログイン時刻
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+リモートでログインしていたらホスト名
+.RE
+.sp
+.LP
+アイドル時間には 3 通りの表記方法があります。 数値 1 つの場合は「分」を表し、2 つの数値が : (コロン) をはさんでいる場合は「時」と「分」を表し、2 つの数値が d をはさんでいる場合は「日」と「時」を表します。
+.sp
+.LP
+\fIusername\fR 引数を 1 つ以上指定すると、それらのユーザーに関するより詳細な情報が、当該ユーザーがログインされているいないに関わらず出力されます。\fI\fR\fIusername\fR はローカルユーザー名である必要がありますが、 そのユーザーの姓でも、名でも、アカウント名でもかまいません。引数の指定により複数行にわたって出力される詳細情報には、 以下の内容が含まれます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+当該ユーザー名と正式名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+当該ユーザーのホームディレクトリとログインシェル
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+現在ログインされていればそのログイン時刻、されていなければ 最後にログインした時刻。さらにログインを行なった端末またはホスト
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+当該ユーザーが最後にメールを受信した時刻、および最後にメールを読んだ時刻
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+もしあれば、当該ユーザーのホームディレクトリ内の \fB\&.project\fR ファイルの最初の行
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+もしあれば、当該ユーザーのホームディレクトリ内の \fB\&.plan\fR の内容
+.RE
+.sp
+.LP
+注 : \fB/etc/passwd\fR のコメント (GECOS) フィールドにコンマが組み込まれている場合、\fBfinger\fR はそのコンマの後に続く情報を表示しません。
+.sp
+.LP
+\fIusername@hostname\fR1[\fI@hostname\fR2\fI\|.\|.\|.@hostname\fRn] または \fI@hostname\fR1[\fI@hostname\fR2\fI\|.\|.\|.@hostname\fRn] の形式で引数を指定すると、要求はまず \fBhostname\fRn に送られ、それぞれ \fBhostname\fRn-1 を通して \fBhostname\fR1 に送られます。本プログラムは \fBfinger user information protocol\fR (finger ユーザー情報プロトコル RFC 1288 を参照) を使って、指定されたユーザー (指定されていれば) またはログインしているユーザーに関する情報を、指定されたリモートホストに照会します。\fI\fR表示された情報はサーバーによって異なります。
+.sp
+.LP
+RFC 1288 で規定されるように \fBfinger\fR は印刷可能である 7 ビットの \fBASCII\fR データだけを送ります。この動作は、 システム管理者が \fB/etc/default/finger\fR に \fBPASS\fR オプションを使用することによって修正できます。\fBPASS=low\fR を指定すると、 10 進数 32 ASCII よりも小さい文字をすべて送ります。\fBPASS=high\fR を指定すると、10 進数 126 \fBASCII\fR よりも大きい文字をすべて送ります。\fBPASS=low,high\fR または \fBPASS=high,low\fR を指定すると、 32 ASCII よりも小さい文字と 126 ASCII よりも大きい文字をすべて送ります。
+.SH オプション
+.sp
+.LP
+\fIusername@hostname\fR 形式では \fB-l\fR オプションのみがサポートされている以外は、次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fR
+.ad
+.RS 7n
+.rt  
+長形式の出力において、 ユーザーのホームディレクトリとシェルの出力を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fR
+.ad
+.RS 7n
+.rt  
+長形式以外の出力において、通常出力されるヘッダーの出力を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fR
+.ad
+.RS 7n
+.rt  
+長形式の出力において、 \fB\&.project\fR ファイルの出力を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fR
+.ad
+.RS 7n
+.rt  
+アイドル形式の出力を生成します。短形式との違いは、ログイン名、端末、 ログイン時刻、およびアイドル時間のみが出力されることです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fR
+.ad
+.RS 7n
+.rt  
+長形式の出力を生成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fR
+.ad
+.RS 7n
+.rt  
+引数をユーザー名 (姓や名ではない) と見なしてマッチングを行います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.RS 7n
+.rt  
+長形式の出力において、 \fB\&.plan\fR ファイルの出力を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR \fR
+.ad
+.RS 7n
+.rt  
+クィック形式の出力を生成します。短形式との違いは、ログイン名、端末、 およびログイン時刻のみが出力されることです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fR
+.ad
+.RS 7n
+.rt  
+短形式の出力を生成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fR
+.ad
+.RS 7n
+.rt  
+短形式の出力において、正式な氏名の出力を抑制します。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.plan \fR \fR
+.ad
+.RS 24n
+.rt  
+ユーザーの計画
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.project\fR \fR
+.ad
+.RS 24n
+.rt  
+ユーザーのプロジェクト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/finger\fR \fR
+.ad
+.RS 24n
+.rt  
+\fBfinger\fR オプションのファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 24n
+.rt  
+パスワードのファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/lastlog\fR \fR
+.ad
+.RS 24n
+.rt  
+最後にログインした時刻
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/utmpx\fR \fR
+.ad
+.RS 24n
+.rt  
+アカウンティング
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/network-servers
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpasswd\fR(1), \fBwho\fR(1), \fBwhois\fR(1), \fBpasswd\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+『\fIRFC 1288, The Finger User Information Protocol\fR』、Zimmerman, D. 著、Center for Discrete Mathematics and Theoretical Computer Science (DIMACS)、Rutgers University、1991 年 12 月
+.SH 注意事項
+.sp
+.LP
+本コマンドをリモート形式で実行する場合、使用可能なオプションは \fBfinger user information protocol\fR (finger ユーザー情報プロトコル) により制限されます。

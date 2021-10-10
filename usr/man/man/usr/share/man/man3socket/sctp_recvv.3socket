@@ -1,0 +1,503 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH sctp_recvv 3SOCKET "5 May 2011" "SunOS 5.11" "Sockets Library Functions"
+.SH NAME
+sctp_recvv \- receive a message from an SCTP socket
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR... ] \fIfile\fR... -lsocket -lnsl -lsctp [ \fIlibrary\fR... ]
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/sctp.h>
+
+ssize_t sctp_recvv(int \fIsd\fR, const struct iovec *\fIiov\fR, int \fIiovlen\fR,
+      struct sockaddr *\fIfrom\fR, socklen_t *\fIfromlen\fR, void *\fIinfo\fR,
+      socklen_t *\fIinfolen\fR, unsigned int *\fIinfotype\fR, int *\fIflags\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsd\fR\fR
+.ad
+.RS 12n
+.rt  
+The socket descriptor.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIiov\fR\fR
+.ad
+.RS 12n
+.rt  
+The scatter buffer containing the received message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIiovlen\fR\fR
+.ad
+.RS 12n
+.rt  
+The number of elements in \fIiov\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfrom\fR\fR
+.ad
+.RS 12n
+.rt  
+A pointer to a buffer to be filled with the sender address of the received message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfromlen\fR\fR
+.ad
+.RS 12n
+.rt  
+The size of the from buffer. Upon return, it is set to the actual size of the sender's address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfo\fR\fR
+.ad
+.RS 12n
+.rt  
+A pointer to the buffer to hold the attributes of the received message. The structure type of info is determined by the \fIinfotype\fR parameter.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfolen\fR\fR
+.ad
+.RS 12n
+.rt  
+The size of the info buffer. Upon return, it is set to the actual size of returned info buffer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfotype\fR\fR
+.ad
+.RS 12n
+.rt  
+The type of the info buffer. The defined values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_RECVV_NOINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+If both \fBSCTP_RECVRCVINFO\fR and \fBSCTP_RECVNXTINFO\fR options are not enabled, no attribute will be returned. If only the \fBSCTP_RECVNXTINFO\fR option is enabled but there is no next message in the buffer, there will also no attribute be returned. In these cases, \fIinfotype\fR will be set to \fBSCTP_RECVV_NOINFO\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_RECVV_RCVINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of info is \fBstruct\fR \fBsctp_rcvinfo\fR and the attribute is about the received message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_RECVV_NXTINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of info is \fBstruct\fR \fBsctp_nxtinfo\fR and the attribute is about the next message in receive buffer. This is the case when only the \fBSCTP_RECVNXTINFO\fR option is enabled and there is a next message in the buffer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_RECVV_RN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of info is \fBstruct\fR \fBsctp_recvv_rn\fR. The \fIrecvv_rcvinfo\fR field is the attribute of the received message and the \fIrecvv_nxtinfo\fR field is the attribute of the next message in buffer. This is the case when both \fBSCTP_RECVRCVINFO\fR and \fBSCTP_RECVNXTINFO\fR options are enabled and there is a next message in the receive buffer.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflags\fR\fR
+.ad
+.RS 12n
+.rt  
+Flag for receive as in \fBrecvmsg\fR(3SOCKET). On return, its value will be different from what was set in to the call. It has the same value as \fIrcv_flags\fR.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsctp_recvv()\fR function provides an extensible way for the SCTP stack to pass up different SCTP attributes associated with a received message to an application.
+.sp
+.LP
+There are two types of attributes which can be returned by this call: the attribute of the received message and the attribute of the next message in receive buffer. The caller enables the \fBSCTP_RECVRCVINFO\fR and \fBSCTP_RECVNXTINFO\fR socket option to receive these attributes respectively. Attributes of the received message are returned in \fBstruct\fR \fBsctp_rcvinfo\fR and attributes of the next message are returned in \fBstruct\fR \fBsctp_nxtinfo\fR. If both options are enabled, both attributes are returned using the following structure.
+.sp
+.in +2
+.nf
+struct sctp_recvv_rn {
+    struct sctp_rcvinfo    recvv_rcvinfo;
+    struct sctp_nxtinfo    recvv_nxtinfo;
+};
+.fi
+.in -2
+
+.sp
+.LP
+The \fBsctp_rcvinfo\fR structure is defined as:
+.sp
+.in +2
+.nf
+struct sctp_rcvinfo {
+    uint16_t       rcv_sid;
+    uint16_t       rcv_ssn;
+    uint16_t       rcv_flags;
+    uint32_t       rcv_ppid;
+    uint32_t       rcv_tsn;
+    uint32_t       rcv_cumtsn;
+    uint32_t       rcv_context;
+    sctp_assoc_t   rcv_assoc_id;
+};
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_sid\fR\fR
+.ad
+.RS 16n
+.rt  
+The stream number of the received message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_ssn\fR\fR
+.ad
+.RS 16n
+.rt  
+The stream sequence number that the peer endpoint assigned to the DATA chunk of this message. For fragmented messages, this is the same number for all deliveries of the message (if more than one \fBsctp_recvv()\fR) is needed to read the message).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_flags\fR\fR
+.ad
+.RS 16n
+.rt  
+This field may be set to following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_UNORDERED\fR\fR
+.ad
+.RS 18n
+.rt  
+This flag is set when the message was sent unordered.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_ppid\fR\fR
+.ad
+.RS 16n
+.rt  
+This value is the same information that is passed by the peer socket to its SCTP stack. The SCTP stack performs no byte order modification of this field.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_tsn\fR\fR
+.ad
+.RS 16n
+.rt  
+The transmission sequence number that the peer endpoint assigned to the received message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_cumtsn\fR\fR
+.ad
+.RS 16n
+.rt  
+The current cumulative transmission sequence number of the association known to the SCTP stack.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_assoc_id\fR\fR
+.ad
+.RS 16n
+.rt  
+The association identifier of the association of the received message. This field applies only to a one-to-many style socket.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrcv_context\fR\fR
+.ad
+.RS 16n
+.rt  
+This value is an opaque 32 bit context datum that was set by the caller with the \fBSCTP_CONTEXT\fR socket option. This value is passed back to the upper layer if an error occurs on the transmission of a message and is retrieved with each undelivered message.
+.RE
+
+.sp
+.LP
+The \fBsctp_nxtinfo\fR structure is defined as follows:
+.sp
+.in +2
+.nf
+struct sctp_nxtinfo {
+    uint16_t       nxt_sid;
+    uint16_t       nxt_flags;
+    uint32_t       nxt_ppid;
+    size_t         nxt_length;
+    sctp_assoc_t   nxt_assoc_id;
+};
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInxt_sid\fR\fR
+.ad
+.RS 16n
+.rt  
+The stream number of the next message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInxt_flags\fR\fR
+.ad
+.RS 16n
+.rt  
+This field can contain any of the following flags and is composed of a bitwise OR of the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_UNORDERED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The next message was sent unordered.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_COMPLETE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The entire message has been received and is in the socket buffer. This flag has special implications with respect to the \fInxt_length\fR field.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_NOTIFICATION\fR\fR
+.ad
+.sp .6
+.RS 4n
+The next message is not a user message but instead is a notification.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInxt_ppid\fR\fR
+.ad
+.RS 16n
+.rt  
+This value is the same information that was passed by the peer socket to its SCTP stack when sending the next message. The SCTP stack performs no byte order modification of this field.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInxt_length\fR\fR
+.ad
+.RS 16n
+.rt  
+The length of the message currently received in the socket buffer. This might not be the entire length of the next message since a partial delivery may be in progress. Only if the flag \fBSCTP_COMPLETE\fR is set in the \fInxt_flags\fR field does this field represent the entire next message size.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInxt_assoc_id\fR\fR
+.ad
+.RS 16n
+.rt  
+The association identifier of the association of the next message. This field applies only to a one-to-many style socket.
+.RE
+
+.sp
+.LP
+New structures can be defined to hold new types of attributes. The new structures do not need to be based on \fBstruct\fR \fBsctp_recvv_rn\fR or \fBstruct\fR \fBsctp_rcvinfo\fR.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, the \fBsctp_recvv()\fR function returns the number of bytes received. The function returns -1 if an error occurs and \fIerrno\fR is set to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBsctp_recvv()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 15n
+.rt  
+The \fIsd\fR parameter is not a valid file descriptor.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEFAULT\fR\fR
+.ad
+.RS 15n
+.rt  
+A parameter can not be accessed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINTR\fR\fR
+.ad
+.RS 15n
+.rt  
+The operation was interrupted by delivery of a signal before any data could be buffered to be sent.
+.sp
+The operation was interrupted by delivery of a signal before any data is available to be received.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 15n
+.rt  
+A parameter provided is invalid for this operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOBUFS\fR\fR
+.ad
+.RS 15n
+.rt  
+Insufficient memory is available to complete the operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEWOULDBLOCK\fR\fR
+.ad
+.RS 15n
+.rt  
+The socket is marked as non-blocking, and the requested operation would block.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBlibsctp\fR(3LIB), \fBrecvmsg\fR(3SOCKET), \fBsetsockopt\fR(3SOCKET), \fBsocket\fR(3SOCKET), \fBattributes\fR(5), \fBsctp\fR(7P)

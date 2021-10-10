@@ -1,0 +1,1306 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH netcfg 1M "2011 年 6 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+netcfg \- ネットワーク構成プロファイルの作成と変更
+.SH 形式
+.LP
+.nf
+\fBnetcfg\fR
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR \fIsubcommand\fR [\fIoptions\fR...]
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR [\fB-d\fR] \fB-f\fR \fIcommand-file\fR
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR help [\fIsubcommand\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnetcfg\fR ユーティリティーは、システムネットワーク構成プロファイルを操作します。\fBnetcfg\fR は対話形式で個々のサブコマンドを使って呼び出すことも、一連のサブコマンドが含まれているコマンドファイルを指定して呼び出すこともできます。
+.sp
+.LP
+\fBnetcfg\fR ユーティリティーは、いくつかの異なるタイプの構成プロファイルで動作します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ネットワーク構成プロファイル (NCP)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+場所
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+外部ネットワーク修飾子 (ENM)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+既知の WLAN
+.RE
+.sp
+.LP
+これらのプロファイルタイプの詳細は、「プロファイル」の節を参照してください。
+.sp
+.LP
+\fBnetcfg\fR コマンドは、スコープ内で実行されます。グローバル、プロファイル、NCP の 3 つのスコープがあります。\fBnetcfg\fR が引数なしで呼び出されると、編集セッションがグローバルスコープ内で開始します。グローバルスコープでは、NCP、場所、および ENM プロファイルと、既知の WLAN エントリを操作対象として利用できます。NCP を選択すると、編集セッションが NCP スコープに移動します。そこで、個々の NCU を作成したり選択したりすると、プロファイルスコープに移動します。また、グローバルスコープで、場所、ENM、または既知の WLAN を選択または作成すると、編集セッションがプロファイルスコープに移ります。
+.sp
+.LP
+指定したプロファイルスコープ内で、プロファイルのプロパティーを表示して変更できます。
+.sp
+.LP
+対話型モードでは、確定処理が呼び出されるまで、変更は永続ストレージに保存されません。確定処理は「最後」または「終了」時に暗黙的に呼び出されますが、ユーザーが明示的に呼び出すこともできます。確定処理が呼び出されると、プロファイル全体が確定します。永続ストレージの整合性を維持するために、確定処理には検証手順が含まれています。検証が失敗すると、確定処理も失敗します。暗黙の確定処理が失敗した場合、ユーザーは、現在の変更を確定せずに終了するか、または現在のスコープのままさらに変更を続けるオプションが与えられます。
+.SH プロファイル
+.sp
+.LP
+NWAM サービスは、必要なプロパティー値をプロファイルに保存することにより、ネットワーク構成を管理します。次に、どの時点でどのプロファイルをアクティブにするべきかを現在のネットワーク条件に応じて判定し、そのプロファイルをアクティブ化します。前の節で説明したネットワーク構成プロファイル (NCP) に加え、\fBnwamd\fR は場所と ENM のプロファイルも管理します。
+.SS "ネットワーク構成プロファイル (NCP)"
+.sp
+.LP
+NCP は、物理的リンク、IP トンネルリンク、IP インタフェースといったローカルネットワークのコンポーネントの構成を指定します。IP インタフェースには、どちらかのタイプの基になるリンクを関連付ける必要があります。これらのコンポーネントをまとめて「ネットワーク構成ユニット」または「NCU」と呼びます。
+.sp
+.LP
+システムには NCP をいくつでも構成できます。Automatic NCP は \fBnwamd\fR によって作成され管理されるため、ユーザーが変更することはできません。この NCP は、システムに存在する各物理リンクに関する 1 つのリンク NCU と 1 つのインタフェース NCU から成ります。リンクがシステムに追加またはシステムから削除されると、それに対応する NCU が Automatic NCP に追加または Automatic NCP から削除されます。この NCP に実装されているポリシーでは、有線リンクが無線リンクよりも優先され、接続されているすべての有線リンクに、あるいは有線リンクが接続されていない場合は 1 つの無線リンクに IP が plumb されます。
+.sp
+.LP
+また、古い \fB/etc/nwam/llp\fR ファイルに含まれている構成に基づいて、NWAM サービスを旧バージョンからアップグレードする際に User NCP も作成されます。たいてい、アップグレード時に NWAM サービスがアクティブになっていた場合は、User NCP が作成されても、まず Automatic NCP がアクティブになります。ただし、静的 IP アドレスなどの明示的な変更が古い構成に見つかった場合は、まず User NCP がアクティブになります。
+.sp
+.LP
+最後に、ユーザーは追加の NCP をいくつでも作成できます。これらの NCP はすべてユーザーが管理します。NCU の追加や削除は明示的に行う必要があります。また、現在システムにインストールされているどのリンクにも対応しない NCU を追加することも、システムに存在するリンクに対応している NCU を削除することもできます。ユーザーはこれらの NCP のポリシーを決定できます。
+.sp
+.LP
+システムは最初に NCP を選択したあとは、アクティブな NCP を変更することはありません。ユーザーは、GUI または \fBnetadm\fR(1M) コマンドを使用して、いつでもこれを行うことができます。
+.SS "場所"
+.sp
+.LP
+場所は、ネームサービス、ドメイン、IP フィルタ、IPsec 構成といったシステム全体のネットワーク構成を指定します。
+.SS "外部ネットワーク修飾子 (ENM)"
+.sp
+.LP
+外部ネットワーク修飾子は、その名前が示すとおり、ネットワーク構成の変更や作成を行うことのできる NWAM サービス外部のアプリケーションです。\fB nwamd\fR は、ENM プロファイルの一部として指定されている条件に応じて、ENM をアクティブ化または非アクティブ化します。または、必要に応じてユーザーが手動で ENM をアクティブ化または非アクティブ化することもできます。
+.sp
+.LP
+場所プロファイルでは、現在のネットワークの状況に基づいて、特定のネットワーク関連サービスセットを自動的に構成できますが、そのサービスセットは制限されています。ENM にはさらなる柔軟性が備わっているため、ユーザーは SMF サービスのプロパティーまたは状態 (あるいはその両方) やほかのシステム設定に対する変更が特定の条件下で適用されるように指定することができます。
+.SH プロパティー
+.sp
+.LP
+\fBnetcfg\fR は、次のタイプのプロパティーをサポートしています。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NCU のプロパティー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+インタフェース NCU のプロパティー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+すべてのリンク NCU に共通のプロパティー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+場所のプロパティー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ENM のプロパティー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+既知の WLAN のプロパティー
+.RE
+.sp
+.LP
+これらのプロパティーについては、次の項目で説明します。
+.SS "NCU のプロパティー"
+.sp
+.LP
+次のプロパティーはすべての NCU に共通しています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR: 列挙値: \fIlink\fR | \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+NCU タイプを、\fIlink\fR または \fIinterface\fR のどちらかに指定します。値は指定したクラスに基づいて暗黙的に決まります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclass\fR: 列挙値: \fIphys\fR (リンク NCU の場合); \fIip\fR (インタフェース NCU の場合)\fR
+.ad
+.sp .6
+.RS 4n
+NCU クラスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparent\fR: 文字列: \fI親 NCP の名前\fR\fR
+.ad
+.sp .6
+.RS 4n
+この NCU がコンポーネントになっている NCP を指定します。
+.RE
+
+.sp
+.LP
+\fBtype\fR、\fBclass\fR、および \fBparent\fR プロパティーは、NCU の作成時に設定され、あとから変更することはできません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR: ブール型: \fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+activation-mode が \fBmanual\fR の場合、enabled プロパティーは NCU の現在の状態を反映します。このプロパティーは読み取り専用です。\fBnetadm\fR(1M) を使って NCU を有効または無効にすることで、間接的に変更されます。
+.sp
+デフォルト値は \fBtrue\fR です。
+.RE
+
+.SS "インタフェース NCU のプロパティー"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip-version\fR: 列挙値のリスト: \fBipv4\fR | \fBipv6\fR\fR
+.ad
+.sp .6
+.RS 4n
+この NCU で使用すべき IP のバージョン。
+.sp
+デフォルト値は \fBipv4,ipv6\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-addrsrc\fR: 列挙値のリスト: \fBdhcp\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+この NCU に割り当てられた IPv4 アドレスのソースを識別します。複数の値を割り当てることができます。割り当てられた値のいずれかが \fBstatic\fR である場合、\fBipv4-addr\fR プロパティーには、NCU に割り当てられる IPv4 アドレスを少なくとも 1 つ含める必要があります。
+.sp
+デフォルト値は \fBdhcp\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-addr\fR: IPv4 アドレスのリスト\fR
+.ad
+.sp .6
+.RS 4n
+この NCU に割り当てられる 1 つまたは複数の IPv4 アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-default-route\fR:\fIIPv4 アドレス\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトルーターの IPv4 アドレス。このプロパティーが設定されている場合、IPv4 トラフィックのデフォルトルートは、起動時にこのインタフェースに関連付けられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-addrsrc\fR: 列挙値のリスト: \fBdhcp\fR | \fBautoconf\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+この NCU に割り当てられた IPv6 アドレスのソースを識別します。複数の値を割り当てることができます。割り当てられたいずれかの値が \fBstatic\fR である場合、\fBipv6-addr\fR プロパティーには、NCU に割り当てられる IPv6 アドレスを少なくとも 1 つ含める必要があります。
+.sp
+デフォルト値は \fBdhcp,autoconf\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-addr\fR: IPv6 アドレスのリスト\fR
+.ad
+.sp .6
+.RS 4n
+この NCU に割り当てられる 1 つまたは複数の IPv6 アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-default-route\fR: \fIIPv6 アドレス\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトルーターの IPv6 アドレス。このプロパティーが設定されている場合、IPv6 トラフィックのデフォルトルートは、起動時にこのインタフェースに関連付けられます。
+.RE
+
+.SS "すべてのリンク NCU に共通のプロパティー"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR: 列挙値: \fBmanual\fR | \fBprioritized\fR\fR
+.ad
+.sp .6
+.RS 4n
+この NCU の自動有効化のトリガーのタイプ。
+.sp
+デフォルト値は \fBmanual\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority-group\fR: \fBuint64\fR: \fIgroup\fR \fIpriority\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBactivation-mode\fR が \fBprioritized\fR に設定されている場合、このプロパティーは、この NCU が所属する優先順位グループを指定します。グループは、1 つまたは複数の NCU から構成されます。数値が小さいほど優先順位は高くなります。使用可能と判断された優先順位がもっとも高いグループは、\fBnwamd\fR(1M) によってアクティブ化され、使用可能でなくなるまで、または優先順位がさらに高いグループが使用可能になるまで、使用され続けます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority-mode\fR: 列挙値: \fBexclusive\fR | \fBshared\fR | \fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBactivation-mode\fR が prioritized に設定されている場合、このプロパティーは、優先順位グループの可用性とアクティブ化動作を判断するために使用されるモードを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexclusive\fR\fR
+.ad
+.sp .6
+.RS 4n
+グループを使用可能にするには、少なくとも 1 つの NCU が使用できる必要があります。1 つの NCU だけがアクティブ化されます。複数のメンバー NCU が使用できる場合は、\fBnwamd\fR(1M) がアクティブ化する NCU をランダムに選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshared\fR\fR
+.ad
+.sp .6
+.RS 4n
+グループを使用可能にするには、少なくとも 1 つの NCU が使用できる必要があります。すべての使用可能な NCU がアクティブ化されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+グループを使用可能にするには、すべてのグループメンバー NCU が使用できる必要があります。すべてのメンバー NCU がアクティブ化されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-mac-addr\fR: 文字列: 48 ビット MAC アドレス\fR
+.ad
+.sp .6
+.RS 4n
+このリンクに割り当てられた MAC アドレス。デフォルトで、NWAM は、リンクに対する工場割り当てのまたはデフォルトの MAC アドレスを要求します。ここで別の値を設定すると、選択されている値が上書きされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-autopush\fR: 文字列のリスト: リンクでプッシュされるモジュール\fR
+.ad
+.sp .6
+.RS 4n
+リンクが開かれたときに、リンクを介して自動的にプッシュするモジュールのリストを識別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-mtu\fR: \fBuint64\fR: このリンクの MTU サイズ\fR
+.ad
+.sp .6
+.RS 4n
+このプロパティーは、自動的に、物理リンクのデフォルトの MTU に設定されます。この値は、このプロパティーを別の値に設定することによって上書きできます。
+.sp
+許可される MTU 値の範囲は、基礎となるハードウェアによって異なります。ドライバをインストールして、基礎となるハードウェアを準備する前に NCU を作成できるので、NCU が編集される時点では設定値を確認することはできません。無効な MTU サイズのために NCU をアクティブ化できない場合は、システムログにこのことが記され、NCU は保守状態に置かれます。
+.RE
+
+.SS "場所のプロパティー"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR: 列挙値: \fBmanual\fR | \fBsystem\fR | \fBconditional-all\fR | \fBconditional-any\fR\fR
+.ad
+.sp .6
+.RS 4n
+この場所の自動アクティブ化のトリガーのタイプ。
+.sp
+デフォルト値は \fBmanual\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR: ブール型: \fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+activation-mode が \fBmanual\fR の場合、enabled プロパティーは場所の現在の状態を反映します。このプロパティーは読み取り専用です。\fBnetadm\fR(1M) を使って場所を有効または無効にすることで間接的に変更されます。
+.sp
+デフォルト値は \fBfalse\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconditions\fR: 文字列のリスト: \fI条件式\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBactivation-mode\fR が \fBconditional-all\fR または \fBconditional-any\fR に設定されている場合、このプロパティーは、この場所をアクティブ化すべきかどうかを判断するテストを指定します。条件式は、「advertised-domain is sun.com」や「ip:bge0 is-not active」など、ブール値を割り当てることができる一連の条件から構成されます。これらの式の形式は、後述の「条件式」節で定義します。複数の条件が指定された場合、アクティブ化要件を満たすにはすべての条件が true である必要があるか (\fBactivation-mode\fR が \fBconditional-all\fR)、いずれか 1 つの条件が true であればよいか (\fBactivation-mode\fR が \fBconditional-any\fR) のどちらかです。
+.sp
+\fBadvertised-domain\fR と \fBsystem-domain\fR の間には相違点があります。通知されたドメインは、DHCP サーバーによって通知された、\fBDNSdmain\fR や \fBNISdmain\fR などの外部通信を使用して学習されます。この属性は場所の条件によるアクティブ化に役立ちます。たとえば、通知されたドメインが \fBmycompany.com\fR である場合、「work」という場所をアクティブ化します。システムドメインとは、システムに現在割り当てられているドメインです。つまり、\fBdomainname\fR(1M) コマンドで返される値です。この属性は、場所がアクティブ化されており、その特定のドメインに対してシステムが構成されてはじめて true になるので、ENM の条件によるアクティブ化に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-domain\fR: 文字列: \fIシステムドメイン名\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムに適用すべきドメイン名。このドメイン名は、NIS および LDAP で使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnameservices\fR: 列挙値リスト: \fBfiles\fR | \fBdns\fR | \fBnis\fR | \fBldap\fR\fR
+.ad
+.sp .6
+.RS 4n
+DNS、NIS、LDAP など、構成すべきネームサービスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnameservices-config-file\fR: 文字列: \fI\fR\fBnsswitch.conf\fR \fIファイルへのパス\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用する \fBnsswitch.conf\fR ファイルを指定します。このプロパティーには常に値が必要です。\fBnameservices\fR プロパティーで単一のネームサービスを指定した場合、このプロパティーには、デフォルトで、\fBnameservices\fR プロパティーで指定されたネームサービスの \fB/etc/nsswitch.\fR\fInameservice\fR が含まれます。この値はユーザーが変更できます。\fBnameservices\fR プロパティーが複数のネームサービスを識別する場合、ユーザーは、このプロパティーに対して追加の値を指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdns-nameservice-configsrc\fR: 列挙値リスト: \fBmanual\fR | \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+DNS ネームサービスの構成情報を取得するために使用すべきソースを指定します。\fBmanual\fR が含まれる場合、残りの \fBdns-nameservice-*\fR プロパティーが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdns-nameservice-domain\fR: 文字列: \fIドメイン名\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-servers\fR: 文字列リスト: \fIネームサーバーアドレス\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-search\fR: 文字列リスト: \fI ドメイン検索文字列\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-sortlist\fR: 文字列リスト: \fIIP アドレス\fR、\fIネットマスクのペア\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-options\fR: 文字列リスト: \fI変更されるリゾルバ変数\fR\fR
+.ad
+.sp .6
+.RS 4n
+DNS が、構成されたネームサービスのいずれかであり、\fBmanual\fR がその構成ソースの 1 つである場合、これらのプロパティーはその構成パラメータを指定します。\fBservers\fR プロパティーのみが必要です。\fBsearch\fR と \fBdomain\fR は相互に排他的であり、一方しか指定できません。\fBdhcp\fR も使用されている場合、この値は DHCP サーバーが指定するドメインを上書きします。これらの値の形式は、\fBresolv.conf \fR(4) のそれぞれのオプションと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnis-nameservice-configsrc\fR: 列挙値リスト: \fBmanual\fR | \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS ネームサービスの構成情報を取得するために使用すべきソースを指定します。\fBmanual\fR が含まれる場合、残りの \fBnis-nameservice-*\fR プロパティーが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnis-nameservice-servers\fR: 文字列リスト: \fIネームサーバーアドレス\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS が、構成されたネームサービスのいずれかであり、\fBmanual\fR がその構成ソースの 1 つである場合、このプロパティーはそのサーバーアドレスを指定します。このプロパティーが指定されない場合、NIS クライアントはブロードキャストモードで起動します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap-nameservice-configsrc\fR: 列挙値リスト: \fBmanual\fR\fR
+.ad
+.sp .6
+.RS 4n
+LDAP ネームサービスの構成情報を取得するために使用すべきソースを指定します。\fBmanual\fR は、現在、LDAP の唯一のオプションです。したがって、LDAP 構成を完成させるには、\fBldap-nameservice-*\fR プロパティーを指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap-nameservice-servers\fR: 文字列リスト: \fIネームサーバーアドレス\fR\fR
+.ad
+.sp .6
+.RS 4n
+LDAP が、構成されたネームサービスのいずれかである場合、このプロパティーはそのサーバーアドレスを指定します。このプロパティーは必須であり、指定したサーバーには、クライアント構成を完成させるために使用されるクライアントプロファイルがあるものとみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnfsv4-domain\fR: 文字列: \fINVSv4 に使用するドメイン名\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用する NVSv4 ドメインを指定します。この値が指定されていない場合は、ネームサービスドメインが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipfilter-config-file\fR: 文字列: \fIipfilter IPv4 構成ファイルへのパス\fR\fR
+.ad
+.br
+.na
+\fB\fBipfilter-v6-config-file\fR: 文字列: \fIipfilter IPv6 へのパス\fR\fR
+.ad
+.br
+.na
+\fB\fBipnat-config-file\fR: 文字列: \fI\fR\fBipnat\fR \fI構成ファイルへのパス\fR\fR
+.ad
+.br
+.na
+\fB\fBippool-config-file\fR: 文字列: \fI\fR\fBippool\fR \fI構成ファイルへのパス\fR\fR
+.ad
+.sp .6
+.RS 4n
+これらのプロパティーはそれぞれ、\fBipfilter\fR(5) 構成のコンポーネントに対して、規則ファイルへのパスを指定します。特定の \fBconfig-file\fR プロパティーが設定された場合、指定されたファイルから構成が読み取られ、対応する IP フィルタのコンポーネントが有効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBike-config-file\fR: 文字列: \fIIKE 構成ファイルへのパス\fR\fR
+.ad
+.sp .6
+.RS 4n
+IKE 構成ファイルを指定します。値が指定された場合、指定されたファイルから構成が読み取られ、\fBsvc:/network/ipsec/ike\fR サービスが有効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipsecpolicy-config-file\fR: 文字列: \fIIPsec ポリシー構成ファイルへのパス\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPsec ポリシー構成ファイルを指定します。値が指定された場合、指定されたファイルから構成が読み取られ、\fBsvc:/network/ipsec/policy\fR サービスが有効になります。
+.RE
+
+.SS "ENM のプロパティー"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR: 列挙値: \fBmanual\fR | \fBconditional-all\fR | \fBconditional-any\fR\fR
+.ad
+.sp .6
+.RS 4n
+この ENM の自動アクティブ化のトリガーのタイプ。
+.sp
+デフォルト値は \fBmanual\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR: ブール型: \fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+activation-mode が \fBmanual\fR の場合、enabled プロパティーは ENM の現在の状態を反映します。このプロパティーは読み取り専用です。\fBnetadm\fR(1M) を使って ENM を有効または無効にすることで間接的に変更されます。
+.sp
+デフォルト値は \fBfalse\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconditions\fR: 文字列のリスト: \fI条件式\fR\fR
+.ad
+.sp .6
+.RS 4n
+activation-mode が \fBconditional-all\fR または \fBconditional-any\fR に設定されている場合、このプロパティーは、この ENM をアクティブ化すべきかどうかを判断するテストを指定します。条件式は、「system-domain is sun.com」や「ip:bge0 is-not active」など、ブール値を割り当てることができる一連の条件から構成されます。これらの式の形式は、後述の「条件式」節で定義します。複数の条件が指定された場合、アクティブ化要件を満たすにはすべての条件が true である必要があるか (\fBactivation-mode\fR が \fBconditional-all\fR)、いずれか 1 つの条件が true であればよいか (\fBactivation-mode\fR が \fBconditional-any\fR) のどちらかです。
+.sp
+\fBadvertised-domain\fR と \fBsystem-domain\fR の間には相違点があります。通知されたドメインは、DHCP サーバーによって通知された、\fBDNSdmain\fR や \fBNISdmain\fR などの外部通信を使用して学習されます。この属性は場所の条件によるアクティブ化に役立ちます。たとえば、通知されたドメインが \fBmycompany.com\fR である場合、「work」という場所をアクティブ化します。システムドメインとは、システムに現在割り当てられているドメインです。つまり、|domainname|(1M) コマンドで返される値です。この属性は、場所がアクティブ化されており、その特定のドメインに対してシステムが構成されてはじめて true になるので、ENM の条件によるアクティブ化に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmri\fR: 文字列: \fIサービス FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+この ENM が SMF サービスとして実装された場合、このプロパティーはそのサービスを識別します。このプロパティーが指定された場合、ENM は、サービスを有効にすることによってアクティブ化され、サービスを無効にすることによって非アクティブ化されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR: 文字列: \fI起動コマンド\fR\fR
+.ad
+.sp .6
+.RS 4n
+この ENM が SMF サービスとして実装されない場合、このプロパティーは、ENM を起動またはアクティブ化するために exec で実行すべきコマンドを識別します。FMRI プロパティーが設定されている場合、このプロパティーは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR: 文字列: \fI停止コマンド\fR\fR
+.ad
+.sp .6
+.RS 4n
+この ENM が SMF サービスとして実装されない場合、このプロパティーは、ENM を停止または非アクティブ化するために exec で実行すべきコマンドを識別します。FMRI プロパティーが設定されている場合、このプロパティーは無視されます。
+.RE
+
+.SS "既知の WLAN のプロパティー"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbssids\fR: 文字列のリスト: WLAN BSSID (AP MAC アドレス)\fR
+.ad
+.sp .6
+.RS 4n
+特定のアクセスポイントを同じ名前/ESSID のほかのアクセスポイントより優先すべき場合は、このプロパティーを使用して AP の BSSID を指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority\fR: \fBuint64\fR: 優先順位の数値\fR
+.ad
+.sp .6
+.RS 4n
+この WLAN の相対的な優先順位。数値が小さいほど、高い優先度を表します。
+.sp
+その後、既知の WLAN オブジェクトセットを変更したときに、この数値の変更が必要になった場合は、変更されることがあります。たとえば、システムが \fBwlanA\fR と \fBwlanB\fR の 2 つの既知の WLAN オブジェクトで構成されているとします。\fBwlanA\fR には優先順位 1 が、\fBwlanB\fR には優先順位 2 が割り当てられています。新しい既知の WLAN、\fBwlanC\fR が作成され、優先順位 2 が割り当てられます。この場合、\fBwlanA\fR に優先順位 1、\fBwlanC\fR に優先順位 2、\fBwlanB\fR に優先順位 3 が割り当てられるように、リスト全体が更新されます。2 つの WLAN に同じ優先順位の値を割り当てることはできないので、優先順位 2 で \fBwlanC\fR を追加すると、\fBwlanB\fR の優先順位は強制的に下位に移動します。それ以外の WLAN が \fBwlanB\fR よりも低い優先順位にあった場合は、それに応じて移動されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyslot\fR: \fBuint64\fR: この WLAN に使用されるスロット\fR
+.ad
+.sp .6
+.RS 4n
+複数のキースロットをサポートする暗号化モードを WLAN で使用した場合、キーを配置するスロットは、このプロパティーで指定できます。指定しない場合、デフォルトでスロット 1 が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyname\fR: 文字列のリスト: 安全なオブジェクト名\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーが、\fBdladm\fR(1M) を使用して作成された安全なオブジェクトを既知の WLAN に関連付けられるようにします。
+.RE
+
+.SS "条件式"
+.sp
+.LP
+場所と ENM は、ユーザー指定の条件セットに基づいてアクティブ化できます。これらの条件式の構文を次の表にまとめます。
+.sp
+
+.sp
+.TS
+tab();
+cw(1.83i) cw(1.83i) cw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+オブジェクトタイプオブジェクト条件
+_
+ncp|ncu|enm|locnameis/is-not active
+.TE
+
+.sp
+.in +2
+.nf
+Object Type       Condition                           Object
+------------------------------------------------------------
+essid             is/is-not/contains/does-not-contain name string
+bssid             is/is-not                           bssid string
+ip-address        is/is-not                           IPv4 or IPv6 
+                                                      address
+ip-address        is-in-range/is-not-in-range         IPv4 or IPv6 
+                                                      address plus
+                                                      netmask/prefixlen
+advertised-domain is/is-not/contains/does-not-contain name string
+system-domain     is/is-not/contains/does-not-contain name string
+.fi
+.in -2
+.sp
+
+.SH オプション
+.sp
+.LP
+次のオプションは、特定の \fBnetcfg\fR サブコマンドに関連付けられていません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドファイルからサブコマンドを読み取る前に、すべての構成を削除します (次のオプションを参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIcommand_file\fR から \fBnetcfg\fR サブコマンドを読み取り、実行します。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+次のサブコマンドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+永続ストレージに対する現在の変更を確定することなく、現在のプロファイル指定を終了し、次の上位のスコープに移ります。
+.sp
+このサブコマンドは、NCP およびプロファイルのスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIprop-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したプロパティーの値を消去します。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+永続ストレージに現在のプロファイルを確定します。構成が正しく設定されていないと確定できないので、この操作では、オブジェクトでの検証も自動的に行われます。確定操作は、現在のスコープから外れるときに自動的に試行されます (\fBend\fR サブコマンドまたは \fBexit\fR サブコマンドの使用時)。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.sp
+非対話型モードでは、値を変更するすべてのサブコマンドで暗黙に確定が行われるので、確定操作は必要ありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate\fR [ \fB-t\fR \fItemplate\fR ] \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたタイプと名前のメモリー内プロファイルを作成します。\fB-t\fR \fItemplate\fR オプションは、新しいオブジェクトが、\fItemplate\fR と同一であるべきことを指定します。ここで、\fItemplate\fR は同じタイプの既存のオブジェクトの名前です。\fB-t\fR オプションを指定しない場合、新しいオブジェクトはデフォルト値で作成されます。NCP の場合、「User」NCP のみを作成できます。
+.sp
+このサブコマンドは、グローバルおよび NCP のスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdestroy\fR { \fB-a\fR | \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR }\fR
+.ad
+.sp .6
+.RS 4n
+メモリーおよび永続ストレージから、すべてまたは指定したプロファイルを削除します。この処理は即座に実行されます。確定する必要はありません。破棄したオブジェクトを元に戻すことはできません。
+.sp
+特定のオブジェクトが指定された場合、このサブコマンドは、グローバルおよび NCP のスコープで有効です。\fB-a\fR オプションはグローバルスコープでのみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のプロファイル指定を終了し、次の上位のスコープに移ります。終了する前に、現在のオブジェクトが検証され確定されます。検証操作または確定処理のどちらかが失敗した場合、該当するエラーメッセージが発行され、ユーザーには、現在の変更を確定せずに終了するか、現在のスコープのまま編集を続行するかを選択する機会が与えられます。
+.sp
+このサブコマンドはどのスコープでも有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBnetcfg\fR セッションを終了します。編集前に、現在のプロファイルが検証され確定されます。どちらかの処理が失敗した場合、該当するエラーメッセージが発行され、ユーザーには、現在の変更を確定せずに終了するか、現在のスコープのまま編集を続行するかを選択する機会が与えられます。
+.sp
+このサブコマンドはどのスコープでも有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [ \fB-d\fR ] [ \fB-f\fR \fIoutput-file\fR ] [ \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+現在または指定したスコープの現在の構成を、標準出力または \fB-f\fR オプションで指定したファイルに出力します。\fB-d\fR オプションは、出力の最初の行として \fBdestroy\fR \fB-a\fR を生成します。このサブコマンドを使用すると、コマンドファイルに適した形式で出力が生成されます。Automatic NCP および Automatic、NoNet、ユーザー場所などのシステム作成オブジェクトは、エクスポートできません。
+.sp
+このサブコマンドはどのスコープでも有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [ \fB-V\fR ] \fIprop-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したプロパティーの現在 (メモリー内) の値を取得します。デフォルトで、プロパティー名と値の両方が出力されます。\fB-V\fR オプションを指定した場合は、プロパティー値のみが表示されます。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fIsubcommand\fR]\fR
+.ad
+.sp .6
+.RS 4n
+一般ヘルプまたは特定のサブコマンドに関するヘルプを表示します。
+.sp
+このサブコマンドはどのスコープでも有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [ \fB-a\fR ] [ \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+現在または指定したスコープに存在するすべてのプロファイル、プロパティーと値のペア、およびリソースを一覧表示します。オブジェクトのプロパティーを一覧表示するときには、デフォルトの動作で、指定した構成に適用されるプロパティーのみを一覧表示します。つまり、\fBipv4-addrsrc\fR が \fBdhcp\fR である IP NCU を一覧表示する場合、\fBipv4-addr\fR プロパティーは一覧表示されません。\fB-a\fR オプションを含めると、現在の設定に適用されるかどうかにかかわらず、すべてのプロパティーが一覧表示されます。
+.sp
+このサブコマンドはどのスコープでも有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のプロファイルに対する現在の変更を削除し、永続ストレージから値を元に戻します。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のスコープのレベルで使用できるプロファイルのいずれかを選択し、オブジェクトのスコープまで下げます。選択したオブジェクトは、永続ストレージからメモリーに読み込まれます。
+.sp
+このサブコマンドは、グローバルおよび NCP のスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIprop-name\fR=\fIvalue1\fR[,\fIvalue2\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+指定したプロパティーの現在 (メモリー内) の値を設定します。非対話型モードで実行した場合、永続ストレージにも変更が確定されます。
+.sp
+複数の値を持つプロパティーの値の区切り文字は「\fB,\fR」(コンマ) です。このようなプロパティー内の個々の値にコンマが含まれる場合、コンマをエスケープする必要があります (つまり、\fB\,\fR と記述)。単一の値のみを持つプロパティー内のコンマは、区切り文字として解釈されず、エスケープする必要はありません。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のメモリー内オブジェクトに有効な構成があることを確認します。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwalkprop\fR [ \fB-a\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+現在のプロファイルに関連付けられた各プロパティーを調査します。プロパティーごとに、名前と現在値が表示され、ユーザーが現在の値を変更するためのプロンプトが表示されます。
+.sp
+複数の値を持つプロパティーの値の区切り文字は「,」(コンマ) です。このようなプロパティー内の個々の値にコンマが含まれる場合、コンマをエスケープする必要があります (つまり、\fB\,\fR と記述)。単一の値のみを持つプロパティー内のコンマは、区切り文字として解釈されず、エスケープする必要はありません。
+.sp
+デフォルトでは、すでに設定されているプロパティーに基づいて、必要なプロパティーのみが調査されます。つまり、\fBipv4-addrsrc\fR が \fBdhcp\fR に設定されている場合、\fBipv4-addr\fR は調査されません。\fB-a\fR オプションを含めると、使用可能なすべてのプロパティーが調査されます。
+.sp
+このサブコマンドはプロファイルのスコープで有効です。
+.sp
+このサブコマンドは、対話型モードでのみ意味があります。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRNCU のプロパティーを設定する
+.sp
+.LP
+次のコマンドは、コマンド行から (つまり非対話型モードで) NCU のプロパティーを設定します。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg "select ncp User; select ncu phys net1; set link-mtu=1492"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR最上位プロファイルを一覧表示する
+.sp
+.LP
+次のコマンドは、コマンド行からすべての最上位プロファイルを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg list\fR
+NCPs:
+        Automatic
+        User
+Locations:
+        Automatic
+        home
+        NoNet
+        office
+ENMs:
+        enmtest
+        myenm
+WLANs:
+        sunwifi
+        coffeeshop
+        linksys
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR場所プロファイルを破棄する
+.sp
+.LP
+次のコマンドは、コマンド行から場所プロファイルを破棄します。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg destroy loc home\fR
+Destroyed loc 'home'
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRNCU プロファイルを作成する
+.sp
+.LP
+次のコマンドシーケンスは、NCU プロファイルを対話形式で作成します。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg> \fBselect ncp user\fR
+netcfg:ncp:User> \fBcreate ncu ip net1\fR
+Created ncu 'net1'.  Walking properties ...
+ip-version (ipv4,ipv6) [ipv4|ipv6]> \fBipv4\fR
+ipv4-addrsrc (dhcp) [dhcp|static]> \fBstatic\fR
+ipv4-addr> \fB168.1.2.3\fR
+netcfg:ncp:User:ncu:net1> \fBlist\fR
+ncu:net1
+        type:             interface
+        class:            ip
+        parent:           "User"
+        enabled           true
+        ip version:       ipv4
+        ipv4-addrsrc:     static
+        ipv4-addr:        "168.1.2.3"
+        ipv6-addrsrc      dhcp,autoconf
+netcfg:ncp:User:ncu:net1> \fBcommit\fR
+Committed changes
+netcfg:ncp:User:ncu:net1> \fBend\fR
+netcfg:ncp:User> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRENM を操作する
+.sp
+.LP
+次のコマンドシーケンスは、既存の ENM を選択し、その内容を表示して、プロパティー値を変更します。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg>\fBselect enm myenm\fR
+netcfg:enm:myenm>\fBlist\fR
+ENM:myenm
+        activation-mode manual
+        enabled         true
+        start           "/usr/local/bin/myenm start"
+        stop            "/usr/local/bin/myenm stop"
+netcfg:enm:myenm>\fBset stop="/bin/alt_stop"\fR
+netcfg:enm:myenm>\fBlist\fR
+ENM:myenm
+        activation-mode manual
+        enabled         true
+        start           "/usr/local/bin/myenm start"
+        stop            "/bin/alt_stop"
+netcfg:enm:myenm>\fBexit\fR
+Committed changes
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR静的アドレスを構成する
+.sp
+.LP
+次のコマンドシーケンスは、Home NCP を使用して、インタフェース \fBbge0\fR で、192.168.2.12/24 の静的アドレスを構成します。このインタフェースは、Home NCP がアクティブ化されているときに、デフォルトで有効になります。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg> \fBcreate ncp Home\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+最初に、phys NCU を構成します。
+
+.sp
+.in +2
+.nf
+netcfg:ncp:Home> \fBcreate ncu phys bge0\fR
+Created ncu 'bge0'.  Walking properties ...
+activation-mode (manual) [manual|prioritized]>
+link-mac-addr>
+link-autopush>
+link-mtu>
+netcfg:ncp:Home:ncu:bge0> \fBend\fR
+Committed changes
+netcfg:ncp:Home>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、IP NCU を構成します。
+
+.sp
+.in +2
+.nf
+netcfg:ncp:Home> \fBcreate ncu ip bge0\fR
+Created ncu 'bge0'.  Walking properties ...
+ip-version (ipv4,ipv6) [ipv4|ipv6]>
+ipv4-addrsrc (dhcp) [dhcp|static]> \fBstatic\fR
+ipv4-addr> \fB192.168.2.10/24\fR
+ipv4-default-route>
+ipv6-addrsrc (dhcp,autoconf) [dhcp|autoconf|static]>
+ipv6-default-route>
+netcfg:ncp:Home:ncu:bge0> \fBlist\fR
+ncu:bge0
+    type                interface
+    class               ip
+    parent              "Home"
+    enabled             true
+    ip-version          ipv4,ipv6
+    ipv4-addrsrc        static
+    ipv4-addr           "192.168.2.10/24"
+    ipv6-addrsrc        dhcp,autoconf
+netcfg:ncp:Home:ncu:bge0> \fBexit\fR
+Committed changes
+#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBnetadm\fR(1M) を使用して Home NCP に切り替えます。
+
+.LP
+\fB例 7 \fR条件に基づいて場所を構成する
+.sp
+.LP
+次のコマンドシーケンスは、条件に基づいて場所を構成します。場所は、IP アドレスが 10.0.8.0/24 サブネット内にあるときはいつでもアクティブ化されます。また、NIS がこの場所で構成されます。
+
+.sp
+.in +2
+.nf
+netcfg> \fBselect loc office\fR
+netcfg:loc:office> \fBlist\fR
+loc:office
+       activation-mode                 conditional-any
+       conditions                      "ip-address is 10.0.8.0/24"
+       enabled                         false
+       nameservices                    dns,nis
+       nameservices-config-file        "/etc/nsswitch.nis"
+       dns-nameservice-configsrc       dhcp
+       nis-nameservice-configsrc       manual
+       nis-nameservice-servers         "10.2.18.24"
+       default-domain                  "labs.east.sun.com"
+netcfg:loc:office>
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR既知の WLAN を作成する
+.sp
+.LP
+次のコマンドシーケンスは、WEP キーを持つ \fBcoffeeshop\fR という既知の WLAN を確立します。
+
+.sp
+.in +2
+.nf
+netcfg> \fBselect wlan coffeeshop\fR
+netcfg:wlan:coffeeshop> \fBlist\fR
+known wlan:coffeeshop
+       priority                2
+       keyname                 "foo"
+       security-mode           wep
+netcfg:wlan:coffeeshop> \fBset priority=1\fR
+netcfg:wlan:coffeeshop> \fBend\fR
+Committed changes
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR現在の構成をファイルにエクスポートする
+.sp
+.LP
+次のコマンドは現在の構成をファイルにエクスポートします。
+
+.sp
+.in +2
+.nf
+netcfg> \fBexport -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+または、UNIX コマンド行から同じタスクを実行します。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg export -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR現在の構成をファイルからインポートする
+.sp
+.LP
+次のコマンドは現在の構成をファイルからインポートします。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdladm\fR(1M), \fBdomainname\fR(1M), \fBnetadm\fR(1M), \fBnetcfgd\fR(1M), \fBnwamd\fR(1M), \fBresolv.conf\fR(4), \fBattributes\fR(5), \fBipfilter\fR(5)
+.sp
+.LP
+JDS/GNOME マニュアルページコレクションで利用可能な \fBnwam-manager(1M)\fR も参照してください。

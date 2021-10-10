@@ -1,0 +1,78 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH audio_engine_sync 9E "16 Apr 2010" "SunOS 5.11" "Driver Entry Points"
+.SH NAME
+audio_engine_sync \- synchronize DMA caches for an audio engine
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/audio/audio_driver.h>
+
+void prefix_sync(void *\fIstate\fR, unsigned \fInframes\fR)
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 11n
+.rt  
+pointer to driver supplied soft state
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInframes\fR\fR
+.ad
+.RS 11n
+.rt  
+integer value indicating the number of frames that have been either sent or received and need to be synchronized in the cache since the last time \fBaudio_engine_sync()\fR was called
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris DDI specific (Solaris DDI)
+.SH DESCRIPTION
+.sp
+.LP
+The \fBaudio_engine_sync()\fR function is used as a hook to request device drivers to perform DMA cache synchronization of the buffer.
+.sp
+.LP
+Drivers should call \fBddi_dma_sync\fR(9F) when this function is called. The direction used for the operation can be determined by the driver. Engines performing playback must use \fBDDI_DMA_SYNC_FORDEV\fR, and engines performing record must use \fBDDI_DMA_SYNC_FORKERNEL\fR.
+.sp
+.LP
+Drivers are responsible for maintaining a running index to keep track of the offset where cache synchronization is needed, but the framework indicates how many frames need to be synchronized in the \fInframes\fR parameter. Many drivers elect to synchronize the entire buffer for simplicity.
+.sp
+.LP
+The index should be reset to 0 whenever \fBaudio_engine_start\fR(9E) is called.
+.SH CONTEXT
+.sp
+.LP
+This function may be called from user or interrupt context.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBaudio\fR(7D), \fBaudio_engine_start\fR(9E), \fBddi_dma_sync\fR(9F), \fBaudio_engine_ops\fR(9S)

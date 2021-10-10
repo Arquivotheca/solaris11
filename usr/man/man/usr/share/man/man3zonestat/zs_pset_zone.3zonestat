@@ -1,0 +1,169 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zs_zone_pset 3ZONESTAT "19 May 2011" "SunOS 5.11" "Zones Statistics Library Functions"
+.SH NAME
+zs_zone_pset, zs_pset_zone_list, zs_pset_zone_walk, zs_pset_zone_get_zone, zs_pset_zone_get_pset, zs_pset_zone_property, zs_pset_zone_used_time, zs_pset_zone_used_cpus, zs_pset_zone_used_pct \- libzonestat accessor methods for per-zone utilization of psets
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR ... ] \fIfile\fR... -lzonestat [ \fIlibary\fR ... ]
+#include <zonestat.h>
+
+int zs_pset_zone_list(zs_pset_t \fIpset\fR, zs_pset_zone_t *\fIpzlist\fR, int \fInum\fR);
+.fi
+
+.LP
+.nf
+zs_pset_zone_t zs_pset_zone_walk(zs_pset_t \fIpset\fR, zs_pset_zone_t \fIpz\fR);
+.fi
+
+.LP
+.nf
+zs_zone_t zs_pset_zone_get_zone(zs_pset_zone_t \fIpz\fR);
+.fi
+
+.LP
+.nf
+zs_pset_t zs_pset_zone_get_pset(zs_pset_zone_t \fIpz\fR);
+.fi
+
+.LP
+.nf
+zs_property_t zs_pset_zone_property(zs_pset_zone_t \fIpz\fR,
+     zs_pz_property_t \fIprop\fR);
+.fi
+
+.LP
+.nf
+void zs_pset_zone_used_time(zs_pset_zone_t \fIpz\fR, timestruc_t *\fIts\fR);
+.fi
+
+.LP
+.nf
+uint64_t zs_pset_zone_used_cpus(zs_pset_zone_t \fIpz\fR);
+.fi
+
+.LP
+.nf
+uint_t zs_pset_zone_used_pct(zs_pset_zone_t \fIpz\fR, zs_pz_pct_t \fIpct\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+These functions are used to access the per-zone utilization information for a given pset. Each pset will have zero or more zones bound to it.
+.sp
+.LP
+Typically, a zone will be bound to a single pset, but it is possible for the global zone to be bound to multiple psets, as well as non-global zones if \fBpsrset\fR(1M) psets are used.
+.sp
+.LP
+If a zone is bound to multiple psets, it's CPUs shares will be applied to each pset. For instance, if a zone has 10 shares, and has processes in both pset A and pset B, then the zone will have 10 shares in both pset A and pset B. The relative value of those shares will depend on the other zones running in each pset, and how many shares the other zones have.
+.sp
+.LP
+If a zone is bound to multiple psets, then its CPU cap is applied across all psets. The zone may use up to its cap in CPU time. Some of this time could be spent in pset A, and the rest in pset B. Each zone does not get its full CPU cap per pset.
+.sp
+.LP
+The \fBzs_pset_zone_list()\fR function returns the number of \fBzs_pset_zone_t\fR objects contained within \fIpset\fR. If \fIpzlist\fR is non-NULL, the \fIpzlist\fR array will be filled with up to \fInum\fR \fBzs_pset_zone_t\fR objects. The \fIpzlist\fR array must be first allocated by the caller. The \fBzs_pset_zone_t\fR objects will be returned in alphanumeric ordered by zone name.
+.sp
+.LP
+The \fBzs_pset_zone_walk()\fR function is used to walk the list of zones using a \fIpset\fR. Zones are walked in alphanumeric order. If \fIpz\fR is NULL, the first zone is returned, otherwise the zone after \fIpz\fR is returned. NULL is returned if there are no more zones using the \fIpset\fR.
+.sp
+.LP
+The \fBzs_pset_zone_get_zone()\fR function returns the \fBzs_zone_t\fR object representing the zone for \fIpz\fR.
+.sp
+.LP
+The \fBzs_pset_zone_get_pset()\fR function returns the \fBzs_pset_t\fR object representing the pset for \fIpz\fR.
+.sp
+.LP
+The \fBzs_pset_zone_property()\fR function will return the prop property of a \fIpz\fR. See \fBlibzonestat\fR(3LIB) for a description of the \fBZS_PZ_PROP_\fR* property codes.
+.sp
+.LP
+The \fBzs_pset_zone_used_time()\fR function sets \fIts\fR to the total CPU time that has been used in the pset by the zone, starting at zero from the point when \fBzs_open\fR(3ZONESTAT) was first called.
+.sp
+.LP
+The \fBzs_pset_zone_used_cpus()\fR function sets \fIts\fR to the total number of CPUs that has been used in the pset by the zone, starting at zero from the point when \fBzs_open()\fR was first called. The value returned is the number of CPUs used * 100. For example, if the zone used 1.5 CPUs in the pset, the returned value will be 1500.
+.sp
+.LP
+The \fBzs_pset_zone_used_pct()\fR function returns the percentage of \fIpct\fR used by the zone in the pset. See the description of the \fBZS_PZ_PCT_\fR* codes on the \fBlibzonestat\fR(3LIB) manual page.
+.SH RETURN VALUES
+.sp
+.LP
+See Description.
+.SH ERRORS
+.sp
+.LP
+If a \fBzs_pset_zone_*()\fR function is called with an invalid property or \fIpct\fR code, the function will abort with \fBabort\fR(3C).
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRWalk the list of zones and retrieve CPU data.
+.sp
+.LP
+The following example walks the list of zones using the default pset, retrieving both the CPU shares and CPU cap, as well as the percent of each used.
+
+.sp
+.in +2
+.nf
+#include <zonestat.h>
+#include <strings.h>
+\&...
+extern zs_usage_t usage;        /* assume returned by zs_usage_read() */
+\&...
+zs_pset_t pset;
+zs_pset_zone_t pz;
+zs_property_t prop;
+char *psetname;
+char *zonename;
+uint64_t shares;
+uint64_t cap;
+uint_t pct_shares;
+uint_t pct_cap;
+
+/* Get default pset and name, which is always the first pset */
+pset = zs_pset_first(usage);
+zs_pset_property(pset, ZS_PROP_PSET_NAME prop);
+psetname = strdup(zs_property_string(prop));
+
+for (pz = zs_pset_zone_first(pset); pz != NULL;
+    pz = zs_pset_zone_next(pset, pz)) {
+
+    /* Get name of zone */
+    zone = zs_pset_zone_get_zone(pz);
+    prop = zs_zone_property(pset, ZS_PROP_ZONE_NAME);
+    zonename = strdup(zs_property_string(prop));
+
+    /* get shares and cap */
+    prop = zs_pset_zone_property(pz, ZS_PZ_PROP_CPU_SHARES);
+    shares = zs_property_uint64(prop);
+    prop = zs_pset_zone_property(pz, ZS_PZ_PROP_CPU_CAP);
+    cap = zs_property_uint64(prop);
+
+    /* get percent used of shares and cap */
+    pct_shares = zs_pset_zone_used_pct(pz, ZS_PZ_PCT_CPU_SHARE);
+    pct_cap = zs_pset_used_cpus(pz, ZS_PZ_PCT_CPU_CAP);
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBzonestat\fR(1), \fBpooladm\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBswap\fR(1M), \fBzoneadm\fR(1M), \fBzonestatd\fR(1M), \fBabort\fR(3C), \fBlibpool\fR(3LIB), \fBlibzonestat\fR(3LIB), \fBzs_open\fR(3ZONESTAT), \fBzs_pset\fR(3ZONESTAT), \fBzs_property\fR(3ZONESTAT), zs_zone_pset(3ZONESTAT), \fBzs_resource\fR(3ZONESTAT), \fBzs_usage\fR(3ZONESTAT), \fBzs_zone\fR(3ZONESTAT), \fBattributes\fR(5), \fBresource_controls\fR(5)

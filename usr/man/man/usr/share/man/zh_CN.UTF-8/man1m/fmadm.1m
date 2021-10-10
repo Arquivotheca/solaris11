@@ -1,0 +1,646 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH fmadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+fmadm \- 故障管理配置工具
+.SH 用法概要
+.LP
+.nf
+\fBfmadm\fR [\fB-q\fR] [\fIsubcommand\fR [\fIarguments\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+管理员和服务人员可以使用 \fBfmadm\fR 实用程序来查看和修改由 Solaris Fault Manager \fBfmd\fR(1M) 维护的系统配置参数。\fBfmd\fR 接收与系统软件检测到的问题有关的遥测信息，诊断这些问题，启动主动式自我修复活动，如禁用故障组件等。
+.sp
+.LP
+\fBfmadm\fR 可用于：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+查看当前参与故障管理的诊断引擎和代理的集合，
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+查看被诊断为故障的系统组件列表，以及
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+执行与这些实体有关的管理任务。
+.RE
+.sp
+.LP
+Fault Manager 尝试将尽可能多的活动自动化，这样，通常就不需要使用 \fBfmadm\fR 了。当 Fault Manager 需要管理员、服务维修技术人员或 Oracle 的帮助时，会发出一条说明其需要的消息。它还会为您提供 Oracle 的 Web 站点上的知识文章。该 Web 站点可能会要求您使用 \fBfmadm\fR 或某个其他的故障管理实用程序来收集更多信息，或执行其他任务。\fBfmd\fR(1M)、\fBfmdump\fR(1M) 和 \fBfmstat\fR(1M) 的文档对用于观察故障管理活动的工具进行了详细的描述。
+.sp
+.LP
+Fault Manager 的一个职责是跟踪组件的位置。在机箱级别，\fBfmadm\fR *\fB-alias\fR 子命令管理机箱 \fIproduct-id\fR.\fIchassis-id\fR 到 \fIalias-id \fR 的映射。受管理的 \fIalias-id\fR 将以某种有意义的方式描述机箱的物理位置。
+.sp
+.LP
+\fBfmadm\fR 实用程序要求用户拥有 \fBSYS_CONFIG\fR 特权。请参见\fI\fR了解有关如何配置 Solaris 特权的更多信息。\fBfmadm\fR \fBload\fR 子命令要求用户拥有所有特权。
+.SS "子命令"
+.sp
+.LP
+\fBfmadm\fR 接受以下子命令：有些子命令接受或要求额外的选项和操作数。\fBload\fR、\fBunload\fR、\fBreset\fR 和 \fBrotate\fR 子命令是供经过培训的技术人员使用的。我们建议，在没有获得具体指导（如阅读知识库文章）之前，不要使用这些子命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm acquit\fR \fIfmri\fR \fB|\fR \fIlabel\fR [\fIuuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+通知 Fault Manager，不会将指定资源认定为 \fIuuid\fR 标识的故障事件中（如果未指定 UUID，则是在检测到的所有故障中）的可疑对象。\fBfmadm acquit\fR 子命令应仅在 Oracle 修复过程文档的指导下使用。管理员可能需要使用额外的命令来重新启用之前发生故障的资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm acquit\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+通知 Fault Manager，可以安全地忽略由 \fIuuid\fR 标识的故障事件。\fBfmadm acquit\fR 子命令应仅在 Oracle 修复过程文档的指导下使用。管理员可能需要使用额外的命令来重新启用之前发生故障的任何资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm config\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 Fault Manager 本身的配置，包括模块名称、版本以及每个组件模块的描述。Fault Manager 模块可提供包括自动诊断、自我修复以及向系统中存在的硬件和软件发送消息在内的各种服务。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm faulty\fR [\fB-afgiprsv\fR] [\fB-n\fR \fImax\fR] [\fB-u\fR \fIuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示 Fault Manager 当前认定为故障的资源的状态信息。
+.sp
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 10n
+.rt  
+显示所有故障。缺省情况下，\fBfmadm faulty\fR 命令只列出当前存在且发生故障的资源的输出。如果指定了 \fB-a\fR 选项，则会列出 Fault Manager 缓存的所有资源信息，包括已经自动更正或无需恢复操作的故障。列表中包括系统中可能已不存在的资源的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 10n
+.rt  
+显示故障的 \fBfru\fR（Field replaceable units，现场可更换单元）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.RS 10n
+.rt  
+将具有相同 fru、类和故障消息的故障归为一组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 10n
+.rt  
+显示 Fault Manager 中每个资源的持久性高速缓存标识符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fImax\fR\fR
+.ad
+.RS 10n
+.rt  
+如果以 \fB-a\fR 或 \fB-g\fR 选项对故障或资源进行分组，会将输出限制为 \fImax\fR 项。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 10n
+.rt  
+以故障间的换页使输出通过页面调度程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 10n
+.rt  
+显示带有标识符的故障管理资源 (Fault Management Resource with their Identifier, FMRI) 及其故障管理状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 10n
+.rt  
+对每个故障事件显示一行的故障摘要。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuid\fR\fR
+.ad
+.RS 10n
+.rt  
+仅显示具有给定 \fBuid\fR 的故障。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 10n
+.rt  
+显示完整输出。
+.RE
+
+故障有多个可疑对象（具有不同的类或出现在不同的 \fBfru\fR 上）时会显示确定性百分比。如果同一 \fBfru\fR 上有多个资源，且无法 100% 确定故障与该 \fBfru\fR 有关，系统会显示该 \fBfru\fR 上可能的可疑对象的最大确定性百分比。
+.RE
+
+.sp
+.LP
+Fault Manager 将以下状态与收到其遥测信息的每个资源相关联：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fR
+.ad
+.sp .6
+.RS 4n
+就 Fault Manager 而言，相应资源始终存在且正在使用中，并且没有已知的问题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown（未知）\fR\fR
+.ad
+.sp .6
+.RS 4n
+资源不存在或不可用，但是没有已知的问题。这可能表示，资源已被管理员禁用或取消配置。请通过相应的管理工具来了解更多信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfaulted（错误）\fR\fR
+.ad
+.sp .6
+.RS 4n
+资源存在但是不可用，因为已通过 Fault Manager 诊断出一个或多个问题。已禁用资源，以防止对系统造成进一步的损害。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdegraded（降级）\fR\fR
+.ad
+.sp .6
+.RS 4n
+资源存在且可以使用，但是 Fault Manager 诊断出资源中有一个或多个问题。
+.sp
+如果所有受影响的资源都处于相同状态，列表末端的消息中会说明这一点。否则，会在每个受影响的资源之后给出状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm flush\fR \fIfmri\fR\fR
+.ad
+.sp .6
+.RS 4n
+刷新由 Fault Manager 缓存的指定资源的信息（以其 FMRI 命名）。该子命令应仅在 Oracle 修复过程文档的指导下使用。通常，不需要使用该命令，因为 Fault Manager 会自动使其高速缓存保持最新。如果在高速缓存中刷新故障资源，管理员可能需要使用额外的命令来启用指定资源。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm load\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+装入指定的 Fault Manager 模块。\fIpath\fR 必须是绝对路径，且必须指向某个为模块定义的目录中存在的模块。通常，不需要使用此命令，因为 Fault Manager 会在 Solaris 最初引导时或根据需要自动装入模块。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm unload\fR \fImodule\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载指定的 Fault Manager 模块。使用 \fBfmadm config\fR 输出中所列的根基名称来指定 \fImodule\fR。通常，不需要使用此命令，因为 Fault Manager 会根据系统配置自动装入和卸载模块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm repaired\fR \fIfmri\fR \fB|\fR \fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+通知 Fault Manager，已经对指定的资源执行修复过程。\fBfmadm repaired\fR 子命令应仅在 Oracle 修复过程文档的指导下使用。管理员可能需要使用额外的命令来重新启用之前发生故障的资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm replaced\fR \fIfmri\fR \fB|\fR \fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+通知 Fault Manager，已经替换指定的资源。该命令应在 Fault Manager 无法自动检测替换的情况下使用。\fBfmadm replaced\fR 子命令应仅在 Oracle 修复过程文档的指导下使用。管理员可能需要使用额外的命令来重新启用之前发生故障的资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm reset\fR [\fB-s\fR \fIserd\fR\fB]\fR \fImodule\fR\fR
+.ad
+.sp .6
+.RS 4n
+复位指定的 Fault Manager 模块或模块子组件。如果存在 \fB-s\fR 选项，将在模块内复位指定的 Soft Error Rate Discrimination (SERD) 引擎。如果不存在 \fB-s\fR 选项，会复位整个模块，并删除所有与该模块关联的持久性状态。\fBfmadm reset\fR 子命令应仅在 Oracle 修复过程文档的指导下使用。通常，不需要使用此命令，因为 Fault Manager 自动管理其模块。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm rotate\fR \fBerrlog | fltlog | infolog | infolog_hival\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBrotate\fR 子命令是 \fBlogadm\fR(1M) 的辅助命令，可用于确保 \fBlogadm\fR 正确轮转活动的日志文件。不可直接调用（直接调用可能会丢失日志历史）。如果当前日志文件的大小不为零，可以使用以下命令之一轮转相应的日志文件：
+.sp
+.in +2
+.nf
+# \fBlogadm -p now -s 1b /var/fm/fmd/errlog\fR
+# \fBlogadm -p now -s 1b /var/fm/fmd/fltlog\fR
+# \fBlogadm -p now -s 1b /var/fm/fmd/infolog\fR
+# \fBlogadm -p now -s 1b /var/fm/fmd/infolog_hival\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm add-alias\fR \fIproduct-id\fR.\fIchassis-id\fR \fIalias-id\fR ['\fIcomment\fR']\fR
+.ad
+.sp .6
+.RS 4n
+\fBadd-alias\fR 子命令用于建立 \fIalias-id\fR，作为 \fIproduct-id\fR.\fIchassis-id\fR 机箱的受管理别名。定义受管理别名后，机箱的 \fB/dev/chassis\fR\fBdevchassis\fR(7FS) 名称空间表示将使用更有意义的 \fIalias-id\fR 来代替 \fIproduct-id\fR.\fI chassis-id\fR。
+.sp
+.in +2
+.nf
+# \fBfmadm add-alias SUN-Storage-J4410.1039QAQ007 RACK29.U25-28\fR
+.fi
+.in -2
+.sp
+
+上述命令将验证新映射是否会与现有映射产生冲突。如果产生冲突，则映射不会发生任何更改。当关联的名称空间更新完成时，该子命令即完成。如果更新后的名称空间没有使用新的 \fIalias-id \fR，则会显示一条警告，但是会更新映射。如果名称空间更新花费的时间过长，将显示一条警告。
+.sp
+如果提供可选注释，该注释会被保留下来，后续 \fBlookup-alias\fR 或 \fBlist-alias\fR 命令将会显示该注释。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm remove-alias\fR \fIalias-id\fR | \fIproduct-id\fR.\fIchassis-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBremove-alias\fR 子命令用于删除 \fIproduct-id\fR.\fIchassis-id\fR 到 \fIalias-id\fR 的映射。
+.sp
+.in +2
+.nf
+# \fBfmadm remove-alias RACK29.U25-28\fR
+.fi
+.in -2
+.sp
+
+当关联的名称空间更新完成时，上述子命令即完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm lookup-alias\fR \fIalias-id\fR | \fIproduct-id\fR.\fIchassis-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlookup-alias\fR 子命令可用于确定当前映射。下面是一个命令示例。
+.sp
+.in +2
+.nf
+# \fBfmadm lookup-alias SUN-Storage-J4410.1039QAQ007\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm list-alias\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlist-alias\fR 子命令用于显示所有注释和映射。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm sync-alias\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsync-alias\fR 子命令用于成批手动导入一组映射。将维护当前映射的两个副本：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/dev/chassis_aliases\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/dev/.chassis_aliase\fR
+.RE
+要成批导入一组映射，您可以更新 \fB/etc/dev/chassis_aliases\fR 文件，然后运行 \fBsync-alias\fR。
+.RE
+
+.SH 选项
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 6n
+.rt  
+设置静默模式。\fBfmadm\fR 不会向标准输出发出表明成功操作结果的消息。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcmd\fR\fR
+.ad
+.RS 8n
+.rt  
+\fB\fR"子命令"中列出的一个子命令的名称。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIargs\fR\fR
+.ad
+.RS 8n
+.rt  
+一个或多个适用于选定 \fIsubcommand\fR 的选项或参数，如\fB\fR"子命令"中所述。这些参数包括 \fBfmri\fR、\fBuuid\fR 和 \fBlabel\fR。这些参数会标识作为 \fBfmadm\fR 子命令的对象的资源。使用 \fBfmadm faulty\fR 获取用于目标资源的 \fBfmri\fR、\fBuuid\fR 和 \fBlabel\fR。请参见\fB\fR"示例"部分。通常，\fBlabel\fR 是这些操作数中用户友好程度最高的。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR调用 \fBfaulty\fR 子命令
+.sp
+.LP
+以下命令调用 \fBfaulty\fR 子命令，它显示一个组件的 \fBuuid\fR、\fBlabel\fR 和 \fBfmri\fR。
+
+.sp
+.in +2
+.nf
+# \fBfmadm faulty\fR
+------------ ------------------------------------  ------------ ---------
+TIME         EVENT-ID                              MSG-ID       SEVERITY
+------------ ------------------------------------  ------------ ---------
+Sep 09 16:15 96609fae-113c-e48c-b1cf-ebf4b0902d72  DISK-8000-3E Critical
+                                                                injected
+
+Host      : x4170-brm-02
+Platform  : SUN-FIRE-X4170-SERVER     Chassis_id  : 0920XF508B
+Product_sn:
+
+Fault class: fault.io.scsi.cmd.disk.dev.rqs.derr
+Affects : dev:///:devid=id1,sd@n5000c5000940edbb//scsi_vhci/disk@g5000c\e
+5000940edbb  out of service, but associated components no longer faulty
+FRU     : "DISK 11"
+(hc://:product-id=SUN-Storage-J4410:server-id=:chassis-id=:serial=000930\e
+G01CN4----3SJ01CN4:part=SEAGATE-ST330057SSUN300G:revision=0205/\e
+ses-enclosure=0/bay=11/disk=0)
+replaced
+\&...
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在上面的输出中，\fBuuid\fR 是 \fBEVENT-ID\fR 列中的第一项 \fB96609fae-113c-e48c-b1cf-ebf4b0902d72\fR。\fBlabel\fR 是 \fBFRU\fR 行中的 \fBDISK 11\fR。\fBfmri\fR 是：
+
+.sp
+.in +2
+.nf
+dev:///:devid=id1,sd@n5000c5000940edbb//scsi_vhci/disk@g5000c\e
+5000940edbb
+
+hc://:product-id=SUN-Storage-J4410:server-id=:chassis-id=:serial=000930\e
+G01CN4--------3SJ01CN4:part=SEAGATE-ST330057SSUN300G:revision=0205/\e
+ses-enclosure=0/bay=11/disk=0)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用 \fBfmdump\fR \fB-v\fR 可以获得相同的值：
+
+.sp
+.in +2
+.nf
+# \fBfmdump -v\fR
+Sep 09 16:15:36.9252 96609fae-113c-e48c-b1cf-ebf4b0902d72 DISK-8000-3E \e
+Diagnosed 100%  fault.io.scsi.cmd.disk.dev.rqs.derr
+
+Problem in: hc://:scheme=:product-id=SUN-Storage-J4410:chassis-id=:\e
+server-id=/ses-enclosure=0/bay=11/disk=0
+
+Affects: dev:///:devid=id1,sd@n5000c5000940edbb//\e
+scsi_vhci/disk@g5000c5000940edbb
+FRU: hc://:product-id=SUN-Storage-J4410:server-id=:chassis-id=:\e
+serial=000930G01CN4--------3SJ01CN4:part=SEAGATE-ST330057SSUN300G:\e
+revision=0205/ses-enclosure=0/bay=11/disk=0
+
+Location: DISK 11
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，\fBlabel\fR 是使用最方便的标识符。
+
+.LP
+\fB示例 2 \fR获取模块名称
+.sp
+.LP
+以下命令显示每个组件的模块名称。模块名称被指定为 \fBfmadm unload\fR 命令的输入。
+
+.sp
+.in +2
+.nf
+# \fBfmadm config\fR
+MODULE                   VERSION STATUS  DESCRIPTION
+cpumem-retire            1.1     active  CPU/Memory Retire Agent
+disk-transport           1.0     active  Disk Transport Agent
+eft                      1.16    active  eft diagnosis engine
+\&..
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+出现错误。错误包括与 \fBfmd\fR 的通信失败，或是执行请求操作的权限不足。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/fault-management
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令行选项为 Committed（已确定）。用户可读输出为 not-an-interface（不是接口）。
+.SH 另请参见
+.sp
+.LP
+\fBfmd\fR(1M)、\fBfmdump\fR(1M)、\fBfmstat\fR(1M)、\fBlogadm\fR(1M)、\fBsyslogd\fR(1M)、\fBattributes\fR(5)、\fBdevchassis\fR(7FS)
+.sp
+.LP
+\fI《System Administration Guide: Common Management Tasks》\fR

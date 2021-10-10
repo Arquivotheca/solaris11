@@ -1,0 +1,488 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH svc.startd 1M "2010 年 12 月 14 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+svc.startd \- サービス管理機能のマスターリスタータ
+.SH 形式
+.LP
+.nf
+\fB/lib/svc/bin/svc.startd\fR 
+.fi
+
+.LP
+.nf
+\fBsvc:/system/svc/restarter:default\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsvc.startd\fR はサービス管理機能 (SMF) のマスターリスタータデーモンであり、すべてのサービスのデフォルトリスタータです。\fBsvc.startd\fR は、管理要求、システム障害、またはアプリケーション障害に基づいて、サービスの開始、停止、および再起動を行います。
+.sp
+.LP
+\fBsvc.startd\fR は、各サービスの依存関係に基づいて障害管理を担うほか、サービスの状態の維持も行います。 
+.sp
+.LP
+\fBsvc.startd\fR はシステムの起動時に自動的に呼び出されます。なんらかの障害が発生した場合は再起動されます。直接 \fBsvc.startd\fR を呼び出さないでください。
+.sp
+.LP
+すべてのリスタータに共通する構成および動作の詳細については、\fBsmf_restarter\fR(5) を参照してください。
+.sp
+.LP
+\fBsvcs\fR(1) は、サービス構成機能によって管理されているすべてのサービスについてステータスを報告します。\fBsvcadm\fR(1M) を使用すると、サービスのリスタータに関連してサービスインスタンスを操作できます。
+.SS "環境変数"
+.sp
+.LP
+「SMF_」という接頭辞を持つ環境変数は予約済みであり、上書きが可能です。
+.sp
+.LP
+\fBsvc.startd\fR は、\fBsmf_method\fR(5) で指定されている「SMF_」環境変数をメソッドに渡します。デフォルトでは、PATH は \fB/usr/sbin:/usr/bin\fR に設定されます。デフォルトでは、\fBsvc.startd\fR に渡されるその他すべての環境変数は、\fBinit\fR(1M) から継承されたものです。
+.sp
+.LP
+重複するエントリは削減されて単一のエントリになります。使用される値は不定です。「<\fI名前\fR>=」という接頭辞を持たない環境エントリは無視されます。
+.SS "リスタータオプション"
+.sp
+.LP
+\fBsvc.startd\fR の構成はコマンド行オプションでは設定されません。代わりに、サービス構成リポジトリから構成が読み込まれます。\fBsvccfg\fR(1M) を使用すると、すべてのオプションおよびプロパティーを設定できます。
+.sp
+.LP
+次に示す \fBoptions\fR プロパティーグループ内の構成変数は、開発者および管理者が使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBboot_messages\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIastring\fR は、ブート中にコンソールに出力するメッセージのデフォルトレベルを示します (\fBscf_value_is_type\fR で定義される。\fBscf_value_is_type\fR(3SCF) を参照)。サポートされているメッセージオプションには、\fBquiet\fR と \fBverbose\fR があります。\fBquiet\fR オプションは、ブート中に最小限のメッセージをコンソールに出力します。\fBverbose\fR オプションは、開始されるサービスごとに 1 つのメッセージを出力して、成功または失敗を示します。\fBboot\fR \fB-m\fR オプションを使用すると、ブート時に \fBboot_messages\fR 設定を上書きできます。\fBkernel\fR(1M) を参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogging\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvc.startd\fR のグローバルサービスログ記録レベルを制御します。\fIastring\fR (\fBscf_value_is_type\fR で定義される。\fBscf_value_is_type\fR(3SCF) を参照) は、\fBsyslog\fR (\fBsyslog\fR( 3C) を参照) および \fBsvc.startd\fR のグローバルログファイル \fB/var/svc/log/svc.startd.log\fR に記録するメッセージのデフォルトレベルを示します。サポートされているメッセージオプションには、\fBquiet\fR、\fBverbose\fR、および \fBdebug\fR があります。\fBquiet\fR オプションは、管理者の介入を必要とするエラーメッセージを、コンソール、\fBsyslog\fR、および \fBsvc.startd\fR のグローバルログファイルに送信します。\fBverbose\fR オプションは、管理者の介入を必要とするエラーメッセージをコンソール、\fBsyslog\fR、および \fBsvc.startd\fR のグローバルログファイルに、管理者の介入を必要としないエラーに関する情報を \fBsvc.startd\fR のグローバルログファイルに、それぞれ送信します。さらに、サービスが起動されるたびに単一のメッセージがコンソールに送信されます。\fBdebug\fR オプションは、\fBsvc.startd\fR デバッグメッセージを \fBsvc.startd\fR のグローバルログファイルに、管理者の介入を必要とするエラーメッセージをコンソール、\fBsyslog\fR、および \fBsvc.startd\fR のグローバルログファイルに、サービスが起動されるたびに単一のメッセージをコンソールに、それぞれ送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのブートレベルとして使用するマイルストーンを決定する FMRI です。指定できるオプションは、次に示すメジャーマイルストーンです。
+.sp
+.in +2
+.nf
+svc:/milestone/single-user:default
+svc:/milestone/multi-user:default
+svc:/milestone/multi-user-server:default
+.fi
+.in -2
+.sp
+
+あるいは特殊値 \fBall\fR または \fBnone\fR も指定できます。\fBall\fR は、すべてのサービスに依存する理想化されたマイルストーンを表します。\fBnone\fR は、マスター \fBsvc:/system/svc/restarter:default\fR 以外にはどのサービスも実行されていない、特殊なマイルストーンです。デフォルトでは、\fBsvc.startd\fR は、すべてのサービスに依存する統合的なマイルストーン \fBall\fR を使用します。このプロパティーが指定された場合、\fBinittab\fR(4) の \fBinitdefault\fR 設定はすべて上書きされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsystem/reconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+再構成リブートが要求されたことを示します。再構成リブートに応じて動作する必要のあるサービスでは、このプロパティーが存在し 1 に設定されているかどうかをチェックして、再構成ブートが要求されたかどうかを確認できます。
+.sp
+このプロパティーは \fBsvc.startd\fR によって管理されます。管理者はこのプロパティーを変更しないでください。
+.RE
+
+.sp
+.LP
+\fBsvc.startd\fR を無効にするなどの構成エラーは、\fBsyslog\fR によってログに記録されますが、無視されます。
+.SS "サービスの状態"
+.sp
+.LP
+\fBsvc.startd\fR によって管理されるサービスは、\fBsmf\fR(5) で説明されている状態のいずれかになります。このリスタータによって状態の定義が変更されることはありません。 
+.SS "サービスの報告機能"
+.sp
+.LP
+管理対象サービスによって実行されるログ記録のほかに、\fBsvc.startd\fR には、サービスの報告およびログ記録を行う共通のメカニズムが用意されています。
+.sp
+.LP
+報告機能プロパティー \fBsvc.startd\fR は、管理しているすべてのサービスについて、共通のプロパティーセットを更新します。これらのプロパティーは、サービスインスタンスの状態に基づいてアクションを実行するための共通インタフェースとして使用できます。\fBsvcs\fR(1) コマンドを使用すると、これらのプロパティーを簡単に表示できます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/state\fR\fR
+.ad
+.br
+.na
+\fB\fBrestarter/next_state\fR\fR
+.ad
+.sp .6
+.RS 4n
+インスタンスの現在の状態および次の状態 (移行中の場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/auxiliary_state\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のインスタンス状態について詳細情報を示す説明文。\fBsvc.startd\fR によって管理されるサービスには、次に示す補助状態を使用できます。 
+.sp
+.ne 2
+.mk
+.na
+\fBmaintenance\fR
+.ad
+.RS 15n
+.rt  
+.sp
+.in +2
+.nf
+fault_threshold_reached
+stop_method_failed
+administrative_request
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/state_timestamp\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の状態に到達した時刻。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/contract\fR\fR
+.ad
+.sp .6
+.RS 4n
+サービスインスタンスを実行している主プロセス契約 ID (存在する場合)。
+.RE
+
+.sp
+.LP
+\fBログ\fR
+.sp
+.LP
+デフォルトでは、\fBsvc.startd\fR は、メソッドの標準出力および標準エラーのファイル記述子に加えて、サービスに対する重要なリスタータアクションを \fB/var/svc/log/\fIservice\fR:\fIinstance\fR.log\fR に記録します。\fB/var/svc/log/svc.startd.log\fR や \fBsyslog\fR など、システムのグローバルな場所へのロギングレベルは、\fBoptions/logging\fR プロパティーによって制御されます。
+.SS "サービスの定義"
+.sp
+.LP
+\fBsvc.startd\fR によって管理されるサービスを開発または構成するとき、サービスインスタンスとリスタータの相互作用を操作するために、一連の共通プロパティーが使用されます。 
+.sp
+.LP
+\fBメソッド\fR
+.sp
+.LP
+\fBsvc.startd\fR で提供されている fork/exec モデル用メソッドの一般的な形式は、\fBsmf_method\fR(5) に示されています。\fBsvc.startd\fR によって管理されるサービスでは、次に示すメソッドが必須メソッドまたは省略可能メソッドとしてサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.RS 11n
+.rt  
+サービスを中断することなく、リポジトリまたは \fBconfig\fR ファイルから適切な構成パラメータを読み込み直します。多くの場合、これはシステムデーモン用の \fBSIGHUP\fR を使用して実装されます。再起動しないとサービスが構成の変更を認識できない場合、refresh メソッドは提供されません。
+.sp
+このメソッドは省略可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.RS 11n
+.rt  
+サービスを開始します。アプリケーションがコンシューマに対して利用可能になったときに初めて成功を返します。競合するインスタンスがすでに実行されている場合や、サービスを開始できない場合は、失敗を返します。
+.sp
+このメソッドは必須です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.RS 11n
+.rt  
+サービスを停止します。場合によっては、一部またはすべてのサービスがすでに停止されているときに stop メソッドを呼び出すこともできます。メソッドが戻るときにサービスが完全に停止していない場合だけ、エラーを返します。
+.sp
+このメソッドは必須です。
+.RE
+
+.sp
+.LP
+サービスが必須メソッド内で何もアクションを実行する必要がない場合、そのメソッドに \fB:true\fR トークンを指定する必要があります。 
+.sp
+.LP
+\fBsvc.startd\fR は、サービスや特定のメソッドに対して指定されたメソッドコンテキストをすべて尊重します。\fBsmf_method\fR(5) で説明されているメソッド拡張トークンは、\fBsvc.startd\fR によって呼び出されるすべてのメソッドで使用できます。 
+.sp
+.LP
+\fBプロパティー\fR 
+.sp
+.LP
+\fBsmf\fR(5) で使用できる一般的なプロパティーの概要。これらの一般的なプロパティーは、次のような特定の方法で \fBsvc.startd\fR と対話します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgeneral/enabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+enabled が true に設定されている場合、リスタータは、サービスの依存関係がすべて満たされるとサービスの開始を試みます。false に設定されている場合、サービスは実行されず、無効にされた状態のままになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgeneral/restarter\fR\fR
+.ad
+.sp .6
+.RS 4n
+この FMRI プロパティーが空または \fBsvc:/system/svc/restarter:default\fR に設定されている場合、サービスは \fBsvc.startd\fR によって管理されます。それ以外の場合は、指定されたリスタータが (利用可能になったときに) サービスの管理を担当します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgeneral/single_instance\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsingle_instance\fR が true に設定されている場合、\fBsvc.startd\fR は、常にこのサービスの 1 つのインスタンスのみ、オンラインまたは機能低下状態に移行することを許可します。
+.RE
+
+.sp
+.LP
+また、\fBsvc.startd\fR によって管理されるサービスは、下記に示す省略可能プロパティーを \fBstartd\fR プロパティーグループ内に定義できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/duration\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBduration\fR プロパティーは、サービスのモデルを定義します。このプロパティーは、\fBtransient\fR、\fBwait\fR とも呼ばれる \fBchild\fR モデルサービス、または \fBcontract\fR (デフォルト) に設定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/ignore_error\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBignore_error\fR プロパティーは、設定されている場合、無視するイベントをコンマ区切りのリストで指定します。このリストで有効な文字列値は \fBcore\fR と \fBsignal\fR です。デフォルトでは、すべてのエラーで再起動が行われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/need_session\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBneed_session\fR プロパティーが true に設定されている場合は、インスタンスを独自のセッションで起動する必要があることを示します。デフォルトでは、そのようにはなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/utmpx_prefix\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fButmpx_prefix\fR 文字列プロパティーは、メソッドを実行する前にインスタンスに有効な \fButmpx\fR エントリが必要であることを定義します。デフォルトでは、\fButmpx\fR エントリは作成されません。
+.RE
+
+.SS "サービス障害"
+.sp
+.LP
+メソッドからゼロ以外の終了コードが返された場合や指定されたタイムアウトの期限が切れる前にメソッドが完了できなかった場合、\fBsvc.startd\fR はメソッドが失敗したと見なします。\fB$SMF_EXIT_ERR_CONFIG\fR または \fB$SMF_EXIT_ERR_FATAL\fR が返された場合、\fBsvc.startd\fR はすぐにサービスを保守状態にします。その他すべての障害では、\fBsvc.startd\fR はサービスをオフライン状態にします。サービスがオフラインの場合で、その依存関係が満たされているときは、\fBsvc.startd\fR は再びサービスの開始を試みます (\fBsmf\fR(5) を参照)。
+.sp
+.LP
+contract または transient サービスが、その定義済みのタイムアウトが経過する前に起動メソッドから戻らない場合、\fBsvc.startd\fR はそのメソッドに \fBSIGKILL\fR を送信し、サービスをオフライン状態に戻します。
+.sp
+.LP
+障害が 5 回連続して発生した場合、またはエラーのためにサービスが 10 分経過する間に複数回再起動されている場合、\fBsvc.startd\fR はサービスを保守状態にします。
+.sp
+.LP
+サービス障害の条件は、\fBstartd/duration\fR プロパティーで定義されるサービスモデルと、\fBstartd/ignore_error\fR プロパティーの値との組み合わせによって定義されます。
+.sp
+.LP
+次に示す条件のいずれかが発生すると、contract モデルサービスは障害状態になります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サービスのすべてのプロセスが終了する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サービスのプロセスのいずれかでコアダンプが生成される
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サービス外部のプロセスからサービスプロセスに致命的な信号が送信される (たとえば、管理者が \fBpkill\fR コマンドを使用してサービスプロセスを終了する)
+.RE
+.sp
+.LP
+\fBstartd/ignore_error\fR に core または signal、あるいはその両方を指定すると、サービスでは最後の 2 つの条件を無視できます。
+.sp
+.LP
+サービスを \fBtransient\fR として定義すると、svc.startd はそのサービスのプロセスを追跡しません。したがって、contract モデルサービスについて記述されている潜在的な障害は、transient サービスについては障害と見なされません。transient サービスは、メソッド失敗条件のいずれかが発生した場合だけ保守状態になります。
+.sp
+.LP
+\fBwait\fR モデルサービスは、サービスに関連付けられている子プロセスが終了するたびに再起動されます。「\fBwait\fR」モデルサービスの場合、子プロセスの終了はエラーとは見なされず、障害が繰り返し発生しても保守状態への移行にはつながりません。
+.SS "レガシーサービス"
+.sp
+.LP
+\fBsvc.startd\fR は、起動時の実行レベル移行中に呼び出されるサービスを引き続きサポートしています。同等の実行レベルのマイルストーンを構成しているすべての管理対象サービスがオンライン状態に移行したあと、各 \fB/etc/rc?.d\fR ディレクトリが処理されます。\fB\fR\fB/etc/rc?.d\fR ディレクトリにある標準の init スクリプトは、そのシーケンス番号の順に実行されます。
+.sp
+.LP
+マイルストーンと実行レベルのマッピングは次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone/single-user\fR\fR
+.ad
+.sp .6
+.RS 4n
+シングルユーザー (\fBS\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone/multi-user\fR\fR
+.ad
+.sp .6
+.RS 4n
+マルチユーザー (\fB2\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone/multi-user-server\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークサービス付きマルチユーザー (\fB3\fR)
+.RE
+
+.sp
+.LP
+また、\fBsvc.startd\fR は、スクリプトごとに 1 つのインスタンスをリポジトリに挿入することにより、これらのレガシーサービスが SMF で表示されるようにします。これらのレガシーインスタンスは、\fB svcs\fR(1) などの標準の SMF インタフェースを使用して表示でき、常に \fBLEGACY-RUN\fR 状態で表示されます。変更したり、ほかのサービスの依存関係として指定したりすることはできません。管理者に役立つように、レガシーサービスの初期の開始時刻が取り込まれます。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/svc/log\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBsvc.startd\fR がログファイルを格納するディレクトリ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/svc/volatile\fR\fR
+.ad
+.RS 21n
+.rt  
+\fB/var\fR が読み書き用にマウントされる前のブートの初期段階で \fBsvc.startd\fR がログファイルを格納するディレクトリ。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR詳細ログをオンに設定する
+.sp
+.LP
+詳細ログをオンに設定するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# /usr/sbin/svccfg -s system/svc/restarter:default
+svc:/system/svc/restarter:default> addpg options application
+svc:/system/svc/restarter:default> setprop options/logging = \e
+astring: verbose
+svc:/system/svc/restarter:default> exit
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この要求は、次に \fBsvc.startd\fR を再起動したときに有効になります。
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcprop\fR(1), \fBkernel\fR(1M), \fBinit\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsvc.configd\fR(1M), \fBsetsid\fR(2), \fBsyslog\fR(3C), \fBlibscf\fR(3LIB), \fBscf_value_is_type\fR(3SCF), \fBcontract\fR(4), \fBinit.d\fR(4), \fBprocess\fR(4), \fBinittab\fR(4), \fBattributes\fR(5), \fBsmf\fR(5), \fBsmf_method\fR(5)

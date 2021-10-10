@@ -1,0 +1,666 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH iostat 1M "2009 年 3 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+iostat \- 报告 I/O 统计信息
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/iostat\fR  [\fB-cCdDeEiImMnpPrstxXYz\fR] [\fB-l\fR \fIn\fR] [\fB-T\fR u | d]
+ [\fIdisk\fR]... [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBiostat\fR 实用程序重复报告终端、磁盘和磁带 \fBI/O\fR 活动，以及 \fBCPU\fR 使用情况。输出的第一行针对自引导后的所有时间；随后每一行仅针对前一个时间间隔。
+.sp
+.LP
+为计算此信息，内核要维护大量计数器。对于每个磁盘，内核都会对读取、写入、位读取和位写入情况进行计数。内核还会取得队列入口点和退出点处的 hi-res 时间戳，使它可以为每个队列跟踪驻留时间以及累积驻留长度。使用这些值，\fBiostat\fR 会得出关于总处理能力、使用情况、队列长度、事务处理速度和服务时间的非常准确的测量值。对于全体终端，内核只对输入和输出字符数进行计数。
+.sp
+.LP
+内核状态命令执行期间，系统的 \fBstate\fR 可以更改。如果相关，状态更改消息会包括在 \fBiostat\fR 输出中，格式为下列之一：
+.sp
+.in +2
+.nf
+<<device added: sd0>>
+<<device removed: sd0>>
+<<partition added: sd0,a>>
+<<partition removed: sd0,a>>
+<<NFS mounted: nfs1>>
+<<NFS unmounted: nfs1>>
+<<multi-path added: ssd4>>
+<<multi-path removed: ssd4>>
+<<controller added: c1>>
+<<controller removed: c1>>
+<<processors added: 1, 3>>
+<<processors removed: 1, 3>>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，根据情况，这些状态更改消息中打印的 \fBnames\fR 受 \fB-n\fR 和 \fB-m\fR 选项影响。 
+.sp
+.LP
+有关更多常规系统统计信息，请使用 \fBsar\fR(1)、\fBsar\fR(1M) 或 \fBvmstat\fR(1M)。
+.SS "输出"
+.sp
+.LP
+\fBiostat\fR 实用程序的输出包括以下信息。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR\fR
+.ad
+.RS 10n
+.rt  
+磁盘名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr/s\fR\fR
+.ad
+.RS 10n
+.rt  
+每秒读取次数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw/s\fR\fR
+.ad
+.RS 10n
+.rt  
+每秒写入次数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkr/s\fR\fR
+.ad
+.RS 10n
+.rt  
+每秒读取的千字节数
+.sp
+间隔期间的平均 I/O 大小可以由 \fBkr/s\fR 除以 \fBr/s\fR 计算得出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkw/s\fR\fR
+.ad
+.RS 10n
+.rt  
+每秒写入的千字节数
+.sp
+间隔期间的平均 I/O 大小可以由 \fBkw/s\fR 除以 \fBw/s\fR 计算得出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwait\fR\fR
+.ad
+.RS 10n
+.rt  
+等待服务的平均事务数（队列长度）
+.sp
+这是保留在设备驱动器队列中等待设备接受的 I/O 操作的数量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactv\fR\fR
+.ad
+.RS 10n
+.rt  
+正在处理的平均事务数（已从队列删除但尚未完成）
+.sp
+这是被设备接受但仍未处理的 I/O 操作的数量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc_t\fR\fR
+.ad
+.RS 10n
+.rt  
+事务的平均响应时间（以毫秒为单位）
+.sp
+\fBsvc_t\fR 输出报告设备的整体\fB响应\fR时间，而不是\fB服务\fR时间。整体时间包括事务在队列中的时间和事务被处理的时间。在队列中花费的时间以 \fBwsvc_t\fR 输出列中的 \fB-x\fR 选项显示。处理事务所花费的时间是真正的服务时间。服务时间也以 \fB-x\fR 选项显示，出现在同一报告的 \fBasvc_t\fR 输出列中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%w\fR\fR
+.ad
+.RS 10n
+.rt  
+存在等待服务的事务的时间百分比（队列非空）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%b\fR\fR
+.ad
+.RS 10n
+.rt  
+磁盘忙碌的时间百分比（事务在进行中）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwsvc_t\fR\fR
+.ad
+.RS 10n
+.rt  
+等待队列中的平均服务时间（以毫秒为单位）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBasvc_t\fR\fR
+.ad
+.RS 10n
+.rt  
+活动事务的平均服务时间（以毫秒为单位）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwt\fR\fR
+.ad
+.RS 10n
+.rt  
+I/O 等待时间不再以 \fBCPU\fR 时间的百分比来计算，该统计将始终返回零。
+.RE
+
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 12n
+.rt  
+报告系统在用户模式、系统模式下、等待 \fBI/O\fR 和空闲的时间百分比。有关更多信息，请参见"说明"一节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 12n
+.rt  
+同时也选择了 \fB-x\fR 选项时，报告通过 \fIcontroller id\fR 聚合的扩展磁盘统计信息。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 12n
+.rt  
+对于每个磁盘，报告每秒传输的千字节数、每秒的传输数量以及平均服务时间（以毫秒为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 12n
+.rt  
+对于每个磁盘，报告每秒读取次数、每秒写入次数以及磁盘使用百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 12n
+.rt  
+显示设备错误汇总统计信息。显示全部错误、硬错误、软错误以及传输错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.RS 12n
+.rt  
+显示全部设备错误统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 12n
+.rt  
+在 \fB-E\fR 输出中，显示\fB设备 ID\fR，而非\fB序列号\fR。\fBDevice Id\fR 是驱动器通过 \fBddi_devid_register\fR(9F) 注册的唯一标识符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.RS 12n
+.rt  
+报告每个时间间隔内的计数，而非速度（如适用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIn\fR\fR
+.ad
+.RS 12n
+.rt  
+将报告中包括的磁盘数量限制为 \fIn\fR；\fB-d\fR 和 \fB-D\fR 的磁盘限制缺省为 4，对 \fB-x\fR 无限制。注意：明确请求的磁盘（请参见下面的 \fIdisk\fR）不受此磁盘限制的约束。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 12n
+.rt  
+报告文件系统挂载点。如果还指定了 \fB-P\fR 或 \fB-p\fR 选项或者其与 \fB-Xn\fR 或 \fB-en\fR 一起使用时，该选项最有用。仅当输出中实际列出挂载点时，\fB-m\fR 选项才有用。该选项仅可与 \fB-n\fR 选项共同使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.RS 12n
+.rt  
+以 \fBMB\fR/秒（而非 KB/秒）显示数据吞吐量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 12n
+.rt  
+以描述性格式显示名称。例如，\fBcXtYdZ\fR、\fBrmt/N\fR、\fBserver:/export/path\fR。
+.sp
+缺省情况下，通过诸如 \fBssd23\fR 或 \fBmd301\fR 等的实例名来标识磁盘。结合 \fB-n\fR 选项和 \fB-x\fR 选项，会以 \fBcXtYdZsN\fR 格式显示磁盘名称，从而更容易与其物理硬件特性关联。\fBcXtYdZsN\fR 格式在 FibreChannel (FC) 环境中特别有用，其中 FC 全局名称显示在 \fBt\fR 字段中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 12n
+.rt  
+对于每个磁盘，既按设备也按分区报告统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.RS 12n
+.rt  
+对每个磁盘，仅按分区报告统计信息，没有按磁盘统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 12n
+.rt  
+以逗号分隔格式显示数据。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 12n
+.rt  
+取消与 \fBstate changes\fR 有关的消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 12n
+.rt  
+报告每秒向终端读取和写入的字符数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR u | d\fR
+.ad
+.RS 12n
+.rt  
+显示时间戳。
+.sp
+指定 \fBu\fR 表示时间的内部表示形式的印刷表示形式。请参见 \fBtime\fR(2)。指定 \fBd\fR 表示标准日期格式。请参见 \fBdate\fR(1)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-X\fR\fR
+.ad
+.RS 12n
+.rt  
+对于 \fBscsi_vhci\fR(7D) 控制下的磁盘，除磁盘 \fIlun\fR 统计信息外，还会报告 \fIlun \fR.\fIcontroller\fR 的统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 12n
+.rt  
+报告扩展磁盘统计信息。缺省情况下，通过诸如 \fBssd23\fR 或 \fBmd301\fR 等的实例名来标识磁盘。结合 \fBx\fR 选项和 \fB-n\fR 选项，会以 \fBcXtYdZsN\fR 格式显示磁盘名称，从而更容易与其物理硬件特性关联。使用 \fBcXtYdZsN\fR 格式在 FibreChannel 环境中特别有帮助，其中 FC 全局名称显示在 \fBt\fR 字段中。
+.sp
+如果不请求输出显示（无 \fB-x\fR、\fB-e\fR 或 \fB-E\fR），则暗含 \fB-x\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Y\fR\fR
+.ad
+.RS 12n
+.rt  
+对于 \fBscsi_vhci\fR(7D) 控制下的磁盘，除磁盘 \fIlun\fR 统计信息外，还会报告 \fIlun \fR.\fItargetport\fR 和 \fIlun\fR.\fItargetport\fR.\fIcontroller\fR 的统计信息。
+.sp
+在 \fB-n\fR（描述性）模式下，使用路径的 \fBtarget-port\fR 属性显示 \fItargetport\fR。没有 \fB-n\fR，会使用较短 \fBport-id\fR 显示 \fItargetport\fR。所有具有相同 \fBtarget-port\fR 属性值的目标端口共享相同 \fBport-id\fR。\fBtarget-port\fR 到 \fBport-id\fR 关联在重新引导后不会保留。
+.sp
+如果不请求输出显示（无 \fB-x\fR、\fB-e\fR 或 \fB-E\fR），则暗含 \fB-x\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.RS 12n
+.rt  
+不会打印底层数据值都是零的行。
+.RE
+
+.sp
+.LP
+选项设置 \fB-xcnCXTdz\fR \fIinterval\fR 对于确定是否存在磁盘 I/O 问题以及识别问题特别有用。
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.RS 12n
+.rt  
+仅显示 \fIcount\fR 报告。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdisk\fR\fR
+.ad
+.RS 12n
+.rt  
+明确指定要报告的磁盘；除了任何明确磁盘外，还将报告达到磁盘限制（请见上面的 \fB-l\fR 选项）的任何活动磁盘。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.RS 12n
+.rt  
+每 \fIinterval\fR 秒报告一次。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBiostat\fR 生成用户和系统操作统计信息
+.sp
+.LP
+以下命令显示通过 \fIcontroller id\fR 为用户 (\fBus\fR) 和系统 (\fBsy\fR) 操作聚合的扩展设备统计信息的两个报告。因为 \fB-n\fR 选项与 \fB-x\fR 选项一起使用，以控制器名称标识设备。
+
+.sp
+.in +2
+.nf
+example% \fBiostat\fR \fB-xcnCXTdz\fR \fB5\fR
+
+
+Mon Nov 24 14:58:36 2003
+    cpu
+ us sy wt id
+ 14 31  0 20
+                    extended device statistics                
+  r/s    w/s    kr/s      kw wait  actv wsvc_t asvc_t  %w  %b device
+  3.8   29.9   145.8    44.0  0.0   0.2    0.1    6.4   0   5     c0
+666.3  814.8 12577.6 17591.1 91.3  82.3   61.6   55.6   0   2    c12
+180.0  234.6  4401.1  5712.6  0.0 147.7    0.0  356.3   0  98    d10
+
+Mon Nov 24 14:58:41 2003
+    cpu
+ us sy wt id
+ 11 31  0 22
+                    extended device statistics                
+  r/s    w/s    kr/s      kw wait  actv wsvc_t asvc_t  %w  %b device
+  0.8   41.0     5.2    20.5 0.0    0.2    0.2    4.4   0   6     c0
+565.3  581.7  8573.2 10458.9 0.0   26.6    0.0   23.2   0   3    c12
+106.5   81.3  3393.2  1948.6 0.0    5.7    0.0   30.1   0  99    d10
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 \fBiostat\fR 生成 TTY 统计信息
+.sp
+.LP
+以下命令显示关于不同操作模式下五个磁盘的活动的两个报告。因为使用了 \fB-x\fR 选项，以实例名称标识磁盘。
+
+.sp
+.in +2
+.nf
+example% \fBiostat\fR \fB-x\fR \fBtc 5 2\fR
+
+
+                  extended device statistics        tty         cpu
+device r/s  w/s kr/s  kw/s wait actv svc_t %w  %b  tin tout  us sy wt id
+sd0    0.4  0.3 10.4   8.0  0.0  0.0  36.9  0   1    0   10   0  0  0 99
+sd1    0.0  0.0  0.3   0.4  0.0  0.0  35.0  0   0 
+sd6    0.0  0.0  0.0   0.0  0.0  0.0   0.0  0   0 
+nfs1   0.0  0.0  0.0   0.0  0.0  0.0   0.0  0   0 
+nfs2   0.0  0.0  0.0   0.1  0.0  0.0  35.6  0   0 
+            extended device statistics              tty         cpu
+device r/s  w/s  kr/s  kw/s wait actv svc_t %w  %b tin tout  us sy wt id
+sd0    0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0   0  155   0  0  0 100
+sd1    0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+sd6    0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+nfs1   0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+nfs2   0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+                             
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用 \fBiostat\fR 生成分区和设备统计信息
+.sp
+.LP
+以下命令生成每个磁盘的分区和设备统计信息。因为 \fB-n\fR 选项与 \fB-x\fR 选项一起使用，以控制器名称标识磁盘。
+
+.sp
+.in +2
+.nf
+example% \fBiostat -xnp\fR
+
+                extended device statistics              
+r/s  w/s  kr/s kw/s wait actv wsvc_t asvc_t %w %b device
+0.4  0.3  10.4  7.9  0.0  0.0    0.0   36.9  0  1 c0t0d0
+0.3  0.3   9.0  7.3  0.0  0.0    0.0   37.2  0  1 c0t0d0s0
+0.0  0.0   0.1  0.5  0.0  0.0    0.0   34.0  0  0 c0t0d0s1
+0.0  0.0   0.0  0.1  0.0  0.0    0.6   35.0  0  0 fuji:/export/home/user3
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR显示从实例名称向描述性名称的转换
+.sp
+.LP
+以下示例说明了使用 \fBiostat\fR 将特定实例名称转换成描述性名称。
+
+.sp
+.in +2
+.nf
+example% \fBiostat -xn sd1\fR
+                        extended device statistics
+r/s    w/s   kr/s   kw/s wait actv wsvc_t asvc_t  %w  %b device
+0.0    0.0    0.0    0.0  0.0  0.0    0.0    0.0   0   0 c8t1d0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR显示特定磁盘的目标端口和控制器活动
+.sp
+.LP
+以下示例中共有四个控制器，全都连接到同一个目标端口。
+
+.sp
+.in +2
+.nf
+# \fBiostat -Y ssd22\fR
+                    extended device statistics
+device          r/s    w/s   kr/s   kw/s wait actv  svc_t  %w  %b
+ssd22           0.2    0.0    1.5    0.0  0.0  0.0    0.7   0   0
+ssd22.t2        0.2    0.0    1.5    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp0    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp1    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp2    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp3    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+调用为 Evolving（发展中）。用户可读的输出为 Unstable（不稳定）。
+.SH 另请参见
+.sp
+.LP
+\fBdate\fR(1)、\fBsar\fR(1)、\fBsar\fR(1M)、\fBmpstat\fR(1M)、\fBvmstat\fR(1M)、\fBtime\fR(2)、\fBattributes\fR(5)、\fBscsi_vhci\fR(7D)
+.SH 附注
+.sp
+.LP
+因为生成百分比数字中的舍入误差，\fBCPU\fR 使用总量可能与 100 略有差别。
+.sp
+.LP
+\fBI/0\fR (\fBr/s\fR+\fBw/s\fR) 速度低于 0.5/秒时，\fBsvc_t\fR 响应时间不是非常显著。此类情况下，无害峰值相当正常。
+.sp
+.LP
+\fBmpstat\fR 实用程序报告相同的 \fBwt\fR、\fBusr\fR 和 \fBsys\fR 统计信息。有关更多信息，请参见 \fBmpstat\fR(1M)。 
+.sp
+.LP
+在 \fBzone\fR 中执行时，并且如果池工具处于活动状态，\fBiostat\fR(1M) 仅提供该 \fBzone\fR 绑定到的池的处理器集合中那些处理器的信息。

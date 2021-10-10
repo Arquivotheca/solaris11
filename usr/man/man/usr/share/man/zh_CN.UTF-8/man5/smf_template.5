@@ -1,0 +1,555 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH smf_template 5 "2011 年 5 月 20 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+smf_template \- 对服务元数据的服务管理框架支持
+.SH 描述
+.sp
+.LP
+模板由服务开发者定义，用于在整体上描述关于服务的元数据或描述服务的各个配置属性，包括便于阅读的说明以及有效配置的定义。
+.sp
+.LP
+通过 SMF 命令为管理员提供访问模板的权限，这些命令用于描述配置值以及根据模板验证配置。
+.sp
+.LP
+工具开发者可以使用模板为服务配置提供更有帮助的用户界面。
+.SS "模板数据"
+.sp
+.LP
+服务元数据在模板中定义为服务清单的一部分。
+.SS "使用模板数据"
+.sp
+.LP
+可以使用 \fBsvcs -lv\fR 和 \fBsvccfg describe\fR 命令以便于阅读的格式访问关于属性的元数据。
+.sp
+.LP
+可以使用 \fBsvccfg\fR(1M) 的 \fBvalidate\fR 子命令根据模板数据验证服务实例或清单。可以使用一组 \fBlibscf\fR(3LIB) 接口访问模板数据。
+.SS "模板定义"
+.sp
+.LP
+服务清单是定义模板的唯一接口。
+.sp
+.LP
+服务作者应该为服务特定的属性组以及它们所引入的属性提供模板元数据，包括 \fBcommon_names\fR、\fBdescriptions\fR、\fBchoices\fR 和 \fBconstraints\fR。在 C 语言环境中，服务作者必须至少为属性组和属性提供说明。服务作者不能为框架附带的属性组（如方法和相关项）提供模板元数据。
+.sp
+.LP
+有关为服务制作模板定义的示例，请参见\fB示例\fR部分。
+.SS "模板编写"
+.sp
+.LP
+对属性组的相关模板数据的所有模板接口搜索依次在实例、服务、服务的重启程序上执行，最后将全局执行。
+.sp
+.LP
+属性组模板由其作者定义，可以应用于特定实例、服务及其所有实例、重启程序的委托或者全局应用。典型服务作者在实例或服务上定义模板。在实例上定义的模板仅应用于该实例，可覆盖在服务上定义的该属性组的模板。在服务上定义的模板应用于该服务的所有实例。
+.sp
+.LP
+重启程序作者可以在其清单中定义模板，这些模板应用于使用其重启程序的任何服务（也称为\fB委托\fR）。SMF 框架作者在 \fBsvc:/system/svc/global\fR 的清单中为整个 SMF 框架熟知其含义的属性组定义了模板。
+.sp
+.LP
+如果模板已在全局定义或由重启程序定义，但又由服务或实例重新定义，将被标记为验证错误。服务作者可以只为其服务特定的且 SMF 框架未使用的属性组创建模板，从而避免这些错误。
+.sp
+.LP
+属性组模板也可以按名称或类型设置通配符。只有适用于属性组的最特定的模板定义才受支持。
+.SS "模板详细信息"
+.SS "服务和实例模板"
+.sp
+.LP
+\fBtemplate\fR 元素定义模板块的开始。以下所有更深入的定义可包含在模板块中。\fBtemplate\fR 元素可包含在 \fBservice\fR 或 \fBinstance\fR 元素中。如果它包含在 \fBservice\fR 元素中，则应用于服务及该服务的所有实例。如果它包含在 \fBinstance\fR 元素中，则仅应用于服务的该实例。
+.sp
+.LP
+我们建议您尽可能地为整个服务定义模板数据。
+.sp
+.in +2
+.nf
+<service ... >
+   <template>
+   </template>
+</service>
+.fi
+.in -2
+
+.SS "服务和实例通用名称"
+.sp
+.LP
+整个服务或实例可以定义一个通用名称，用来描述服务/实例的用途。
+.sp
+.in +2
+.nf
+<template>
+  <common_name>
+      <loctext xml:lang='C'>console login</loctext>
+  </common_name>
+<template>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR 是一个自由格式的字符串，但专门用作 GUI 或 CLI 中的标签。 
+.sp
+.LP
+定义通用名称时，请遵循以下准则：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+简短。通常一两个字词就很合适。将名称限定为 40 个字符以内。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+清晰。服务名、属性组名或属性名对用户可能没什么帮助，但 \fIcommon_name\fR 有助于阐明实体的用途。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+无标点符号。\fIcommon_name\fR 不是句子或段落。它不应包含分句或短语。只有在为了满足商标需求时才应使用标点符号。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+大写字母只能用于首字母缩略词或正确的名称。对于英语以外的语言环境，对句子分段使用适当的大写。
+.RE
+.SS "服务和实例说明"
+.sp
+.LP
+description 元素包含属性组的较长说明，适用于状态行或工具提示：
+.sp
+.in +2
+.nf
+<template>
+  <description>
+     <loctext xml:lang='C'>Provide the text login prompt on console.
+     </loctext>
+  </description>
+<template>
+.fi
+.in -2
+
+.sp
+.LP
+\fIdescription\fR 准则
+.RS +4
+.TP
+.ie t \(bu
+.el o
+使用正确的语法。\fIdescription\fR 是旨在供用户阅读的句子。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+简短。几个句子通常最合适。
+.RE
+.SS "文档"
+.sp
+.LP
+可明确地定义此服务的文档，这样在服务出现问题或者服务的使用者需要更多相关信息时，就可以轻松地查找文档。
+.SS "属性组"
+.sp
+.LP
+\fBpg_pattern\fR 元素包含属性组的定义：
+.sp
+.in +2
+.nf
+<template>
+  <pg_pattern name="pgname" type="pgtype" target="this" required="true">
+  </pg_pattern>
+</template>
+.fi
+.in -2
+
+.sp
+.LP
+\fIname\fR 是属性组的名称，\fItype\fR 是属性组的类型。
+.sp
+.LP
+\fBtarget\fR 指定此定义的目标。\fB"this"\fR 是指定义服务或实例。\fB"instance"\fR 只能在服务的模板块中使用，这意味着该定义应用于此服务的所有实例。\fB"delegate"\fR 只能在重启程序的模板块中使用，并且应用于委托给该重启程序的所有实例。\fB"all"\fR 只能由主重启程序使用，是指系统上的所有服务。目标的缺省值为 \fB"this"\fR。
+.sp
+.LP
+\fIrequired\fR 指示此属性组是否为必需。\fIrequired\fR 的缺省值为 \fBfalse\fR。如果 \fIrequired\fR 为 \fBtrue\fR，则必须指定 \fIname\fR 和 \fItype\fR。
+.sp
+.LP
+\fIname\fR 和/或 \fItype\fR 可忽略。如果这两个属性中的任何一个被忽略，则将其视为通配符。例如，如果在 \fBpg_pattern\fR 定义中忽略 name 属性，则 \fBpg_pattern\fR 将适用于具有指定类型的所有特性组。
+.SS "属性组名称"
+.sp
+.LP
+\fIcommon_name\fR 元素包含属性组的便于阅读的本地化名称：
+.sp
+.in +2
+.nf
+<pg_pattern ...>
+  <common_name>
+    <loctext xml:lang='C'>start method</loctext>
+  </common_name>
+</pg_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR 是一个自由格式的字符串，但专门用作 GUI 或 CLI 中的标签。 
+.sp
+.LP
+参见上文"服务实例和通用名称"中的 \fIcommon_name\fR 准则。
+.SS "属性组说明"
+.sp
+.LP
+\fIdescription\fR 元素包含属性组的较长说明，适用于状态行或工具提示： 
+.sp
+.in +2
+.nf
+<pg_pattern ...>
+  <description>
+    <loctext xml:lang='C'>A required method which starts the service.
+   </loctext>
+   </description>
+</pg_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+参见上文"服务和实例说明"中用于指定 \fIdescription\fR 的准则。
+.SS "属性"
+.sp
+.LP
+\fIprop_pattern\fR 元素包含特定属性的定义：
+.sp
+.in +2
+.nf
+<pg_pattern ...>
+  <prop_pattern name="propname" type="proptype" required="true">
+  </prop_pattern>
+</pg_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIname\fR 是属性的名称，\fItype\fR 是属性的类型。
+.sp
+.LP
+\fBrequired\fR 指示属性是否为必需。\fBrequired\fR 的缺省值为 \fBfalse\fR。
+.sp
+.LP
+\fIname\fR 始终为必需。\fItype\fR 只有在 \fBrequired\fR 为 \fBfalse\fR 时才可选。
+.SS "属性名"
+.sp
+.LP
+\fIcommon_name\fR 元素包含属性的便于阅读的本地化名称：
+.sp
+.in +2
+.nf
+
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR 是一个自由格式的字符串字段，但专门用作 GUI 或 CLI 中的标签。 
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+<common_name>
+  <loctext xml:lang='C'>retry interval</loctext>
+</common_name>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+参见上文"服务实例和通用名称"中的 \fIcommon_name\fR 准则。
+.SS "属性单位"
+.sp
+.LP
+\fIunits\fR 元素包含数字属性的便于阅读的本地化单位：
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+  <units>
+    <loctext xml:lang='C'>seconds</loctext>
+  </units>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIunits\fR 准则
+.RS +4
+.TP
+.ie t \(bu
+.el o
+简短。尽量只使用单个字词或标签。复数形式通常最合适。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+无标点符号。\fIunits\fR 不是句子或段落。它不应包含分句或短语。只有在为了满足商标需求时才应使用标点符号。
+.RE
+.SS "属性说明"
+.sp
+.LP
+\fIdescription\fR 元素包含属性的较长说明，适用于状态行或工具提示：
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+   <description> <loctext xml:lang='C'>
+    The number of seconds to wait before retry.
+    </loctext> </description>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+参见上文"服务和实例说明"中用于指定 \fIdescription\fR 的准则。
+.SS "属性可见性"
+.sp
+.LP
+\fIvisibility\fR 元素指定更高级别软件中的简化视图是否要显示此属性。 
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+  <visibility value="hidden | readonly | readwrite"/>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+有些属性是内部实现的详细信息，不应显示为配置设置。其他属性可能仅为只读。此属性用于指定这些限制。值 hidden 指示不应显示属性，\fBreadonly\fR 指示属性不能修改，\fBreadwrite\fR 指示属性可修改。
+.sp
+.LP
+此属性不是一种安全机制，它只是专门帮助用户避免因粗心大意而造成破坏以及从 CLI 输出或 GUI 显示中删除不必要的杂乱信息。在许多命令和 UI 中的完全公开模式下，隐藏属性是可见的。
+.SS "属性格式"
+.sp
+.LP
+\fIcardinality\fR 和 \fIinternal_separators\fR 元素用于限制属性的结构：
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+  <cardinality min="1" max="1"/>
+  <internal_separators>,</internal_separators>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcardinality\fR 指示可接受的属性值数量。\fImin\fR 是最小数量，\fImax\fR 是最大数量。这两者均可选。如果这两者均未指定，则 \fB<cardinality/>\fR 等同于缺省数量的值、零个值或零个以上的值。
+.sp
+.LP
+\fIinternal_separators\fR 指定在打包了多个实际值的属性值中使用的分隔符。
+.SS "值约束"
+.sp
+.LP
+\fIconstraints\fR 元素指定属性可接受哪些值：
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+<constraints>
+       <value name="blue" />
+       <range min="1" max="7"/>
+       <include_values type="values"/>
+</constraints>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIvalue\fR 元素包含可能的属性值。range 包含整数范围。
+.sp
+.LP
+\fIvalue\fR 和 \fIrange\fR 可以按任何组合形式使用，限制其使用将会禁止许多有效的说明。如果未指定值约束，则属性可采用任何值。
+.sp
+.LP
+\fIinclude_values\fR 包含由值块指定的所有值（参见\fB值说明\fR部分）。
+.SS "值选择"
+.sp
+.LP
+选择块指示 UI 应向用户提供哪些值：
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+<choices>
+      <range min="1" max="3"/>
+      <value name="vt100" />
+      <value name="xterm" />
+      <include_values type="constraints"/>
+      <include_values type="values"/>
+</choices>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+与用于约束时一样，\fBrange\fR 和 \fBvalue\fR 也分别包含范围和各个值。
+.sp
+.LP
+\fIinclude_values\fR 包含由约束块或值块（参见下一部分）指定的所有值。
+.SS "值说明"
+.sp
+.LP
+与属性名一样，属性可采用的值也可能具有难以理解的表示形式。values 元素包含特定属性值的便于阅读的本地化说明：
+.sp
+.in +2
+.nf
+<prop_pattern>
+<values>
+      <value name="blue">
+              <common_name>
+                      <loctext xml:lang='C'>blue</loctext>
+              </common_name>
+              <description>
+                      <loctext xml:lang='C>
+                              The color between green and indigo.
+                      </loctext>
+              </description>
+      </value>
+</values>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR 是一个自由格式的字符串  ，但专门用作 GUI 或 CLI 中的标签。
+.sp
+.LP
+参见上文"服务实例和通用名称"中的 \fIcommon_name\fR 准则。
+.SH 示例
+.sp
+.LP
+假定要定义基本模板数据的基本服务如下所示：
+.sp
+.in +2
+.nf
+<?xml version="1.0"?
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<service_bundle type='manifest' name='FOOfoo:foo'>
+<service name='system/foo' type='service' version='1'>
+      <dependency>
+              name='multi-user'
+              type='service'
+              grouping='require_all'
+              restart_on='none'
+              <service_fmri value='svc:/milestone/multi-user' />
+      </dependency>
+      <exec_method
+              type='method'
+              name='start'
+              exec='/opt/foo/food'
+              timeout_seconds='60'>
+      </exec_method>
+      <exec_method
+              type='method'
+              name='stop'
+              exec=':kill'
+              timeout_seconds='60'>
+      </exec_method>
+      <property_group name='config' type='application'>
+              <propval name='local_only' type='boolean' value='false' />
+              <propval name='config_file' type='astring'
+                  value='/opt/foo/foo.conf' />
+      <property name='modules' type='astring'>
+         <astring_list>
+               <value_node value='bar'/>
+               <value_node value='baz'/>
+         </astring_list>
+        </property>
+      </property_group>
+
+      <instance name='default' enabled='false' />
+</service>
+</service_bundle>
+.fi
+.in -2
+
+.sp
+.LP
+该服务可定义一些基本模板数据，从而为在 \fB<service>\fR 标记内使用此服务的管理员提供帮助。最有用的就是记录服务本身的用途以及服务特定的配置。
+.sp
+.in +2
+.nf
+<template>
+       <common_name> <loctext xml:lang='C'>
+           all-purpose demonstration
+       </loctext> </common_name>
+       <documentation>
+                <manpage title='food' section='1M'
+                         manpath='/opt/foo/man' />
+       </documentation>
+
+       <pg_pattern name='config' type='application' target='this'
+           required='true'>
+               <description> <loctext xml:lang='C'>
+                   Basic configuration for foo.
+                </loctext> </description>
+                <prop_pattern name='local_only' type='boolean'
+                    required='false'>
+                       <description> <loctext xml:lang='C'>
+                           Only listen to local connection requests.
+                       </loctext> </description>
+                </prop_pattern>
+                <prop_pattern name='config_file' type='astring'
+                     required='true'>
+                        <cardinality min='1' max='1'/>
+                        <description> <loctext xml:lang='C'>
+                             Configuration file for foo.
+                         </loctext> </description>
+                 </prop_pattern>
+                 <prop_pattern name='modules' type='astring'
+                     required='false'>
+                         <description> <loctext xml:lang='C'>
+                             Plugin modules for foo.
+                          </loctext> /description>
+                          <values>
+                                   <value name='bar'>
+                                   <description> <loctext xml:lang='C'>
+                                       Allow foo to access the bar.
+                                    </loctext> </description>
+                                    </value>
+                                    <value name='baz'>
+                                    <description> <loctext xml:lang='C'>
+                                       Allow foo to access baz functions.
+                                    </loctext> </description>
+                                    </value>
+                                    <value name='qux'>
+                                    <description> <loctext xml:lang='C'>
+                                       Allow foo to access qux functions.
+                                     </loctext> </description>
+                                     </value>
+                         </values>
+                         <choices>
+                             <include_values type='values'/>
+                         </choices>
+                  <prop_pattern>
+        </pg_pattern>
+</template>
+.fi
+.in -2
+
+.SH 文件
+.sp
+.LP
+\fB/usr/share/lib/xml/dtd/service_bundle.dtd.1\fR
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvccfg\fR(1M)、\fBlibscf\fR(3LIB)、\fBservice_bundle\fR(4)、\fBsmf\fR(5)

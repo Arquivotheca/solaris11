@@ -1,0 +1,522 @@
+'\" te
+.\" Copyright (c) 2009 Sun Microsystems, Inc. All Rights Reserved
+.TH prctl 1 "2009 年 8 月 25 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+prctl \- 実行中のプロセス、タスク、およびプロジェクトのリソース制御の取得または設定
+.SH 形式
+.LP
+.nf
+\fBprctl\fR [\fB-P\fR] [\fB-t\fR [basic | privileged | system]] 
+     [\fB-n\fR \fIname\fR [\fB-srx\fR] [\fB-v\fR \fIvalue\fR] 
+     [\fB-e\fR | \fB-d\fR \fIaction\fR] [\fB-p\fR \fIpid\fR]] [\fB-i\fR \fIidtype\fR] \fIid\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBprctl\fR ユーティリティーを使用すると、システム上のアクティブなプロセス、タスク、またはプロジェクトに関連付けられているリソース制御に対して、確認や変更を行うことができます。これを使えば、指定されたエンティティー上の基本制限、特権付き制限、および現在の使用状況にアクセスできます。
+.sp
+.LP
+Solaris オペレーティングシステムの現行リリースでサポートされているリソース制御については、\fBresource_controls\fR(5) を参照してください。
+.SH オプション
+.sp
+.LP
+\fB-s\fR、\fB-r\fR、\fB-x\fR、\fB-v\fR、\fB-d\fR、\fB-e\fR のいずれのオプションも指定されなかった場合、その呼び出しは取得処理とみなされます。それ以外の場合、それは変更処理とみなされます。
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR | \fB-e\fR \fIaction\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-v\fR、\fB-t\fR、および \fB-p\fR で指定されたリソース制御値に対し、指定された \fIaction\fR を無効 (\fB-d\fR) または有効 (\fB-e\fR) にします。\fB-v\fR、\fB-t\fR、\fB-p\fR のいずれかのオプションが指定されなかった場合、すべての値、特権、または受取人 pid に一致します。たとえば、\fB-v\fR のみが指定された場合、それに一致する値を持つ最初のリソース制御が変更されます。その際、すべての特権と受取人 pid に一致します。一致するリソース制御値が見つからなかった場合には、あたかも \fB-s\fR が指定されたかのように、新しい値が追加されます。
+.sp
+\fBアクション:\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 17n
+.rt  
+このアクションは \fB-d\fR でのみ使用できます。これは、すべてのアクションを無効化します。これは、\fBdeny\fR 大域フラグを持つリソース制御値では失敗します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeny\fR\fR
+.ad
+.RS 17n
+.rt  
+プロセス、タスク、プロジェクト、またはゾーンからのリソース要求がリソース制御値を超えた場合に、リソース制御がその要求を拒否しようとすることを示します。\fBno-deny\fR 大域フラグを持つリソース制御では、\fBdeny\fR アクションは有効にできません。\fBdeny\fR 大域フラグを持つリソース制御では、\fBdeny\fR アクションは無効にできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsignal\fR\fR
+.ad
+.RS 17n
+.rt  
+このアクションは \fB-d\fR でのみ使用できます。これは、\fBsignal\fR アクションを無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsignal\fR=\fIsignum\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBsignal=\fR\fIsignum\fR アクションの \fIsignum\fR は、シグナル番号 (またはシグナルの文字列表現) です。\fBno-local-action\fR 大域フラグを持つリソース制御上に \fBsignal\fR アクションを設定すると、失敗します。送信可能なシグナルは限られています。詳細については、「\fB注意事項\fR」を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIidtype\fR\fR
+.ad
+.sp .6
+.RS 4n
+ID オペランドのタイプを指定します。有効な \fIidtype\fR は、\fBprocess\fR、\fBtask\fR、\fBproject\fR、または \fBzone\fR です。また、\fBpid\fR、\fBtaskid\fR、\fBprojid\fR、および \fBzoneid\fR も使用できます。\fB-i\fR オプションが省略された場合のデフォルトの ID タイプは、\fBprocess\fR です。
+.sp
+変更処理の場合、ID オペランドが所属するエンティティーが、ターゲットエンティティーになります。たとえば、\fB-i\fR \fBprocess\fR を指定して特定のプロジェクトリソース制御を設定した場合、指定された各プロセス引数が所属するプロジェクト上にそのリソース制御が設定されます。
+.sp
+取得処理の場合、ID オペランドが所属するすべてのエンティティーのリソース制御が、一覧表示されます。たとえば、\fB-i\fR \fBtask\fR \fItaskid\fR と指定した場合、そのタスクのタスクリソース制御、プロジェクトリソース制御、およびゾーンリソース制御に加え、そのタスクが所属するプロジェクトとゾーンのリソース制御も一覧表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+取得または設定するリソース制御の名前を指定します。\fIname\fR が指定されなかった場合、すべてのリソース制御が取得されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-s\fR、\fB-r\fR、\fB-x\fR、\fB-d\fR、\fB-e\fR のいずれかを使ってタスク、プロジェクト、またはゾーンの基本リソース制御値を操作する場合、\fB-p\fR を使って受取人 \fIpid\fR を指定することができます。特定のタスク、プロジェクト、またはゾーン上で 1 つ以上の新しい基本リソース制御を設定する際に、\fB-i\fR \fIidtype\fR オプションの引数が \fBprocess\fR でない場合には \fB-p\fR オプションが必要となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソース制御値をスペース文字で区切られた形式で表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+最初のリソース制御値 (\fB-t\fR \fBprivilege\fR に一致するもの) を、\fB-v\fR オプションで指定された新しい値で置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいリソース制御値を設定します。
+.sp
+このオプションは、 必ず \fB-v\fR とともに指定してください。 
+.sp
+ユーザーが \fB-t\fR オプションを指定しなかった場合、基本特権が使用されます。基本のタスク資源制御、プロセス資源制御、またはゾーン資源制御を設定する場合、\fB-p\fR が必要になります。\fB-e\fR または \fB-d\fR も併せて指定された場合、新しい \fBrctl\fR へのアクションの設定も行われます。 
+.sp
+\fB-v\fR が指定され、かつ \fB-e\fR、\fB-d\fR、\fB-r\fR、\fB-x\fR のいずれも指定されなかった場合、以前のリリースとの互換性を維持する目的でこのオプションが暗黙のうちに仮定されます。
+.sp
+リソース制御値の設定時に大きな値を表現するために使用可能な単位修飾子や倍率については、\fBresource_controls\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [ \fBbasic\fR | \fBprivileged\fR | \fBsystem\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+設定するリソース制御タイプを指定します。「lowerable」フラグが設定されたリソース制御でない限り、特権付きリソース制御を変更できるのは、root と同等の特権を持つユーザー (または setuid プログラム) による呼び出しだけです。\fBRCTL_GLOBAL_LOWERABLE\fR フラグについては、\fBrctlblk_set_value\fR(3C) を参照してください。タイプが指定されなかった場合、\fBbasic\fR が仮定されます。取得処理では、タイプが指定されなかった場合、\fBsystem\fR を含むすべてのリソース制御タイプの値が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+設定処理用として、リソース制御の値を指定します。\fIvalue\fR が指定されなかった場合、指定されたタイプのうち、最小の値を持つリソース制御に対して、変更 (削除、アクションの有効化、またはアクションの無効化) が実行されます。
+.sp
+リソース制御値の設定時に大きな値を表現するために使用可能な単位修飾子や倍率については、\fBresource_controls\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたリソース制御値を削除します。削除オプションが指定されなかった場合の \fBprctl\fR のデフォルト操作は、値や特権の一致したリソース制御値を変更するか、指定された特権を使って新しい値を挿入することです。一致条件の詳細については、\fBsetrctl\fR(2) を参照してください。
+.RE
+
+.sp
+.LP
+\fB-d\fR、\fB-e\fR、\fB-v\fR、\fB-x\fR のいずれのオプションも指定されなかった場合、その呼び出しは取得処理とみなされます。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIid\fR\fR
+.ad
+.RS 6n
+.rt  
+問い合わせるエンティティー (\fBprocess\fR、\fBtask\fR、\fBproject\fR、\fBzone\fR のいずれか) の \fBID\fR。呼び出し元のユーザーの資格が特権付きでなく、かつ問い合わせ対象のエンティティーが所有している資格が異なっている場合、処理が失敗します。\fIid\fR が指定されなかった場合、エラーメッセージが返されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR現在のリソース制御設定の表示
+.sp
+.LP
+次の例では、現在のシェルが所属するタスクの現在のリソース制御設定を表示しています。
+
+.sp
+.in +2
+.nf
+ example$ ps -o taskid -p $$
+TASKID
+8
+example$ prctl -i task 8
+136150: /bin/ksh
+NAME    PRIVILEGE       VALUE    FLAG   ACTION             RECIPIENT
+task.max-cpu-time
+        usage            8s
+        system          18.4Es    inf   none                -
+task.max-lwps
+        usage              39
+        system          2.15G     max   deny                -
+project.max-contracts
+        privileged      10.0K       -   deny                -
+project.max-locked-memory
+        usage               0B
+        privileged       508MB      -   deny                -
+project.max-port-ids
+        privileged      8.19K       -   deny                -
+project.max-shm-memory
+        privileged       508MB      -   deny                -
+project.max-shm-ids
+        privileged        128       -   deny                -
+project.max-msg-ids
+        privileged        128       -   deny                -
+project.max-sem-ids
+        privileged        128       -   deny                -
+project.max-crypto-memory
+         usage            0B
+privileged       508MB      -   deny                -
+project.max-tasks
+        usage               2
+        system          2.15G     max   deny                -
+project.max-lwps
+         usage             39
+        system          2.15G     max   deny                -
+project.cpu-shares
+        usage               1
+        privileged          1       -   none                -
+zone.max-shm-memory
+        system          16.0EB    max   deny                -
+zone.max-shm-ids
+        system          16.8M     max   deny                -
+zone.max-sem-ids
+        system          16.8M     max   deny                -
+zone.max-msg-ids
+        system          16.8M     max   deny                -
+zone.max-lwps
+        system          2.15G     max   deny                -
+zone.cpu-shares
+        privileged          1       -   none                -
+zone.max-locked-memory
+        usage               0B
+        privileged       508MB      -   deny                -
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR特定の制御の値の表示、置換、および確認
+.sp
+.LP
+次の例では、ある既存プロジェクト上の特定の制御の値を表示、置換、および確認しています。
+
+.sp
+.in +2
+.nf
+example# prctl -n project.cpu-shares -i project group.staff
+project: 10: group.staff
+NAME    PRIVILEGE       VALUE    FLAG   ACTION               RECIPIENT
+project.cpu-shares
+        usage               1
+        privileged          1       -   none                         -
+        system          65.5K     max   none                         -
+
+example# prctl -n project.cpu-shares -v 10 -r -i project group.staff
+example# prctl -n project.cpu-shares -i project group.staff
+project: 10: group.staff
+NAME    PRIVILEGE       VALUE    FLAG   ACTION               RECIPIENT
+project.cpu-shares
+        usage              10
+        privileged         10       -   none                         -
+        system          65.5K     max   none                         -
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRリソースの調整
+.sp
+.LP
+次の例では、\fBproject.max-locked-memory\fR リソースを使用しています。
+
+.sp
+.LP
+最初に、\fBid\fR \fB-p\fR を使用して、現在のシェルが所属しているプロジェクトを検出します。
+
+.sp
+.in +2
+.nf
+/home/garfield> id -p
+          uid=77880(garfield) gid=10(staff) projid=10(group.staff)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+変更を行う前に、ターゲットプロジェクトを使用してリソースの制限値を識別します。
+
+.sp
+.in +2
+.nf
+/home/garfield> prctl -n project.max-locked-memory -i project \e
+                      group.staff
+	project 10: group.staff
+	project.max-locked-memory
+            privileged         256MB       -    deny                  -
+      	    system            16.0EB     max    deny                  -
+
+current limit is 256 Megabytes.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、ターゲットプロジェクトに対して、\fBproject.max-locked-memory\fR の制限を 300M バイトに調整します。
+
+.sp
+.in +2
+.nf
+# prctl -n project.max-locked-memory -v 300M -r -i project group.staff
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+変更後のリソースの制限値が、新しい値 300M バイトを示しています。
+
+.sp
+.in +2
+.nf
+# prctl -n project.max-locked-memory -i project group.staff
+	project 10:group.staff
+	project.max-locked-memory
+	    usage              200MG
+     privileged         300MB       -    deny                           -
+	   system            16.0EB     max    deny                           -
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRプロジェクトの CPU キャップを変更する
+.sp
+.LP
+\fBprctl\fR コマンドは、\fBproject.cpu-cap\fR リソース制御 (\fBresource_controls\fR(5) を参照) を使用して、プロジェクトの CPU キャップを設定したり変更したりすることができます。(\fB/etc/project\fR ファイルでも同じリソース制御を使用できます。\fBproject\fR(4) を参照) 次のコマンドは、\fBuser.smith\fR を 3 つの CPU に制限するように CPU キャップを変更します。
+
+.sp
+.in +2
+.nf
+# \fBprctl -r -t privileged -n project.cpu-cap -v 300 -i project user.smith\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上で使用されている \fBprctl\fR \fB-r\fR オプションは、プロジェクトまたはゾーンの CPU キャップを動的に変更するために使用されます。たとえば、次のコマンドは、前のコマンドで設定されたキャップを 80%に変更します。
+
+.sp
+.in +2
+.nf
+# \fBprctl -r -t privileged -n project.cpu-cap -v 80 -i project user.smith\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+CPU キャップを削除するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# \fBprctl -x -n project.cpu-cap $$\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRゾーンの CPU キャップを変更する
+.sp
+.LP
+\fBprctl\fR コマンドは、\fBzone.cpu-cap\fR リソース制御 (\fBresource_controls\fR(5) を参照) を使用して、ゾーンの CPU キャップを設定したり変更したりすることができます。(\fBzonecfg\fR(1M) コマンドでも同じリソース制御を操作できます。)次のコマンドは、大域ゾーンを CPU の 80%に制限するように CPU キャップを変更します。
+
+.sp
+.in +2
+.nf
+# \fBprctl -t privileged -n zone.cpu-cap -v 80 -i zone global\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+キャップを 50% に削減するには、次のコマンドを使用します。
+
+.sp
+.in +2
+.nf
+# \fBprctl -r -t privileged -n zone.cpu-cap -v 50 -i zone global\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+致命的なエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/pid/*\fR\fR
+.ad
+.RS 15n
+.rt  
+プロセス情報および制御ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド行の構文は「確実」です。人間が読める形式の出力は「不確実」です。機械可読な出力は「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBrctladm\fR(1M), \fBzonecfg\fR(1M), \fBsetrctl\fR(2), \fBrctlblk_get_local_action\fR(3C), \fBproject\fR(4), \fBattributes\fR(5), \fBresource_controls\fR(5)
+.SH 注意事項
+.sp
+.LP
+ローカルアクションを許可するリソース制御ブロック上に設定可能な有効なシグナルは、\fBSIGABRT\fR、\fBSIGXRES\fR、\fBSIGHUP\fR、\fBSIGSTOP\fR、\fBSIGTERM\fR、および \fBSIGKILL\fR です。これに加え、CPU 時間関連の制御は \fBSIGXCPU\fR シグナルを発行でき、ファイルサイズ関連の制御は \fBSIGXFSZ\fR シグナルを送信できます。

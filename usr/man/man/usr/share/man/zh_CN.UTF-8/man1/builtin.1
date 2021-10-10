@@ -1,0 +1,154 @@
+'\" te
+.\" Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" To view license terms, see http://www.opensource.org/licenses/cpl1.0.txt
+.\" Portions Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH builtin 1 "2007 年 5 月 1 日" "SunOS 5.11" "用户命令"
+.SH 名称
+builtin \- 用于添加、删除或显示 shell 内置命令的 ksh 内置函数
+.SH 用法概要
+.LP
+.nf
+\fBbuiltin\fR [\fB-ds\fR] [\fB-f\fR \fIlib\fR] [\fIpathname\fR ...]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBksh\fR\fBbuiltin\fR 命令可在当前 shell 环境中添加、删除或显示内置命令。内置命令在当前 shell 进程中执行，可能会在当前 shell 中产生负面影响。在大多数系统上，内置命令的调用时间比创建单独进程的命令低一或两个数量级。
+.sp
+.LP
+对于指定的每个 \fIpathname\fR，由路径名的根基名称确定内置命令的名称。对于每个根基名称，该 shell 会在当前 shell 中查找 C 级函数（通过内置名称前置 \fBb_\fR 来确定其名称）。如果 \fIpathname\fR 包含正斜杠 (\fB/\fR)，内置命令会绑定到 \fIpathname\fR。仅当 \fIpathname\fR 是在路径搜索期间找到的第一个可执行对象时，才会执行绑定到该路径名的内置命令。否则，将在执行路径搜索之前查找内置命令。 
+.sp
+.LP
+如果未指定 \fIpathname\fR，\fBbuiltin\fR 会在标准输出上显示当前内置命令列表，或者在指定了 \fB-s\fR 选项的情况下仅显示特殊内置命令。将显示已绑定到路径名的内置命令的全路径名。 
+.sp
+.LP
+可使用 \fB-f\fR 选项指定包含内置命令的库。如果库中包含名为 \fBlib_init()\fR 的函数，则会在装入该库时调用此函数（带有参数 \fB0\fR）。\fBlib_init()\fR 函数可以通过调用相应的 C 级函数装入内置命令。在这种情况下，对 C 级函数名称没有限制。
+.sp
+.LP
+调用 C 级函数时带有三个参数。前两个参数与 \fBmain()\fR 相同，第三个是一个指针。
+.sp
+.LP
+无法从限定的 shell 调用 \fBksh\fR\fBbuiltin\fR 命令。 
+.SH 选项
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 10n
+.rt  
+删除每个指定内置命令。无法删除特殊内置命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIlib\fR\fR
+.ad
+.RS 10n
+.rt  
+在具有动态链接的系统上，在共享库 \fIlib\fR 中装入和搜索内置命令。 
+.sp
+搜索 \fB$PATH\fR 和系统相关库目录中的库。可省略系统相关共享库的前缀或后缀。装入某库后，其符号即可用于 \fBbuiltin\fR 的当前和后续调用。在单个 \fBbuiltin\fR 调用中可以指定多个库。按指定库时的反向顺序搜索库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 10n
+.rt  
+仅显示特殊内置命令。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpathname\fR\fR
+.ad
+.RS 12n
+.rt  
+指定 \fIpathname\fR。由路径名的根基名称确定内置命令的名称。 
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR装入 \fBbuiltin\fR 命令
+.sp
+.LP
+以下示例从库 \fBlibfoo.so\fR 装入 \fBbuiltin\fR 命令 \fBmycmd\fR：
+
+.sp
+.in +2
+.nf
+example% builtin -f foo mycmd
+.fi
+.in -2
+.sp
+
+.SH 作者
+.sp
+.LP
+David Korn，\fBdgk@research.att.com\fR
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBksh\fR(1)、\fBwhence\fR(1)、\fBattributes\fR(5)

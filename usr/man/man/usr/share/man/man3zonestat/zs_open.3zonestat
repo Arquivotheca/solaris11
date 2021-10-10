@@ -1,0 +1,122 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zs_open 3ZONESTAT "19 May 2011" "SunOS 5.11" "Zones Statistics Library Functions"
+.SH NAME
+zs_open, zs_close \- open and close the zones statistics facility
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR ... ] \fIfile\fR... -lzonestat [ \fIlibary\fR ... ]
+#include <zonestat.h>
+
+zs_ctl_t zs_open();
+.fi
+
+.LP
+.nf
+void zs_close(zs_ctl_t \fIzsctl\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBzs_open()\fR function connects to the zones statistic facility and returns a \fBzonestat\fR control object, which can then be used to read zone utilization information.
+.sp
+.LP
+All reads using a \fBzonestat\fR control object are relative to the point in time in which the object was returned by \fBzs_open()\fR. For example, CPU usage will be reported as usage since the \fBzs_open()\fR call was made.
+.sp
+.LP
+The \fBzs_close()\fR function closes the connection to the zones statistics facility and frees all associated resources.
+.SH RETURN VALUES
+.sp
+.LP
+On success, \fBzs_open()\fR returns a pointer to a \fBzonestat\fR control object. On failure, \fBzs_open()\fR returns \fINULL\fR and sets \fIerrno\fR to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBzs_open()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEAGAIN\fR\fR
+.ad
+.RS 10n
+.rt  
+There are insufficient resources available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEMFILE\fR\fR
+.ad
+.RS 10n
+.rt  
+Opening would exceed the maximum number of file descriptors allowed for the current process.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 10n
+.rt  
+There is insufficient memory available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEPERM\fR\fR
+.ad
+.RS 10n
+.rt  
+The caller does not have privilege \fBproc_info\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBESRCH\fR\fR
+.ad
+.RS 10n
+.rt  
+Unable to connect to the zones monitoring service. See Notes below.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSee below.
+.TE
+
+.sp
+.LP
+The \fBzs_open()\fR and \fBzs_close()\fR functions are MT-safe, with the exception that only one thread may actively use a \fBzs_ctl_t\fR object at any time. Synchronization is left to the application.
+.SH SEE ALSO
+.sp
+.LP
+\fBzonestat\fR(1), \fBpooladm\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBswap\fR(1M), \fBzoneadm\fR(1M), \fBzonestatd\fR(1M), \fBlibpool\fR(3LIB), \fBlibzonestat\fR(3LIB), \fBzs_pset\fR(3ZONESTAT), \fBzs_property\fR(3ZONESTAT), \fBzs_pset_zone\fR(3ZONESTAT), \fBzs_resource\fR(3ZONESTAT), \fBzs_usage\fR(3ZONESTAT), \fBzs_zone\fR(3ZONESTAT), \fBattributes\fR(5), \fBresource_controls\fR(5)
+.SH NOTES
+.sp
+.LP
+The service \fBsvc:/system/zones-monitoring:default\fR must be enabled in the global zone in order for \fBzs_open()\fR to succeed. This requirement exists for use of \fBlibzonestat\fR in both the global zone and non-global zones.

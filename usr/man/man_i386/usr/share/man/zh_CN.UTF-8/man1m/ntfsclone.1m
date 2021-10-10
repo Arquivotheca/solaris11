@@ -1,0 +1,399 @@
+'\" te
+.\" Portions Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.\" Copyright (c) 2002-2006 Szabolcs Szakacsits
+.\" Copyright (c) 2002-2005 Anton Altaparmakov
+.\" Copyright (c) 2002-2003 Richard Russon
+.\" Copyright (c) 2007 Yura Pakhuchiy
+.\" This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ; either version 2 of the License, or (at your option) any later version. 本程序本着为用户提供帮助的目的而发布，但不承担任何担保；即使是对适销性或特定用途适用性的暗示担保也不承担。有关详细信息，请参见 GNU 通用公共许可。您应当已随本程序接收到 GNU 通用公共许可的一份副本（在 Linux-NTFS 分发的主目录下的 COPYING 文件中）；如果没有，请致函：Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfsclone 1M "2011 年 5 月 24 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ntfsclone \- 克隆、映像、还原或挽救 NTFS
+.SH 用法概要
+.LP
+.nf
+\fBntfsclone\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.LP
+.nf
+\fBntfsclone\fR \fB--save-image\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.LP
+.nf
+\fBntfsclone\fR \fB--resotore-image\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.LP
+.nf
+\fBntfsclone\fR \fB--metadata\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBntfsclone\fR 实用程序可以有效地将 NTFS 文件系统克隆（包括复制、保存、备份和还原操作）或挽救到一个稀疏文件、映像、设备（分区）或到标准输出。它在磁盘扇区级别工作，仅复制写入的数据（即不包括空白空间）。未使用的磁盘空间将变为零（克隆至稀疏文件时）、以控制代码编码（以特殊映像格式保存时）、保留不变（克隆至磁盘/分区时），或以零填充（克隆至标准输出时）。
+.sp
+.LP
+\fBntfsclone\fR 在制作备份（拍摄 NTFS 文件系统的确切快照）以及在以后还原该备份时很有用。它还可用于测试 NTFS 读取/写入功能，并且使得您可以使用克隆文件排除用户的问题，而不会有破坏原始文件系统的风险。
+.sp
+.LP
+如果未使用"特殊映像格式"（请参见下面的同名部分），克隆文件将完全是原始 NTFS 文件系统的确切副本，逐个扇区都是相同的。这样，它也可以像原始 NTFS 文件系统一样挂载。例如，如果克隆到一个文件，且内核具有回送设备和 NTFS 支持，那么文件可以通过以下方式挂载：
+.sp
+.in +2
+.nf
+# \fBmount -t ntfs -o loop ntfsclone.img\fR
+.fi
+.in -2
+.sp
+
+.SS "Windows 克隆"
+.sp
+.LP
+将系统或引导分区复制、移动或还原到另一台计算机、另一个磁盘或分区时（例如，从 \fB/dev/dsk/c0d0p1\fR 到 \fB/dev/dsk/c0d0p2\fR，从 \fB/dev/dsk/c0d0p1\fR 到 \fB/dev/dsk/c0d1p1\fR 或到另一个磁盘扇区偏移）要特别小心。
+.sp
+.LP
+大多数情况下，要使 Windows 能够进行引导，您必须将 NTFS 复制、移动或还原到与原始分区和磁盘具有相同的下列特征的分区：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+从同一扇区开始
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在相同类型的磁盘上
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+具有相同的 BIOS 传统柱面设置
+.RE
+.sp
+.LP
+\fBntfsclone\fR 实用程序保证 NTFS 的确切副本，但是不处理引导问题。这是设计使然：\fBntfsclone\fR 是一个文件系统，而不是一个系统实用程序。其目标仅仅是 NTFS 克隆，而不是 Windows 克隆。因此，可以使用 \fBntfsclone\fR 作为一个非常快速可靠的构造块进行 Windows 克隆，但不能将其用作完整的解决方案。您可以在 NTFS 网站 http://wiki.linux-ntfs.org 上找到有关 NTFS 克隆的有用技巧。
+.SS "稀疏文件"
+.sp
+.LP
+包含未分配块（空洞）的文件称为"稀疏文件"。为此类文件报告的大小始终高于它们在磁盘上实际占用空间的大小。\fBdu\fR(1) 命令报告稀疏文件使用的实际磁盘空间。空洞始终读取为零。所有主要的 Linux 文件系统，如 \fBext2\fR、\fBext3\fR、\fBreiserfs\fR、\fBReiser4\fR、JFS 和 XFS 都支持稀疏文件。不过，有些文件系统不支持稀疏文件，ISO 9600 CD-ROM 文件系统就是其中一例。
+.SS "特殊映像格式"
+.sp
+.LP
+建议您将 NTFS 文件系统保存为特殊映像格式。该格式不将未分配的块表示为空洞，而是使用控制代码对它们进行编码。这样，映像可以保存空间，而不需要稀疏文件支持。映像格式非常适用于通过网络对文件系统映像进行流式传输。特殊映像格式的缺点是，您不能直接挂载映像，而是必须先还原它。
+.sp
+.LP
+要使用特殊映像格式保存映像，请使用 \fB-s\fR 或 \fB--save-image\fR 选项。要还原映像，请使用 \fB-r\fR 或 \fB--restore-image\fR 选项。注意，通过使用连字符 (\fB-\fR) 作为源文件，可以从标准输入还原映像。
+.SS "仅元数据克隆"
+.sp
+.LP
+使用 \fB-m\fR 或 \fB--metadata\fR 选项，\fBntfsclone\fR 可以仅保存 NTFS 元数据，且克隆文件仍然可以挂载。在此类使用中，所有非元数据内容都将丢失；回读数据也只能得到零。
+.sp
+.LP
+仅元数据的映像可以压缩到很小，通常大小是 1 到 8 MB。传输此类映像用于调查或故障排除非常方便。
+.sp
+.LP
+在仅元数据模式下，\fBntfsclone\fR 不保存用户数据，包括嵌入在元数据中的驻留用户数据。它们都填充为零。而且，所有的文件时间戳，元数据内被删除的和未使用的空间都填充为零。因此，此模式不适合某些情况，如司法鉴定。
+.sp
+.LP
+注意，文件名不会被删除。因为文件名可能包含敏感信息，在发送仅元数据映像之前请考虑破坏安全性或保密性的各种可能。
+.SH 选项
+.sp
+.LP
+下面列出了支持的选项。大多数选项都有单字母和全名两种形式。不接受参数的单字母选项可以多个组合到一起。例如，\fB-fv\fR 等效于 \fB-f\fR \fB-v\fR。全名选项可以缩写为其名称的唯一前缀。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制 \fBntfsclone\fR 继续，即使文件系统在一致性检查后被标记为"脏"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR、\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示选项的列表及每个选项的简要说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB--ignore-fs-check\fR\fR
+.ad
+.sp .6
+.RS 4n
+忽略文件系统的一致性检查结果。此选项仅可与 \fB--meta-data\fR 选项一起使用。导致不一致的簇将被保留。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR、\fB--metadata\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅克隆元数据。使用此选项时，必须仅克隆到一个文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR、\fB--output\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 NTFS 克隆到不存在的 \fIfile\fR。如果 \fIfile\fR 是一个连字符 (\fB-\fR)，将克隆到标准输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR、\fB--overwrite\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 NTFS 克隆到 \fIfile\fR，如果 \fIfile\fR 已经存在，则将其覆盖。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--rescue\fR\fR
+.ad
+.sp .6
+.RS 4n
+忽略磁盘读取错误，使得有坏扇区的磁盘（如故障磁盘）也可以被挽救且对磁盘造成的影响最小。在该模式下，\fBntfsclone\fR 在最低的扇区级别上工作，从而使更多的数据得以挽救。不可读取的扇区的内容将以问号 (\fB?\fR) 字符填充，此类扇区的开头以字符串 \fBBadSector\fR 标记。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR、\fB--restore-image\fR \fIsource\fR\fR
+.ad
+.sp .6
+.RS 4n
+从由 \fIsource\fR 指定的特殊映像格式进行还原。如果 \fIsource\fR 是一个连字符 (\fB-\fR)，则从标准输入读取映像。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--save-image\fR\fR
+.ad
+.sp .6
+.RS 4n
+保存为特殊映像格式。在空间使用和速度方面，如果在标准输出中生成映像，这是最高效的选项。此选项非常适用于对映像进行压缩、加密或通过网络进行流式传输。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用覆盖选项进行克隆
+.sp
+.LP
+以下命令使用 \fB--overwrite\fR 选项进行克隆。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --overwrite /dev/dsk/c0d2p1 /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR保存为特殊映像格式
+.sp
+.LP
+以下命令将文件系统以特殊映像格式克隆到其原始分区。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --save-image --output backup.img /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR从特殊映像文件还原
+.sp
+.LP
+以下命令从特殊映像文件还原 NTFS。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 backup.img\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR保存为压缩的映像
+.sp
+.LP
+以下命令将 NTFS 保存为压缩的映像文件。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --save-image -o - /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR从压缩的映像还原
+.sp
+.LP
+以下命令从压缩的映像文件还原 NTFS 卷。
+
+.sp
+.in +2
+.nf
+# \fBgunzip -c backup.img.gz | \e\fR
+\fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 -\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR使用 \fBssh\fR 备份至远程主机
+.sp
+.LP
+以下命令使用 \fBssh\fR(1) 备份至远程主机。请注意，\fBssh\fR 可能需要口令。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --save-image --output - /dev/dsk/c0d0p1 | \e\fR
+\fBgzip -c | ssh host `cat > backup.img.gz`\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR使用 \fBssh\fR 从远程主机还原
+.sp
+.LP
+以下命令使用 \fBssh\fR(1) 从远程主机恢复。请注意，\fBssh\fR 可能需要口令。
+
+.sp
+.in +2
+.nf
+# \fBssh host `cat backup.img.gz` | gunzip -c  | \e\fR
+\fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 -\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR从 Web 服务器流式传输映像文件
+.sp
+.LP
+以下命令从 Web 服务器流式传输映像文件，并将其还原至分区。
+
+.sp
+.in +2
+.nf
+# \fBwget -qO - http://server/backup.img | \e\fR
+\fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 -\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR克隆至新文件
+.sp
+.LP
+以下命令将 NTFS 卷克隆到不存在的文件。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --output ntfs-clone.img /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR打包 NTFS 元数据
+.sp
+.LP
+以下命令将 NTFS 元数据打包至映像文件。请注意，\fBbzip2\fR 比 \fBgzip\fR 花费更长时间，但是生成的归档大小不到后者的十分之一。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --metadata --output ntfsmeta.img /dev/dsk/c0d0p1\fR
+\fBbzip2 ntfsmeta.img\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR解压缩 NTFS 元数据
+.sp
+.LP
+以下命令将 NTFS 元数据解压缩至稀疏文件。
+
+.sp
+.in +2
+.nf
+# \fBbunzip2 -c ntfsmeta.img.bz2 | \e\fR
+\fBcp --sparse=always /proc/self/fd/0 ntfsmeta.img\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+如果成功，返回代码为零，如果不成功，则返回代码为非零值。
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/ntfsprogs
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdu\fR(1)、\fBssh\fR(1)、\fBntfsresize\fR(1M)、\fBntfsundelete\fR(1M)、\fBparted\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 作者
+.sp
+.LP
+\fBntfsclone\fR 由 Szabolcs Szakacsits 编写，Per Olofsson（特殊映像格式支持）和 Anton Altaparmakov 为其提供了帮助。

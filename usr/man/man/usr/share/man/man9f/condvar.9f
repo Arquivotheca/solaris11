@@ -1,0 +1,276 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems, Inc.  All Rights Reserved
+.TH condvar 9F "13 Nov 2009" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+condvar, cv_init, cv_destroy, cv_wait, cv_signal, cv_broadcast, cv_wait_sig, cv_timedwait, cv_timedwait_sig, cv_reltimedwait, cv_reltimedwait_sig \- condition variable routines
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/ksynch.h>
+
+\fBvoid\fR \fBcv_init\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBchar *\fR\fIname\fR, \fBkcv_type_t\fR \fItype\fR, \fBvoid *\fR\fIarg\fR);
+.fi
+
+.LP
+.nf
+\fBvoid\fR \fBcv_destroy\fR(\fBkcondvar_t *\fR\fIcvp\fR);
+.fi
+
+.LP
+.nf
+\fBvoid\fR \fBcv_wait\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBkmutex_t *\fR\fImp\fR);
+.fi
+
+.LP
+.nf
+\fBvoid\fR \fBcv_signal\fR(\fBkcondvar_t *\fR\fIcvp\fR);
+.fi
+
+.LP
+.nf
+\fBvoid\fR \fBcv_broadcast\fR(\fBkcondvar_t *\fR\fIcvp\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBcv_wait_sig\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBkmutex_t *\fR\fImp\fR);
+.fi
+
+.LP
+.nf
+\fBclock_t\fR \fBcv_timedwait\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBkmutex_t *\fR\fImp\fR, \fBclock_t\fR \fItimeout\fR);
+.fi
+
+.LP
+.nf
+\fBclock_t\fR \fBcv_timedwait_sig\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBkmutex_t *\fR\fImp\fR, \fBclock_t\fR \fItimeout\fR);
+.fi
+
+.LP
+.nf
+\fBclock_t\fR \fBcv_reltimedwait\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBkmutex_t *\fR\fImp\fR, \fBclock_t\fR \fIdelta\fR,
+     \fBtime_res_t\fR \fIresolution\fR);
+.fi
+
+.LP
+.nf
+\fBclock_t\fR \fBcv_reltimedwait_sig\fR(\fBkcondvar_t *\fR\fIcvp\fR, \fBkmutex_t *\fR\fImp\fR, \fBclock_t\fR \fIdelta\fR,
+     \fBtime_res_t\fR \fIresolution\fR);
+.fi
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris DDI specific (Solaris DDI).
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcvp\fR\fR
+.ad
+.RS 14n
+.rt  
+A pointer to an abstract data type \fBkcondvar_t\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImp\fR\fR
+.ad
+.RS 14n
+.rt  
+A pointer to a mutual exclusion lock (\fBkmutex_t\fR), initialized by \fBmutex_init\fR(9F) and held by the caller.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.RS 14n
+.rt  
+Descriptive string. This is obsolete and should be \fINULL\fR. (Non-\fINULL\fR strings are legal, but they're a waste of kernel memory.)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItype\fR\fR
+.ad
+.RS 14n
+.rt  
+The constant \fBCV_DRIVER\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIarg\fR\fR
+.ad
+.RS 14n
+.rt  
+A type-specific argument, drivers should pass arg as \fINULL\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItimeout\fR\fR
+.ad
+.RS 14n
+.rt  
+A time, in absolute ticks since boot, when \fBcv_timedwait()\fR or \fBcv_timedwait_sig()\fR should return.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdelta\fR\fR
+.ad
+.RS 14n
+.rt  
+A time, in relative ticks, when \fBcv_reltimedwait()\fR or \fBcv_reltimedwait_sig()\fR should return.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIresolution\fR\fR
+.ad
+.RS 14n
+.rt  
+A flag that specifies how accurate the relative time interval should be. Possible values are \fBTR_NANOSEC\fR, \fBTR_MICROSEC\fR, \fBTR_MILLISEC\fR, \fBTR_SEC\fR, or \fBTR_CLOCK_TICK\fR. \fBTR_CLOCK_TICK\fR indicates that the interval should be aligned to system clock ticks. This information is used to anticipate or defer the timeout expiration in order to batch process similarly expiring events, allowing the system to stay idle for longer periods of time and enhance its power efficiency.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+Condition variables are a standard form of thread synchronization. They are designed to be used with mutual exclusion locks (mutexes). The associated mutex is used to ensure that a condition can be checked atomically and that the thread can block on the associated condition variable without missing either a change to the condition or a signal that the condition has changed. Condition variables must be initialized by calling \fBcv_init()\fR, and must be deallocated by calling \fBcv_destroy()\fR. 
+.sp
+.LP
+The usual use of condition variables is to check a condition (for example, device state, data structure reference count, etc.) while holding a mutex which keeps other threads from changing the condition. If the condition is such that the thread should block, \fBcv_wait()\fR is called with a related condition variable and the mutex. At some later point in time, another thread would acquire the mutex, set the condition such that the previous thread can be unblocked, unblock the previous thread with \fBcv_signal()\fR or \fBcv_broadcast()\fR, and then release the mutex.
+.sp
+.LP
+The \fBcv_wait()\fR function suspends the calling thread and exits the mutex atomically so that another thread which holds the mutex cannot signal on the condition variable until the blocking thread is blocked. Before returning, the mutex is reacquired.
+.sp
+.LP
+The \fBcv_signal()\fR function signals the condition and wakes one blocked thread. All blocked threads can be unblocked by calling \fBcv_broadcast()\fR. \fBcv_signal()\fR and \fBcv_broadcast()\fR can be called by a thread even if it does not hold the mutex passed into \fBcv_wait()\fR, though holding the mutex is necessary to ensure predictable scheduling.
+.sp
+.LP
+The \fBcv_wait_sig()\fR function is similar to \fBcv_wait()\fR but returns \fB0\fR if a signal (for example, by \fBkill\fR(2)) is sent to the thread. In any case, the mutex is reacquired before returning.
+.sp
+.LP
+The \fBcv_timedwait()\fR function is similar to \fBcv_wait()\fR, except that it returns \fB\(mi1\fR without the condition being signaled after the timeout time has been reached.
+.sp
+.LP
+The \fBcv_timedwait_sig()\fR function is similar to \fBcv_timedwait()\fR and \fBcv_wait_sig()\fR, except that it returns \fB\(mi1\fR without the condition being signaled after the timeout time has been reached, or \fB0\fR if a signal (for example, by \fBkill\fR(2)) is sent to the thread.
+.sp
+.LP
+For both \fBcv_timedwait()\fR and \fBcv_timedwait_sig()\fR, time is in absolute clock ticks since the last system reboot. The current time may be found by calling \fBddi_get_lbolt\fR(9F).
+.sp
+.LP
+The \fBcv_reltimedwait()\fR function is similar to \fBcv_timedwait()\fR, except that it takes a relative time value as argument and it also takes an additional argument to specify the accuracy of such interval. The \fBcv_reltimedwait_sig()\fR function is analogous to \fBcv_timedwait_sig()\fR but takes the same arguments as \fBcv_reltimedwait()\fR.
+.SH RETURN VALUES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 9n
+.rt  
+For \fBcv_wait_sig()\fR, \fBcv_timedwait_sig()\fR, and \fBcv_reltimedwait_sig()\fR, this value indicates that the condition was not necessarily signaled and the function returned because a signal (as in \fBkill\fR(2)) was pending.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi1\fR\fR
+.ad
+.RS 9n
+.rt  
+For \fBcv_timedwait()\fR, \fBcv_timedwait_sig()\fR, \fBcv_reltimedwait()\fR, and \fBcv_reltimedwait_sig()\fR, this value indicates that the condition was not necessarily signaled and the function returned because the timeout time was reached.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 9n
+.rt  
+For \fBcv_wait_sig()\fR, \fBcv_timedwait()\fR, \fBcv_timedwait_sig()\fR, \fBcv_reltimedwait()\fR, and \fBcv_reltimedwait_sig()\fR, a value greater than 0 indicates that the condition was met and the function returned due to a call to either \fBcv_signal()\fR or \fBcv_broadcast()\fR, or due to a premature wakeup (see NOTES). 
+.RE
+
+.SH CONTEXT
+.sp
+.LP
+These functions can be called from user, kernel or interrupt context. In most cases, however, \fBcv_wait()\fR, \fBcv_timedwait()\fR, \fBcv_wait_sig()\fR, \fBcv_timedwait_sig()\fR, \fBcv_reltimedwait()\fR, and \fBcv_reltimedwait_sig()\fR should not be called from interrupt context, and cannot be called from a high-level interrupt context.
+.sp
+.LP
+If \fBcv_wait()\fR, \fBcv_timedwait()\fR, \fBcv_wait_sig()\fR, \fBcv_timedwait_sig()\fR, \fBcv_reltimedwait()\fR, or \fBcv_reltimedwait_sig()\fR are used from interrupt context, lower-priority interrupts will not be serviced during the wait. This means that if the thread that will eventually perform the wakeup becomes blocked on anything that requires the lower-priority interrupt, the system will hang.
+.sp
+.LP
+For example, the thread that will perform the wakeup may need to first allocate memory. This memory allocation may require waiting for paging \fBI/O\fR to complete, which may require a lower-priority disk or network interrupt to be serviced. In general, situations like this are hard to predict, so it is advisable to avoid waiting on condition variables or semaphores in an interrupt context.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRWaiting for a Flag Value in a Driver's Unit
+.sp
+.LP
+Here the condition being waited for is a flag value in a driver's unit structure. The condition variable is also in the unit structure, and the flag word is protected by a mutex in the unit structure.
+
+.sp
+.in +2
+.nf
+mutex_enter(&un->un_lock);
+while (un->un_flag & UNIT_BUSY)
+      cv_wait(&un->un_cv, &un->un_lock);
+un->un_flag |= UNIT_BUSY;
+mutex_exit(&un->un_lock);
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRUnblocking Threads Blocked by the Code in Example 1
+.sp
+.LP
+At some later point in time, another thread would execute the following to unblock any threads blocked by the above code.
+
+.sp
+.in +2
+.nf
+mutex_enter(&un->un_lock);
+un->un_flag &= ~UNIT_BUSY;
+cv_broadcast(&un->un_cv);
+mutex_exit(&un->un_lock);
+.fi
+.in -2
+
+.SH NOTES
+.sp
+.LP
+It is possible for \fBcv_wait()\fR, \fBcv_wait_sig()\fR, \fBcv_timedwait()\fR, \fBcv_timedwait_sig()\fR, \fBcv_reltimedwait()\fR, and \fBcv_reltimedwait_sig()\fR to return prematurely, that is, not due to a call to \fBcv_signal()\fR or \fBcv_broadcast()\fR. This occurs most commonly in the case of \fBcv_wait_sig()\fR and \fBcv_timedwait_sig()\fR and \fBcv_timedwait_sig()\fR when the thread is stopped and restarted by job control signals or by a debugger, but can happen in other cases as well, even for \fBcv_wait()\fR. Code that calls these functions must always recheck the reason for blocking and call again if the reason for blocking is still true.
+.sp
+.LP
+If your driver needs to wait on behalf of processes that have real-time constraints, use \fBcv_timedwait()\fR or \fBcv_reltimedwait()\fR rather than \fBdelay\fR(9F). The \fBdelay()\fR function calls \fBtimeout\fR(9F), which can be subject to priority inversions.
+.sp
+.LP
+Not all threads can receive signals from user level processes. In cases where such reception is impossible (such as during execution of \fBclose\fR(9E) due to \fBexit\fR(2)), \fBcv_wait_sig()\fR behaves as \fBcv_wait()\fR, \fBcv_timedwait_sig()\fR behaves as \fBcv_timedwait()\fR, and \fBcv_reltimedwait_sig()\fR behaves as \fBcv_reltimedwait()\fR. To avoid unkillable processes, users of these functions may need to protect against waiting indefinitely for events that might not occur. The \fBddi_can_receive_sig\fR(9F) function is provided to detect when signal reception is possible.
+.SH SEE ALSO
+.sp
+.LP
+\fBkill\fR(2), \fBddi_can_receive_sig\fR(9F), \fBddi_get_lbolt\fR(9F), \fBmutex\fR(9F), \fBmutex_init\fR(9F) 
+.sp
+.LP
+\fIWriting Device Drivers\fR 

@@ -1,0 +1,1187 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH luxadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+luxadm \- Sun Fire 880 記憶装置サブシステムと FC_AL デバイスの管理
+.SH 形式
+.LP
+.nf
+\fBluxadm\fR [\fIoptions\fR]... \fIsubcommand\fR [\fIoptions\fR]... \fIenclosure\fR 
+     [,\fIdev\fR] | \fIpathname\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBluxadm\fR プログラムは、\fBSENA\fR、Sun Fire 880 内蔵記憶装置サブシステム、および各 \fBFC_AL\fR (Fiber Channel Arbitrated Loop)  デバイスの管理コマンドです。\fBluxadm\fR は、コマンド行に指定される引数やオプションに応じて、さまざまな制御処理や照会処理を実行します。
+.sp
+.LP
+コマンド行にはサブコマンドの指定が必要です。コマンド行には、サブコマンドに応じてオプションやパラメータを指定することができます。オプションには、通常 1 つ以上の格納装置名またはパス名を指定します。指定する文字数は、サブコマンドを一意に識別するのに必要なだけでかまいません。
+.sp
+.LP
+サブコマンドが作用するデバイスをパス名で指定します。\fBSun StorEdge A5000\fR サブシステムでは、パス名の代わりに、デバイスまたはデバイスに対するポートのワールドワイド名 (\fBWWN\fR) を入力することによってディスクデバイスまたは格納装置サービスコントローラを指定することができます。また、\fBSun StorEdge A5000\fR の格納装置名および格納装置内の特定のデバイスを示す識別子 (オプション) を入力することによってデバイスを指定することもできます。各 \fBFC_AL\fR デバイスを指定するには、デバイスの \fBWWN\fR またはポートを入力します。
+.SS "パス名"
+.sp
+.LP
+デバイスまたはコントローラを、完全な物理パス名または完全な論理パス名で指定します。
+.sp
+.LP
+\fBSun StorEdge A5000\fR に対するデバイスの一般的な物理パス名を以下に示します。
+.sp
+.in +2
+.nf
+/devices/sbus@1f,0/SUNW,socal@1,0/sf@0,0/ssd@w2200002037000f96,
+         0:a,raw
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システム上のすべての \fBSun StorEdge A5000 IB\fR (Interface Board)に対しては、物理パスへの論理リンクが \fB/dev/es\fR ディレクトリに格納されます。論理リンクの例として、\fB/dev/es/ses0\fR などがあります。
+.sp
+.LP
+\fBFC_AL\fR デバイスや \fBSun StorEdge A5000\fR サブシステム IB を選択するために、パス名の代わりに \fBWWN\fR を使用することもできます。\fBWWN\fR は、デバイスを使用するためのポートまたはデバイスそのものを表す 16 桁の 16 進数の値です。一般的な \fBWWN\fR の値を次に示します。
+.sp
+.in +2
+.nf
+2200002037000f96
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBWWN\fR の形式については、「注意事項」を参照してください。
+.sp
+.LP
+Sun Fire 880 内蔵記憶装置サブシステムのディスクの一般的な物理パス名を次に示します。 
+.sp
+.in +2
+.nf
+/devices/pci@8,600000/SUNW,qlc@2/fp@0,0/ssd@w2100002037a6303c,0:a
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、一般的な論理パス名を示します。
+.sp
+.in +2
+.nf
+/dev/rdsk/c2t8d0s2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+各 FC_AL デバイスの一般的なパス名を示します。 
+.sp
+.in +2
+.nf
+/devices/sbus@3.0/SUNW,socal@d,10000/sf@0,0/ssd@w2200002037049fc3,0:a,raw
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、一般的な論理パス名を示します。
+.sp
+.in +2
+.nf
+/dev/rdsk/c1t0d0s2
+.fi
+.in -2
+.sp
+
+.SS "格納装置"
+.sp
+.LP
+\fBSun StorEdge A5000\fR では、デバイスは格納装置名とスロット名で特定することができます。
+.br
+.in +2
+\fIbox_name\fR[\fB,f\fR\fIslot_number\fR]
+.in -2
+.br
+.in +2
+\fIbox_name\fR[\fB,r\fR\fIslot_number\fR]
+.in -2
+.sp
+.LP
+\fIbox_name\fR は、\fBSun StorEdge A5000\fR の格納装置名で、\fBenclosure_name\fR サブコマンドで指定します。オプションの \fIslot_number\fR パラメータを指定しないと、\fIbox_name\fR には、\fBSun StorEdge A5000\fR サブシステム \fBIB\fR が指定されます。
+.sp
+.LP
+\fBf\fR または \fBr\fR は、\fBSun StorEdge A5000\fR の格納装置の前面のスロット(f) か、背面のスロット (r) かを指定します。
+.sp
+.LP
+\fIslot_number\fR は、\fBSun StorEdge A5000\fR の格納装置のデバイスのスロット番号を指定します。指定することができる番号の範囲は \fB0～ 6\fR または \fB0 ～ 10\fR です。
+.sp
+.LP
+Sun Fire 880 内蔵記憶装置サブシステムも、デバイスは格納装置名とスロット名で特定することができます。ただし、1 セットのディスクしかありません。
+.sp
+.in +2
+.nf
+\fIbox_name\fR[,\fIsslot_number\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIbox_name\fR は、Sun Fire 880 内蔵記憶装置サブシステムの格納装置名で、\fBenclosure_name\fR サブコマンドで指定します。オプションの \fIslot_number\fR パラメータを指定しないで使用した場合、\fIbox_name\fR には、Sun Fire 880 内蔵記憶装置サブシステム格納装置のサービスデバイスが指定されます。Sun Fire 880 内蔵記憶装置サブシステムのスロット番号、\fB0\fR ～ \fB11\fR のいずれかを指定するには \fIs\fR を使用します。
+.sp
+.LP
+ディスクおよびサブシステムの論理名については、\fBdisks\fR(1M) および \fBdevlinks\fR(1M) を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションはすべてのサブコマンドに対して指定することができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 6n
+.rt  
+エキスパート (Expert) モードです。このオプションは初心者の方にはお勧めしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+冗長モード。
+.RE
+
+.sp
+.LP
+特定のサブコマンドだけに指定するオプションについては、「使用方法」の各サブコマンドの説明を参照してください。\fB\fR
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIenclosure\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSun StorEdge A5000\fR の \fIbox_name\fR を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfibre_channel_HBA_port\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストのコントローラポートへのパスを指定します。一般的なパスは、下記のとおりです。
+.sp
+.in +2
+.nf
+ /devices/pci@8,600000/pci@1/SUNW,qlc@4/fp@0,0:devctl
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSENA IB\fR、Sun Fire 880 内蔵記憶装置サブシステム、またはディスクデバイスの論理パスまたは物理パスを指定します。\fIpathname\fR は、\fBSENA IB\fR、\fBSENA\fR ディスク、または各 \fBFC_AL\fR デバイスの \fBWWN\fR でも指定することができます。
+.RE
+
+.SH 使用法
+.SS "サブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisplay\fR \fIenclosure\fR[,\fIdev\fR]\|.\|.\|.\|| \fIpathname\fR\|.\|.\|.\fR
+.ad
+.br
+.na
+\fB\fBdisplay\fR \fB-p\fR \fIpathname \fR\|.\|.\|. \fR
+.ad
+.br
+.na
+\fB\fBdisplay\fR \fB-r\fR \fIenclosure\fR[,\fIdev\fR]\|.\|.\|.\|| \fIpathname\fR\|.\|.\|.\fR
+.ad
+.br
+.na
+\fB\fBdisplay\fR \fB- v\fR \fIenclosure\fR[,\fIdev\fR]\|.\|.\|.\|| \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+格納装置またはデバイス固有のデータを表示します。
+.sp
+サブシステムのデータは、格納装置の環境検知情報、およびディスクのステータスを含む、すべてのサブシステムのデバイスのステータスで構成されます。
+.sp
+ディスクデータは、照会、容量、および設定情報で構成されます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIpathname\fR で指定されたデバイスまたはサブシステムの性能情報を表示します。このオプションは、性能情報を保存するサブシステムに対してのみ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+pathname で指定された \fBFC_AL\fR デバイスのエラー情報を表示します。また、パス名が \fBSun StorEdge A5000\fR の場合は、そのループ上のすべてのデバイスのエラー情報を表示します。\fB-r\fR オプションは \fBSun StorEdge A5000\fR サブシステムまたは各 \fBFC_AL\fR デバイスに対してのみ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+モード検知データを含む、詳細表示モードで表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdownload\fR [ \fB-s\fR ] [ \fB-f\fR \fIfilename_path\fR ] \fIenclosure\fR.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+prom イメージを、filename_path で指定された SENA サブシステムのインタフェースボード装置か、enclosure または pathname で指定された SPARCstorageArray コントローラにダウンロードします。SPARCstorage Array は、ダウンロードコードを使用するためにリセットする必要があります。
+.sp
+\fBSENA\fR のダウンロードが終了すると、\fBSENA\fR はリセットされ、ダウンロードコードが実行されます。ファイル名が指定されていない場合は、デフォルトの prom イメージが使用されます。SPARCstorage Array コントローラ用のデフォルトの prom イメージは、/usr/lib/firmware/ssa/ssafirmware ディレクトリに格納されます。\fBSENA\fR 用のデフォルトの prom イメージは \fBusr/lib/locale/C/LC_MESSAGES\fR ディレクトリに \fBibfirmware\fR というファイル名で格納されます。
+.sp
+Sun Fire 880 内蔵記憶装置サブシステムのダウンロードが終了すると、サブシステムはリセットされ、ダウンロードコードが実行されます。Sun Fire 880 内蔵記憶装置サブシステムのデフォルトのファームウェアイメージは、次のディレクトリに格納されます。 \fB/usr/platform/SUNW,Sun-Fire-880/lib/images/int_fcbpl_fw\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+保存オプションです。\fB-s\fR オプションはダウンロードしたファームウェアを FEPROM に保存します。\fB-s\fR を指定しない場合、 ダウンロードしたファームウェアは保存されず、電源の再投入後に消えてしまいます。 
+.sp
+\fB-s\fR オプションは SPARCstorage Array コントローラには指定することができません。
+.sp
+\fB-s\fR オプションを使用すると、\fBダウンロード\fRサブコマンドがサブシステム上の \fBFEPROM\fRを変更するため、-s オプションの使用には\fI注意\fRが必要です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenclosure_name\fR \fInew_name\fR \fIenclosure\fR | \fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+enclosure または pathname で指定された単数または複数の格納装置名を変更します。新しい名前は 16 文字以下で \fInew_name\fR に指定します。英数字のみが使用できます。このサブコマンドは Sun StorEdge A5000 に対してだけ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailover primary\fR | \fBsecondary\fR \fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した論理ボリュームに、どの Sun StorEdge T3 array パートナーグループのコントローラがアクセスするかを選択します。\fBprimary\fR を指定した場合、プライマリコントローラから論理ボリュームにアクセスします。\fBsecondary\fR を指定した場合、\fIpathname\fR で指定したセカンダリコントローラから論理ボリュームにアクセスします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfcal_s_download\fR [ \fB-f\fR \fIfcode-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIfcode-file\fR で指定されたファイルに含まれる fcode を\fIすべての\fR \fBFC/S\fR SBus カードにダウンロードします。このコマンドは対話型で、fcode をダウンロードする前にユーザーに対して確認を促します。
+.sp
+\fBfcal_s_download\fR は、シングルユーザーモードで\fIだけ\fR使用してください。入出力操作が行われているホストアダプタに対して、そのアダプタを更新する目的で \fBfcal_s_download\fR を指定すると、アダプタのリセットの原因となります。\fB\fR\fI\fR新しく更新した fcode は、システムをリブートしたときに実行され、表示できるようになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfcode-file\fR\fR
+.ad
+.RS 17n
+.rt  
+\fB-f\fR fcode-file オプションを省略すると、各 \fBFC100/S\fR SBus カードの中の現在のバージョンの fcode が表示されます。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfcode_download\fR \fB-p\fR\fR
+.ad
+.br
+.na
+\fB\fBfcode_download\fR \fB-d\fR \fIdir-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストール済みの \fBFC/S\fR、\fBFC100/S、FC100/P\fR、または \fBFC100/2P\fR ホストバスアダプタ カードを検出し、\fIdir-name\fR の fcode を適切なカードにダウンロードします。このコマンドは対話型で、各ファイルタイプに対して適切なカードを決定します。各デバイスに fcode をダウンロードする前にユーザーに対して確認を促します。
+.sp
+\fBfcode_download\fR は、シングルユーザーモードで fcode だけを読み込むときに使用します。\fB入出力\fR操作があるホストアダプタに対して、そのアダプタを更新する目的で \fBfcode_download\fR を指定すると、アダプタのリセットの原因となります。新しく更新した fcode は、システムをリブートしたときに実行され、表示できるようになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdir-name\fR\fR
+.ad
+.RS 15n
+.rt  
+\fIdir-name\fR ディレクトリに格納されている fcode ファイルを適切なアダプタカードにダウンロードします。d オプションを省略すると、デフォルトの usr/lib/firmware/fc_s ディレクトリが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 15n
+.rt  
+各カードに読み込まれている現在のバージョンの fcode を表示します。ダウンロードは行われません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinquiry\fR \fIenclosure\fR[,\fIdev\fR ]\|.\|.\|.\| | \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+enclosure または pathname で指定されたデバイスに対する照会情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert_device\fR [ \fIenclosure\fR,\fIdev\fR\|.\|.\|. ]\fR
+.ad
+.sp .6
+.RS 4n
+このコマンドを使用して、電源を入れたまま 1 つまたは複数のデバイスを追加することができます。ホットプラグ操作中の制限に関しては「注意事項」を参照してください。\fB\fRこのサブコマンドは \fBSun StorEdge A5000\fR、RSM および各 FC_AL デバイスに対してのみ指定することができます。\fBSun StorEdge A5000\fRに対して複数の格納装置が指定された場合は、複数のバスに対して同時に追加が行われます。このサブコマンドの引数を省略すると、すべての格納装置または各 \fBFC_AL\fR デバイスが追加されます。RSM に対して指定することができるコントローラは 1 つだけです。\fBSun StorEdge A5000\fR に対しては、このサブコマンドは、電源を入れたまま 1 つまたは複数のデバイスを追加するすべての過程をユーザーとの対話によって行います。複数のディスクが指定された場合は、それらのディスクが正しいかどうかの確認が行われ、ユーザーは継続するか中止するかを選択することができます。その後で、ディスクまたは格納装置の追加を実行するかどうかの確認が行われ、それらのデバイスの論理パス名が作成および表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled\fR \fIenclosure\fR,\fIdev\fR\|.\|.\|.\|| \fIpathname\fR.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+enclosure または pathname で指定されたディスクに対応している \fBLED\fR の現在の状態を表示します。このサブコマンドはこの機能を持つサブシステムに対してのみ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled_blink\fR \fIenclosure\fR,\fIdev\fR\|.\|.\|.\|| \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+enclosure または pathname で指定されたディスクに対応している \fBLED\fR の点滅を開始するようサブシステムに指示します。このサブコマンドはこの機能を持つサブシステムに対してのみ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled_off\fR \fIenclosure\fR,\fIdev\fR\|.\|.\|.\|| \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+enclosure または pathname で指定されたディスクに対応している \fBLED\fR を消灯させるようサブシステムに指示します。\fBSun StorEdge A5000\fR サブシステムでは、\fBLED\fR の消灯や点滅の停止ができる状態とできない状態があります。\fB\fR『\fBSun StorEdge A5000\fR 設置・サービスマニュアル』(805-4111) を参照してください。このサブコマンドはこの機能を持つサブシステムに対してのみ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled_on\fR \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+pathname で指定されたディスクに対応している \fBLED\fR を点灯させるようサブシステムに指示します。このサブコマンドはこの機能を持つサブシステムに対してのみ指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpower_off\fR [ \fB-F\fR ] \fIenclosure\fR[,\fIdev\fR]\|.\|.\|. | \fIpathname\fR \|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+\fBSun StorEdge A5000\fR に対してこのオプションでは、\fBSun StorEdge A5000\fR サブシステムが省電力モードに切り替わります。\fBSun StorEdge A5000\fR ドライブは、省電力モードでは使用することができません。SPARCstorage Array 中の格納装置サービスカードに対してこのオプションでは、RSMトレーの電源が切れます。\fBSun StorEdge A5000\fR 中のドライブに対してこのオプションでは、そのドライブがドライブ off/unmated モードに設定されます。ドライブ off/unmated 状態では、ドライブが停止し、バイパスモードになります。このコマンドは、Sun Fire 880 内蔵記憶装置サブシステムには使用できません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+強制オプションは \fBSun StorEdge A5000\fR のみに適用されます。このオプションを指定すると、\fBluxadm\fR は、1 つまたは複数のデバイスを、それらがホストによって使用されていても電源切断しようとします。
+.sp
+\fB警告\fR :  現在使用されているデータを含むデバイスの電源を切断すると、予想不可能な結果を引き起こします。デバイスの電源を切断する際は、まず、通常の方法を (\fB-F\fR を指定せずに) 試してください。このオプションは、通常の確認を無効にすることによる結果を理解した上で使用してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpower_on\fR \fIenclosure\fR[\fB,\fR\fIdev\fR]\|.\|.\|\fR
+.ad
+.sp .6
+.RS 4n
+\fBSun StorEdge A5000\fR に対してこのオプションでは、\fBSun StorEdge A5000\fR サブシステムが省電力モードから抜けますSun StorEdge A5000 ドライブは、省電力モードでは使用することができません。SPARCstorage Array RSM トレーの電源をプログラムによって投入する方法はありません。Sun StorEdge A5000 の中のドライブに対してこのオプションでは、そのドライブが通常の起動状態に設定されます。このコマンドは、Sun Fire 880 内蔵記憶装置サブシステムには使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprobe\fR [ \fB-p\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+接続された \fBSun StorEdge A5000\fR サブシステムおよび各 \fBFC_AL\fR デバイスすべてに関する情報を検索して表示します。この情報には、論理パス名、\fBWWN\fR、および格納装置名が含まれます。このサブコマンドは、同じ格納装置名を持つ異なる \fBSun StorEdge A5000\fR を見つけると、ユーザーに対して警告を発します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+物理パス名を表示に含めます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqlgc_s_download\fR [ \fB-f\fR \fIfcode-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIfcode-file\fR ファイルに格納されている fcode をすべての \fBFC100/P\fR、\fBFC100/2P\fR \fBPCI\fRホストアダプタカードにダウンロードします。このコマンドは対話型で、fcode を各ドライブにダウンロードする前にユーザーに対して確認を促します。\fBqlgc_s_download\fR は、シングルユーザーモードでだけ使用してください。\fB入出力\fR操作があるホストアダプタに対して、そのアダプタを更新する目的で \fBqlgc_s_download\fR を指定すると、アダプタのリセットの原因となります。新しく更新した fcode は、システムをリブートしたときに実行され、表示できるようになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfcode-file\fR\fR
+.ad
+.RS 17n
+.rt  
+\fB-f\fR オプションを省略すると、各 \fBFC100/P\fR、\fBFC100/2P PCI\fR カードの、現在のバージョンの fcode が表示されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrelease\fR \fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたディスクの予約を解除します。パス名は、ディスクの物理または論理パス名でなければなりません。SPARCstorage Array コントローラのパス名を指定した場合、SPARCstorage Array 中のすべてのディスクの予約が解除されます。
+.sp
+このサブコマンドは、履歴および診断目的以外では使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove_device\fR [ \fB-F\fR ] \fIenclosure\fR[,\fIdev\fR]\|.\|.\|.\|| \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+このコマンドを使用して、電源を入れたまま 1 つまたは複数のデバイスを削除することができます。このサブコマンドはすべての格納装置を削除する場合にも指定することができます。このサブコマンドは \fBSun StorEdge A5000\fR、RSM、および各 \fBFC_AL\fR デバイスに対して指定することができます。ホットプラグ操作中の制限に関しては「注意事項」を参照してください。\fB\fR\fBSun StorEdge A5000\fR および各 \fBFC_AL\fR デバイスに対しては、このサブコマンドは、電源を入れたまま 1 つまたは複数のデバイスを削除するすべての過程をユーザーとの対話によって行います。複数のディスクが指定された場合は、それらのディスクが正しいかどうかの確認が行われ、ユーザーは継続するか中止するかを選択することができます。その後で、ディスクまたは格納装置の削除を実行するかどうかの確認が行われ、それらのデバイスの論理パス名が作成および表示されます。
+.sp
+多重ホストディスクの場合、実行する手順は次のとおりです。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+最初のホストに対して、\fBluxadm\fR \fBremove_device\fR コマンドを発行します。続行するかどうかを確認するプロンプトが表示されたら、待機します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+2 番目のホストに対して、\fBluxadm\fR \fBremove_device\fR コマンドを発行します。続行するかどうかを確認するプロンプトが表示されたら、待機します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+最初のホストに対して、\fBremove_device\fR コマンドを続行します。デバイスを削除するプロンプトが表示されたら、これを実行します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ほかのホストに対して、\fBluxadm\fR \fBremove_device\fR コマンドを最後まで実行します。
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+1 つまたは複数のデバイスに対してホットプラグを適用するように \fBluxadm\fR に指示します。これらのデバイスがホストで使用されている場合 (\fBbusy\fR  または \fBreserved\fR の場合) にも適用されます。ホットプラグオペレーションが\fB強制的に\fR実行されます。
+.sp
+\fB警告\fR:  現在使用されているデータが格納されているデバイスを取り外すと、予期しない結果が発生します。通常は、\fB-F\fR を指定しないでホットプラグを適用します。-F は、通常のホットプラグ検査を無効にしたときの結果がわかっているときにだけ使用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreserve\fR \fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたディスクを、ホストによる排他的利用のために 予約します。パス名は、ディスクの物理または論理パス名でなければなりません。pathname が SPARCstorage Array コントローラのパス名の場合、SPARCstorage Array 中のすべてのディスクが予約されます。
+.sp
+このサブコマンドは、履歴および診断目的以外では使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset_boot_dev\fR [ \fB-y\fR ] \fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム \fBPROM\fR 中のブートデバイス変数を、\fIpathname\fR で指定された物理デバイス名に設定します。指定する物理デバイス名は、ブロック型特殊デバイス、またはブートファイルシステムのマウント先のディレクトリのパス名です。通常、このコマンドは、\fBPROM\fR の中のデフォルトブートデバイスを設定するためにユーザーに対して確認を促します。\fB-y\fR オプションは、ユーザーに対して確認を要求せず、非対話形式で実行するために使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR \fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたSENA のディスクを起動します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR \fIpathname\fR...\fR
+.ad
+.sp .6
+.RS 4n
+指定されたディスク SENA のを停止します。
+.RE
+
+.SS "SENA、Sun Fire 800 内蔵記憶装置サブシステムおよび各 FC_AL デバイスのエキスパートモードサブコマンド"
+.sp
+.LP
+以下のサブコマンドは、経験が豊富なユーザーのみが使用することができます。また、\fBSun StorEdge A5000\fR およびファイバチャネルループのみを対象にしています。これらのコマンドは、\fBSun StorEdge A5000\fR サブシステムとファイバチャネルループの知識が豊富なユーザーだけが使用することができます。
+.sp
+.LP
+バスを操作するエキスパートサブコマンドにディスクを指定した場合は、そのサブコマンドは、指定したディスクに接続されたバスを操作します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fBbypass\fR \fB[\fR\fB-ab\fR\fB]\fR \fIenclosure\fR,\fIdev\fR\fR
+.ad
+.br
+.na
+\fB\fB-e\fR \fBbypass\fR \fB-f\fR \fIenclosure\fR\fR
+.ad
+.sp .6
+.RS 4n
+エンクロージャサービスコントローラに対して、指定したポートおよびデバイスの LRC (ループ冗長回路) をバイパス状態に設定するよう要求します。 
+.sp
+このサブコマンドは、以下のオプションをサポートします。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+指定したデバイスのポート \fBa\fR をバイパスします。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 6n
+.rt  
+指定したデバイスのポート \fBb\fR をバイパスします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fBdump_map\fR \fIfibre_channel_HBA_port\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したファイバチャネルポート上にあるターゲットデバイスまたはホストバスアダプタの WWN データを表示します。指定したポートにターゲットデバイスが存在しない場合、エラーが返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fBenable\fR \fB[\fR\fB-ab\fR\fB]\fR \fIenclosure\fR,\fIdev\fR\fR
+.ad
+.br
+.na
+\fB\fB-e\fR \fBenable\fR \fB-f\fR \fIenclosure\fR\fR
+.ad
+.sp .6
+.RS 4n
+エンクロージャサービスコントローラに対して、指定したポートおよびデバイスの LRC (ループ冗長回路) を有効な状態に設定するよう要求します。 
+.sp
+このサブコマンドは、以下のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+指定したデバイスのポート \fBa\fR を有効にします。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 6n
+.rt  
+指定したデバイスのポート \fBb\fR を有効にします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB forcelip\fR \fIenclosure\fR[\fB,\fR\fIdev\fR] \|.\|.\|. | \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+ループ初期化基本式 (\fBLIP\fR) の処理を使ってリンクを強制的に最初期化します。enclosure または pathname には、ループ上のどのデバイスでも指定することができます。複数のループ構成に対して特定のパスを指定する場合は、パス名を使用します。
+.sp
+このコマンドは経験者向けのコマンドで、使用には注意が必要です。このコマンドは、ループ上のすべてのポートをリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB rdls\fR \fIenclosure\fR[\fB,\fR\fIdev\fR] \|.\|.\|. | \fIpathname\fR\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+enclosure または pathname で指定されたデバイスを含むループにある、すべての使用可能なデバイスのリンクエラーステータス情報を読み込み、表示します。
+.RE
+
+.SS "その他のエキスパートモードサブコマンド"
+.sp
+.LP
+ホットプラグ操作中の制限に関しては「注意事項」を参照してください。\fB\fR以下のサブコマンドは、経験が豊富なユーザーのみが使用することができます。
+.sp
+.LP
+これらのコマンドは、Sun Fire 880 内蔵記憶装置サブシステムに使用することはできません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB bus_getstate\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたバスの状態を取得、表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB bus_quiesce\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたバスを休止します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB bus_reset\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたバスのみをリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB bus_resetall\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたバスおよびすべてのデバイスをリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB bus_unquiesce\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたバスを休止解除します。指定されたデバイス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB dev_getstate\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたデバイスの状態を取得、表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB dev_reset\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたデバイスをリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB offline\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたデバイスをオフラインにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB online\fR \fIpathname\fR\fR
+.ad
+.RS 29n
+.rt  
+指定されたデバイスをオンラインにします。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRシステム上にあるすべての \fBSun StorEdge A5000\fR および FC_AL の表示
+.sp
+.LP
+システム上にあるすべての \fBSun StorEdge A5000\fR および FC_AL デバイスを検索、表示する例を次に示します。\fB\fR
+
+.sp
+.in +2
+.nf
+example% \fBluxadm probe\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBSENA\fR または Sun Fire 880 内蔵記憶装置サブシステムの表示
+.sp
+.LP
+\fBSENA\fR または Sun Fire 880 内蔵記憶装置サブシステムを表示する例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm display /dev/es/ses0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR2 つのサブシステムの表示
+.sp
+.LP
+格納装置名を使って 2 つのサブシステムを表示する例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm display BOB system1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR最初のディスクに関する情報の表示
+.sp
+.LP
+\fBBOB\fR という名前の格納装置の前面にある最初のディスクに関する情報を表示する例を次に示します。前面のディスクを指定する場合は \fBf\fR を指定します。背面のディスクを指定する場合は \fBr\fR を指定します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm display BOB,f0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRSun Fire 880 内蔵記憶装置サブシステムに関する情報の表示
+.sp
+.LP
+Sun Fire 880 内蔵記憶装置サブシステムには、1 セットのディスクしかありません。この場合、そのスロットを指定する場合は \fIs\fR を指定します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm display BOB,s0\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR\fBSENA\fR ディスク、格納装置、または各 \fBFC_AL\fR デバイスに関する情報の表示
+.sp
+.LP
+ポートの \fBWWN\fR が \fB2200002037001246\fR の \fBSun StorEdge A5000\fR ディスク、格納装置、または各 \fBFC_AL\fR デバイスに関する情報を表示する例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm display 2200002037001246\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRサブコマンドとして一意に認識するための文字列
+.sp
+.LP
+サブコマンドとして一意に認識できるだけの長さの文字列を使用する例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm disp BOB\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRエラー情報の表示
+.sp
+.LP
+格納装置 \fBBOB\fR があるループに関するエラー情報を表示する例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm display\fR \fB-r\fR \fBBOB\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRインタフェースボードへの新しいファームウェアのダウンロード
+.sp
+.LP
+格納装置 \fBBOB\fR のインタフェースボードに新しいファームウェアをダウンロードする例を次に示します (ダウンロードするファイルはデフォルトパスで指定されています)。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm download\fR \fB-s\fR \fBBOB\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR\fBSCSI\fR 照会コマンドからの情報の表示
+.sp
+.LP
+システム上の個々のディスクから \fBSCSI\fR 照会コマンドからの情報を表示する例を次に示します。サブコマンドとして一意に認識できる長さの文字列だけが使用されます。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm inq /dev/rdsk/c?t?d?s2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRホットプラグによる取り付け
+.sp
+.LP
+\fBBOB\fR,f1 という名前の格納装置の前面の最初のスロットに新しいドライブをホットプラグで取り付ける例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm insert_device BOB,f0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SF880-1 という名前の Sun Fire 880 内蔵記憶装置サブシステムの最初のスロットに、新しいドライブをホットプラグで取り付ける例を次に示します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm insert_device SF880-1,s0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRエキスパートサブコマンドの実行
+.sp
+.LP
+エキスパートサブコマンドを実行する例を次に示します。このサブコマンドは、格納装置 \fBBOB\fR のあるループを強制的に初期化します。
+
+.sp
+.in +2
+.nf
+example% \fBluxadm\fR \fB-e\fR \fBforcelip BOB\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 13 \fRエキスパートモードのホットプラグサブコマンドの使用
+.sp
+.LP
+エキスパートモードのホットプラグサブコマンドを使用して SSA 上のディスクを削除する例を次に示します。ホットプラグ操作中の制限に関しては「注意事項」を参照してください。\fB\fR
+
+.sp
+.LP
+最初の手順では、SCSI デバイスが 2 つ目の SCSI バスによってアクセスされないように、そのデバイスを予約します。
+
+.sp
+.in +2
+.nf
+example# \fBluxadm reserve /dev/rdsk/c1t8d0s2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 14 \fRディスクをオフラインにする
+.sp
+.LP
+次の 2 つの手順では、ディスクをオフラインにし、バスを休止します。
+
+.sp
+.in +2
+.nf
+example# \fBluxadm\fR \fB-e\fR \fBoffline /dev/rdsk/c1t8d0s2\fR
+example# \fBluxadm -e bus_quiesce /dev/rdsk/c1t8d0s2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 15 \fRバスの休止解除
+.sp
+.LP
+ユーザーは、この時点でディスクを取り外し、バスを休止解除し、ディスクをオンラインに戻し、ディスクの予約を解除します。
+
+.sp
+.in +2
+.nf
+example# \fBluxadm\fR \fB-e\fR \fBbus_unquiesce /dev/rdsk/c1t8d0s2\fR
+example# \fBluxadm\fR \fB-e\fR \fBonline /dev/rdsk/c1t8d0s2\fR
+example# \fBluxadm release /dev/rdsk/c1t8d0s2\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBluxadm\fR の実行に影響のある環境変数 \fBLANG\fR に関しては \fBenviron\fR(5) を参照してください。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-1\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusr/lib/firmware/fc_s/fc_s_fcode\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusr/lib/locale/C/LC_MESSAGES/ibfirmware\fR
+.RE
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "usr/sbin"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/storage/fc-utilities
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdevlinks\fR(1M), \fBdisks\fR(1M), \fBattributes\fR(5), \fBenviron\fR(5), \fBses\fR( 7D)
+.sp
+.LP
+SAN Configuration and Multipathing Guide
+.sp
+.LP
+『\fIOracle Solaris Cluster 3.3 with Fibre Channel JBOD Storage Device Manual\fR』
+.SH 注意事項
+.sp
+.LP
+\fBIEEE\fR 拡張 \fBWWN\fR に関する情報については、『\fITutorial for SCSI use of IEEE Company_ID\fR』 (R. Snively 著) を参照してください。現在、一部のデバイスドライバのみがホットプラグに対応しています。ホットプラグに対応していないディスクまたはバスにホットプラグが適用されると、メッセージが表示されます。
+.sp
+.in +2
+.nf
+luxadm: can't acquire "PATHNAME": No such file or directory
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上記の形式で表示されます。
+.sp
+.LP
+ルートファイルシステムまたは \fB/usr\fR ファイルシステムを含むバスやスワップデータを含むバスを休止する際は注意してください。そのようなバスを休止すると、デッドロックを引き起こす可能性があり、そのような場合は、システムのリブートが必要となります。

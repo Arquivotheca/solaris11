@@ -1,0 +1,3097 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ipadm 1M "2011 年 7 月 22 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ipadm \- インターネットプロトコルネットワークインタフェースおよび TCP/IP 調整可能パラメータの構成
+.SH 形式
+.LP
+.nf
+\fBipadm\fR create-ip [\fB-t\fR] \fIIP-interface\fR
+\fBipadm\fR delete-ip \fIIP-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-vni [\fB-t\fR] \fIVNI-interface\fR
+\fBipadm\fR delete-vni \fIVNI-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-ipmp [\fB-t\fR] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR
+\fBipadm\fR delete-ipmp [\fB-f\fR] \fIIPMP-interface\fR
+\fBipadm\fR add-ipmp [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...]
+     \fIIPMP-interface\fR
+\fBipadm\fR remove-ipmp [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...]
+     \fIIPMP-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR show-if [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIinterface\fR]
+\fBipadm\fR disable-if \fB-t\fR \fIinterface\fR
+\fBipadm\fR enable-if \fB-t\fR \fIinterface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-ifprop [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR prop=\fIvalue\fR[,...] \fIinterface\fR
+\fBipadm\fR reset-ifprop [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR \fIprop\fR \fIinterface\fR
+\fBipadm\fR show-ifprop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...]
+     [\fB-m\fR \fIprotocol\fR] [\fIinterface\fR]
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR static [\fB-d\fR]
+     \fB-a\fR {local|remote}=\fIaddr\fR[/\fIprefixlen\fR],... \fIaddrobj\fR
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR dhcp [\fB-w\fR \fIseconds\fR | forever]
+     [\fB-h\fR \fIhostname\fR] \fIaddrobj\fR
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR addrconf [\fB-i\fR {local|remote}=\fIinterface-id\fR]
+     [\fB-p\fR {stateful|stateless}={yes|no},..] \fIaddrobj\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR delete-addr [\fB-r\fR] \fIaddrobj\fR
+\fBipadm\fR show-addr [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-d\fR] [\fIaddrobj\fR | \fIinterface\fR/]
+\fBipadm\fR up-addr [\fB-t\fR] \fIaddrobj\fR
+\fBipadm\fR down-addr [\fB-t\fR] \fIaddrobj\fR
+\fBipadm\fR refresh-addr [\fB-i\fR] \fIaddrobj\fR
+\fBipadm\fR disable-addr \fB-t\fR \fIaddrobj\fR
+\fBipadm\fR enable-addr \fB-t\fR \fIaddrobj\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-addrprop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR
+\fBipadm\fR reset-addrprop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR
+\fBipadm\fR show-addrprop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...]] [\fIaddrobj\fR]
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-prop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIprotocol\fR
+\fBipadm\fR reset-prop [\fB-t\fR] \fB-p\fR prop \fIprotocol\fR
+\fBipadm\fR show-prop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...] \fIprotocol\fR | \fIprotocol\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBipadm\fR コマンドには一連のサブコマンドがあり、次の目的に使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fBインタフェースを管理する:\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+インタフェースクラス \fBip\fR、\fBipmp\fR、および \fBvni\fR のインタフェースを作成および削除する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+インタフェースのプロパティーを変更する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+インタフェースの構成を表示する
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBアドレスを管理する:\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+アドレスを作成および削除する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+アドレスのプロパティーを変更する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+アドレスの構成を表示する
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTCP/IP プロトコルのプロパティーを管理する:\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+TCP/IP のプロパティーを変更する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+TCP/IP のプロパティーを表示する
+.RE
+.RE
+
+.sp
+.LP
+\fBipadm\fR サブコマンドのさまざまなオペランドについては、「サブコマンド」に続く「オペランド」の項で説明されています。
+.SS "必要な承認と特権"
+.sp
+.LP
+次のサブコマンドには、\fBsolaris.network.interface.config\fR 承認と \fBPRIV_SYS_IP_CONFIG\fR 特権が必要です。
+.sp
+.in +2
+.nf
+create-ip          create-addr
+delete-ip          up-addr
+create-vni         down-addr
+delete-vni         refresh-addr
+create-ipmp        disable-addr
+delete-ipmp        enable-addr
+add-ipmp           set-addrprop
+remove-ipmp        reset-addrprop
+disable-if         set-prop
+enable-if          reset-prop
+set-ifprop
+reset-ifprop
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の承認と特権に加えて、\fBipadm\fR のサブコマンドの \fBcreate-ip\fR、\fBcreate-vni\fR、\fBcreate-ipmp\fR、および \fBenable-if\fR には \fBPRIV_NET_RAWACCESS\fR 特権も必要です。
+.SH サブコマンド
+.sp
+.LP
+次のサブコマンドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-ip\fR [\fB-t\fR] \fIIP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 パケットと IPv6 パケットの両方を処理する IP インタフェースを作成します。IPv4 インタフェースのアドレスは \fB0.0.0.0\fR に設定され、IPv6 インタフェースのアドレスは \fB::\fR に設定されます。デフォルトでは、このサブコマンドの情報は持続し、次回のリブート時にこのインタフェースがインスタンス化されます。
+.sp
+インタフェースの作成時には、IPv4 と IPv6 の両方が暗黙的に有効になっています。インタフェースの無効化および有効化については、後述の \fBdisable-if\fR サブコマンドと \fBenable-if\fR サブコマンドを参照してください。
+.sp
+\fBlo0\fR は、ループバックインタフェースと呼ばれる特殊なインタフェースです。これは仮想 IP インタフェースなので、どの物理ハードウェアにも関連付けられません。これはシステムに最初に作成される IP インタフェースの 1 つであり、その IPv4 アドレスは \fB127.0.0.1\fR、IPv6 アドレスは \fB::/128\fR です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは一時的な操作で、永続してはいけないことを示します。操作の影響を受けるのはアクティブな構成だけです。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-ip\fR \fIIP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+この IP インタフェースをアクティブな構成から削除します。このインタフェースに構成されているすべてのアドレスが破棄されます。さらに、インタフェースに関連するすべての永続的な情報が永続的データストアから削除されるため、リブート時に \fIinterface\fR はインスタンス化されません。アクティブな構成からインタフェースを (削除するのではなく) 無効にするには、\fBdisable-if\fR サブコマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-vni\fR [\fB-t\fR] \fIVNI-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 パケットと IPv6 パケットの両方を処理する VNI インタフェースを作成します。IPv4 インタフェースのアドレスは \fB0.0.0.0\fR に設定され、IPv6 インタフェースのアドレスは \fB::\fR に設定されます。デフォルトでは、このサブコマンドの情報は持続し、次回のリブート時にこのインタフェースがインスタンス化されます。
+.sp
+インタフェースの作成時には、IPv4 と IPv6 の両方が暗黙的に有効になっています。インタフェースの無効化および有効化については、後述の \fBdisable-if\fR サブコマンドと \fBenable-if\fR サブコマンドを参照してください。
+.sp
+仮想インタフェースなのでどのハードウェアにも関連付けられないという点で、\fBvni\fR は特殊なインタフェースです。\fBvni\fR(7D) を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは一時的な操作で、持続してはいけないことを示します。操作の影響を受けるのはアクティブな構成だけです。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-vni\fR \fIVNI-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+この VNI インタフェースをアクティブな構成から削除します。このインタフェースに構成されているすべてのアドレスが破棄されます。さらに、IP インタフェースに関連するすべての永続的な情報が永続的データストアから削除されるため、リブート時に interface はインスタンス化されません。アクティブな構成からインタフェースを (削除するのではなく) 無効にするには、\fBdisable-if\fR サブコマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-ipmp\fR [\fB-t\fR] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 パケットと IPv6 パケットの両方を処理する IPMP インタフェースを作成します。IPv4 インタフェースのアドレスは \fB0.0.0.0\fR に設定され、IPv6 インタフェースのアドレスは \fB::\fR に設定されます。デフォルトでは、このサブコマンドの情報は持続し、次回のリブート時にこのインタフェースがインスタンス化されます。
+.sp
+インタフェースの作成時には、IPv4 と IPv6 の両方が暗黙的に有効になっています。IPMP インタフェースの無効化および有効化については、後述の \fBdisable-if\fR サブコマンドと \fBenable-if\fR サブコマンドを参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは一時的な操作で、持続してはいけないことを示します。操作の影響を受けるのはアクティブな構成だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+基になるインタフェースとして IPMP インタフェースに追加するインタフェースのコンマ区切りのリスト。インタフェースを IPMP グループに正常に追加するには、これらのインタフェースはアクティブな構成に存在している必要があり、ほかの IPMP グループに属していてはいけません。\fB-i\fR オプションは複数指定できます。IPMP インタフェースは作成されたが、指定された基になるインタフェースが 1 つも正常に追加されなかった場合、このコマンドは部分的な成功を返します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-ipmp\fR [\fB-f\fR] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+この IPMP インタフェースをアクティブな構成から削除します。このインタフェースに構成されているすべてのアドレスが破棄されます。IPMP インタフェースに基になるインタフェースが存在している場合、\fB-f\fR オプションを指定しないと、このコマンドは失敗します。さらに、IPMP インタフェースに関連するすべての永続的な情報が永続的データストアから削除されるため、リブート時に interface はインスタンス化されません。アクティブな構成からインタフェースを (削除するのではなく) 単に無効にするには、\fBdisable-if\fR サブコマンドを使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP インタフェースに基になるインタフェースが存在している場合、このオプションを指定すると、基になるインタフェースがすべてグループから削除されたあと、IPMP インタフェースが削除されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-ipmp\fR [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された IPMP インタフェースに 1 つまたは複数の基になる IP インタフェースを追加します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは一時的な操作で、持続してはいけないことを示します。操作の影響を受けるのはアクティブな構成だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+基になるインタフェースとして IPMP インタフェースに追加するインタフェースのコンマ区切りのリスト。インタフェースを IPMP グループに正常に追加するには、これらのインタフェースはアクティブな構成に存在している必要があり、ほかの IPMP グループに属していてはいけません。少なくとも 1 つのインタフェースは追加されたが、残りのインタフェースは追加に失敗した場合、このコマンドは部分的な成功を返します。\fB-i\fR オプションは複数指定できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-ipmp\fR [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+この IPMP インタフェースから 1 つまたは複数の基になる IP インタフェースを削除します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは一時的な操作で、持続してはいけないことを示します。操作の影響を受けるのはアクティブな構成だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+IPMP インタフェースから削除する基になるインタフェースのコンマ区切りのリスト。指定するインタフェースは、この IPMP グループの基になるインタフェースとしてすでに設定されている必要があります。\fB-i\fR オプションは複数指定できます。少なくとも 1 つのインタフェースは削除されたが、残りのインタフェースは削除に失敗した場合、このコマンドは部分的な成功を返します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-if\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIinterface\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークインタフェースの構成情報を表示します。システム上に構成されているすべてのネットワークインタフェース (永続的な構成だけに存在するものも含む) を対象にすることも、特定のネットワークインタフェースを対象にすることもできます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。\fIfield\fR 名には、次に示すフィールドのいずれか、あるいは、すべてのフィールドを表示するための特殊な値 \fBall\fR を指定する必要があります。各ネットワークインタフェースについて、次のフィールドを表示できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR \fR
+.ad
+.sp .6
+.RS 4n
+IP インタフェースの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCLASS\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のうちのいずれかを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip\fR\fR
+.ad
+.sp .6
+.RS 4n
+基になるデータリンク上に plumb されたインタフェース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmp\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つまたは複数の基になる IP インタフェース上に作成された IPMP インタフェース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBloopback\fR\fR
+.ad
+.sp .6
+.RS 4n
+ループバックインタフェース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvni\fR\fR
+.ad
+.sp .6
+.RS 4n
+仮想 IP インタフェース。\fBvni\fR(7D) を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示されるインタフェースに関して、次のいずれかを示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースが必要とするリソースが確保されていることを示します。一部のインタフェースでは、これは、リンクが稼働していることも示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースはオフライン状態なので、IP データトラフィックを送受信できません。\fBif_mpadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed\fR\fR
+.ad
+.sp .6
+.RS 4n
+データリンクが停止していることを示します。インタフェースが IPMP グループに属している場合、これは、インタフェースに障害が発生している (つまり、IFF_FAILED が設定されている) ことも示すことがあります。障害が発生したインタフェースは、IP データトラフィックの送受信には使用されません。これが IPMP グループの物理 IP インタフェースに設定されている場合、IP データトラフィックは、その IPMP グループで使用可能なほかの IP インタフェースを介して引き続き送受信されます。これが IPMP IP インタフェースに設定されている場合は、グループ全体が障害状態であり、そのグループのどのインタフェースでもデータトラフィックを送受信できません。\fBin.mpathd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown\fR\fR
+.ad
+.sp .6
+.RS 4n
+そのインタフェースを介して IP パケットが送受信されないように、インタフェースが管理上停止されていることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースが \fBdisable-if\fR サブコマンドによってアクティブな構成から無効にされていることを示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBACTIVE\fR\fR
+.ad
+.sp .6
+.RS 4n
+その IP インタフェースがシステムで IP データトラフィックに使用されているかどうかによって、\fByes\fR または \fBno\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクティブな構成のインタフェースオブジェクトに関して、次のフラグのいずれかを示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースはブロードキャストをサポートしています
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースはマルチキャストをサポートしています
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースはポイントツーポイントリンクです
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBv\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースは仮想インタフェースです (\fBvni\fR(7D)、ループバックなど)。つまり、物理インタフェースには基になるハードウェアがありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP インタフェースは、管理上 standby としてマークされています。\fBin.mpathd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースは、IPMP インタフェースの基になるインタフェースです。\fBin.mpathd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.sp .6
+.RS 4n
+基になるインタフェースはアクティブではありません。\fBin.mpathd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBV\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースは VRRP インタフェースです
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP インタフェースはアクセプトモードです (~\fBIFF_NOACCEPT\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの IP アドレスのレイヤー 3 保護が管理上適用されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースは IPv4 パケットを処理できます
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースは IPv6 パケットを処理できます
+.RE
+
+\fBb\fR と \fBp\fR を同時に指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースオブジェクトがリブート時にインスタンス化されるとき、または \fBenable-if\fR サブコマンドで再度有効化されるときに適用する構成を指定します。\fBs\fR、\fBl\fR、\fB4\fR、および \fB6\fR の任意の組み合わせにできます (前述の説明を参照)。このフィールドはデフォルトでは表示されず、\fB-o\fR で \fBall\fR または \fBpersistent\fR を指定した場合のみ表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOVER\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP インタフェースが作成される基になるインタフェース。これは、ほかのインタフェースクラスには適用されません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。このオプションには \fB-o\fR オプションが必要です。下記の「解析可能な出力形式」を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-if\fR \fB-t\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIinterface\fR をアクティブな構成から削除することによって無効にします。このインタフェースに構成されているすべてのアドレスが無効になります。もともと永続的なインタフェースオブジェクトとして作成されていた場合、永続的な構成は変更されません。このインタフェースを再度有効にするには、\fBenable-if\fR を使用するようにしてください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+この無効化は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-if\fR \fB-t\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成を永続的ストアから読み取ることで、指定されたインタフェースを有効にします。永続的なインタフェースプロパティーがあればすべて適用され、指定されたインタフェースに永続的アドレスがあればすべて有効になります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+この有効化は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-ifprop\fR [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR prop=\fIvalue\fR[,...] \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースのプロパティーを、ユーザーが指定した値に変更します。プロパティーが複数の値を取る場合は、区切り文字としてコンマを使用して値を指定します。一度に指定できるプロパティーは 1 つだけです。インタフェースでサポートされているプロパティーおよびその指定可能な値は、\fBshow-ifprop\fR サブコマンドで取得できます。一度に変更できるプロパティーは 1 つだけです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+この変更は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR, \fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーを IPv4 パケットに適用するか IPv6 パケットに適用するかを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop=\fIvalue\fR[,...], \fB-prop\fR prop=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+指定の値に設定するプロパティー。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-ifprop\fR [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR \fIprop\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたインタフェースのプロパティーをデフォルト値にリセットします。\fB-t\fR を省略すると、プロパティーの持続的な値はすべて削除されます。一度に変更できるプロパティーは 1 つだけです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+このリセットは一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR, \fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+リセットするプロパティーを IPv4 パケットに適用するか IPv6 パケットに適用するかを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR, \fB-prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定の値に設定するプロパティー。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-ifprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...] [\fB-m\fR \fIprotocol\fR] [\fIinterface\fR]\fR
+.ad
+.sp .6
+.RS 4n
+作成されているすべてのインタフェースまたは特定のインタフェースについて、1 つまたは複数のプロパティーの現在の値と永続的な値を表示します。一度に複数のプロパティーを取得するには、プロパティー名をコンマで区切って \fB-p\fR オプションに指定します。\fB- p\fR オプションを指定しない場合、 使用可能なすべてのインタフェースプロパティーが表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。\fIfield\fR 名には、次に示すフィールドのいずれか、あるいは、すべてのフィールドを表示するための特殊な値 \fBall\fR を指定する必要があります。インタフェースごとに、次のフィールドを表示できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR \fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROTO\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーが属しているプロトコルの名前。現在サポートされているプロトコルは IPv4 と IPv6 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの読み取り権と書き込み権。表示される値は、\fBr\fR (読み取り専用)、\fBw\fR (書き込み専用)、または \fBrw\fR (読み書き) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの現在の値。値が設定されていないため無効になっているインタフェースの場合は、\fB--\fR と表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの永続的な値。永続的な値は、リブート時に再度適用される値です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーのデフォルト値。プロパティーにデフォルト値がない場合は、\fB--\fR と表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーに設定できる値のコンマ区切りのリスト。値に数値の範囲がある場合は、短縮形として \fImin\fR - \fImax\fR が表示される可能性があります。指定可能な値が不明な場合は \fB?\fR と表示され、指定可能な値が無限の場合は \fB--\fR と表示されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。このオプションには \fB-o\fR オプションが必要です。下記の「解析可能な出力形式」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,..., \fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示するプロパティーのコンマ区切りのリスト。サブコマンドの説明に続くインタフェースプロパティーの節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR, \fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロトコルに一致するプロパティーを表示します。有効な値は \fBipv4\fR と \fBipv6\fR です。
+.RE
+
+サポートされているインタフェースプロパティーの一覧については、後述の「インタフェースのプロパティー」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR static [\fB-d\fR] \fB-a\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],... \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR で指定されたインタフェースに IPv4 または IPv6 の静的アドレスを作成します。\fIaddrobj\fR を作成するインタフェースはすでに存在している必要があります。作成された静的アドレスは \fIaddrobj\fR で識別されます。
+.sp
+デフォルトでは、構成されたアドレスは「\fBup\fR」とマークされるため、送信パケットと受信パケットの発信元または着信先として使用できます。
+.sp
+すべてのアドレスオブジェクトが作成時に有効になります。アドレスオブジェクトの無効化および有効化の手順については、\fBdisable-addr\fR サブコマンドと \fBenable-addr\fR サブコマンドを参照してください。
+.sp
+永続的な操作を一時オブジェクトに対して実行することはできません。つまり、一時的に作成されたインタフェースには、永続的なアドレスオブジェクトを作成することはできません。
+.sp
+\fIaddrobj\fR 名に指定されたインタフェースが IPMP インタフェースであれば、IPMP インタフェース上に静的データアドレスが作成されます。\fIaddrobj\fR 名に指定されたインタフェースが IPMP グループの基になるインタフェースであれば、基になるインタフェース上に静的テストアドレスが作成されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されたアドレスは一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--down\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されたアドレスを「\fBdown\fR」とマークします。つまり、そのアドレスは IP パケットの発信元や着信先として使用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],...\fR
+.ad
+.br
+.na
+\fB\fB--address\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],...\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddr\fR は、ローカルエンドポイントまたはリモートエンドポイント (ポイントツーポイントインタフェースの場合) に対応する、リテラル IP アドレスまたはホスト名です。
+.sp
+ホスト名が指定されている場合は、その数値が \fB/etc/hosts\fR のエントリから一意に取得されます。このファイルに数値の IP アドレスが定義されていない場合は、\fBnsswitch.conf\fR(4) で \fBhosts\fR または \fBipnodes\fR に指定されているリゾルバの順序を使用して、数値が一意に取得されます。指定されたホスト名に複数のエントリが存在する場合は、エラーが生成されます。IP アドレスの作成はブートプロセスでネームサービスがオンラインになる前に行われるため、使用するホスト名がすべて \fB/etc/hosts\fR に含まれていることが重要です。
+.sp
+\fIprefixlen\fR がコマンド行で明示的に指定されていない場合、アドレスのネットマスクは次に示す順序で検索によって取得されます。
+.RS +4
+.TP
+1.
+\fBnsswitch.conf\fR(4) で \fBnetmasks\fR に指定されている順序を使用する
+.RE
+.RS +4
+.TP
+2.
+RFC 791 で定義されているクラスフルサブネット化セマンティクスを使用して IPv4 アドレスを解釈し、RFC 4291 の定義を使用して IPv6 アドレスを解釈します。
+.RE
+ポイントツーポイントインタフェースの場合は、ローカルエンドポイントのアドレスとともに、リモートエンドポイントのアドレスを指定する必要があります (例: \fB-a\fR local=\fIladdr\fR,remote=\fIraddr\fR)。リモートエンドポイントに \fIprefixlen\fR を指定すると、エラーが返されます。
+.sp
+インタフェースにローカルアドレスだけが必要な場合は、\fB-a\fR オプションに直接、\fB-a\fR \fIaddr\fR[/\fIprefixlen\fR] のように指定します。アドレスは自動的にローカルアドレスとみなされます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR dhcp [\fB-w\fR \fIseconds\fR | forever] \fB-h\fR \fIhostname\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR で指定されたインタフェースに、DHCP によって制御される IPv4 アドレスを作成します。作成された IPv4 アドレスは \fIaddrobj\fR で識別されます。このコマンドの \fIaddrobj\fR に、基になるインタフェースを指定するとテストアドレスが作成され、IPMP インタフェースを指定するとデータアドレスが作成されます。
+.sp
+すべてのアドレスオブジェクトが作成時に有効になります。アドレスオブジェクトの無効化および有効化の手順については、\fBdisable-addr\fR サブコマンドと \fBenable-addr\fR サブコマンドを参照してください。
+.sp
+永続的な操作を一時オブジェクトに対して実行することはできません。つまり、一時的に作成されたインタフェースには、永続的なアドレスオブジェクトを作成することはできません。
+.sp
+\fIaddrobj\fR 名に指定されたインタフェースが IPMP インタフェースであれば、DHCP によって取得されたアドレスが IPMP インタフェース上にデータアドレスとして作成されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントが DHCP サーバーでクライアントのリース済み IPv4 アドレスをマップさせるホスト名を指定します。DHCP サーバーがホスト名の要求を満たせるという保証はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されたアドレスは一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIseconds\fR | forever, \fB--wait\fR \fIseconds\fR | forever\fR
+.ad
+.sp .6
+.RS 4n
+処理が完了するまで待つ時間を秒単位で指定します。待機時間が指定されず、かつ処理内容がすぐに完了できない性質のものであった場合、\fBipadm\fR はデフォルトで 120 秒間、要求された処理が完了するのを待ちます。デフォルトの待機時間は将来のリリースで変更される可能性があります。シンボリック値 \fBforever\fR も、リテラルな意味で使用できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR addrconf [\fB-i\fR {local | remote}=\fIinterface-id\fR] [\fB-p\fR {stateful | stateless}={yes | no},..] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR で指定されたインタフェースに、自動設定 IPv6 アドレスを作成します。作成された IPv6 アドレスは \fIaddrobj\fR で識別されます。
+.sp
+自動設定アドレスは、デフォルトのインタフェース ID を使用して生成されます (メディアタイプが Ethernet の場合、インタフェース ID はインタフェースの MAC アドレス)。この動作は \fB-i\fR オプションで上書きできます。
+.sp
+デフォルトでは、次のようになります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+RFC 4862 に記述されているとおり、IPv6 アドレスは、ルーターで通知される接頭辞に基づいて自動設定されます。さらに、
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+RFC 3315 に記述されているとおり、IPv6 アドレスは、DHCPv6 サーバーから提供される IPv6 アドレスを使用して、指定のインタフェース上に自動設定されます。(つまり、デフォルトのオプションは \fB-p\fR \fBstateful=yes,stateless=yes\fR です。)
+.RE
+すべてのアドレスオブジェクトが作成時に有効になります。アドレスオブジェクトの無効化および有効化の手順については、\fBdisable-addr\fR サブコマンドと \fBenable-addr\fR サブコマンドを参照してください。
+.sp
+永続的な操作を一時オブジェクトに対して実行することはできません。つまり、一時的に作成されたインタフェースには、永続的なアドレスオブジェクトを作成することはできません。
+.sp
+\fIaddrobj\fR 名に指定されたインタフェースが IPMP インタフェースであれば、IPv6 自動設定によって取得されたアドレスが IPMP インタフェース上にデータアドレスとして作成されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されたアドレスは一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR {local | remote}=\fIinterface-id\fR, \fB--interface-id\fR {local | remote}=\fIinterface-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動設定アドレスの生成に使用するインタフェース ID を指定します。
+.sp
+ポイントツーポイントインタフェースの場合は、リモートエンドポイントのインタフェース ID を指定できます (例: \fB-i\fR \fBlocal=\fR\fIlid\fR,\fBremote=\fR\fIrid\fR)。
+.sp
+インタフェースにローカルインタフェース ID だけが必要な場合は、\fB-i\fR オプションに直接、\fB-i\fR \fIlid\fR のように指定します。インタフェース ID は自動的にローカルインタフェース ID とみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR {stateful | stateless}={yes | no},..\fR
+.ad
+.br
+.na
+\fB\fB--prop\fR {stateful | stateless}={yes | no},..\fR
+.ad
+.sp .6
+.RS 4n
+ステートフル自動設定方法とステートレス自動設定方法の一方または両方を有効にするかどうかを指定します。
+.sp
+\fB-p\fR \fBstateful=no\fR を指定すると、DHCPv6 で指定される IPv6 アドレスに基づいたステートフル自動設定は実行されません。
+.sp
+\fB-p\fR \fBstateless=no\fR を指定すると、ルーターで通知される接頭辞に基づいたステートレス自動設定は実行されません。
+.sp
+\fB-p\fR \fBstateful=no,stateless=no\fR を指定すると、どちらの方法の自動設定も実行されません。
+.sp
+\fB-T\fR \fBaddrconf\fR オプションでは、デフォルトで \fB-p\fR \fBstateful=yes,stateless=yes\fR が使用されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-addr\fR [\fB-r\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR で指定されたインタフェース上の、\fIaddrobj\fR で識別されるアドレスをすべて削除します。これらのアドレスは永続的データストアからも削除されるため、リブート時にこれらのアドレスはインスタンス化されません。
+.sp
+アドレスオブジェクトが DHCP によって制御されるアドレスの場合、\fBdelete-addr\fR は DHCP サーバーに通知することなくシステムからこのアドレスを削除し、あとで使用できるように現在のリースを記録します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR, \fB--release\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR が DHCP によって制御されるアドレスの場合、このオプションを指定すると、インタフェース上の DHCP によって制御される IP アドレスがサーバーへの通知によって解放され、現在のリースが破棄されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-addr\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-d\fR] [\fIaddrobj\fR | \fIinterface\fR/]\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIaddrobj\fR について、または指定されたインタフェース上に構成されているすべてのアドレスオブジェクト (永続的な構成だけに存在するアドレスオブジェクトも含む) について、アドレス情報を表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。このオプションには \fB-o\fR オプションが必要です。下記の「解析可能な出力形式」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。\fIfield\fR 名には、次に示すフィールドのいずれか、あるいは、すべてのフィールドを表示するための特殊な値 \fBall\fR を指定する必要があります。インタフェースごとに、次のフィールドを表示できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDROBJ\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトのタイプ。\fBfrom-gz\fR、\fBstatic\fR、\fBdhcp\fR、または \fBaddrconf\fR のいずれかです。\fBstatic\fR、\fBdhcp\fR、および \fBaddrconf\fR タイプは、\fBcreate-addr\fR の \fB-T\fR オプションで指定されたアドレスオブジェクトのタイプに対応します。\fBfrom-gz\fR タイプは、非大域ゾーンでのみ表示され、非大域排他的 IP ゾーンに設定されている \fBallowed-address\fR プロパティーに基づいて大域ゾーンから構成されたアドレスであることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトの状態。このフィールドは、\fB-o\fR に \fBall\fR を指定した場合だけ表示されます。次のいずれかの値が表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスはアクティブな構成に含まれています (\fBdisable-addr\fR と \fBdisable-if\fR を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスは管理上停止されています (\fBdown-addr\fR を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBduplicate\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスは、別のシステムの IP アドレスと競合していることが重複アドレス検出 (DAD) で見つかったため、競合が解決されるまで使用できません。システムでは、競合が解決されたかどうかを調べるために、定期的に DAD が実行されます。または、\fBrefresh-addr\fR を使用して DAD をただちに再実行することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinaccessible\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスが構成されている IP インタフェースに障害が発生したため、アドレスは使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスは有効で、稼働しており、正しく動作しています。システムは、このアドレス宛の IP パケットを受け入れます。また、設定されている IP 発信元アドレス選択ポリシーに従い、このアドレスを使用して IP パケットを発信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtentative\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在、アドレスには重複アドレス検出が行われています (たとえば、\fBup-addr\fR または \fBrefresh-addr\fR の一環として)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクティブな構成のアドレスオブジェクトに関して、次のフラグのいずれかを示します。このフィールドはデフォルトでは表示されず、\fB-o\fR で \fBall\fR または \fBcurrent\fR を指定した場合のみ表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR (deprecated)\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスが送信パケットの発信元アドレスとして使用されるのは、そのインタフェース上で利用可能なアドレスがほかに存在しない場合と、アプリケーションがこのアドレスに明示的にバインドした場合だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR (private)\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスはルーティングデーモンによって通知されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR (temporary)\fR
+.ad
+.sp .6
+.RS 4n
+RFC 3041 で定義されている一時 IPv6 アドレスです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBU\fR (up)\fR
+.ad
+.sp .6
+.RS 4n
+アドレスは「up」とマークされ、送信/受信パケットの発信元/着信先として使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR (unnumbered)\fR
+.ad
+.sp .6
+.RS 4n
+アドレスは、システム内のほかのリンクのローカルアドレスに一致しています。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトがリブート時にインスタンス化されるとき、または \fBenable-addr\fR サブコマンドで再度有効化されるときに適用する構成を指定します。有効な値は、\fBU\fR、\fBp\fR、および \fBd\fR の任意の組み合わせです (前述の説明を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDR\fR\fR
+.ad
+.sp .6
+.RS 4n
+数値の IPv4 または IPv6 アドレス。ポイントツーポイントインタフェースの場合は、両方のエンドポイントのアドレスが表示されます (\fIladdr\fR-->\fIraddr\fR)。\fBdhcp\fR タイプのアドレスオブジェクトの場合は、アドレスオブジェクトの状態が \fBdisabled\fR であるか、アドレスが IPv4 アドレス \fB0.0.0.0\fR または IPv6 アドレス \fB::\fR であれば、疑問符 (\fB?\fR) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCID-TYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスが DHCP を使用して取得されている場合は、\fBdhcpagent\fR(1M) で使用されるクライアント ID のタイプ。IPv4 の場合は、RFC 4361 のクライアント ID の構築に使用される DUID のタイプが表示されます。タイプは \fBDUID-LLT\fR、\fBDUID-EN\fR、\fBDUID-LL\fR、\fBother\fR、または \fBdefault\fR のいずれかです。このフィールドはデフォルトの出力には表示されません。表示するには、\fB-d\fR を使用するか、\fB-o\fR に \fBcid-type\fR または \fBall\fR を使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-LLT\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイプ 1 の RFC 3315 DUID が \fBCID-VALUE\fR の構築に使用されます (例: \fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR)。詳細については、RFC を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-EN\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイプ 2 の RFC 3315 DUID が \fBCID-VALUE\fR の構築に使用されます (例: \fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR)。詳細については、RFC を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-LL\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイプ 3 の RFC 3315 DUID が \fBCID-VALUE\fR の構築に使用されます (例: \fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR)。詳細については、RFC を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBother\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイプ {0,4-65535} の RFC 3315 DUID がクライアント ID の生成に使用されます (例: \fB4,0x734633\fR)。または、\fBCID-VALUE\fR は、RFC 3315 に準拠していないクライアント ID そのものです (例: \fBSun\fR、\fB0xab3146\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアント ID の構築に RFC 3315 DUID は使用されていないことを示します。代わりに、RFC 2132 に従い、インタフェースの MAC アドレスを使用してクライアント ID が生成されます。\fBCID-VALUE\fR は、文字列 \fB0x01\fR とそれに続く MAC アドレスの 16 進文字列で構成されます。これは IPv4 の場合にのみ当てはまります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCID-VALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスが DHCP を使用して取得されている場合は、\fBdhcpagent\fR(1M) で使用されるクライアント ID の値。使用される形式は、\fB/etc/default/dhcpagent\fR ファイル内の構成パラメータ \fBCLIENT_ID\fR の形式に従います。\fBdhcpagent\fR(1M) の \fBCLIENT_ID\fR の説明を参照してください。\fBCID-TYPE\fR が default の場合、\fBCID-VALUE\fR は、RFC 2132 に従って構築されたレガシー \fBCLIENT-ID\fR になります。このフィールドはデフォルトの出力には表示されません。表示するには、\fB-d\fR を使用するか、\fB-o\fR に \fBcid-type\fR または all を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBEGIN\fR \fR
+.ad
+.sp .6
+.RS 4n
+DHCP を使用して取得されたアドレスの場合、リースが開始された時刻 (存在する場合)。時刻は、\fBLC_TIME\fR ロケール環境変数で規定される形式で表示されます。DHCP によって構成されないアドレス、あるいは、まだリースが取得されていない DHCP アドレスの場合は、\fB--\fR (2 つのハイフン) が表示されます。このフィールドはデフォルトの出力には表示されません。表示するには、\fB-d\fR を使用するか、\fB-o\fR に \fBcid-type\fR または all を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEXPIRE\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP  を使用して取得されたアドレスの場合、リースが期限切れになる時刻 (存在する場合)。時刻は、\fBLC_TIME\fR ロケール環境変数で規定される形式で表示されます。DHCP によって構成されないアドレス、あるいは、まだリースが取得されていない DHCP アドレスの場合は、\fB--\fR (2 つのハイフン) が表示されます。このフィールドはデフォルトの出力には表示されません。表示するには、\fB-d\fR を使用するか、\fB-o\fR に \fBcid-type\fR または all を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRENEW\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP を使用して取得されたアドレスの場合、リースが最後に更新された時刻。時刻は、\fBLC_TIME\fR ロケール環境変数で規定される形式で表示されます。DHCP によって構成されないアドレス、あるいは、まだリースが取得されていない DHCP アドレスの場合は、\fB--\fR (2 つのハイフン) が表示されます。このフィールドはデフォルトの出力には表示されません。表示するには、\fB-d\fR を使用するか、\fB-o\fR に \fBcid-type\fR または all を使用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--dhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP を使用して取得されたアドレスの \fBdhcp\fR ステータスフィールドを表示します。表示されるフィールドは、\fBADDROBJ\fR、\fBSTATE\fR、\fBADDR\fR、\fBCID-TYPE\fR、\fBCID-VALUE\fR、\fBBEGIN\fR、\fBEXPIRE \fR、および \fBRENEW\fR です。このオプションの出力は人間が読める形式だけです。このオプションを \fB-p\fR と組み合わせて使用することはできません。
+.RE
+
+.LP
+注 - 
+.sp
+.RS 2
+\fBe1000g1/_a\fR や \fBe1000g1/_b\fR のように、アドレスオブジェクトの名前が下線 (\fB_\fR) で始まる場合もあります。このような名前は、\fBipadm\fR プログラミングライブラリを使用するアプリケーションのために自動的に生成されたものです。アドレスのアドレスオブジェクト名に疑問符 (\fB?\fR) が含まれている場合もあります。これは、そのアドレスが \fBipadm\fR ライブラリの外部で作成されたものであり、\fBipadm\fR には認識されていないことを意味します。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown-addr\fR [\fB-t\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR で識別されるアドレスを「down」とマークして、送信/受信パケットの発信元/着信先として使用できないようにします。このコマンドは、\fBdown-addr\fR の呼び出しの前にすでに「down」とマークされていたアドレスオブジェクトには影響しません。アドレスオブジェクトが \fBaddrconf\fR タイプの場合、このコマンドはエラーを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されたアドレスは一時的なもので、変更はアクティブな構成だけに適用されることを示します。アドレスオブジェクトのタイプが \fBdhcp\fR の場合、このオプションは必須です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBup-addr\fR [\fB-t\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR で識別されるアドレスを「up」とマークして、送信/受信パケットの発信元/着信先として使用できるようにします。このサブコマンドは、重複アドレスなのでシステムによって「down」とマークされているアドレスオブジェクトや、\fBup-addr\fR の呼び出しの前にすでに「up」とマークされていたアドレスオブジェクトには影響しません。アドレスオブジェクトが \fBaddrconf\fR タイプの場合、このコマンドはエラーを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されたアドレスは一時的なもので、変更はアクティブな構成だけに適用されることを示します。アドレスオブジェクトのタイプが \fBdhcp\fR の場合、このオプションは必須です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh-addr\fR [\fB-i\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddrobj\fR が \fBstatic\fR タイプの場合、このアドレスオブジェクトで識別されるアドレスに対し、必要に応じて DAD (重複アドレス検出) が再開されます。
+.sp
+\fIaddrobj\fR が \fBdhcp\fR タイプの場合、このアドレスに取得されたリース期間が DHCP クライアントデーモンによって延長されます。
+.sp
+\fIaddrobj\fR が \fBaddrconf\fR タイプの場合、このコマンドはエラーを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB--inform\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された IP アドレスについて、DHCP からネットワーク構成パラメータを取得します。その際、アドレスのリースは取得しません。これは、DHCP 以外のメカニズムを使って IP アドレスを取得する場合に役立ちます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-addr\fR \fB-t\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスをアクティブな構成から削除することによって無効にします。もともと永続的なアドレスオブジェクトとして作成されていた場合、永続的な構成は変更されません。この \fIaddrobj\fR を再度有効にするには、\fBenable-addr\fR を使用するようにしてください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+この無効化は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-addr\fR \fB-t\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成を永続的ストアから読み取ることで、指定された \fIaddrobj\fR を有効にします。アドレスオブジェクトには、永続的なアドレスプロパティーがすべて適用されます。このサブコマンドでは、アドレスオブジェクトを有効にするインタフェースが存在する必要があります。インタフェース自体がアクティブな構成には存在せず永続的ストアには存在する場合、つまりインタフェースが無効になっている場合は、\fBenable-addr\fR を呼び出す前に \fBenable-if\fR を実行する必要があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+この有効化は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-addrprop\fR [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIaddrobj\fR にプロパティーの値を設定します。\fIaddrobj\fR が複数のアドレスに対応している場合は、\fIaddrobj\fR で参照されるすべてのアドレスにプロパティーの変更が適用されます。一度に指定できるプロパティーは 1 つだけです。\fIaddrobj\fR でサポートされているプロパティーおよびその指定可能な値は、\fBshow-addrprop\fR サブコマンドで取得できます。\fIaddrobj\fR が \fBaddrconf\fR タイプの場合、このコマンドはエラーを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+この変更は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop=\fIvalue\fR[,...], \fB--prop\fR prop=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+指定の値に設定するプロパティー。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-addrprop\fR [\fB-t\fR] \fB-p\fR \fIprop\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたアドレスのプロパティーをデフォルト値にリセットします。\fB-t\fR を省略すると、プロパティーの永続的な値はすべて削除されます。一度に変更できるプロパティーは 1 つだけです。\fIaddrobj\fR が \fBaddrconf\fR タイプの場合、このコマンドはエラーを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+このリセットは一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR, \fB--prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+リセットするプロパティー。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-addrprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...] [\fIaddrobj\fR]\fR
+.ad
+.sp .6
+.RS 4n
+構成されているすべてのアドレスオブジェクトまたは特定の \fIaddrobj\fR について、1 つまたは複数のプロパティーの現在の値と永続的な値を表示します。一度に複数のプロパティーを取得するには、プロパティー名をコンマで区切って \fB-p\fR オプションに指定します。\fB-p\fR オプションを指定しない場合、 使用可能なすべてのプロパティーが表示されます。\fIaddrobj\fR が \fBaddrconf\fR タイプの場合、このコマンドはエラーを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。\fIfield\fR 名には、次に示すフィールドのいずれか、あるいは、すべてのフィールドを表示するための特殊な値 \fBall\fR を指定する必要があります。\fIaddrobj\fR ごとに、次のフィールドを表示できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDROBJ\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの読み取り権と書き込み権。表示される値は、\fBr\fR (読み取り専用)、\fBw\fR (書き込み専用)、または \fBrw\fR (読み取り/書き込み) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの現在の値。値が設定されていないため無効になっているアドレスの場合は、2 つのハイフン (\fB--\fR) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの永続的な値。永続的な値は、リブート時に再度適用される値です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーのデフォルト値。プロパティーにデフォルト値がない場合は、2 つのハイフン (\fB--\fR) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーに設定できる値のコンマ区切りのリスト。値に数値の範囲がある場合は、短縮形として \fImin\fR - \fImax\fR が表示される可能性があります。指定可能な値が不明な場合は疑問符 (\fB?\fR) が表示され、指定可能な値が無限の場合は 2 つのハイフン (\fB--\fR) が表示されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。このオプションには \fB-o\fR オプションが必要です。下記の「解析可能な出力形式」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,..., \fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示するプロパティーのコンマ区切りのリスト。サブコマンドの説明に続くアドレスオブジェクトのプロパティーに関する節を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-prop\fR [\fB-t\fR] \fB-p\fR prop[+ | -]=\fIvalue\fR[,...] \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロトコルのプロパティーの値を、指定された \fIvalue\fR に変更します。プロパティーが複数の値を取る場合は、区切り文字としてコンマを使用して値を指定します。一度に指定できるプロパティーは 1 つだけです。デフォルトでは、値は永続的で、リブート時に再度適用されます。プロトコルでサポートされているプロパティーおよびその指定可能な値は、\fBshow-prop\fR サブコマンドで取得できます。
+.sp
+サポートされているプロトコルは、\fBip\fR、\fBipv4\fR、\fBipv6\fR、\fBicmp\fR、\fBtcp\fR、\fBudp\fR、および \fBsctp\fR です。
+.sp
+一部のプロパティーでは、プロパティーの値をグローバルに設定することもインタフェースごとに設定することもできます。インタフェースごとの値は \fBset-ifprop\fR サブコマンドで設定できます。そのような場合、管理者がプロパティーのインタフェースごとの値をカスタマイズして、グローバルな値とは異なる値にすると、そのインタフェースではグローバルな設定よりもインタフェースごとの値が優先されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+このプロパティーの変更は一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop[+|-]=\fIvalue\fR[,...], \fB--prop\fR prop[+|-]=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+指定の値に設定するプロパティー。次の「修飾子」も提供されているため、割り当て操作に加え、追加操作と削除操作も実行できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された値を現在の値リストに追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された値を現在の値リストから削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しい割り当てを行い、現在の値はすべて削除します。
+.RE
+
+修飾子の使用方法の詳細については、「使用例」を参照してください。\fB\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-prop\fR [\fB-t\fR] \fB-p\fR \fIprop\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロトコルのプロパティーを、そのプロパティーのデフォルト値にリセットします。-t を使用しない場合、プロパティーの永続的な値はすべて削除されます。一度に変更できるプロパティーは 1 つだけです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+このリセットは一時的なもので、変更はアクティブな構成だけに適用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR, \fB--prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+リセットするプロパティー。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-prop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...] \fIprotocol\fR | \fIprotocol\fR]\fR
+.ad
+.sp .6
+.RS 4n
+サポートされているすべてのプロトコルまたは特定のプロトコルについて、1 つまたは複数のプロパティーの現在の値と永続的な値を表示します。一度に複数のプロパティーを取得するには、プロパティー名をコンマで区切って \fB-p\fR オプションに指定します。\fB-p\fR オプションを指定しない場合、 使用可能なすべてのプロパティーが表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。\fIfield\fR 名には、次に示すフィールドのいずれか、あるいは、すべてのフィールドを表示するための特殊な値 \fBall\fR を指定する必要があります。各 \fIprotocol\fR について、次のフィールドを表示できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROTO\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロトコルの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの読み取り権と書き込み権。表示される値は、\fBr\fR (読み取り専用)、\fBw\fR (書き込み専用)、または \fBrw\fR (読み取り/書き込み) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの現在の値。値が設定されていないため無効になっているアドレスの場合は、2 つのハイフン (\fB--\fR) が表示されます。値が不明な場合は疑問符 (\fB?\fR) が表示されます。プロパティーの現在の値が \fBPOSSIBLE\fR 値のリストに含まれていない場合は、キーワード \fBcustom\fR が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの永続的な値。永続的な値は、リブート時に再度適用される値です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーのデフォルト値。プロパティーにデフォルト値がない場合は、2 つのハイフン (\fB--\fR) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBset-prop\fR サブコマンドで使用するプロパティー設定の値のコンマ区切りのリスト。値に数値の範囲がある場合は、短縮形として \fImin\fR - \fImax\fR が表示される可能性があります。指定可能な値が不明な場合は疑問符 (\fB?\fR) が表示され、指定可能な値が無限の場合は 2 つのハイフン (\fB--\fR) が表示されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。このオプションには \fB-o\fR オプションが必要です。下記の「解析可能な出力形式」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,..., \fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示するプロパティーのコンマ区切りのリスト。サブコマンドの説明に続くプロトコルのプロパティーに関する節を参照してください。
+.RE
+
+各プロトコルでサポートされているプロパティーの一覧については、後述の「プロトコルのプロパティー」を参照してください。
+.RE
+
+.SS "解析可能な出力形式"
+.sp
+.LP
+\fBipadm\fR の一連の「show」サブコマンドには、マシン解析可能な形式で出力を表示する \fB-o\fR オプションがあります。この出力形式は、コロン (:) で区切られたフィールドで構成された 1 つ以上の行です。表示されるフィールドは、使用されているサブコマンドに固有のもので、そのサブコマンドの \fB-o\fR オプションに基づいて一覧表示されます。出力には、\fB-o\fR オプションを使用して要求したフィールドのみが、要求した順序で表示されます。サブコマンドのすべてのフィールドを表示する \fB-o\fR \fBall\fR オプションは、解析可能な出力には使用できません。
+.sp
+.LP
+複数のフィールドを要求した場合、すべてのコロン文字は、バックスラッシュ (\fB\\fR) でエスケープされてから出力されます。同様に、バックスラッシュ文字もエスケープされます (\fB\\\fR)。このエスケープ形式は、環境変数 \fBIFS=:\fR を設定したシェルの \fBread\fR(1) 関数を使って解析できます。ただし、1 つのフィールドだけを要求した場合はエスケープは行われません。
+.SS "プロトコルのプロパティー"
+.sp
+.LP
+次のプロトコルプロパティーがサポートされています。
+.LP
+注 - 
+.sp
+.RS 2
+プロトコルに固有の、「\fB_\fR」(下線) で始まるプロトコルプロパティーがあります。これらのプロパティーはデフォルトで変更または削除されることがあり、\fBipadm show-prop\fR 出力には表示されません。詳細は、『\fIOracle Solaris Tunable Parameters Reference Manual\fR』を参照してください。
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcong_default\fR (TCP, SCTP)\fR
+.ad
+.sp .6
+.RS 4n
+新しい接続の作成時にプロトコルによって使用されるデフォルトの輻輳制御アルゴリズムを指定します。あとで接続の有効期間内にアプリケーションで別のアルゴリズムを選択することもできます。デフォルトとして設定できるのは有効になっているアルゴリズムのみです (\fBcong_enabled\fR を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcong_enabled\fR (TCP, SCTP)\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、輻輳制御アルゴリズムを有効または無効にすることができます。デフォルトでは、システムにインストールされているすべてのアルゴリズムが有効になります。無効になっているアルゴリズムをデフォルトとして設定したり (\fBcong_default\fR を参照)、アプリケーションで使用したりすることはできません。
+.sp
+アルゴリズムの追加または削除には、\fBset-prop\fR サブコマンドと修飾子 \fB+\fR および \fB-\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBecn\fR (TCP)\fR
+.ad
+.sp .6
+.RS 4n
+明示的な輻輳制御 (詳細は、RFC 3168 を参照)。指定可能な値は、上記と同じ \fBnever\fR、\fBpassive\fR、および \fBactive\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextra_priv_ports\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、1-1023 の範囲外にある追加の特権ポートを定義します。このリストに含まれるポートにバインドしようとするプログラムは、root ユーザーとして実行する必要があります。これにより、通常ユーザーが特定のポートでサーバープロセスを開始することを防止します。
+.sp
+これらのポートの追加、削除、および割り当てを行うには、\fBset-prop\fR サブコマンドと修飾子 \fB+\fR、\fB-\fR、および \fB=\fR を使用します。使用方法については、後述の「\fB使用例\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforwarding\fR (IPv4), \fBforwarding\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+グローバルな IPv4 転送または IPv6 転送を有効または無効にします。構成されているすべてのインタフェースがパケットの転送を開始または停止します。\fBset-ifprop\fR による個々のインタフェースの設定は、このグローバルなオプションよりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostmodel\fR (IPv4), \fBhostmodel\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+マルチホームシステムでの IP パケットの送受信動作を制御します。\fBhostmodel\fR の値は \fBstrong\fR または \fBweak\fR に設定できます。これは、RFC 1122 の同等のエンドシステムモデル定義に対応します。さらに、3 つ目の値 \fBsrc-priority\fR もサポートされています。\fBsrc-priority\fR \fBhostmodel\fR シナリオでは、パケットの着信先 IP アドレスがホストのいずれかのインタフェース上に構成され「\fBUP\fR」とマークされていれば、パケットは任意のインタフェースで受け入れられます。パケットの送信時、パケットの IP 着信先への経路が複数ある場合は、パケットの IP 発信元アドレスが送信インタフェース上に構成されている経路が優先されます。そのような経路がない場合、弱い ES の場合と同様に、フォールバックによって「最適な」経路が選択されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.sp .6
+.RS 4n
+ソケットの送信バッファーまたは受信バッファーの最大サイズ。このプロパティーの現在の値によって、\fBrecv_buf\fR と \fBsend_buf\fR の最大値が制限されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.br
+.na
+\fB\fBsend_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロトコルの受信バッファーサイズまたは送信バッファーサイズを変更します。これらのプロパティーの最大値は、\fBmax_buf\fR プロパティーの現在の値に制約されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsack\fR (TCP)\fR
+.ad
+.sp .6
+.RS 4n
+選択的肯定応答 (SACK) を使用すると、受信者は順序の誤ったデータを選択的に受け入れることができます。損失の多いリンクでデータ転送のパフォーマンスを向上させるためのものです。SACK については、RFC 2018 を参照してください。指定可能な値とその意味は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnever\fR\fR
+.ad
+.sp .6
+.RS 4n
+SACK を受け入れず、SACK 情報の送信も行いません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpassive\fR\fR
+.ad
+.sp .6
+.RS 4n
+SACK を受け入れますが、送信はしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactive\fR\fR
+.ad
+.sp .6
+.RS 4n
+SACK を受け入れ、SACK 情報の送信も行います。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmallest_anon_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.br
+.na
+\fB\fBlargest_anon_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+これらのオプションは、エフェメラルポートの上限と下限を定義します。エフェメラル (「短命な」の意) ポートは、発信ネットワーク接続を確立するときに使用されます。\fBsmallest_anon_port\fR の現在の値は、常に \fBlargest_anon_port\fR の現在の値以下になるようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmallest_nonpriv_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、非特権ポートの開始を定義します。通常、非特権ポートの範囲は 1024 から始まります。非特権ポートにバインドしようとするプログラムは、root ユーザーとして実行する必要はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBttl\fR (IPv4), \fBhoplimit\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 ヘッダーまたは IPv6 ヘッダーの \fBttl/hoplimit\fR フィールドに設定する値を指定します。システムが \fIN\fR ホップより遠くにあるほかのシステムに到達することを防止するために使用できます。この \fIN\fR は、指定した値です。
+.RE
+
+.SS "インタフェースのプロパティー"
+.sp
+.LP
+次のインタフェースプロパティーがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBarp\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースでのアドレス解決プロトコル (ARP) の使用を有効または無効にします。ARP は、ネットワークレベルのアドレスとリンクレベルのアドレスとの間のマッピングに使用されます。これは現時点では、IPv4 アドレスと MAC アドレス間のマッピング用として実装されています。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBon\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexchange_routes\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースでの経路指定情報の交換を有効または無効にします。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBoff\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースが基になるインタフェースとして属している IPMP インタフェースのグループ名を指定します。インタフェースのクラスが IPMP の場合、これは IPMP グループの名前を指定します。このプロパティーは IPMP インタフェースでのみ読み書き可能です。ほかのインタフェースクラスの場合、このプロパティーは読み取り専用です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforwarding\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースでの IP 転送を有効または無効にします。有効になっている場合、このインタフェースへの、およびこのインタフェースからの、IP パケットの転送を行えます。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBoff\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmetric\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの経路指定メトリックを \fIn\fR に設定します。値が指定されなかった場合のデフォルトは、\fB0\fR になります。経路指定メトリックは、経路指定プロトコルによって使用されます。メトリックが高いほど、その経路は好まれません。メトリックは、着信先となるネットワークまたはホストへの加算ホップとしてカウントされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの最大転送単位を \fIn\fR に設定します。多くのネットワークタイプでは、MTU には上限があります。たとえば、Ethernet の場合は 1500 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnud\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のポイントツーポイント物理インタフェース上で近傍不到達検出メカニズムを有効または無効にします。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBon\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstandby\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースを IPMP グループの予備インタフェースとして構成するかどうかを指定します。このプロパティーは IPMP インタフェースには適用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusesrc\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定の物理インタフェースまたは仮想インタフェースを発信元アドレス選択用として指定します。キーワード \fBnone\fR を使用した場合、それまでの選択がすべてクリアされます。デフォルトは \fBnone\fR です。
+.RE
+
+.SS "アドレスのプロパティー"
+.sp
+.LP
+次のアドレスプロパティーがサポートされています。\fBaddrconf\fR アドレスオブジェクトのアドレスプロパティーの変更はサポートされていません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeprecated\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しい通信ではこのアドレスを発信元アドレスとして使用しないようにしてください。ただし、このアドレス宛のパケットは期待どおりに処理されます。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBoff\fR です。このプロパティーは \fBdhcp\fR タイプのアドレスオブジェクトではサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprefixlen\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスの左から何ビットがアドレスの IPv6 接頭辞または IPv4 ネットマスクに該当するかを指定します。残りの下位ビットは、アドレスのホスト部を定義します。\fBprefixlen\fR をアドレスのテキスト表現に変換すると、アドレスのネットワーク部として使用するビット位置には 1 が、ホスト部として使用するビット位置には 0 が含まれています。\fBprefixlen\fR は単一の 10 進数で指定する必要があります。このプロパティーは \fBdhcp\fR タイプのアドレスオブジェクトではサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivate\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスを \fBin.routed\fR ルーティングデーモンで通知しないように指定します。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBoff\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreqhost\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントが DHCP サーバーでクライアントのリース済み IPv4 をマップさせるホスト名。ホスト名の要求が満たされる保証はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransmit\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトで参照されるアドレスを使用してパケットを送信できるようにします。これは、アドレスが「up」状態にある場合のデフォルト動作です。指定可能な値は、\fBon\fR または \fBoff\fR です。デフォルトは \fBon\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzone\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスオブジェクトで参照されるすべてのアドレスを配置するゾーンを指定します。指定されたゾーンは、カーネル内でアクティブになっており、準備完了か実行中の状態になっていなければいけません。ゾーンが停止またはリブートすると、インタフェースは unplumb されます。ゾーンは共有 IP ゾーンとして構成されている必要があります。排他的 IP ゾーンにネットワークインタフェース名を割り当てるには、\fBzonecfg\fR(1M) を使用します。ゾーンの割り当てがリブート後も持続するように変更するには、\fBzonecfg\fR(1M) を使用してください。指定可能な値は、システム上に構成されているすべてのゾーンのリストです。デフォルトは \fBglobal\fR です。
+.RE
+
+.SH オペランド
+.sp
+.LP
+各 \fBipadm\fR サブコマンドは、次のいずれかのオブジェクトに対して動作します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークインタフェース上に構成されているアドレスは \fIaddrobj\fR で識別されます。\fIaddrobj\fR は 2 つの部分から成ります。最初の部分は、アドレスが構成されているネットワークインタフェースの名前です。2 つ目の部分は、ユーザーが指定した文字列です。任意の英数字を 32 文字まで使用でき、英文字で始まる必要があります。\fIaddrobj\fR の 2 つの部分はスラッシュ (\fB/\fR) で区切られます。アドレスオブジェクトは常に、システム内にあるアドレスの一意のセットを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークアドレスが構成されているネットワークインタフェースの名前。一般に、この名前には任意の英数字に加えて下線 (\fB_\fR) とピリオド (\fB\&.\fR) も使用できますが、英字で始まり、数字で終わる必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーを設定する TCP/IP インターネットプロトコルファミリの名前。サポートされているプロトコルは、\fBip\fR、\fBipv4\fR、\fBipv6\fR、\fBicmp\fR、\fBtcp\fR、\fBsctp\fR、および \fBudp\fR です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRIPv4 静的アドレスの作成
+.sp
+.LP
+次のコマンドは、インタフェース \fBbge1\fR (リンク名 \fBnet1\fR) 上にアドレス 10.2.3.4/24 を作成し、そのアドレスを使用するために「\fBup\fR」とマークします。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、インタフェース \fBnet1\fR 上に別のアドレス 10.2.3.5/24 を作成しますが、明示的に「up」とマークされるまでアドレスを「\fBdown\fR」とマークします。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-addr -T static -d -a 10.2.3.5/24 net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+local が使用されておらず、指定されたアドレスが 1 つだけなので、10.2.3.5/24 はローカルアドレスとみなされます。
+
+.sp
+.LP
+次のコマンドは、以前に「\fBdown\fR」とマークされたアドレスオブジェクト \fBnet1/v4static2\fR を「\fBup\fR」とマークします。
+
+.sp
+.in +2
+.nf
+# \fBipadm up-addr net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+アドレスオブジェクトに \fBDUPLICATE\fR フラグが設定されていた場合は、アドレスがネットワーク上でまだ重複しているかどうかを \fBrefresh-addr\fR で確認します。そうでない場合、アドレスは「\fBup\fR」とマークされます。
+
+.sp
+.in +2
+.nf
+# \fBipadm refresh-addr net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、構成されているアドレスを一覧表示します。これは、アドレス \fBnet1/v4static2\fR が重複していないことを示します。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-addr\fR
+ADDROBJ          TYPE    STATE      ADDR
+lo0/v4           static  ok         127.0.0.1/8
+lo0/v6           static  ok         ::/128
+net1/v4static1   static  ok         10.2.3.4/24
+net1/v4static2   static  ok         10.2.3.10/24
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRDHCPv4 によって制御されるアドレスの作成
+.sp
+.LP
+次のコマンドは、インタフェース \fBbge1\fR (リンク名 \fBnet1\fR) 上の DHCPv4 アドレスを取得します。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T dhcp net1/dhaddr\fR
+# \fBipadm show-addr net1/dhaddr\fR
+ADDROBJ          TYPE    STATE      ADDR
+net1/dhaddr      dhcp    ok         10.8.48.173/25
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、DHCPv4 アドレスオブジェクト \fBnet1/dhaddr\fR のリース期間を延長します。
+
+.sp
+.in +2
+.nf
+# \fBipadm refresh-addr net1/dhaddr\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRIPv6 アドレスの作成
+.sp
+.LP
+次の一連のコマンドは、\fBin.ndpd\fR をデフォルトのインタフェース ID とともに使用して、IPv6 アドレスを \fBbge1\fR (リンク名 \fBnet1\fR) 上に自動設定します。リンクローカルアドレスが最初に設定されたあと、ステートレスおよびステートフルな自動設定アドレスが \fBin.ndpd\fR によって追加されます。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T addrconf net1/v6addr\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、IPv6 静的アドレスを作成します。リンクローカルアドレスでない IPv6 アドレスを構成するには、インタフェース上にリンクローカルアドレスがすでに構成されている必要があります。これは、前の手順の \fB-T\fR \fBaddrconf\fR で達成されています。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-addr -T static -a local=2ff0::f3ad/64 net1/v6static\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、IPv6 アドレスの接頭辞の長さを変更します。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-addrprop -p prefixlen=80 net1/v6static\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+すべての自動設定アドレスおよび更新された接頭辞の長さは、アドレスを一覧表示することで確認できます。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-addr\fR
+ADDROBJ       TYPE     STATE     ADDR
+lo0/v4        static   ok        127.0.0.1/8
+lo0/v6        static   ok        ::/128
+net1/v6addr   addrconf ok        fe80::203:baff:fe94:2f01/10
+net1/v6addr   addrconf ok        2002:a08:39f0:1:203:baff:\e
+                                            fe94:2f00/64
+net1/v6addr   addrconf ok        2001:db8:1:2::402f/128
+net1/v6static static   ok        2ff0::f3ad/80
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRIPv4 トンネルの構成
+.sp
+.LP
+次に示す最初のコマンド (\fBipadm\fR) は、トンネルの発信元アドレスを作成します。次に、\fBdladm\fR コマンドでトンネルリンクが作成されます。最後の \fBipadm\fR コマンドは、トンネル IP インタフェース上に IPv4 アドレスと IPv6 アドレスを構成します。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static\fR
+# \fBdladm create-iptun -T ipv4 -a local=10.2.3.4,remote=10.2.3.5 tun0\fR
+# \fBipadm create-ip tun0\fR 
+# \fBipadm create-addr -T static \e\fR
+       \fB-a local=173.129.134.1,remote=173.129.134.2 tun0/v4tunaddr\fR
+# \fBipadm create-addr -T static \e\fR
+       \fB-a local=2ff1::3344,remote=2ff1::3345 tun0/v6tunaddr\fR
+# \fBipadm show-addr\fR
+ADDROBJ        TYPE   STATE     ADDR
+lo0/v4         static ok        127.0.0.1/8
+lo0/v6         static ok        ::/128
+net1/v4static  static ok        10.2.3.4/24
+tun0/v4tunaddr static ok        173.129.134.1-->173.129.134.2
+tun0/v6tunaddr static ok        2ff1::3344-->2ff1::3345
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRすべてのインタフェースの表示
+.sp
+.LP
+次のコマンドを使用すると、すべてのインタフェースを表示できます。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-if -o all\fR
+IFNAME  CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+lo0     loopback ok       yes    -m-v------46  --46       --
+net0    ip       ok       yes    bm--------46  --46       --
+e1000g0 ip       ok       yes    bm---l----46  -l46       --
+e1000g1 ip       ok       yes    bm---l----46  -l46       --
+ipmp0   ipmp     down     yes    bm--------46  --46       e1000g0 e1000g1
+tun0    ip       failed   no     -mp-------46  --46       --
+vni0    vni      disabled no     bm-v--------  --46       --
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRインタフェースのプロパティーの表示
+.sp
+.LP
+次のコマンドは、指定されたインタフェースのすべてのインタフェースプロパティーを表示します。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-ifprop net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   arp             ipv4  rw   on      --         on       on,off
+net0   forwarding      ipv4  rw   off     on         off      on,off
+net0   metric          ipv4  rw   2       2          0        --
+net0   mtu             ipv4  rw   1500    --         1500     68-1500
+net0   exchange_routes ipv4  rw   off     --         off      on,off
+net0   usesrc          ipv4  rw   none    --         none     --
+net0   forwarding      ipv6  rw   off     --         off      on,off
+net0   metric          ipv6  rw   2       2          0        --
+net0   mtu             ipv6  rw   1500    --         1500     1280-1500
+net0   nud             ipv6  rw   on      --         on       on,off
+net0   exchange_routes ipv6  rw   off     on         off      on,off
+net0   usesrc          ipv6  rw   none    --         none     --
+net0   group           ip    rw   grp0    --         --       --
+net0   standby         ip    r-   off     --         off      on,off
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRインタフェースごとのプロパティーの構成
+.sp
+.LP
+次のコマンドは、インタフェース \fBnet0\fR の IPv4 MTU を \fB900\fR に設定します。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-ifprop -m ipv4 -p mtu=900 net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、インタフェース \fBnet0\fR の IPv6 MTU を \fB1400\fR に設定します。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-ifprop -m ipv6 -p mtu 1400 net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+結果を確認します。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-ifprop -p mtu net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   mtu             ipv4  rw   900     900        1500     68-1500
+net0   mtu             ipv6  rw   1400    1400       1500     1280-1500
+
+# \fBipadm show-ifprop -m ipv6 -p mtu net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   mtu             ipv6  rw   1400    1400       1500     1280-1500
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRサポートされているプロパティーの表示
+.sp
+.LP
+次のコマンドは、TCP でサポートされているプロパティーを表示します。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-prop tcp\fR
+PROTO PROPERTY              PERM CURRENT PERSISTENT DEFAULT   POSSIBLE
+tcp   ecn                   rw   active  active     passive   never,passive,
+                                                                      active
+tcp   extra_priv_ports      rw   --      1,65535    2049,4045 1-65535
+tcp   largest_anon_port     rw   32768   32768      65535     1024-65535
+tcp   sack                  rw   active  --         active    never,passive,
+                                                                      active
+tcp   recv_buf              rw   29567   --         49152     2048-1073741824
+tcp   send_buf              rw   21354   --         49152     4096-1073741824
+tcp   max_buf               ro   65536   --         32768     4096-1073741824
+tcp   smallest_anon_port    rw   32768   --         32768     1024-65535
+tcp   smallest_nonpriv_port rw   1024    --         1024      1024-32768
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRグローバルな IPv4 転送の構成
+.sp
+.LP
+次の一連のコマンドは、グローバルな IPv4 転送を構成し、その設定をインタフェース \fBnet0\fR については上書きします。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p forwarding=on ipv4\fR
+# \fBipadm set-ifprop -p forwarding=off -m ipv4 net0\fR
+# \fBipadm show-prop -p forwarding ipv4\fR
+PROTO PROPERTY              PERM CURRENT PERSISTENT DEFAULT POSSIBLE
+ipv4  forwarding            rw   on      on         off     on,off
+
+# \fBshow-ifprop -p forwarding -m ipv4 net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   forwarding      ipv4  rw   off     off        off      on,off
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR\fBset-prop\fR サブコマンドの修飾子の使用
+.sp
+.LP
+次の一連のコマンドは、プラス修飾子とマイナス修飾子 (\fB+\fR、\fB-\fR) を使用して、1047、1048、および 1049 を TCP の追加の特権ポートとして追加します。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p extra_priv_ports=1047 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1048 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1049 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1050 tcp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、1048 を追加の特権ポートとして削除します。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p extra_priv_ports-=1048\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、TCP の追加の特権ポートをすべて表示します。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-prop -p extra_priv_ports tcp\fR
+PROTO PROPERTY             PERM CURRENT    PERSISTENT  DEFAULT   POSSIBLE
+ipv4  extra_priv_ports     rw   1047,1049, 1047,1049,  2049,4045 1-65535
+                                1050       1050
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRオブジェクトの有効化と無効化
+.sp
+.LP
+次の一連のコマンドは、インタフェースオブジェクトとアドレスオブジェクトを有効または無効にし、それらの操作の結果を表示します。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static\fR
+# \fBipadm set-addrprop -p private=yes net1/v4static\fR
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、アドレスオブジェクト \fBnet1/v4static\fR を無効にします。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-addr -t net1/v4static\fR
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、インタフェースオブジェクト \fBnet1\fR を無効にします。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t net1\fR
+# \fBipadm show-if net1 -o all\fR
+IFNAME     CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+net1       ip       disabled no     bm----------  --46       --
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、永続的な構成を使用してインタフェースオブジェクトを有効にします。
+
+.sp
+.in +2
+.nf
+# \fBipadm enable-if -t net1\fR
+# \fBipadm show-if net1 -o all\fR
+IFNAME     CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+net1       ip       ok       yes    bm--------46  --46       --
+
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+インタフェースオブジェクトを有効にすると、そのインタフェースに構成されているすべてのアドレスオブジェクトも有効になります。
+
+.sp
+.LP
+次のコマンドは、非大域排他的 IP ゾーンの \fBnet0\fR インタフェースの永続的な構成を作成します。これにより、次回のリブート時に大域ゾーンから \fBallowed-address\fR リソースを通して提供される一連のアドレスを使用して、\fBnet0\fR インタフェースが構成されます。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドを実行すると、リブートしなくても、非大域排他的 IP ゾーンで使用可能な一連の \fBallowed-address\fR 値を使用して \fBnet0\fR インタフェースを構成できます。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t net0\fR
+# \fBipadm enable-if -t net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRIPMP インタフェースの作成
+.sp
+.LP
+次の一連のコマンドは、IPMP インタフェースを作成し、基になるインタフェースを追加します。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip e1000g0\fR
+# \fBipadm create-ip e1000g1\fR
+# \fBipadm create-ip e1000g2\fR
+# \fBipadm set-ifprop -p standby=on -m ip e1000g2\fR
+# \fBipadm create-ipmp testgroup0\fR
+# \fBipadm add-ipmp -i e1000g0 -i e1000g1 -i e1000g2 testgroup0\fR
+# \fBipadm create-addr -T static -a local=192.168.80.5/24 testgroup0/data1\fR
+# \fBipadm create-addr -T static -a local=192.168.80.6/24 testgroup0/data2\fR
+# \fBipadm show-if\fR
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+e1000g0    ip       ok       yes    --
+e1000g1    ip       ok       yes    --
+ipmp0      ipmp     ok       yes    e1000g0 e1000g1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の一連のコマンドは、IPMP インタフェースを無効にしてから有効にします。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t testgroup0\fR
+\fBipadm show-if\fR
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+e1000g0    ip       disabled no     --
+e1000g1    ip       disabled no     --
+ipmp0      ipmp     disabled no     e1000g0 e1000g1
+# \fBipadm enable-if -t testgroup0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の一連のコマンドは、IPMP インタフェースから基になるインタフェースを削除したあとで、IPMP インタフェースを削除します。
+
+.sp
+.in +2
+.nf
+\fBipadm remove-ipmp -i e1000g0 -i e1000g1 testgroup0\fR
+\fBipadm delete-ipmp testgroup0\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBread\fR(1), \fBarp\fR(1M), \fBcfgadm\fR(1M), \fBdhcpagent\fR(1M), \fBdladm\fR(1M), \fBif_mpadm\fR(1M), \fBifconfig\fR(1M), \fBin.mpathd\fR(1M), \fBin.ndpd\fR(1M), \fBndd\fR(1M), \fBzonecfg\fR(1M), \fBnsswitch.conf\fR(4), \fBattributes\fR(5), \fBdhcp\fR(5), \fBvni\fR(7D)
+.sp
+.LP
+『\fIOracle Solaris Tunable Parameters Reference Manual\fR』
+.sp
+.LP
+『\fIRFC 791, Internet Protocol - DARPA Internet Program Protocol Specification\fR』、Postel, J. (Information Sciences Institute, University of Southern California) 著、1981 年 9 月
+.sp
+.LP
+『\fIIP Version 6 Addressing Architecture\fR』(RFC 4291)、Hinden, R. および S. Deering 著、2006 年 2 月
+.sp
+.LP
+『\fIIPv6 Stateless Address AutoConfiguration\fR』(RFC 4862)、Thomson, S.、Narten, T.、および T. Jinmei 著、2007 年 9 月
+.sp
+.LP
+『\fIDynamic Host Configuration Protocol for IPv6 (DHCPv6)\fR』(RFC 3315)、Droms, R.、Bound, J.、Volz, B.、Lemon, T.、Perkins, C.、および M. Carney 著、2003 年 7 月
+.sp
+.LP
+『\fIPrivacy Extensions for Stateless Address AutoConfiguration in IPv6\fR』(RFC 4941)、Narten, T.、Draves, R.、および S. Krishnan 著、2007 年 9 月
+.sp
+.LP
+『\fIManagement Information Base for the Internet Protocol (IP)\fR』(RFC 4293)、S. Routhier, Ed. 著、2006 年 4 月
+.sp
+.LP
+『\fIRequirements for Internet Hosts - Communication Layers\fR』(RFC 1122)、Braden, R. (Information Sciences Institute, University of Southern California) 著、1989 年 10 月

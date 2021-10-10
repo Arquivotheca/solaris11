@@ -1,0 +1,341 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH bootadm 1M "2011 年 3 月 31 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+bootadm \- GRUB 対応オペレーティングシステムのブート管理
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR update-archive [\fB-vn\fR] [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR list-archive [\fB-vn\fR] [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+.fi
+
+.LP
+.nf
+ x86 only
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR set-menu [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]] \fIkey\fR=\fIvalue\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR list-menu [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBbootadm\fR コマンドは、ブートアーカイブのほか、x86 ブート環境、GRUB (GRand Unified Bootloader) メニューを管理します。\fBupdate-archive\fR オプションを使えば、ブートアーカイブの更新を、障害予防策として、あるいは復旧手順の一環として、実施できます。\fBset-menu\fR サブコマンドを使えば、GRUB メニュー内の自動ブートタイムアウトやデフォルトブートエントリを切り替えることができます。\fB\fR
+.sp
+.LP
+\fBlist-menu\fR サブコマンドは、GRUB メニューの場所と現在のエントリ内容を表示します。ZFS での GRUB メニューの場所は通常は \fB/rpool/boot/grub/menu.lst\fR ですが、使用されたインストール方法によっては、アクティブな GRUB メニューがほかの場所に格納されている可能性もあります。\fBlist-menu\fR サブコマンドを使ってアクティブな GRUB メニューの場所を特定してください。たとえば、Live Upgrade を使ってインストールされたシステムの場合、現在のブート環境内に GRUB メニューが格納されていない可能性があります。\fBlist-menu\fR オプションの典型的な出力については、「使用例」の節を参照してください。
+.sp
+.LP
+SPARC システムなどの OpenBoot PROM (OBP) ベースのマシンは GRUB を使用しないため、\fBbootadm\fR で管理できるブートメニューがないことに注意してください。
+.sp
+.LP
+あるプラットフォーム上で呼び出される \fBbootadm\fR を使用して、プラットフォームの種類が異なるディスクレスクライアントを管理できるように、\fBbootadm\fR コマンドは、管理対象のイメージでサポートされるオプションを動的に判断します。
+.SH サブコマンド
+.sp
+.LP
+\fBbootadm\fR コマンドのサブコマンドを、次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBupdate-archive\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のブートアーカイブを必要に応じて更新します。SPARC と x86 の両方のプラットフォームに適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-archive\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートアーカイブに含めるファイルとディレクトリを一覧表示します。SPARC と x86 の両方のプラットフォームに適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-menu\fR\fR
+.ad
+.sp .6
+.RS 4n
+GRUB メニューを維持管理します。現在の GRUB メニューは、\fBboot/grub/menu.lst\fR にあります。ただし、これはルートからの相対パスです。これは変更される可能性があるため、この場所には依存しないでください。x86 プラットフォームにのみ適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-menu\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクティブな GRUB メニューの場所と現在の GRUB メニューエントリを一覧表示します。これには、自動ブートタイムアウト、デフォルトエントリ番号、および各エントリのタイトルが含まれます。x86 プラットフォームにのみ適用されます。
+.RE
+
+.SH オプション
+.sp
+.LP
+\fBbootadm\fR コマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBupdate-archive\fR 処理の場合、無効なファイルが標準エラー出力に表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBupdate-archive\fR 処理の場合、アーカイブ内容のチェックは行われますが、その更新は行われません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIplatform\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントのプラットフォームまたはマシンのハードウェアクラス。プラットフォームの種類は \fB-R\fR とともにのみ指定でき、一般にはクライアントのプラットフォームクラスがサーバーとは異なる場合のディスクレスクライアントの管理にのみ有効です。プラットフォームには、\fBi86pc\fR、\fBsun4u\fR、\fBsun4v\fR のいずれかを指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIaltroot\fR\fR
+.ad
+.sp .6
+.RS 4n
+別のルートパスに処理が適用されます。
+.LP
+注 - 
+.sp
+.RS 2
+いかなる非大域ゾーンのルートファイルシステムも \fB-R\fR で参照しないでください。この操作によって、大域ゾーンのファイルシステムを損傷したり、大域ゾーンのセキュリティを損ねたり、非大域ゾーンのファイルシステムを損傷する可能性があります。\fBzones\fR(5) を参照してください。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIkey\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+可能な値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault=\fR\fIentrynum\fR\fR
+.ad
+.sp .6
+.RS 4n
+GRUB メニュー内の項目番号 (0、1、2 など)。タイムアウト時にブートするオペレーティングシステムを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout=\fR\fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルト項目番号で指定されたオペレーティングシステムがブートされるまでの秒数。値が -1 の場合、自動ブートは無効になります。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR現在のブートアーカイブの更新
+.sp
+.LP
+次のコマンドは、現在のブートアーカイブを更新します。
+
+.sp
+.in +2
+.nf
+# bootadm update-archive
+.fi
+.in -2
+
+.LP
+\fB例 2 \fR別のルート上にあるブートアーカイブの更新
+.sp
+.LP
+次のコマンドは、別のルート上にあるブートアーカイブを更新します。
+
+.sp
+.in +2
+.nf
+# bootadm update-archive -R /a
+.fi
+.in -2
+
+.LP
+\fB例 3 \fRインストール済み OS インスタンスの一覧表示
+.sp
+.LP
+次のコマンドは、GRUB メニューに含まれている、インストール済みのオペレーティングシステムインスタンスを一覧表示します。
+
+.sp
+.in +2
+.nf
+# bootadm list-menu
+
+default=0
+timeout=10
+(0) Solaris10
+(1) Solaris10 Failsafe
+(2) Linux
+.fi
+.in -2
+
+.LP
+\fB例 4 \fRデフォルトブートエントリの切り替え
+.sp
+.LP
+次のコマンドは、1 つ前の例で表示されたメニューを参照しています。ユーザーは、Linux (項目 2) を選択しています。
+
+.sp
+.in +2
+.nf
+# bootadm set-menu default=2
+.fi
+.in -2
+
+.LP
+\fB例 5 \fRGRUB メニューのエントリと場所の一覧表示
+.sp
+.LP
+次のコマンドは、GRUB メニューのエントリと場所を一覧表示しています。
+
+.sp
+.in +2
+.nf
+# bootadm list-menu
+The location for the active GRUB menu is: /stubboot/boot/grub/menu.lst
+default 0
+timeout 10
+0 Solaris10
+1 Solaris10 failsafe
+2 Linux
+.fi
+.in -2
+
+.LP
+\fB例 6 \fRGRUB メニューの場所の表示
+.sp
+.LP
+次のコマンドは、GRUB メニューの場所を表示しています。
+
+.sp
+.in +2
+.nf
+# bootadm list-menu
+The location for the active GRUB menu is: /dev/dsk/c0t1d0s0 (not mounted)
+The filesystem type of the menu device is <ufs>
+default 2
+timeout 10
+0 c0t1d0s3
+1 c0t1d0s3 failsafe
+2 Solaris10
+3 Solaris10 failsafe
+.fi
+.in -2
+
+.sp
+.LP
+この例では、アクティブな GRUB メニューが、マウントされて\fBいない\fRデバイス上に格納されています。この GRUB メニューにアクセスするには、このデバイスをマウントし、\fB\fI<マウントポイント>\fR/boot/grub/menu.lst\fR にある GRUB メニューにアクセスします。
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドが正常に完了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生したため、コマンドが終了しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBboot\fR(1M), \fBinstallgrub\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+次の GRUB ホームページを参照してください。
+.sp
+.in +2
+.nf
+http://www.gnu.org/
+.fi
+.in -2
+

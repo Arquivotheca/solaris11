@@ -1,0 +1,231 @@
+#!/usr/bin/bash
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+#======================================================================
+# CIFS Configuration Check
+#
+# This script will perform some basic configuration sanity checks.
+#
+# Usage:
+#
+# 	cifs-chkcfg
+#======================================================================
+
+chkcfg_version=2.00
+zpl_minver=9
+zfs_minver=3
+os_release=5.11
+
+pam_conf=/etc/pam.conf
+resolv_conf=/etc/resolv.conf
+smbpasswd=/var/smb/smbpasswd
+smbpam=pam_smb_passwd.so.1
+smbcommon=smb
+smbsvc=smb/server
+smbdrv=smbsrv
+smbmanifest=/lib/svc/manifest/network/smb/server.xml
+
+#
+# OS release
+#
+release=`uname -r`
+if [ "$release" != "$os_release" ] ; then
+	echo $smbsvc is only supported on Solaris $os_release
+	exit 1
+fi
+
+#
+# Package check
+#
+pkgnum=`pkginfo | grep -c SUNWsmbs`
+if [ $pkgnum -lt 2 ] ; then
+	echo some CIFS packages are missing
+	exit 1
+fi
+
+#
+# Installation checks
+#
+svcs $smbsvc > /dev/null
+if [ $? -ne 0 ] ; then
+	echo $smbsvc service is not installed
+	echo check to make sure CIFS packages are installed properly then
+	echo try: svccfg import $smbmanifest
+	exit 1
+fi
+
+grep ^$smbdrv /etc/name_to_major > /dev/null 2>&1
+if [ $? -ne 0 ] ; then
+	echo "CIFS driver ($smbdrv) is not installed"
+	echo make sure CIFS packages are installed properly
+	exit 1
+fi
+
+modinfo | grep smbsrv > /dev/null
+if [ $? -ne 0 ] ; then
+	echo "CIFS driver ($smbdrv) is not loaded"
+	echo try: modload -p $smbdrv
+	exit 1
+fi	
+
+#
+# Zpool version
+#
+for zpl in `zpool list -H -o name`; do
+	version=`zpool list -H -o version $zpl`
+	if [ $version -lt $zpl_minver ] ; then
+		echo $zpl is version $version, minimum requirement is version $zpl_minver 
+		echo run: zpool upgrade $zpl
+	fi
+done
+
+#
+# Dataset version
+#
+for zfs in `zfs list -H -o name -t filesystem`; do
+	version=`zfs list -H -o version $zfs`
+	if [ $version -lt $zfs_minver ] ; then
+		echo $zfs is version $version, minimum requirement is version $zfs_minver 
+		echo run: zfs upgrade $zfs
+	fi
+done
+
+#
+# Samba status
+#
+samba_status=`svcs -Hv samba 2>&1 | awk -F" " '{print $1}'`
+if [ "$samba_status" = "online" ] ; then
+	echo samba service is online
+	echo Samba and $smbsvc cannot be run together
+	echo run: svcadm disable samba
+	exit 1
+fi
+
+#
+# smb/server status
+#
+smb_status=`svcs -Hv $smbsvc | awk -F" " '{print $1}'`
+if [ "$smb_status" != "online" ] ; then
+	echo $smbsvc service is not online: $smb_status
+	echo run: svcadm enable -r $smbsvc
+fi
+
+#
+# Workgroup checks
+#
+chk_workgroup()
+{
+	smb_wrkgrp=`svccfg -s $smbcommon listprop smb/nb_domain | awk -F" " '{print $3}'`
+	if [ -z "$smb_wrkgrp" ] ; then
+		echo no workgroup has been configured
+		echo run: smbadm join -w workgroup
+		exit 1
+	fi
+
+	pamline=`grep $smbpam $pam_conf`
+	if [ -z "$pamline" ] ; then
+		echo $pam_conf is not configured for workgroup mode
+		echo "run: echo other password required $smbpam nowarn >> $pam_conf"
+		exit 1
+	fi
+
+	pamok=`echo $pamline | \
+	   awk -F" " '$1 == "other" && $2 == "password" && $3 == "required" \
+	   && $4 == "pam_smb_passwd.so.1" {print "ok"}'`
+
+	if [ "$pamok" != "ok" ] ; then   
+		echo SMB PAM configuration is commented or has wrong format
+		echo This is the correct format:
+		echo "other password required $smbpam nowarn"
+		exit 1
+	fi	
+
+	if ! [[ -s $smbpasswd ]] ; then
+		echo $smbpasswd does not exist or it is empty
+		echo passwd must be used to create CIFS-style password for local users
+		exit 1
+	fi	
+}
+
+#
+# Domain checks
+#
+chk_domain()
+{
+	smb_domain=`svccfg -s $smbcommon listprop smb/ad_domain | awk -F" " '{print $3}'`
+	if [ -z "$smb_domain" ] ; then
+		echo no domain has been configured
+		echo run: smbadm join -u username domain    
+		exit 1
+	fi
+
+	resdom_line=`grep ^domain $resolv_conf`
+	resdom_len=${#resdom_line}
+	if [ $resdom_len -ne 0 ] ; then
+		resdom_lineno=`grep -n ^domain $resolv_conf | awk -F":" '{print $1}'`
+	else
+		resdom_lineno=0
+	fi	    
+
+	ressrch_line=`grep ^search $resolv_conf`
+	ressrch_len=${#ressrch_line}
+	if [ $ressrch_len -ne  0 ] ; then
+		ressrch_lineno=`grep -n ^search $resolv_conf | awk -F":" '{print $1}'`
+	else
+		ressrch_lineno=0
+	fi	    
+
+	if [ $resdom_len -eq 0 -a $ressrch_len -eq 0 ] ; then
+		echo $resolv_conf is missing both domain and search configurtaion
+		echo one of domain or search configuration MUST be present    
+		echo "run: echo domain $smb_domain >> $resolv_conf"
+		echo "OR echo search $smb_domain >> $resolv_conf"
+		exit 1
+	fi
+
+	if [ $resdom_lineno -gt $ressrch_lineno ] ; then
+		echo $resdom_line | grep -w $smb_domain > /dev/null
+		if [ $? -ne 0 ] ; then
+			echo $resolv_conf: domain directive should contain $smb_domain
+			exit 1
+		fi	    
+	else	
+		echo $ressrch_line | grep -w $smb_domain > /dev/null
+		if [ $? -ne 0 ] ; then
+			echo $resolv_conf: search directive should contain $smb_domain
+			exit 1
+		fi	    
+	fi
+}
+
+secmode=`svccfg -s $smbcommon listprop smb/security | awk -F" " '{print $3}'`
+
+if [ "$secmode" = "workgroup" ] ; then
+	chk_workgroup
+elif [ "$secmode" = "domain" ] ; then	
+	chk_domain
+else	
+	echo unknown security mode: $secmode
+	exit 1
+fi

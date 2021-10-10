@@ -1,0 +1,793 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fdisk 1M "2011 年 4 月 21 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fdisk \- 固定ディスクパーティションテーブルの作成または変更
+.SH 形式
+.LP
+.nf
+\fBfdisk\fR [\fB-o\fR \fIoffset\fR] [\fB-s\fR \fIsize\fR] [\fB-P\fR \fIfill_patt\fR] [\fB-S\fR \fIgeom_file\fR] 
+     [\fB-w\fR | \fB-r\fR | \fB-d\fR | \fB-n\fR | \fB-I\fR | \fB-B\fR | \fB-t\fR | \fB-T\fR | \fB-g\fR | \fB-G\fR | \fB-R\fR | \fB-E\fR] 
+     [-\fB-F\fR \fIfdisk_file\fR] [ [\fB-v\fR] \fB-W\fR {\fIfdisk_file\fR | \(mi}] 
+     [\fB-h\fR] [\fB-b\fR \fImasterboot\fR] 
+     [\fB-A\fR \fIid\fR : \fIact\fR : \fIbhead\fR : \fIbsect\fR : \fIbcyl\fR : \fIehead\fR : \fIesect\fR : 
+         \fIecyl\fR : \fIrsect\fR : \fInumsect\fR] 
+     [\fB-D\fR \fIid\fR : \fIact\fR : \fIbhead:\fR \fIbsect\fR : \fIbcyl\fR : \fIehead:\fR \fIesect\fR :
+         \fIecyl\fR : \fIrsect\fR : \fInumsect\fR] \fIrdevice\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+このコマンドは、次のように使用します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+x86 システム上の \fBfdisk\fR パーティションテーブルを作成および変更する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SPARC または x86 システム上のリムーバブルメディアで \fBfdisk\fR パーティションテーブルを作成および変更する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+x86 システムのみ、固定ディスクの最初のセクターに格納されるマスターブートレコードをインストールする
+.RE
+.sp
+.LP
+このテーブルは、異なるオペレーティングシステムごとに予約されているディスク領域を識別するために、または第 2 段階のブートストラップのあるパーティション (アクティブな Solaris パーティション) を識別するために、第 1 段階のブートストラップ (またはファームウェア) により使用されます。\fI\fR\fIrdevice\fR 引数は、固定ディスクに対応する raw デバイスを指定する場合に使用しなくてはいけません。たとえば、\fB/dev/rdsk/c0t0d0p0\fR のように指定します。
+.sp
+.LP
+このプログラムは、3 種類の動作モードで実行します。最初の動作モードは対話モードです。対話モードでは、ディスク上に存在するパーティションテーブルが表示され、さらにユーザーがテーブルを変更できるように、メニューが表示されます。メニュー、問い合わせ、警告、およびエラーメッセージは、特に説明がなくても理解できるものです。
+.sp
+.LP
+対話モードでは、ディスク上にパーティションテーブルがない場合、ユーザーはデフォルトのパーティション分割を行うか、または初期テーブル値を指定するかの、どちらかを選択できます。デフォルトのパーティション分割では、ディスク全体が Solaris システムに割り当てられ、Solaris システムパーティションがアクティブになります。いずれの場合も、初期テーブルが作成された時点で、\fBfdisk\fR はパーティションテーブルとともに、第 1 段階のブートストラップ (x86 のみ) コードも書き込みます。このモード (x86 のみ) では、2T バイトより大きなディスク上に非 EFI パーティションのエントリを作成する場合、\fBfdisk\fR はパーティションの最大サイズが 2T バイトであることを警告します。これらの状態で、\fBfdisk\fR によって表示される割合 (パーセント) は 2T バイトに基づいています。
+.sp
+.LP
+2 番目の動作モードは、エントリの追加、削除、または \fBfdisk\fR テーブル全体の置き換えを自動的に行う場合に使用します。このモードでは、コマンド行に指定したエントリを追加または削除できます。また、ファイルから \fBfdisk\fR テーブル全体を読み込んで、元のテーブルと置き換えることもできます。\fBfdisk\fR はこのファイルを作成する目的でも使用できます。コマンド行オプションを使用すると、任意の \fBfdisk\fR テーブルが、ディスク全体を Solaris システムに割り当てるデフォルトの \fBfdisk\fR テーブルに置き換えられます。
+.sp
+.LP
+3 番目の動作モードは、ディスクの診断時に使用します。このモードでは、ディスクのあるセクションをユーザーが指定したパターンで埋めることができ、ディスクのモードセクションを読み書きすることもできます。
+.LP
+注 - 
+.sp
+.RS 2
+3 番目の動作モードは、拡張パーティションでは現在サポートされません。
+.RE
+.sp
+.LP
+\fBfdisk\fR がパーティションを作成する場合、領域は \fBfdisk\fR のパーティションテーブル内に割り当てられますが、割り当てられたディスク領域は初期化されません。ファイルシステムのメタデータを作成して新しいパーティションに書き込むには \fBnewfs\fR(1M) が必要であり、VTOC または EFI/GPT メタデータを書き込むには \fBformat\fR(1M) が必要です。
+.SS "メニューオプション"
+.sp
+.LP
+\fBfdisk\fR プログラムの対話モードで使用できるメニューオプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCreate a partition\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、新しいパーティションを作成できます。パーティションの最大数は 4 つです。パーティションのタイプ (SOLARIS、MS-DOS、UNIX、またはその他) が尋ねられます。次に、パーティションのサイズをディスクの割合で指定するように求められます。この時点で \fBc\fR と入力すると、開始シリンダ番号およびシリンダ内のパーティションのサイズが尋ねられます。\fBc\fR を入力しなかった場合は、パーティションが収まるように、fdisk プログラムが開始シリンダ番号を決定します。いずれの場合でも、パーティションが既存のパーティションとオーバーラップする場合、または収まりきらない場合は、メッセージが表示されて最初のメニューに戻ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBChange Active (Boot from) partition\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、第 1 段階のブートストラップが第 2 段階のブートストラップを検索するパーティション (アクティブパーティションと呼ばれる) を指定できます。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDelete a partition\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、作成済みのパーティションを削除できます。そのパーティション内のすべてのデータが破壊されるので注意してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBChange between Solaris and Solaris2 Partition IDs\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、ユーザーは、現在と以前の \fBfdisk\fR オペレーティングシステムパーティション ID を切り替えることができます。これにより、そのディスクパーティション内のデータが影響を受けることはありません。このオプションは、以前のソフトウェアとの互換性を維持するために提供されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEdit/View extended partitions\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、拡張パーティションメニューを表示できます。論理ドライブの追加および削除、論理ドライブの sysid の変更、および論理ドライブ情報の表示を行うには、拡張パーティションメニューを使用します。拡張パーティションに加えた変更を確定するには、拡張パーティションサブメニューのオプション \fBr\fR を使用してメインメニューに戻る必要があります。拡張パーティションサブメニューによってサポートされるオプションのリストを表示するオプションもあります。オプションのリストを次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.RS 5n
+.rt  
+論理ドライブを追加します。
+.sp
+論理ドライブを追加するには、このサブメニューオプションを使用します。開始シリンダ、サイズ (シリンダ単位、または人間が読み取れる形式 - KB、MB、または GB)、およびパーティション ID の 3 種類の情報が必要となります。パーティション ID を指定する場合、サポートされるパーティションを一覧表示するために使用できるオプション (\fBI\fR) があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 5n
+.rt  
+論理ドライブを削除します。
+.sp
+論理ドライブを削除するには、このサブメニューオプションを使用します。必要となる入力は、削除する論理ドライブの番号のみです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.RS 5n
+.rt  
+ヘルプメニューを表示します。
+.sp
+このサブメニューオプションは、拡張パーティションサブメニューでサポートされる操作を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+論理ドライブの ID を変更します。
+.sp
+既存の論理ドライブのシステム ID を変更するには、このサブメニューオプションを使用します。このサブメニューで \fBI\fR オプションを使用すると、サポートされるシステム ID のリストが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+論理ドライブのレイアウトを表示します。
+.sp
+論理ドライブの情報を標準出力に表示します。この出力には、現在の \fBfdisk\fR プログラムの実行で加えられた変更が反映されます。変更がディスクに確定されるのは、メインメニューに戻って (サブメニュー \fBr\fR を使用)、変更をディスクに確定するオプションを選択したときです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 5n
+.rt  
+メイン \fBfdisk\fR メニューに戻ります。
+.sp
+拡張パーティションサブメニューを終了して、メインメニューに戻ります。
+.RE
+
+拡張パーティションの番号付けの動的な特性に注意してください。たとえば、Solaris システムにパーティション \fBp1\fR、\fBp2\fR、\fBp3\fR、および \fBp4\fR があるとします。拡張パーティションの作成のあと、同じシステムに論理デバイスノード \fBp5\fR および以降のノードが最大 \fBp36\fR まで連番で作成されました。たとえば、論理ドライブ \fBp8\fR が削除されると、\fBp8\fR に続くすべてのノード (\fBp9\fR から \fBp36\fR まで) がパーティションのリスト内で 1 つ上に移動し、\fBp9\fR が \fBp8\fR に、\fBp10\fR が \fBp9\fR というようになります。
+.RE
+
+.sp
+.LP
+この時点で、次に示すオプションを使用してパーティションテーブルの設定を変更することも、あるいは、テーブルを変更せずにセッションを中止することもできます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBExit\fR\fR
+.ad
+.RS 10n
+.rt  
+このオプションを使用すると、\fBfdisk\fR によってこのセッションで作成された新しいテーブルが固定ディスクに書き込まれ、fdisk は終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCancel\fR\fR
+.ad
+.RS 10n
+.rt  
+パーティションテーブルを変更せずに終了します。
+.RE
+
+.SH オプション
+.sp
+.LP
+\fBfdisk\fR で使用できるオプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIid:act:bhead:bsect:bcyl:ehead:esect:ecyl:rsect:numsect\fR\fR
+.ad
+.sp .6
+.RS 4n
+引数で指定されたパーティションを追加します (形式については以下の \fB-F\fR オプションを参照)。\fBfdisk\fR テーブルが変更された場合、このオプションを使用すると、Solaris パーティション上の \fBVTOC\fR がゼロで埋められます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fImaster_boot\fR\fR
+.ad
+.sp .6
+.RS 4n
+マスターブートプログラムとしてファイル \fImaster_boot\fR を指定します。デフォルトのマスターブートプログラムは \fB/usr/lib/fs/ufs/mboot\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトでディスク全体を 1 つの Solaris パーティションに割り当てます。x86 マシンでは、ディスクが 2T バイトより大きい場合、Solaris パーティションのデフォルトのサイズは 2T バイトに制限されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細デバッグモードを有効にします。\fI\fR\fBfdisk\fR を使用するたびに、その状態を標準エラー出力に送ります。このオプションの出力を \fB-F\fR オプションで使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIid:act:bhead:bsect:bcyl:ehead:esect:ecyl:rsect:numsect\fR\fR
+.ad
+.sp .6
+.RS 4n
+引数で指定されたパーティションを削除します (形式については以下の \fB-F\fR オプションを参照)。引数が完全に一致しないと、エントリが削除されないことに注意してください。\fBfdisk\fR テーブルが変更された場合、このオプションを使用すると、Solaris パーティション上の \fBVTOC\fR がゼロで埋められます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスク全体を使用する \fBEFI\fR パーティションを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIfdisk_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイル \fIfdisk_file\fR を使用してテーブルを初期化します。\fBfdisk\fR テーブルが変更された場合、このオプションを使用すると、Solaris パーティション上の \fBVTOC\fR がゼロで埋められます。
+.sp
+\fIfdisk_file\fR には、一次パーティション用の 4 つの指定行とそれに続く論理ドライブ用の指定行が含まれています。少なくとも 1 つの論理ドライブがある場合、一次パーティションに対して 4 つの行がある必要があります。この場合、構成する一次パーティションの数が 4 つより少ないときは、残りの行をゼロで埋める必要があります。
+.sp
+各行は位置に依存するエントリからなり、エントリはスペースまたはコロンで区切ります。形式は次のとおりです。
+.sp
+\fIid act bhead bsect bcyl ehead esect ecyl rsect numsect\fR
+.sp
+エントリの値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIid\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションのタイプ。指定可能な数値は、\fBfdisk.h\fR に記述されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIact\fR\fR
+.ad
+.RS 11n
+.rt  
+アクティブパーティションプラグ。\fB0\fR は非アクティブ、\fB128\fR はアクティブを意味します。論理ドライブの場合、ユーザーが 128 を指定しても、このフラグは常に 0 に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbhead\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが開始するヘッド。\fB0\fR に設定されている場合、\fBfdisk\fR は他の情報に基づいて適切な値を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbsect\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが開始するセクター。\fB0\fR に設定されている場合、\fBfdisk\fR は他の情報に基づいて適切な値を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbcyl\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが開始するシリンダ。\fB0\fR に設定されている場合、\fBfdisk\fR は他の情報に基づいて適切な値を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIehead\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが終了するヘッド。\fB0\fR に設定されている場合、\fBfdisk\fR は他の情報に基づいて適切な値を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIesect\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが終了するセクター。\fB0\fR に設定されている場合、\fBfdisk\fR は他の情報に基づいて適切な値を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIecyl\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが終了するシリンダ。\fB0\fR に設定されている場合、\fBfdisk\fR は他の情報に基づいて適切な値を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrsect\fR\fR
+.ad
+.RS 11n
+.rt  
+パーティションが開始するディスクの先頭からの相対的な位置にあるセクター。この指定は必須です。この値は、\fBfdisk\fR が他のフィールドを設定するのに使用できます。論理ドライブの場合、論理ドライブに指定された \fIrsect\fR の前に、空きセクターが少なくとも 63 個ある必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInumsect\fR\fR
+.ad
+.RS 11n
+.rt  
+セクター数で表したこのディスクパーティションのサイズ。この指定は必須です。この値は、\fBfdisk\fR が他のフィールドを設定するのに使用できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクのラベルジオメトリを取得して、標準出力に出力します (形式については \fB-S\fR オプションを参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクの物理ジオメトリを取得して、標準出力に出力します (形式については \fB-S\fR オプションを参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細メッセージを表示します。メッセージには全オプションのリストとともに、各オプションの説明が示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスチェックを省略します。デバイスを使用せずに、ディスクに送られる内容のファイルイメージを生成する場合に使用します。このオプションは \fB-S\fR と組み合わせて使用する必要があります (前述を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+他のオプションで明示的に指定されている場合を除き、\fBfdisk\fR テーブルを更新しません。他のオプションを指定しない場合、\fB-n\fR オプションは、マスターブートレコードだけをディスクに書き込みます。また、\fB-n\fR オプションを指定した場合、\fBfdisk\fR は対話モードで起動しないことにも注意してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoffset\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクの先頭からのブロックオフセット。このオプションは \fB-P\fR、\fB-r\fR、および \fB-w\fR とともに使用します。このオプションを指定しない場合、ゼロが想定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIfill_patt\fR\fR
+.ad
+.sp .6
+.RS 4n
+パターン \fIfill_patt\fR でディスクを埋めます。\fIfill_patt\fR は 10 進数または 16 進数にすることができ、一定のロングパターンを表す数として使用します。\fIfill_patt\fR が \fB#\fR の場合、パターンは各ブロックで # になります。パターンはロングワードとして各ブロックに格納されて各ブロックを埋めます (\fB-o\fR および \fB-s\fR を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクから読み込んで標準出力に書き込みます。操作の開始ポイントおよびサイズを指定するオプション \fB-o\fR と \fB-s\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+読み取り専用ディスクとして扱います。このオプションはテスト用です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsize\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作を実行するブロック数 (\fB-o\fRを参照)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIgeom_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgeom_file\fR の内容をラベルジオメトリとして設定します。\fIgeom_file\fR には、行ごとに 1 つの指定を記述します。各行は復帰改行文字 (\fB\en\fR) で区切ります。行の先頭文字がアスタリスク (*) の場合、その行はコメント行とみなされます。各行は位置に依存するエントリからなり、スペースまたはコロンで区切ります。形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fIpcyl ncyl acyl bcyl nheads nsectors sectsiz\fR
+.fi
+.in -2
+.sp
+
+エントリの値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpcyl\fR\fR
+.ad
+.RS 12n
+.rt  
+ドライブの物理シリンダ数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIncyl\fR\fR
+.ad
+.RS 12n
+.rt  
+ドライブの使用可能シリンダ数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIacyl\fR\fR
+.ad
+.RS 12n
+.rt  
+ドライブの代替シリンダ数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbcyl\fR\fR
+.ad
+.RS 12n
+.rt  
+ドライブのオフセットシリンダ数 (ゼロにすべき)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInheads\fR\fR
+.ad
+.RS 12n
+.rt  
+このドライブのヘッド数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInsectors\fR\fR
+.ad
+.RS 12n
+.rt  
+トラックあたりのセクター数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsectsiz\fR\fR
+.ad
+.RS 12n
+.rt  
+セクターサイズ (バイト単位)
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティションテーブル境界を越えないように、無効なスライステーブルエントリを調整します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティションテーブル境界にまたがる無効なスライステーブルエントリを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+HBA (仮想) ジオメトリディメンションを出力します。このオプションは \fB-W\fR フラグと組み合わせて使用する必要があります。このオプションは、仮想ジオメトリをサポートするプラットフォームで使用できます。(x86 のみ) 。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクに書き込み、標準入力から読み込みます。操作の開始ポイントおよびサイズを指定するオプション \fB-o\fR と \fB-s\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-W\fR \fB\(mi\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクテーブルを標準出力に書き込みます。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-W\fR \fIfdisk_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスクテーブルから \fBfdisk\fR ファイル \fIfdisk_file\fR を作成します。これは、上記の \fB-F\fR オプションと組み合わせて使用できます。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rdsk/c0t0d0p0\fR\fR
+.ad
+.RS 25n
+.rt  
+固定ディスクに対応づけられる raw デバイス
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/fs/ufs/mboot\fR\fR
+.ad
+.RS 25n
+.rt  
+デフォルトのマスターブートプログラム
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+アーキテクチャx86 と SPARC
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBuname\fR(1), \fBfmthard\fR(1M), \fBformat\fR(1M), \fBnewfs\fR(1M), \fBparted\fR(1M), \fBprtvtoc\fR(1M), \fBattributes\fR(5)
+.SH 診断
+.sp
+.LP
+ほとんどのメッセージは、読めば理解できるものです。プログラムの開始直後に次のメッセージが表示される場合があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFdisk\fR: \fBcannot open\fR <\fBdevice\fR>\fR
+.ad
+.sp .6
+.RS 4n
+このメッセージは、デバイス名引数が無効であることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFdisk\fR: \fBunable to get device parameters for device\fR <\fBdevice\fR>\fR
+.ad
+.sp .6
+.RS 4n
+このメッセージは、固定ディスクの構成に問題があるか、または固定ディスクドライバでエラーが発生したことを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFdisk\fR: \fBerror reading partition table\fR\fR
+.ad
+.sp .6
+.RS 4n
+このメッセージは、固定ディスクから最初の読み込み時にエラーが発生したことを示します。固定ディスクのコントローラまたはドライバに問題があるか、固定ディスクの構成に問題がある可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFdisk\fR: \fBerror writing boot record\fR\fR
+.ad
+.sp .6
+.RS 4n
+このメッセージは、固定ディスクに新しいパーティションテーブルを書き込むときに、エラーが発生したことを示します。固定ディスクコントローラ、ディスク自体、ドライバ、または固定ディスクの構成に問題がある可能性があります。
+.RE
+

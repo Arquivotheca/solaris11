@@ -1,0 +1,734 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T.
+# All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+. /lib/svc/share/net_upgrade_include.sh
+. /lib/svc/share/nwam_include.sh
+
+IFCONFIG=/usr/sbin/ifconfig
+IPADM=/usr/sbin/ipadm
+SVCADM=/usr/sbin/svcadm
+SVCCFG=/usr/sbin/svccfg
+SVCPROP=/usr/bin/svcprop
+
+# Location of the temporary volatile directory
+VOL_NETCFG_PATH=$SMF_SYSVOL_FS/netcfg
+
+# Make sure that the libraries essential to this stage of booting can be found.
+LD_LIBRARY_PATH=/lib; export LD_LIBRARY_PATH
+
+NET_INSTALL_FMRI=svc:/network/install:default
+
+#
+# Network configuration for network installs is obtained manually (via the
+# PROM or CLI during boot) or via DHCP. In the case of DHCP, the IPv4
+# interface should be adopted. In the case of a manual configuration, the
+# configuration should be retrieved using netbootinfo and the interface and,
+# optionally, a default route should be configured using the proper CLIs.
+#
+# Note that iSCSI is a special case since it needs to configure its interface
+# itself in the kernel.
+#
+config_netinstall ()
+{
+	NETBOOTINFO=/usr/lib/inet/wanboot/netbootinfo
+
+	#
+	# netbootinfo returns an error in the non-network boot case. So,
+	# just return.
+	#
+	strategy=`$NETBOOTINFO net-config-strategy 2>/dev/null`
+	if [ $? -ne 0 -o -z "$strategy" -o "$strategy" = "none" ]; then
+		return
+	fi
+
+	nic=`$NETBOOTINFO interface-name 2>/dev/null`
+	if [ $? -ne 0 -o -z "$nic" -o "$nic" = "none" ]; then
+		echo "Failed to obtain network interface used to" \
+		    "boot from the network.\nConfiguration bypassed."
+		return
+	fi
+
+	#
+	# It is possible that the kernel has already plumbed and
+	# configured the interface (e.g., iSCSI boot). If so,
+	# just return.
+	#
+	state=`$IPADM show-if -p -o state $nic 2>/dev/null`
+	if [ $? -eq 0 -a "$state" = "ok" ] ; then
+		echo "$nic has already been configured. No" \
+		    "need to reconfigure.\nConfiguration bypassed."
+		return
+	fi
+
+	case "$strategy" in
+	"dhcp")
+		#
+		# Instruct dhcpagent to take over control of the interface.
+		#
+		/usr/sbin/dhcpagent -a
+		ipadmif_v4_list=$nic
+		echo "Adopted DHCP configured interface, $nic."
+		;;
+
+	"manual")
+		ip=`$NETBOOTINFO host-ip 2>/dev/null`
+		if [ $? -ne 0 -o -z "$ip" -o "$ip" = "none" ]; then
+			echo "Failed to obtain IP address for manual" \
+			    "configuration.\nConfiguration bypassed."
+			return
+		fi
+
+		mask=`$NETBOOTINFO subnet-mask 2>/dev/null`
+		if [ $? -ne 0 -o -z "$mask" -o "$mask" = "none" ]; then
+			echo "Failed to obtain netmask for manual" \
+			    "configuration.\nConfiguration bypassed."
+			return
+		fi
+
+		#
+		# ipadm requires CIDR prefixlen so convert
+		# mask to plen.
+		#
+		plen=`netmask2plen $mask`
+		if [ $? -ne 0 -o -z "$plen" ]; then
+			echo "Failed to configure network using" \
+			    "boot parameters."
+			echo "Could not convert $mask to CIDR prefixlen."
+			return
+		fi
+				
+		#
+		# Configure the interface. No need for it to be
+		# persistent.
+		#
+		ipadmif_v4_list=$nic
+		$IPADM show-if $nic >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			$IPADM create-ip -t $nic
+			if [ $? -ne 0 ]; then
+				warn_failed_ifs "create IPv4" "$nic"
+				return
+			fi
+		fi
+		$IPADM create-addr -t -T static -a \
+		    local=$ip/$plen $nic/netboot >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			echo "Failed to configure address $ip/$plen on $nic"
+			return
+		fi
+		echo "Configured $nic using boot parameters."
+
+		router=`$NETBOOTINFO router-ip 2>/dev/null`
+		if [ $? -ne 0 -o -z "$router" -o "$router" = "none" ]; then
+			return
+		fi
+
+		/usr/sbin/route add default $router -ifp $nic >/dev/null 2>&1
+		/usr/sbin/route get default $router -ifp $nic >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			echo "Failed to configure default route using" \
+			    "boot parameter:\nrouter-ip=$router"
+			return
+		fi
+		echo "Added default route using boot parameters."
+		;;
+	esac
+}
+
+#
+# Create a dummy background process.
+#
+dummy_start ()
+{
+	/usr/bin/rm -f $VOL_NETCFG_PATH/svc_running
+	/usr/bin/mkfifo $VOL_NETCFG_PATH/svc_running
+	(/usr/bin/cat <$VOL_NETCFG_PATH/svc_running >/dev/null) &
+}
+
+#
+# Stop the dummy background process and remove the file, only if that dummy
+# file exists.
+#
+dummy_stop ()
+{
+	if [ -e $VOL_NETCFG_PATH/svc_running ]; then
+		echo "stop" > $VOL_NETCFG_PATH/svc_running
+		/usr/bin/rm -f $VOL_NETCFG_PATH/svc_running
+	fi
+}
+
+#
+# Disable all persistently configured interfaces (other than loopback)
+#
+default_stop ()
+{
+	$IPADM show-if -po ifname,class,state,persistent 2>/dev/null | \
+	    while IFS=':' read ifname class state pflags; do
+		# skip the loopback and disabled interfaces
+		if [ "$class" = "loopback" -o "$state" = "disabled" ]; then
+			continue;
+		fi
+		case "$pflags" in
+		"--"*)
+			# skip non-persistent interfaces
+			;;
+		*)
+			$IPADM disable-if -t $ifname
+			;;
+		esac
+	done
+}
+
+net_unconfigure ()
+{
+	# flush the forwarding table, including persistent entries
+	/usr/sbin/route -p flush
+	rm -f /etc/defaultrouter
+
+	# delete all non-loopback IP interfaces.
+	for intf in $(/usr/sbin/ipadm show-if -p -o ifname,class); do
+		echo $intf | IFS=':' read ifname ifclass
+		case $ifclass in
+		'ip' )
+			/usr/sbin/ipadm delete-ip $ifname
+			;;
+		'ipmp' )
+			/usr/sbin/ipadm delete-ipmp --force $ifname
+			;;
+		'vni' )
+			/usr/sbin/ipadm delete-vni $ifname
+			;;
+		esac
+		if [ $? -ne 0 ]; then
+			return 1
+		fi
+	done
+
+	if smf_is_globalzone; then
+		# disconnect from any connected WiFi links
+		for wifi in $(/usr/sbin/dladm show-wifi -p -o link,status); do
+			echo $wifi | IFS=':' read linkname wifistatus
+			if [ "$wifistatus" == "connected" ]; then
+				/usr/sbin/dladm disconnect-wifi $linkname
+				if [ $? -ne 0 ]; then
+					return 1
+				fi
+			fi
+		done
+
+        	# delete security objects
+		for secobj in $(/usr/sbin/dladm show-secobj -p -o object); do
+			/usr/sbin/dladm delete-secobj $secobj  || return 1
+		done
+	fi
+	return 0
+}
+
+#
+# Script entry point
+#
+# Arguments to net-physical are
+#	method ( start | refresh | stop | upgrade )
+#
+
+#
+# Create the netcfg directory in $SMF_SYSVOL_FS
+#
+if [ ! -d $VOL_NETCFG_PATH ]; then
+  	/usr/bin/mkdir -m 0755 $VOL_NETCFG_PATH
+fi
+
+case "$1" in
+'start')
+	#
+	# The nwamd daemon is not started a shared stack zone.  But we need to
+	# create a dummy background process to preserve contract lifetime.
+	#
+	smf_configure_ip
+	if [ $? -eq 1 ]; then
+		dummy_start
+		exit $SMF_EXIT_OK
+	fi
+
+	# remainder of script is start action
+	;;
+
+
+unconfigure)
+	net_unconfigure || exit $SMF_EXIT_ERR_CONFIG
+
+	# Revert property customizations.
+	$SVCCFG -s $SMF_FMRI delcust general/enabled || \
+	    exit $SMF_EXIT_ERR_CONFIG
+	$SVCCFG -s $SMF_FMRI delcust netcfg/active_ncp || \
+	    exit $SMF_EXIT_ERR_CONFIG
+	$SVCCFG -s $SMF_FMRI delcust nwamd || exit $SMF_EXIT_ERR_CONFIG
+	$SVCADM refresh $SMF_FMRI
+
+	#
+	# We can destroy user-created NCPs and Locations now that
+	# we're assured that the active_ncp property is no longer set
+	# to a user-created NCP.
+	#
+	/usr/sbin/netcfg destroy -a || exit $SMF_EXIT_ERR_CONFIG
+
+	$SVCCFG -s $NET_INSTALL_FMRI delcust || \
+	    exit $SMF_EXIT_ERR_CONFIG
+	$SVCADM refresh $NET_INSTALL_FMRI
+
+	exit $SMF_EXIT_OK
+	;;
+
+'refresh')
+	#
+	# If a reactive ncp is enabled, simply refresh the daemon.  If
+	# not, stop nwamd.  This happens when netadm is used to switch to
+	# DefaultFixed.  netcfg/active_ncp has already been changed to
+	# DefaultFixed, so reactive_ncp_enabled will return false, but we
+	# still want to stop nwamd.  If nwamd was not running, nwamd_stop
+	# doesn't do anything.
+	#
+	if reactive_ncp_enabled ; then	
+		nwam_refresh
+	else
+		nwam_stop
+	fi
+	exit $SMF_EXIT_OK
+	;;
+
+'stop')
+	# In a shared stack zone, just stop the dummy background process.
+	smf_configure_ip
+	if [ $? -eq 1 ]; then
+		dummy_stop
+		exit $SMF_EXIT_OK
+	fi
+
+	# The service is being stopped.  Call the appropriate stop functions.
+	if nwam_is_running ; then
+		nwam_stop
+	else
+		default_stop
+		dummy_stop
+	fi
+
+	exit $SMF_EXIT_OK
+	;;
+
+'upgrade')
+	#
+	# Check the nwaminst/upgraded property (of the nwam instance); if
+	# it is true, there's nothing to do, we've already been upgraded.
+	#
+	upgraded=`$SVCPROP -p nwaminst/upgraded $NP_NWAM_FMRI`
+	if [ $upgraded = "true" ]; then
+		exit $SMF_EXIT_OK
+	fi
+
+	#
+	# If nwam instance was enabled, the new netcfg/active_ncp prop should
+	# be set to nwam's active_ncp value; if default instance was enabled,
+	# netcfg/active_ncp will already be DefaultFixed from the manifest.
+	#
+	if service_is_enabled $NP_NWAM_FMRI; then
+		ncp=`$SVCPROP -p nwamd/active_ncp $NP_NWAM_FMRI`
+		$SVCCFG -s $NP_DEFAULT_FMRI setprop netcfg/active_ncp = astring: "$ncp"
+
+		# transfer nwamd properties from nwam to default instance
+		upgrade_nwamd_props
+
+		#
+		# Disable the nwam instance.  Refresh the default instance to
+		# load new properties.  Enable the default instance.
+		# netcfg/version is set when nwamd starts.
+		#
+		$SVCADM disable $NP_NWAM_FMRI
+		$SVCADM refresh $NP_DEFAULT_FMRI
+		$SVCADM enable $NP_DEFAULT_FMRI
+	fi
+
+	# Set nwaminst/upgraded in the nwam instance to 'true'
+	$SVCCFG -s $NP_NWAM_FMRI setprop nwaminst/upgraded = boolean: true
+	if [ $? -eq 0 ]; then
+		$SVCADM refresh $NP_NWAM_FMRI
+	else
+		echo "Failed to set the nwaminst/upgraded property " \
+		    "in $NP_NWAM_FMRI"
+	fi
+
+	exit $SMF_EXIT_OK
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | refresh | unconfigure | upgrade }"
+	exit 1
+	;;
+esac
+
+if smf_is_globalzone; then
+	net_reconfigure
+	if [ $? -ne 0 ]; then
+		echo "Failed to perform network configuration during" \
+		    "reconfigure boot. Moving service $SMF_FMRI to" \
+		    "maintenance mode"
+		exit $SMF_EXIT_ERR_CONFIG
+	fi
+
+	# Update PVID on interfaces configured with VLAN 1
+	update_pvid
+
+	# 
+	# Upgrade handling. The upgrade file consists of a series of dladm(1M)
+	# commands.
+	#
+	upgrade_script=/var/svc/profile/upgrade_datalink
+	if [ -f "${upgrade_script}" ]; then 
+		. "${upgrade_script}"
+		#
+		# Rename the upgrade script file so that on subsequent reboots
+		# we do not end up applying the same configuration.
+		#
+		/usr/bin/mv "${upgrade_script}" \
+		    "${upgrade_script}".app.`/usr/bin/date +\%Y\%m\%d\%H\%M\%S`
+	fi
+
+	#
+	# Upgrade handling for ibd:
+	# After we are done with the upgrade handling, we can not set the
+	# ibd/ibd_upgraded property to "true" as the file system is
+	# read-only at this point. It will be done later by ibd-post-upgrade
+	# service.
+	#
+	if [ -f /usr/sbin/ibd_upgrade ]; then
+		ibd_upgraded=`$SVCPROP -c -p ibd/ibd_upgraded \
+		    $SMF_FMRI 2>/dev/null`
+		if [ "$ibd_upgraded" = "false" ]; then
+			/usr/sbin/ibd_upgrade -v
+		fi
+	fi
+
+	#
+	# Bring up simnets, link aggregations and initialize security objects.
+	# Note that link property initialization is deferred until after
+	# IP interfaces are plumbed to ensure that the links will not
+	# be unloaded (and the property settings lost). We should bring
+	# up simnets prior to VLANs/Aggrs to enable creation of VLANs/Aggrs
+	# over simnets.
+	#
+	/usr/sbin/dladm up-simnet
+	/usr/sbin/dladm up-aggr
+	/usr/sbin/dladm up-vlan
+	/usr/sbin/dladm up-part
+	/usr/sbin/dladm init-secobj
+	#
+	# Bring up VNICs
+	#
+	/usr/sbin/dladm up-vnic
+fi
+
+#
+# Create flows via flowadm.
+#
+/usr/sbin/flowadm init-flow
+
+#
+# If a reactive/nwam ncp is enabled, run the nwam-specific
+# startup code and exit. The remainder of the script performs
+# fixed/non-nwam bring-up.
+#
+if reactive_ncp_enabled ; then
+	nwam_start && exit $SMF_EXIT_OK
+	exit $SMF_EXIT_ERR_FATAL
+else
+	#
+	# There is no nwamd daemon in this case.  But we need to create a
+	# dummy background process to preserve contract lifetime.
+	#
+	dummy_start
+fi
+
+#
+# The network initialization is done early to support diskless and
+# dataless configurations.  For IPv4 interfaces that were configured by
+# the kernel (e.g.  those on diskless machines) and not configured by
+# DHCP, reset the netmask using the local "/etc/netmasks" file if one
+# exists, and then reset the broadcast address based on the netmask.
+#
+$IFCONFIG -auD4 netmask + broadcast +
+
+unset ipadm_v4if_list		# list of IPv4 interfaces.
+unset ipadm_v6if_list		# list of IPv6 interfaces.
+unset ipadm_ipmpif_list		# list of IPMP interfaces.
+unset ipadm_otherif_list	# list of non-IPMP interfaces.
+#
+# Deal with /etc/hostname upgrade before we enable ipadm configuration.
+#
+if nu_etc_files_need_upgrading $SMF_FMRI; then
+	nu_upgrade_from_etc_files
+	nu_finalize_etc_upgrade $SMF_FMRI
+	ipadm_v4if_list="$inet_list"
+	ipadm_v6if_list="$inet6_list"
+fi
+
+#
+# Find all the DHCP configured interfaces. The first interface,
+# lexographically speaking, is treated specially in that the
+# service will give it an extended amount of wait time to complete
+# configuring. This is done with the assumption that the interface
+# might need to complete its configuration with DHCP before other
+# services that depend on it can start. The remaining DHCP configured
+# interfaces will get no wait time. This is all done in the attempt
+# to provide backward compatibility with S10 which followed these
+# same semantics.
+#
+primaryd=
+primaryi=
+$IPADM show-addr -po addrobj,type 2>/dev/null | \
+    while IFS=':' read addrobj type; do
+	[[ $type != "dhcp" ]] && continue
+	ifname=`echo $addrobj | /usr/bin/cut -f 1-1 -d '/'`
+	device=`dladm show-phys -po device $ifname 2>/dev/null`
+	[[ $? -ne 0 ]] && continue
+	if [[ -z $primaryd || $device < $primaryd ]]; then
+		primaryd=$device
+		primaryi=$ifname
+	fi
+done
+
+if [[ ! -z $primaryi ]]; then
+	echo "Enabling $primaryi as the DHCP primary interface"
+	export IPADM_NET_PHYSICAL_WAIT=120
+	$IPADM enable-if -t $primaryi
+	IPADM_NET_PHYSICAL_WAIT=0
+fi
+	
+#
+# Get the remaining list of interfaces to be configured from ipadm.
+#
+$IPADM show-if -po ifname,state,class,persistent 2>/dev/null | \
+    while IFS=':' read ifname state class persistent; do
+	# skip IP tunnel interfaces configured by net-iptun
+	if is_iptun $ifname; then
+		continue
+	fi
+	# skip loopback interfaces configured by net-loopback
+	if [[ $class = "loopback" ]]; then
+		continue
+	fi
+
+	#
+	# Before coming here, it is possible that the interface was
+	# already enabled by nu_upgrade_from_etc_files.
+	# Skip if the interface is already enabled.
+	#
+	if [[ $state != "disabled" ]]; then
+		continue
+	fi
+
+	[[ $persistent == *4* ]] && \
+	    ipadm_v4if_list="$ipadm_v4if_list $ifname"
+	echo $persistent | fgrep "6" >/dev/null
+	[[ $persistent == *6* ]] && \
+	    ipadm_v6if_list="$ipadm_v6if_list $ifname"
+	if [[ $class = "ipmp" ]]; then
+		ipadm_ipmpif_list="$ipadm_ipmpif_list $ifname"
+	elif [[ $persistent != *l* ]]; then
+		ipadm_otherif_list="$ipadm_otherif_list $ifname"
+	fi
+done
+
+#
+# Enable the IPMP interfaces first, which also enables all the
+# underlying interfaces, followed by the rest of the interfaces.
+#
+for intf in $ipadm_ipmpif_list $ipadm_otherif_list; do
+	$IPADM enable-if -t $intf
+done
+unset IPADM_NET_PHYSICAL_WAIT
+
+# In order to avoid bringing up the interfaces that have
+# intentionally been left down, perform RARP only if the system
+# has no configured hostname in the svc:/system/identity:node SMF 
+# service or /etc/nodename
+hostname=$($SVCPROP -p config/nodename svc:/system/identity:node)
+[[ "$hostname" = '""' ]] && hostname=""
+if [[ -z "$hostname" && -e /etc/nodename ]]; then
+	hostname="`shcat /etc/nodename 2>/dev/null`"
+fi
+smf_netstrategy
+if [ "$_INIT_NET_STRATEGY" = "rarp" -o -z "$hostname" ]; then
+	$IFCONFIG -adD4 auto-revarp netmask + broadcast + up
+fi
+
+#
+# If the /etc/defaultrouter file exists, process it now so that the next
+# stage of booting will have access to NFS.
+#
+if [ -f /etc/defaultrouter ]; then
+	while read router rubbish; do
+		case "$router" in
+			'#'* | '') ;;	#  Ignore comments, empty lines
+			*)	/usr/sbin/route -n add default -gateway $router ;;
+		esac
+	done </etc/defaultrouter
+fi
+
+#
+# If we get here and were not asked to plumb any IPv4 interfaces, look
+# for boot properties that direct us.
+#
+# - The "network-interface" property is required and indicates the
+#   interface name.
+# - The "xpv-hcp" property, if present, is used by the hypervisor
+#   tools to indicate how the specified interface should be configured.
+#   Permitted values are "dhcp" and "off", where "off" indicates static
+#   IP configuration.
+#
+# In the case where "xpv-hcp" is set to "dhcp", no further properties
+# are required or examined.
+#
+# In the case where "xpv-hcp" is not present or set to "off", the
+# "host-ip" and "subnet-mask" properties are used to configure
+# the specified interface.  The "router-ip" property, if present,
+# is used to add a default route.
+#
+nic="`/usr/sbin/devprop network-interface`"
+if smf_is_globalzone && [ -z "$ipadm_v4if_list" ] && [ -n "$nic" ]; then
+	hcp="`/usr/sbin/devprop xpv-hcp`"
+	case "$hcp" in
+	"dhcp")
+		$IFCONFIG $nic plumb 2>/dev/null
+		[ -n "`$IFCONFIG $nic 2>/dev/null`" ] && (
+			# The interface is successfully plumbed, so
+			# modify "ipadm_v4if_list" to force the exit code
+			# checks to work.
+			ipadm_v4if_list=$nic;
+			# Given that this is the only IPv4 interface,
+			# we assert that it is primary.
+			echo "starting DHCP on primary interface $primary";
+			$IFCONFIG $nic auto-dhcp primary;
+			# Exit code 4 means ifconfig timed out waiting
+			# for dhcpagent
+			[ $? -ne 0 -a $? -ne 4 ] && \
+			    i4d_fail="$i4d_fail $nic";
+		)
+		;;
+
+	"off"|"")
+		/usr/sbin/devprop host-ip subnet-mask router-ip | (
+			read ip;
+			read mask;
+			read router;
+			[ -n "$ip" ] && [ -n "$mask" ] && \
+				$IFCONFIG $nic plumb 2>/dev/null
+			[ -n "`$IFCONFIG $nic 2>/dev/null`" ] && (
+				# The interface is successfully
+				# plumbed, so modify "ipadm_v4if_list" to
+				# force the exit code checks to work.
+				ipadm_v4if_list=$nic;
+				$IFCONFIG $nic  inet $ip \
+				    netmask $mask broadcast + up 2>/dev/null;
+				[ -n "$router" ] && route add \
+				    default $router 2>/dev/null;
+			)
+		)
+		;;
+	esac
+fi
+
+if [ -z "$ipadm_v4if_list" ] && smf_is_globalzone; then
+	config_netinstall
+fi
+
+#
+# We tell smf this service is online if any of the following is true:
+# - no interfaces were configured for plumbing and no DHCP failures
+# - any non-loopback IPv4 interfaces are up and have a non-zero address
+# - there are any DHCP interfaces started
+# - any non-loopback IPv6 interfaces are up
+#
+# If we weren't asked to configure any interfaces, exit
+if [ -z "$ipadm_v4if_list" ] && [ -z "$ipadm_v6if_list" ]; then
+	# Config error if DHCP was attempted without plumbed interfaces
+	if [ -n "$i4d_fail" ]; then
+		echo "Attempting DHCP operation without any plumbed" \
+		    "interfaces. Moving service $SMF_FMRI to maintenance mode."
+		exit $SMF_EXIT_ERR_CONFIG
+	fi
+	exit $SMF_EXIT_OK
+fi
+
+#
+# In order to exit with the correct return code (see comments above), check
+# to see if we have any addresses up. In case the only addresses
+# we have are in tentative state, we'll loop after sleeping for a second
+# and check again. If we don't find any addresses up and no DHCP interfaces
+# were started, then the service failed.
+#
+maxcnt=2
+cnt=$maxcnt
+while [ $cnt -gt 0 ]; do
+	tentative=0
+	$IPADM show-addr -po addrobj,type,state,addr 2>/dev/null | \
+	    while IFS=':' read aobj type state addr; do
+		# Skip interfaces that are not up
+		[[ $state = "down" ]] || [[ $state = "duplicate" ]] || \
+		    [[ $state = "disabled" ]] && continue
+		# If tentative, let's give it a chance to become non-tentative
+		if [[ $state = "tentative" && $cnt -gt 1 ]] ; then
+			tentative=1
+			continue
+		fi
+		# We are not interested in loopback interfaces
+		[[ "$addr" = 127.0.0.* ]] || [[ "$addr" = ::1/* ]] && continue
+		# Any DHCP interfaces started? No need to check this more
+		# than once.
+		[[ $cnt -eq $maxcnt ]] && [[ $type = dhcp ]] && \
+		    exit $SMF_EXIT_OK
+		# Any non-loopback IPv4 or IPv6 interfaces up?
+		addr=$(echo $addr | /usr/bin/cut -d'/' -f1)
+		if [[ $(echo $addr | egrep ":|\.") ]] ; then
+			[[ $state != "ok" ]] && \
+			    echo "Note that $aobj is in $state state"
+			exit $SMF_EXIT_OK
+		fi
+	done
+
+	[[ $tentative -eq 0 ]] && break
+	cnt=`expr $cnt - 1` && sleep 1
+done
+
+#
+# This service was supposed to configure something yet didn't.  Exit
+# with config error.
+#
+echo "Failed to configure any of the IP interfaces. Moving service $SMF_FMRI" \
+    "to maintenance mode."
+exit $SMF_EXIT_ERR_CONFIG

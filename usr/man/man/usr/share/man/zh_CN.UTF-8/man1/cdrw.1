@@ -1,0 +1,596 @@
+'\" te
+.\" 版权所有 (c) 2008，Oracle 和/或其附属公司。保留所有权利。
+.TH cdrw 1 "2008 年 7 月 10 日" "SunOS 5.11" "用户命令"
+.SH 名称
+cdrw \- CD 读取和写入
+.SH 用法概要
+.LP
+.nf
+\fBcdrw\fR \fB-i\fR [\fB-vSCO\fR] [\fB-d\fR \fIdevice\fR] [\fB-p\fR \fIspeed\fR] [\fIimage-file\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-a\fR [\fB-vSCO\fR] [\fB-d\fR \fIdevice\fR] [\fB-p\fR \fIspeed\fR] [\fB-T\fR \fIaudio-type\fR] \fIaudio-file1\fR 
+     [\fIaudio-file2\fR]...
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-x\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR] [\fB-T\fR \fIaudio-type\fR] \fItrack-number\fR \fIout-file\fR
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-c\fR [\fB-vSC\fR] [\fB-d\fR \fIdevice\fR] [\fB-p\fR \fIspeed\fR] [\fB-m\fR \fItmp-dir\fR] 
+     [\fB-s\fR \fIsrc-device\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-b\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR] all | session | fast
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-L\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-M\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-l\fR [\fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-h\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBcdrw\fR 命令可提供创建数据和音频 CD 的功能。此命令还提供从音频 CD 提取声道以及创建数据 DVD 的功能。CD 或 DVD 设备必须符合 MMC，才能使用 \fBcdrw\fR 命令创建 CD 或 DVD。
+.sp
+.LP
+除非您使用 \fB-d\fR 选项指定某设备，否则 \fBcdrw\fR 将搜索已连接到系统的 CD 或 DVD 写入器。如果 \fBcdrw\fR 找到一个此类设备，它会将该设备用作此命令的缺省 CD 或 DVD 写入器。
+.sp
+.LP
+若系统上连接有多个 CD 或 DVD 写入器，请使用 \fB-d\fR 选项指明所需的设备。可以采用下列方式之一指定设备名称：/dev/rdsk/cNtNdNsN、cNtNdNsN、cNtNdN 或卷管理器使用的名称（例如，\fBcdrom\fR 或 \fBcdrom1\fR）。使用 \fB-l\fR 选项可提供 CD 或 DVD 写入器的列表。
+.sp
+.LP
+有关向系统中添加符合 USB 海量存储类的 CD-RW 或 DVD-RW 设备的说明，请参见 \fBscsa2usb\fR(7D)。
+.SS "创建数据 CD"
+.sp
+.LP
+在创建数据 CD 时，\fBcdrw\fR 使用轨道一次刻录 (Track-At-Once) 模式进行写入。使用 \fB-i\fR 选项指定包含要写入到 CD 介质上的数据的文件。如果不指定此选项，\fBcdrw\fR 将从标准输入读取数据。
+.sp
+.LP
+无论在哪种情况下，通常都会准备好数据，方法是使用 \fBmkisofs\fR 命令将文件和文件信息转换成 CD 上使用的 High Sierra 格式。请参见包括此命令用法的示例。
+.SS "创建数据 DVD"
+.sp
+.LP
+\fBcdrw\fR 可以使用从 \fBmkisofs\fR 生成的映像在 DVD+RW 或 DVD-RW 设备上创建单会话数据 DVD。可将这些磁盘作为 HSFS 文件系统挂载。在创建数据 DVD 时，\fBcdrw\fR 使用光盘一次刻录 (Disk-At-Once, DAO) 模式进行写入，这会在写入完成时关闭介质并防止添加任何其他会话。因为 DAO 模式要求事先知道映像的大小，所以在将映像写入 DVD 介质之前应事先准备好映像。
+.SS "创建音频 CD"
+.sp
+.LP
+使用 \fB-a\fR 选项创建音频 CD。可以使用此选项指定单个或多个音频文件。所有音频文件都应采用支持的音频格式。当前批准的格式包括：
+.sp
+.ne 2
+.mk
+.na
+\fBsun\fR
+.ad
+.RS 7n
+.rt  
+数据采用 Red Book CDDA 格式的 Sun .au 文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBwav\fR
+.ad
+.RS 7n
+.rt  
+数据采用 Red Book CDDA 格式的 RIFF (.wav) 文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcda\fR
+.ad
+.RS 7n
+.rt  
+具有原始 CD 音频数据（即，抽样率为 44.1 KHz 时采用小端字节序 (little-endian) 的 16 位 PCM 立体声）的 .cda 文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBaur\fR
+.ad
+.RS 7n
+.rt  
+具有采用大端字节序 (big-endian) 的原始 CD 数据的 .aur 文件
+.RE
+
+.sp
+.LP
+如果未指定音频格式，\fBcdrw\fR 会尝试基于文件扩展名识别音频文件格式。忽略扩展名中字符的大小写。如果使用 \fB-T\fR 选项指定了格式，则假定为适用于所有指定文件的音频文件类型。另外，写入声道后使用 \fB-c\fR 选项关闭会话。因此，应在单个命令行中指定要写入的磁道。
+.SS "提取音频"
+.sp
+.LP
+还可使用 \fBcdrw\fR 通过 \fB-x\fR 选项从音频 CD 提取音频数据。CD 应具有 Red Book CDDA 格式的磁道。缺省情况下，输出格式基于文件扩展名。用户可以使用 \fB-T\fR 选项指定 \fBsun\fR、\fBwav\fR、\fBcda\fR 或 \fBaur\fR 输出格式。
+.SS "复制 CD"
+.sp
+.LP
+可使用 \fBcdrw\fR 复制单会话数据 CD-ROM 和 Red Book 音频 CD。在复制 CD 时，\fBcdrw\fR 会查找指定的源设备。如果在使用 \fB-c\fR 选项时未指定源设备，会假定当前 CD 写入器是源。\fBcdrw\fR 将一个或多个磁道提取到临时文件并在当前 CD 写入器中查找空的可写入 CD-R/RW 介质。如果没有找到介质，请在当前 CD 写入器中插入空的可写入 CD 介质。如果缺省临时目录没有足够的空间，可以使用 \fB-m\fR 选项指定备用目录。
+.SS "擦除 CD-RW 或 DVD-RW 介质"
+.sp
+.LP
+用户必须先擦除 CD-RW 介质，才可以对其进行重写。通过 \fB-b\fR 选项，当前支持以下类型的擦除：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsession\fR\fR
+.ad
+.RS 11n
+.rt  
+擦除最后一个会话。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfast\fR\fR
+.ad
+.RS 11n
+.rt  
+最小程度地擦除介质。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 11n
+.rt  
+擦除整个介质。
+.RE
+
+.sp
+.LP
+如果使用 session 擦除类型，\fBcdrw\fR 将擦除最后一个会话。如果 CD-RW 上仅记录了一个会话（例如，由此工具创建的数据或音频 CD-RW），则 session 擦除仅会擦除所记录的部分，留下一个空磁盘。这比擦除整个介质速度要快。对于 DVD 介质，使用 \fB-b session\fR 擦除整个介质。
+.sp
+.LP
+\fBfast\fR 擦除类型通过删除第一个会话的 \fBPMA\fR 和 \fBTOC\fR 最小程度地擦除整个介质。它不会擦除介质上的用户数据和后续磁道，但会将介质视为空磁盘。如果需要完全擦除介质，请使用 \fBall\fR 选项。
+.sp
+.LP
+如果是多会话磁盘、最后一个会话未关闭或磁盘状态未知而您想要擦除该磁盘，应使用 \fBall\fR 擦除类型。使用此擦除类型，\fBcdrw\fR 会擦除整个磁盘。
+.sp
+.LP
+DVD+RW 介质不支持擦除。要重新使用 DVD+RW 介质，仅需在介质上写入一个新映像。\fBcdrw\fR 会自动格式化并覆盖现有介质。
+.SS "检查设备列表或介质状态"
+.sp
+.LP
+您可以使用 \fB-l\fR 选项列出系统的 CD 或 DVD 写入器。另外，对于特定介质，您也可以使用 \fB-M\fR 选项获取清空状态和目录。\fB-M\fR 选项还可显示有关最后一个会话的起始地址和下一可写入地址的信息。此信息可与 \fB-O\fR 选项一起用于创建多会话 CD。有关更多信息，请参阅 SUNWfsman 软件包中的 \fBmkisofs\fR(8) 手册页 (\fB/usr/share/man/man8/mkisofs.8\fR)。 
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+创建音频磁盘。必须至少指定一个 \fIaudio-file\fR 名称。一个 CD 具有的声道不能超过 99 个，所以指定的音频文件也不得超出 99 个。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 6n
+.rt  
+清空 CD-RW 或 DVD-RW 介质。必须使用 \fBall\fR、\fBfast\fR 或 \fBsession\fR 参数指定擦除类型。DVD+RW 介质不支持清空，但可以在无需清空的情况下进行重写。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+复制 CD。如果没有指定任何其他参数，则将缺省 CD 写入设备假定为源设备。在这种情况下，复制操作会将源介质读取到临时目录，并提示您将空介质放入驱动器中以继续执行复制操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 6n
+.rt  
+此选项已过时。 
+.sp
+此选项以前用于指示 \fBcdrw\fR 查询驱动器来确定介质容量。现在这是缺省行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 6n
+.rt  
+指定 CD 或 DVD 写入设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 6n
+.rt  
+帮助。显示用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+指定用于创建数据 CD 或 DVD 的映像文件。文件大小应小于介质上可写入的大小。另外，请考虑提供本地文件，而不是挂载 NFS 的文件系统上的文件。CD 写入进程期望数据持续可用，没有中断。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+列出系统上可用的所有 CD 或 DVD 写入器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 6n
+.rt  
+关闭磁盘。如果在完成最后一个写入操作后介质仍处于打开状态，则将其关闭以阻止任何其他写入。只能在可重写的 CD-RW 介质上执行此操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 6n
+.rt  
+复制 CD 或 DVD 时，使用备用临时目录（而不是缺省临时目录）来存储磁道数据。备用临时目录可能是必需的，因为 CD 上的数据量可能非常大。例如，80 分钟的音频 CD 的数据量可能达到 800 MB，而 DVD 可能要达到 4.7 GB。缺省临时目录可能没有那么多可用空间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.RS 6n
+.rt  
+报告介质状态。\fBcdrw\fR 报告介质是否为空、其目录、最后一个会话的起始地址，以及下一可写入地址（如果磁盘已打开）。DVD+RW 不支持擦除且始终在介质上具有某些内容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.RS 6n
+.rt  
+保持磁盘打开。\fBcdrw\fR 会关闭会话而保持磁盘打开，以便稍后添加其他会话来创建多会话磁盘。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+设置 CD 写入速度。例如，\fB-p\fR \fB4\fR 会将速度设置为 4X。如果未指定此选项，\fBcdrw\fR 会使用 CD 写入器的缺省速度。如果指定此选项，\fBcdrw\fR 会尝试将驱动器写入速度设置为此值，但不能保证驱动器使用的实际速度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+指定用于复制 CD 或 DVD 的源设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.RS 6n
+.rt  
+模拟模式。在此模式中，\fBcdrw\fR 在驱动器激光关闭的情况下运行，所以不会向介质中写入任何内容。使用此选项可验证系统是否能够以最利于 CD 写入的速率提供数据。
+.sp
+CD-R、CD-RW（非 MRW 格式）、DVD-R 和 DVD-RW 介质支持模拟模式 (\fB-S\fR)。DVD-RAM、DVD+R、DVD+RW、任何 MRW 格式介质以及某些其他介质不支持模拟模式 (\fB-S\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.RS 6n
+.rt  
+提取音频文件或读取音频文件以创建音频 CD 时要使用的音频格式。\fIaudio-type\fR 可以是 \fBsun\fR、\fBwav\fR、\fBcda\fR 或 \fBaur\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+详细模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 6n
+.rt  
+从声道提取音频数据。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建数据 CD 或 DVD
+.sp
+.in +2
+.nf
+example% \fBcdrw -i /local/iso_image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR从目录创建 CD 或 DVD
+.sp
+.LP
+本示例显示了如何从目录树 \fB/home/foo\fR 创建 CD 或 DVD。
+
+.sp
+.in +2
+.nf
+example% \fBmkisofs -r /home/foo 2>/dev/null | cdrw -i -p 1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR提取声道编号
+.sp
+.LP
+本示例显示了如何将声道编号 \fB1\fR 提取到 \fB/home/foo/song1.wav\fR。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -x -T wav 1 /home/foo/song1.wav\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR使用 \fBwav\fR 文件
+.sp
+.LP
+本示例显示了如何从磁盘上的 \fBwav\fR 文件创建音频 CD。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -a song1.wav song2.wav song3.wav song4.wav\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR擦除 CD-RW 或 DVD-RW 介质
+.sp
+.LP
+本示例显示了如何擦除可重写介质。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -b all\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR使用多个驱动器创建数据 CD 或 DVD
+.sp
+.LP
+本示例显示了如何在系统上使用多个 CD、DVD-R 或 DVD-RW 驱动器创建数据 CD 或 DVD。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -d c1t6d0s2 -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR检查数据传送速率
+.sp
+.LP
+本示例显示了如何验证系统是否能够以满足写入操作的速率向 CD-RW 或 DVD 驱动器提供数据。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -S -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR以较高优先级运行
+.sp
+.LP
+本示例显示了如何以较高优先级运行 \fBcdrw\fR（仅限超级用户）。
+
+.sp
+.in +2
+.nf
+example# \fBpriocntl -e -p 60 cdrw -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR创建多会话磁盘
+.sp
+.LP
+本示例显示了如何通过使用 \fBmkisofs\fR 创建第一个会话映像并在不关闭磁盘的情况下将其记录到磁盘上。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -O -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过使用 \fBmkisofs\fR 创建映像（采用 \fBcdrw\fR 报告的会话起始地址和下一可写入地址），可向打开的磁盘中添加其他会话。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -M\fR
+
+Track No. |Type    |Start address
+----------+--------+-------------
+ 1        |Data    | 0
+Leadout   |Data    | 166564
+
+Last session start address: 162140
+Next writable address: 173464
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+example% \fBmkisofs -o /tmp/image2 -r -C 0,173464 -M \e
+   /dev/rdsk/c0t2d0s2 /home/foo\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性media/cdrw
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBaudioconvert\fR(1)、\fBpriocntl\fR(1)、\fBpolicy.conf\fR(4)、\fBattributes\fR(5)、\fBrbac\fR(5)、\fBscsa2usb\fR(7D)、\fBsd\fR(7D)
+.sp
+.LP
+SUNWfsman 软件包中的 \fBmkisofs\fR(8) (\fB/usr/share/man/man8/mkisofs.8\fR)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Devices and File Systems》\fR
+.SH 附注
+.sp
+.LP
+CD 写入进程要求以恒定速率向驱动器提供数据。在写入 CD 时，将 I/O 活动保持在最小程度并关闭任何相关的 I/O 应用程序。
+.sp
+.LP
+在创建副本或提取声道时，请使用符合 MMC 的源 CD-ROM 驱动器。可以使用 CD 写入器执行这些操作。
+.sp
+.LP
+在写入 CD 之前，通过使用 \fB-M\fR 选项确保该介质为空。您可以使用 \fB-S\fR 模拟模式测试系统，以确保系统可以按所需速率提供数据。\fBcdrw\fR 会为支持它的驱动器打开缓冲区欠载保护并从大多数停顿进行恢复。如果系统无法以恒定速率提供数据或者频繁发生停顿，您可以使用 \fB-p\fR 选项减慢速度。也可以通过使用 \fBpriocntl\fR(1) 命令尝试以较高优先级运行 \fBcdrw\fR。
+.sp
+.LP
+如果您知道 CD-R/RW 驱动器可以按不同的写入速度运行，请使用 \fB-p\fR 选项。有些市售驱动器处理驱动器速度设置命令的方式有所不同，所以请明智地使用此选项。
+.sp
+.LP
+\fBcdrw\fR 命令使用 \fBrbac\fR(5) 控制用户对设备的访问权。缺省情况下，所有用户都可以访问 \fBcdrw\fR，但可设置为仅限单个用户访问。有关更多信息，请参阅\fI《Oracle Solaris Administration: Devices and File Systems》\fR。
+.sp
+.LP
+要以非超级用户身份刻录 CD，必须启用 \fBhal\fR 且用户必须在控制台上。\fBhal\fR（即 \fBsvc:/system/hal\fR SMF 服务）在缺省情况下处于启用状态，因此，通常不需要特殊操作。  
+.sp
+.LP
+用户必须登录到控制台。\fB/dev/console\fR 也是正确的。以前，用户可以远程登录（例如，通过使用 \fBtelnet\fR 或 \fBssh\fR）且能够刻录 CD。除非管理员已将缺省配置更改为拒绝 \fBsolaris.device.cdrw\fR 授权，否则以上情况仍有效。请参见 \fBpolicy.conf\fR(4)。

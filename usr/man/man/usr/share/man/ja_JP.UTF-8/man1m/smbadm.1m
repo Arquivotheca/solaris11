@@ -1,0 +1,716 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH smbadm 1M "2011 年 8 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+smbadm \- SMB ローカルグループおよびユーザーの構成と管理、ドメインメンバーシップの管理、永続的パスワード情報の管理、および各種コマンドの発行
+.SH 形式
+.LP
+.nf
+\fBsmbadm add-key\fR [\fB-u\fR \fIusername\fR]
+.fi
+
+.LP
+.nf
+\fBsmbadm add-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm create-group\fR [\fB-d\fR \fIdescription\fR] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm crypt\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm delete-group\fR \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm disable-user\fR \fIusername\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm enable-user\fR \fIusername\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm get-group\fR [[\fB-p\fR \fIproperty\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm join\fR \fB-u\fR \fIusername\fR \fIdomain\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm join\fR \fB-w\fR \fIworkgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm lookup-server\fR //\fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm lookup-user\fR [\fB-u\fR \fIusername\fR] \fIname\fR | \fISID\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm print\fR [\fB-u\fR \fIusername\fR] //\fIserver\fR/\fIshare\fR {\fIprint_file\fR|-}
+.fi
+
+.LP
+.nf
+\fBsmbadm remove-key\fR [\fB-u\fR \fIusername\fR]
+.fi
+
+.LP
+.nf
+\fBsmbadm remove-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm rename-group\fR \fIgroup\fR \fInew-group\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm set-group\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [[\fB-p\fR \fIproperty\fR=\fIvalue\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-connections\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] [\fB-c\fR \fIcomputername\fR | -s \fIsharename\fR]
+     \fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-domains\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-files\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-groups\fR [\fB-m\fR] [\fB-p\fR] [\fIgroup\fR]
+.fi
+
+.LP
+.nf
+\fBsmbadm show-sessions\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-shares\fR [\fB-t\fR] [\fB-A\fR | \fB-u\fR \fIusername\fR] \fIserver\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsmbadm\fR コマンドを使用して、\fBSMB\fR ローカルグループの構成、ドメインメンバーシップの管理、永続的パスワード情報の管理、および各種コマンドの発行を行います。また、\fBsmbadm\fR コマンドを使用して、個々のローカルユーザーのための SMB パスワードの生成を有効または無効にすることもできます。
+.sp
+.LP
+\fBSMB\fR ローカルグループは、Windows アカウントが何らかのローカルグループのメンバーである必要がある場合や、Windows スタイルの特権を許可する必要がある場合に使用できます。Solaris ローカルグループは、これらの機能を提供できません。
+.sp
+.LP
+ローカルグループには、ユーザー定義と組み込みの 2 つのタイプがあります。組み込みローカルグループは、一般的な管理タスクをサポートするための定義済みのローカルグループです。
+.sp
+.LP
+\fBSMB\fR ローカルグループと Solaris グループの間の正しい識別情報マッピングを提供するには、\fBSMB\fR ローカルグループに、対応する Solaris グループが存在する必要があります。この要件には、次の 2 つの影響があります。まず、グループ名が、Windows と Solaris のグループ名規則の共通部分に従っている必要があります。そのため、\fBSMB\fR ローカルグループ名の最大長は 8 文字であり、小文字と数字のみを含むことができます。2 番目に、Solaris ローカルグループを作成してから、\fBSMB\fR ローカルグループを作成する必要があります。
+.sp
+.LP
+組み込みグループは標準の Windows グループであり、\fBSMB\fR サービスによって事前に定義されています。組み込みグループは、追加、削除、または名前変更を行うことができず、また \fBSMB\fR ローカルグループの命名規則には従いません。
+.sp
+.LP
+\fBSMB\fR サーバーの起動時は、次の組み込みグループが使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fBAdministrators\fR
+.ad
+.sp .6
+.RS 4n
+グループメンバーはシステムを管理できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBBackup Operators\fR
+.ad
+.sp .6
+.RS 4n
+グループメンバーは、ファイルをバックアップおよび復元するためのファイルのアクセス制御をバイパスできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBPower Users\fR
+.ad
+.sp .6
+.RS 4n
+グループメンバーはディレクトリを共有できます。
+.RE
+
+.sp
+.LP
+Solaris ローカルユーザーは、認証のため、および SMB リソースへのアクセスを取得するための SMB パスワードを持っている必要があります。このパスワードは、\fBpam_smb_password\fR モジュールがシステムの PAM 構成に追加されたときに \fBpasswd\fR(1) コマンドを使用して作成されます。\fBpam_smb_passwd\fR(5) のマニュアルページを参照してください。
+.sp
+.LP
+\fBdisable-user\fR サブコマンドと \fBenable-user\fR サブコマンドは、指定されたローカルユーザーのための SMB パスワード生成を制御します。無効になっている場合、ユーザーは Solaris SMB サービスに接続できません。デフォルトでは、すべてのローカルユーザーに対して SMB パスワード生成が有効になっています。
+.sp
+.LP
+無効になっているユーザーを再度有効にするには、\fBenable-user\fR サブコマンドを使用したあと、\fBpasswd\fR コマンドを使用してそのユーザーのパスワードをリセットする必要があります。SMB パスワードを生成するには、\fBpam_smb_passwd.so.1\fR モジュールがシステムの PAM 構成に追加されている必要があります。
+.SS "バックスラッシュ文字のエスケープ"
+.sp
+.LP
+\fBadd-member\fR、\fBremove-member\fR、および \fBjoin\fR (\fB-u\fR が指定されている場合) サブコマンドでは、バックスラッシュ文字 (\fB\e\fR) は、メンバーまたはユーザー名とドメイン名の間の有効な区切り文字です。バックスラッシュ文字はシェルの特殊文字であるため、クォートする必要があります。たとえば、\fIdomain\fR\fB\e\e\fR\fIusername\fR のように、別のバックスラッシュ文字でバックスラッシュ文字をエスケープできます。シェルの特殊文字を処理する方法の詳細については、使用しているシェルのマニュアルページを参照してください。
+.SH オペランド
+.sp
+.LP
+\fBsmbadm\fR コマンドは、次のオペランドを使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+参加する既存の Windows ドメインの名前を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSMB\fR ローカルグループの名前を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+Windows ユーザーの名前を指定します。\fIusername\fR は、次のいずれかの形式で指定できます。
+.sp
+.in +2
+.nf
+\fIdomain\fR\e\fIusername\fR[+\fIpassword\fR]
+\fIdomain\fR/\fIusername\fR[+\fIpassword\fR]
+\fIusername\fR@\fIdomain\fR
+\fIusername\fR
+.fi
+.in -2
+.sp
+
+ここで、\fIdomain\fR には NetBIOS または DNS ドメイン名を指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+ローカルホストの名前または IP アドレスを指定します。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+\fBsmbadm\fR コマンドには、次のサブコマンドが含まれています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-key\fR [\fB-k\fR \fIusername\fR]\fR
+.ad
+.sp .6
+.RS 4n
+SMB サーバーのユーザーアカウントに使用される永続的パスワード情報を指定します。この情報を指定すると、Kerberos 以外の構成で、パスワードを要求せずにマウントを行うことができます。Kerberos サイトでは、パスワードを要求せずに Kerberos を自動的に使用するべきです。デフォルトドメインを SMF で使用可能な場合は、ドメインを省略できます。ユーザー名が指定されていない場合は、Solaris のユーザーアカウント名が使用されます。暗号化 (ハッシュ) されたパスワードも使用できます (\fBcrypt\fR サブコマンドを参照)。 このコマンドは標準入力からパスワードを読み込むこともできます。標準入力が TTY の場合は、プロンプトが表示されます。
+.sp
+また、特定のサーバー用のパスワードを格納するには、ドメイン名の代わりにサーバー名を使用します。
+.sp
+コマンドを実行しているユーザーの永続的パスワードの情報は、 \fB/var/smb/smbfspasswd\fR にも格納されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fBSMB\fR ローカルグループに指定されたメンバーを追加します。\fB-m\fR \fImember\fR オプションは、\fBSMB\fR ローカルグループのメンバーの名前を指定します。このメンバー名には、既存のユーザー名とオプションのドメイン名が含まれている必要があります。
+.sp
+メンバー名は、次のどちらかの形式で指定します。
+.sp
+.in +2
+.nf
+[\fIdomain\fR\e]\fIusername\fR
+[\fIdomain\fR/]\fIusername\fR
+.fi
+.in -2
+.sp
+
+たとえば、\fBsales\eterry\fR や \fBsales/terry\fR は有効なメンバー名です。ここで、\fBsales\fR は Windows ドメイン名であり、\fBterry\fR は \fBsales\fR ドメイン内のユーザーの名前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-group\fR [\fB-d\fR \fIdescription\fR] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前を持つ \fBSMB\fR ローカルグループを作成します。必要に応じて、\fB-d\fR オプションを使用してグループの説明を指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrypt\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードのハッシュを作成します。このサブコマンドは、パスワードの入力を要求し、ハッシュを標準出力に書き込みます。このハッシュ値は、\fBsmbfs\fR マウントおよび各種 \fBsmbadm\fR サブコマンドの暗号化パスワードオプションの値として使用することに適しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-group\fR \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fBSMB\fR ローカルグループを削除します。組み込みグループは削除できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-user\fR \fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたローカルユーザーに対する SMB パスワード生成機能を無効にします。無効になっているローカルユーザーは、SMB サービスを使用してシステムにアクセスすることはできません。ローカルユーザーのアカウントが無効になっている場合は、ユーザーアカウントが再度有効になるまで、\fBpasswd\fR コマンドを使用してそのユーザーの SMB パスワードを変更することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-user\fR \fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたローカルユーザーに対する SMB パスワード生成機能を有効にします。パスワード生成機能が再度有効になったあと、ユーザーが SMB サービスに接続する前に、\fBpasswd\fR コマンドを使用してそのローカルユーザーの SMB パスワードを生成する必要があります。
+.sp
+\fBpam_smb_passwd\fR モジュールがシステムの PAM 構成に追加されている場合、\fBpasswd\fR コマンドは、このユーザーの Solaris パスワードと SMB パスワードの両方を管理します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget-group\fR [[\fB-p\fR \fIproperty\fR=\fIvalue\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたグループのプロパティー値を取得します。プロパティーが指定されていない場合は、すべてのプロパティー値が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBjoin\fR \fB-u\fR \fIusername\fR \fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+Windows ドメインまたはワークグループに参加します。
+.sp
+\fBSMB\fR サービスのデフォルトモードは、デフォルトのワークグループ名である \fBWORKGROUP\fR を使用するワークグループモードです。
+.sp
+ドメインに参加するには認証されたユーザーアカウントが必要であるため、\fB-u\fR オプションを使用して Windows 管理ユーザーの名前を指定する必要があります。コマンド行でパスワードを指定しない場合、ユーザーはパスワードを入力するように要求されます。このユーザーはドメイン管理者か、またはターゲットドメインに対する管理特権を持つ任意のユーザーであるべきです。
+.sp
+\fIusername\fR と \fIdomain\fR は、次のいずれかの形式で入力できます。
+.sp
+.in +2
+.nf
+\fIusername\fR[+\fIpassword\fR] \fIdomain\fR
+\fIdomain\fR\e\fIusername\fR[+\fIpassword\fR]
+\fIdomain\fR/\fIusername\fR[+\fIpassword\fR]
+\fIusername\fR@\fIdomain\fR
+.fi
+.in -2
+.sp
+
+ここで、\fIdomain\fR には NetBIOS または DNS ドメイン名を指定できます。
+.sp
+システムのマシン信頼アカウントがドメインコントローラ上にすでに存在する場合は、ドメインに参加するときに、認証された任意のユーザーアカウントを使用できます。ただし、マシン信頼アカウントがまだ存在しない場合は、ドメインに参加するにはドメイン上の管理特権を持つアカウントが必要です。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBjoin\fR \fB-w\fR \fIworkgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+Windows ドメインまたはワークグループに参加します。
+.sp
+\fB-w\fR \fIworkgroup\fR オプションは、\fBjoin\fR サブコマンドを使用しているときに、参加するワークグループの名前を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlookup-server\fR //\fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたサーバーを IP アドレス、NetBIOS ドメイン、NetBIOS サーバー名に解決します。\fIserver\fR には、次のいずれかを指定できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NetBIOS ホスト名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+DNS ホスト名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IP アドレス
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlookup-user\fR [\fB-u\fR \fIusername\fR] \fIname\fR | \fISID\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のドメインまたは任意の信頼できるドメイン内のアカウントの名前または SID に関する情報を解決します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprint\fR [\fB-u\fR \fIusername\fR] //\fIserver\fR/\fIshare\fR {\fIprint_file\fR|-}\fR
+.ad
+.sp .6
+.RS 4n
+指定されたリモートプリンタにファイルを出力します。 \fIprint_file\fR がハイフン (\fB-\fR) の場合は、標準入力を読み込みます。デフォルトドメインを SMF で使用可能な場合は、ドメインを省略できます。ユーザー名が指定されていない場合は、Solaris のユーザーアカウント名が使用されます。暗号化 (ハッシュ) されたパスワードも使用できます (\fBcrypt\fR サブコマンドを参照)。 このコマンドは、リダイレクションによりパスワードを取得することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-key\fR [\fB-u\fR \fIusername\fR]\fR
+.ad
+.sp .6
+.RS 4n
+コマンドを実行しているユーザーのパスワードを消去します。\fB/var/smb/smbfspasswd\fR にある、コマンドを実行しているユーザーのパスワードも消去されます。
+.sp
+名前のユーザー名およびドメイン名の部分は省略可能です。デフォルトドメインを SMF で使用可能な場合は、ドメインを省略できます。\fIusername\fR が指定されていない場合は、格納されているコマンドを実行しているユーザーのキーがすべて削除されます。
+.sp
+ユーザーのパスワードが特定のサーバーに格納されている場合は、ドメイン名の代わりにサーバー名を指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fBSMB\fR ローカルグループから指定されたメンバーを削除します。\fB-m\fR \fImember\fR オプションは、\fBSMB\fR ローカルグループのメンバーの名前を指定します。このメンバー名には、既存のユーザー名とオプションのドメイン名が含まれている必要があります。
+.sp
+メンバー名は、次のどちらかの形式で指定します。
+.sp
+.in +2
+.nf
+[\fIdomain\fR\e]\fIusername\fR
+[\fIdomain\fR/]\fIusername\fR
+.fi
+.in -2
+.sp
+
+たとえば、\fBsales\eterry\fR や \fBsales/terry\fR は有効なメンバー名です。ここで、\fBsales\fR は Windows ドメイン名であり、\fBterry\fR は \fBsales\fR ドメイン内のユーザーの名前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrename-group\fR \fIgroup\fR \fInew-group\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fBSMB\fR ローカルグループの名前を変更します。このグループはすでに存在する必要があります。組み込みグループは名前を変更できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-group\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [[\fB-p\fR \fIproperty\fR=\fIvalue\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSMB\fR ローカルグループの設定プロパティーを設定します。組み込みグループの説明や特権は変更できません。
+.sp
+\fB-p\fR \fIproperty\fR\fB=\fR\fIvalue\fR オプションは、指定されたグループに対して設定するプロパティーのリストを指定します。
+.sp
+グループ関連のプロパティーは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbackup=[on|off]\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSMB\fR ローカルグループのメンバーが、ファイルシステムオブジェクトをバックアップするためのファイルのアクセス制御をバイパスできるかどうかを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdescription=\fR\fIdescription-text\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSMB\fR ローカルグループのテキスト説明を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestore=[on|off]\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSMB\fR ローカルグループのメンバーが、ファイルシステムオブジェクトを復元するためのファイルのアクセス制御をバイパスできるかどうかを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtake-ownership=[on|off]\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSMB\fR ローカルグループのメンバーがファイルシステムオブジェクトの所有権を取得できるかどうかを指定します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-domains\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のワークグループまたはドメインに関する情報を表示します。この情報には通常、ワークグループ名または第一ドメイン名が含まれます。ドメインモードにある場合、この情報には、ドメインコントローラ名や信頼できるドメイン名が含まれます。
+.sp
+出力内の各エントリは、次のいずれかのタグで識別されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[*]\fR 第一ドメイン
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[.]\fR ローカルドメイン
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[-]\fR その他のドメイン
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[+]\fR 選択されたドメインコントローラ
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-groups\fR [\fB-m\fR] [\fB-p\fR] [\fIgroup\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定された 1 つまたは複数の \fBSMB\fR ローカルグループに関する情報を表示します。グループが指定されていない場合は、すべてのグループの情報が表示されます。\fB-m\fR オプションが指定されている場合は、グループメンバーも表示されます。\fB-p\fR オプションが指定されている場合は、グループ特権も表示されます。
+.RE
+
+.sp
+.LP
+次の一連のサブコマンドは、ローカルまたはリモートサーバー上のユーザーの共有、セッション、接続、および開かれたファイルに関する情報を表示します。
+.sp
+.LP
+上に示したタイプのデータを表示するには認証されたユーザーアカウントが必要であるため、\fB-u\fR オプションを使用して Windows 管理ユーザーの名前を指定する必要があります。コマンド行でパスワードを指定しない場合、ユーザーはパスワードを入力するように要求されます。このユーザーはドメイン管理者か、またはターゲットドメインに対する管理特権を持つユーザーであるべきです。ユーザー名が指定されていない場合は、Solaris のユーザーアカウント名が使用されます。
+.sp
+.LP
+\fIusername\fR は、「オペランド」で説明されているいずれかの形式で指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-connections\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] [\fB-c\fR \fIcomputername\fR | \fB-s\fR \fIsharename\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバー上で作成された SMB ツリー接続に関する情報を表示します。\fB-c\fR オプションは、クライアントへの対象となる接続のコンピュータ名を指定します。\fB-s\fR オプションは、クライアントへの対象となる接続の共有名を指定します。\fB-t\fR オプションは、表示されるコマンドヘッダーを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-files\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバー上の SMB を介して開かれたファイルに関する情報を表示します。\fB-t\fR オプションは、表示されるコマンドヘッダーを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-sessions\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバー上の SMB ユーザーセッションに関する情報を表示します。\fB-t\fR オプションは、表示されるコマンドヘッダーを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-shares\fR [\fB-t\fR] [\fB-A\fR | \fB-u\fR \fIusername\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバー上の SMB 共有に関する情報を表示します。\fB-t\fR オプションは、表示されるコマンドヘッダーを指定します。\fB-A\fR オプションは、匿名ユーザーを指定します。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.RS 13n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB>0\fR
+.ad
+.RS 13n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性の説明については、\fBattributes\fR(5) のマニュアルページを参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/file-system/smb
+_
+T{
+ユーティリティー名とオプション
+T}不確実
+_
+ユーティリティーの出力形式インタフェースではない
+_
+\fBsmbadm join\fR廃止
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpasswd\fR(1), \fBgroupadd\fR(1M), \fBidmap\fR(1M), \fBidmapd\fR(1M), \fBkclient\fR(1M), \fBmount_smbfs\fR(1M), \fBshare\fR(1M), \fBsharectl\fR(1M), \fBsmbd\fR(1M), \fBsmbstat\fR(1M), \fBsmb\fR(4), \fBsmbautohome\fR(4), \fBattributes\fR(5), \fBpam_smb_passwd\fR(5), \fBsmf\fR(5)

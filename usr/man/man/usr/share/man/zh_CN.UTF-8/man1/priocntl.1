@@ -1,0 +1,829 @@
+'\" te
+.\" 版权所有 (c) 2008，2011，Oracle 和/或其附属公司。保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH priocntl 1 "2011 年 2 月 25 日" "SunOS 5.11" "用户命令"
+.SH 名称
+priocntl \- 显示或设置指定进程和 LWP 的调度参数
+.SH 用法概要
+.LP
+.nf
+\fBpriocntl\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fBpriocntl\fR \fB-d\fR [\fB-i\fR \fIidtype\fR] [\fIidlist\fR]
+.fi
+
+.LP
+.nf
+\fBpriocntl\fR \fB-s\fR [\fB-c\fR \fIclass\fR] [\fIclass-specific\fR \fIoptions\fR] 
+     [\fB-i\fR \fIidtype\fR] [\fIidlist\fR]
+.fi
+
+.LP
+.nf
+\fBpriocntl\fR \fB-e\fR [\fB-c\fR \fIclass\fR] [\fIclass-specific\fR \fIoptions\fR] \fIcommand\fR 
+     [\fIargument(s)\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpriocntl\fR 命令显示或设置指定进程或 LWP 的调度参数。也可用于显示系统进程调度程序的当前配置信息，或以指定调度参数执行命令。
+.sp
+.LP
+进程和 LWP 属于完全不同的类，对每个类应用单独的调度策略。当前支持的类包括实时类、分时类、交互式类、公平份额类和固定优先级类。这些类的特征和它们接受的类特定选项将在下面以下标题下的"用法"部分进行说明：\fB实时类\fR、\fB分时类\fR、\fB交互式类\fR、\fB公平份额类\fR和\fB固定优先级类\fR。拥有适当权限时，\fBpriocntl\fR 命令可以更改与运行中的进程或 LWP 关联的类和其他调度参数。
+.sp
+.LP
+缺省配置中，可运行的实时进程或 LWP 在其他所有进程之前运行。因此，对实时进程或 LWP 的不恰当使用会对系统性能有很严重的负面影响。
+.sp
+.LP
+如果存在 \fIidlist\fR，它必须在命令行的最后，且列表中的各个元素必须以空格间隔。如果不存在 \fIidlist\fR，\fBpid\fR、\fBppid\fR、\fB pgid\fR、\fBsid\fR、\fBtaskid\fR、\fBclass\fR、\fBuid\fR、\fBgid\fR、\fBprojid\fR 或 \fBzoneid\fR 的 \fIidtype\fR 参数会分别指定 \fBpriocntl\fR 命令本身的进程 \fBID\fR、父进程 \fBID\fR、进程组 \fB ID\fR、会话 \fBID\fR、任务 \fBID\fR、类、用户 \fBID\fR、组 \fBID\fR、项目 \fBID\fR 或区域 \fBID\fR。
+.sp
+.LP
+命令
+.sp
+.in +2
+.nf
+priocntl -d [-i \fIidtype\fR] [\fIidlist\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+显示 \fIidtype\fR 和 \fIidlist\fR 指定的进程的类和类特定调度参数。
+.sp
+.LP
+命令
+.sp
+.in +2
+.nf
+priocntl -s [-c \fIclass\fR] [\fIclass-specific options\fR] \e
+     [-i \fIidtype\fR] [\fIidlist\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+将指定进程的类和类特定调度参数设置为命令行给出的值。\fB-c\fR \fIclass\fR 选项指定要设置的类。（有效 \fIclass\fR 参数对于实时是 \fBRT\fR，对于分时是 \fBTS\fR，对于交互式是 \fBIA\fR，对于公平份额是 \fBFSS\fR，对于固定优先级是 \fBFX\fR。）
+.sp
+.LP
+要设置的类特定参数由类特定选项指定，我们将在后面适当的标题下加以解释。如果省略 \fB-c\fR \fIclass\fR 选项，\fIidtype\fR 和 \fIidlist\fR 必须指定一组全部位于相同类中的进程或 LWP，否则会出现错误。如果未指定类特定选项，进程的类特定参数设置为由 \fB-c\fR \fIclass\fR 指定的类的缺省值（或者，如果还省略 \fB-c\fR \fIclass\fR 选项，则设置为进程的当前类的缺省参数值）。
+.sp
+.LP
+要使用 \fBpriocntl\fR 更改进程或 LWP 的调度参数，调用 \fBpriocntl\fR 的用户的实际或有效用户 \fBID\fR（各自的 groupID）必须与接收进程或 LWP 的实际或有效用户 \fBID\fR（各自的 groupID）相匹配，或者用户的有效用户 \fBID\fR 必须是超级用户。这些是所有类都要强制执行的最低权限要求。设置类的进程或类特定调度参数时，单个类可以强加其他权限要求。
+.sp
+.LP
+\fIidtype\fR 和 \fIidlist\fR 指定一组进程（无论是否有 LWP 列表）时，\fBpriocntl\fR 会以特定于实现的顺序作用于集合中的进程。如果 \fBpriocntl\fR 遇到有关一个或多个目标进程的错误，它是否能够继续通过进程集合取决于错误的性质。
+.sp
+.LP
+如果错误与权限有关，\fBpriocntl\fR 会打印这条错误消息，然后继续通过进程集合，同时重置用户具有适当权限的所有目标进程的参数。如果 \fBpriocntl\fR 遇到权限之外的错误，则不会继续通过进程集合，而是打印错误消息并立即退出。
+.sp
+.LP
+存在一个特殊的 \fBsys\fR 调度类，目的在于调度某些特别系统进程（如交换程序进程）的执行。不是任何进程的类都可以更改为 \fBsys\fR。此外，包括在由 \fIidtype\fR 和 \fIidlist\fR 指定的进程集合中的 \fB sys\fR 类中的任何进程或 LWP 都会被 \fBpriocntl\fR 忽略。例如，如果 \fIidtype\fR 是 \fBuid\fR，包含一个零的 \fIidlist\fR 将指定 \fBUID\fR 为 \fB0\fR 的所有进程，除了 \fBsys\fR 类中的进程和（如果使用 \fB-s\fR 选项更改参数）\fBinit\fR 进程。
+.sp
+.LP
+\fBinit\fR 进程（进程 \fBID\fR \fB1\fR）是一个特例。为了 \fBpriocntl\fR 命令可以更改 \fBinit\fR 进程的类或其他调度参数，\fIidtype\fR 必须是 \fBpid\fR，\fIidlist\fR 必须只包含一个 \fB1\fR。\fBinit\fR 进程可以分配到系统中配置的任何类，但是分时类几乎永远是最佳选择。非常不建议您选择其他项，有关更多信息，请参见\fI《Oracle Solaris Administration: Common Tasks》\fR。
+.sp
+.LP
+命令
+.sp
+.in +2
+.nf
+priocntl -e [-c \fIclass\fR\fB]\fR [\fIclass-specific options\fR] \fIcommand\fR \e
+     [\fIargument...\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以在命令行（\fIarguments\fR 是命令的参数）指定的类和调度参数执行特定命令。如果省略 \fB-c\fR \fIclass\fR 选项，该命令会在用户当前的类中运行。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass\fR\fR
+.ad
+.RS 13n
+.rt  
+指定要设置的 \fIclass\fR。（有效 \fIclass\fR 参数对于实时是 \fBRT\fR，对于分时是 \fBTS\fR，对于交互式是 \fBIA\fR，对于公平份额是 \fBFSS\fR，对于固定优先级是 \fBFX\fR。）如果指定的类尚未配置，会自动对其进行配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 13n
+.rt  
+显示与一组进程关联的调度参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 13n
+.rt  
+以与一组进程关联的类和调度参数执行指定命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIidtype\fR\fR
+.ad
+.RS 13n
+.rt  
+该选项与 \fIidlist\fR 参数（如果有）共同指定 \fBpriocntl\fR 命令要应用到的一个或多个进程或 LMP。对 \fIidlist\fR 的解释取决于 \fIidtype \fR 的值。如果在使用 \fB-d\fR 或 \fB-s\fR 选项时省略了 \fB-i\fR \fIidtype\fR 选项，将采用 \fBpid\fR 的缺省 \fIidtype\fR。
+.sp
+有效 \fIidtype\fR 参数和对 \fIidlist\fR 的相应解释如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBall\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBpriocntl\fR 命令应用于所有的现有进程。不应指定 \fIidlist\fR（如果指定，则会忽略）。下面描述的权限限制仍然适用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBctid\fR\fR
+.ad
+.RS 17n
+.rt  
+idlist 是进程合同 ID 列表。\fBpriocntl\fR 命令应用于进程合同 ID 等于列表中 ID 的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBclass\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 包含一个类名称（对于实时是 \fBRT\fR ，对于分时是 \fBTS\fR，对于交互式是 \fBIA\fR，对于公平份额是 \fBFSS\fR，对于固定优先级是 \fBFX\fR）。\fBpriocntl\fR 命令应用于指定类中的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBgid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是组 \fBID\fR 列表。\fBpriocntl\fR 命令应用于有效组 \fBID\fR 等于列表中 \fBID\fR 的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBpgid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是进程组 \fBID\fR 列表。\fBpriocntl\fR 命令应用于指定进程组中的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fB\fIpid\fR[/\fIlwps\fR]\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是进程 \fBID\fR 列表（每个 \fBID\fR 后可能有一个正斜杠 (\fB/\fR)）和 \fBLWP ID\fR 的逗号分隔列表。\fBLWP ID\fR 的范围可以由 \fB-\fR 表示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBppid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是父进程 \fBID\fR 列表。\fBpriocntl\fR 命令应用于其父进程 \fBID\fR 包含在列表中的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBprojid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR是项目 \fBID\fR 列表。\fBpriocntl\fR 命令应用于有效项目 \fBID\fR 等于列表中 \fBID\fR 的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBsid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是会话 \fBID\fR 列表。\fBpriocntl\fR 命令应用于指定会话中的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBtaskid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是任务 \fBID\fR 列表。\fBpriocntl\fR 命令应用于指定任务中的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBuid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是用户 \fBID\fR 列表。\fBpriocntl\fR 命令应用于有效用户 \fBID\fR 等于列表中 \fBID\fR 的所有进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fBzoneid\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIidlist\fR 是区域 \fBID\fR 列表。\fBpriocntl\fR 命令应用于有效区域 \fBID\fR 等于列表中 \fBID\fR 的所有进程。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 13n
+.rt  
+显示系统中当前配置的类的列表，以及有关每个类的类特定信息。类特定信息的显示格式将在"用法"部分进行说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 13n
+.rt  
+设置与一组进程关联的调度参数。
+.RE
+
+.sp
+.LP
+用于设置实时参数的有效类特定选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIrtpri\fR\fR
+.ad
+.RS 21n
+.rt  
+将指定进程和 LWP 的实时优先级设置为 \fIrtpri\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItqntm\fR [\fB-r\fR \fIres\fR]\fR
+.ad
+.RS 21n
+.rt  
+将指定进程的时间量程设置为 \fItqntm\fR。您可以按照下面的解释有选择地指定精度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR \fItqsig\fR\fR
+.ad
+.RS 21n
+.rt  
+将指定进程和 LWP 的实时时间量程信号设置为 \fItqsig\fR。
+.RE
+
+.sp
+.LP
+用于设置分时参数的有效类特定选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fItsuprilim\fR\fR
+.ad
+.RS 16n
+.rt  
+将指定进程和 LWP 的用户优先级限制设置为 \fItsuprilim\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fItsupri\fR\fR
+.ad
+.RS 16n
+.rt  
+将指定进程和 LWP 的用户优先级设置为 \fItsupri\fR。
+.RE
+
+.sp
+.LP
+用于设置交互式参数的有效类特定选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIiauprilim\fR\fR
+.ad
+.RS 16n
+.rt  
+将指定进程和 LWP 的用户优先级限制设置为 \fIiauprilim\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIiaupri\fR\fR
+.ad
+.RS 16n
+.rt  
+将指定进程和 LWP 的用户优先级设置为 \fIiaupri\fR。
+.RE
+
+.sp
+.LP
+用于设置公共份额参数的有效类特定选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIfssuprilim\fR\fR
+.ad
+.RS 17n
+.rt  
+将指定进程和 LWP 的用户优先级限制设置为 \fIfssuprilim\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIfssupri\fR\fR
+.ad
+.RS 17n
+.rt  
+将指定进程和 LWP 的用户优先级设置为 \fIfssupri\fR。
+.RE
+
+.sp
+.LP
+用于设置固定优先级参数的有效类特定选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIfxuprilim\fR\fR
+.ad
+.RS 16n
+.rt  
+将指定进程和 LWP 的用户优先级限制设置为 \fIfxuprilim\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIfxupri\fR\fR
+.ad
+.RS 16n
+.rt  
+将指定进程和 LWP 的用户优先级设置为 \fIfxupri\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItqntm\fR\fR
+.ad
+.RS 16n
+.rt  
+[\fB-r\fR \fIres\fR] 将指定进程和 LWP 的时间量程设置为 \fItqntm\fR。您可以按照下面的解释有选择地指定精度。
+.RE
+
+.SH 用法
+.SS "实时类"
+.sp
+.LP
+实时类为那些需要快速和确定响应的进程提供固定优先级优先调度策略，以及对调度优先级的绝对用户/应用程序控制。如果系统中配置了实时类，它会对系统上最高范围的调度优先级具有独占控制。这可以确保在属于任何其他类的任何进程之前为可运行实时进程提供 \fBCPU\fR 服务。
+.sp
+.LP
+实时类拥有一定范围的实时优先级 (\fIrtpri\fR) 值，这些值可以分配给该类中的进程。实时优先级的范围从 0 到 \fIx\fR，其中 \fIx\fR 值是可配置的，可以通过以下命令为已经配置了实时调度程序的特定安装显示该值：
+.sp
+.in +2
+.nf
+priocntl -l
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+实时调度策略是固定优先级策略。实时进程的调度优先级从不更改，除非用户/应用程序明确要求更改进程的 \fIrtpri\fR 值。
+.sp
+.LP
+对于实时类中的进程，\fIrtpri\fR 值实际上相当于进程的调度优先级。\fIrtpri\fR 值完全决定实时进程相对应其类内的其他进程的调度优先级。\fIrtpri\fR 数值越大，表示优先级越高。因为实时类控制着系统中最高范围的调度优先级，可以保证具有最高 \fIrtpri\fR 值的可运行实时进程始终被选择在系统中的任何其他进程之前运行。
+.sp
+.LP
+除了提供对优先级的控制之外，\fBpriocntl\fR 还提供对分配给实时类中进程的时间量程长度的控制。时间量程值指定进程可运行的最长时间，假定进程未完成，或进入一个资源或事件等待状态 (\fBsleep\fR)。请注意，如果其他进程成为优先级更高的可运行进程，当前运行的进程可以在用完其全部时间量程前被取代。
+.sp
+.LP
+命令
+.sp
+.in +2
+.nf
+priocntl -d [-i \fIidtype\fR] [\fIidlist\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+显示由 \fIidtype\fR 和 \fIidlist\fR 指定的集合中每个实时进程的实时优先级、时间量程（毫秒精度）以及时间量程信号值。
+.sp
+.LP
+\fB-p\fR、\fB-t\fR [\fB-r\fR] 和 \fB-q\fR 选项组合可与 \fBpriocntl\fR \fB-s\fR 或 \fBpriocntl\fR \fB-e\fR 共同用于实时类。如果省略某个选项且进程当前是实时的，关联参数不会受到影响。如果将进程的类从某些其他类更改为实时类时省略某个选项，关联参数会设置为缺省值。\fIrtpri\fR 的缺省值是 \fB0\fR，时间量程的缺省值取决于 \fIrtpri\fR 的值和系统配置；请参见 \fBrt_dptbl\fR(4)。
+.sp
+.LP
+使用 \fB-t\fR \fItqntm\fR 选项时，您可以选择性地使用 \fB-r\fR \fIres\fR 选项指定精度。（如果不指定精度，系统会假定其为毫秒精度。）如果指定 \fIres\fR，其必须是 \fB1\fR 到 \fB1,000,000,000\fR（包括）之间的正整数，使用的精度是 \fIres\fR 的倒数（以秒为单位）。例如，指定 \fB-t\fR \fB10\fR \fB-r\fR \fB100 \fR 会将精度设置为百分之一秒，得到的时间量程长度为 10/100 秒（十分之一秒）。尽管可以指定更高的精度（纳秒），但是时间量程长度会由系统向上舍入到系统时钟精度的下一个整数倍。将时间量程设置为零的请求，或量程大于（通常非常大）特定于实现的最大量程，都会导致错误。
+.sp
+.LP
+实时时间量程信号可以用于通知失控实时进程有关时间量程消耗的情况。那些由实时时间量程信号监视的进程，在时间量程到期时会收到配置的信号。时间量程信号 \fItqsig\fR 的缺省值 (\fB0\fR) 表示不发出任何信号。正值表示发出由值指定的信号。与 \fBkill\fR(1) 和其他应用于信号的命令相似，\fB-q\fR \fItqsig\fR 选项也能处理以符号方式命名的信号，如 \fBXCPU\fR 或 \fBKILL\fR。
+.sp
+.LP
+为了将进程的类（从任何其他类）更改为实时类，调用 \fBpriocntl\fR 的用户必须拥有超级用户特权。为了更改实时进程的 \fIrtpri\fR 值或时间量程，调用 \fBpriocntl\fR 的用户必须既是超级用户，或者该用户当前必须在实时类（作为实时进程运行的 shell）中，且具有与目标进程的实际或有效用户 \fBID\fR 匹配的实际或有效用户 \fBID\fR。
+.sp
+.LP
+实时优先级、时间量程和时间量程信号将在 \fBfork\fR(2) 和 \fBexec\fR(2) 系统调用中继承。在 \fBexec\fR(2) 系统调用中通过用户定义的信号处理程序使用时间量程信号时，新映像必须在时间量程到期前安装合适的用户定义的信号处理程序。否则会导致不可预期的行为。
+.SS "分时类"
+.sp
+.LP
+分时调度策略是为在具有各种 \fBCPU\fR 消耗特征的进程中公平有效地分配 \fBCPU\fR 资源而提供的。分时策略的目标是为交互式进程提供快速响应时间，为计算密集型 (\fBCPU\fR-bound) 作业提供很好的吞吐量，同时提供对调度的一定程度的用户/应用程序控制。
+.sp
+.LP
+分时类拥有一定范围的分时用户优先级 (\fItsupri\fR) 值，这些值可以分配到该类中的进程。用户优先级的范围是从 \(mi\fIx\fR 到 +\fIx\fR，其中 \fIx\fR 值是可配置的。可通过使用以下命令显示特定安装的范围：
+.sp
+.in +2
+.nf
+priocntl -l
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+用户优先级的目的是提供对分时类中进程调度的一定程度的用户/应用程序控制。增加或降低分时类中进程的 \fItsupri\fR 值会增加或降低进程的调度优先级。但是不保证具有较高 \fItsupri\fR 值的分时进程会在具有较低 \fItsupri\fR 值的进程之前运行。这是因为 \fItsupri\fR 值只是用于决定分时进程调度优先级的一个因素。系统可以根据其他因素（如最近的 \fBCPU\fR 使用情况）来动态调整分时进程的内部调度优先级。
+.sp
+.LP
+除了在系统范围内对用户优先级（以 \fBpriocntl\fR \fB-l\fR 显示）作出限制外，还有每个进程的用户优先级限制 (\fItsuprilim\fR)，它指定可为给定进程设置的最大 \fItsupri\fR 值。
+.sp
+.LP
+命令
+.sp
+.in +2
+.nf
+priocntl -d [-i \fIidtype\fR] [\fIidlist\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+显示 \fIidtype\fR 和 \fIidlist\fR 指定的集合中每个分时进程的用户优先级和用户优先级限制。
+.sp
+.LP
+任何分时进程都可降低自己的 \fItsuprilim\fR（或具有相同用户 \fBID\fR 的其他进程的该值）。只有具有超级用户特权的分时进程可以提高 \fItsuprilim\fR。将进程的类从其他类更改为分时类时，需要超级用户权限才能将初始 \fItsuprilim\fR 设置为一个大于零的值。
+.sp
+.LP
+任何分时进程都可以将自己的 \fItsupri\fR（或具有相同用户 \fBID\fR 的其他进程的该值）设置为小于等于进程的 \fItsuprilim\fR 的任何值。尝试将 \fItsupri\fR 设置为高于 \fItsuprilim\fR（和/或将 \fItsuprilim\fR 设置为低于 \fItsupri\fR）会导致 \fItsupri\fR 被设置为等于 \fItsuprilim\fR。
+.sp
+.LP
+\fB-m\fR 和 \fB-p\fR 选项的任何组合都可以与 \fBpriocntl\fR \fB-s\fR 或 \fBpriocntl\fR \fB-e\fR 共同用于分时类。如果省略某个选项且进程当前是分时的，关联参数通常不会受到影响。例外情况是，省略 \fB-p\fR 选项且使用 \fB-m\fR 将 \fItsuprilim\fR 设置为低于当前的 \fItsupri\fR 时。这种情况下，\fItsupri\fR 会设置为等于正在设置的 \fItsuprilim\fR。如果将进程的类从某些其他类更改为实时类时省略某个选项，关联参数会设置为缺省值。\fItsuprilim\fR 的缺省值是 \fB0\fR，\fItsupri\fR 的缺省值是将它设置为等于正在设置的 \fItsuprilim\fR。
+.sp
+.LP
+分时用户优先级和用户优先级限制将在 \fBfork\fR(2) 和 \fBexec\fR(2) 系统调用中继承。
+.SS "交互式类"
+.sp
+.LP
+交互式调度策略是为在具有各种 \fBCPU\fR 消耗特征的进程中公平有效地分配 \fBCPU\fR 资源而提供的，同时为用户交互提供良好的响应速度。交互式策略的目标是为交互式进程提供快速响应时间，为计算密集型 (\fBCPU\fR-bound)作业提供很好的吞吐量。交互式类中进程优先级的更改方式与分时类相同，但是修改后的优先级可以继续调整，以为用户交互提供快速响应速度。
+.sp
+.LP
+交互式用户优先级限制 \fIiaupri\fR 等效于 \fItsupri\fR。交互式每进程的用户优先级 \fIiauprilim\fR 等效于 \fItsuprilim\fR。
+.sp
+.LP
+将为设置了 \fIiamode\fR（"交互模式"）位的交互式类进程提供优先级增加值 \fB10\fR，在进行计算时（即，每次调整进程的优先级时）该值将分解为进程的用户模式优先级。此功能由 X 窗口系统使用，它将为在当前活动窗口内运行的那些进程设置此位，以便为进程提供更高优先级。
+.SS "公平份额类"
+.sp
+.LP
+公平份额调度策略对项目中的系统 \fBCPU\fR 资源进行公平分配，而不考虑它们拥有的进程数量。每个项目都会得到一定的"份额"，用来控制他们对 \fBCPU\fR 资源的权利。系统会根据时间记录资源使用情况，这样，相对于其他项目，使用多的权利会被减少，而使用少的权力则会被增加。根据进程所有者的权利，在进程中调度 \fBCPU\fR 时间，与各个项目拥有的进程数量无关。
+.sp
+.LP
+\fBFSS\fR 调度类支持每进程的用户优先级和用户优先级限制的概念，从而与分时调度程序兼容。公平份额调度程序尝试在整个用户优先级范围内提供平均分级效果。\fIfssupri\fR 值为负的进程接收时间分片的频率低于正常，而 \fIfssupri\fR 值为正的进程接收时间分片的频率高于正常。请注意，用户优先级不会影响份额。也就是说，更改进程的 \fIfssupri\fR 值不会影响其项目的整体 \fBCPU\fR 使用情况，后者通常与该项目相对于其他项目分配的份额量有关。
+.sp
+.LP
+公平份额类中的进程优先级的更改方式与分时类相同。
+.SS "固定优先级类"
+.sp
+.LP
+对于要求系统不动态调整调度优先级且用户/应用程序可以控制调度优先级的那些进程，固定优先级类为它们提供固定优先级优先调度策略。
+.sp
+.LP
+缺省情况下，固定优先级类与分时类的调度优先级范围相同。固定优先级类拥有一定范围的固定优先级用户优先级 (\fIfxupri\fR) 值，这些值可以分配给类中的进程。用户优先级范围从 0 到 \fIx\fR，其中 \fIx\fR 值是可配置的。可通过使用以下命令显示特定安装的范围：
+.sp
+.in +2
+.nf
+priocntl -l
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+用户优先级的目的是提供对固定优先级类中进程调度的一定程度的用户/应用程序控制。对于固定优先级类中的进程，\fIfxupri\fR 值实际上等效于进程的调度优先级。\fIfxupri\fR 值可完全决定固定优先级进程相对于其类中其他进程的调度优先级。\fIfxupri\fR 数值越大，表示优先级越高。
+.sp
+.LP
+除了在系统范围内对用户优先级（以 \fBpriocntl\fR \fB-l\fR 显示）作出限制外，还有每个进程的用户优先级限制 (\fIfxuprilim\fR)，它指定可为给定进程设置的最大 \fIfxupri\fR 值。
+.sp
+.LP
+任何固定优先级进程都可降低自己的 \fIfxuprilim\fR（或具有相同用户 \fBID\fR 的其他进程的该值）。只有具有超级用户权限的进程才可以提高 \fIfxuprilim\fR。将进程的类从其他类更改为固定优先级类时，需要超级用户权限才能将初始 \fIfxuprilim\fR 设置为大于零的值。
+.sp
+.LP
+任何固定优先级进程都可以将自己的 \fIfxupri\fR（或具有相同用户 \fBID\fR 的其他进程的该值）设置为小于等于进程 \fIfxuprilim\fR。尝试将 \fIfxupri\fR 设置为高于 \fIfxuprilim\fR（和/或将 \fIfxuprilim\fR 设置为低于 \fIfxupri\fR），会导致 \fIfxupri\fR 设置为等于 \fIfxuprilim\fR。
+.sp
+.LP
+除了提供对优先级的控制之外，\fBpriocntl\fR 还提供对固定优先级类中分配给进程的时间量程长度的控制。时间量程值指定进程在让出\fB CPU\fR 之前可运行的最长时间，假定进程未完成，或进入一个资源或事件等待状态 (sleep)。请注意，如果其他进程成为优先级更高的可运行进程，当前运行的进程可以在用完其全部时间量程前被取代。
+.sp
+.LP
+任何 \fB-m\fR、\fB-p\fR 和 \fB-t\fR 选项组合都可以与 \fBpriocntl\fR \fB-s\fR 或 \fBpriocntl\fR \fB-e\fR 共同用于固定优先级类。如果省略某个选项且进程当前是固定优先级的，关联参数通常不会受到影响。例外情况是，省略 \fB-p\fR 选项且使用 \fB-m\fR 将 \fIfxuprilim\fR 设置为低于当前的 \fIfxupri\fR 时。这种情况下，\fIfxupri \fR 会设置为等于正在设置的 \fIfxuprilim\fR。如果将进程的类从某些其他类更改为固定优先级类时省略某个选项，关联参数会设置为缺省值。\fIfxuprilim\fR 的缺省值为 \fB 0\fR。\fIfxupri\fR 缺省值是将它设置为等于正在设置的 \fIfxuprilim\fR 值。时间量程的缺省值由 \fIfxupri\fR 和系统配置决定。请参见 \fBfx_dptbl\fR(4)。
+.sp
+.LP
+固定优先级类中的进程时间量程的更改方式与实时类相同。
+.sp
+.LP
+固定优先级用户优先级、用户优先级限制和时间量程将在 \fBfork\fR(2) 和 \fBexec\fR(2) 系统调用中继承。
+.SH 示例
+.sp
+.LP
+下面是实时类的示例：
+.LP
+\fB示例 1 \fR设置类
+.sp
+.LP
+以下示例将由 \fIidtype\fR 和 \fIidlist\fR 选择的任意非实时进程的类设为实时，并将它们的实时优先级设置为缺省值 \fB0\fR。实时类中当前任意进程的实时优先级都不会受到影响。所有指定进程中的时间量程都设置为 \fB1/10\fR 秒。
+
+.sp
+.in +2
+.nf
+example% priocntl -s -c RT -t 1 -r 10 -i \fIidtype idlist\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR执行实时类中的命令
+.sp
+.LP
+以下示例以实时优先级 \fB15\fR 和时间量程 \fB20\fR 毫秒执行实时类中的 \fIcommand\fR。
+
+.sp
+.in +2
+.nf
+example% priocntl -e -c RT -p 15 -t 20 \fIcommand\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR以指定量程信号执行实时类中的命令
+.sp
+.LP
+以下示例实时优先级 \fB11\fR、时间量程 \fB250\fR 毫秒和指定实时量程信号 \fBSIGXCPU\fR 执行实时类中的 \fIcommand\fR：
+
+.sp
+.in +2
+.nf
+example% priocntl -e -c RT -p 11 -t 250 -q XCPU \fIcommand\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面是分时类的示例：
+.LP
+\fB示例 4 \fR设置非分时进程的类
+.sp
+.LP
+以下示例将由 \fIidtype\fR 和 \fIidlist\fR 选择的任意非分时进程的类设置为分时，并将它们的用户优先级限制和用户优先级设置为 \fB0\fR。已经位于分时类中的进程不受影响。
+
+.sp
+.in +2
+.nf
+example% priocntl -s -c TS -i \fIidtype idlist\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR执行分时类中命令
+.sp
+.LP
+以下示例在分时类中使用参数 \fIarguments\fR 执行 \fIcommand\fR，用户优先级限制为 \fB0\fR，用户优先级为 \fB\(mi15\fR：
+
+.sp
+.in +2
+.nf
+example% priocntl -e -c TS -m 0 -p \fB-15\fR \fIcommand\fR [\fIarguments\fR]
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR执行固定优先级类中的命令
+.sp
+.LP
+以下示例执行固定优先级类中的命令，用户优先级限制为 \fB20\fR，用户优先级为 \fB10\fR，时间量程为 \fB250\fR 毫秒：
+
+.sp
+.in +2
+.nf
+example% priocntl -e -c FX -m 20 -p 10 -t 250 command
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR更改指定 LMP 的优先级
+.sp
+.LP
+以下示例设置进程 \fB500\fR 中的 LWP \fB5\fR 的用户优先级限制为 \fB20\fR，用户优先级为 \fB15\fR：
+
+.sp
+.in +2
+.nf
+example% priocntl -s -m 20 -p 15 500/5
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.LP
+对于选项 \fB-d\fR、\fB-l\fR 和 \fB-s\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+错误条件。
+.RE
+
+.sp
+.LP
+对于选项 \fB-e\fR：
+.sp
+.LP
+已执行命令的"退出状态"为"返回"时说明操作成功。否则，
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+不能以指定优先级执行命令。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+CSIEnabled（已启用）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBkill\fR(1)、\fBnice\fR(1)、\fBps\fR(1)、\fBdispadmin\fR(1M)、\fBexec\fR(2)、\fBfork\fR(2)、\fBpriocntl\fR(2)、\fBfx_dptbl\fR(4)、\fBprocess\fR(4)、\fBrt_dptbl\fR(4)、\fBattributes\fR(5)、\fBzones\fR(5)、\fBFSS\fR(7)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Common Tasks》\fR
+.SH 诊断
+.sp
+.LP
+\fBpriocntl\fR 打印以下错误消息：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBProcess(es) not found\fR\fR
+.ad
+.sp .6
+.RS 4n
+不存在指定的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSpecified processes from different classes\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-s\fR 选项正用于设置参数，\fB-c\fR \fIclass\fR 选项不存在，并且指定了多个类中的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBInvalid option or argument\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用了无法识别或无效的选项或选项参数。
+.RE
+

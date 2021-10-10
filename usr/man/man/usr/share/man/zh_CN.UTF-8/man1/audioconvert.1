@@ -1,0 +1,385 @@
+'\" te
+.\" 版权所有 (c) 2001，Oracle 和/或其附属公司。保留所有权利
+.TH audioconvert 1 "2001 年 2 月 16 日" "SunOS 5.11" "用户命令"
+.SH 名称
+audioconvert \- 转换音频文件格式
+.SH 用法概要
+.LP
+.nf
+\fBaudioconvert\fR [\fB-pF\fR] [\fB-f\fR \fIoutfmt\fR] [\fB-o\fR \fIoutfile\fR] 
+     [ [\fB-i\fR \fIinfmt\fR] [\fIfile\fR]...] ...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBaudioconvert\fR 用于在一组受支持的音频编码和文件格式之间转换音频数据。该命令可用于压缩和解压缩音频数据，向原始音频数据文件添加音频文件头，以及在标准数据编码（例如 -law 和线性 PCM）之间进行转换。
+.sp
+.LP
+如果未提供文件名，\fBaudioconvert\fR 将从标准输入流中读取数据，然后将音频文件写入标准输出。否则，将按顺序处理输入文件，进行串联，然后写入输出文件。
+.sp
+.LP
+输入文件应包含用于识别音频数据格式的音频文件头。如果音频数据不包含可识别的文件头，则必须通过 \fB-i\fR 选项指定格式，使用 \fBrate\fR、\fBencoding\fR 和 \fBchannels\fR 关键字来识别输入数据格式。
+.sp
+.LP
+输出文件格式是通过在 \fB-f\fR 规范中使用格式选项更新第一个输入文件的格式派生而来的。如果不指定 \fB-p\fR，所有后续的输入文件都将转换为所得到的这一格式，然后串联在一起。输出文件将包含音频文件头，除非在输出格式选项中指定了 \fBformat\fR=\fIraw\fR。
+.sp
+.LP
+可以使用 \fB-p\fR 选项就地转换输入文件。当 \fB-p\fR 起作用时，可根据 \fB-f\fR 选项修改每个输入文件的格式以确定输出格式。然后，将使用转换后的数据覆盖现有文件。
+.sp
+.LP
+\fBfile\fR(1) 命令可解码和输出 Sun 音频文件的音频数据格式。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIIn Place\fR：输入文件分别转换为 \fB-f\fR 选项所指定的格式，并进行重写。如果目标文件是符号链接，将重写底层文件。\fB-o\fR 选项不能与 \fB-p\fR 一起指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIForce\fR：此选项可强制 \fBaudioconvert\fR 忽略由 \fB-i\fR 选项指定了格式的输入文件的任何文件头。如果未指定 \fB-F\fR，\fBaudioconvert\fR 将对包含有效音频文件头的输入文件忽略 \fB-i\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIoutfmt\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIOutput Format\fR：此选项用于指定输出文件的文件格式和数据编码。未指定的字段的缺省值派生自输入文件格式。下一部分列出了有效的关键字和值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutfile\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIOutput File\fR：所有输入文件将进行串联，转换为输出格式，然后写入所指定的输出文件。如果未指定 \fB-o\fR 和 \fB-p\fR，串联的输出将写入标准输出。\fB-p\fR 选项不能与 \fB-o\fR 一起指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinfmt\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIInput Format\fR：此选项用于指定原始输入文件的数据编码。通常，输入数据格式派生自音频文件头。在转换开头没有有效音频文件头的音频数据时，需要使用此选项。如果为包含音频文件头的输入文件指定了 \fB-i\fR，将忽略输入格式字符串，除非指定了 \fB-F\fR 选项。格式规范语法与 \fB-f\fR 输出文件格式相同。
+.sp
+可以指定多个输入格式。输入格式规定所有输入文件都要遵守该规范，直到指定了新的输入格式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIFile Specification\fR：所指定的音频文件将进行串联，转换为输出格式，然后写出。如果未提供文件名，或者指定了特殊的文件名 '\(mi'，将从标准输入读取音频数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIHelp\fR：输出命令行用法消息。
+.RE
+
+.SS "格式规范"
+.sp
+.LP
+输入和输出格式规范的语法为：
+.sp
+.LP
+\fIkeyword\fR=\fIvalue\fR[,\fIkeyword\fR=\fIvalue\fR \|.\|.\|.\|]
+.sp
+.LP
+中间没有空格。可以在开头没有 \fIkeyword\fR= 的情况下使用明确的值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrate\fR\fR
+.ad
+.RS 12n
+.rt  
+音频抽样率以每秒的样例数进行指定。如果一个数字后面跟有字母 \fBk\fR，表示乘以 1000（例如 44.1k = 44100）。常用抽样率的标准有：8k、16k、32k、44.1k 和 48k。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchannels\fR\fR
+.ad
+.RS 12n
+.rt  
+使用一个整数指定交错声道的数量。还可以使用 \fBmono\fR 和 \fBstereo\fR 这两个词来分别指定单声道和双声道数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencoding\fR\fR
+.ad
+.RS 12n
+.rt  
+此选项用于指定数字音频数据的表现形式。编码可隐式指定精度（\fBulaw\fR 表示 8 位精度），或者在名称中显式指定精度（例如，\fBlinear16\fR）。有效的编码值为： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB ulaw\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBCCITT G.711\fR -law 编码。这是主要用于电话音质语音的 8 位格式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalaw\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBCCITT G.711\fR A-law 编码。这是欧洲主要用于电话音质语音的 8 位格式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinear8\fR,\fR
+.ad
+.br
+.na
+\fB\fBlinear16\fR,\fR
+.ad
+.br
+.na
+\fB\fBlinear32\fR\fR
+.ad
+.RS 13n
+.rt  
+线性脉冲编码调制 (Pulse Code Modulation, PCM) 编码。该名称可标识精度位数。\fBlinear16\fR 通常用于高质量音频数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcm\fR\fR
+.ad
+.RS 13n
+.rt  
+同 \fBlinear16\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg721\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBCCITT G.721\fR 压缩格式。此编码使用具有 4 位精度的自适应差分脉冲编码调制 (Adaptive Delta Pulse Code Modulation, ADPCM)。该编码主要用于压缩 -law 语音数据（可达到 2:1 的压缩率）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg723\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBCCITT G.723\fR 压缩格式。此编码使用具有 3 位精度的自适应差分脉冲编码调制 (Adaptive Delta Pulse Code Modulation, ADPCM)。该编码主要用于压缩 -law 语音数据（可达到 8:3 的压缩率）。音频质量类似于 \fBG.721\fR，但在用于非语音数据时质量较低。
+.RE
+
+还可以使用以下编码值作为速记方式来设置抽样率、声道和编码：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvoice\fR\fR
+.ad
+.RS 9n
+.rt  
+等同于 \fBencoding=ulaw,rate=8k,channels=mono\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcd\fR\fR
+.ad
+.RS 9n
+.rt  
+等同于 \fBencoding=linear16,rate=44.1k,channels=stereo\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdat\fR\fR
+.ad
+.RS 9n
+.rt  
+等同于 \fBencoding=linear16,rate=48k,channels=stereo\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBformat\fR\fR
+.ad
+.RS 12n
+.rt  
+此选项用于指定音频文件格式。有效格式有： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsun\fR\fR
+.ad
+.RS 7n
+.rt  
+Sun 兼容文件格式（缺省）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBraw\fR\fR
+.ad
+.RS 7n
+.rt  
+在读取或写入原始音频数据（没有音频头）时可使用此格式；该格式也可以与 \fBoffset\fR 结合使用以导入外来音频文件格式。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffset\fR\fR
+.ad
+.RS 12n
+.rt  
+(\fB-i\fR \fIonly\fR) 指定字节偏移以定位音频数据的开始位置。此选项可用于导入包含无法识别的文件头的音频数据。
+.RE
+
+.SH 用法
+.sp
+.LP
+当遇到的文件大于或等于 2 GB（2^31 字节）时，有关 \fBaudioconvert\fR 行为的说明，请参见 \fBlargefile\fR(5)。
+.SH 示例
+.LP
+\fB示例 1 \fR在存储语音数据之前进行录制和压缩
+.sp
+.LP
+在将语音数据存储到文件中之前对其进行录制和压缩：
+
+.sp
+.in +2
+.nf
+example% \fBaudiorecord | audioconvert -f g721 > mydata.au\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR串联两个音频文件
+.sp
+.LP
+串联两个 Sun 格式的音频文件（不管是何种数据格式），然后输出一个 8 位 ulaw、16 kHz、单声道文件：
+
+.sp
+.in +2
+.nf
+example% \fBaudioconvert -f ulaw,rate=16k,mono -o outfile.au infile1 infile2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR将目录转换为 Sun 格式
+.sp
+.LP
+将包含原始语音数据文件的目录就地转换为 Sun 格式（向每个文件添加文件头）：
+
+.sp
+.in +2
+.nf
+example% \fBaudioconvert -p -i voice -f sun *.au\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+体系结构SPARC、x86
+_
+可用性audio/audio-utilities
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBaudioplay\fR(1)、\fBaudiorecord\fR(1)、\fBfile\fR(1)、\fBattributes\fR(5)、\fBlargefile\fR(5)
+.SH 附注
+.sp
+.LP
+只需将声道相加，即可实施用于将多声道数据转换为单声道数据的算法。如果输入数据完全同相（如同单声道文件转换为立体声又转换回单声道的情况），得到的数据可能会有些失真。

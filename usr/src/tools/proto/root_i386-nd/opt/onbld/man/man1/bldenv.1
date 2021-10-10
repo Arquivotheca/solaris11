@@ -1,0 +1,173 @@
+.\" format with nroff|troff|groff -man
+.fp 5 CW
+.nr mH 5
+.de H0
+.nr mH 0
+.in 5n
+\fB\\$1\fP
+.in 7n
+..
+.de H1
+.nr mH 1
+.in 7n
+\fB\\$1\fP
+.in 9n
+..
+.de H2
+.nr mH 2
+.in 11n
+\fB\\$1\fP
+.in 13n
+..
+.de H3
+.nr mH 3
+.in 15n
+\fB\\$1\fP
+.in 17n
+..
+.de H4
+.nr mH 4
+.in 19n
+\fB\\$1\fP
+.in 21n
+..
+.de OP
+.nr mH 0
+.ie !'\\$1'-' \{
+.ds mO \\fB\\-\\$1\\fP
+.ds mS ,\\0
+.\}
+.el \{
+.ds mO \\&
+.ds mS \\&
+.\}
+.ie '\\$2'-' \{
+.if !'\\$4'-' .as mO \\0\\fI\\$4\\fP
+.\}
+.el \{
+.as mO \\*(mS\\fB\\-\\-\\$2\\fP
+.if !'\\$4'-' .as mO =\\fI\\$4\\fP
+.\}
+.in 5n
+\\*(mO
+.in 9n
+..
+.de SP
+.if \\n(mH==2 .in 9n
+.if \\n(mH==3 .in 13n
+.if \\n(mH==4 .in 17n
+..
+.de FN
+.nr mH 0
+.in 5n
+\\$1 \\$2
+.in 9n
+..
+.de DS
+.in +3n
+.ft 5
+.nf
+..
+.de DE
+.fi
+.ft R
+.in -3n
+..
+.TH BLDENV 1 
+.SH NAME
+bldenv \- spawn shell for interactive incremental OS\-Net consolidation builds
+.SH SYNOPSIS
+\fBbldenv\fP\ [\ \fIoptions\fP\ ]\ <env_file>\ [command]
+.SH DESCRIPTION
+bldenv is a useful companion to the nightly(1) script for doing interactive and
+incremental builds in a workspace already built with nightly(1)\&. bldenv
+spawns a shell set up with the same environment variables taken from an
+env_file, as prepared for use with nightly(1)\&.
+.PP
+In addition to running a shell for interactive use, bldenv can optionally run a
+single command in the given environment, in the vein of sh \-c or su \-c\&.
+This is useful for scripting, when an interactive shell would not be\&. If the
+command is composed of multiple shell words or contains other shell
+metacharacters, it must be quoted appropriately\&.
+.PP
+bldenv is particularly useful for testing Makefile targets like clobber,
+install and _msg, which otherwise require digging through large build logs to
+figure out what is being done\&.
+.PP
+bldenv is also useful if you run into build issues with the source product or
+when generating OpenSolaris deliverables\&. If a source product build is
+flagged, the environment is set up for building the indicated source product
+tree, which is assumed to have already been created\&. If the OpenSolaris
+deliverables flag (\-O) is set in NIGHTLY_OPTIONS, the environment is set up
+for building just the open source\&. This includes using an alternate proto
+area, as well as using the closed binaries in $CODEMGR_WS/closed\&.skel (which
+is assumed to already exist)\&.
+.PP
+By default, bldenv will invoke the shell specified in $SHELL\&. If $SHELL is
+not set or is invalid, csh will be used\&.
+.SH OPTIONS
+.OP c - flag -
+force the use of csh, regardless of the value of $SHELL\&.
+.OP f - flag -
+invoke csh with the \-f (fast\-start) option\&. This option is valid only if
+$SHELL is unset or if it points to csh\&.
+.OP d - flag -
+set up environment for doing DEBUG builds (default is non\-DEBUG)
+.OP t - flag -
+set up environment to use the tools in usr/src/tools (this is the default, use
++t to use the tools from /opt/onbld)
+.OP S - string option
+Build a variant of the source product\&. The value of \fIoption\fP must be one
+of the following:
+.H2 E
+build the exportable source variant of the source product\&.
+.H2 D
+build the domestic source (exportable + crypt) variant of the source product\&.
+.H2 H
+build hybrid source (binaries + deleted source)\&.
+.H2 O
+simulate an OpenSolaris (open source only) build\&.
+.SH EXAMPLES
+.SP
+Example 1: Interactive use
+.SP
+Use bldenv to spawn a shell to perform a DEBUG build and testing of the
+Makefile targets clobber and install for usr/src/cmd/true\&.
+.nf
+\f5%\ rlogin\ wopr\-2\ \-l\ gk
+{root:wopr\-2:49}\ bldenv\ \-d\ /export0/jg/on10\-se\&.env
+Build\ type\ \ \ is\ \ DEBUG
+RELEASE\ \ \ \ \ \ is\ \ 5\&.10
+VERSION\ \ \ \ \ \ is\ \ wopr\-2:on10\-se:11/01/2001
+RELEASE_DATE\ is\ \ May\ 2004
+The\ top\-level\ `setup'\ target\ is\ available\ to\ build\ headers
+and\ tools\&.
+Using\ /usr/bin/tcsh\ as\ shell\&.
+{root:wopr\-2:49}
+{root:wopr\-2:49}\ cd\ $SRC/cmd/true
+{root:wopr\-2:50}\ make
+{root:wopr\-2:51}\ make\ clobber
+/usr/bin/rm\ \-f\ true\ true\&.po
+{root:wopr\-2:52}\ make
+/usr/bin/rm\ \-f\ true
+cat\ true\&.sh\ >\ true
+chmod\ +x\ true
+{root:wopr\-2:53}\ make\ install
+install\ \-s\ \-m\ 0555\ \-u\ root\ \-g\ bin\ \-f\
+/export0/jg/on10\-se/proto/root_sparc/usr/bin\ true
+`install'\ is\ up\ to\ date\&.\fP
+.fi
+.PP
+Example 2: Non\-interactive use
+.SP
+Invoke bldenv to create SUNWonbld with a single command:
+.nf
+\f5example%\ bldenv\ onnv_06\ 'cd\ $SRC/tools\ &&\ make\ pkg'\fP
+.fi
+.SH SEE\ ALSO
+\fBnightly\fP(1)
+.SH IMPLEMENTATION
+.H0 version
+bldenv (OS/Net) 2008\-04\-06
+.H0 author
+OS/Net community <tools\-discuss@opensolaris\&.org>

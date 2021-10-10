@@ -1,0 +1,559 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH sctp_sendv 3SOCKET "19 May 2011" "SunOS 5.11" "Sockets Library Functions"
+.SH NAME
+sctp_sendv \- send a message to an SCTP socket
+.SH SYNOPSIS
+.LP
+.nf
+cc [ flag... ] file... -lsocket -lnsl -lsctp [ library... ]
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/sctp.h>
+
+ssize_t sctp_sendv(int sd, const struct iovec *iov, int iovcnt,
+      struct sockaddr *addrs, int addrcnt, void *info, socklen_t infolen,
+      unsigned int infotype, int flags);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsd\fR\fR
+.ad
+.RS 12n
+.rt  
+The socket descriptor.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIiov\fR\fR
+.ad
+.RS 12n
+.rt  
+The message to be sent. The data in the buffer are treated as one single user message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIiovcnt\fR\fR
+.ad
+.RS 12n
+.rt  
+The number of elements in \fIiov\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddrs\fR\fR
+.ad
+.RS 12n
+.rt  
+An array of addresses to be used to set up an association or one single address to be used to send the message. Pass in \fINULL\fR if the caller does not want to set up an association nor want to send the message to a specific address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddrcnt\fR\fR
+.ad
+.RS 12n
+.rt  
+The number of addresses in the \fIaddrs\fR array.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfo\fR\fR
+.ad
+.RS 12n
+.rt  
+A pointer to the buffer containing the attribute associated with the message to be sent. The type is indicated by \fIinfo_type\fR parameter.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfolen\fR\fR
+.ad
+.RS 12n
+.rt  
+The length in bytes of info.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfotype\fR\fR
+.ad
+.RS 12n
+.rt  
+Identifies the type of the information provided in \fIinfo\fR. The defined values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_SENDV_SNDINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fItype\fR of info is \fBstruct\fR \fBsctp_sndinfo\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_SENDV_PRINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fItype\fR of info is \fBstruct\fR \fBsctp_prinfo\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_SENDV_AUTHINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fItype\fR of info is \fBstruct\fR \fBsctp_authinfo\fR ( not supported).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_SENDV_SPA\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of \fIinfo\fR is \fBstruct\fR \fBsctp_sendv_spa\fR.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflags\fR\fR
+.ad
+.RS 12n
+.rt  
+The same flags as used by \fBsendmsg\fR(3SOCKET) (for example, \fBMSG_DONTROUTE\fR).
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsctp_sendv()\fR function provides an extensible way for an application to communicate different send attributes to the SCTP stack when sending a message. This function can also be used to set up an association. The \fIaddrs\fR array is similar to the \fIaddrs\fR array used by \fBsctp_connectx\fR(3SOCKET).
+.sp
+.LP
+There are three types of attributes which can be used to describe a message to be sent. They are represented by \fBstruct\fR \fBsctp_sndinfo\fR, \fBstruct\fR \fBsctp_prinfo\fR, and \fBstruct\fR \fBsctp_authinfo\fR (currently not supported). The following structure \fBsctp_sendv_spa\fR is defined to be used when more than one of the above attributes are needed to describe a message to be sent.
+.sp
+.in +2
+.nf
+struct sctp_sendv_spa {
+    uint32_t               sendv_flags;
+    struct sctp_sndinfo    sendv_sndinfo;
+    struct sctp_prinfo     sendv_prinfo;
+    struct sctp_authinfo   sendv_authinfo;
+};
+.fi
+.in -2
+
+.sp
+.LP
+The \fIsendv_flags\fR field holds a bitwise OR of \fBSCTP_SEND_SNDINFO_VALID\fR, \fBSCTP_SEND_PRINFO_VALID\fR, and \fBSCTP_SEND_AUTHINFO_VALID\fR, indicating whether the \fIsendv_sndinfo\fR, \fIsendv_prinfo\fR, and \fIsendv_authinfo\fR fields contain valid information.
+.sp
+.LP
+The \fBsctp_sndinfo\fR structure is defined as:
+.sp
+.in +2
+.nf
+struct sctp_sndinfo {
+    uint16_t       snd_sid;
+    uint16_t       snd_flags;
+    uint32_t       snd_ppid;
+    uint32_t       snd_context;
+    sctp_assoc_t   snd_assoc_id;
+};
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsnd_sid\fR\fR
+.ad
+.RS 16n
+.rt  
+This value holds the stream number to send the message to. If a sender specifies an invalid stream number, an error value is returned and the call fails.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsnd_flags\fR\fR
+.ad
+.RS 16n
+.rt  
+This field is a bit wise OR of the following flags:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_UNORDERED\fR\fR
+.ad
+.sp .6
+.RS 4n
+This flag requests the unordered delivery of the message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_ADDR_OVER\fR\fR
+.ad
+.sp .6
+.RS 4n
+This flag requests the SCTP stack to override the primary destination address and send the message to the given address in \fIaddrs\fR. Only one address can be given is this case. If this flag is not specified and \fIaddrs\fR is not \fINULL\fR, this call is treated as a connect request. This flag is applicable to one-to-many style sockets only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_ABORT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Setting this flag causes the specified association to be aborted by sending an ABORT message to the peer. The ABORT message will contain an error cause 'User Initiated Abort' with cause code 12. The specific information the cause of this error is provided in \fImsg_iov\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_EOF\fR\fR
+.ad
+.sp .6
+.RS 4n
+Setting this flag invokes the SCTP graceful shutdown procedures on the specified association. Graceful shutdown assures that all data queued by both endpoints is successfully transmitted before closing the association.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCTP_SENDALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+This flag requests that the message is sent to all associations that are currently established on the socket. This flag is applicable to one-to-many style sockets only.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsnd_ppid\fR\fR
+.ad
+.RS 16n
+.rt  
+An unsigned integer that is passed to the remote end in each user message (SCTP DATA chunk). The SCTP stack performs no byte order modification of this field. For example, if the DATA chunk has to contain a given value in network byte order, the SCTP user has to perform the \fBhtonl\fR(3SOCKET) computation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsnd_context\fR\fR
+.ad
+.RS 16n
+.rt  
+This value is an opaque 32 bit context datum. It is passed back to the caller if an error occurs on the transmission of the message and is retrieved with each undelivered message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsnd_assoc_id\fR\fR
+.ad
+.RS 16n
+.rt  
+When sending a message, this holds the identifier for the association which the message is sent to. When this call is used to set up an association, the association identifier of the newly created association is returned in this field. This field is applicable to one-to-many style sockets only.
+.RE
+
+.sp
+.LP
+The \fBsctp_prinfo\fR structure is defined as:
+.sp
+.in +2
+.nf
+struct sctp_prinfo {
+    uint16_t pr_policy;
+    uint32_t pr_value;
+};
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpr_policy\fR\fR
+.ad
+.RS 13n
+.rt  
+This field specifies which partial reliability (PR-SCTP) policy is used to send the message. If it is \fBSCTP_PR_SCTP_NONE\fR, the message is sent reliably (the default is normal send). If it is \fBSCTP_PR_SCTP_TTL\fR, "timed reliability" as defined in RFC 3758 is used. In this case, the lifetime is provided in \fIpr_value\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpr_value\fR\fR
+.ad
+.RS 13n
+.rt  
+The meaning of this field depends on the PR-SCTP policy specified by the \fIpr_policy\fR field. It is ignored when \fBSCTP_PR_SCTP_NONE\fR is specified. In case of \fBSCTP_PR_SCTP_TTL\fR, this field specifies the lifetime in milliseconds of the message.
+.RE
+
+.sp
+.LP
+When new send attributes are needed, new structures can be defined. Those new structures do not need to be based on any of the above defined structures.
+.sp
+.LP
+The \fBstruct\fR \fBsctp_sndinfo\fR attribute for one-to-many style sockets must always be used in order to specify the association the message is to be sent to. The only case where it is not needed is when this call is used to set up a new association.
+.sp
+.LP
+The caller provides a list of addresses in the \fIaddrs\fR parameter to set up an association. This function will behave like calling \fBsctp_connectx()\fR, first using the list of addresses, and then calling \fBsendmsg()\fR with the given message and attributes. For an one-to-many style socket, if a \fBstruct\fR \fBsctp_sndinfo\fR attribute is provided, the \fIsnd_assoc_id\fR field must be 0. When this function returns, the \fIsnd_assoc_id\fR field will contain the association identifier of the newly established association. The \fBstruct\fR \fBsctp_sndinfo\fR attribute is not required to set up an association for one-to-many style sockets. If this attribute is not provided, the caller can enable the \fBSCTP_ASSOC_CHANGE\fR notification and use the \fBSCTP_COMM_UP\fR message to find out the association identifier.
+.sp
+.LP
+If the caller wants to send the message to a specific peer address (overriding the primary address), it can provide the specific address in the \fIaddrs\fR parameter and provide a \fBstruct\fR \fBsctp_sndinfo\fR attribute with the \fIsnd_flags\fR field set to \fBSCTP_ADDR_OVER\fR.
+.sp
+.LP
+This function can also be used to terminate an association. The caller provides an \fBsctp_sndinfo\fR attribute with the \fIsnd_flags\fR set to \fBSCTP_EOF\fR. In this case, the length of the message would be zero.
+.sp
+.LP
+Sending a message using \fBsctp_sendv()\fR is atomic unless explicit EOR marking is enabled on the socket specified by \fIsd\fR.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, the number of bytes sent is returned. Otherwise, -1 is returned and \fIerrno\fR is set to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBsctp_sendv()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEADDRINUSE\fR\fR
+.ad
+.RS 17n
+.rt  
+The address is already in use.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEADDRNOTAVAIL\fR\fR
+.ad
+.RS 17n
+.rt  
+No local address is available for this operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEAFNOSUPPORT\fR\fR
+.ad
+.RS 17n
+.rt  
+Addresses in the specified address family cannot be used with this socket.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 17n
+.rt  
+The \fIsd\fR parameter is not a valid file descriptor.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBECONNREFUSED\fR\fR
+.ad
+.RS 17n
+.rt  
+The attempt to connect was forcefully rejected. The calling program should close the socket descriptor using \fBclose\fR(2) and issue another \fBsocket\fR(3SOCKET) call to obtain a new descriptor before making another attempt.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEFAULT\fR\fR
+.ad
+.RS 17n
+.rt  
+A parameter can not be accessed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINTR\fR\fR
+.ad
+.RS 17n
+.rt  
+The operation was interrupted by delivery of a signal before any data could be buffered to be sent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 17n
+.rt  
+A parameter provided is invalid for this operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEMSGSIZE\fR\fR
+.ad
+.RS 17n
+.rt  
+The message is too large to be sent all at once.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENETUNREACH\fR\fR
+.ad
+.RS 17n
+.rt  
+The network is not reachable from this host.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOBUFS\fR\fR
+.ad
+.RS 17n
+.rt  
+Insufficient memory is available to complete the operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEOPNOTSUPP\fR\fR
+.ad
+.RS 17n
+.rt  
+Operation not supported in this type of socket.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEPIPE\fR\fR
+.ad
+.RS 17n
+.rt  
+The peer end point has shutdown the association.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBETIMEDOUT\fR\fR
+.ad
+.RS 17n
+.rt  
+Attempt timed out.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEWOULDBLOCK\fR\fR
+.ad
+.RS 17n
+.rt  
+The socket is marked as non-blocking, and the requested operation would block.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBhtonl\fR(3SOCKET), \fBlibsctp\fR(3LIB), \fBsctp_connectx\fR(3SOCKET), \fBsendmsg\fR(3SOCKET), \fBsocket\fR(3SOCKET), \fBattributes\fR(5), \fBsctp\fR(7P)

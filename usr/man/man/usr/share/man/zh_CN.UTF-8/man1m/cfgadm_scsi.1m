@@ -1,0 +1,816 @@
+'\" te
+.\" 版权所有 (c) 2009 Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_scsi 1M "2009 年 5 月 13 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_scsi \- 特定于 SCSI 硬件的 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_option\fR] [\fB-o\fR \fIhardware_option\fR]
+     [\fB-l\fR [\fIap_id\fR | \fIap_type ...\fR ]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR] \fB-t\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR] \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+特定于 \fBSCSI\fR 硬件的库 \fB/usr/lib/cfgadm/scsi.so.1\fR 通过 \fBcfgadm\fR(1M) 命令提供 \fBSCSI\fR 热插拔功能。\fBcfgadm\fR 在挂接点上运行，这些挂接点是可动态重新配置硬件资源的系统位置。有关挂接点的信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+对于 \fBSCSI\fR 热插拔，每个 \fBSCSI\fR 控制器由设备树中的挂接点表示。此外，每个 \fBSCSI\fR 设备由动态挂接点表示。挂接点通过 \fBap_id\fR 命名。定义下列两种类型的 \fBap_id\fR：逻辑和物理。物理 \fBap_id\fR 基于物理路径名称，而逻辑 \fBap_id\fR 的名称较短且更加用户友好。对于 \fBSCSI\fR 控制器，逻辑 \fBap_id\fR 通常是对应的磁盘控制器号。例如，一个典型的逻辑 \fBap_id\fR 为 \fBc0\fR。 
+.sp
+.LP
+\fBSCSI\fR 设备的命名与控制器的 \fBap_id\fR 相关。因此，如果磁盘设备附加到控制器 \fBc0\fR，其 \fBap_id\fR 可以是： 
+.sp
+.in +2
+.nf
+c0::dsk/c0t0d0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中，\fBdsk/c0t0d0\fR 标识特定的设备。通常，设备标识符源自 \fB/dev\fR 中的设备的对应逻辑链接。例如，\fBSCSI\fR 磁带机的逻辑 \fBap_id\fR 可能为 \fBc0::rmt/0\fR。其中，\fBc0\fR 是 \fBSCSI\fR 控制器的逻辑 \fBap_id\fR，\fBrmt/0\fR 源自 \fB/dev/rmt\fR 中的磁带机的逻辑链接。如果标识符无法从 \fB/dev\fR 中的链接获取，将为其分配唯一的标识符。例如，如果 \fB/dev\fR 中不存在磁带设备链接，可分配 \fBc0::st3\fR 格式的 \fBap_id\fR，其中，\fBst3\fR 是内部生成的唯一标识符。
+.sp
+.LP
+如果启用了支持 Solaris I/O 多路径功能（以前称为 "MPxIO" 或 "Sun StorEdge Traffic Manager [STMS]"）的控制器，该控制器可提供到 \fBscsi_vhci\fR(7D) 多路径设备的路径。如果 \fBscsi_vhci\fR(7D) 支持附加到此类控制器的设备，该控制器的 \fBap_id\fR 可为：
+.sp
+.in +2
+.nf
+c0::0,0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...其中，\fB0,0\fR 唯一标识目标和逻辑单元信息。这些 \fBap_id\fR 的路径的 \fBType\fR（类型）字段表明其是否表示到 \fBscsi_vhci\fR(7D) 多路径设备的路径，以及通过该路径连接到的设备的类型。
+.sp
+.LP
+系统中挂接点的简单列表包含 \fBSCSI\fR 控制器的挂接点，不包含 \fBSCSI\fR 设备的挂接点。在 (\fB-l\fR) 列表选项中使用 \fB-a\fR 标志也可列出 \fBSCSI\fR 设备。例如： 
+.sp
+.in +2
+.nf
+# \fBcfgadm -l\fR
+  Ap_Id             Type        Receptacle     Occupant     Condition
+  c0                scsi-bus    connected      configured   unknown
+  sysctrl0:slot0    cpu/mem     connected      configured   ok
+  sysctrl0:slot1    sbus-upa    connected      configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+除了 \fBSCSI\fR 控制器之外，还列出 \fBSCSI\fR 设备：
+.sp
+.in +2
+.nf
+# \fBcfgadm -al\fR
+
+Ap_Id                Type         Receptacle   Occupant     Condition
+c0                   scsi-bus     connected    configured   unknown
+c0::dsk/c0t14d0      disk         connected    configured   unknown
+c0::dsk/c0t11d0      disk         connected    configured   unknown
+c0::dsk/c0t8d0       disk         connected    configured   unknown
+c0::dsk/c0t0d0       disk         connected    configured   unknown
+c0::rmt/0            tape         connected    configured   unknown
+sysctrl0:slot0       cpu/mem      connected    configured   ok
+sysctrl0:slot1       sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果控制器 \fBc0\fR 启用了 Solaris I/O 多路径功能并且 Solaris I/O 多路径功能支持所连接的磁盘和磁带设备，将输出：
+.sp
+.in +2
+.nf
+# \fBcfgadm -al\fR
+
+Ap_Id               Type         Receptacle   Occupant     Condition
+c0                  scsi-bus     connected    configured   unknown
+c0::11,0            disk-path    connected    configured   unknown
+c0::14,0            disk-path    connected    configured   unknown
+c0::8,0             disk-path    connected    configured   unknown
+c0::0,0             disk-path    connected    configured   unknown
+c0::a.0             tape-path    connected    configured   unknown
+sysctrl0:slot0      cpu/mem      connected    configured   ok
+sysctrl0:slot1      sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关列出挂接点的更多信息，请参见 \fBcfgadm\fR(1M)。\fBSCSI\fR 控制器上的挂接点的插口状态和插卡状态的含义如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty（空）\fR\fR
+.ad
+.sp .6
+.RS 4n
+不适用
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected（断开）\fR\fR
+.ad
+.sp .6
+.RS 4n
+总线停止（总线上的 \fBI/O\fR 活动暂停）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+总线处于活动状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigured（已配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+总线上配置了一个或多个设备 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigured（未配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+总线上未配置任何设备
+.RE
+
+.sp
+.LP
+单个 \fBSCSI\fR 设备的对应状态为： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty（空）\fR\fR
+.ad
+.sp .6
+.RS 4n
+不适用
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected（断开）\fR\fR
+.ad
+.sp .6
+.RS 4n
+设备附加到的总线处于停止状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+设备附加到的总线处于活动状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigured（已配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置了设备或多路径 SCSI 设备的路径 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigured（未配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+未配置设备或多路径 SCSI 设备的路径
+.RE
+
+.SH 选项
+.sp
+.LP
+除了列出 (\fB-l\fR)，\fBcfgadm\fR 还定义了其他几种类型的操作。这些操作包括测试 (\fB-t\fR)、调用配置状态更改 (\fB-c\fR)、调用特定于硬件的函数 (\fB-x\fR) 以及获取配置管理帮助消息 (\fB-h\fR)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+以下通用命令是针对特定于 \fBSCSI\fR 硬件的库定义的： 
+.sp
+对于 \fBSCSI\fR 控制器挂接点，支持以下配置状态更改操作： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unquiesce the \fBSCSI\fR bus.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+总线停止（暂停总线上的 \fBI/O\fR 活动）。
+.sp
+错误使用该命令可导致系统挂起。请参见\fB\fR"说明"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBSCSI\fR 总线上配置新设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消对连接到总线的所有设备的配置。
+.RE
+
+以下通用命令是针对 \fBSCSI\fR 设备以及多路径 SCSI 设备的路径定义的： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置特定设备或多路径 SCSI 设备的特定路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消对特定设备或多路径 SCSI 设备的特定路径的配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果该选项用于 \fBdisconnect\fR 命令，则强制停止 \fBSCSI\fR 总线（如果硬件支持）。
+.sp
+错误使用该命令可导致系统挂起。请参见\fB\fR"说明"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+SCSI 特定帮助可通过将帮助选项与任何 SCSI 挂接点一起使用来获取。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_option\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前没有定义任何硬件专用选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_option\fR\fR
+.ad
+.sp .6
+.RS 4n
+可使用 \fBselect\fR 子选项列出 \fBscsi\fR 类的挂接点。有关其他信息，请参见 \fBcfgadm\fR(1M) 手册页。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+目前没有可用的测试命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+下面的部分命令只适用于 SCSI 控制器，部分命令只适用于 SCSI 设备。 
+.sp
+在下面，\fIcontroller_ap_id\fR 指 SCSI 控制器的 \fBap_id\fR，例如，\fBc0\fR。\fIdevice_ap_id\fR 指 \fBSCSI\fR 设备的 \fBap_id\fR，例如，\fBc0::dsk/c0dt3d0\fR。
+.sp
+定义了以下特定于硬件的函数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert_device\fR \fIcontroller_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+向 SCSI 控制器 \fIcontroller_ap_id\fR 添加新设备。
+.sp
+该命令只用于交互式使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove_device\fR \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除 \fIdevice_ap_id\fR 设备。
+.sp
+该命令只用于交互式使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreplace_device\fR \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除 \fIdevice_ap_id\fR 设备并使用同类设备代替。
+.sp
+该命令只用于交互式使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset_device\fR \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+复位 \fIdevice_ap_id\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset_bus\fR \fIcontroller_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅复位 \fIcontroller_ap_id\fR 的总线，而不复位附加到该总线的任何设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset_all\fR \fIcontroller_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+复位 \fIcontroller_ap_id\fR 的总线以及该总线上的所有设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocator\fR [=\fBon\fR|\fBoff\fR] \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果平台提供硬盘定位器 \fBLED\fR 指示灯，设置或获取该指示灯。如果未设置 [on|off] 子选项，则输出硬盘定位器的状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled\fR[=\fBLED\fR,\fBmode\fR=\fBon\fR|\fBoff\fR|\fBblink\fR] \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果未设置任何子参数，则该函数输出当前 \fBLED\fR 指示灯设置的列表。如果设置了子参数，则该函数设置插槽特定的 \fBLED\fR 指示灯的模式。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR配置磁盘
+.sp
+.LP
+以下命令配置附加到 \fBc0\fR 控制器的磁盘： 
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c configure c0::dsk/c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR取消配置磁盘
+.sp
+.LP
+以下命令取消对附加到 \fBc0\fR 控制器的磁盘的配置。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c unconfigure c0::dsk/c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR添加新设备
+.sp
+.LP
+以下命令向 \fBc0\fR 控制器添加新设备：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -x insert_device c0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应： 
+
+.sp
+.in +2
+.nf
+Adding device to SCSI HBA: /devices/sbus@1f,0/SUNW,fas@e,8800000
+This operation will suspend activity on SCSI bus c0
+Continue (yes/no)? 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+输入： 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应： 
+
+.sp
+.in +2
+.nf
+SCSI bus quiesced successfully. 
+It is now safe to proceed with hotplug operation.
+Enter y if operation is complete or n to abort (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+输入： 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR替换设备
+.sp
+.LP
+以下命令替换附加到 \fBc0\fR 控制器的设备：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm\fR \fB-x\fR \fBreplace_device c0::dsk/c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应： 
+
+.sp
+.in +2
+.nf
+Replacing SCSI device: /devices/sbus@1f,0/SUNW,fas@e,8800000/sd@3,0
+This operation will suspend activity on SCSI bus: c0
+Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+输入： 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应： 
+
+.sp
+.in +2
+.nf
+SCSI bus quiesced successfully. 
+It is now safe to proceed with hotplug operation.
+Enter y if operation is complete or n to abort (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+输入： 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR取消配置磁盘时遇到已挂载的文件系统
+.sp
+.LP
+以下命令表明在取消配置磁盘时遇到已挂载的文件系统：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c unconfigure c1::dsk/c1t0d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应：
+
+.sp
+.in +2
+.nf
+cfgadm: Component system is busy, try again: failed to offline:
+/devices/pci@1f,4000/scsi@3,1/sd@1,0
+     Resource              Information
+------------------  --------------------------
+/dev/dsk/c1t0d0s0   mounted filesystem "/mnt"
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR显示磁盘定位器的值
+.sp
+.LP
+以下命令显示磁盘定位器的值。该示例特定于 \fBSPARC\fR Enterprise Server 系列：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -x locator c0::dsk/c0t6d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应：
+
+.sp
+.in +2
+.nf
+Disk                    Led
+c0t6d0                  locator=on
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR设置磁盘定位器的值
+.sp
+.LP
+以下命令设置磁盘定位器的值。该示例特定于 \fBSPARC\fR Enterprise Server 系列：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -x locator=off c0::dsk/c0t6d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统不输出任何信息作为响应。
+
+.LP
+\fB示例 8 \fR配置多路径 SCSI 磁盘的路径
+.sp
+.LP
+以下命令配置通过 \fBc0\fR 控制器连接的路径：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c configure c0::2,0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR取消对多路径 SCSI 磁盘的路径的配置
+.sp
+.LP
+以下命令取消对通过 \fBc0\fR 控制器连接的路径的配置：
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c unconfigure c0::2,0\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/scsi.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+适用于通用 \fBSCSI\fR 热插拔的特定于硬件的库
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/platform/SPARC-Enterprise/lib/cfgadm/scsi.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+适用于通用 \fBSCSI\fR 热插拔的特定于平台的库
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBluxadm\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBlibcfgadm\fR(3LIB)、\fBattributes\fR(5)、\fBscsi_vhci\fR(7D)
+.SH 附注
+.sp
+.LP
+对于控制包含关键分区（如 \fBroot\fR (\fB/\fR)、\fB/usr\fR、\fBswap\fR 或 \fB/var\fR）的磁盘的控制器，不支持 \fBdisconnect\fR（停止）操作。不应在此类控制器上尝试执行 \fBdisconnect\fR 操作。不正确的用法可能导致系统挂起且需要重新引导。
+.sp
+.LP
+如果控制器处于断开（停止）状态，则可能导致系统死锁。使用 \fBdisconnect\fR 操作时需谨慎。在完成 \fBDR\fR 操作所需的最短时间内，控制器应保持断开状态。\fBdisconnect\fR 命令只用于在系统运行时替换 \fBSCSI\fR 电缆。不应出于其他任何目的使用该命令。解决死锁（如果发生）的唯一方法是重新引导系统。
+.sp
+.LP
+并非所有 \fBSCSI\fR 控制器都支持热插拔操作。
+.SH 警告
+.sp
+.LP
+某些 \fBSCSI\fR 设备上的连接器不遵循 \fBSCSI\fR 热插拔规范。在此类设备上执行热插拔操作可能损坏 \fBSCSI\fR 总线上的硬件。有关其他信息，请参见硬件手册。

@@ -1,0 +1,617 @@
+'\" te
+.\" 版权所有 (c) 2007，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH kbd 1 "2010 年 10 月 8 日" "SunOS 5.11" "用户命令"
+.SH 名称
+kbd \- 操控键盘的状态、显示键盘的类型或更改缺省的键盘异常中止序列影响
+.SH 用法概要
+.LP
+.nf
+\fBkbd\fR [\fB-r\fR] [\fB-t\fR ] [\fB-l\fR] [\fB-a\fR enable | disable | alternate] 
+     [\fB-c\fR on | off] [\fB-d\fR \fIkeyboard device\fR] 
+     [\fB-D\fR \fIautorepeat delay\fR] [\fB-R\fR \fIautorepeat rate\fR]
+.fi
+
+.LP
+.nf
+\fBkbd\fR [\fB-i\fR] [\fB-d\fR \fIkeyboard device\fR]
+.fi
+
+.LP
+.nf
+\fBkbd\fR \fB-s\fR [\fIlanguage\fR]
+.fi
+
+.LP
+.nf
+\fBkbd\fR \fB-b\fR [\fBkeyboard\fR | \fBconsole\fR] \fIfrequency\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBkbd\fR 实用程序操控键盘的状态、显示键盘类型或允许更改缺省的键盘异常中止序列影响。异常中止序列也适用于串口控制台设备。\fBkbd\fR 实用程序将 \fB/dev/kbd\fR 设置为缺省键盘设备。
+.SH 扩展描述
+.sp
+.LP
+\fB-i\fR 选项从键盘配置服务 \fBsvc:/system/keymap:default\fR 读取并处理 \fBkeyclick\fR 和 \fBkeyboard\fR 异常中止设置的缺省值。只有支持按键发音器的键盘可以响应 \fB-c\fR 选项。要缺省打开按键音，请在 \fBkeymap\fR 服务中将 \fBkeymap/keyclick\fR 属性的值添加或更改为：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyclick=true
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+接下来，运行命令 \fBkbd\fR \fB-i\fR 来更改设置。\fBkeymap/keyclick\fR 属性的有效设置为 \fBtrue\fR 或 \fBfalse\fR。所有其他值均会被忽略。如果在 \fBkeymap\fR 服务中未指定 \fBkeymap/keyclick\fR 属性，该设置没有变化。
+.sp
+.LP
+只有超级用户可以使用 \fB-a\fR 选项更改键盘异常中止序列影响。通常，该序列在 \fBSPARC\fR 系统的键盘上为 Stop-A 或 L1-A 和 Shift-Pause，在 x86 系统上为 F1-A 和 Shift-Pause，在大多数系统的串口控制台输入设备上为 BREAK。
+.sp
+.LP
+无法将由错误的电子信号导致的 \fBBREAK\fR 情况与由远程 \fBDCE\fR 故意发送的该指令进行区分。作为修正措施，可以将 \fB-a\fR 选项与"替代中断"结合使用来切换中断解释。由于存在序列解释错误的风险，在施行"替代中断"序列时，不应通过串口控制台端口运行二进制协议（如 \fBSLIP\fR 和其他协议）。 
+.sp
+.LP
+尽管 PPP 是二进制协议，但它具有避免使用会干扰串行操作的字符的能力。缺省的"替代中断"序列为 CTRL-m \fB~\fR CTRL-b 或十六进制的 \fB0D 7E 02\fR。在 PPP 中，这可以通过在 ACCM 中设置 \fB0x00000004\fR 或 \fB0x00002000\fR 来避免。这分别强制实施 CTRL-b 和 CTRL-m 字符的转义。
+.sp
+.LP
+要在 Solaris PPP 4.0 中执行此操作，应将以下内容：
+.sp
+.in +2
+.nf
+asyncmap 0x00002000
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+添加到 \fB/etc/ppp/options\fR 文件或用于连接的任何其他配置文件。请参见 \fBpppd\fR(1M)。
+.sp
+.LP
+SLIP 没有类似功能，使用"替代中断"序列时，不得使用 SLIP。 
+.sp
+.LP
+"替代中断"序列对键盘异常中止没有影响。有关"替代中断"序列的更多信息，请参见 \fBzs\fR(7D)、\fBse\fR(7D) 和 \fBasy\fR(7D)。 
+.sp
+.LP
+在许多系统上，键盘异常中止序列的缺省影响是暂停操作系统并进入调试器或监视器。某些系统具有带有一个\fB安全\fR位置的键开关。在这些系统上，将键开关设置到该\fB安全\fR位置可以覆盖该命令的任何软件缺省设置。
+.sp
+.LP
+要永久更改键盘异常中止序列的软件缺省影响，请首先在 \fBkeymap\fR 服务中将 \fBkeymap/keyboard_abort\fR 属性添加或更改为：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyboard_abort=disable
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+接下来，运行命令 \fBkbd\fR \fB-i\fR 来更改设置。有效设置为 \fBenable\fR、\fBdisable\fR 和 \fBalternate\fR；所有其他值均被忽略。如果在 \fBkeymap\fR 服务中未指定该变量，则该设置没有变化。
+.sp
+.LP
+要将异常中止序列设置为硬件 \fBBREAK\fR，应在 \fBkeymap\fR 服务中将 \fBkeymap/keyboard_abort\fR 的值设置为：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyboard_abort=enable
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要更改当前设置，请运行命令 \fBkbd\fR \fB-i\fR。要将异常中止序列设置为"替代中断"字符序列，请首先在 \fBkeymap\fR 服务中将 \fBkeyboard_abort\fR 属性的当前值设置为：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyboard_abort=alternate
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+接下来，运行命令 \fBkbd\fR \fB-i\fR 来更改设置。当施行"替代中断"序列时，只有串口控制台设备会受影响。
+.sp
+.LP
+要设置缺省的自动重复延迟，应在 \fBkeymap\fR 服务中将 \fBrepeat_delay\fR 属性设置为所需值，以毫秒 (\fBms\fR) 为单位。为避免因印刷错误而导致键盘无法使用，将拒绝低于 \fBKIOCRPTDELAY_MIN\fR（在 \fB/usr/include/sys/kbio.h\fR 中定义的）的延迟值并返回 \fBEINVAL\fR：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/repeate_delay=500
+$ svcadm refresh keymap
+ 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要设置缺省的自动重复频率，请在 \fBkeymap\fR 服务中将 \fBrepeat_rate\fR 属性设置为所需值，以毫秒为单位。负值和零值重复频率将被拒绝并返回 \fBEINVAL\fR。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/repeate_rate=40
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要更改 \fIdelay\fR 和 \fIrate\fR 的当前设置，请运行命令 \fBkbd\fR \fB-i\fR。在施行自动重复延迟和/或自动重复频率时，只有命令行模式会受影响。
+.sp
+.LP
+要设置缺省语言，请在 \fBkeymap\fR 服务中将 \fBkeymap/layout\fR 属性设置为所需语言。可以通过运行 \fBkbd -s\fR 查明内核中支持的这些语言。其他值均会被忽略。例如，以下示例将键盘布局设置为西班牙语：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/layout=Spanish
+$ svcadm refresh keymap
+ 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+接下来，运行 \fBkbd\fR \fB-i\fR 以更改该设置。当 Solaris 重新引导时，会将西班牙语按键表加载到内核中。这些布局对 \fBusb\fR 和 \fBps/2\fR 键盘有效。 
+.sp
+.LP
+要设置缺省的键盘蜂鸣器频率，请在 \fBkeymap\fR 服务中将 \fBkeymap/kbd_beeper_freq\fR 属性设置为所需值，以 HZ 为单位。该值应该介于 \fB0\fR 和 \fB 32767\fR 之间（包含两者）。否则，它将被拒绝并返回 \fBEINVAL\fR：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/kbd_beeper_freq=2000
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要设置缺省的控制台蜂鸣器频率，请在 \fBkeymap\fR 服务中将 \fBkeymap/console_beeper_freq\fR 属性设置为所需值，以 HZ 为单位。该值应该介于 \fB0\fR 和 \fB 32767\fR 之间（包含两者）。否则，它将被拒绝并返回 \fBEINVAL\fR：
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/console_beeper_freq=900
+$ svcadm refresh keymap
+ 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要更改键盘蜂鸣器频率和控制台蜂鸣器频率的当前设置，请运行 \fBkbd\fR \fB-i\fR。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fBenable\fR | \fBdisable \fR | \fBalternate\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用、禁用或替代键盘异常中止序列影响。缺省情况下，在大多数系统上，键盘异常中止序列会暂停操作系统。通常，该序列在 \fBSPARC\fR 系统的键盘上为 Stop-A 或 L1-A 和 Shift-Pause，在 x86 系统上为 F1-A 和 Shift-Pause，在串口控制台设备上为 BREAK。 
+.sp
+可以使用该选项更改缺省的键盘行为。只有超级用户可以使用 \fB-a\fR 选项。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR\fR
+.ad
+.RS 13n
+.rt  
+启用键盘异常中止序列的缺省影响（暂停操作系统并进入调试器或监视器）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR\fR
+.ad
+.RS 13n
+.rt  
+禁用缺省/替代影响并忽略键盘异常中止序列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalternate\fR\fR
+.ad
+.RS 13n
+.rt  
+在控制台上接收到"替代中断"字符序列时，启用键盘异常中止序列的替代影响（暂停操作系统并进入调试器或监视器）。"替代中断"序列是由驱动程序 \fBzs\fR(7D)、\fBse\fR(7D)、\fBasy\fR(7D) 定义的。由于存在序列解释错误的风险，在使用该值时，二进制协议无法通过串口控制台端口运行。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fBkeyboard\fR | \fBconsole \fR\fR
+.ad
+.sp .6
+.RS 4n
+设置键盘或控制台的蜂鸣器频率。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyboard\fR\fR
+.ad
+.RS 12n
+.rt  
+将键盘蜂鸣器频率设置为操作数，以 HZ 为单位。请参见\fB操作数\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconsole\fR\fR
+.ad
+.RS 12n
+.rt  
+将控制台蜂鸣器频率设置为操作数，以 HZ 为单位。请参见\fB操作数\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+打开或关闭键盘按键音。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBon\fR\fR
+.ad
+.RS 7n
+.rt  
+启用按键音
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoff\fR\fR
+.ad
+.RS 7n
+.rt  
+禁用按键音
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIkeyboard device\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要进行设置的键盘设备。缺省设置为 \fB/dev/kbd\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIautorepeat delay\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置自动重复延迟，以毫秒为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过 keymap 服务设置键盘属性。除了 -d keyboard device 之外，该选项不能与任何其他选项一起使用。-i 选项指示键盘命令从 \fBkeymap\fR 服务中的键盘属性读取和处理 \fBkeyclick\fR 和 \fBkeyboard\fR 异常中止缺省值。\fB-i\fR 选项只能由具有 "Device Security"（设备安全）权限配置文件的用户或角色使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+返回正在使用的键盘布局代码，以及正在使用的自动重复延迟和自动重复频率。
+.sp
+如果与 \fB-R\fR 或 \fB-D\fR 选项一起使用，该选项将返回更改之前的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+将键盘重置为刚打开电源时的设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIautorepeat rate\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置自动重复速率，以毫秒为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-s\fR \fB[\fR\fI language\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+将键盘布局设置到内核。
+.sp
+如果指定了 \fIlanguage\fR，则会将布局设置为 \fIlanguage\fR。如果未指定 \fIlanguage\fR，则会显示可用的布局列表，用以提示用户指定 \fIlanguage\fR。请参见 \fBOPERANDS\fR（操作数）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+返回正在使用的键盘的类型。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fBfrequency\fR
+.ad
+.RS 13n
+.rt  
+所指定的要在内核中设置的频率值。该值的接收方是由 \fB-b\fR 选项指定的。该值应该介于 0 和 32767 之间，否则将会被拒绝并返回 \fBEINVAL\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlanguage\fR
+.ad
+.RS 13n
+.rt  
+所指定的要在内核中设置的语言。如果未发现语言，则会列出受支持的语言以供选择。它仅适用于 \fB-s\fR 选项。 
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR显示键盘类型
+.sp
+.LP
+以下示例显示了键盘类型：
+
+.sp
+.in +2
+.nf
+example% kbd -t
+Type 4 Sun keyboard
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR设置键盘缺省值
+.sp
+.LP
+以下示例将键盘缺省值设置为 keymap 服务中指定的值：
+
+.sp
+.in +2
+.nf
+example# kbd -i
+example#
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR显示信息
+.sp
+.LP
+以下示例显示了键盘类型和布局代码。它还显示了自动重复延迟和自动重复频率设置。
+
+.sp
+.in +2
+.nf
+example% kbd -l
+type=4
+layout=43 (0x2b)
+delay(ms)=500
+rate(ms)=33
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR设置键盘自动重复延迟
+.sp
+.LP
+以下示例设置键盘自动重复延迟：
+
+.sp
+.in +2
+.nf
+example% kbd -D 300
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR设置键盘自动重复频率
+.sp
+.LP
+以下示例设置键盘自动重复频率：
+
+.sp
+.in +2
+.nf
+example% kbd -R 50
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR选择和设置键盘语言
+.sp
+.LP
+以下示例从指定的语言列表中选择并设置键盘语言： 
+
+.sp
+.in +2
+.nf
+example% kbd -s
+1. Albanian                      16. Malta_UK
+2. Belarusian                    17. Malta_US
+3. Belgian                       18. Norwegian
+4. Bulgarian                     19. Portuguese
+5. Croatian                      20. Russian
+6. Danish                        21. Serbia-And-Montenegro
+7. Dutch                         22. Slove
+\&......
+
+To select the keyboard layout, enter a number [default n]: 
+
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下示例设置指定的键盘语言： 
+
+.sp
+.in +2
+.nf
+example% kbd -s Dutch
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR设置键盘蜂鸣器频率
+.sp
+.LP
+以下示例设置键盘蜂鸣器频率：
+
+.sp
+.in +2
+.nf
+example% kbd -b keyboard 1000
+example%
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/kbd\fR\fR
+.ad
+.RS 12n
+.rt  
+键盘设备文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBkmdb\fR(1)、\fBloadkeys\fR(1)、\fBsvcs\fR(1)、\fBinetd\fR(1M)、\fBinetadm\fR(1M)、\fBsvcadm\fR(1M)、\fBpppd\fR(1M)、\fBkeytables\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBkb\fR(7M)、\fBzs\fR(7D)、\fBse\fR(7D)、\fBasy\fR(7D)、\fBvirtualkm\fR(7D)
+.SH 附注
+.sp
+.LP
+某些服务器系统具有带有一个\fB安全\fR键位置的键开关，系统软件可以读取该键位置。该键位置覆盖了键盘异常中止序列影响的正常缺省值，并更改缺省值以禁用该影响。在这些系统上，当键开关位于\fB安全\fR位置时，键盘异常中止序列影响不能被可使用 \fBkbd\fR 实用程序设置的软件缺省值覆盖。
+.sp
+.LP
+目前，没有方法可用来确定键盘单击设置的状态。
+.sp
+.LP
+\fBkdb\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/system/keymap:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对该服务的管理操作（如启用、禁用或请求重新启动）。启动和重新启动该服务的职责已委托给 \fBinetd\fR(1M)。使用 \fBinetadm\fR(1M) 可以为该服务进行配置更改以及查看该服务的配置信息。可以使用 \fBsvcs\fR(1) 命令查询服务状态。

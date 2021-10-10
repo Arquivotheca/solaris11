@@ -1,0 +1,136 @@
+'\" te
+.\"  Copyright 1989 AT&T Copyright (c) 1994, Sun Microsystems, Inc. All Rights Reserved
+.TH mkmsgs 1 "1994 年 7 月 26 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+mkmsgs \- gettxt でアクセスできるメッセージファイルの作成
+.SH 形式
+.LP
+.nf
+\fBmkmsgs\fR [\fB-o\fR] [\fB-i\fR \fIlocale\fR] \fIinputstrings\fR \fImsgfile\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmkmsgs\fR ユーティリティーは、テキスト検索ツール (\fBgettxt\fR(1)、\fBsrchtxt\fR(1)、\fBexstr\fR(1)、および \fBgettxt\fR(3C) を参照) を使用してアクセスできる、テキスト文字列のファイルを作成するために使用されます。入力の対象は、特定のロケール (\fBsetlocale\fR(3C) を参照) 用のテキスト文字列のファイルです。出力先は、\fBgettxt\fR(1) と \fBgettxt\fR(3C) の両方で検索できる形式のテキスト文字列のファイルです。\fB-i\fR オプションを使用すると、作成されたファイルを \fB/usr/lib/\fIlocale\fR/\fR\fIlocale\fR/\fBLC_MESSAGES\fR ディレクトリにインストールできます (\fBlocale\fR は、テキスト文字列が記述されている言語に対応する)。
+.sp
+.LP
+\fIinputstrings\fR 引数には、もとになるテキスト文字列を 含んだファイル名を指定します。\fImsgfile\fR は、\fBmkmsgs\fR が、\fBgettxt\fR(1) や \fBgettxt\fR(3C) で読み取り可能な形式の文字列を書き込む出力ファイルの名前です。この \fImsgfile\fR 名は、長さが 14 文字以内であること、\e\fB0\fR (NULL) を含んでいないこと、スラッシュ\|(\fB/\fR) またはコロン (\fB:\fR) に該当する \fBASCII\fR コードを含んでいないことが必要です。
+.sp
+.LP
+入力ファイルの内容は、特定のロケールに対応したテキスト文字列がいくつか集まったものです。文字列と文字列とは復帰改行文字で区切られます。表示不可能な文字は、エスケープシーケンスとしてアルファベットで表す必要があります。メッセージは \fIinputstrings\fR から順番に読み込まれ、変換され、\fImsgfile\fR に書き込まれます。空のメッセージを \fImsgfile\fR 中に生成する場合は、\fIinputstrings\fR 中の適切な位置に空の行を入れておいてください。
+.sp
+.LP
+文字列の内容を変更する場合は、単に \fIinputstrings\fR ファイルを編集してください。新たな文字列は、ファイルの最後尾にだけ追加できます。追加を行なったら、新たに \fImsgfile\fR を作成して正しい場所に登録しておく必要があります。この手順を誤ると、検索機能使用時に誤った文字列が検索されて、ソフトウェアの互換性が損なわれます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fR
+.ad
+.RS 14n
+.rt  
+\fImsgfile\fR がすでに存在していれば上書きします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fI locale\fR \fR
+.ad
+.RS 14n
+.rt  
+\fImsgfile\fR を \fB/usr/lib/\fIlocale\fR/\fR\fIlocale\fR/\fBLC_MESSAGES\fR ディレクトリにインストールします。このディレクトリ中でファイルを生成したり上書きしたりできるのは、スーパーユーザー、およびグループ \fBbin\fR のメンバーだけです。\fB/usr/lib/\fIlocale\fR\fR の下のディレクトリは、存在していなければ生成されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBmkmsgs\fR コマンドの使用例
+.sp
+.LP
+\fBC.str\fR という名の入力メッセージソースファイルの例です。
+
+.sp
+.in +2
+.nf
+File %s:\et cannot be opened\en
+%s: Bad directory\en
+	.
+	.
+	.
+write error\en
+	.
+	.
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRファイルにテキスト文字列を作成するために \fBC.str\fR から入力文字列を使用する例
+.sp
+.LP
+次のコマンドを実行すると、 \fBC.str\fR から文字列が読み取られ、適切な形式の文字列に変換され、現在のディレクトリ中の \fB\fR\fBUX\fR というファイルに書き込まれます。
+
+.sp
+.in +2
+.nf
+example% mkmsgs C.str UX
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRファイルにテキスト文字列を作成するために \fBFR.str\fR から入力文字列を使用する例
+.sp
+.LP
+次のコマンドは、\fBFR.str\fR からテキスト文字列を読み取り、適切な形式に変換し、/usr/lib/locale/fr/\fBLC_MESSAGES\fR というディレクトリ中の \fBUX\fR というファイルに書き込みます。 
+
+.sp
+.in +2
+.nf
+example% mkmsgs -i fr FR.str UX
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これらのテキスト文字列は、環境変数 \fBLC_MESSAGES\fR=fr が設定されていて、「機能説明」節の冒頭に一覧表示されているテキスト検索ツールのいずれかが呼び出された場合にアクセスされます。\fB\fR
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/locale/\fR\fBlocale\fR\fB/\fR\fBLC_MESSAGES\fR\fB/*  \fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmkmsgs\fR が生成するメッセージファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) lw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+\fB属性タイプ\fR\fB属性値\fR
+使用条件text/locale
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBexstr\fR(1), \fBgettxt\fR(1), \fBsrchtxt\fR(1), \fBgettxt\fR(3C), \fBsetlocale\fR(3C), \fBattributes\fR(5)

@@ -1,0 +1,262 @@
+'\" te
+.\" Copyright (c) 1999 Sun Microsystems, Inc. All Rights Reserved.
+.TH cfgadm_ac 1M "1999 年 9 月 29 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_ac \- EXX00 メモリーシステムの管理
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-c\fR configure] [\fB-f\fR] 
+     [\fB-o\fR disable-at-boot | enable-at-boot ] ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-c\fR unconfigure] 
+     [\fB-o\fR disable-at-bootp | enable-at-boot ] ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] 
+     [\fB-o\fR quick | normal | extended, [max_errors=\fI#\fR] ] \fB-t\fR ac\fI#\fR:bank\fI#\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR relocate-test ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-l\fR] \fB-o\fR disable-at-boot | enable-at-boot ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBac\fR ハードウェア固有ライブラリ \fB/usr/platform/sun4u/lib/cfgadm/cfgadm_ac.so.1\fR は、\fBcfgadm_sysctrl\fR(1M) を使用する \fBCPUU\fR/メモリーボードの Dynamic Reconfiguration (DR: 動的再構成) の一部として、\fBE6X00\fR、\fBE5X00\fR、\fBE4X00\fR、\fBE3X00\fR システムのメモリーバンクの構成と構成解除に関連する機能を提供します。  
+.sp
+.LP
+メモリーバンクは、デバイスツリー上の接続点として表されます。\fBCPU\fR/メモリーボードそれぞれに 2 つの接続点が用意されます。 1 つがボード上の各バンク (\fBバンク 0\fR と\fBバンク 1\fR) 用になります。 バンクが空いている場合は、受容体の状態は empty (空き) になります。バンクが使用されている場合は、受容体の状態は connected (接続) になります。 受容体の状態が disconnected (接続解除) になることはありません。接続されているメモリーバンクの占有状態は、構成することも構成解除することもできます。占有状態が構成されている場合は、メモリーは Solaris によって使用されています。構成解除されている場合は、使用されていません。 
+.SH オプション
+.sp
+.LP
+コマンドオプションの詳細については、\fBcfgadm\fR(1M) を参照してください。 
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR configure | unconfigure\fR
+.ad
+.sp .6
+.RS 4n
+占有状態を変更します。引数が \fBconfigure\fR の場合は、メモリーが初期化され、Solaris のメモリープールに追加します。引数が \fBunconfigure\fR の場合は、Solaris によって使用されているメモリーを切り離します。\fBCPU\fR/メモリーボードをシステムから取り外すには、2 つのメモリーバンクを構成解除する必要があります。  
+.sp
+ボード上のメモリーが \fBdisabled-at-boot\fR (\fBinfo\fR フィールド参照) に指定されていて、\fB-f\fR (強制) オプションやブート許可フラグ (\fB-o\fR \fBenable-at-boot\fR) がいずれも指定されていない場合は、\fBcfgadm\fR コマンドは、構成操作を許可しません。\fB\fR構成操作には、初期化する必要のあるメモリーのサイズに応じて、少し時間がかかります。  
+.sp
+システムに十分な使用可能メモリーがない (\fBVM viability\fR エラー)、または構成解除されるべきバンクに切り離せないメモリーがある (\fBnon-relocatable pages\fR エラー) 場合、\fBcfgadm\fR コマンドは、\fB構成解除\fR操作を許可しません。再配置不可のページの現状は、\fBinfo\fR フィールドの一覧にある \fBpermanent\fR によって表されます。Solaris が使用しているメモリの取り外しを行うと、システム負荷や補助記憶装置のページングの大きさによって、かなり時間がかかります。\fB構成解除\fR操作は、いつでも中止することができ、シグナルによるコマンドの中断によって、メモリーは完全に構成されている状態に戻ります。もし、タイムアウトまでの期間内に削除できるメモリーがない場合は、\fB構成解除\fR操作は、自動的に取り消されます。デフォルトのタイムアウト期間は \fB60\fR 秒ですが、\fB-o\fR \fBtimeout=\fR\fI#\fR オプションで変更することもできます。この数値を \fB0\fR にすると、タイムアウトは不許可になります。  
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+強制オプション。このオプションは、非揮発性の変数 \fBdisabled-memory-list\fR で、disabled at boot (ブート不可) に指定された、構成されているメモリーバンクのブロックを無効にしたい場合に使用してください。\fB『特記事項: Sun Enterprise 6x00、5x00、4x00、3x00 システム』\fRのマニュアルも参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+リストオプション。このオプションについての説明は、\fBcfgadm\fR(1M) を参照してください。
+.sp
+type フィールドは、常に \fImemory\fR です。 
+.sp
+\fIinfo\fR フィールドには、以下に示すような空のメモリーバンクについての情報が保持されます。 
+.sp
+.in +2
+.nf
+slot# empty
+.fi
+.in -2
+.sp
+
+slot# は、CPU/メモリーボードが挿入されているシステムスロットを示しています。たとえば、これがスロット 11 である場合、cfgadm が関連付けられたボードを操作するために使用する接続点は、sysctrl0:slot11 になります。info フィールドには、次に示すような接続されているバンクについての情報が保持されます。
+.sp
+.in +2
+.nf
+slot# sizeMb|sizeGb [(sizeMb|sizeGb used)] base 0x### 
+      [interleaved #-way] [disabled at boot] [permanent]
+.fi
+.in -2
+.sp
+
+バンクのサイズは、Mb か Gb か適切な単位で与えられます。メモリーがまだ使い切られていない場合、使用サイズが表示されます。物理ベースアドレスは、16 進数で与えられます。メモリーバンクが他のバンクによってインタリーブされている場合は、インタリーブファクター(因子) が出力されます。ボード上のメモリーが、非揮発性の変数 \fBdisabled-memory-list\fR を使ってブート不可になっている場合は、そのことが表示されます。バンクに切り離せないメモリーがあると、固定 (permanent) として出力されます。  
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR disable-at-boot | enable-at-boot\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、非揮発性の disabled-memory-list 変数を変更することを許可します。これらのオプションは、コマンド要求がない場合は、\fB-c\fR オプションの発行や、明白または暗示的なリスティングオプション -l と結合して、使用することができます。使用不可メモリーの一覧にあるボード上に構成されているメモリーブロックを無効にするには、 \fBconfigure\fR コマンドを \fB-o\fR \fBenable-at-boot\fR オプションで使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR extended | normal | quick\fR
+.ad
+.sp .6
+.RS 4n
+テストレベルを指定するには、\fB-t\fR オプションを使用してください。
+.sp
+テストレベル \fBnormal\fR では、各メモリーセルに \fB0\fR と \fB1\fR のいずれも格納できることを確認して、さらにすべてのセルが個別にアドレス可能であるかどうか検査します。テストレベル \fBquick\fR では、すべてのメモリーに \fB0\fR と \fB1\fR を書き込むテストだけを行うため、アドレス線の障害を発見することはできません。\fBextended\fR テストでは、近接したセル同士の干渉の問題をテストするパターンを使用します。デフォルトのテストレベルは、\fBnormal\fR です。\fB-t\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR max_errors=\fI#\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-t\fR オプションと共に使用して、許可するエラーの最大数を指定します。このオプションを指定しなかった場合は、デフォルト値の \fB32\fR が適用されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR timeout=\fI#\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB構成解除\fRコマンドと共に使用して、自動取り消しによるタイムアウトを設定します。デフォルト値は \fB60\fR で、単位は秒です。数値が \fB0\fR の場合は、タイムアウトしません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成されていないメモリーのバンクをテストします。\fB-o\fR \fBquick\fR | \fBnormal\fR | \fBextended\fR オプションでテストレベルを指定してください。
+.sp
+メモリーバンクテストが実行できた場合は、\fBcfgadm\fR コマンドはステータス \fB0\fR (成功) で終了します。\fB\fRテストの結果は、接続点のためという条件で利用可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細表示オプションです。\fB-t\fR オプションと組み合わせて使用することにより、テストの進行状況と結果を詳細に表示できます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR relocate-test\fR
+.ad
+.sp .6
+.RS 4n
+指定されたメモリーバンクで使用されているメモリーの全ページに対し、構成解除コマンドで行われるように、再配置を試みます。この操作の成功は、バンクが構成解除できるかどうかを保証しません。この操作の失敗は、構成解除できなかったことを意味します。このオプションの用途は、テストのみに限定されます。 
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIac#\fR:\fIbank#\fR\fR
+.ad
+.RS 13n
+.rt  
+メモリーバンクの接続点は、アドレスコントローラー (\fIac#\fR) ドライバ (\fBac\fR) のインスタンスによって作成されます。\fBac\fR ドライバの 1 つのインスタンスは、各システムボードによって作成されますが、\fBCPU\fR/メモリーボードに関連付けられたインスタンスだけは、バンク 0 と バンク 1 の 2 つの接続点を作成します。  	
+.sp
+ このフォームは、\fBcfgadm\fR(1M) によって与えられた論理 \fBap_id\fR 指定と一致します。これに対応する物理的な \fBap_id\fR は、次項の【\fBファイル\fR】に記載してあります。 
+.sp
+\fBac\fR ドライバインスタンスの番号付けは、対応するボードのスロット番号とは関係はありません。完全な物理接続点の識別子には、\fBfhc@\fR に続く、スロット番号の 2 倍を 16 進数で表したスロット番号が入ります。 
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB/devices/fhc@*,f8800000/ac@0,1000000:bank?\fR
+.ad
+.sp .6
+.RS 4n
+接続点 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/platform/sun4u/lib/cfgadm/cfgadm_ac.so.1\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェア固有ライブラリファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library/platform
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBcfgadm_sysctrl\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBattributes\fR(5)
+.sp
+.LP
+\fB『Sun Enterprise 6x00、5x00、4x00、3x00 システム Dynamic Reconfiguration ユーザーマニュアル』\fR
+.sp
+.LP
+\fB『特記事項: Sun Enterprise 6x00、5x00、4x00、3x00 システム』\fR
+.SH 注意事項
+.sp
+.LP
+EXX00 システムの CPU/メモリーボードの動的再構成について、更に詳しい情報が必要な場合は、\fB『Sun Enterprise 6x00、5x00、4x00、3x00 システム Dynamic Reconfiguration ユーザーマニュアル』\fRを参照してください。 

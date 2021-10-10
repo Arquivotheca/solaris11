@@ -1,0 +1,277 @@
+'\" te
+.\"  Copyright (C) 2000 Sun Microsystems Inc.  All Rights Reserved.
+.TH iprb 7D "17 November 2000" "SunOS 5.11" "Devices"
+.SH NAME
+iprb \- Intel 82557, 82558, 82559-controlled network interface controllers 
+.SH SYNOPSIS
+.LP
+.nf
+\fB/dev/iprb\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBiprb\fR Ethernet driver is a multi-threaded, loadable, clonable, \fBSTREAMS\fR hardware driver supporting the connectionless Data Link Provider Interface, \fBdlpi\fR(7P), over Intel D100 82557, 82558, and 82559 controllers. Multiple  82557, 82558, and 82559 controllers installed within the system are supported by the driver. The \fBiprb\fR driver provides basic support for the 82557, 82558, and 82559 hardware. Functions include chip initialization, frame transmit and receive, multicast support, and error recovery and reporting.
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The cloning, character-special device \fB/dev/iprb\fR is used to access all 82557, 82558, and 82559 devices installed within the system.
+.SS "iprb and DLPI"
+.sp
+.LP
+The \fBiprb\fR driver is dependent on \fB/kernel/misc/gld\fR, a loadable kernel module that provides the \fBiprb\fR driver with the \fBDLPI\fR and \fBSTREAMS\fR functionality required of a \fBLAN\fR driver.  See \fBgld\fR(7D) for more details on the primitives supported by the driver.
+.sp
+.LP
+The values returned by the driver in the \fBDL_INFO_ACK\fR primitive in response to the \fBDL_INFO_REQ\fR from the user are as follows:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum SDU is \fB1500\fR (\fBETHERMTU\fR).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum SDU is \fB0\fR. The driver will pad to the mandatory 60-octet minimum packet size.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBdlsap\fR address length is \fB8\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+MAC type is \fBDL_ETHER.\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBsap\fR length value is \fB\(mi2\fR, meaning the physical address component is followed immediately by a 2-byte \fBsap\fR component within the \fBDLSAP\fR address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Broadcast address value is Ethernet/IEEE broadcast address (\fBFF:FF:FF:FF:FF:FF\fR)\fB\&.\fR
+.RE
+.SH KNOWN PROBLEMS AND LIMITATIONS
+.sp
+.LP
+x86 based systems with the Intel EtherExpress PRO/100B or the Intel EtherExpress PRO/100+ might hang when the interface is brought down at the very instant that a packet is being received. To avoid this, wait until the system is experiencing light or no network traffic before bringing the interface down.
+.sp
+.LP
+Early versions of the firmware on Intel EtherExpress PRO/100+ and Intel PRO/100+ Management adapters do not support PXE network boot on Solaris systems. Upgrade the firmware if the version is lower than 078. PXE firmware versions are expressed 	as three-digit build numbers. The build number is typically displayed by the firmware during boot. If the PXE build number 	is not displayed during boot, change the system BIOS or adapter BIOS configuration to display PXE messages during boot.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiprb\fR\fR
+.ad
+.RS 25n
+.rt  
+Device special file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/iprb.conf\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBiprb\fR configuration file 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB<\fBsys/stropts.h\fR>\fR
+.ad
+.RS 25n
+.rt  
+\fBstropts\fR network header file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB<\fBsys/ethernet.h\fR>\fR
+.ad
+.RS 25n
+.rt  
+Ethernet network header file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB<\fBsys/dlpi.h\fR>\fR
+.ad
+.RS 25n
+.rt  
+\fBdlpi\fR network header file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB<\fBsys/gld.h\fR>\fR
+.ad
+.RS 25n
+.rt  
+\fBgld\fR network header file
+.RE
+
+.sp
+.LP
+The \fBiprb.conf\fR configuration file options include:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-TxURRetry\fR\fR
+.ad
+.RS 14n
+.rt  
+Default: 3
+.sp
+Allowed Values: \fI0\fR, \fI1\fR, \fI2\fR, \fI3\fR
+.sp
+Sets the number of retransmissions. Modified when tuning performance.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-MWIEnable\fR\fR
+.ad
+.RS 14n
+.rt  
+Default: \fI0\fR (Disable)
+.sp
+Allowed Values:	\fI0\fR (Disable), \fI1\fR (Enable)
+.sp
+Should only be set for 82558 adapters and systems in which the PCI bus supports Memory Write & Invalidate operations. Can improve the performance for some configurations.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-FlowControl\fR\fR
+.ad
+.RS 16n
+.rt  
+Default: \fI0\fR (Disable)
+.sp
+Allowed Values:	\fI0\fR (Disable), \fI1\fR (Enable)
+.sp
+Setting this value can improve the performance for some configurations
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-CollisionBackOffModification\fR\fR
+.ad
+.sp .6
+.RS 4n
+ Default: 	\fI0\fR (Disable)
+.sp
+Allowed Values:	\fI0\fR (Disable), \fI1\fR (Enable)
+.sp
+Setting this value can improve the performance for some configurations
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-PhyErrataFrequency\fR\fR
+.ad
+.RS 23n
+.rt  
+Default: 	\fI0\fR (Disable)
+.sp
+Allowed Values:	\fI0\fR (Disable), \fI10\fR (Enable)
+.sp
+If you have problems establishing links with cables length = 70 Ft, set this field to \fI10\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-CpuCycleSaver\fR\fR
+.ad
+.RS 18n
+.rt  
+Default: 		\fI0\fR
+.sp
+Allowed Values: 	\fI1\fR through \fIFFFFh\fR
+.sp
+Reasonable Values:	\fI200h \fRthrough \fI800h\fR
+.sp
+The CPUSaver algorithm improves the system's P/E ratio by reducing the number of interrupts generated by the card. The algorithm bundles multiple receive frames together, then generates a single interrupt for the bundle. Because the microcode does not support run-time configuration, configuration must be done prior to the micro code being loaded into the chip. Changing this value from its default means that the driver will have to be unloaded and loaded for the change to take affect. Setting the CpuCycleSaver option to \fI0\fR prevents the algorithm from being used. Because it varies for different network environments, the optimal value for this parameter is impossible to predict. Accordingly, developers should run tests to determine the effect that changing this value has on bandwidth and CPU utilization.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ForceSpeedDuplex\fR\fR
+.ad
+.RS 21n
+.rt  
+Default:	\fI5\fR (Auto-negotiate)
+.sp
+Allowed Values:	\fI4\fR (100 FDX)
+.sp
+\fI3\fR (100 HDX)
+.sp
+\fI2\fR (10 FDX)
+.sp
+\fI1\fR (10 HDX)
+.sp
+Specify the speed and duplex mode for each instance.
+.sp
+Example: ForceSpeedDuplex=5,4;
+.sp
+Sets \fBiprb0\fR to autonegotiate and \fBiprb1\fR to 100 FDX.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Architecturex86
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBdlpi\fR(7P), \fBgld\fR(7D)

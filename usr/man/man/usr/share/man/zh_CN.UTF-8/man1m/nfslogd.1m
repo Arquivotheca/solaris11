@@ -1,0 +1,197 @@
+'\" te
+.\" 版权所有 (c) 1999，Oracle 和/或其附属公司。保留所有权利。
+.TH nfslogd 1M "2004 年 12 月 2 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+nfslogd \- nfs 日志记录守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/nfs/nfslogd\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnfslogd\fR 守护进程向 Solaris \fBNFS\fR 服务器提供操作日志记录。\fBnfslogd\fR 守护进程的工作是通过分析 \fBNFS\fR 服务器处理的 \fBRPC\fR 操作来生成活动日志。仅会为在导出时启用了日志记录的文件系统生成日志。这是在文件系统导出时通过\fBshare_nfs\fR(1M) 命令指定的。
+.sp
+.LP
+使用 NFS 版本 4 的 Solaris 计算机不支持 NFS 服务器日志记录。
+.sp
+.LP
+日志文件中的每条记录包括一个时间戳、客户机系统的 \fBIP\fR 地址（或主机名，如果可解析）、对其执行操作的文件或目录名称，以及操作的类型。在基本格式中，操作可以是一个输入 (i) 或输出 (o) 操作。\fBNFS\fR 服务器日志的基本格式与 Washington University \fBFTPd\fR 守护进程生成的日志格式兼容。可以对日志格式进行扩展以包括目录修改操作，例如 \fBmkdir\fR、\fBrmdir\fR 和 \fBremove\fR。扩展的格式与 Washington University \fBFTPd\fR 守护进程格式不兼容。有关详细信息，请参见\fBnfslog.conf\fR(4)。
+.sp
+.LP
+\fBNFS\fR 服务器日志记录机制分为两个阶段。第一个阶段是由 \fBNFS\fR 内核模块执行的，它将原始 \fBRPC\fR 请求及其结果记录在由永久存储支持的工作缓冲区中。工作缓冲区的位置是在 /\fBetc/nfs/nfslog.conf\fR 文件中指定的。有关更多信息，请参见\fBnfslog.conf\fR(4)。第二个阶段涉及到 \fBnfslogd\fR 用户级守护进程，它定期读取工作缓冲区，解释原始 \fBRPC\fR 信息，将相关的 \fBRPC\fR 操作分组到单个事务记录中，并生成输出日志。然后，\fBnfslogd\fR 守护进程将进入休眠状态，等待更多的信息记录到工作缓冲区中。可以通过在 \fB/etc/default/nfslogd\fR 中修改 \fBIDLE_TIME\fR 参数来配置该守护进程的休眠时间量。工作缓冲区供 \fBnfslogd\fR 守护进程内部使用。
+.sp
+.LP
+\fBNFS\fR 操作使用文件句柄而不是路径名作为参数。因此，\fBnfslogd\fR 守护进程需要维护包含文件句柄到路径映射的数据库，以便记录与操作关联的路径名而不是记录对应的文件句柄。当客户机执行查找操作或执行会向客户机返回文件句柄的其他 \fBNFS\fR 操作时，将向该数据库中添加一个文件句柄条目。
+.sp
+.LP
+在 \fBNFS\fR 客户机从服务器获取文件句柄后，它可以无限期地保留该文件句柄，以便以后将其用作对文件或目录执行的 \fBNFS\fR 操作的参数。\fBNFS\fR 客户机甚至在服务器重新引导多次后还可以使用该句柄。因为该数据库在服务器重新引导后仍然需要保留，所以该数据库由永久存储来支持。该数据库的位置是由 \fB/etc/nfs/nfslog.conf\fR 文件中的 \fIfhtable\fR 参数指定的。该数据库供 \fBnfslogd\fR 守护进程内部使用。
+.sp
+.LP
+为了将文件句柄映射数据库的大小保持为可管理的，\fBnfslogd\fR 会定期删改该数据库。它会删除超过指定的时间量未访问的文件句柄条目。\fB/etc/default/nfslogd\fR 中的 \fBPRUNE_TIMEOUT\fR 可配置参数指定删改进程的两次后续运行之间的时间间隔长度。如果某个文件句柄记录自上次执行删改进程后未被使用，则会删除该文件句柄记录。通过将 \fBPRUNE_TIMEOUT\fR 设置为 \fBINT_MAX\fR 可以有效地禁用该数据库的删改。
+.sp
+.LP
+启用了删改功能时，始终会存在以下风险：客户机可能会将某个文件句柄保留超过 \fBPRUNE_TIMEOUT\fR 的时间并且在匹配的数据库中的匹配记录被删除后对该文件句柄执行 \fBNFS\fR 操作。在这种情况下，将无法解析文件句柄的路径名，并且日志中将包括文件句柄而不是路径名。
+.sp
+.LP
+有各种可配置的参数可以影响 \fBnfslogd\fR 守护进程的行为。可以在 \fB/etc/default/nfslogd\fR 中找到这些参数，其描述如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUMASK\fR\fR
+.ad
+.RS 27n
+.rt  
+为日志文件、工作缓冲区文件和文件句柄映射数据库设置文件模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMIN_PROCESSING_SIZE\fR\fR
+.ad
+.RS 27n
+.rt  
+指定在处理工作信息并向日志文件进行写入之前，缓冲区文件必须达到的最小大小（以字节为单位）。\fBMIN_PROCESSING_SIZE\fR 的值必须介于 1 和 \fBulimit\fR 之间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDLE_TIME\fR\fR
+.ad
+.RS 27n
+.rt  
+指定在等待更多信息放置到缓冲区文件中时，守护进程应休眠的时间量（以秒为单位）。\fBIDLE_TIME\fR 还决定了重新读取配置文件的频率。\fBIDLE_TIME\fR 的值必须介于 1 和 \fBINT_MAX\fR 之间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAX_LOGS_PRESERVE\fR\fR
+.ad
+.RS 27n
+.rt  
+\fBnfslogd\fR 会定期回收其日志。\fBMAX_LOGS_PRESERVE\fR 指定要保存的最大日志文件数目。当达到 \fBMAX_LOGS_PRESERVE\fR 时，在创建新日志文件时将覆盖最旧的文件。这些文件将以编号式扩展名保存，从 \fBfilename.0\fR 开始。最旧的文件将具有最高的编号式扩展名，最大值等于为 \fBMAX_LOGS_PRESERVE\fR 配置的值。\fBMAX_LOGS_PRESERVE\fR 的值必须介于 1 和 \fBINT_MAX\fR 之间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCYCLE_FREQUENCY\fR\fR
+.ad
+.RS 27n
+.rt  
+指定回收日志文件的频率（以小时为单位）。\fBCYCLE_FREQUENCY\fR 用来确保日志文件不会变得过大。\fBCYCLE_FREQUENCY\fR 的值必须介于 1 和 \fBINT_MAX\fR 之间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAPPING_UPDATE_INTERVAL\fR\fR
+.ad
+.RS 27n
+.rt  
+指定对文件句柄到路径映射表中的记录进行更新的时间间隔（以秒为单位）。不是在每次访问记录时都更新该记录的 \fBatime\fR，只有基于此参数判定它已老化时才会对其进行更新。删改例程使用记录访问时间来确定是否应从数据库中删除记录。此参数的值必须介于 1 和 \fBINT_MAX\fR 之间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRUNE_TIMEOUT\fR\fR
+.ad
+.RS 27n
+.rt  
+指定数据库记录何时超时（以小时为单位）。如果自上次访问记录以来经过的时间超过了 \fBPRUNE_TIMEOUT\fR，则可以从数据库中删改该记录。\fBPRUNE_TIMEOUT\fR 的缺省值是 168 小时（7 天）。\fBPRUNE_TIMEOUT\fR 的值必须介于 1 和 \fBINT_MAX\fR 之间。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+守护进程启动成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+守护进程启动失败。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nfs/nfslogtab \fR \fR
+.ad
+.RS 24n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nfs/nfslog.conf\fR\fR
+.ad
+.RS 24n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/nfslogd\fR\fR
+.ad
+.RS 24n
+.rt  
+
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/file-system/nfs
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBshare_nfs \fR(1M)、\fB nfslog.conf\fR(4)、\fB attributes\fR(5)

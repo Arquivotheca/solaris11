@@ -1,0 +1,794 @@
+'\" te
+.\" 版权所有 (c) 2004，Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_ib 1M "2008 年 7 月 2 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_ib \- InfiniBand 硬件专用 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-f\fR [\fB-y\fR | \fB-n\fR] [\fB-v\fR] \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-v\fR [\fB-a\fR] [\fB-s\fR \fIlisting_option\fR] [-] [\fIap_id\fR | \fIap_type...\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-v\fR \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+InfiniBand 硬件专用库 \fB/usr/lib/cfgadm/ib.so.1\fR 提供通过 \fBcfgadm\fR(1M) 实用程序管理光纤网络的功能。\fBcfgadm\fR 在挂接点上运行。请参见 \fBcfgadm\fR(1M)。 
+.sp
+.LP
+基于 IB 设备管理器 (IB Device Manager, IBDM) 提供的服务，InfiniBand (\fBIB\fR) 设备由 IB nexus 驱动程序 \fBib\fR(7D) 进行枚举。
+.sp
+.LP
+IB nexus 驱动程序创建并初始化五种类型的子设备节点。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IB 端口设备
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IB HCA 服务 (HCA_SVC) 设备
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IB 虚拟物理挂接点 (Virtual Physical Point of Attachment, VPPA) 设备 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+I/O 控制器 (I/O Controller, IOC)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IB 伪设备
+.RE
+.sp
+.LP
+有关 IB 端口、IB VPPA 以及 IB HCA_SVC 设备的枚举的详细信息，请参见 \fBib\fR(7D)。有关 IBDM 的其他信息，请参见 \fBibdm\fR(7D)。有关 IB 伪设备的详细信息，请参见 \fBib\fR(4)。
+.sp
+.LP
+对于 IB 管理，为光纤网络管理创建两种类型的静态挂接点，如在给定主机中所显示的。一种静态挂接点是 \fBib\fR，且该光纤网络中的所有 IB 设备（IOC、端口、VPPA、HCA_SVC 或伪设备）表示为基于该静态挂接点的动态挂接点。另一种静态挂接点是基于其节点的全局唯一标识符 (Globally Unique Identifier, GUID) 值为主机中的每个主机通道适配器 (Host Channel Adapter, HCA) 创建的。
+.sp
+.LP
+挂接点通过 ap_id 命名。ap_id 包括逻辑 ap_id 和物理 ap_id。物理 ap_id 基于物理路径名。对于 IB 光纤网络，物理 ap_id 为 \fB/devices/ib:fabric\fR。逻辑 ap_id 为更短、更加用户友好的名称。
+.sp
+.LP
+IB 光纤网络的静态 ap_id 为 \fBib\fR。IB 设备为动态挂接点，没有物理 ap_id。IOC 的逻辑 ap_id 包含其 GUID，\fBib::\fR\fIIOC-GUID\fR。 \fBib::80020123456789a\fR 就是 IOC ap_id 的一个示例。伪设备的逻辑 ap_id 的格式为 \fBib::\fR\fIdriver_name\fR\fB,\fR\fIunit-address\fR。有关详细情况，请参见 ib(4)。\fBib::sdp,0\fR 就是伪 ap_id 的一个示例，其中 "\fBsdp\fR" 是驱动程序的名称，"\fB0\fR" 是相应的 \fIunit-address\fR 属性。端口、VPPA 以及 HCA_SVC 设备的逻辑 ap_id 包含其分区键 (\fIP_Key\fR)、\fI端口 GUID\fR/\fI节点 GUID\fR 以及通信服务名称。ap_id 的格式如下：
+.sp
+.ne 2
+.mk
+.na
+\fB端口设备\fR
+.ad
+.sp .6
+.RS 4n
+\fBib::\fR\fIPORT_GUID\fR\fB,\fR\fI0\fR\fB,\fR\fIservice-name\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVPPA 设备\fR
+.ad
+.sp .6
+.RS 4n
+\fBib::\fR\fIPORT_GUID\fR\fB,\fR\fIP_Key\fR\fB,\fR\fIservice-name\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBHCA_SVC 设备\fR
+.ad
+.sp .6
+.RS 4n
+\fBib::\fR\fIHCA_GUID\fR\fB,\fR0\fB,\fR\fIservicename\fR
+.RE
+
+.sp
+.LP
+端口和 HCA_SVC 设备的分区键 (\fIP_Key\fR) 为 \fB0\fR。\fIP_Key\fR 有助于确定 VPPA 设备节点的端口所属的分区。一个端口可能有多个 \fIP_Key\fR。\fBib::80245678,ffff,ipib\fR 就是 VPPA 设备的逻辑 ap_id 点的一个示例。在该示例中，\fIport-GUID\fR 为 \fB80245678\fR，\fIP_Key\fR 为 \fB0xffff\fR，服务名称为 \fBipib\fR。服务名称信息可从 \fB/kernel/drv/ib.conf\fR 文件中获取，该文件包含服务名称字符串。HCA 的逻辑 ap_id 包含其节点的 GUID 值：hca:HCA-GUID。例如，\fBhca:21346543210a987\fR。
+.sp
+.LP
+IB 挂接点列表包含有关该光纤网络中的所有 IB 设备（包含在 IBDM 以及 IB nexus 驱动程序上显示的 IOC 设备、VPPA 设备、HCA_SVC 设备、伪设备以及端口设备）的信息，即使这些 IB 设备在主机上未显示且未配置用于使用，也如此。 
+.sp
+.LP
+以下显示包含五个 IB 设备（两个 IOC 设备、一个 VPPA 设备、一个端口设备以及一个 HCA_SVC 设备）的列表和一个 HCA。
+.sp
+.in +2
+.nf
+example# cfgadm -al 
+Ap_Id                    Type       Receptacle   Occupant      Condition
+hca:21346543210a987      IB-HCA     connected    configured    ok
+ib                       IB-FABRIC  connected    configured    ok
+ib::80020123456789a      IB-IOC     connected    configured    ok
+ib::802abc9876543        IB-IOC     connected    unconfigured  unknown
+ib::80245678,ffff,ipib   IB-VPPA    connected    configured    ok
+ib::12245678,0,nfs       IB-PORT    connected    configured    ok
+ib::21346543,0,hnfs      IB-HCA_SVC connected    configured    ok
+ib::sdp,0                IB-PSEUDO  connected    configured    ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ap_id \fBib::802abc9876543\fR 表示没有被主机配置为用于使用的 IOC 设备或者之前通过显式 
+.sp
+.in +2
+.nf
+cfgadm \fB-c\fR unconfigure
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+操作脱机的 IOC 设备。\fBCondition\fR（状态）列中显示的信息可以区分这两种情况。如果 IB 设备的 P_Key 为 0 且具备 HCA GUID，该 IB 设备为 HCA_SVC 设备。有关挂接点列表的更多信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+挂接点的插口状态的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBconnected（已连接）\fR
+.ad
+.sp .6
+.RS 4n
+对于 IOC 设备、VPPA 设备、端口设备、伪设备以及 HCA_SVC 设备，\fBconnected\fR（已连接）表示设备在主机上显示。相应设备可能还未配置为由 Solaris 使用。 
+.sp
+对于 HCA 挂接点，\fBconnected\fR（已连接）表示该挂接点已配置并处于使用状态。 
+.sp
+所有的 IB ap_id 总是显示为 connected（已连接）状态。
+.RE
+
+.sp
+.LP
+挂接点的插卡状态的含义如下： 
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured（已配置）\fR
+.ad
+.sp .6
+.RS 4n
+IB 设备以及 HCA ap_id 已配置并且可供 Solaris 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured\fR
+.ad
+.sp .6
+.RS 4n
+如果 IB 设备的 ap_id 通过 \fBcfgadm\fR \fB-c\fR \fBunconfigure\fR 显式脱机，该设备将不能成功配置。这种情况是可能的，因为该 IB 设备并没有成功配置为由 Solaris（没有驱动器或设备有问题）使用或者该设备没有配置为由 IB nexus 驱动程序使用。 
+.sp
+\fBunconfigured\fR（未配置）操作不支持 HCA 挂接点。如果系统中不存在 IB 硬件，则 IB 静态 ap_id \fBib\fR 显示为 unconfigured（未配置）。
+.RE
+
+.sp
+.LP
+挂接点的状态含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBfailed（失败）\fR
+.ad
+.sp .6
+.RS 4n
+未使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBFAILED\fR
+.ad
+.sp .6
+.RS 4n
+未使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBok\fR
+.ad
+.sp .6
+.RS 4n
+正常状态。可供使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunknown（未知）\fR
+.ad
+.sp .6
+.RS 4n
+该状态只对那些已经由 IBDM 进行探测但尚未被 Solaris 配置为使用的 IB 设备有效。通过 \fBcfgadm\fR \fB-c\fR \fBunconfigure\fR 操作显式脱机的设备也显示为 unknown（未知）状态。该状态不适用于 HCA 挂接点。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunusable（不可用）\fR
+.ad
+.sp .6
+.RS 4n
+未使用。
+.RE
+
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+IB 硬件专用库支持两个通用命令 (\fIfunction\fR)。静态挂接点（即 HCA ap_id 和 IB 静态 \fBib\fR ap_id）不支持这两个命令。
+.sp
+支持以下两个通用命令： 
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure（配置）\fR
+.ad
+.sp .6
+.RS 4n
+配置 IB 设备由 Solaris 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure\fR
+.ad
+.sp .6
+.RS 4n
+取消配置 IB 设备。如果成功取消配置 IB 设备，\fBcfgadm\fR 报告 \fBap_id\fR 的 \fBcondition\fR（状态）为 \fBunknown\fR（未知）。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+不支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 IB 挂接点获取 IB 专用帮助。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出 IB 挂接点的状态和状况。按照 \fBcfgadm\fR(1M) 中的描述使用 \fB-l\fR 选项。 
+.sp
+如果该选项与 \fB-a\fR 选项一起使用，也显示动态挂接点（包含 IOC 设备、VPPA 设备、端口设备、伪设备以及 HCA_SVC 设备）。 
+.sp
+如果该选项与 \fB-v\fR 选项一起使用，显示有关 ap_id 的详细数据。对于一个 IOC，输出中的 \fBInfo\fR（信息）字段 
+.sp
+.in +2
+.nf
+cfgadm \fB-avl\fR
+.fi
+.in -2
+.sp
+
+显示 IOC 控制器配置文件如下信息：供应商 ID、IOC 设备 ID、设备版本、子系统供应商 ID、子系统 ID、类、子类、协议、协议版本以及 ID 字符串。如果 ID 字符串没有提供，该字段不会显示任何信息。这些字段在《InfiniBand Specification Volume 1》(http://www.infinibandta.org) 中进行了定义。 
+.sp
+对于 VPPA 设备、端口设备或 HCA_SVC 设备，\fBcfgadm -lav\fR 中的 \fBInfo\fR（信息）字段显示相应设备绑定的服务名称信息。如果相应设备没有绑定服务名称，该字段不显示任何信息。
+.sp
+对于伪设备，\fBcfgadm -alv\fR 显示驱动程序名称及其 \fBunit-address\fR 信息。对于 HCA，详细列表显示该 HCA 的供应商 ID、产品 ID、端口数量以及端口 PortGUID 值。请参见"示例"部分。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_option\fR\fR
+.ad
+.sp .6
+.RS 4n
+该选项当前未定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_option\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以通过 select 子选项列出 ib 类的挂接点。有关更多信息，请参见 \fBcfgadm\fR(1M) 手册页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行硬件专用函数。请注意，\fIname\fR 长度不能超过 4 个字符。
+.sp
+所支持的硬件专用函数如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd_service\fR \fB-ocomm\fR\fB=[port|vppa|hca_svc],service=\fR\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+静态 \fBIB\fR 挂接点支持该硬件专用函数。该函数可用于在 \fB/kernel/drv/ib.conf\fR 文件中添加一个新服务并且更新 \fBib\fR(7D) 驱动程序。 
+.sp
+必须使用 \fBservice=\fR\fIname\fR 选项标识要添加的新服务。必须使用 \fBcomm=[port|vppa|hca_svc]\fR 选项将 \fBname\fR 服务添加到 \fBport-svc-list\fR 或 \fB/kernel/drv/ib.conf\fR 文件中的 \fBhca-svc-list\fR。请参见"示例"部分\fB\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete_service\fR \fB-ocomm\fR\fB=[port|vppa|hca_svc],service=\fR\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+只有静态 \fBIB\fR 挂接点才支持该硬件专用函数。该函数用于将现有服务从 \fB/kernel/drv/ib.conf\fR 文件以及 \fBib\fR(7D) 驱动程序的数据库中删除。必须使用 \fBservice=name\fR 选项标识要删除的服务。必须使用 \fBcomm=[port|vppa|hca_svc]\fR 选项将该服务从 \fBport-svc-list\fR、\fBvppa-svc-list\fR 或 \fB/kernel/drv/ib.conf\fR 文件中的 \fBvppa-svc-list\fR 中删除。请参见"示例"部分。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist_clients\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBHCA\fR 挂接点支持该函数。显示所有使用该 \fBHCA\fR 的内核 IB 客户机。如果内核 IB 客户机已经打开了备用的 \fBHCA\fR 设备，该选项也显示这些内核 IB 客户机的相应 ap_id。请参见"示例"部分。\fB\fR
+.sp
+\&.
+.sp
+如果一个给定的内核 IB 客户机没有一个有效的 ap_id，该列显示 \fB-\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist_services\fR\fR
+.ad
+.sp .6
+.RS 4n
+只有静态 \fBIB\fR 挂接点才支持该硬件专用函数。该函数列出从 \fB/kernel/drv/ib.conf\fR 文件中读取的所有端口以及 VPPA 服务。请参见"示例"部分。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfig_clients\fR\fR
+.ad
+.sp .6
+.RS 4n
+只有静态 HCA 挂接点才支持该硬件专用函数。该函数用于取消配置给定的 HCA 的所有 IB 内核客户机。只有不具备备用 HCA 的 IB 内核客户机才被取消配置。请参见"示例"部分。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBupdate_ioc_config\fR\fR
+.ad
+.sp .6
+.RS 4n
+静态 ib 挂接点以及 IOC 挂接点支持该硬件专用函数。对于 \fBib\fR APID，该函数更新所有 IOC 设备节点的属性。对于 IOC APID，该函数更新指定的 IOC 设备节点的属性。该命令更新 \fBport-list\fR、\fBport-entries\fR、\fBservice-id\fR 以及 \fBservice-name\fR IOC 节点属性。
+.sp
+请参见 \fBib\fR(7D)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBupdate_pkey_tbls\fR\fR
+.ad
+.sp .6
+.RS 4n
+静态 \fBib\fR 挂接点支持该函数。该函数更新 \fBIBTL\fR 中的 \fBPKEY\fR 信息。\fBIBTL\fR 重新读取主机上显示的每个 \fBHCA\fR 上的所有端口的 \fBP_Key\fR 表。 
+.sp
+请参见 \fBibtl\fR(7D)。 
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR列出 IB 设备的状态和状况
+.sp
+.LP
+以下命令列出系统中的 IB 设备的状态和状况。该命令只显示了静态挂接点。
+
+.sp
+.in +2
+.nf
+example# cfgadm
+hca:21346543210a987        IB-HCA      connected    configured   ok
+ib                         IB-FABRIC   connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-a\fR 选项列出所有挂接点。以下示例使用 \fB-a\fR 选项列出所有挂接点：
+
+.sp
+.in +2
+.nf
+example# cfgadm -a
+hca:21346543210a987          IB-HCA      connected    configured   ok
+ib                           IB-FABRIC   connected    configured   ok
+ib::80020123456789a          IB-IOC      connected    unconfigured ok
+ib::80245678,ffff,ipib       IB-VPPA     connected    configured   ok
+ib::21346543,0,hnfs          IB-HCA_SVC  connected    configured   ok
+ib::12245678,0,nfs           IB-PORT     connected    configured   ok
+ib::sdp,0                    IB-PSEUDO   connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR列出 IB VPPA 设备的详细状态
+.sp
+.LP
+以下命令列出 IB VPPA 设备的详细状态：
+
+.sp
+.in +2
+.nf
+example# cfgadm -alv ib::80245678,ffff,ipib      
+Ap_Id                   Receptacle Occupant   Condition Information
+When         Type     Busy  Phys_Id
+ib::80245678,ffff,ipib    connected    configured   ok        ipib
+unavailable  IB-VPPA  n     /devices/ib:fabric::80245678,ffff,ipib
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+IOC 的详细列表显示其他信息。以下命令显示详细列表：
+
+.sp
+.in +2
+.nf
+example# cfgadm -alv ib::80020123456789a
+Ap_Id      Receptacle   Occupant     Condition Information
+When       Type     Busy  Phys_Id
+ib::80020123456789a     connected    configured   ok         VID: 0xeaea
+DEVID: 0xeaea VER: 0x5 SUBSYS_VID: 0x0 SUBSYS_ID: 0x0 CLASS: 0xffff
+SUBCLASS: 0xff PROTO: 0xff PROTOVER: 0x1 ID_STRING: Sample Host Adapter
+unavailable IB-IOC   n     /devices/ib:fabric::80020123456789a
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+伪设备的详细列表显示如下信息：
+
+.sp
+.in +2
+.nf
+example# cfgadm -alv ib::sdp,0
+Ap_Id                 Receptacle  Occupant   Condition Information
+When       Type   Busy  Phys_Id
+ib::sdp,0         connected   configured   ok       Driver = "sd
+p" Unit-address = "0"
+unavailable  IB-PSEUDO   n  /devices/ib:fabric::sdp,0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+HCA 的详细列表显示如下信息： 
+
+.sp
+.in +2
+.nf
+example# cfgadm -alv hca:21346543210a987
+Ap_Id               Receptacle   Occupant     Condition Information
+When       Type    Busy  Phys_Id
+hca:21346543210a987  connected    configured   ok         VID: 0x15b3,
+PID: 0x5a44, #ports: 0x2, port1 GUID: 0x80245678, port2 GUID: 0x80245679
+unavailable  IB-HCA     n  /devices/ib:21346543210a987
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果指定以下 \fBcfgadm\fR 类以及字段选择选项，可以获取更多的用户友好的输出：\fB\fR\fB-s\fR \fB"select=class(ib),cols=ap_id:info"\fR。
+
+.sp
+.LP
+以下命令只显示 IB 的 ap_id。该命令的输出只包含 \fBap_id\fR 和 \fBInformation\fR（信息）字段。
+
+.sp
+.in +2
+.nf
+ 
+# cfgadm -al -s "cols=ap_id:info"  ib::80245678,ffff,ipib
+Ap_Id                                Information
+ib::80245678,ffff,ipib               ipib
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR取消配置现有的 IB IOC
+.sp
+.LP
+以下命令取消配置 \fBib::80020123456789a\fR 连接的 IB IOC 并显示 \fBap_id\fR 的状态。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure ib::80020123456789a
+Unconfigure the device: /devices/ib:fabric::80020123456789a 
+This operation will suspend activity on the IB device
+Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+输入 \fBy\fR
+
+.sp
+.in +2
+.nf
+IB device unconfigured successfully. 
+# cfgadm -al ib::80020123456789a
+Ap_Id                  Type      Receptacle  Occupant     Condition
+ib::80020123456789     IB-IOC    connected   unconfigured unknown
+#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果 condition（状态）显示为 unknown（未知），表示该设备节点不存在并且只有 IB 设备管理器知道该 IB 设备的存在。
+
+.LP
+\fB示例 4 \fR配置 IB IOC
+.sp
+.LP
+以下一系列命令配置 \fBib::80020123456789a\fR 连接的 IB 设备。
+
+.sp
+.in +2
+.nf
+# cfgadm -yc configure ib::80020123456789a
+# cfgadm -al ib::80020123456789a
+Ap_Id                  Type        Receptacle   Occupant     Condition
+ib::80020123456789a    IB-IOC      connected    configured   ok       
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR列出 HCA 的所有内核 IB 客户机
+.sp
+.LP
+以下命令列出 \fBhca:21346543210a987\fR 连接的 HCA 中的所有内核 IB 客户机。
+
+.sp
+.in +2
+.nf
+# cfgadm -x list_clients hca:21346543210a987
+Attachment Point       Clients                Alternate HCA
+ib::80020123456789a    ioc1                   Yes
+ib::80245678,ffff,ipib ipib                   No
+ib::21346543,0,hnfs    hnfs                   No
+-                      ibdm                   No
+-                      ibmf                   No
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR添加端口服务
+.sp
+.LP
+以下命令添加一个名为 \fBsrp\fR 的新端口服务：
+
+.sp
+.in +2
+.nf
+ # cfgadm -o comm=port,service=srp -x add_service ib
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR删除 VPPA 服务
+.sp
+.LP
+以下命令删除 \fBibd\fR VPPA 服务 \fBibd\fR： 
+
+.sp
+.in +2
+.nf
+# cfgadm -o comm=vppa,service=ipib -x delete_service ib
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR列出端口服务、VPPA 服务以及 HCA_SVC 服务
+.sp
+.LP
+以下命令列出所有的端口服务、VPPA 服务以及 HCA_SVC 服务：
+
+.sp
+.in +2
+.nf
+# cfgadm -x list_services ib
+Port communication services:
+         srp
+
+VPPA communication services:
+         ipib
+         nfs
+
+HCA_SVC communication services:
+         hnfs
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR重新探测 IOC 设备
+.sp
+.LP
+以下命令重新探测所有的 IOC 设备节点：
+
+.sp
+.in +2
+.nf
+# cfgadm -x update_ioc_config ib
+This operation can update properties of IOC devices.
+Continue (yes/no)?
+
+Enter: y
+
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR取消配置 HCA 的所有内核客户机
+.sp
+.LP
+以下命令取消配置 HCA 的所有内核客户机：
+
+.sp
+.in +2
+.nf
+# cfgadm -x unconfig_clients hca:21346543
+ This operation will unconfigure clients of this HCA.
+ Continue (yes/no)?
+
+ Enter: y
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/ib.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+通用 InfiniBand 设备管理的硬件专用库
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBlibcfgadm\fR(3LIB)、\fBib\fR(4)、\fBattributes\fR(5)、\fBib\fR(7D)、\fBibdm\fR(7D)、\fBibtl\fR(7D)
+.sp
+.LP
+《InfiniBand Specification Volume 1》(http://www.infinibandta.org)
+.SH 附注
+.sp
+.LP
+除列出（\fBcfgadm\fR \fB-l\fR 或 \fBcfgadm\fR \fB-x\fR \fBlist_clients\fR）外，只有超级用户才能在挂接点执行任意函数。

@@ -1,0 +1,211 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH kmscfg 1M "2011 年 4 月 18 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+kmscfg \- 配置 PKCS#11 KMS 提供者
+.SH 用法概要
+.LP
+.nf
+\fBkmscfg\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-p\fR[\fBrofile\fR] \fIProfile_Name\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-a\fR[\fBgent\fR] \fIAgent_ID\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-i\fR[\fBpaddr\fR] \fIAgent_Address\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-t\fR[\fBimeout\fR] \fITransaction_Timeout\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-f\fR[\fBailover\fR] \fIFailover_Limit\fR
+.fi
+
+.LP
+.nf
+\fBkmscfg\fR \fB-d\fR[\fBiscovery\fR] \fIDiscovery_Freq\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBkmscfg\fR 命令用于初始化 PKCS#11 KMS 提供者 (\fBpkcs11_kms\fR)，以便与 Solaris 加密框架一起使用。要使 KMS 提供者与 Oracle Key Manager (OKM) 进行通信，必须提供一些配置信息。该配置数据包含要使用的配置文件的名称、OKM 代理的名称、OKM 设备 (KMA) 的 IP 地址及其他一些参数（请参见\fBSYNOPSIS\fR部分）。
+.sp
+.LP
+缺省情况下，\fBkmscfg\fR 将配置信息存储在 \fB/var/user/kms/$USERNAME\fR 中。如果该目录不存在，则将创建该目录。如果已检测到该配置，则将为用户提供覆盖现有数据的选项。可使用 \fBKMSTOKEN_DIR\fR 环境变量覆盖缺省位置，必须在调用 \fBkmscfg\fR 之前设置该变量。
+.sp
+.LP
+在运行 \fBkmscfg\fR 之前，OKM 管理员必须已对设备本身执行了所需的初始化和配置步骤才能设置 PKCS11 KMS 使用者将使用的各个配置文件和代理。有关配置这些配置文件的说明可以在 Oracle Web 站点 (\fBhttp://docs.oracle.com\fR) 上的《\fIOracle Key Manager Administration Guide\fR》中找到。
+.sp
+.LP
+一旦配置了 KMA，管理员必须提供必需的标识信息（配置文件名称、代理 ID、IP 地址）才能在 Oracle Solaris 客户机上运行 \fBkmscfg\fR 和初始化提供者。
+.SH 选项
+.sp
+.LP
+支持下面列出的选项。请注意，如果未在命令行上指定配置文件、代理 ID 或 KMA 地址，\fBkmscfg\fR 会提示您提供这些项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIAgent_ID\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 OKM 上配置的用户代理 ID，用于正在配置的 KMS 令牌。配置文件和代理 ID 通常是相同的，例如，\fBMyAgent\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIDiscovery_Freq\fR\fR
+.ad
+.sp .6
+.RS 4n
+客户机将尝试搜索 OKM 群集中其他 KMA 的可用性的频率（秒）。如果未指定，则 \fIDiscovery_Freq\fR 缺省为 10。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIFailover_Limit\fR\fR
+.ad
+.sp .6
+.RS 4n
+在客户机放弃之前，与 KMA 的通信可以失败的次数。如果未指定，则 \fIFailover_Limit\fR 缺省为 3。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIAgent_Addr\fR\fR
+.ad
+.sp .6
+.RS 4n
+KMA 的地址。此地址可以是 IPv4 地址 (\fIxxx\fR.\fIxxx\fR.\fIxxx\fR.\fIxxx\fR) 或 IPv6 地址。只要客户机上配置的名称服务可以解析全限定主机名，则还可以使用全限定主机名。如果使用的是 OKM 群集，则可以指定群集中任何成员的地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIProfile_Name\fR\fR
+.ad
+.sp .6
+.RS 4n
+要用于正在配置的 KMS 令牌的配置文件的名称。通常，配置文件名称和代理 ID 是相同的（尽管并不要求它们相同）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fITransaction_Timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+各个 KMS 命令的超时周期（以秒为单位）。如果未指定，则该值缺省为 10。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+在完成所请求的操作之后，\fBkmscfg\fR 以下列状态值之一退出。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功终止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+失败。无法完成所请求的操作。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/kms/$USERNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省的 KMS 令牌配置目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB${KMSTOKEN_DIR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+备用的 KMS 令牌配置目录。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性T{
+/system/library/security/crypto/pkcs11_kms
+T}
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpktool\fR(1)、\fBattributes\fR(5)、\fBpkcs11_kms\fR(5)
+.sp
+.LP
+《\fIOracle Key Manager Administration Guide\fR》(\fBhttp://docs.oracle.com\fR)
+.SH 附注
+.sp
+.LP
+PKCS#11 客户机要求在 OKM 上安装 2.4 版 Oracle Key Manager 软件。
+.sp
+.LP
+如果 PKCS#11 客户机要对多个系统使用同一个代理 ID，则创建该代理时时不应设置 "One Time Passphrase"（一次性口令短语）标志。在一些成员运行的 OKM 软件版本低于 2.4 的 OKM 群集中，该选项将不可用。有关创建代理的帮助信息，请参考《\fIOracle Key Manager Administration Guide\fR》。
+.sp
+.LP
+OKM 代理在用于在 PKCS#11 客户机中创建密钥之前，必须分配有缺省密钥组。如果没有为该代理分配缺省密钥组，操作将失败并显示 \fBCKR_PIN_INCORRECT\fR 错误。有关为代理分配密钥组的帮助信息，请参考《\fIOracle Key Manager Administration Guide\fR》。

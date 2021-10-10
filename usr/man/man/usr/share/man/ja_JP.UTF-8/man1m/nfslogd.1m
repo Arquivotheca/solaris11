@@ -1,0 +1,197 @@
+'\" te
+.\" Copyright (c) 1999, Sun Microsystems, Inc. All Rights Reserved.
+.TH nfslogd 1M "2004 年 12 月 2 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+nfslogd \- nfs ロギングデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/nfs/nfslogd\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnfslogd\fR デーモンは、Solaris \fBNFS\fR サーバーに操作可能なロギング機能を提供します。\fBnfslogd \fR デーモンの役割は、\fBNFS\fR サーバーにより処理された \fB RPC\fR 操作を分析して、アクティビティーログを生成することです。このログは、ロギングを有効にしてエクスポートされたファイルシステムでのみ生成されます。これは、ファイルシステムのエクスポート時に、\fBshare_nfs\fR(1M) コマンドを使って指定されます。
+.sp
+.LP
+NFS Version 4 を使用する Solaris マシンでは、NFS サーバーのロギングはサポートされていません。
+.sp
+.LP
+ログファイル内の各レコードには、タイムスタンプ、クライアントシステムの \fBIP \fR アドレス (またはホスト名 (解決可能な場合))、操作対象のファイル名またはディレクトリ名、および操作のタイプが含まれています。基本書式では、操作は入力 (i) または出力 (o) 操作のいずれかになります。\fBNFS\fR サーバーログの基本書式は、Washington University \fBFTPd\fR デーモンにより生成されるログ書式と互換性があります。ログ書式を拡張して、\fBmkdir\fR、\fB rmdir\fR、\fBremove\fR などのディレクトリ変更操作を含めることもできます。拡張された書式は、Washington University \fBFTPd\fR デーモンの書式とは互換性がありません。詳細については、\fBnfslog.conf\fR(4) を参照してください。
+.sp
+.LP
+\fBNFS\fR サーバーのロギングメカニズムは、2 つのフェーズに分けられます。最初のフェーズは \fBNFS\fR カーネルモジュールにより実行され、raw \fBRPC\fR 要求およびその結果を持続ストレージによりバックアップされる作業バッファーに記録します。作業バッファーの場所は、/\fBetc/nfs/nfslog.conf\fR ファイルに指定されます。詳細は、\fBnfslog.conf\fR(4) を参照してください。2 番目のフェーズには、\fBnfslogd\fR ユーザーレベルデーモンが関係します。これは、作業バッファーを定期的に読み取り、raw \fBRPC\fR 情報を解釈し、関連する \fBRPC \fR 操作を単一のトランザクションレコードにまとめて、出力ログを生成します。その後、\fBnfslogd\fR デーモンは休眠状態に入り、作業バッファーにさらに情報が記録されるのを待機します。デーモンの休眠状態の長さは、\fB/etc/default/nfslogd\fR の \fBIDLE_TIME \fR パラメータを変更することで構成できます。作業バッファーは、\fBnfslogd \fR デーモン内部で使用するためのものです。
+.sp
+.LP
+\fBNFS\fR 操作では、パス名の代わりにファイルハンドルが引数として使用されます。このため、\fBnfslogd\fR デーモンは、操作に関連するパス名を記録するために、対応するファイルハンドルではなく、ファイルハンドルからパスへのマッピングのデータベースを管理する必要があります。クライアントが検索や、ファイルハンドルをクライアントに返すほかの \fBNFS\fR 操作を実行すると、ファイルハンドルのエントリがデータベースに追加されます。
+.sp
+.LP
+\fBNFS\fR クライアントがサーバーから取得したファイルハンドルは無期限に保持でき、あとでファイルやディレクトリに対する \fBNFS\fR 操作の引数として使用できます。\fBNFS\fR クライアントは、サーバーのリブート後でさえもそのファイルハンドルを使用できます。データベースは、サーバーのリブート後も利用可能でなければならないため、持続ストレージにバックアップされます。データベースの場所は、\fB/etc/nfs/nfslog.conf \fR ファイル内の \fIfhtable\fR パラメータで指定されます。このデータベースは、\fB nfslogd\fR デーモンにより内部で使用されます。
+.sp
+.LP
+ファイルハンドルのマッピングデータベースを扱いやすいサイズに保つために、\fB nfslogd\fR は定期的にデータベースのプルーニングを行います。削除されるのは、指定された期間以上アクセスのないファイルハンドルのエントリです。プルーニングプロセスの実行間隔は、\fB/etc/default/nfslogd\fR 内の \fBPRUNE_TIMEOUT\fR 構成可能パラメータを使って指定します。前回のプルーニング処理の実行以降、使用されていないファイルハンドルのレコードは削除されます。データベースのプルーニングは、\fBPRUNE_TIMEOUT\fR を \fBINT_MAX\fR と同じ値に設定することで無効にできます。
+.sp
+.LP
+プルーニングが有効な場合、クライアントがファイルハンドルを \fBPRUNE_TIMEOUT\fR よりも長期間保持し、マッピングデータベース内の一致するレコードが削除されたあとで、ファイルハンドルに対して \fBNFS\fR 操作を実行する危険が常に存在します。このような場合、ファイルハンドルのパス名は解決されず、ログにはパス名の代わりにファイルハンドルが含まれています。
+.sp
+.LP
+\fBnfslogd\fR デーモンの動作に影響を及ぼすさまざまな構成可能パラメータが存在します。これらのパラメータは \fB /etc/default/nfslogd\fR に記述されています。詳細は後述します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUMASK\fR \fR
+.ad
+.RS 27n
+.rt  
+ログファイル、作業バッファーファイル、およびファイルハンドルのマッピングデータベースのファイルモードを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMIN_PROCESSING_SIZE\fR\fR
+.ad
+.RS 27n
+.rt  
+作業情報を処理してログファイルに書き込む前に、バッファーファイルが達している必要のある最小サイズをバイト単位で指定します。\fBMIN_PROCESSING_SIZE\fR の値は、1 と \fBulimit\fR の間にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDLE_TIME\fR\fR
+.ad
+.RS 27n
+.rt  
+デーモンがバッファーファイルにさらに情報が記録されるのを待機する休眠期間を秒単位で指定します。\fB IDLE_TIME\fR は、構成ファイルを再読み込みする頻度も決定します。\fBIDLE_TIME\fR の値は、1 と \fBINT_MAX\fR の間にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAX_LOGS_PRESERVE\fR\fR
+.ad
+.RS 27n
+.rt  
+\fBnfslogd\fR は、ログを定期的に切り替えます。\fB MAX_LOGS_PRESERVE\fR には、保存するログファイルの最大数を指定します。\fBMAX_LOGS_PRESERVE\fR に達すると、新しいログファイルの作成時にもっとも古いファイルが上書きされます。これらのファイルは、\fBfilename.0\fR から始まる番号付きの拡張子を付けて保存されます。拡張子に付けられた番号が最も大きいファイルが、もっとも古いファイルです。この番号の最大値は、\fBMAX_LOGS_PRESERVE\fR に設定された値です。\fB MAX_LOGS_PRESERVE\fR の値は、1 と \fBINT_MAX\fR の間にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCYCLE_FREQUENCY\fR\fR
+.ad
+.RS 27n
+.rt  
+ログファイルを切り替える頻度を時間単位で指定します。\fB CYCLE_FREQUENCY\fR を使って、ログファイルが大きくなり過ぎないようにできます。\fBCYCLE_FREQUENCY\fR の値は、1 と \fBINT_MAX\fR の間にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAPPING_UPDATE_INTERVAL\fR\fR
+.ad
+.RS 27n
+.rt  
+ファイルハンドルからパスへのマッピングテーブル内のレコードを更新する間隔を秒単位で指定します。レコードへのアクセスが行われるたびにそのレコードの \fBatime\fR を更新する代わりに、このパラメータに設定された期間が経過したときにのみ更新します。プルーニングルーチンは、レコードへのアクセス時間を使用して、データベースからレコードを削除するかどうかを決定します。このパラメータの値は、1 と \fBINT_MAX\fR の間にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRUNE_TIMEOUT\fR\fR
+.ad
+.RS 27n
+.rt  
+データベースレコードがタイムアウトする期間を時間単位で指定します。最後にレコードにアクセスがあってからの経過時間が \fB PRUNE_TIMEOUT\fR より長い場合、そのレコードをデータベースからプルーニングできます。\fBPRUNE_TIMEOUT\fR のデフォルト値は 168 時間 (7 日) です。 \fBPRUNE_TIMEOUT\fR の値は、1 と \fBINT_MAX\fR の間にする必要があります。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+デーモンが正常に起動されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+デーモンの起動に失敗しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nfs/nfslogtab \fR \fR
+.ad
+.RS 24n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nfs/nfslog.conf\fR\fR
+.ad
+.RS 24n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/nfslogd\fR\fR
+.ad
+.RS 24n
+.rt  
+
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/file-system/nfs
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBshare_nfs \fR(1M), \fB nfslog.conf\fR(4), \fB attributes\fR(5)

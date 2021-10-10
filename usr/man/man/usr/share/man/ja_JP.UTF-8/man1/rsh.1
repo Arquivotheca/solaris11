@@ -1,0 +1,388 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2008, Sun Microsystems, Inc. All Rights Reserved
+.TH rsh 1 "2008 年 12 月 23 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+rsh, remsh, remote_shell \- リモートシェル
+.SH 形式
+.LP
+.nf
+\fBrsh\fR [\fB-n\fR] [\fB-a\fR] [\fB-K\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-x\fR] [\fB-f\fR | \fB-F\fR] [\fB-l\fR \fIusername\fR] 
+     [\fB-k\fR \fIrealm\fR] \fIhostname\fR \fIcommand\fR
+.fi
+
+.LP
+.nf
+\fBrsh\fR \fIhostname\fR [\fB-n\fR] [\fB-a\fR] [\fB-K\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-x\fR] [\fB-f\fR | \fB-F\fR] 
+     [\fB-l\fR \fIusername\fR] [\fB-k\fR \fIrealm\fR] \fIcommand\fR
+.fi
+
+.LP
+.nf
+\fBremsh\fR [\fB-n\fR] [\fB-a\fR] [\fB-K\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-x\fR] [\fB-f\fR | \fB-F\fR] [\fB-l\fR \fIusername\fR] 
+     [\fB-k\fR \fIrealm\fR] \fIhostname\fR \fIcommand\fR
+.fi
+
+.LP
+.nf
+\fBremsh\fR \fIhostname\fR [\fB-n\fR] [\fB-a\fR] [\fB-K\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-x\fR] [\fB-f\fR | \fB-F\fR] 
+     [\fB-l\fR \fIusername\fR] [\fB-k\fR \fIrealm\fR] \fIcommand\fR
+.fi
+
+.LP
+.nf
+ \fIhostname\fR [\fB-n\fR] [\fB-a\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-x\fR] [\fB-f\fR | \fB-F\fR] 
+     [\fB-l\fR \fIusername\fR] [\fB-k\fR \fIrealm\fR] \fIcommand\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBrsh\fR は、\fIhostname\fR が示すホストに接続し、\fIcommand\fR が示すコマンドを実行します。\fBrsh\fR は自身の標準入力のデータをリモートコマンドにコピーし、リモートコマンドの標準出力を自身の標準出力にコピーし、さらに、リモートコマンドの標準エラー出力を 自身の標準エラー出力にコピーします。割り込み、停止、および終了シグナルは、リモートコマンドに伝えられます。通常 \fBrsh\fR は、リモートコマンドが終了したときに終了します。
+.sp
+.LP
+ユーザーは、Kerberos V5 認証を使用して、\fBrsh\fR セッションを安全にするかどうかを選択できます。また、転送されるデータも暗号化できます。\fBrsh\fR セッションで Kerberos 認証を使用するには、任意の Kerberos 固有オプションを使用します 　 (\fB-a\fR、\fB-PN\fR または \fB-PO\fR、\fB-x\fR、\fB-f\fR または \fB-F\fR、および \fB-k\fR \fIrealm\fR)。これらのオプションのうち、\fB-a\fR、\fB-x\fR、\fB-PN\fR または \fB-PO\fR、および \fB-f\fR または \fB-F\fR は、\fBkrb5.conf\fR(4) の \fB[appdefaults]\fR セクションにも指定できます。これらのオプションの使用法と期待される動作については、次の「オプション」セクションを参照してください。Kerberos 承認を使用する場合、アカウントの承認は、\fBkrb5_auth_rules\fR(5) の規則によって制御されます。Kerberos 承認が失敗した場合、\fB-PO\fR オプションをコマンド行に明示的に指定するか、\fBkrb5.conf\fR(4) 経由で指定している場合にのみ、\fBrhosts\fR を使用する通常の \fBrsh\fR へのフォールバックが発生します。\fB-PN\fR または \fB-PO\fR、\fB-x\fR、\fB-f\fR または \fB-F\fR、および \fB-k\fR \fIrealm\fR オプションは、\fB-a\fR オプションの上位集合であることに注意してください。
+.sp
+.LP
+\fIcommand\fR を省略すると、\fBrsh\fR は単一のコマンドを実行する代わりに、\fBrlogin\fR(1) を使ってそのユーザーをリモートホストにログインします。
+.sp
+.LP
+\fBrsh\fR は \fIcommand\fR の終了ステータスを返しません。
+.sp
+.LP
+シェルのメタキャラクタのうち、引用符で囲まれていないものはローカルマシン上で解釈されます。引用符で囲まれているものは、リモートマシン上で解釈されます。「使用例」を参照してください。
+.sp
+.LP
+特定のユーザーのログインシェルの初期化ファイル (\fB\&.cshrc\fR など) でロケールが設定されていない場合、\fBrsh\fR はコマンドを実行するときに、常に C ロケールを使用します。リモートマシンのデフォルトのロケールは使用しません。
+.sp
+.LP
+このコマンド自身は暗号化されずにリモートシステムに送信されます。それ以降の転送はすべて暗号化されます。\fB-x\fR を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+このオプションは、Kerberos 認証を明示的に有効にし、アクセス制御において \fB\&.k5login\fR ファイルを信用します。サーバー側での \fBin.rshd\fR(1M) による承認チェックが成功し、\fB\&.k5login\fR ファイルがアクセス権を許可する場合、ユーザーは rsh コマンドを実行することが許可されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 15n
+.rt  
+ローカルの証明書 (Kerberos チケット許可チケット) のコピーをリモートシステムに転送します。この証明書は再転送可能ではありません。このチケット許可チケットを転送する必要があるのは、リモートホスト上で Kerberos 認証を使用しているほかのネットワークサービスで自分自身を認証する必要がある場合です。たとえば、リモートホスト上にある自分のホームディレクトリが Kerberos V5 経由で \fBNFS\fR マウントされている場合などです。この場合、ローカルの証明書を転送しなければ、自分のホームディレクトリにアクセスできません。このオプションは、\fB-F\fR オプションと互いに排他の関係にあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 15n
+.rt  
+ローカルの証明書 (Kerberos チケット許可チケット) のコピーをリモートシステムに転送します。この証明書は再転送可能です。\fB-F\fR オプションは、\fB-f\fR オプションが提供する機能の上位集合を提供します。たとえば、\fB-f\fR オプションの場合、リモートホストに接続した後に、\fB/usr/bin/ftp\fR、\fB/usr/bin/telnet\fR、\fB/usr/bin/rlogin\fR、または \fB/usr/bin/rsh\fR を \fB-f\fR オプションまたは \fB-F\fR オプションで呼び出そうとしても失敗します。つまり、単一のネットワーク署名をほかのシステムにプッシュできません。このオプションは、\fB-f\fR オプションとは相互排他的です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIrealm\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBrsh\fR は、\fBkrb5.conf\fR(4) で定義されているリモートホストの領域ではなく、指定した \fIrealm\fR 内のリモートホスト用のチケットを取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.RS 15n
+.rt  
+このオプションは、Kerberos 認証を明示的に無効にします。このオプションを使用すると、\fBkrb5.conf\fR(4) の \fBautologin\fR 変数を上書きできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-l\fR \fIusername\fR\fR
+.ad
+.RS 15n
+.rt  
+リモートユーザー名として、ユーザー自身のローカルユーザー名の代わりに \fIusername\fR を使用します。このオプションを省略すると、リモートユーザー名はローカルユーザー名と同じになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBrsh\fR の入力先を \fB/dev/null\fR に変更します。このオプションは、\fBrsh\fR とそれを呼び出したシェルとの間での、予期できない干渉を防ぐ上で便利です。たとえば、\fBrsh\fR を実行していて、さらにバックグラウンドで \fBrsh\fR を呼び出した場合、その入力先を端末以外に変更しないと、リモートコマンドの読み取りがない場合でも 処理が妨げられてしまいます。\fB-n\fR オプションを指定すれば、このような事態は避けられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-PO\fR\fR
+.ad
+.br
+.na
+\fB\fB-PN\fR\fR
+.ad
+.RS 15n
+.rt  
+Kerberos の「\fBrcmd\fR」プロトコルの新しいバージョン (\fB-PN\fR) または古いバージョン (\fB-PO\fR) を明示的に要求します。新しいプロトコルは、古いプロトコルで蔓延している多くのセキュリティの問題を回避し、より安全であると考えられますが、古い (MIT/SEAM) サービスとは相互運用できません。PO オプションで古いプロトコルを明示的に指定するか、\fBkrb5.conf\fR(4) 経由で指定していないかぎり、デフォルトでは、新しいプロトコルが使用されます。古い「\fBrcmd\fR」プロトコルを使用しているときに Kerberos 承認が失敗した場合、Kerberos 承認を使用しない通常の \fBrsh\fR へのフォールバックが発生します。これは、新しい、より安全な「\fBrcmd\fR」プロトコルを使用している場合には当てはまりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 15n
+.rt  
+ネットワークセッションのトラフィックを暗号化します。「機能説明」を参照してください。\fB\fR
+.RE
+
+.sp
+.LP
+リモートシェルの種類 ( \fBsh\fR や \fBrsh\fR など) は、リモートシステム上の \fB/etc/passwd\fR ファイル中のユーザーのエントリにより決められます。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcommand\fR\fR
+.ad
+.RS 11n
+.rt  
+指定された \fIhostname\fR で実行するコマンド
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBrsh\fR と \fBremsh\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.sp
+.LP
+\fBrsh\fR および \fBremsh\fR コマンドは、IPv6 に対応しています。\fBip6\fR(7P) を参照してください。現在のところ、\fBIPv6\fR は Kerberos V5 認証ではサポートされません。
+.sp
+.LP
+ホスト名は \fIhosts\fR データべース (\fB/etc/hosts\fR ファイルに含めることができる)、インターネットドメイン名データべース、あるいはその両方に書かれています。各ホストには 1 つの正式名 (データべースエントリの最初の名前) があり、さらにいくつかのニックネームが存在することもあります。\fIhostname\fR 引数には、正式なホスト名とニックネームの いずれかを指定します。
+.sp
+.LP
+\fBrsh\fR を実行するファイル名が \fBrsh\fR でなければ、\fBrsh\fR はそのファイル名を \fIhostname\fR 引数として使用します。これによりユーザーは、ホスト名で \fBrsh\fR に対するシンボリックリンクを生成でき、実行時にそのホスト上のリモートシェルを呼び出せます。ディレクトリを作成し、それを共通に使われる ホスト名でシンボリックリンクにつなぎ、さらにそのディレクトリをユーザー自身の シェルの検索パスに含めることにより、シェルに \fIhostname\fR を入力するだけで \fBrsh\fR を実行することができます。
+.sp
+.LP
+\fBrsh\fR を \fBremsh\fR で呼び出した場合、\fBrsh\fR は \fB/usr/bin/remsh\fR の存在を確認します。このファイルが存在 する場合、\fBrsh\fR は \fBremsh\fR を \fBrsh\fR の別名として処理します。\fB/usr/bin/remsh\fR が存在しない場合、\fBrsh\fR は \fBremsh\fR をホスト名として処理します。
+.sp
+.LP
+Kerberos 承認を使用する \fBrsh\fR セッションの場合、各ユーザーは自分のホームディレクトリの \fB\&.k5login\fR ファイルに、専用の承認リストを持つことができます。このファイルの各行には、形式 \fIprincipal\fR/\fIinstance\fR@\fIrealm\fR の Kerberos 主体名が入っている必要があります。\fB~/.k5login\fR ファイルが存在する場合、起点ユーザーが \fB~/.k5login\fR ファイルに指定された主体の 1 人であると認証された場合にのみ、起点ユーザーのアカウントにアクセス権が付与されます。それ以外の場合は、\fIauthenticated-principal-name\fR \(-> \fIlocal-user-name\fR マッピング規則を使用して、起点ユーザーの認証された主体名をローカルアカウント名にマッピングできる場合にのみ、起点ユーザーのアカウントにアクセス権が付与されます。\fB\&.k5login\fR ファイル (アクセス制御用) が処理されるのは、Kerberos 認証が行われるときだけです。
+.sp
+.LP
+セキュリティー保護されていない \fBrsh\fR セッションの場合、各リモートマシンで \fB/etc/hosts.equiv\fR という名のファイルを使用できます。このファイルには、そのマシンとユーザー名を共有する、信頼できるホスト名のリストが含まれています。ローカルマシン上とリモートマシン上でのユーザー名が同一のユーザーは、リモートマシンの \fB/etc/hosts.equiv\fR ファイルにリストされているマシンから \fBrsh\fR を実行することができます。個々のユーザーは、このような同等名リストを個人用の .rhosts ファイルとして、自身のホームディレクトリに作成することができます。このファイル中の各行には 2 つの名前、 hostname と username が含まれ、両者はスペースで区切られます。username で示すユーザーが hostname で示すホストにログインしていれば、そのユーザーは rsh を使って、リモートユーザーとしてリモートマシンにアクセスできます。ローカルホスト名がリモートマシン上の \fB/etc/hosts.equiv\fR ファイル中に見つからず、ローカルのユーザー名とホスト名がリモートユーザーの \fB\&.rhosts\fR ファイル中に見つからない場合、アクセスは拒否されます。\fB/etc/hosts.equiv\fR または \fB\&.rhosts\fR ファイルに記録されているホスト名は、\fBhosts\fR データべースに登録されている正式なホスト名である必要があります。つまりこの両ファイル中には、ニックネームは指定できません。
+.sp
+.LP
+ユーザーアカウントがロックされていると、\fBrsh\fR を使用して、ホスト名からのユーザーとして ログインすることはできません。
+.sp
+.LP
+リモートマシン上でアクセスが拒否されたときは、\fIcommand\fR 引数が省略されていない限り、\fBrsh\fR はパスワードの入力を要求するプロンプトを出力しません。
+.SH 使用例
+.LP
+\fB例 1 \fRrsh でファイルを追加する
+.sp
+.LP
+次のコマンドは、リモートのマシン \fBlizard\fR 上にあるファイル \fBlizard.file\fR を、ローカルのマシン \fBexample\fR 上にあるファイル \fBexample.file\fR に追加します。
+
+.sp
+.in +2
+.nf
+example% \fBrsh lizard cat lizard.file >> example.file\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、リモートのマシン \fBlizard\fR 上にあるファイル \fBlizard.file\fR を、同じマシン \fBlizard\fR 上にあるファイル \fBlizard.file2\fR に追加します。
+
+.sp
+.in +2
+.nf
+example% \fBrsh lizard cat lizard.file ">>" lizard.file2\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts\fR\fR
+.ad
+.RS 23n
+.rt  
+インターネットホストテーブル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts.equiv\fR\fR
+.ad
+.RS 23n
+.rt  
+信頼性のあるリモートホストとユーザー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 23n
+.rt  
+システムパスワードファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.k5login\fR\fR
+.ad
+.RS 23n
+.rt  
+アクセスを許可する Kerberos 主体を含むファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/krb5/krb5.conf\fR\fR
+.ad
+.RS 23n
+.rt  
+Kerberos 構成ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/network-clients
+_
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBon\fR(1), \fBrlogin\fR(1), \fBssh\fR(1), \fBtelnet\fR(1), \fBvi\fR(1), \fBin.rshd\fR(1M), \fBhosts\fR(4), \fBhosts.equiv\fR(4), \fBkrb5.conf\fR(4), \fBattributes\fR(5), \fBkrb5_auth_rules\fR(5), \fBlargefile\fR(5), \fBip6\fR(7P)
+.SH 注意事項
+.sp
+.LP
+\fBhosts.equiv\fR に登録されているシステムのセキュリティーは、少なくともローカルシステムのセキュリティーと 同レベルである必要があります。セキュリティーレベルの低いシステムが \fBhosts.equiv\fR 中に 1 つでも存在していると、システム全体のセキュリティーが損なわれる可能性があります。
+.sp
+.LP
+\fBvi\fR(1) のような対話型コマンドは実行できません。対話型コマンドは \fBrlogin\fR を使って実行してください。
+.sp
+.LP
+停止シグナルは、ローカルの \fBrsh\fR プロセスだけを停止させます。これはバグだという議論があるかもしれませんが、現在のところ修正が大変困難です。その理由は複雑なので、ここでは説明を省きます。
+.sp
+.LP
+現在のローカル環境は、リモートシェルに引き渡されません。
+.sp
+.LP
+\fB-n\fR オプションを使用すると、原因を特定できないような問題が発生することがあります。次に例を示します。
+.sp
+.in +2
+.nf
+example% \fBrsh somehost dd if=/dev/nrmt0 bs=20b | tar xvpBf \(mi\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドを実行すると、シェルの状態がおかしくなります。つまり \fBrsh\fR の前に \fBtar\fR が終了してしまい、次に \fBrsh\fR コマンドが「壊れたパイプ」に書き込みを試みると、正常終了せずに、標準入力をめぐってシェルと競合します。\fB-n\fR オプションを指定して \fBrsh\fR を実行すれば、このような事態を防ぐことができます。
+.sp
+.LP
+このバグは \fBrsh\fR がパイプラインの先頭で、標準入力を読み込まないときにだけ発生します。\fBrsh\fR が標準入力を読み込む必要があるときは、\fB-n\fR オプションを使用しないでください。例: 
+.sp
+.in +2
+.nf
+example% \fBtar cf \(mi . | rsh sundial dd of=/dev/rmt0 obs=20b\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、前述のような現象は起こりません。この場合に \fB-n\fR オプションを指定すると、\fBrsh\fR はパイプから読み込む代わりに、誤って \fB/dev/null\fR からの読み込みを試みます。
+.sp
+.LP
+ほとんどの場合、\fBssh\fR(1) は \fBrsh\fR よりも推奨されています。

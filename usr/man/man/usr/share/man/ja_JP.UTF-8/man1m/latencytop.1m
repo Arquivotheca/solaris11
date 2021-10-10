@@ -1,0 +1,321 @@
+'\" te
+.\" Copyright (c) 2010, Sun Microsystems, Inc. All Rights Reserved
+.TH latencytop 1M "2010 年 2 月 25 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+latencytop \- システムおよびアプリケーションの遅延関連の統計を報告する
+.SH 形式
+.LP
+.nf
+\fBlatencytop\fR [\fB-t\fR \fIinterval\fR] [\fB-o\fR \fIlog_file\fR] [\fB-k\fR \fIlog_level\fR]
+     [\fB-f\fR [no]\fIfeature\fR,...] [\fB-l\fR \fIlog_interval\fR] [\fB-h\fR]
+     [ \fB-s\fR pid=\fIPID\fR | pgid=\fIPGID\fR ]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+LatencyTOP は、システムおよびアプリケーションの遅延に関する統計を報告する監視ツールです。このツールは、システムまたはシステムで実行中のアプリケーションで発生している遅延の場所および種類に関する統計を報告します。この統計を使用して特定された遅延を取り除くことで、アプリケーションやシステムのパフォーマンススループットを改善できます。
+.sp
+.LP
+このツールは、システムアクティビティーを定期的に分析して、データを出力ウィンドウに表示します。追跡対象の遅延には、LWP によるスリープの開始と終了、および LWP による順序のスピン (同期オブジェクトを取得するため) の 2 種類があります。このツールは、Solaris DTrace フレームワークを使用して、システムやアプリケーション LWP に関するこれら 2 つの非アクティブ化シナリオに対応する統計を収集します。
+.sp
+.LP
+出力ウィンドウは 2 つのセクションに分かれています。上部にはシステム全体の統計が、下部には各プロセスの統計がそれぞれ表示されます。ユーザーは (左右の矢印キーを使用して) プロセスリスト内を移動し、必要なリストを選択できます。選択したプロセスの統計は、ウィンドウの下部に表示されます。t または T キーを押すと、選択したプロセスが LWP 固有の表示になります。t または T キーを使って、プロセス表示とスレッド表示を切り替えることができます。
+.sp
+.LP
+実行中に r または R キーを押すと、分析が強制的に更新されます。時間間隔は、デフォルトまたは指定した値 (-t を使用した場合) に復元されます。アプリケーションを終了するには、q または Q キーを押す必要があります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--feature\fR [no]\fIfeature1\fR,[no]\fIfeature2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+LatencyTOP の機能を有効または無効にします。機能は、次のいずれかに設定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBfilter\fR\fR
+.ad
+.sp .6
+.RS 4n
+大規模で割り込み可能な遅延 (スリープなど) をフィルタ処理します。デフォルトは \fBoff\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBsched\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsched\fR (PID=0) を監視します。デフォルトは \fBoff\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBsobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+同期オブジェクトを監視します。デフォルトは \fBon\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBlow\fR\fR
+.ad
+.sp .6
+.RS 4n
+小規模な遅延をサンプリングしてオーバーヘッドを引き下げます。この機能を有効にすると、小規模の遅延が統計的に見積もられるため、CPU 使用率が低下します。これは、ビジー状態の Web サーバーなど、作業負荷が高い場合に使用します。デフォルトは \fBoff\fR です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの使用方法を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIlog_level\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログファイルのログ記録レベルを指定します。有効な値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBnone\fR (デフォルト)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBunknown\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBall\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fIlog_interval\fR]\fR
+.ad
+.sp .6
+.RS 4n
+データを \fIlog_interval\fR 秒ごとにファイルに書き込みます。\fIlog_interval\fR は 60 より大きい値にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIlog_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+出力を書き込むログファイルを指定します。デフォルトのログファイルは \fB/var/log/latencytop.log\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR pid=\fIPID\fR | pgid=\fIPGID\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したプロセスまたは指定したプロセスグループのみを追跡して、そのプロセスまたはプロセスグループに関連するデータのみを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+ツールがシステムから統計を収集する間隔を秒単位で指定します。指定可能な値は、1 - 60 です。デフォルトは 5 秒です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRツールを実行する
+.sp
+.LP
+次のコマンドは、デフォルトのオプション値を使用してツールを起動します。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR間隔を設定する
+.sp
+.LP
+次のコマンドは、サンプリング間隔を 2 秒に設定します。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -t 2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRログファイルを指定する
+.sp
+.LP
+次のコマンドは、ログファイルを \fB/tmp/latencytop.log\fR に設定します。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -o /tmp/latencytop.log\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRログレベルを指定する
+.sp
+.LP
+次のコマンドは、ログレベルを \fBall\fR に設定します。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -l 2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR遅延の追跡を有効にする
+.sp
+.LP
+次のコマンドは、同期オブジェクトにより発生した遅延の追跡を有効にします。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -f sobj\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRプロセスグループのデータを表示する
+.sp
+.LP
+次のコマンドは、プロセスグループ 630 に属するプロセスの追跡データを表示します。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -s pgid=630\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+アーキテクチャx86、SPARC
+_
+使用条件diagnostic/latencytop
+_
+インタフェースの安定性流動的
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdtrace\fR(1M), \fBkstat\fR(1M), \fBattributes\fR(5)
+.SH 使用法
+.sp
+.LP
+LatencyTOP を実行するには DTrace 特権が必要です。

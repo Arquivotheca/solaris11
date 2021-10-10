@@ -1,0 +1,63 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+#
+
+. /lib/svc/share/smf_include.sh
+
+RUN_OK=0
+CONFIG_ERROR=1
+FATAL_ERROR=2
+
+PID_FILE=$SMF_SYSVOL_FS/wusbd/wusb.pid
+DOOR_FILE=$SMF_SYSVOL_FS/wusbd/wusb_door
+
+smf_assert_globalzone
+
+case "$1" in
+'start')
+
+	[ ! -d $SMF_SYSVOL_FS/wusbd ] && /usr/bin/mkdir -m 755 $SMF_SYSVOL_FS/wusbd
+
+	/usr/lib/wusbd --daemon
+
+	[ $? -eq $CONFIG_ERROR ] && exit $SMF_EXIT_ERR_CONFIG
+	[ $? -eq $FATAL_ERROR ] && exit $SMF_EXIT_ERR_FATAL
+	;;
+
+'stop')
+
+	[ -f $PID_FILE ] && kill `cat $PID_FILE`
+
+	rm -f $PID_FILE
+	rm -f $DOOR_FILE
+	;;
+
+*)
+	echo "Usage: $0 start | stop" >&2
+	exit $SMF_EXIT_ERR_FATAL
+	;;
+esac
+
+exit $SMF_EXIT_OK

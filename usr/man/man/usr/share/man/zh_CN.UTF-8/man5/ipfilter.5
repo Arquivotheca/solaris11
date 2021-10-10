@@ -1,0 +1,253 @@
+'\" te
+.\" To view license terms, attribution, and copyright for IP Filter, the default path is /usr/lib/ipf/IPFILTER.LICENCE. If the Solaris operating environment has been installed anywhere other than the default, modify the given path to access the file at the installed location.
+.\" Portions Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH ipfilter 5 "2011 年 7 月 11 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+ipfilter \- IP 包过滤软件
+.SH 描述
+.sp
+.LP
+IP 过滤器是 Solaris 系统上提供包过滤功能的软件。在设置正确的系统上，IP 过滤器可用于构建防火墙。
+.sp
+.LP
+Solaris IP 过滤器随 Solaris 操作系统一起安装。但是，缺省情况下不启用包过滤。有关启用和激活 IP 过滤器功能的过程，请参见 \fBipf\fR(1M)。 
+.SH 服务
+.sp
+.LP
+\fBipfilter\fR SMF 服务支持 \fBstart\fR、\fBstop\fR、\fBrestart\fR 和 \fBrefresh\fR 方法。这些方法可以通过使用 \fBsvcadm\fR(1M) 进行调用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.RS 11n
+.rt  
+装入 \fBipfilter\fR 内核模块并根据配置激活任何防火墙或 NAT 规则。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.RS 11n
+.rt  
+清除应用的所有防火墙和 NAT 规则以及创建的任何活动会话信息。仅当能够进入主机的任何网络通信流量不存在风险时，才能停止启用联网功能的服务。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestart\fR\fR
+.ad
+.RS 11n
+.rt  
+停止然后启动 \fBipfilter\fR 服务。对活动防火墙使用该方法会导致一定时段的暴露，在该时段内，通信流量可能在未经过滤的情况下进入和/或通过防火墙。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.RS 11n
+.rt  
+装入当前配置并从旧配置切换为新配置，而在这期间系统一直都在积极使用安全策略，没有间断。 
+.RE
+
+.SH 基于主机的防火墙
+.sp
+.LP
+为简化 IP 过滤器配置管理，创建了一个防火墙框架，以便用户可以通过在系统和服务级别指定防火墙策略来配置 IP 过滤器。在指定用户定义的防火墙策略后，该框架会生成一组 IP 过滤器规则来执行所需的系统行为。用户可以指定系统和服务防火墙策略，以允许或拒绝来自特定主机、子网和接口的网络通信流量。这些策略将转换成一组活动的 IPF 规则来执行指定的防火墙策略。
+.sp
+.LP
+如果用户选择不使用该框架，仍可以指定他们自己的 \fBipf\fR 规则文件。有关如何启用定制规则以及 \fBipf\fR(4) 找出 \fBipf\fR 规则语法的信息，请参见 \fBipf\fR(1M)。
+.SS "型号"
+.sp
+.LP
+本节介绍基于主机的防火墙框架。有关如何配置防火墙策略的详细信息，请参见 svc.ipfd(1M)。
+.sp
+.LP
+有一种具有不同优先级的三层方法可帮助用户实现所需行为。
+.sp
+.ne 2
+.mk
+.na
+\fB全局缺省\fR
+.ad
+.sp .6
+.RS 4n
+全局缺省\(em缺省的系统范围防火墙策略。所有服务都将自动继承此策略，除非有服务修改了其防火墙策略。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB网络服务\fR
+.ad
+.sp .6
+.RS 4n
+其优先级高于全局缺省。无论全局缺省策略如何，服务的策略都将允许/禁止其特定端口的通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局覆盖\fR
+.ad
+.sp .6
+.RS 4n
+另一种系统范围的策略，优先于网络服务层中特定服务的需求。
+.RE
+
+.sp
+.in +2
+.nf
+Global Override
+      |
+      |
+Network Services
+      |
+      |
+Global Default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+防火墙策略包括一种防火墙模式和一组可选的网络源。网络源包括 IP 地址、子网和本地网络接口，所有这些网络源都可供系统从中接收传入通信。基本防火墙模式组包括：
+.sp
+.ne 2
+.mk
+.na
+\fB无\fR
+.ad
+.sp .6
+.RS 4n
+无防火墙，允许所有传入通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB拒绝\fR
+.ad
+.sp .6
+.RS 4n
+允许所有传入通信，只拒绝来自指定源的通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB允许\fR
+.ad
+.sp .6
+.RS 4n
+拒绝所有传入通信，只允许来自指定源的通信。
+.RE
+
+.SS "有关层的详细说明"
+.sp
+.LP
+第一个系统范围层全局缺省定义应用于\fB任何\fR传入通信的防火墙策略；例如，允许或阻止来自某一 IP 地址的所有通信。这使得很容易设置阻止所有传入通信或阻止来自不需要源的所有传入通信的策略。
+.sp
+.LP
+网络服务层包含向远程客户机提供服务的本地程序（例如，\fBtelnetd\fR、\fBsshd\fR 和 \fBhttpd\fR）的防火墙策略。其中每个程序（即一个网络服务）都有其自己的防火墙策略来控制对其服务的访问。最初，服务的策略设置为继承全局缺省策略，即"使用全局缺省"模式。这使得很容易在全局缺省层设置一个可由所有服务继承的策略。
+.sp
+.LP
+如果某一服务的策略不同于全局缺省策略，则该服务的策略具有较高的优先级。如果全局缺省策略设置为阻止来自子网的所有通信，则 SSH 服务可配置为允许从该子网中的特定主机进行访问。所有网络服务的所有策略的集合构成了网络服务层。
+.sp
+.LP
+第二个系统范围层全局覆盖的防火墙策略也应用于任何传入网络通信。此策略具有最高优先级，将覆盖其他层中的策略，具体来说是覆盖网络服务的需求。例如，无论服务的策略如何，都能理想地阻止已知的恶意源。
+.SS "用户交互"
+.sp
+.LP
+此框架利用 IP 过滤器功能，仅在启用 \fBsvc:/network/ipfilter\fR 时才有效，而在禁用 \fBnetwork/ipfilter\fR 时将无效。同样，网络服务的防火墙策略也仅在启用该服务时才有效，而在禁用该服务时也将无效。具有有效防火墙的系统具有 IP 过滤器规则（用于正在运行/已启用的每个网络服务）以及系统范围的策略（防火墙模式不是\fB无\fR）。
+.sp
+.LP
+用户可通过设置系统范围策略和各网络服务的策略来配置防火墙。有关配置防火墙策略的方法，请参见 svc.ipfd(1M)。
+.sp
+.LP
+防火墙框架由策略配置和一个机制组成，用以从策略生成 IP 过滤器规则并应用这些规则来获取所需的 IP 过滤器配置。下面对设计和用户交互进行了快速汇总：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+系统范围策略存储在 \fBnetwork/ipfilter\fR 中
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+网络服务的策略存储在各 SMF 服务中
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用户通过启用 \fBnetwork/ipfilter\fR（请参见 \fBipf\fR(1M)）来激活防火墙
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用户通过启用/禁用网络服务来激活/取消激活该服务的防火墙
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对系统范围或每服务防火墙策略进行更改会导致系统防火墙规则的更新
+.RE
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型\fB\fR属性值\fB\fR
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBipf\fR(1M)、\fBipnat\fR(1M)、\fBsvcadm\fR(1M)、\fBsvc.ipfd\fR(1M)、\fBipf\fR(4)、\fBipnat\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+\fI《Oracle Solaris Administration: IP Services》\fR
+.SH 附注
+.sp
+.LP
+\fBipfilter\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/network/ipfilter:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+IP 过滤器启动配置文件存储在 \fB/etc/ipf\fR 中。

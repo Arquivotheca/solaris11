@@ -1,0 +1,632 @@
+'\" te
+.\" 版权所有 (c) 2008，Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_fp 1M "2008 年 1 月 10 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_fp \- 驱动程序专用 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-n\fR | \fB-y\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR] 
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR [\fIap_id\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBfp\fR 端口驱动程序插件 \fB/usr/lib/cfgadm/fp.so.1\fR 提供通过 \fBcfgadm\fR(1M) 管理光纤通道光纤网络设备节点的功能。\fBcfgadm\fR 在挂接点上运行。挂接点是可动态重新配置硬件资源的系统位置。有关挂接点的其他详细信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+对于光纤通道光纤网络设备节点管理，每个 \fBfp\fR 端口节点采用设备树中的一个挂接点表示。此外，每个光纤通道设备还采用一个动态挂接点表示。挂接点通过 \fBap_id\fR 命名。定义下列两种类型的 \fBap_id\fR：逻辑和物理。物理 \fBap_id\fR 基于物理路径名。逻辑 \fBap_id\fR 是更短、更加用户友好的名称。对于 \fBfp\fR 端口节点，逻辑 \fBap_id\fR 为对应的磁盘控制器号。例如，\fBc0\fR 是一个典型的逻辑 \fBap_id\fR。
+.sp
+.LP
+光纤通道设备使用端口全球名称 (World Wide Name, WWN) 命名。如果一个磁盘设备连接到控制器 \fBc0\fR，其 \fBap_id\fR 可以是：
+.sp
+.in +2
+.nf
+c0::50020f2300006077
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中 \fB50020f2300006077\fR 用于标识特定光纤通道设备的端口 WWN。
+.sp
+.LP
+缺省情况下，对光纤通道专用环路端口、光纤网络端口或公共环路端口上的每个设备进行探测，并使其可供 Solaris 使用。通过启动应用程序或最终用户操作，可使连接到光纤通道光纤网络端口或公共环路端口的设备不可供 Solaris 使用。此操作类似于通过管理用户接口的方法热拔除设备。应用程序或用户可以使用 \fB/usr/lib/cfgadm/fp.so.1\fR 库来启用 \fBlibcfgadm\fR 提供接口以完成此任务。
+.sp
+.LP
+当前连接的光纤网络设备的列表以挂接点的形式生成。 
+.sp
+.LP
+此系统中挂接点的简单列表包括 \fBfp\fR 端口节点（非光纤通道设备）中的挂接点。以下示例使用列表选项 (\fB-l\fR) 的 \fB-a\fR 标志来列出光纤通道设备：
+.sp
+.in +2
+.nf
+# \fBcfgadm -l\fR
+     Ap_Id                Type         Receptacle   Occupant     Condition
+     c0                   fc-fabric    connected    configured   unknown
+     c1                   fc-private   connected    configured   unknown
+     c2                   fc-pt_to_pt  connected    configured   unknown
+     c3                   fc           connected    unconfigured unknown
+     sysctrl0:slot0       cpu/mem      connected    configured   ok
+     sysctrl0:slot1       sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下示例列出了连接到 \fBfp\fR 端口的光纤通道设备。 
+.sp
+.in +2
+.nf
+# \fBcfgadm -al\fR
+     Ap_Id                Type         Receptacle   Occupant     Condition
+     c0                   fc-fabric    connected    configured   unknown
+     c0::50020f2300006077 disk         connected    configured   unknown
+     c0::50020f23000063a9 disk         connected    configured   unknown
+     c0::50020f2300005f24 disk         connected    configured   unknown
+     c0::50020f2300006107 disk         connected    configured   unknown
+     c1                   fc-private   connected    configured   unknown
+     c1::220000203708b69c disk         connected    configured   unknown
+     c1::220000203708ba7d disk         connected    configured   unknown
+     c1::220000203708b8d4 disk         connected    configured   unknown
+     c1::220000203708b9b2 disk         connected    configured   unknown
+     c2                   fc-pt_to_pt  connected    configured   unknown
+     c2::500104f000937528 tape         connected    configured   unknown
+     c3                   fc           connected    unconfigured unknown
+     sysctrl0:slot0       cpu/mem      connected    configured   ok
+     sysctrl0:slot1       sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在此示例中，\fBfc-fabric\fR 类型的 \fBap_id\fR \fBc0\fR 指示 \fBfp\fR 端口与光纤网络相连。对于具有光纤网络相关类型（例如 \fBfc-fabric\fR 和 \fBfc-public \fR）的 \fBfp\fR 端口，缺省情况下在引导时创建设备节点并可通过 \fBcfgadm\fR 配置与取消配置操作进行管理。\fBfc-private\fR 类型的 \fBap_id c1\fR 指示 \fBfp\fR 端口连接到专用环路且缺省情况下也创建设备节点。\fBfc-pt_to_pt\fR 类型的 \fBap_id c2\fR 指示 \fBfp\fR 端口直接连接到另一个 \fBN_port\fR 且缺省情况下也创建设备节点。\fBfc\fR 类型的 \fBap_id c3\fR 指示 \fBfp\fR 端口 \fBc2\fR 未与任何对象相连。光纤通道设备 \fBap_id\fR 的 "Type"（类型）字段显示了设备中 LUN 0 的 SCSI 设备类型。
+.sp
+.LP
+在 Solaris 中配置了具有多个 FCP SCSI LUN 的光纤通道设备，其中每一个 \fBFCP SCSI LUN\fR 均可作为一个 Solaris 设备使用。假定 ap_id \fBc0::50020f2300006077\fR 和 \fBc0::50020f23000063a9\fR 表示具有多个 \fBFCP SCSI LUN\fR 的光纤通道设备。 
+.sp
+.LP
+以下示例显示了如何列出具有 \fBFCP\fR \fBSCSI\fR \fBLUN\fR 的 ap_id 的信息：
+.sp
+.in +2
+.nf
+# \fBcfgadm -al -o show_SCSI_LUN\fR
+     Ap_Id                  Type         Receptacle   Occupant     Condition
+     c0                     fc-fabric    connected    configured   unknown
+     c0::50020f2300006077,0 disk         connected    configured   unknown
+     c0::50020f2300006077,1 disk         connected    configured   unknown
+     c0::50020f2300006077,2 disk         connected    configured   unknown
+     c0::50020f2300006077,3 disk         connected    configured   unknown
+     c0::50020f23000063a9,0 disk         connected    configured   unknown
+     c0::50020f23000063a9,1 disk         connected    configured   unknown
+     c0::50020f23000063a9,2 disk         connected    configured   unknown
+     c0::50020f23000063a9,3 disk         connected    configured   unknown
+     c0::50020f2300005f24,0 disk         connected    unconfigured unknown
+     c0::50020f2300005f24,1 disk         connected    unconfigured unknown
+     c0::50020f2300006107,0 disk         connected    unconfigured unknown
+     c0::50020f2300006107,1 disk         connected    unconfigured unknown
+     c1                     fc-private   connected    configured   unknown
+     c1::220000203708b69c,0 disk         connected    configured   unknown
+     c1::220000203708ba7d,0 disk         connected    configured   unknown
+     c1::220000203708b8d4,0 disk         connected    configured   unknown
+     c1::220000203708b9b2,0 disk         connected    configured   unknown
+     c2                     fc-pt_to_pt  connected    configured   unknown
+     c2::500104f000937528,0 tape         connected    configured   unknown
+     c3                     fc           connected    unconfigured unknown
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在此示例中，\fBap_id c0::50020f2300006077,0\fR 标识光纤通道设备的 \fBFCP SCSI LUN 0\fR，采用端口 \fBWWN 50020f2300006077\fR 表示。根据报告，光纤通道设备具有 4 个 \fBFCP SCSI LUN\fR，并且这些 FCP SCSI LUN 均已配置。列出了与端口 \fBWWN 50020f2300006077\fR 相关联的 4 个 \fBFCP SCSI LUN\fR 级别 ap_id。此列表还显示了未配置的光纤通道设备的 \fBFCP SCSI LUN\fR。根据报告，由 \fBc0::50020f2300005f24 \fR 表示的光纤通道设备具有两个 \fBFCP SCSI LUN\fR。\fBc0::50020f2300005f24\fR 上的配置操作会创建两个 Solaris 设备。\fBFCP\fR \fBSCSI\fR \fBLUN\fR 级别 ap_id 的 \fBType\fR（类型）字段显示每个 \fBLUN\fR 的 \fBSCSI\fR 设备类型。如果光纤通道设备具有不同的设备类型 \fBLUN\fR，\fBType\fR（类型）字段会反映出来。
+.sp
+.LP
+\fBfp\fR 端口上挂接点的插口和插卡状态具有下列含义：
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured（已配置）\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBfp\fR 端口上配置了一个或多个设备
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected（已连接）\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR 端口处于活动状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB断开\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR 端口停止（IO 活动暂停）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBempty（空）\fR
+.ad
+.sp .6
+.RS 4n
+不适用
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured（未配置）\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBfp\fR 端口上未配置任何设备
+.RE
+
+.sp
+.LP
+\fBfp\fR 端口上各光纤通道设备的状态：
+.sp
+.ne 2
+.mk
+.na
+\fB配置网络\fR
+.ad
+.sp .6
+.RS 4n
+设备已在 Solaris 中配置并可供使用
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected（已连接）\fR
+.ad
+.sp .6
+.RS 4n
+设备连接的 \fBfp\fR 端口处于活动状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB断开\fR
+.ad
+.sp .6
+.RS 4n
+设备连接的 \fBfp\fR 端口处于停止状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured（未配置）\fR
+.ad
+.sp .6
+.RS 4n
+可配置设备
+.RE
+
+.sp
+.LP
+\fBfp\fR 端口上挂接点的 \fBcondition\fR（状态）字段具有下列含义：
+.sp
+.ne 2
+.mk
+.na
+\fBfailed（失败）\fR
+.ad
+.sp .6
+.RS 4n
+一个错误状态已阻止 \fBfp\fR 端口检测光纤通道连接的存在情况或类型的功能。
+.RE
+
+.sp
+.LP
+\fBfp\fR 端口上各光纤通道设备的 \fBcondition\fR（状态）字段具有下列含义：
+.sp
+.ne 2
+.mk
+.na
+\fBfailed（失败）\fR
+.ad
+.sp .6
+.RS 4n
+在光纤网络上探测设备时发生错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfailing（即将失败）\fR
+.ad
+.sp .6
+.RS 4n
+在主机上配置了一个设备且其状态在 Solaris 上显示为正常（即，联机），但是该设备目前不存在或在光纤网络上不显示，或者因为用于配置该设备的本地端口上存在错误状态，该设备的存在情况无法验证。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunusable（不可用）\fR
+.ad
+.sp .6
+.RS 4n
+已在主机上配置设备，但其目前处于脱机状态或存在故障。
+.RE
+
+.sp
+.LP
+\fBcondition\fR（状态）为 unknown 指示在光纤网络上探测设备已完成且没有错误，并且如果之前配置了该设备，Solaris 主机中的设备状态为正常。无法保证设备的内部状态。
+.SH 选项
+.sp
+.LP
+除列出 (\fB-l\fR) 外，\fBcfgadm\fR 还定义了一些类型的操作。这些操作包括调用配置状态更改以及获取配置管理帮助消息 (\fB-h\fR)。
+.sp
+.LP
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fBfp\fR 传输特定库定义了下列通用命令：
+.sp
+对于 \fBfc-fabric\fR 类型 \fBfp\fR 端口挂接点上的光纤通道设备挂接点，支持下列配置状态更改操作：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置连接到主机的光纤通道光纤网络设备。如果在列表操作的输出中将光纤通道设备列为 unknown（未知）类型，可能无法配置该设备。未尝试配置类型为 unknown（未知）的设备。可使用强制选项 (\fB-f\fR) 来强制 \fBfp\fR 端口驱动程序插件尝试配置任意设备。报告进程中的任何错误。缺省情况下，在光纤通道光纤网络设备上发现的每个 FCP SCSI LUN 都进行了配置。但是，在 \fBfp.conf\fR 文件的 "pwwn-lun-blacklist" 属性中指定的 FCP SCSI LUN 仍将处于 unconfigured（未配置）状态。FCP SCSI LUN 级别列表反映了这些 FCP SCSI LUN 的状态。重新引导或在连接的控制器上 Solaris 动态重新配置之后，它们仍会处于 unconfigured（未配置）状态。有关 "pwwn-lun-blacklist" 属性的更多详细信息，请参见 \fBfp\fR(7D)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+在主机上取消配置光纤通道光纤网络设备。在下次重新引导或在连接该设备的控制器上 Solaris 动态重新配置之前，该设备保持处于 unconfigured（未配置）状态，而届时所有光纤网络设备都会自动枚举。通过使用 \fBfp.conf\fR 文件中的 "manual_configuration_only" 属性可以更改缺省的行为。如果设置了该属性，设备会在重新引导后仍处于 unconfigured（未配置）状态。有关 "manual_configuration_only" 属性的更多详细信息，请参见 \fBfp\fR(7D)。
+.RE
+
+对于光纤通道专用环路设备和 \fBN_Port\fR 点到点设备，\fBconfigure\fR 命令返回成功，但不会执行任何操作。\fBunconfigure\fR 命令在专用环路设备和 \fBN_Port\fR 点到点设备上不受支持。缺省情况下，专用环路设备和 \fBN_Port\fR 点到点设备由 Solaris 光纤通道驱动程序配置，且不通过最终用户或应用程序启动的操作进行管理。\fBfp.conf\fR 文件中的 \fBpwwn-lun-blacklist\fR 属性以与应用于光纤网络设备相同的方式应用于专用环路设备和 \fBN_Port\fR 点到点设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制实施 \fBconfigure\fR 更改状态操作，无论 \fBcondition\fR（状态）或 \fBtype\fR（类型）为何。请参见上述有关 \fBconfigure\fR 更改状态操作的说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取 \fBfp\fR 传输特定帮助。指定任意 \fBfp\fR 挂接点。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+支持下列硬件选项。
+.sp
+.ne 2
+.mk
+.na
+\fBshow_SCSI_LUN\fR
+.ad
+.sp .6
+.RS 4n
+如果使用 \fBlist\fR 选项 \fB-al\fR 指定，列出与发现的光纤通道设备的每个 FCP SCSI LUN 相关联的 ap_id。请参见上述 FCP SCSI LUN 级别列表的说明和示例。在 FCP SCSI LUN 级别上不支持设备节点创建。请参见"说明"部分\fB\fR。
+.RE
+
+缺省情况下，所有光纤通道设备对 Solaris 都可用。通过设置 \fB/kernel/drv/fp.conf\fR 文件中的属性 "manual_configuration_only"，可完成在缺省情况下仅启用对 Solaris 可用的光纤网络设备的子集。设置了 \fBfp.conf\fR 中的 "manual_configuration_only" 时，除非应用程序或最终用户之前已请求在 Solaris 中配置该设备，否则所有光纤网络设备对 Solaris 均不可用。\fBconfigure\fR 状态更改命令使该设备对 Solaris 可用。在光纤网络设备上成功执行 \fBconfigure\fR 操作之后，将相关链接添加到 \fB/dev\fR 名称空间。\fBunconfigure\fR 状态更改命令使设备对 Solaris 不可用。 
+.sp
+使用 \fB-c\fR \fBconfigure\fR 操作在主机上成功配置了光纤通道光纤网络设备时，其物理 \fBap_id\fR 存储在系统信息库中。使用 \fB-c\fR \fBunconfigure\fR 操作取消光纤通道光纤网络设备配置时，从该系统信息库中删除物理 \fBap_id\fR。缺省情况下，自动枚举所有光纤网络设备，且仅当设置了 \fBfp.conf\fR 中的 "manual_configuration_only" 属性时才使用该系统信息库。有关 "manual_configuration_only" 属性的更多详细信息，请参见 \fBfp\fR(7D)。
+.sp
+可以使用 \fB-c\fR 选项指定下列命令以控制系统信息库的更新行为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforce_update\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBconfigure\fR，无条件地将挂接点添加到系统信息库，对于 \fBunconfigure\fR，无条件地删除挂接点。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBno_update\fR\fR
+.ad
+.sp .6
+.RS 4n
+无论实施任何操作，均不更新系统信息库。
+.RE
+
+对于正常的 \fBconfigure\fR 和 \fBunconfigure\fR 操作，不应使用这些选项。请参见"警告"部分\fB\fR。
+.sp
+如果为一个光纤通道设备配置了多个 \fBFCP SCSI LUN\fR 且与其 \fBFCP SCSI LUN\fR 相关联的任意 Solaris 处于不可用状态，将整个光纤通道设备报告为不可用。在使用 \fB-c\fR unconfigure 命令的情况下的以下选项仅移除光纤通道设备的处于不可用状态的 Solaris 设备。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunusable_SCSI_LUN\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBunconfigure\fR 操作，移除目标设备的任何脱机的设备节点。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关用法信息，请参见 \fBcfgadm\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+目前没有可用的测试命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+目前没有可用的硬件专用函数。
+.RE
+
+.sp
+.LP
+所有其他选项的含义与 \fBcfgadm\fR(1M) 手册页中定义的含义相同。
+.SH 示例
+.LP
+\fB示例 1 \fR取消配置磁盘
+.sp
+.LP
+以下命令可用于取消配置磁盘：
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR取消配置单个挂接点下的所有配置的磁盘
+.sp
+.LP
+以下命令取消配置挂接点 \fBc0\fR 下的所有配置的磁盘。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure c0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR配置磁盘
+.sp
+.LP
+以下命令配置磁盘：
+
+.sp
+.in +2
+.nf
+# cfgadm -c configure c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR配置单个挂接点下的所有未配置的磁盘
+.sp
+.LP
+以下命令配置挂接点 \fBc0\fR 下的所有未配置的磁盘。
+
+.sp
+.in +2
+.nf
+# cfgadm -c configure c0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR从系统信息库中移除光纤通道光纤网络设备挂接点
+.sp
+.LP
+以下命令从光纤网络设备系统信息库中无条件地移除光纤通道光纤网络设备挂接点。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure -o force_update c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR从目标设备中移除脱机的 Solaris 设备节点
+.sp
+.LP
+以下命令从目标设备中移除脱机的 Solaris 设备节点：
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure -o unusable_SCSI_LUN c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/fp.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+光纤通道光纤网络设备节点管理的硬件专用库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cfg/fp/fabric_WWN_map\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前配置的光纤网络设备的物理 \fBap_id\fR 的系统信息库。仅用于在引导时重新配置这些光纤网络设备。仅当设置了 \fB/kernel/drv/fp.conf\fR 文件中的 "manual_configuration_only" 时才使用该系统信息库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rcS.d/fdevattach\fR\fR
+.ad
+.sp .6
+.RS 4n
+重新配置引导时物理 \fBap_id\fR 在 \fB/etc/cfg/fp/fabric_WWN_map\fR 中列出的光纤网络设备。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性T{
+service/storage/fibre-channel/fc-fabric、service/storage/fibre-channel/fc-fabricx
+T}
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBcfgadm\fR(1M)、\fBsvcadm\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBlibcfgadm\fR(3LIB)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBfp\fR(7D)
+.SH 警告
+.sp
+.LP
+对于正常 \fBconfigure\fR/\fBunconfigure\fR 操作下的系统信息库更新，请勿使用硬件专用选项。如果当引导时光纤网络设备的节点创建失败且错误状态被认为是永久性的，希望使用硬件专用选项。带 \fBforce_update\fR 硬件专用选项的 \fBunconfigure\fR 命令从系统信息库中无条件地移除存在故障的光纤网络设备的挂接点。
+.SH 附注
+.sp
+.LP
+对于具有未知或无 SCSI 设备类型的设备（例如，光纤通道主机总线适配器），\fBconfigure\fR 操作可能不适用。
+.sp
+.LP
+\fBconfigure\fR 和 \fBunconfigure\fR 命令在由端口 WWN ap_id 表示的光纤通道设备级别上运行。如果为一个光纤通道设备配置了多个 FCP SCSI LUN，关联端口 WWN ap_id 上的 \fBconfigure\fR 命令用于为每个 \fBFCP SCSI LUN\fR 创建一个 Solaris 设备，除非使用 \fBfp.conf\fR 文件中的 "pwwn-lun-blacklist" 属性进行了指定。\fBunconfigure\fR 命令移除所有与端口 WWN ap_id 相关联的 Solaris 设备。\fBFCP SCSI LUN\fR 级别 ap_id 对于 \fBconfigure\fR 和 \fBunconfigure\fR 命令无效。
+.sp
+.LP
+过时的 \fBshow_FCP_dev\fR 选项已被新的 \fBshow_SCSI_LUN\fR 选项代替，且过时的 \fBunusable_FCP_dev\fR 选项已被新的 \fBunusable_SCSI_LUN\fR 选项代替。
+.sp
+.LP
+\fBcfgadm_fp\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/system/device/fc-fabric:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+引导时启动此服务后，对于光纤网络设备配置，无需实施此服务的管理操作。 

@@ -1,0 +1,392 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH pginfo 1M "2010 年 8 月 18 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+pginfo \- プロセッサグループに関する情報の表示
+.SH 形式
+.LP
+.nf
+\fBpginfo\fR [\fB-T\fR] [\fB-p\fR] [\fB-v\fR] [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR]
+     [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-s\fR [\fB-v\fR] [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-c\fR | \fB-I\fR [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-h\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpginfo\fR は、プロセッサグループ (PG) 階層、その内容、およびその特性に関する情報を表示します。PG とは、共通の特性でひとまとめにした CPU のセットです。
+.sp
+.LP
+PG は、オペレーティングシステムによって、実行パイプラインやキャッシュなど、パフォーマンスに関連したハードウェアを共有する CPU を表すために使用されます。これらの PG は、マシンのプロセッサトポロジをモデル化した階層に編成されます。この階層では、それぞれの CPU (ストランド)　が、その CPU ともっとも多くのハードウェアを共有している CPU 群を表すリーフ PG を 1 つ持ちます。ルート PG に到達するまでリーフ PG を上位にさかのぼっていくにつれ、その CPU と共有されるハードウェアの数は少なくなっていきます。ルート PG は、システム内のすべての CPU を含み、相互に共有するハードウェアがもっとも少ない CPU のグループを表します (PG 階層の例については、後述の「\fB使用例\fR」を参照してください)。
+.sp
+.LP
+マシンに、パフォーマンス関連のハードウェアの共有関係がない場合、\fBpginfo\fR は、システム内のすべての CPU を含むルート PG のみを表示します。
+.sp
+.LP
+デフォルトで、\fBpginfo\fR は、PG ID、共有関係、オンラインおよびオフラインの CPU など、システム内の各 PG に関する情報を表示します。デフォルトで PG を深さ優先順で表示し、PG がどのように相互に関連しているかをインデントを使用してわかりやすく示します (後述の「使用例」を参照)。\fB\fR
+.sp
+.LP
+オプションを指定して次の操作を行えます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+PG 階層をグラフィカルに表示する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+稼働中のシステムに存在する PG 共有関係を一覧表示する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+PG ID、CPU ID、または共有関係で対象の PG を指定して、PG の現在の使用状況情報を表示する
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+CPU ID または PG ID だけを表示するように指定する
+.RE
+.sp
+.LP
+さらに、\fBsystem\fR、\fBchip\fR、\fBcore\fR などの一般的な物理的関係を持つ CPU に相当する CPU を含む PG を表示する、\fB-p\fR オプションがあります。これらの物理的関係は、CPU の物理的特性を表し、パフォーマンスに関連したプロセッサ共有関係をカプセル化している場合としていない場合があります。
+.sp
+.LP
+\fBpginfo\fR がシステムデータのスナップショットを取得しているときに、システム構成が繰り返し変更された場合、\fBpginfo\fR はエラーメッセージを表示して、終了ステータス 1 で終了します。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIprocessor_id\fR ... \fR
+.ad
+.sp .6
+.RS 4n
+引数をプロセッサ ID と解釈して、指定されたプロセッサを含む PG に関する情報のみを表示します。
+.sp
+このオプションを \fB-T\fR オプションと一緒に使用すると、PG 階層には、指定された各 CPU の系列のみが表示されます。このオプションは、PG ID で対象の PG を指定する場合には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG に所属するすべての CPU の CPU ID のみを表示します。このオプションは、\fB-I\fR オプションと同時に使用することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+簡単なヘルプメッセージを表示し、終了ステータス 0 で終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG の PG ID のみを表示します。このオプションは、\fB-C\fR オプションと同時に使用することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG に対応する物理的関係を表示します。PG に、システム全体、プロセッサコア、またはチップと同じ CPU がある場合、それぞれ \fBsystem\fR、\fBcore\fR、または \fBchip\fR が、PG の共有関係のあとに角括弧 (「\fB[]\fR」) で囲まれて表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIstring1\fR,\fI string2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+指定された文字列のいずれかに一致した共有関係名を持つ PG に関する情報のみを表示します。
+.sp
+指定する各文字列は、完全な関係名でも、1 つ以上の関係名の一部でも構いません。文字列の照合では大文字と小文字は区別されません。使用可能な関係名は、\fB-s\fR オプションで表示される共有関係のリストに示されます。
+.sp
+複数の \fB-r\fR オプションを指定できますが、この場合、指定された文字列のいずれかが含まれる関係名を持つすべての PG に一致することになります。このオプションを \fB-T\fR オプションと一緒に使用すると、PG 階層には、指定された関係を持つ各 PG の系列のみが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIstring1\fR,\fI string2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前\fB以外\fRの共有関係名を持つ PG に関する情報のみを表示します。
+.sp
+文字列の照合は、前述の \fB-r\fR オプションの説明と同じです。複数の \fB-R\fR オプションを入力できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された PG について、稼働中のシステムでサポートされるすべての共有関係を表示します。このオプションとともに \fB-v\fR オプションを使用すると、共有関係ごとの PG のリストを取得できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+この結果表示される階層では、各 CPU (ハードウェアストランド) の系列は、もっとも多くのハードウェアを CPU と共有する PG から、もっとも少ないハードウェアを CPU と共有する PG の順番に並べられます。対象の CPU、PG、または関係が指定されると、結果として表示される PG 階層は、その PG 階層の中で、指定された CPU、PG、または関係を持つ PG の系列に限定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モード。PG に関する追加情報を表示します。-s、-C、または -I を付けずに使用した場合は、-T オプションと -p オプションを同時に指定した場合と同等です。-s オプションを付けて使用した場合は、共有関係ごとの PG のリストが表示されます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+1 つまたは複数の対応する ID、またはキーワード \fBall\fR を指定することによって、コマンド行で次のオペランドを入力できます。スペース区切りのリスト (たとえば \fB1 3\fR)、数値の範囲 (たとえば \fB5-8\fR)、またはその両方 (たとえば \fB1 3 5-8 13-16\fR) で、複数の ID を指定できます。PG と CPU を同時に指定することはできません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpg\fR\fR
+.ad
+.RS 16n
+.rt  
+対象の PG は、コマンド行から PG ID を使って指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+\fB-c\fR オプションを入力した場合、対象の CPU をコマンド行から CPU ID を使って指定できます。
+.RE
+
+.sp
+.LP
+指定された PG または CPU が無効である場合、\fBpginfo\fR コマンドは無効な ID を表示するメッセージを標準エラー出力に表示し、コマンド行で指定されたほかの PG または CPU を引き続き処理します。指定された PG または CPU が 1 つも有効でない場合、\fBpginfo\fR は終了ステータス 2 で終了します。
+.SH 使用例
+.sp
+.LP
+次の例では、システムには、8 つのコアと 32 のストランドを備えた 1 つの UltraSPARC T1 プロセッサチップが搭載されています。
+.LP
+\fB例 1 \fRすべての PG に関する情報を表示する
+.sp
+.LP
+次の引数なしのコマンドは、すべての PG に関する情報を表示します。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo\fR
+PG  RELATIONSHIP            CPUs
+0   System                  0-31
+3    Data_Pipe_to_memory    0-31
+2     Floating_Point_Unit   0-31
+1      Integer_Pipeline     0-3
+4      Integer_Pipeline     4-7
+5      Integer_Pipeline     8-11
+6      Integer_Pipeline     12-15
+7      Integer_Pipeline     16-19
+8      Integer_Pipeline     20-23
+9      Integer_Pipeline     24-27
+10     Integer_Pipeline     28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRすべての共有関係に関する情報を表示する
+.sp
+.LP
+次のコマンドは、すべての共有関係に関する情報を表示します。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -s -v\fR
+RELATIONSHIP         PGs
+-------------------- -------
+System               0
+Data_Pipe_to_memory  3
+Floating_Point_Unit  2
+Integer_Pipeline     1 4-10
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRPG 階層を表示する
+.sp
+.LP
+次のコマンドは、システム内のすべての PG に関する一般情報を表示します。出力には、どの PG がチップおよびコアに所属するかが示されます。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -p -T\fR
+0 (System) CPUs: 0-31
+`-- 3 (Data_Pipe_to_memory [system,chip]) CPUs: 0-31
+    `-- 2 (Floating_Point_Unit [system,chip]) CPUs: 0-31
+        |-- 1 (Integer_Pipeline [core]) CPUs: 0-3
+        |-- 4 (Integer_Pipeline [core]) CPUs: 4-7
+        |-- 5 (Integer_Pipeline [core]) CPUs: 8-11
+        |-- 6 (Integer_Pipeline [core]) CPUs: 12-15
+        |-- 7 (Integer_Pipeline [core]) CPUs: 16-19
+        |-- 8 (Integer_Pipeline [core]) CPUs: 20-23
+        |-- 9 (Integer_Pipeline [core]) CPUs: 24-27
+        `-- 10 (Integer_Pipeline [core]) CPUs: 28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR特定の基準でリストを表示する
+.sp
+.LP
+次のコマンドは、CPU 0 と整数パイプラインを共有する CPU のリストを表示します。この例ではさらに、-r オプションを使用して PG を共有関係名でフィルタ処理しています。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -r integer_pipeline -C -c 0\fR
+0 1 2 3
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR特定の基準で排除するオプションを使用する
+.sp
+.LP
+次のコマンドは、\fBInteger_Pipeline\fR の関係を持つ PG 以外のすべての PG を一覧表示します。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -R Integer_Pipeline\fR
+PG RELATIONSHIP            CPUs
+0  System                  0-31
+3  Data_Pipe_to_memory     0-31
+2  Floating_Point_Unit     0-31
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+構文が正しくありません。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.sp
+.LP
+コマンド行オプションおよび出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBpgstat\fR(1M), \fBattributes \fR(5)

@@ -1,0 +1,223 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH share 1M "2011 年 8 月 10 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+share \- ファイルシステム共有を表示する、またはローカルファイルシステムをリモートシステムからマウント可能にする
+.SH 形式
+.LP
+.nf
+\fBshare\fR [\fB-F\fR \fIprotocol\fR] \fB-a\fR
+.fi
+
+.LP
+.nf
+\fBshare\fR [\fB-F\fR \fIprotocol\fR] [\fB-o\fR \fIoptions\fR] [\fB-d\fR \fIdescription\fR] \fIpathname\fR [\fIsharename\fR]
+.fi
+
+.LP
+.nf
+\fBshare\fR [\fB-F\fR \fIprotocol\fR] [\fB-A\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBshare\fR コマンドは、ファイルシステムの共有を定義および公開します。これは、共有プロトコルを使用してファイルシステムをマウントできることを意味します。
+.sp
+.LP
+\fB-F\fR \fIprotocol\fR オプションを指定しない場合、\fB/etc/dfs/fstypes\fR 内の最初のファイル共有プロトコルがデフォルトとして使用されます。
+.sp
+.LP
+NFS に固有の共有オプションについては、\fBshare_nfs\fR(1M) を参照してください。SMB に固有の共有オプションについては、\fBshare_smb\fR(1M) を参照してください。
+.sp
+.LP
+\fBshare\fR コマンドを使用した、ZFS ファイルシステムの NFS 共有または SMB 共有の定義および公開は、古い運用方法であるとみなされています。\fBzfs set share\fR コマンドを使用して NFS または SMB の共有プロパティーを定義し、ZFS の \fBsharenfs\fR または \fBsharesmb\fR プロパティーを設定して共有を公開することを検討してください。詳細は、\fBzfs\fR(1M) および \fBshare_smb\fR(1M) を参照してください。
+.sp
+.LP
+上記の「形式」に示された \fBshare\fR コマンドの 3 つ目の形式では、\fBshare\fR は公開された共有を表示するか、\fB-A\fR オプションを付けてすべての構成済み (定義済み) の共有を表示します。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイル共有プロトコルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fI specific_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrw\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有 \fIpathname\fR は、すべてのクライアントに読み取りおよび書き込み権を付与して公開されます。これはデフォルトの動作です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrw=\fR\fIclient\fR[\fI:client\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+共有 \fIpathname\fR は、リストされたクライアントにのみ読み取りおよび書き込み権を付与して公開されます。ほかのシステムは共有パス名にアクセスできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有 pathname は、すべてのクライアントに読み取り専用アクセス権を付与して公開されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro=\fR\fIclient\fR[\fI:client\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+共有 pathname は、リストされたクライアントにのみ読み取り専用アクセス権を付与して公開されます。ほかのシステムは共有パス名にアクセスできません。
+.RE
+
+複数のオプションはコンマで区切ります。オプションごとの複数のオペランドはコロンで区切ります。「使用例」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+公開されるファイルシステムの共有について説明したコメントを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義されているすべての共有を公開します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義されているすべての共有を表示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR読み取り専用アクセス権を付与した NFS 共有の公開
+.sp
+.LP
+次のコマンドは、読み取り専用アクセス権を付与して \fB/ufsfs\fR の NFS 共有を定義および公開します。
+
+.sp
+.in +2
+.nf
+# \fBshare -F nfs -o ro /ufsfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR複数の共有オプションを指定した NFS 共有の公開
+.sp
+.LP
+次のコマンドは、読み取り専用アクセス権を持つ \fBusers_nfs\fR という \fBnetgroup\fR、および読み取りおよび書き込み権を持つ指定されたホストのユーザーを指定して、\fB/export/manuals\fR ファイルシステムの NFS 共有を定義および公開します。
+
+.sp
+.in +2
+.nf
+# \fBshare -F nfs -o ro=users_nfs,rw=host1:host2:host3 /export/manuals\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/dfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+このファイルは廃止されています。SMF サービスは、NFS 共有または SMB 共有をブート時に公開します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/fstypes\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイル共有プロトコルのリスト。デフォルトのファイル共有プロトコルは NFS です。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件SUNWcs
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBmountd\fR(1M), \fBnfsd\fR(1M), \fBshare_nfs\fR(1M), \fBshare_smb\fR(1M), \fBshareall\fR(1M), \fBunshare\fR(1M), \fBzfs\fR(1M), \fBattributes\fR(5) 
+.SH 注意事項
+.sp
+.LP
+\fBshare\fR コマンドが同じファイルシステムに対して複数回呼び出された場合、最後の \fBshare\fR の呼び出しが前の呼び出しより優先されます。最後の \fBshare\fR コマンドによって設定されたオプションによって、古いオプションが置き換えられます。たとえば、\fB/somefs\fR の \fBusera\fR に読み取りおよび書き込み権が付与されていて、\fB/somefs\fR の \fBuserb\fR にも読み取りおよび書き込み権を付与する場合は、次の構文を使用します。
+.sp
+.in +2
+.nf
+example% \fBshare -F nfs -o rw=usera:userb /somefs\fR
+.fi
+.in -2
+.sp
+

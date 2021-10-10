@@ -1,0 +1,389 @@
+'\" te
+.\"  Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH pvs 1 "2011 年 6 月 8 日" "SunOS 5.11" "用户命令"
+.SH 名称
+pvs \- 显示动态对象的内部版本信息
+.SH 用法概要
+.LP
+.nf
+\fBpvs\fR [\fB-Cdlnorsv\fR] [\fB-I\fR \fIindex-expr\fR] [\fB-N\fR \fIname\fR] \fIfile\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpvs\fR 实用程序显示 \fBELF\fR 文件中包含的任何内部版本信息。通常情况下，这些文件是动态可执行文件和共享对象，并且有可能是可重定位的对象。此版本信息可以是以下两个类别中的一种：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+版本定义
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+版本依赖项
+.RE
+.sp
+.LP
+版本\fI定义\fR描述了可通过 \fBELF\fR 文件提供的接口。每个版本定义都与该文件提供的一组全局符号相关联。在创建某个文件期间，可以通过链接编辑器使用 \fB- M\fR 选项和相关的 \fImapfile\fR 指令将版本定义分配给该文件。有关更多详细信息，请参见\fI《Linker and Libraries Guide》\fR。
+.sp
+.LP
+版本\fI依赖项\fR描述了动态对象对任何共享对象依赖项的版本定义的绑定需求。如果构建的动态对象引用了某个共享对象，链接编辑器将在动态对象内记录相应的信息，指示该共享对象是一个依赖项。在运行时必须满足此依赖性。如果共享对象也包含版本\fI定义\fR，则还会在正在创建的动态对象中记录用来满足动态对象的全局符号需求的那些版本定义。在进程初始化时，运行时链接程序将版本\fI依赖项\fR用作一种验证方法，用以验证用来构建进程的动态对象的接口需求。
+.SH 选项
+.sp
+.LP
+支持下列选项。如果 \fB-d\fR 或 \fB- r\fR 选项均未指定，则会同时启用两者。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 17n
+.rt  
+取消重整 C++ 符号名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 17n
+.rt  
+输出版本定义信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIindex-expr\fR\fR
+.ad
+.RS 17n
+.rt  
+通过特定的版本索引或索引范围来限定要检查的版本。例如，可使用以下命令显示某个对象中索引为 3 的版本：
+.sp
+.in +2
+.nf
+example% \fBpvs -I 3 \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+\fIindex-expr\fR 可以是指定一个特定版本的单个非负整数值，如上一示例中所示。另外，\fIindex-expr\fR 还可以包含两个这样的值，以冒号 (:) 分隔，指示版本的范围。以下示例显示文件中的版本 3、4 和 5：
+.sp
+.in +2
+.nf
+example% \fBpvs -I 3:5 \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+在指定索引范围时，可以省略第二个值以指示文件中的最后一项。例如，以下语句列出从第 10 个到最后的所有版本：
+.sp
+.in +2
+.nf
+example% \fBpvs -I 10: \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+有关匹配选项（\fB-I\fR、\fB-N\fR）的更多信息，请参见"匹配选项"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 17n
+.rt  
+输出由于版本更新而从全局绑定降级为本机绑定的符号。按照惯例，这些符号条目位于 \fI\&.symtab\fR 部分中，介于表示输出文件的 \fI FILE\fR 符号和表示用于生成输出文件的第一个输入文件的 \fIFILE \fR 符号之间。这些降级的符号条目分配有虚构的版本定义 \fB_LOCAL_\fR。如果已对文件执行了剥除操作（请参见 \fBstrip\fR(1)），或者无法确定符号条目约定，则不会输出任何降级的符号。
+.sp
+隐式使用 \fB-l\fR 选项会启用 \fB-s\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 17n
+.rt  
+标准化版本定义信息。缺省情况下，将显示对象内的所有版本定义。不过，版本定义可以继承其他的版本定义。在标准化形式下，只会显示每个继承列表的标题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fIname\fR\fR
+.ad
+.RS 17n
+.rt  
+与 \fB-d\fR 选项一起使用时，\fB-N\fR 仅输出给定版本定义 \fIname\fR 及其继承的任何版本定义的信息。
+.sp
+与 \fB-r\fR 选项一起使用时，\fB-N\fR 仅输出给定依赖项文件 \fIname\fR 的信息。可以限定依赖项文件中的某个特定版本，方法是将版本放在文件名之后的括号中：
+.sp
+.in +2
+.nf
+example% \fBpvs -N 'dependency (version)' \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+有关匹配选项（\fB-I\fR、\fB-N\fR）的更多信息，请参见"匹配选项"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 17n
+.rt  
+创建单行版本定义输出。缺省情况下，文件、版本定义和任何符号输出均以缩进形式显示，以便于进行人工检查。此选项在每个输出行前附加文件和版本定义名称，在使用自动工具进行分析时，此选项显得尤为有用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 17n
+.rt  
+输出版本依赖项性（需求）信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 17n
+.rt  
+输出与每个版本定义关联的符号。显示数据项的大小（字节）以及由对象定义的版本中的任何数据符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+详细输出。指示任何弱版本定义以及任何版本定义继承。与 \fB-N\fR 和 \fB-d\fR 选项一起使用时，还会显示基本版本定义的继承。与 \fB-s\fR 选项一起使用时，还会显示版本符号定义。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+要显示其内部版本信息的 \fBELF\fR 文件。
+.RE
+
+.SH 用法
+.SS "匹配选项"
+.sp
+.LP
+\fB-I\fR 和 \fB-N\fR 选项统称为\fB匹配选项\fR。这些选项用于通过索引或名称来缩小要检查的版本范围。
+.sp
+.LP
+在一个给定的 \fBpvs\fR 调用中，可以混合使用任意数量和类型的匹配选项。在这种情况下，\fBpvs\fR 显示与所使用的任何匹配选项匹配的所有版本的超集。使用此功能，可以通过用于指定每个项目的最简便形式来选择复杂的项目分组。
+.SH 示例
+.LP
+\fB示例 1 \fR显示版本定义
+.sp
+.LP
+以下示例显示 \fBlibelf.so.1\fR 的版本定义：
+
+.sp
+.in +2
+.nf
+% \fBpvs -d /lib/libelf.so.1\fR
+	libelf.so.1;
+	SUNW_1.1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR创建单行显示
+.sp
+.LP
+可以使用 \fB-n\fR 和 \fB-o\fR 选项创建标准的单行显示，这适用于创建\fI映射文件\fR版本控制指令。
+
+.sp
+.in +2
+.nf
+% \fBpvs -don /lib/libelf.so.1\fR
+/lib/libelf.so.1 -	SUNW_1.1;
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR显示版本需求
+.sp
+.LP
+以下示例显示 \fBldd\fR 和 \fBpvs\fR 的版本需求：
+
+.sp
+.in +2
+.nf
+% \fBpvs -r /usr/bin/ldd /usr/bin/pvs\fR
+/usr/bin/ldd:
+	libelf.so.1 (SUNW_1.1);
+	libc.so.1 (SUNW_1.1);
+/usr/bin/pvs:
+	libelf.so.1 (SUNW_1.1);
+	libc.so.1 (SUNW_1.1);
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR确定依赖项符号版本
+.sp
+.LP
+以下示例显示 \fBldd\fR 命令预期在运行时从其中找到 printf 函数的共享对象及其属于的版本：
+
+.sp
+.in +2
+.nf
+% \fBpvs -ors /usr/bin/ldd | grep ' printf'\fR
+/usr/bin/ldd -  libc.so.1 (SYSVABI_1.3): printf;
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR确定特定版本中的所有依赖项符号
+.sp
+.LP
+可使用 \fB-N\fR 选项获取某个依赖项中属于某个特定版本的所有符号的列表。确定 \fBldd\fR 将从 \fBlibc.so.1\fR 的版本 \fBSYSVABI_1.3 \fR 中找到的符号：
+
+.sp
+.in +2
+.nf
+% \fBpvs -s -N 'libc.so.1 (SYSVABI_1.3)' /usr/bin/ldd\fR
+
+       libc.so.1 (SYSVABI_1.3):
+               _exit;
+               strstr;
+               printf;
+               __fpstart;
+               strncmp;
+               lseek;
+               strcmp;
+               getopt;
+               execl;
+               close;
+               fflush;
+               wait;
+               strerror;
+               putenv;
+               sprintf;
+               getenv;
+               open;
+               perror;
+               fork;
+               strlen;
+               geteuid;
+               access;
+               setlocale;
+               atexit;
+               fprintf;
+               exit;
+               read;
+               malloc;
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，\fBldd\fR 使用的符号的具体列表在各个 Solaris 发行版之间可能会更改。
+
+.LP
+\fB示例 6 \fR按索引显示所定义的基本版本
+.sp
+.LP
+按照惯例，由对象定义的基本全局版本具有该对象的名称。例如，\fBpvs\fR 的基本版本的名称为 \fB\&'pvs'\fR。任何对象的基本版本始终是版本索引 1。因此，可使用 \fB-I\fR 选项显示任何对象的基本版本，而不需要指定其名称：
+
+.sp
+.in +2
+.nf
+% \fBpvs -v -I 1 /usr/bin/pvs\fR
+       pvs [BASE];
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+如果没有找到所请求的版本信息，则返回非零值。否则，将返回 \fB0\fR 值。
+.sp
+.LP
+如果以下任何内容属实，都将判定为无法找到版本信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+指定了 \fB-d\fR 选项，并且没有找到版本定义。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+指定了 \fB-r\fR 选项，并且没有找到版本需求。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+没有指定 \fB-d\fR 和 \fB-r\fR 选项，并且没有找到版本定义或版本需求。
+.RE
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性developer/base-developer-utilities
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBelfdump\fR(1)、\fBld\fR(1)、\fBldd\fR(1)、\fBstrip\fR(1)、\fBelf\fR(3ELF)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR

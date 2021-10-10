@@ -1,0 +1,187 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH sasinfo 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+smtp-notify \- 用于软件事件的电子邮件通知守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/fm/notify/smtp-notify\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsmtp-notify\fR 是用于订阅软件事件和故障管理生命周期事件并根据存储在 SMF 服务配置系统信息库中的一组通知首选项生成电子邮件通知的守护进程。
+.sp
+.LP
+电子邮件通知首选项是使用 \fBsvccfg\fR(1M) 设置的。
+.sp
+.LP
+\fBsmtp-notify\fR 由服务管理工具 \fBsmf\fR(5) 管理，其服务 FMRI 为：
+.sp
+.in +2
+.nf
+svc:/system/fm/smtp-notify:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.SS "属性"
+.sp
+.LP
+可以设置以下服务属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/rootdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+这是缺省值为 \fB/\fR 的一个 \fBastring\fR 属性。设置了此属性时，将为 \fBsmtp-notify\fR 评估的所有路径名使用指定的根目录。
+.RE
+
+.sp
+.LP
+缺省情况下，电子邮件事件通知的正文将基于随 Oracle Solaris 操作系统提供的一组本地化消息模板。\fBsmtp-notify\fR 将查找相应模板（根据事件类）并使用事件有效负荷中的元素填充模板。
+.sp
+.LP
+通过指定 \fBmsg_template\fR 通知首选项可以替换用户提供的消息正文模板。有关针对每个服务或每个事件类设置通知首选项的更多信息，请参阅 \fBsvccfg\fR(1M)。
+.sp
+.LP
+消息正文模板可以包含下面列出的扩展宏。在发送消息之前，将使用 \fBsmtp-notify\fR 扩展这些宏。
+.sp
+.in +2
+.nf
+Macro          Description
+-----          -----------
+%%              expands to a literal % character
+%<HOSTNAME>     expands to the hostname on which the event
+                occurred
+%<URL>          expands to the URL of the knowledge article
+                associated with this event
+%<CLASS>        expands to the event class
+%<UUID>         expands to the UUID of the event
+%<CODE>         expands to the knowledge article message ID
+%<SEVERITY>     expands to the severity of the event
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+对于 SMF 服务状态转换事件，可以在消息模板中指定以下附加宏：
+.sp
+.in +2
+.nf
+%<FMRI>          expands to FMRI of the affected service
+%<FROM-STATE>    expands to the previous state of the service
+%<TO-STATE>      expands to the new state of the service
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+为方便进行电子邮件过滤，\fBsmtp-notify\fR 将为所有事件类的事件有效负荷的以下组件创建 X 头：
+.sp
+.in +2
+.nf
+Header name             Value
+-----------             -----
+X-FMEV-HOSTNAME         the name of the host on which the
+                        event occurred
+X-FMEV-CLASS            the event class
+X-FMEV-CODE             the Knowledge article message ID
+X-FMEV-SEVERITY         the severity of the event
+X-FMEV-UUID             the UUID of the event
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SMF 服务状态转换事件也将包含下面的附加 X 头：
+.sp
+.in +2
+.nf
+Header name             Value
+-----------             -----
+X-FMEV-FMRI             the FMRI of the affected SMF service
+X-FMEV-FROM-STATE       the previous state of the service
+X-FMEV-TO-STATE         the new state of the service
+.fi
+.in -2
+.sp
+
+.SH 示例
+.LP
+\fB示例 1 \fR配置通知首选项
+.sp
+.LP
+以下命令为 SMF 服务状态转换事件配置通知首选项。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/system/svc/global:default setnotify -g \e\fR
+\fBfrom-online,to-maintenance mailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR启用电子邮件通知
+.sp
+.LP
+以下命令为故障管理问题诊断事件启用电子邮件通知。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify problem-diagnosed mailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR列出通知设置
+.sp
+.LP
+以下命令列出故障管理问题诊断事件的所有通知设置。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg listnotify problem-diagnosed\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/fault-management/smtp-notify
+_
+接口稳定性Unstable（不稳定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBsyslogd\fR(1M)、\fBattributes\fR(5)、\fBsmf\fR(5)

@@ -1,0 +1,431 @@
+'\" te
+.\" Portions Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.\" Copyright (c) 2002-2006 Szabolcs Szakacsits
+.\" Copyright (c) 2002-2005 Anton Altaparmakov
+.\" Copyright (c) 2002-2003 Richard Russon
+.\" Copyright (c) 2007 Yura Pakhuchiy
+.\" This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program (in the main directory of the Linux-NTFS distribution in the file COPYING); if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfsundelete 1M "2009 年 5 月 22 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ntfsundelete \- NTFS ボリュームからの削除されたファイルの回復
+.SH 形式
+.LP
+.nf
+\fBntfsundelete\fR [\fIoptions\fR] \fIdevice\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBntfsundelete\fR ユーティリティーは、適切な状況下で、削除されたファイルを NTFS ボリュームから回復できます。このコマンドには 3 つの操作モードがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトモードです。\fBscan\fR は、NTFS ボリュームを読み取り、削除されたファイルを検索するだけです。検索後、削除された各ファイルの i ノード番号、名前、サイズを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBundelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+undelete モードは、正規表現に一致するファイル (オプション \fB-m\fR)、または \fIinode-expressions\fR で指定されたファイルのどちらかを取り、できるだけ多くのデータを回復します。別の場所に結果を保存します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcopy\fR\fR
+.ad
+.sp .6
+.RS 4n
+上級者向けオプションです。MFT の一部をファイルに保存します。このファイルは \fBntfsundelete\fR のデバッグ時に役立ちます。
+.RE
+
+.sp
+.LP
+\fBntfsundelete\fR でファイルを回復できない状況は多数あります。たとえば、次のシナリオを考えます。ファイルを削除したとき、MFT レコードには未使用というマークが付けられ、ディスクの使用状況を表すビットマップが更新されます。電源をすぐに切らない場合、これまでファイルが存在していた空き領域が上書きされる可能性があります。さらに悪い場合は、MFT レコードが別のファイルに再使用されることもあります。このような事態になった場合、ファイルがディスク上のどこにあったかを判別することは不可能です。
+.sp
+.LP
+ファイルのすべてのクラスタが未使用の場合でも、一部の短命ファイルによって上書きされていないという保証はありません。
+.sp
+.LP
+\fBntfsundelete\fR は、圧縮または暗号化されたファイルを回復できません。スキャン中、このようなファイルは 0% 回復可能であると表示されます。
+.SS "ロケール"
+.sp
+.LP
+NTFS では、すべてのファイル名が Unicode で格納されます。ファイル名は、\fBntfsundelete\fR によって現在のロケールに変換されて表示されます。このユーティリティーは漢字ファイル名を正しく表示し、正しく回復します。
+.SS "拡張 MFT レコード"
+.sp
+.LP
+まれに、ファイルを記述したメタデータを保持するために、単一の MFT レコードでは不足する場合があります (1 つのファイルが数百のフラグメントに分散している場合に不足します)。このような場合は、ある MFT レコードにファイル名が格納され、別のレコードにデータに関する情報が格納される可能性があります。\fBntfsundelete\fR は、これらのレコードをまとめようとはしません。単に、データが含まれる、名前のないファイルを一覧表示するだけです。
+.SS "回復されたファイルのサイズおよび作成日"
+.sp
+.LP
+\fBntfsundelete\fR は、ファイルを回復するために、ファイルのメタデータを読み取る必要があります。残念ながら、ファイルが削除されると、メタデータは整合性のない状態になる可能性があります。たとえば、ファイルサイズが 0 と記録される場合や、ファイルの作成日が、削除された日時や無作為な日時に設定される場合があります。これらの状況では、\fBntfsundelete\fR は、見つかった最大のファイルサイズを選択して、それをディスクに書き込みます。また、ファイルの作成日を最終更新日に設定しようとします。この日付は、正しい最終更新日の場合もあれば、予期しない日付の場合もあります。
+.SH オプション
+.sp
+.LP
+サポートされているオプションを次に示します。ほとんどのオプションには、単一文字と完全名の両方の形式があります。引数を取らない単一文字オプションは複数を組み合わせることができます。たとえば、\fB-fv\fR は \fB-f\fR \fB-v\fR と同等です。完全名のオプションは、その名前の一意の接頭辞に短縮できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR、\fB--byte\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+回復不可能なファイルクラスタの部分を、\fInum\fR で表されるバイトで埋めます。デフォルトは 0 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR、\fB--case\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB--match\fR オプションを付けてファイル名検索を行うと、照合を行うときに大文字と小文字を区別します。デフォルトのファイル名検索では、大文字と小文字を区別しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR、\fB--copy\fR \fIrange\fR\fR
+.ad
+.sp .6
+.RS 4n
+この上級者向けオプションは、MFT FILE レコードのブロックをファイルに書き込みます。デフォルトファイルは、現在のディレクトリに作成される mft です。このオプションは、\fB--output\fR オプションおよび \fB--destination\fR オプションと同時に指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR、\fB--destination\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB--copy\fR オプションと \fB--undelete\fR オプションの出力ファイルの場所を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存のファイルを上書きしないなど、一部の妥当なデフォルト値を無効にします。このオプションは慎重に使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR、\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+それぞれの簡単な説明が付いたオプションのリストを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB--inodes\fR \fIrange\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した範囲の i ノード番号内のファイルを回復します。\fIrange\fR には、単一の i ノード番号、コンマ区切りの複数の番号、またはダッシュ (\fB-\fR) 区切りの範囲を指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR、\fB--match\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIpattern\fR に一致するファイル名だけを検索することによって、出力をフィルタ処理します。パターンには、ちょうど 1 文字に一致するワイルドカード \fB?\fR や、0 個以上の文字に一致する \fB*\fR を含めることができます。デフォルトでは、照合では大文字と小文字を区別しません。検索で大文字と小文字を区別するには、\fB--case\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR、\fB--optimistic\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在使用中とマークされている場合でも、ファイルの一部を回復します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR、\fB--output\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB--copy\fR オプションまたは \fB--undelete\fR オプションで作成される出力ファイルの名前を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR、\fB--parent\fR\fR
+.ad
+.sp .6
+.RS 4n
+削除されたファイルの親ディレクトリを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--percentage\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+回復可能率が \fInum\fR パーセントの内容のファイルだけに一致するように、\fB--scan\fR オプションの出力をフィルタ処理します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR、\fB--quiet\fR\fR
+.ad
+.sp .6
+.RS 4n
+出力の量を最小限にします。このオプションは、\fB--scan\fR オプションを使用する場合には役立ちません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--scan\fR\fR
+.ad
+.sp .6
+.RS 4n
+NTFS ボリュームを検索して、回復できる可能性があるファイルのリストを表示します。これは \fBntfsundelete\fR のデフォルトの動作です。このリストは、ファイル名、サイズ、回復可能率、または最終更新時刻でフィルタ処理できます。それぞれ \fB--match\fR、\fB--size\fR、\fB--percent\fR、\fB--time\fR オプションを使用します。
+.sp
+このオプションの出力の \fB%age\fR (パーセント) フィールドには、ファイルの中で回復できる見込みのある割合が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR、\fB--size\fR \fIrange\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定の範囲のファイルサイズを検索することによって、\fB--scan\fR オプションの出力をフィルタ処理します。\fIrange\fR は、2 つの数値をハイフン (\fB-\fR) で区切って指定できます。サイズの単位は、K バイト、M バイト、G バイト、T バイトに対してそれぞれ接尾辞 \fBk\fR、\fBm\fR、\fBg\fR、\fBt\fR の略称を使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--time\fR \fIsince\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB--scan\fR オプションの出力をフィルタ処理します。この時間以降に変更されたファイルだけを照合します。時間は、数値と、日、週、月、年にそれぞれ対応する接尾辞 \fBd\fR、\fBw\fR、\fBm\fR、\fBy\fR で指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR、\fB--truncate\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsundelete\fR のデフォルトの動作では、ファイルのサイズをもっとも近いクラスタに\fB切り上げ\fRます (512 バイトの倍数になります)。ユーティリティーにファイルのサイズに関する完全なデータがある場合、このオプションは正確にそのサイズにファイルを復元します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR、\fB--undelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+undelete モードを指定します。\fB--match\fR オプションや \fB--inodes\fR オプションを使用することにより、回復対象のファイルを指定できます。このオプションは、\fB--output\fR、\fB--destination\fR、および \fB--byte\fR と同時に指定できます。
+.sp
+\fB--output\fR オプションを使用しないかぎり、ファイルを回復するときにその元の名前が付けられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR、\fB--verbose\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsundelete\fR が表示する出力の量を増やします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR、\fB--version\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsundelete\fR のバージョン番号、著作権、およびライセンスを表示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR削除されたファイルを検索する
+.sp
+.LP
+次のコマンドは、特定のデバイス上で削除されたファイルを検索します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRワイルドカードに一致するファイルを検索する
+.sp
+.LP
+次のコマンドは、\fB*.doc\fR に一致する削除されたファイルを検索します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -s -m '*.doc'\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR特定のサイズのファイルを検索する
+.sp
+.LP
+次のコマンドは、少なくとも 90% のデータが回復可能な 5000 から 6000000 バイトの削除されたファイルを、\fB/dev/dsk/c0d0p1\fR 上で検索します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -S 5k-6m -p 90\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR最近変更されたファイルを検索する
+.sp
+.LP
+次のコマンドは、削除されたファイルのうち過去 2 日間に変更されたものを検索します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -t 2d\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRi ノード範囲を指定する
+.sp
+.LP
+次のコマンドは、デバイス \fB/dev/sda1\fR の 2、5、および 100 から 131 の i ノードの削除を取り消します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/sda1 -u -i 2,5,100-131\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR出力ファイルとディレクトリを指定する
+.sp
+.LP
+次のコマンドは、i ノード番号 3689 の削除を取り消し、ファイルに \fBwork.doc\fR の名前を付け、ユーザーのホームディレクトリにそのファイルを格納します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -u -i 3689 -o work.doc -d ~\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRMFT レコードを保存する
+.sp
+.LP
+次のコマンドは、MFT レコード 3689 から 3690 を、ファイル \fBdebug\fR に保存します。
+
+.sp
+.in +2
+.nf
+# \fBntfsundelete /dev/dsk/c0d0p1 -c 3689-3690 -o debug\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/ntfsprogs
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBntfsclone\fR(1M), \fBntfsresize\fR(1M), \fBparted\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 著者
+.sp
+.LP
+\fBntfsundelete\fR は、Anton Altaparmakov の協力の下、Richard Russon および Holger Ohmacht が作成しました。

@@ -1,0 +1,860 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH cfgadm_shp 1M "2009 年 8 月 25 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_shp \- cfgadm の PCI Express および標準 PCI ホットプラグ対応ハードウェア固有のコマンド
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR]
+     [\fB-o\fR \fIhardware_options\fR] \fB-c\fR \fIfunction\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR]
+     [\fB-o\fR \fIhardware_options\fR] \fB-x\fR \fIhardware_function\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-s\fR \fIlisting_options\fR]
+     [\fB-o\fR \fIhardware_options\fR] \fB-x\fR \fIhardware_function\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-t\fR\fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_function\fR]\fB-h\fR [\fIap_id\fR | \fIap_type\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+PCI Express および標準 PCI ホットプラグ対応ハードウェア固有のライブラリ \fB/usr/lib/cfgadm/shp.so.1\fR は、\fBcfgadm\fR コマンド (\fBcfgadm\fR(1M) を参照) による、ホットプラグ対応システム内の個々のホットプラグ対応スロットに対する、PCI Express および標準 PCI ホットプラグ対応アダプタカードのホットプラグ操作をサポートします。その他の PCI ホットプラグ対応アダプタカード (PCI Express および標準 PCI ホットプラグ対応カード以外) のサポートは、\fBcfgadm_pci\fR ライブラリ (\fBcfgadm_pci\fR(1M) を参照) によって提供されます。ホットプラグ管理モデルは、このマニュアルページに示されている点を除き、PCI Express ホットプラグおよび標準 PCI ホットプラグで同じです。
+.sp
+.LP
+PCI ホットプラグの場合、特定の PCI バス上の各ホットプラグスロットは、その PCI バスの接続点によって表されます。
+.sp
+.LP
+接続点は、受容体と占有装置の 2 つの部分で構成されます。通常、PCI ホットプラグにおける受容体は、物理ホットプラグ対応スロットと見なされ、占有装置は、スロットに接続される PCI アダプタカードと見なされます。
+.sp
+.LP
+接続点には、\fBap_id\fR を通じて名前が付けられます。\fBap_id\fR には、論理 ap_id と物理 ap_id の 2 種類があります。物理 \fBap_id\fR は、次の例のように物理パス名に基づいています。
+.sp
+.in +2
+.nf
+/devices/pci@7c,0/pci10de,5d@d:pcie2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+一方、論理 \fBap_id\fR は、\fBpcie2\fR などの、より短く、ユーザーにわかりやすい名前です。ホットプラグ PCI の \fBap_type\fR は \fBpci\fR です。
+.sp
+.LP
+\fBap_type\fR は、\fBType\fR フィールドの情報と同じではない点に注意してください。
+.SS "PCI Express の ap_id の命名"
+.sp
+.LP
+それ自体は PCI Express デバイスではない接続点を含め、PCI Express 階層内に存在する (つまり、親または祖先が PCI Express デバイスである) 接続点では、次に示す名付けスキームが使用されます。
+.sp
+.LP
+文法:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAPID\fR : \fIabsolute-slot-path\fR\fR
+.ad
+.sp .6
+.RS 4n
+基本項です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIabsolute-slot-path\fR : \fIslot-path\fR[:\fIslot-path\fR[:\fIslotpath\fR ...]]\fR
+.ad
+.sp .6
+.RS 4n
+ここで、\fIfru-id\fR は、\fIslot-id\fR が含まれているシャーシの FRU を示します (ある場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfru-id\fR : \fIfru-type\fR[\fIserialid#\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ここで、\fIfru-type\fR は、PCI Express 拡張シャーシの「iob」であり、その後にそのシリアル番号 \fIserialid#\fR が続きます (取得できる場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR : \fIslot-name\fR | \fIdevice-type\fR \fIphysical-slot#\fR | \e\fR
+.ad
+.br
+.na
+\fB\fInexus-driver-name\fR \fInexus-driver-instance\fR.\e\fR
+.ad
+.br
+.na
+\fB\fIdevice-type\fR \fIpci-device-number\fR\fR
+.ad
+.sp .6
+.RS 4n
+ここで、\fIslot-name\fR は、プラットフォームまたはハードウェア自体によって割り当てられる名前です。\fIdevice-type\fR は、PCI Express デバイスを示す \fBpcie\fR または PCI デバイスを示す \fBpci\fR です。\fInexus-driver-name\fR はデバイスコンポーネントのドライバ名であり、\fIphysical-slot#\fR はハードウェアスロット番号、\fIpci-device-number\fR は標準 PCI 用語における PCI デバイス番号です。
+.RE
+
+.sp
+.LP
+まず、\fIabsolute-slot-path\fR が構成されます。absolute-slot-path は、接続点の位相上の位置を、ユーザーがより物理的に認識できる用語で表します。この \fIabsolute-slot-path\fR は、それぞれ \fB:\fR (コロン) で区切られた \fIslot-path\fR コンポーネントで構成されます。リーフまたは左端の \fIslot-path\fR コンポーネントは、接続点自体のデバイスを表し、右端または最上位の \fIslot-path\fR コンポーネントまでのその右隣の \fIslot-path\fR コンポーネントは、ルートデバイスまでの親をそれぞれ表します。
+.sp
+.LP
+各 \fIslot-path\fR は、\fIslot-id\fR で構成されます。場合によっては、slot-id の前に、\fIslot-id\fR によって表されるデバイスが含まれている拡張シャーシを識別する \fIfru-id\fR が示されます (後述します)。\fIfru-id \fR は、\fIfru-type\fR とそれに続くオプションの \fIserialid#\fR で構成されます。\fIfru-type\fR は、PCI Express 拡張シャーシタイプの「iob」であり、\fIserialid#\fR は、拡張シャーシハードウェアから取得される生のシリアル番号を示す 64 ビット 16 進数値か、Sun ブランドの拡張シャーシの場合は、大文字の 4 つの ASCII 文字シーケンスです。
+.sp
+.LP
+各 slot-id は、次の 3 つのうちのいずれかの形式で構成されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR 形式 (1)\fR
+.ad
+.sp .6
+.RS 4n
+\fIslot-names\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR 形式 (2)\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice-type\fR \fIphysical-slot#\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR 形式 (3)\fR
+.ad
+.sp .6
+.RS 4n
+\fInexus-driver-name\fR \fInexus-driver-instance\fR \fIdevice-type\fR \fIpci-device-number\fR
+.RE
+
+.sp
+.LP
+選択される形式の優先順位は、形式番号の小さいものから大きなものの順、つまり、上記の上から下の順です。ある形式を正常に構成できない場合は、次に数値の大きい形式が試されます。
+.sp
+.LP
+\fIslot-id\fR 形式 (1) の \fIslot-names\fR は、デバイスツリー上の対応するノードの \fBslot-names\fR プロパティーから取得されます。これは、ハードウェアまたはプラットフォームによって割り当てられる名前です。この形式は、事前定義または確立されていません。
+.sp
+.LP
+\fIslot-id\fR 形式 (2) では、\fIdevice-type\fR は、コンポーネントのスロットのデバイスタイプを示し、PCI Express を示す \fBpcie\fR または PCI を示す \fBpci\fR です。一方、対応するデバイスノードの \fBphysical-slot#\fR プロパティーから取得される \fIphysical-slot#\fR は、コンポーネントのハードウェアスロット番号を示します。
+.sp
+.LP
+\fIslot-id\fR 形式 (3) が使用されるのは、ほかのすべての形式が正常に構成できないときであり、デフォルトの形式と見なされます。\fInexus-driver-name\fR はコンポーネントのドライバ名、\fInexus-driver-instance\fR はこのドライバのインスタンス、\fIdevice-type\fR は形式 (2) の説明と同じであり、\fIpci-device-number\fR は、説明されているとおり PCI デバイス番号であり、標準 PCI 用語におけるデバイス構成サイクルで使用されます。
+.sp
+.LP
+要約すると、\fIslot-path\fR コンポーネントは、その前に示される可能性のあるオプションの FRU コンポーネントを拡張し、次のいずれかの形式で、この順で構成されます。\fI\fR
+.sp
+.ne 2
+.mk
+.na
+\fB(1) [ iob[\fIserialid#\fR]. ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIslot-names\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2) [ iob[\fIserialid#\fR]. ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice_type\fR \fIphysical_slot#\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2) [ iob[\fIserialid#\fR]. ]\fR
+.ad
+.sp .6
+.RS 4n
+\fInexus-driver-name\fR \fInexus-driver-instance\fR.
+.sp
+\fIdevice_type\fR \fIpci-device-number\fR
+.RE
+
+.sp
+.LP
+最後に、\fBcfgadm\fR で使用される実際の \fBap_id\fR 名の最終的な形式は、次の優先順位で決定されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBap_id\fR 形式 (1)\fR
+.ad
+.sp .6
+.RS 4n
+\fIabsolute-slot-path\fR が \fBcfgadm\fR の \fBap_id\fR フィールドの固定長制限内に収まる場合は、\fIabsolute-slot-path\fR 自体が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBap_id\fR 形式 (2)\fR
+.ad
+.sp .6
+.RS 4n
+(\fIabsolute-slot-path\fR が \fBap_id\fR の長さ制限を超える場合) 最後の \fIslot_path\fR コンポーネントが拡張シャーシ内に含まれていて、その slot_path に \fIserialid#\fR が含まれている場合は、最後の \fIslot_path \fR コンポーネントが使用されます。この形式で \fIserialid#\fR が必須となるのは、グローバルに一意な \fBap_id\fR にするためです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBap_id\fR 形式 (3)\fR
+.ad
+.sp .6
+.RS 4n
+(\fIabsolute-slot-path\fR が \fBap_id\fR の長さ制限を超える場合) 最後の \fIslot_path\fR コンポーネントのデフォルトの形式、\fIslot-id\fR 形式 (3) が使用されます。
+.RE
+
+.sp
+.LP
+どの最終的な \fBap_id\fR 名が使用されても、\fIabsolute-slot-path\fR は、\fB-s\fR オプションまたは \fB-v\fR オプションを使用して表示できる情報 (\fBinfo\fR) フィールドに格納されます。この情報を使用すると、\fBap_id\fR 形式 (2) または \fBap_id\fR 形式 (3) を使って名前が付けられた \fBap_id\fR を物理的に見つけることができます。\fIabsolute-slot-path\fR は、情報フィールドに格納されるときにわずかに変換されます。具体的には、コロン (\fB:\fR) がスラッシュ (\fB/\fR) に置き換えられ、位相上の文脈がより厳密に示されます。\fIabsolute-slot-path\fR には、リーフまたは右端の \fIslot-path\fR コンポーネントよりも上位でオンボードホストスロットまでの間に、ホットプラグ対応でない \fIslot-path\fR コンポーネントを含めることができます。
+.sp
+.LP
+ホットプラグ対応の例の一覧については、「例」の節を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+PCI ホットプラグ対応スロットでは、次の機能がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+スロット上の PCI デバイスが Solaris で使用されるように構成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+スロットを PCI バスに接続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+PCI バスからスロットを切断します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert\fR\fR
+.ad
+.sp .6
+.RS 4n
+サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR\fR
+.ad
+.sp .6
+.RS 4n
+サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+PCI デバイスのリソースをシステムから論理的に削除します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR | \fIap_type\fR\fR
+.ad
+.sp .6
+.RS 4n
+PCI ホットプラグ固有のヘルプメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+PCI ホットプラグスロットの値を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在定義されているハードウェア固有のオプションはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+汎用の \fBcfgadm\fR(1M) と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+このコマンドは、スロットでテスト機能をサポートするプラットフォームでのみサポートされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細モードで実行します。
+.sp
+\fB-v\fR オプションを \fB-l\fR オプションとともに使用すると、\fBcfgadm\fR コマンドによって、接続点に関する情報が出力されます。PCI Express 階層内に存在する接続点の場合、情報フィールドに、接続点の絶対スロットパスの位置が示されます。これには、スロットパスに含まれる各コンポーネントのハードウェアまたはプラットフォーム固有のラベル情報が含まれます。スロットパスに含まれる各コンポーネントは、\fB/\fR (スラッシュ) で区切られます。上記の「PCI Express の \fBap_id\fR の命名」を参照してください。PCI Express 階層内に存在しない PCI ホットプラグの接続点については、\fBcfgadm_pci\fR(1M) を参照してください。\fBType\fR フィールドの情報は、\fB-v\fR オプションを指定したかどうかにかかわらず出力されます。占有装置の \fBType\fR フィールドは、スロットの内容を示します。次の 2 種類の値があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown\fR\fR
+.ad
+.sp .6
+.RS 4n
+スロットは空です。スロットにカードが装着されている場合、カードが構成されていないか、カード上のデバイスのドライバがありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsubclass\fR/\fIboard\fR\fR
+.ad
+.sp .6
+.RS 4n
+スロットに装着されているカードは、シングルファンクションデバイスまたはマルチファンクションデバイスです。
+.sp
+\fIsubclass\fR は、デバイスのサブクラスコードを表す文字列であり、\fBSCSI\fR、\fBethernet\fR、\fBpci-isa\fR などが示されます。カードがマルチファンクションデバイスである場合、代わりに \fBMULT\fR と表示されます。
+.sp
+\fIboard\fR は、デバイスのボードタイプを表す文字列です。たとえば、\fBhp\fR は、PCI ホットプラグアダプタの場合に使用される文字列です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェア固有の機能を実行します。通常は、これらのハードウェア固有の機能を使用して、受容体または占有装置の状態を変更しないでください。
+.sp
+次の \fIhardware_function\fR がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled\fR=[\fIled_sub_arg\fR],\fBmode\fR=[\fImode_sub_arg\fR]\fR
+.ad
+.sp .6
+.RS 4n
+サブ引数を指定しない場合、現在の LED 設定の一覧が表示されます。サブ引数を指定した場合、スロットの特定の LED のモードが設定されます。
+.sp
+\fIled_sub_arg\fR は、\fBfault\fR、\fBpower\fR、\fBattn\fR、または \fBactive\fR に指定します。
+.sp
+\fImode_sub_arg\fR は、\fBon\fR、\fBoff\fR、または \fBblink\fR に指定します。
+.sp
+PCI Express の場合は、\fBpower\fR および \fBattn\fR LED のみが有効であり、\fBattn\fR LED の状態のみを変更できます。
+.sp
+LED の状態を変更しても、受容体または占有装置の状態は変更されません。通常は、LED はホットプラグコントローラによって制御され、ユーザーの操作は不要です。このコマンドは、テストのために使用します。
+.LP
+注意 - 
+.sp
+.RS 2
+LED の状態を変更すると、占有装置または受容体の状態が誤って示される場合があります。
+.RE
+次のコマンドは、LED の値を表示します。
+.sp
+.in +2
+.nf
+example# \fBcfgadm -x led pcie2\fR
+Ap_Id             Led
+pcie2     power=on,fault=off,active=off,attn=off
+.fi
+.in -2
+.sp
+
+次のコマンドは、\fBattn\fR LED が点滅してスロットの位置を示すように設定します。
+.sp
+.in +2
+.nf
+example# \fBcfgadm -x led=attn,mode=blink pcie2\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR各スロットの値の表示
+.sp
+.LP
+次のコマンドは、各スロットの値を表示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l\fR
+Ap_Id            Type         Receptacle   Occupant       Condition
+c0               scsi-bus     connected    configured     unknown
+c1               scsi-bus     connected    unconfigured   unknown
+c2               scsi-bus     connected    unconfigured   unknown
+pcie7            etherne/hp   connected    configured     ok
+pcie8            unknown      empty        unconfigured   unknown
+pcie9            fibre/hp     connected    configured     ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRカードの交換
+.sp
+.LP
+次のコマンドは、すべての DR 対応の接続点を一覧表示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm\fR
+Type             Receptacle   Occupant     Condition
+c0               scsi-bus     connected    configured     unknown
+c1               scsi-bus     connected    unconfigured   unknown
+c2               scsi-bus     connected    unconfigured   unknown
+pcie7            etherne/hp   connected    configured     ok
+pcie8            unknown      empty        unconfigured   unknown
+pcie9            fibre/hp     connected    configured     ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、\fBpcie7\fR で識別されるカードを構成解除し、電気的に切断します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c disconnect pcie7\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドを入力して変更を確認できます。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm pcie7\fR
+Ap_Id     Type         Receptacle   Occupant     Condition
+pcie7     unknown      disconnected unconfigured unknown
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この時点で、カードを交換できます。次のコマンドは、交換用カードを電気的に接続し、構成します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c configure pcie7\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドを入力して変更を確認できます。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm pcie7\fR
+Ap_Id     Type         Receptacle   Occupant     Condition
+pcie7     etherne/hp   connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRPCI Express トポロジにおける ApId の解釈
+.sp
+.LP
+次のコマンドは、ホストレベルでホットプラグ対応スロットに接続されている I/O 拡張シャーシ内に PCI Express および PCI 接続点の両方があるトポロジの一覧を示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+iou#0-pci#0                    Location: iou#0-pci#0
+iou#0-pci#1                    Location: iou#0-pci#1
+iou#0-pci#1:iob.pci3           Location: iou#0-pci#1/iob.pci3
+iou#0-pci#1:iob.pci4           Location: iou#0-pci#1/iob.pci4
+iou#0-pci#2                    Location: iou#0-pci#2
+iou#0-pci#2:iob58071.pcie1     Location: iou#0-pci#2/iob58071.pcie1
+iou#0-pci#2:iob58071.special   Location: iou#0-pci#2/iob58071.special
+iou#0-pci#3                    Location: iou#0-pci#3
+iou#0-pci#3:iobBADF.pcie1      Location: iou#0-pci#3/iobBADF.pcie1
+iou#0-pci#3:iobBADF.pcie2      Location: iou#0-pci#3/iobBADF.pcie2
+iou#0-pci#3:iobBADF.pcie3      Location: iou#0-pci#3/iobBADF.pcie3
+iou#0-pci#3:iobBADF.pci1       Location: iou#0-pci#3/iobBADF.pci1
+iou#0-pci#3:iobBADF.pci2       Location: iou#0-pci#3/iobBADF.pci2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、\fBiou#0-pci#[0-3]\fR エントリは、システム上の最上位のホットプラグ対応スロットを表しています。\fBiou#\fR\fIn\fR-\fBpci#\fR\fIn\fR の形式は、上記の文法の仕様の節で示されているいずれの形式とも一致しないため、このホットプラグトポロジの基本コンポーネントのこのような名前は、\fBslot-names\fR プロパティーを通じてプラットフォームから取得されたものであると推測できます。
+
+.sp
+.LP
+前の出力に示されているスロットの説明を次に示します。
+
+.sp
+.ne 2
+.mk
+.na
+\fBスロット \fBiou#0-pci#0\fR\fR
+.ad
+.sp .6
+.RS 4n
+このスロットは空であるか、その占有装置が構成されていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBスロット \fBiou#0-pci#1\fR\fR
+.ad
+.sp .6
+.RS 4n
+このスロットには、2 つのホットプラグ対応スロット \fBpci3\fR と \fBpci4\fR がある拡張シャーシが含まれています。\fBpci3\fR と \fBpci4\fR は、その拡張シャーシ内に含まれている、それぞれ物理スロット番号 \fB3\fR と \fB 4\fR を持つ 2 つの PCI スロットを表しています。この例では、拡張シャーシにシリアル ID がないか、エクスポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBスロット \fBiou#0-pci#2\fR\fR
+.ad
+.sp .6
+.RS 4n
+このスロットには、16 進数のシリアル ID \fB58071\fR を持つサードパーティーの拡張シャーシが含まれています。その拡張シャーシ内には、2 つのホットプラグ対応スロット \fBpcie1\fR と \fBspecial\fR があります。\fBpcie1\fR は、物理スロット番号 \fB1\fR を持つ PCI Express スロットを表しています。スロット \fBspecial\fR には、プラットフォーム、ハードウェア、またはファームウェアから取得されたラベルがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBスロット \fBiou#0-pci#3\fR\fR
+.ad
+.sp .6
+.RS 4n
+このスロットには、FRU 識別子 \fBBADF\fR を持つ Sun 拡張シャーシが含まれています。この拡張シャーシには、それぞれ物理スロット番号 \fB1\fR、\fB2\fR、および \fB3\fR を持つ 3 つの PCI Express スロット \fBpcie1\fR、\fBpcie2\fR、および \fBpcie3\fR と、それぞれ物理スロット番号 1 および 2 を持つ 2 つの PCI スロット \fBpci1\fR と \fBpci2\fR が含まれています。
+.RE
+
+.sp
+.LP
+次のコマンドは、接続されたホットプラグ対応およびホットプラグ非対応のホストスロットがある I/O 拡張シャーシ内に PCI Express および PCI 接続点の両方があるトポロジの一覧を示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+Slot1                          Location: Slot1
+Slot2:iob4ffa56.pcie1          Location: Slot2/iob4ffa56.pcie1
+Slot2:iob4ffa56.pcie2          Location: Slot2/iob4ffa56.pcie2
+Slot5:iob3901.pci1             Location: Slot2/iob3901.pci1
+Slot5:iob3901.pci2             Location: Slot2/iob3901.pci2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、ホストシステムには、ホットプラグ対応スロット \fBSlot1\fR のみがあります。\fBSlot2\fR および \fBSlot5\fR は、\fBcfgadm\fR でそれ自体が接続点として表示されていないため、これらはホットプラグ対応でないと推測できます。ただし、\fBSlot2\fR と \fBSlot5\fR には、それぞれ、ホットプラグ対応スロットがあるサードパーティーの拡張シャーシが含まれています。
+
+.sp
+.LP
+次のコマンドは、特定のデバイスプロパティーがない接続点があるトポロジの一覧を示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+px_pci7.pcie0                  Location: px_pci7.pcie0
+px_pci11.pcie0                 Location: px_pci11.pcie0
+px_pci11.pcie0:iob.pcie1       Location: px_pci11.pcie0/iob.pcie1
+px_pci11.pcie0:iob.pcie2       Location: px_pci11.pcie0/iob.pcie2
+px_pci11.pcie0:iob.pcie3       Location: px_pci11.pcie0/iob.pcie3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、ホストシステムに 2 つのホットプラグ対応スロット \fBpx_pci7.pcie0\fR と \fBpx_pci11.pcie0\fR が含まれています。ここでは、より優先度が高くわかりやすいほかの形式を構成するための十分な情報をフレームワークが取得できなかったため、\fIabsolute-slot-path\fR 内の基本 \fIslot-path\fR コンポーネントの \fBslot-id\fR 形式 (3) (デフォルトの形式) が使用されています。
+
+.sp
+.LP
+右から左に解釈すると、接続点 \fBpx_pci7.pcie0\fR は、nexus ドライバ \fBpx_pci\fR、インスタンス \fB7\fR にバインドされた、PCI デバイス番号が \fB0\fR (同じ番号の物理スロット番号という意味はありません) の PCI Express スロットを表しています。同様に、接続点 \fBpx_pci11.pcie0\fR は、\fBpx_pci\fR のドライバインスタンス \fB11\fR にバインドされた、PCI デバイス番号が \fB0\fR の PCI Express スロットを表しています。
+
+.sp
+.LP
+\fBpx_pci11.pcie0\fR の下位には、シリアル ID のない、3 つのホットプラグ対応 PCI Express スロットを持つサードパーティーの拡張シャーシがあります。
+
+.sp
+.LP
+次のコマンドは、\fBApId\fR フィールドの長さ制限を超えている接続点のパスがあるトポロジの一覧を示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+pcie4                          Location: pcie4
+pcie4:iobSUNW.pcie1            Location: pcie4/iobSUNW.pcie1
+pcie4:iobSUNW.pcie2            Location: pcie4/iobSUNW.pcie2
+iob8879c3f3.pci1
+                 Location: pcie4/iobSUNW.pcie2/iob8879c3f3.pci1
+iob8879c3f3.pci2
+                 Location: pcie4/iobSUNW.pcie2/iob8879c3f3.pci2
+iob8879c3f3.pci3
+                 Location: pcie4/iobSUNW.pcie2/iob8879c3f3.pci3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、ホストにホットプラグ対応スロット \fBpcie4\fR のみが存在しています。\fBpcie4\fR の下位には、FRU 識別子が \fBSUNW\fR の Sun 拡張シャーシが接続されています。その拡張シャーシの PCI Express スロット \fBpcie2\fR (\fBApId\fR \fBpcie4:iobSUNW.pcie2\fR) の下位には、3 つのホットプラグ対応 PCI スロットがある別の拡張シャーシが入れ子になっています。
+
+.sp
+.LP
+次の absolute-slot-path 形式の長さが、
+
+.sp
+.in +2
+.nf
+pcie4/iobSUNW.pcie2/iob8879c3f3.pci1...3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...\fBApId\fR フィールドの長さ制限を超えており、リーフ slot-path コンポーネントがグローバルに一意であるため、\fIabsolute-slot-path\fR 内のリーフ \fIslot-path\fR コンポーネントが最終的な \fBApId\fR として使用される \fBap_id\fR 形式 (2) が使用されています。
+
+.sp
+.LP
+次のコマンドは、\fBApId\fR フィールドの長さ制限を超えていて、(シリアル ID が見つからないなど) リーフ \fIslot-id\fR だけで一意に識別できるだけの十分な情報がない接続点のパスがあるトポロジの一覧を示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+pcie4                          Location: pcie4
+pcie4:iob4567812345678.pcie3   Location: pcie4/iob4567812345678.pcie3
+px_pci20.pcie0
+                Location: pcie4/iob4567812345678.pcie3/iob.pcie1
+px_pci21.pcie0
+                Location: pcie4/iob4567812345678.pcie3/iob.pcie2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、ホストにホットプラグ対応スロット \fBpcie4\fR のみが存在しています。\fBpcie4\fR の下位には、16 進数のシリアル ID が \fB4567812345678\fR のサードパーティーの拡張シャーシが接続されています。その拡張シャーシの PCI Express スロット \fBpcie3\fR (\fBApId\fR \fBpcie4:iob4567812345678.pcie3\fR) の下位には、シリアル ID がなく、2 つのホットプラグ対応 PCI Express スロットがある別のサードパーティーの拡張シャーシが入れ子になっています。
+
+.sp
+.LP
+次の absolute-slot-path 形式の長さが、
+
+.sp
+.in +2
+.nf
+pcie4/iob4567812345678.pcie3/iob.pcie1...2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBApId\fR フィールドの長さ制限を超えており、リーフ \fIslot-path\fR コンポーネントがグローバルに一意ではないため、\fBap_id\fR 形式 (3) が使用されています。\fBap_id\fR 形式 (2) では、\fIabsolute-slot-path\fR 内のリーフ \fIslot-path\fR コンポーネントの \fIslot-id\fR 形式 (3) (デフォルトの形式) が最終的な \fBApId\fR として使用されます。
+
+.sp
+.LP
+リーフコンポーネント \fB\&.../iob.pcie1\fR のデフォルトの形式、つまり \fBslot-id\fR 形式 (3) は、\fBpx_pci\fR のドライバインスタンス \fB20\fR にバインドされた、デバイス番号 \fB0\fR の PCI Express スロットを表しています。同様に、リーフコンポーネント \fB\&.../iob.pcie2\fR のデフォルトの形式は、\fBpx_pci\fR のドライバインスタンス \fB21\fR にバインドされた、デバイス番号 \fB0\fR の PCI Express スロットを表しています。
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/shp.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+PCI Express および標準 PCI ホットプラグ操作のためのハードウェア固有のライブラリです。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBcfgadm_pci\fR(1M), \fBhotplugd\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBlibcfgadm\fR(3LIB), \fBattributes \fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBcfgadm_shp\fR ライブラリは、\fBsmf\fR(5) によって、FMRI の下で管理される \fBhotplug\fR サービスに依存しています。
+.sp
+.in +2
+.nf
+svc:/system/hotplug:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBcfgadm_shp\fR ライブラリを適切に機能させるには、サービスを有効にする必要があります。詳細は、\fBhotplugd\fR(1M) を参照してください。

@@ -1,0 +1,413 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2002, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH environ 5 "2011 年 5 月 7 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+environ \- 用户环境
+.SH 描述
+.sp
+.LP
+当进程开始执行时，\fBexec\fR 函数系列中的一个函数将激活一个字符串数组，该字符串数组被称为环境；参见 \fBexec\fR(2)。根据约定，这些字符串的形式为 \fIvariable=value\fR。例如，\fBPATH=/sbin:/usr/sbin\fR。这些环境变量提供了使程序环境相关信息可用于程序的方法。
+.sp
+.LP
+可以通过 \fBsh\fR(1) 中的 \fBexport\fR 命令和 \fIname\fR=\fIvalue\fR 参数或某一个 \fBexec\fR 函数将名称放入环境中。某些 shell 变量（例如，\fBMAIL\fR、\fBPS1\fR、\fBPS2\fR 和 \fBIFS\fR）经常被 \fB\&.profile\fR 文件导出，与这些变量发生冲突是不可取的；参见 \fBprofile\fR(4)。 
+.sp
+.LP
+以下环境变量可由应用程序使用，并且应在目标运行时环境中设置。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户登录目录的名称，由 \fBlogin\fR(1) 通过口令文件设置；参见 \fBpasswd\fR(4)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLANG\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于指定国际化信息的字符串，通过国际化信息，用户可以使用不同的国家约定。\fBsetlocale\fR(3C) 函数检查 \fBLANG\fR 环境变量（当通过 \fB""\fR 将它作为 \fBlocale\fR 参数调用时）。如果特定类别的相应环境变量未设置或为 Null，\fBLANG\fR 将作为缺省语言环境使用。如果 \fBLC_ALL\fR 设置为有效的非空值，将使用其内容覆盖 \fBLANG\fR 和其他 \fBLC_*\fR 变量。例如，在以 \fBsetlocale(LC_CTYPE, "")\fR 形式调用时，\fBsetlocale()\fR 将首先查询 \fBLC_CTYPE\fR 环境变量来查看它是否已设置并且不为 Null。如果 \fBLC_CTYPE\fR 未设置或者为 Null，则 \fBsetlocale()\fR 将检查 \fBLANG\fR 环境变量来查看它是否已设置并且不为 Null。如果 \fBLANG\fR 和 \fBLC_CTYPE\fR 均未设置或为 \fINULL\fR，将使用缺省的 "C" 语言环境来设置 \fBLC_CTYPE\fR 类别。
+.sp
+大部分命令都会在执行任何其他处理之前调用 \fBsetlocale(LC_ALL, "")\fR。这样，通过设置相应的环境变量，可以将命令与不同的国家约定一起使用。
+.sp
+以下环境变量对应于 \fBsetlocale\fR(3C) 的每个类别：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_ALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果设置为有效的非空字符串值，将覆盖 \fBLANG\fR 以及所有其他 \fBLC_*\fR 变量的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_COLLATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+此类别指定所使用字符排序规则序列。此类别对应的信息存储在 \fBlocaledef\fR(1) 命令创建的数据库中。此环境变量影响 \fBstrcoll\fR(3C) 和 \fBstrxfrm\fR(3C)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+此类别指定字符分类、字符转换以及多字节字符的宽度。当 \fBLC_CTYPE\fR 设置为有效值时，调用实用程序可以显示并处理包含下列字符的文本和文件名：该语言环境的有效字符；扩展 Unix 编码 (Extended Unix Code, EUC) 字符，其中任何单个字符的宽度可以为 1、2 或 3 个字节；以及 1、2 或 3 个列宽的 EUC 字符。缺省 "C" 语言环境对应于 7 位 \fBASCII\fR 字符集；只有 ISO 8859-1 字符有效。此类别对应的信息存储在 \fBlocaledef()\fR 命令创建的数据库中。此环境变量由 \fBctype\fR(3C)、\fBmblen\fR(3C) 以及许多其他命令（例如，\fBcat\fR(1)、\fBed\fR(1)、\fBls\fR(1) 和 \fBvi\fR(1)）使用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.sp .6
+.RS 4n
+此类别指定所使用消息数据库的语言。例如，应用程序的一个消息数据库可能包含法语消息，而另一个数据库可能包含德语消息。消息数据库由 \fBmkmsgs\fR(1) 命令创建。此环境变量由 \fBexstr\fR(1)、\fBgettxt\fR(1)、\fBsrchtxt\fR(1)、\fBgettxt\fR(3C) 以及 \fBgettext\fR(3C) 使用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MONETARY\fR\fR
+.ad
+.sp .6
+.RS 4n
+此类别指定用于特定语言环境的货币符号和分隔符。此类别对应的信息存储在 \fBlocaledef\fR(1) 命令创建的数据库中。此环境变量由 \fBlocaleconv\fR(3C) 使用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_NUMERIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+此类别指定小数点分隔符和千分位分隔符。此类别对应的信息存储在 \fBlocaledef()\fR 命令创建的数据库中。在缺省的 \fBC\fR 语言环境中，使用 \fB"."\fR 作为小数点分隔符，不使用千分位分隔符。此环境变量由 \fBlocaleconv\fR(3C)、\fBprintf\fR(3C) 以及 \fBstrtod\fR(3C) 使用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_TIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+此类别指定日期和时间格式。此类别对应的信息存储在 \fBlocaledef()\fR 指定的数据库中。在缺省的 \fBC\fR 语言环境中，使用美国的日期和时间格式。此环境变量由许多命令和函数使用。例如：\fBat\fR(1)、\fBcalendar\fR(1)、\fBdate\fR(1)、\fBstrftime\fR(3C) 以及 \fBgetdate\fR(3C)。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMSGVERB\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制在向 \fBstderr\fR 显示消息时 \fBfmtmsg\fR 选择哪些标准格式消息组件；参见 \fBfmtmsg\fR(1) 和 \fBfmtmsg\fR(3C)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNETPATH\fR\fR
+.ad
+.sp .6
+.RS 4n
+冒号分隔的网络标识符列表。网络标识符是系统的网络选择组件使用的字符串，用于提供应用程序特定的缺省网络搜索路径。网络标识符必须由非 Null 字符构成且长度至少为 1。不指定最大长度。网络标识符通常由系统管理员选择。网络标识符还是任意 \fB/etc/netconfig\fR 文件条目中的第一个字段。因此，\fBNETPATH\fR 提供了指向 \fB/etc/netconfig\fR 文件的链接以及有关该网络条目中包含的网络的信息。\fB/etc/netconfig\fR 由系统管理员维护。\fBgetnetpath\fR(3NSL) 中介绍的库例程可以访问 \fBNETPATH\fR 环境变量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNLSPATH\fR\fR
+.ad
+.sp .6
+.RS 4n
+包含一个模板序列，当 \fBcatopen\fR(3C) 和 \fBgettext\fR(3C) 尝试定位消息目录时将使用这些模板。每个模板都由一个可选前缀、一个或多个替换字段、一个文件名以及一个可选后缀组成。例如：
+.sp
+.in +2
+.nf
+NLSPATH="/system/nlslib/%N.cat"
+.fi
+.in -2
+.sp
+
+定义 \fBcatopen()\fR 应搜索目录 \fB/system/nlslib\fR 中的所有消息目录，其中目录名由传递到 \fBcatopen\fR(\|) 的 \fIname\fR 参数（即 \fB%N\fR）以及 \fB\&.cat\fR 后缀构成。
+.sp
+替换字段包含一个 \fB%\fR 符号，后面跟一个单字母关键字。当前定义了下列关键字：
+.sp
+.ne 2
+.mk
+.na
+\fB%N\fR
+.ad
+.sp .6
+.RS 4n
+传递到 \fBcatopen()\fR 的 \fIname\fR 参数的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%L\fR
+.ad
+.sp .6
+.RS 4n
+\fBLANG\fR 或 \fBLC_MESSAGES\fR 的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%l\fR
+.ad
+.sp .6
+.RS 4n
+\fBLANG\fR 或 \fBLC_MESSAGES\fR 中的语言元素。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%t\fR
+.ad
+.sp .6
+.RS 4n
+\fBLANG\fR 或 \fBLC_MESSAGES\fR 中的地区元素。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%c\fR
+.ad
+.sp .6
+.RS 4n
+\fBLANG\fR 或 \fBLC_MESSAGES\fR 中的代码集元素。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%%\fR
+.ad
+.sp .6
+.RS 4n
+单个 \fB%\fR 字符。
+.RE
+
+如果指定的值当前未定义，将替换为空字符串。分隔符 "\fB_\fR" 和 "\fB\&.\fR" 不包含在 \fB%t\fR 和 \fB%c\fR 替换中。
+.sp
+\fBNLSPATH\fR 中定义的模板由冒号 (\fB:\fR) 分隔。前导冒号或两个相邻的冒号 (\fB::\fR) 相当于指定 \fB%N\fR。例如：
+.sp
+.in +2
+.nf
+NLSPATH=":%N.cat:/nlslib/%L/%N.cat"
+.fi
+.in -2
+.sp
+
+指示 \fBcatopen()\fR 应搜索 \fIname\fR、\fIname\fR\fB\&.cat\fR 和 \fB/nlslib/$LANG/\fR\fIname\fR.cat 中的请求的消息目录。对于 \fBgettext()\fR，\fB%N\fR 将自动映射到 \fBmessages\fR。
+.sp
+如果 \fBNLSPATH\fR 未设置或为 \fINULL\fR，\fBcatopen()\fR 和 \fBgettext()\fR 将调用 \fBsetlocale\fR(3C)，后者将检查 \fBLANG\fR 和 \fBLC_*\fR 变量以定位消息目录。
+.sp
+Solaris 中对 %L 的扩展解释包括对已接受语言环境名称别名的支持，如 gettext(1)、\fBgettext\fR(3C)、\fBcatopen\fR(3C)、\fBsetlocale\fR(3C) 和 \fBlocale_alias\fR(5) 中所述。
+.sp
+\fBNLSPATH\fR 通常在系统范围内设置（在 \fB/etc/profile\fR 中），这样可以使与消息目录相关的位置和命名约定对程序和用户都是透明的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPATH\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsh\fR(1)、\fBtime\fR(1)、\fBnice\fR(1)、\fBnohup\fR(1) 和其他实用程序在按不完整的路径名搜索文件时应用的目录前缀序列。前缀由冒号 (\fB:\fR) 分隔。\fBlogin\fR(1) 用于设置 \fBPATH=/usr/bin\fR。有关详细信息，请参见 \fBsh\fR(1)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSEV_LEVEL\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义严重性级别，并且在标准格式错误消息中将字符串与严重性级别相关联并输出其字符串；参见 \fBaddseverity\fR(3C)、\fBfmtmsg\fR(1) 以及 \fBfmtmsg\fR(3C)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+要为其准备输出的终端的种类。此信息由可能利用该终端的特殊功能的命令（例如 \fBvi\fR(1)）使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+时区信息。此环境变量的内容由函数 \fBctime\fR(3C)、\fBlocaltime\fR(3C)、\fBstrftime\fR(3C) 以及 \fBmktime\fR(3C) 用来覆盖缺省时区。\fBTZ\fR 值为以下两种格式（为清晰可见，插入了空格）之一：
+.sp
+.in +2
+.nf
+:characters
+.fi
+.in -2
+
+或
+.sp
+.in +2
+.nf
+std offset dst offset, rule
+.fi
+.in -2
+
+如果 \fBTZ\fR 属于第一种格式（即如果第一个字符为冒号 (:)）或者 \fBTZ\fR 不属于第二种格式，则 \fBTZ\fR 将指定时区数据库文件的路径（相对于 \fB/usr/share/lib/zoneinfo/\fR），如果存在前导冒号，将忽略它。
+.sp
+否则，如果 \fBTZ\fR 属于第二种格式，其展开形式如下：
+.sp
+.in +2
+.nf
+\fIstdoffset\fR[\fIdst\fR[\fIoffset\fR][,\fIstart\fR[/\fItime\fR],\fIend\fR[/\fItime\fR]]]
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstd\fR 和 \fIdst\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示作为标准 (\fIstd\fR) 时区或备用（\fIdst\fR，例如夏时制）时区指定的字符串，不少于三个字节且不超过 {\fBTZNAME_MAX\fR}。只有 \fIstd\fR 是必需的；如果缺少 \fIdst\fR，则在此时区中不应用备用时间。其中每个字段都以两种格式之一出现，即括起或不括起：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在括起的格式中，第一个字符是小于号 ('<') 字符，最后一个字符是大于号 ('>') 字符。两个尖括号字符之间的所有字符都是当前语言环境的可移植字符集中的字母数字字符、加号 ('+') 字符或减号 ('-') 字符。这种情况下，\fIstd\fR 和 \fIdst\fR 字段不包含尖括号字符。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在不括起的格式中，这些字段中的所有字符都是当前语言环境的可移植字符集中的字母字符。
+.RE
+如果任意字段的长度小于三个字节（缺少 \fIdst\fR 的情况除外）、大于 {\fBTZNAME_MAX\fR} 个字节或者包含指定字符之外的其他字符，则这些字段的解释是未明确指定的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIoffset\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示本地时间与世界标准时间之间的差值。此时差的格式如下：
+.sp
+.in +2
+.nf
+\fIhh\fR[:\fImm\fR[:\fIss\fR]]
+.fi
+.in -2
+.sp
+
+分钟 (\fImm\fR) 和秒 (\fIss\fR) 是可选的。小时 (\fIhh\fR) 是必需的，可以是一位数。\fIoffset\fR（放在 \fIstd\fR 后面）是必需的。如果 \fIoffset\fR 未出现在 \fIdst\fR 后面，将假定夏时制时间比标准时间早一小时。可以使用一位数或多位数。此值始终解释为十进制数字。小时必须介于 0 到 24 之间，如果出现分钟（和秒），分钟（和秒）必须介于 0 到 59 之间。如果值超出范围，可能会导致不可预测的行为。如果开头带有 \fB-\fR，表示时区在本初子午线的东侧。否则，时区位于本初子午线的西侧（通过开头的 "\fI+\fR" 符号表示，该符号是可选的）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstart\fR/\fItime\fR,\|\fIend\fR/\fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示何时进行夏时制切换，其中，\fIstart/time\fR 说明何时从标准时间更改为夏时制时间，而 \fIend/time\fR 说明何时从夏时制时间更改回标准时间。每个 \fItime\fR 字段都用本地时间说明发生更改的时间。
+.sp
+\fIstart\fR 和 \fIend\fR 为以下格式之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBJ\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+儒略日 \fIn\fR (1 \(<= \fIn\fR \(<= 365)。不计算闰日。也就是说，在所有年份中，2 月 28 日是第 59 日，3 月 1 日是第 60 日。无法表示特殊的 2 月 29 日。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+从零开始计算的儒略日 (0 \(<= \fIn\fR \(<= 365)。计算闰日，而且可以表示 2 月 29 日。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBM\fR\fIm.n.d\fR\fR
+.ad
+.sp .6
+.RS 4n
+年度的第 \fIm\fR 月的第 \fIn\fR 周 (1 \(<= \fIn\fR \(<= 5, 1 \(<= \fIm\fR \(<= 12) 第 \fId\fR^ 日 (0 \(<= \fId\fR \(<= 6)，其中，第 5 周表示"第 \fIm\fR 月中的最后 \fId\fR 日"，它可能出现在第四周或第五周。第 1 周是第 \fId\fR^ 日后的第一周。第零日是周日。
+.RE
+
+实现特定的缺省值用于 \fIstart\fR 和 \fIend\fR（如果未指定这些可选字段）。
+.sp
+\fItime\fR 的格式与 \fIoffset\fR 相同，但前者不允许使用前导符号（"-" 或 "+"）。如果未指定 \fItime\fR，缺省值为 02:00:00。
+.RE
+
+.RE
+
+.SH 另请参见
+.sp
+.LP
+\fBcat\fR(1)、\fBdate\fR(1)、\fBed\fR(1)、\fBfmtmsg\fR(1)、\fBlocaledef\fR(1)、\fBlogin\fR(1)、\fBls\fR(1)、\fBmkmsgs\fR(1)、\fBnice\fR(1)、\fBnohup\fR(1)、\fBsh\fR(1)、\fBsort\fR(1)、\fBtime\fR(1)、\fBvi\fR(1)、\fBexec\fR(2)、\fBaddseverity\fR(3C)、\fBcatopen\fR(3C)、\fBctime\fR(3C)、\fBctype\fR(3C)、\fBfmtmsg\fR(3C)、\fBgetdate\fR(3C)、\fBgetnetpath\fR(3NSL)、\fBgettext\fR(3C)、\fBgettxt\fR(3C)、\fBlocaleconv\fR(3C)、\fBmblen\fR(3C)、\fBmktime\fR(3C)、\fBprintf\fR(3C)、\fBsetlocale\fR(3C)、\fBstrcoll\fR(3C)、\fBstrftime\fR(3C)、\fBstrtod\fR(3C)、\fBstrxfrm\fR(3C)、\fBTIMEZONE\fR(4)、\fBnetconfig\fR(4)、\fBpasswd\fR(4)、\fBprofile\fR(4)、\fBlocale_alias\fR(5)

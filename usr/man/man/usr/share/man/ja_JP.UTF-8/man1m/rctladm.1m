@@ -1,0 +1,182 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH rctladm 1M "2007 年 7 月 2 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+rctladm \- システムのリソース制御の大域状態の表示または変更
+.SH 形式
+.LP
+.nf
+\fBrctladm\fR [\fB-lu\fR] [\fB-e\fR \fIaction\fR] [\fB-d\fR \fIaction\fR] [\fIname\fR...]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBrctladm\fR コマンドを使えば、稼働中のシステム上に存在するアクティブなリソース制御を検査および変更できます。リソース制御のインスタンスは「\fBrctl\fR」と記述します。\fBrctl\fR については、\fBsetrctl\fR(2) を参照してください。Solaris オペレーティングシステムの現行リリースでサポートされている \fBrctl\fR の一覧については、\fBresource_controls\fR(5) を参照してください。\fBrctl\fR 違反のロギングをシステム全体で有効化/無効化したり、アクティブな \fBrctl\fR (とその状態) を一覧表示したりすることができます。
+.sp
+.LP
+オプションなしの \fBrctladm\fR コマンドは、\fB-l\fR オプション付きの \fBrctladm\fR と同等です。次の \fB-l\fR に対する説明を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIaction\fR\fR
+.ad
+.br
+.na
+\fB\fB-e\fR \fIaction\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fBrctl\fR 上で大域アクションを無効化 (\fB-d\fR) または有効化 (\fB-e\fR) します。\fBrctl\fR が指定されなかった場合、何のアクションも実行されず、エラーステータスが返されます。無効化オプションで特殊なトークン \fBall\fR を使用すれば、特定のリソース制御上のすべての大域アクションを無効にすることができます。
+.sp
+\fBsyslog\fR アクションには、特定の重要度レベルを割り当てることでアクションレベルを設定できます。それには、\fBsyslog=\fIlevel\fR\fR と指定します。ここで、\fIlevel\fR は、\fBsyslog\fR(3C) で有効な重要度レベルとして記載されている文字列トークンのうちの 1 つです。重要度レベルの共通の \fBLOG_\fR 接頭辞は、省略できます。すべての \fBrctl\fR が \fBsyslog\fR アクションをサポートしているとは限りません。\fBresource_controls\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBrctl\fR に関する情報を一覧表示します。名前、大域イベントアクションと大域ステータス、および大域フラグが表示されます。1 つ以上の名前オペランドが指定された場合、それらの名前に一致する \fBrctl\fR だけが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB/etc/rctladm.conf\fR の内容に基づいてリソース制御を構成します。名前オペランドはすべて無視されます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作対象となる \fBrctl\fR の名前。複数の \fBrctl\fR 名を指定できます。名前が 1 つも指定されず、かつ一覧表示アクションが指定された場合には、すべての \fBrctl\fR が表示されます。有効化/無効化アクションを指定する場合、1 つ以上の \fBrctl\fR 名を指定する必要があります。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR特定の違反に対するシステムロギングの有効化
+.sp
+.LP
+次のコマンドは、\fBtask.max-lwps\fR に対するすべての違反のシステムロギングを有効化します。
+
+.sp
+.in +2
+.nf
+# rctladm -e syslog task.max-lwps
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR特定リソースの現在のステータスの検査
+.sp
+.LP
+次のコマンドは、\fBtask.max-lwps\fR リソースの現在のステータスを検査します。
+
+.sp
+.in +2
+.nf
+$ rctladm -l task.max-lwps
+task.max-lwps               syslog=DEBUG
+$
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+致命的なエラーが発生しました。処理が失敗したそれぞれのリソース制御を知らせるメッセージが、標準エラーに書き込まれます。オペランドに指定されたその他のリソース制御の処理は、すべて成功しました。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効なコマンド行オプションが指定されました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rctladm.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBrctladm\fR が実行されるたびに、\fBrctladm.conf\fR の内容が現在の構成に基づいて更新されます。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsetrctl\fR(2), \fBgetrctl\fR(2), \fBprctl\fR(1), \fBrctlblk_get_global_flags\fR(3C), \fBrctlblk_get_global_action\fR(3C), \fBattributes \fR(5), \fBresource_controls\fR(5)
+.SH 注意事項
+.sp
+.LP
+デフォルトでは、\fBrctl\fR の違反は大域ログ作成では記録されません。

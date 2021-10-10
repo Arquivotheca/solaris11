@@ -1,0 +1,148 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems Inc. All Rights Reserved.
+.TH reparse_add 3REPARSE "14 Oct 2009" "SunOS 5.11" "Reparse Point Library Functions"
+.SH NAME
+reparse_add, reparse_create, reparse_delete, reparse_deref, reparse_free, reparse_init, reparse_parse, reparse_remove, reparse_unparse, reparse_validate, rp_plugin_init \- reparse point operations
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR ... ] \fIfile\fR... -lreparse [ \fIlibrary\fR ... ]
+#include <sys/fs_reparse.h>
+#include <rp_plugin.h>
+
+\fBint\fR \fBreparse_add\fR(\fBnvlist_t *\fR\fIlist\fR, \fBconst char *\fR\fIsvc_type\fR,
+     \fBconst char *\fR\fIstring\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_create\fR(\fBconst char *\fR\fIpath\fR, \fBconst char *\fR\fIstring\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_delete\fR(\fBconst char *\fR\fIpath\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_deref\fR(\fBconst char *\fRsvc_type, \fBconst char *\fR\fIsvc_data\fR,
+     \fBconst char *\fR\fIsvc_data\fR);
+.fi
+
+.LP
+.nf
+\fBvoid\fR \fBreparse_free\fR(\fBnvlist_t *\fR\fIlist\fR);
+.fi
+
+.LP
+.nf
+\fBnvlist_t *\fR\fBreparse_init\fR(\fBvoid\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_parse\fR(\fBconst char *\fR\fIstring\fR, \fBnvlist *\fR\fIlist\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_remove\fR(\fBnvlist_t *\fR\fIlist\fR, \fBconst char *\fR\fIsvc_type\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_unparse\fR(\fBconst nvlist_t *\fR\fIlist\fR, \fBchar **\fR\fIstringp\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBreparse_validate\fR(\fBconst char *\fR\fIstring\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBrp_plugin_init\fR(\fBvoid\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBreparse_add()\fR function adds a service type entry to an \fBnvlist\fR with a copy of \fIstring\fR, replacing one of the same type if already present. This routine will allocate and free memory as needed. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_create()\fR function create a reparse point at a given pathname; the string format is validated. This function will fail if path refers to an existing file system object or an object named string already exists at the given path. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_delete()\fR function delete a reparse point at a given pathname. It will fail if the pathname is not a symlink. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_deref()\fR function accepts and parses the symlink data, and returns a type-specific piece of data in \fIbuf\fR. The caller specifies the size of the buffer provided via *\fIbufsize\fR; the routine will fail with \fBEOVERFLOW\fR if the results will not fit in the buffer, in which case, *\fIbufsize\fR will contain the number of bytes needed to hold the results. It can fail with other non-zero values from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_free()\fR function frees all of the resources in the \fBnvlist\fR.
+.sp
+.LP
+The \fBreparse_init()\fR function allocates an empty \fBnvlist_t\fR suitable for \fBlibreparse.so\fR routines to manipulate. This routine will allocate memory, which must be freed by \fBreparse_free()\fR. It will return \fINULL\fR on failure.
+.sp
+.LP
+The \fBreparse_parse()\fR function parses the specified string and populates the nvlist with the \fIsvc_type\fRs and data from the string. The string could be read from the reparse point symlink body. Existing or duplicate \fIsvc_type\fR entries in the nvlist will be replaced. This routine will allocate memory that must be freed by \fBreparse_free()\fR. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_remove()\fR function removes a service type entry from the \fBnvlist\fR, if present. This routine will free memory that is no longer needed. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_unparse()\fR function converts an \fBnvlist\fR back to a string format suitable to write to the reparse point symlink body. The string returned is in allocated memory and must be freed by the caller. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBreparse_validate()\fR function checks the syntax of a reparse point as it would be read from or written to the symlink body. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.sp
+.LP
+The \fBrp_plugin_init()\fR function loads reparse point "plugins" from \fB/usr/lib/reparse\fR to permit reparse point manipulation to start. It will fail with a non-zero value from \fB</usr/include/sys/errno.h>\fR if it is unsuccessful.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSet up a reparse point.
+.sp
+.LP
+A service would set up a reparse point this way:
+
+.sp
+.in +2
+.nf
+nvlist_t        *nvp;
+char            *text;
+int             rc;
+
+nvp = reparse_init();
+rc = reparse_add(nvp, "smb-ad", smb_ad_data);
+rc = reparse_add(nvp, "nfs-fedfs", nfs_fedfs_data);
+rc = reparse_unparse(nvp, &text);
+rc = reparse_create(path, text);
+reparse_free(nvp);
+free(text);
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBreparsed\fR(1M), \fBlibreparse\fR(3LIB), \fBattributes\fR(5)

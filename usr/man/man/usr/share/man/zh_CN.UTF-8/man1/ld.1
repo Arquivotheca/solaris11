@@ -1,0 +1,1621 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH ld 1 "2011 年 3 月 28 日" "SunOS 5.11" "用户命令"
+.SH 名称
+ld \- 对象文件的链接编辑器
+.SH 用法概要
+.LP
+.nf
+\fBld\fR [\fB-32\fR | \fB-64\fR] [\fB-a\fR | \fB-r\fR] [\fB-b\fR] [\fB-B\fRdirect | nodirect]
+[\fB-B\fR dynamic | static] [\fB-B\fR eliminate] [\fB-B\fR group] [\fB-B\fR local]
+[\fB-B\fR reduce] [\fB-B\fR symbolic] [\fB-c\fR \fIname\fR] [\fB-C\fR] [\fB-d\fR y | n]
+[\fB-D\fR [\fB!\fR]\fItoken1\fR,[\fB!\fR]\fItoken2\fR,...] [\fB-e\fR \fIepsym\fR] [\fB-f\fR \fIname\fR | \fB-F\fR \fIname\fR] [\fB-G\fR]
+[\fB-h\fR \fIname\fR] [\fB-i\fR] [\fB-I\fR \fIname\fR] [\fB-l\fR \fIx\fR] [\fB-L\fR \fIpath\fR] [\fB-m\fR] [\fB-M\fR \fImapfile\fR]
+[\fB-N\fR \fIstring\fR] [\fB-o\fR \fIoutfile\fR] [\fB-p\fR \fIauditlib\fR] [\fB-P\fR \fIauditlib\fR]
+[\fB-Q\fR y | n] [\fB-R\fR \fIpath\fR] [\fB-s\fR] [\fB-S\fR \fIsupportlib\fR] [\fB-t\fR]
+[\fB-u\fR \fIsymname\fR] [\fB-V\fR] [\fB-Y P\fR\fI,dirlist\fR] [\fB-z\fR absexec]
+[\fB-z\fR allextract | defaultextract | weakextract ]
+[\fB-z\fR altexec64] [\fB-z\fR assert-deflib[=\fIlibname\fR]]
+[\fB-z\fR combreloc | nocombreloc ] [\fB-z\fR deferred | nodeferred]
+[\fB-z\fR defs | nodefs] [\fB-z\fR direct | nodirect] [\fB-z\fR endfiltee]
+[\fB-z\fR fatal-warnings | nofatal-warnings] [\fB-z\fR finiarray=\fIfunction\fR]
+[\fB-z\fR globalaudit] [\fB-z\fR groupperm | nogroupperm]
+[\fB-z\fR guidance[=\fIitem1\fR,\fIitem2\fR,...]] [\fB-z\fR help ]
+[\fB-z\fR ignore | record] [\fB-z\fR initarray=\fIfunction\fR] [\fB-z\fR initfirst]
+[\fB-z\fR interpose] [\fB-z\fR lazyload | nolazyload]
+[\fB-z\fR ld32=\fIarg1\fR,\fIarg2\fR,...] [\fB-z\fR ld64=\fIarg1\fR,\fIarg2\fR,...]
+[\fB-z\fR loadfltr] [\fB-z\fR mapfile-add=\fIname\fR] [\fB-z\fR muldefs]
+[\fB-z\fR nocompstrtab] [\fB-z\fR nodefaultlib] [\fB-z\fR nodelete]
+[\fB-z\fR nodlopen] [\fB-z\fR nodump] [\fB-z\fR noldynsym] [\fB-z\fR nopartial]
+[\fB-z\fR noversion] [\fB-z\fR now] [\fB-z\fR origin] [\fB-z\fR preinitarray=\fIfunction\fR]
+[\fB-z\fR redlocsym] [\fB-z\fR relaxreloc] [\fB-z\fR rescan-now] [\fB-z\fR rescan]
+[\fB-z\fR rescan-start \fI\&...\fR \fB-z\fR rescan-end]
+[\fB-z\fR strip-class=[\fB!\fR]\fIclass1\fR,[\fB!\fR]\fIclass2\fR,...]
+[\fB-z\fR stub] [\fB-z\fR symbolcap] [\fB-z\fR target=sparc|x86]
+[\fB-z\fR text | textwarn | textoff] [\fB-z\fR verbose] [\fB-z\fR wrap=\fIsymbol\fR]
+\fIfilename\fR ...
+.fi
+
+.SH 描述
+.sp
+.LP
+链接编辑器 \fBld\fR 通过解析对符号定义的符号引用并执行重定位来合并可重定位对象文件。\fBld\fR 在两种模式（即静态或动态）下运行，具体由 \fB-d\fR 选项控制。在所有情况下，\fBld\fR 的缺省输出位于 \fBa.out\fR 文件中。请参见"注释"。
+.sp
+.LP
+在动态模式（即 \fB-dy\fR，这是缺省模式）下，将合并作为参数提供的可重定位对象文件以生成动态可执行文件。此文件在运行时与作为参数提供的任何共享对象文件合并在一起。如果指定了 \fB-G\fR 选项，将合并可重定位对象文件以生成共享对象文件。如果未指定 \fB-G\fR 选项，将创建动态可执行文件。
+.sp
+.LP
+在静态模式（即 \fB-dn\fR）下，将合并作为参数提供的可重定位对象文件以生成静态可执行文件。如果指定了 \fB-r\fR 选项，将合并可重定位对象文件以生成一个可重定位对象文件。参见\fB静态可执行文件\fR。
+.sp
+.LP
+Solaris 环境使用动态链接将可重定位对象合并到动态可执行文件和共享对象中。此环境紧密结合了链接编辑器和运行时链接程序 \fBld.so.1\fR(1) 的工作。这两个实用程序及其相关的技术和实用程序详细记录在\fI《Linker and Libraries Guide》\fR中。
+.sp
+.LP
+如果任何参数是库，当在参数列表中遇到该库时，缺省情况下，\fBld\fR 将仅搜索该库一次。库可以是共享对象也可以是可重定位归档文件。参见 \fBar.h\fR(3HEAD)。
+.sp
+.LP
+共享对象由以前通过链接编辑一个或多个输入文件而生成的不可分割的整个单元组成。当链接编辑器处理共享对象时，共享对象的完整内容将成为生成的输出文件映像的逻辑部分。在链接编辑期间，实际上不会复制共享对象，因为其实际包含将延迟到进程执行。此逻辑包含的意思是在共享对象中定义的所有符号项目可在链接编辑过程中使用。请参见Chapter 4, \fI"Shared Objects,"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+.LP
+对于归档库，\fBld\fR 仅装入定义未解析的外部引用的例程。\fBld\fR 按顺序搜索归档库的符号表以解析可满足库成员的外部引用。此搜索操作将重复执行，直到不存在可由归档解析的外部引用。因此，库中成员的顺序对功能没有影响，除非存在定义相同外部符号的多个库成员。具有相互依赖性的归档库可能要求多个命令行定义或使用 \fB-z\fR \fBrescan\fR 选项之一。请参见\fI"Archive Processing"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+.LP
+\fBld\fR 是交叉链接编辑器，能够链接 SPARC 或 x86 目标的 32 位对象或 64 位对象。\fBld\fR 使用 \fBELF\fR 类和命令行上第一个可重定位对象的机器类型来控制要运行的模式。不允许混合使用 32 位对象和 64 位对象。同样，只允许使用一种机器类型的对象。参见 \fB-32\fR、\fB-64\fR 和 \fB-z target\fR 选项以及 \fBLD_NOEXEC_64\fR 环境变量。
+.SS "静态可执行文件"
+.sp
+.LP
+多个发行版中已不鼓励创建静态可执行文件。实际上，从未提供 64 位系统归档库。由于静态可执行文件是针对系统归档库生成的，因此可执行文件包含系统实现详细资料。此自包含功能具有许多缺点。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+可执行文件不享受随共享对象一起提供的系统修补程序的好处。因此，必须重新生成可执行文件以享受许多系统改进带来的好处。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+可能无法在将来的发行版中运行可执行文件。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+复制系统实现详细资料会对系统性能产生负面影响。
+.RE
+.sp
+.LP
+在 Solaris 10 中，不再提供 32 位系统归档库。如果没有这些库（特别是 \fBlibc.a\fR），即没有专门的系统知识，将无法再创建静态可执行文件。但是，\fBld\fR 处理静态链接选项以及归档库的功能保持不变。
+.SH 选项
+.sp
+.LP
+支持下列选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-32\fR | \fB-64\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建 32 位或 64 位对象。
+.sp
+缺省情况下，要生成的对象的类根据从命令行处理的第一个 \fBELF\fR 对象来确定。如果未指定任何对象，类由从命令行处理的第一个归档文件中遇到的第一个对象确定。如果没有对象或归档文件，链接编辑器将创建 32 位对象。
+.sp
+仅从 \fBmapfile\fR 创建 64 位对象时才需要 \fB-64\fR 选项。
+.sp
+\fB-32\fR 或 \fB-64\fR 选项还可用在下面的罕见情况中：完全从同时包含 32 和 64 位对象的归档文件链接。如果归档文件中的第一个对象不是需要创建的对象的类，\fB-32\fR 或 \fB-64\fR 选项可用来指向链接编辑器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在静态模式下，生成静态可执行文件。不允许未定义的引用。此选项是静态模式的缺省行为。\fB-a\fR 选项不能与 \fB-r\fR 选项一起使用。参见"说明"下的\fB静态可执行文件\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在动态模式下，不对引用共享对象中的符号的动态可执行文件重定位进行特殊处理。如果不提供 \fB-b\fR 选项，链接编辑器将在动态可执行文件中应用技术以便文本段可以保持只读状态。一种技术是为共享对象中定义的函数的引用创建特殊位置无关重定位。另一种技术安排在运行时将在共享对象中定义的数据对象复制到可执行文件的内存映像中。
+.sp
+\fB-b\fR 选项旨在用于专用动态对象，不建议用于一般用途。使用该选项将禁止执行确保对象可共享性时需要的所有专门处理操作，甚至可能会禁止重定位 64 位可执行文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBdirect\fR | \fBnodirect\fR\fR
+.ad
+.sp .6
+.RS 4n
+这些选项控制是否直接绑定。\fB-B\fR \fBdirect\fR 通过记录每个符号引用与提供定义的依赖项之间的关系来建立直接绑定信息。此外，将在每个符号引用与要创建的对象中的关联定义之间建立直接绑定信息。运行时链接程序使用此信息直接在关联对象中搜索符号而不是执行缺省符号搜索。
+.sp
+只能对使用链接编辑指定的依赖项建立直接绑定信息。因此，应使用 \fB-z\fR \fBdefs\fR 选项。希望在直接绑定环境中插入符号的对象应使用 \fB-z\fR \fBinterpose\fR 选项将自身标识为插入项。使用 \fB-B\fR \fB direct\fR 允许对所有依赖项执行 \fB-z\fR \fBlazyload\fR 操作。
+.sp
+\fB-B\fR \fBnodirect\fR 选项禁止直接绑定到要创建的对象所提供的接口。通过指定 \fB-z\fR \fBdirect\fR 选项，可以将要创建的对象继续直接绑定到外部接口。请参见Chapter 9, \fI"Direct Bindings,"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBdynamic\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+这些选项用于控制库包含。\fB-B\fR \fBdynamic\fR 仅在动态模式下有效。可以在命令行上任意次地指定这些选项以进行切换：如果指定了 \fB-B\fR \fBstatic\fR 选项，在切换为 \fB-B\fR \fBdynamic\fR 选项之前，不会接受任何共享对象。参见 \fB-l\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBeliminate\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用此选项可从符号表中删除未分配给版本定义的任何全局符号。可以通过 \fBmapfile\fR 提供版本定义，以指示在生成的对象中应保持可见的全局符号。此选项与 \fIauto-elimination\fR 指令实现相同的符号删除操作，该指令作为 \fBmapfile\fR 版本定义的一部分提供。合并版本化和非版本化可重定位对象时，此选项可能非常有用。另请参见 \fB-B\fR \fB local\fR 选项和 \fB-B\fR \fBreduce\fR 选项。请参见\fI"SYMBOL_SCOPE / SYMBOL_VERSION Directives"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+建立作为组的共享对象及其依赖项。组中的对象在运行时绑定到组的其他成员。此模式类似于通过组合使用 \fBdlopen\fR(3C) 和 \fBRTLD_GROUP\fR 模式将对象添加到进程中。对标识为组的对象具有显式依赖性的对象会成为该组的成员。
+.sp
+由于该组必须为自包含，因此，使用 \fB-B\fR \fBgroup\fR 选项还将断言 \fB-z\fR \fBdefs\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBlocal\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用此选项可使未分配给版本定义的任何全局符号降级为本地符号。可以通过 \fBmapfile\fR 提供版本定义，以指示在生成的对象中应保持可见的全局符号。此选项与 \fIauto-reduction\fR 指令实现相同的符号降级操作，该指令作为 \fBmapfile\fR 版本定义的一部分提供。合并版本化和非版本化可重定位对象时，此选项可能非常有用。另请参见 \fB-B\fR \fBeliminate \fR 选项和 \fB-B\fR \fBreduce\fR 选项。请参见\fI"SYMBOL_SCOPE / SYMBOL_VERSION Directives"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBreduce\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成可重定位对象时，使用此选项可缩减由任何版本定义所定义的符号信息。可以通过 \fBmapfile\fR 提供版本定义，以指示在生成的对象中应保持可见的全局符号。缺省情况下，生成可重定位对象时，仅在输出映像中记录版本定义。如果在构造动态可执行文件或共享对象时使用该对象，将对符号信息执行实际缩减。创建动态可执行文件或共享对象时，将自动应用 \fB-B\fR \fBreduce\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fBsymbolic\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅适用于动态模式。构建共享对象时，将该对象中全局符号的引用绑定到其定义（如果可用）。通常，在运行时才会绑定共享对象中全局符号的引用，即使有定义可用也是如此。此模式允许可执行文件或其他共享对象中的相同符号的定义覆盖该对象自己的定义。\fBld\fR 将对未定义的符号发出警告，除非 \fB-z\fR \fBdefs\fR 覆盖定义。
+.sp
+\fB-B\fR \fBsymbolic\fR 选项旨在用于专用动态对象，不建议用于一般用途。要缩减对象所需的运行时重定位处理，建议创建版本定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+记录配置文件的 \fIname\fR 以便在运行时使用。可以使用配置文件来改变缺省搜索路径，提供目录高速缓存以及提供备选对象依赖项。参见 \fBcrle\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+Demangles C++ 符号名称显示在诊断消息中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fBy\fR | \fBn\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果指定 \fB-d\fR \fBy\fR（缺省情况），\fBld\fR 将使用动态链接。如果指定 \fB-d\fR \fBn\fR，\fBld\fR 将使用静态链接。参见"说明"下的\fB静态可执行文件\fR以及 \fB-B\fR \fBdynamic\fR|\fBstatic\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR [\fB!\fR]\fItoken1\fR,[\fB!\fR]\fItoken2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+按每个 \fItoken\fR 的指定将调试信息输出为标准错误。特殊标记 \fBhelp\fR 指示可用标记的完整列表。请参见\fI"Debugging Aids"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIepsym\fR\fR
+.ad
+.br
+.na
+\fB\fB--entry\fR \fIepsym\fR\fR
+.ad
+.sp .6
+.RS 4n
+将输出文件的入口点地址设置为符号 \fIepsym\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIname\fR\fR
+.ad
+.br
+.na
+\fB\fB--auxiliary\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅当构建共享对象时才有用。指定将共享对象的符号表用作 \fIname\fR 所指定的共享对象的符号表上的辅助过滤器。允许使用此选项的多个实例。此选项不能与 \fB-F\fR 选项一起使用。请参见\fI"Generating Auxiliary Filters"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIname\fR\fR
+.ad
+.br
+.na
+\fB\fB--filter\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅当构建共享对象时才有用。指定将共享对象的符号表用作 \fIname\fR 所指定的共享对象的符号表上的过滤器。允许使用此选项的多个实例。此选项不能与 \fB-f\fR 选项一起使用。请参见\fI"Generating Standard Filters"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.br
+.na
+\fB\fB-shared\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在动态模式下，生成共享对象。允许使用未定义的符号。请参见Chapter 4, \fI"Shared Objects,"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIname\fR\fR
+.ad
+.br
+.na
+\fB\fB--soname\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在动态模式下，当构建共享对象时，在对象的动态部分中记录 \fIname\fR。\fIname\fR 记录在与此对象而不是对象的文件系统名链接的任何动态对象中。因此，\fIname\fR 由运行时链接程序用作共享对象的名称以在运行时进行搜索。请参见\fI"Recording a Shared Object Name"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+忽略 \fBLD_LIBRARY_PATH\fR。当 \fBLD_LIBRARY_PATH\fR 设置实际影响运行时库搜索（这会干扰正在执行的链接编辑）时，此选项非常有用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIname\fR\fR
+.ad
+.br
+.na
+\fB\fB--dynamic-linker\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+在构建可执行文件时，使用 \fIname\fR 作为要写入程序头的解释程序的路径名。在静态模式下，缺省为没有解释程序。在动态模式下，缺省为运行时链接程序 \fBld.so.1\fR(1) 的名称。任何一种情况都可以由 \fB-I\fR \fIname\fR 覆盖。\fBexec\fR(2) 在装入 \fBa.out\fR 时会装入此解释程序，并将控件传递给该解释程序而不是直接传递给 \fBa.out\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIx\fR\fR
+.ad
+.br
+.na
+\fB\fB--library\fR \fIx\fR\fR
+.ad
+.sp .6
+.RS 4n
+搜索 \fBlib\fR\fIx\fR\fB\&.so\fR 或 \fBlib\fR\fIx\fR\fB\&.a\fR 库，它们分别是共享对象和归档库的常规名称。在动态模式下，除非 \fB-B\fR \fBstatic\fR 选项有效，否则 \fBld\fR 将在库搜索路径中指定的每个目录中搜索 \fBlib\fR\fIx\fR\fB\&.so\fR 或 \fBlib\fR\fIx\fR\fB\&.a\fR 文件。目录搜索在包含任何一个文件的第一个目录处停止。\fBld\fR 会选择以 \fB\&.so\fR 结尾的文件，条件是 \fB-l\fR\fIx\fR 扩展为两个文件，这两个文件的名称采用 \fBlib\fR\fIx\fR\fB\&.so\fR 和 \fBlib\fR\fIx\fR\fB\&.a\fR 形式。如果未找到 \fBlib\fR\fIx\fR\fB\&.so\fR，\fBld\fR 将接受 \fBlib\fR\fIx\fR\fB\&.a\fR。在静态模式下，即当 \fB-B\fR \fBstatic\fR 选项有效时，\fBld\fR 将仅选择以 \fB\&.a\fR 结尾的文件。\fBld\fR 在遇到该库时会搜索库，因此 \fB-l\fR 的位置非常重要。请参见\fI"Linking With Additional Libraries"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fIpath\fR\fR
+.ad
+.br
+.na
+\fB\fB--library-path\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIpath\fR 添加到库搜索目录。\fBld\fR 首先在 \fB-L\fR 选项指定的任何目录中搜索库，然后在标准目录中搜索。仅当此选项位于 \fB-L\fR 选项应用到的 \fB-l\fR 选项之前时，此选项才有用。请参见\fI"Directories Searched by the Link-Editor"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+环境变量 \fBLD_LIBRARY_PATH\fR 可用于补充库搜索路径，但是建议使用 \fB-L\fR 选项，因为环境变量也会由运行时环境解释。参见"环境变量"下的 \fBLD_LIBRARY_PATH\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+在标准输出中生成内存映射或输入/输出部分列表，以及任何非致命多重定义符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR \fImapfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+作为 \fBld\fR 指令的文本文件读取 \fImapfile\fR。可以多次指定此选项。如果 \fImapfile\fR 是目录，将处理该目录中的所有正规文件（如 \fBstat\fR(2) 所定义）。请参见Appendix B, \fI"System V Release 4 (Version 1) Mapfiles,"\fR in \fI《Linker and Libraries Guide》\fR。\fB/usr/lib/ld\fR 中提供了示例 mapfile。请参见"文件"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fIstring\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项会将 \fBDT_NEEDED\fR 条目添加到所生成的对象的 \fB\&.dynamic\fR 部分中。\fBDT_NEEDED\fR 字符串的值为在命令行上指定的 \fIstring\fR。此选项与位置有关，且 \fBDT_NEEDED\fR \fB\&.dynamic\fR 条目与链接编辑行上搜索到的其他动态依赖项有关。当组合使用 \fB-dy\fR 和 \fB-r\fR 选项时，此选项适用于在设备驱动程序可重定位对象中指定依赖项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutfile\fR\fR
+.ad
+.br
+.na
+\fB\fB--output\fR \fIoutfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成名为 \fIoutfile\fR 的输出对象文件。缺省对象文件的名称为 \fBa.out\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIauditlib\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识审计库 \fIauditlib\fR。此审计库用于审计在运行时创建的对象。共享对象被标识为要求使用 \fB-p\fR 选项进行审计，将该共享对象指定为依赖项的任何对象都将继承此项要求。参见 \fB-P\fR 选项。请参见\fI"Runtime Linker Auditing Interface"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIauditlib\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识审计库 \fIauditlib\fR。此审计库用于审计在运行时创建的对象的依赖项。依赖项审计还可以从标识为要求审计的依赖项继承。参见 \fB-p\fR 选项和 \fB-z\fR \fBglobalaudit\fR 选项。请参见\fI"Runtime Linker Auditing Interface"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Q\fR \fBy\fR | \fBn\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fB-Q\fR \fBy\fR 时，会将 \fBident\fR 字符串添加到输出文件的 \fB\&.comment\fR 部分。此字符串标识用于创建文件的 \fBld\fR 的版本。这将导致当存在多个链接步骤（例如使用 \fBld\fR \fB-r\fR）时，出现多个 \fBld\fR \fBident\fR。此标识与 \fBcc\fR 命令的缺省操作相同。\fB-Q\fR \fBn\fR 将隐藏版本标识。\fB\&.comment\fR 部分可以通过 \fBmcs\fR(1) 实用程序来处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.br
+.na
+\fB\fB--relocatable\fR\fR
+.ad
+.sp .6
+.RS 4n
+合并可重定位对象以生成一个可重定位对象文件。\fBld\fR 不受未解析引用的影响。此选项不能与 \fB-a\fR 选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIpath\fR\fR
+.ad
+.br
+.na
+\fB\fB-rpath\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+冒号分隔的目录列表，用于指定运行时链接程序的库搜索目录。如果路径存在且不为空，将在输出对象文件中记录路径并将其传递给运行时链接程序。此选项的多个实例与各个用冒号分隔的 \fIpath\fR 串联在一起。请参见\fI"Directories Searched by the Runtime Linker"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+在关联对象中使用 runpath 比设置全局搜索路径（例如通过 \fBLD_LIBRARY_PATH\fR 环境变量）更可取。仅应记录查找对象依赖项所需的 runpaths。\fBldd\fR(1) 在与 \fB-U\fR 选项一起使用时，还可用于在动态对象中搜索未使用的 runpaths。
+.sp
+还可以通过 runpath 来提供各种标记，运行路径提供了标识系统功能或对象位置的灵活方式。请参见Chapter 6, \fI"Establishing Dependencies with Dynamic String Tokens,"\fR in \fI《Linker and Libraries Guide》\fR。\fB$ORIGIN\fR 标记特别适用于将动态对象重定位到文件系统中的其他位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.br
+.na
+\fB\fB--strip-all\fR\fR
+.ad
+.sp .6
+.RS 4n
+从输出文件中分离任何符号信息。这些选项等效于组合使用 \fB-z strip-class\fR 选项与 \fBdebug\fR 和 \fBsymbol\fR 类标识符。另请参见 \fB-z\fR \fBredlocsym\fR 和 \fB-z\fR \fBnoldynsym\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIsupportlib\fR\fR
+.ad
+.sp .6
+.RS 4n
+共享对象 \fIsupportlib\fR 是使用 \fBld\fR 以及有关链接进程的给定信息装入的。使用 \fB-S\fR 选项定义的共享对象还可通过使用 \fBSGS_SUPPORT\fR 环境变量来提供。请参见\fI"Link-Editor Support Interface"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁止对具有不同大小或不同对齐方式的多重定义符号发出警告。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIsymname\fR\fR
+.ad
+.br
+.na
+\fB\fB--undefined\fR \fIsymname\fR\fR
+.ad
+.sp .6
+.RS 4n
+在符号表中作为未定义的符号输入 \fIsymname\fR。此选项适用于完全从归档库装入。在此实例中，需要使用未解析的引用来强制装入第一个例程。此选项在命令行上的位置非常重要。此选项必须置于定义符号的库之前。请参见\fI"Defining Additional Symbols with the -u option"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.br
+.na
+\fB\fB--version\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出一条消息，其中给出有关所使用的 \fBld\fR 的版本的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Y\fR \fBP,\fR\fIdirlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改用于查找库的缺省目录。\fIdirlist\fR 是冒号分隔的路径列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBabsexec\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅当构建动态可执行文件时才有用。指定应立即解析外部绝对符号的引用而不是留到运行时进行解析。在非常专业化的情况下，此选项将删除可能导致可执行文件要求的交互空间过大的文本重定位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBallextract\fR | \fBdefaultextract\fR | \fBweakextract\fR\fR
+.ad
+.br
+.na
+\fB\fB--whole-archive\fR | \fB--no-whole-archive \fR\fR
+.ad
+.sp .6
+.RS 4n
+从跟随的任何归档中更改对象的提取条件。缺省情况下，将提取归档成员以满足未定义的引用并通过数据定义提升暂定的定义。弱符号引用不会触发提取。使用 \fB-z\fR \fBallextract\fR 或 \fB--whole-archive\fR 选项时，从归档中提取所有归档成员。使用 \fB-z\fR \fBweakextract\fR 时，弱引用触发归档提取。\fB-z\fR \fBdefaultextract\fR 或 \fB--no-whole-archive\fR 选项提供一种在使用前面的提取选项之后返回缺省值的方法。请参见\fI"Archive Processing"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBaltexec64\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行 64 位 \fBld\fR。历史上，已执行的链接编辑器的类由所创建的 \fBELF\fR 对象的类决定。现在，已执行的链接编辑器的类由底层系统的类决定。通常情况下，这是 64 位。此选项维持向后兼容性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBassert-deflib=[\fIlibname\fR]\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许为使用通过检查链接编辑器提供的缺省搜索路径找到的 \fB-l\fR 命令行选项指定的库发出警告消息。如果提供 \fIlibname\fR 值，将启用缺省库警告功能，并将指定的库添加到不为其发出警告的库列表中。可以指定多个 \fB-z\fR \fBassert-deflib\fR 选项以指定多个不应为其发出警告的库。 
+.sp
+\fIlibname\fR 值应为链接编辑器找到的不带任何路径组件的库文件的名称。例如，以下选项允许发出缺省库警告，但标准 C 库除外。
+.sp
+.in +2
+.nf
+\fBld ... -z assert-deflib=libc.so ...\fR
+.fi
+.in -2
+.sp
+
+\fB-z\fR \fBassert-deflib\fR 是专用选项，主要用于这样的版本环境：其中存在多个具有相同名称的对象且需要对所使用的库实行严格控制。该选项不用于一般用途。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBcombreloc\fR | \fBnocombreloc\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省情况下，当构建可执行文件或共享对象时，\fBld\fR 会合并多个重定位部分。此部分合并不同于可重定位对象合并，在部分合并中，重定位部分与必须应用重定位的部分维持一一对应的关系。\fB-z\fR \fBnocombreloc\fR 选项禁止合并重定位部分，并保持在原始可重定位对象中找到的一一对应关系。
+.sp
+\fBld\fR 按数据重定位部分条目的符号引用对这些条目进行排序。此排序会减少运行时符号查找。在合并多个重定位部分时，此排序在将对象装入内存时可能产生最少的重定位系统开销，并加快动态对象的运行时装入。
+.sp
+历史上，单个重定位部分已转入任何可执行文件或共享对象中，并且需要 \fB-z\fR \fBcombreloc\fR 选项才能启用前面所述的重定位部分合并。重定位部分合并现在是缺省设置。由于旧版本环境的好处，\fB-z\fR \fBcombreloc\fR 选项仍可接受，但该选项不是必需的，且不起作用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBdeferred\fR | \fBnodeferred\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止将动态依赖项标记为延迟。标记为 \fBdeferred\fR 的动态依赖项也将标记为延迟可装入，且不会在初始进程启动时装入。在首次绑定到延迟引用时，延迟依赖项的装入过程会延迟到进程执行。与基本的延迟可装入依赖项不同，不会在处理 \fBLD_BIND_NOW\fR 时处理延迟依赖项，也不会通过带有 \fBRTLD_NOW\fR 标记的 \fBdlopen\fR(3C) 来处理延迟依赖项。请参见\fI"Lazy Loading of Dynamic Dependencies"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+组合使用延迟依赖项以及 \fBdlsym\fR(3C) 和 \fBRTLD_PROBE\fR 句柄，可提供灵活机制和自然编码样式以供测试功能使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBdefs\fR | \fBnodefs\fR\fR
+.ad
+.br
+.na
+\fB\fB--no-undefined\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-z\fR \fBdefs\fR 选项和 \fB--no-undefined\fR 选项会在链接末尾保留有任何未定义的符号时强制生成致命错误。此模式是构建可执行文件时的缺省模式。由于历史原因，此模式\fB不\fR是构建共享对象时的缺省模式。建议使用 \fB-z\fR \fBdefs\fR 选项，因为此模式可保证所构建的对象是自包含的。自包含对象在内部解析所有符号引用，或解析到对象的直接依赖项。
+.sp
+\fB-z\fR \fBnodefs\fR 选项允许未定义的符号。由于历史原因，此模式是构建共享对象时的缺省模式。与可执行文件一起使用时，未指定对此类未定义符号的引用的行为。不建议使用 \fB-z\fR \fBnodefs\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBdirect\fR | \fBnodirect\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止直接绑定到命令行上跟在其后的任何依赖项。与全局等效 \fB-B\fR \fBdirect\fR 相比，这些选项允许对直接绑定进行更精确的控制。\fB-z\fR \fBdirect\fR 选项在以下方面也与 \fB-B\fR \fBdirect\fR 选项不同。不会在符号引用与要创建的对象中的关联定义之间建立直接绑定信息。不支持延迟装入。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBendfiltee\fR\fR
+.ad
+.sp .6
+.RS 4n
+标记 filtee 以便在过滤器进行处理时，filtee 可终止过滤器进行的任何进一步的 filtee 搜索。请参见\fI"Reducing Filtee Searches"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBfatal-warnings\fR | \fBnofatal-warnings\fR\fR
+.ad
+.br
+.na
+\fB\fB--fatal-warnings\fR | \fB--no-fatal-warnings\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fB-z\fR \fBfatal-warnings\fR 和 \fB--fatal-warnings\fR 选项可使链接编辑器将警告视为致命错误。
+.sp
+使用 \fB-z\fR \fBnofatal-warnings\fR 和 \fB--no-fatal-warnings\fR 选项可使链接编辑器将警告视为非致命错误。这是缺省行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBfiniarray=\fR\fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+在所构建的对象的 \fB\&.fini_array\fR 部分后附加一个条目。如果不存在 \fB\&.fini_array\fR 部分，将创建该部分。新条目将初始化为指向 \fIfunction\fR。请参见\fI"Initialization and Termination Sections"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBglobalaudit\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项对已使用 \fB-P\fR 选项记录的审计库定义进行补充。此选项仅在构建动态可执行文件时有意义。使用 \fB-P\fR 选项在对象中定义的审计库通常允许审计该对象的直接依赖项。\fB-z\fR \fBglobalaudit\fR 将审计程序升级为全局审计程序，因此允许审计所有依赖项。请参见\fI"Invoking the Auditing Interface"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+使用 \fB-P\fR 选项和 \fB-z\fR \fBglobalaudit\fR 选项建立的审计程序等效于使用 \fBLD_AUDIT\fR 环境变量建立的审计程序。参见 \fBld.so.1\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBgroupperm\fR | \fBnogroupperm\fR\fR
+.ad
+.sp .6
+.RS 4n
+分配或取消分配跟在唯一组后的每个依赖项。将依赖项分配给组的作用就如同使用 \fB-B\fR \fBgroup\fR 选项构建依赖项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBguidance[=\fR\fIitem1\fR\fB,\fR\fIitem2\fR\fB,...]\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供指南消息来指示 \fBld\fR 选项，这些选项可以改进所生成对象的质量，或者在其他方面被视为有益。提供的特定指南在系统升级时可能会发生更改。旧版本 \fBld\fR 提供的过时指南在新版本中可能已删除。同样，可能会在新版本的 \fBld\fR 中添加新指南。因此，指南始终代表当前最佳做法。
+.sp
+通过提供代表要禁止的指南类的 \fIitem\fR 标记列表，可以启用指南但禁止特定指南消息。这样，可以禁止不需要的建议而不会失去其他指南的优点。\fBld\fR 会静默忽略无法识别的 \fIitem\fR 标记，从而允许在多种早期或新版本的 Solaris 上执行指定的 \fBld\fR 命令行。
+.sp
+下面是当前版本的 \fBld\fR 提供的指南以及用于禁止这些消息的 \fIitem\fR 标记。
+.sp
+.ne 2
+.mk
+.na
+\fB指定所需依赖项\fR
+.ad
+.sp .6
+.RS 4n
+动态可执行文件和共享对象应明确定义它们所需的所有依赖项。如果在构建动态对象时有任何符号引用不能满足要求，指南建议使用 \fB-z\fR \fBdefs\fR 选项。可以使用 \fB-z\fR \fBguidance=nodefs\fR 禁用此指南。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB不指定不需要的依赖项\fR
+.ad
+.sp .6
+.RS 4n
+动态可执行文件和共享对象不应定义不满足动态对象建立的符号引用的任何依赖项。指南建议删除未使用的依赖项。可以使用 \fB-z\fR \fBguidance=nounused\fR 禁用此指南。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB延迟装入\fR
+.ad
+.sp .6
+.RS 4n
+应标识依赖项以进行延迟装入。如果在遇到 \fB-z\fR \fBlazyload\fR 或 \fB-z\fR \fBnolazyload\fR 选项之前要处理任何依赖项，指南建议使用 \fB-z\fR \fBlazyload\fR 选项。可以使用 \fB-z\fR \fBguidance=nolazyload\fR 禁用此指南。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB直接绑定\fR
+.ad
+.sp .6
+.RS 4n
+应使用直接绑定来引用依赖项。如果在遇到 \fB-B\fR \fBdirect\fR 或 \fB-z\fR \fBdirect\fR 选项之一或者 \fB-z\fR \fBnodirect\fR 选项之前要处理任何依赖项，指南建议使用前两个选项中的一个。可以使用 \fB-z\fR \fBguidance=nodirect\fR 禁用此指南。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB纯文本段\fR
+.ad
+.sp .6
+.RS 4n
+动态对象不应包含不可写但可分配部分的重定位。如果针对文本段的任何重定位持续，且未遇到 \fB-z\fR \fBtextwarn\fR 和 \fB-z\fR \fBtextoff\fR 选项，指南建议使用位置无关代码 (Position Independent Code, PIC) 编译对象。可以使用 \fB-z\fR \fBguidance=notext\fR 禁用此指南。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBMapfile 语法\fR
+.ad
+.sp .6
+.RS 4n
+所有 mapfile 应使用版本 2 mapfile 语法。如果遇到任何使用版本 1 语法的 mapfile，指南将建议使用版本 2 语法。可以使用 \fB-z\fR \fBguidance=nomapfile\fR 禁用此指南。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB库搜索路径\fR
+.ad
+.sp .6
+.RS 4n
+将静默忽略 \fBld\fR 遇到的不合适的依赖项。例如，将忽略在生成 64 位对象时遇到的 32 位依赖项。这些依赖项可以由不正确的搜索路径设置产生，例如提供不正确的 \fB-L\fR 选项。尽管此依赖项是有利的，但其处理会造成浪费，而且可能会隐藏应解决的版本问题。指南建议删除任何不合适的依赖项。可以使用 \fB-z\fR \fBguidance=nolibpath\fR 禁用此指南。
+.RE
+
+此外，\fB-z\fR \fBguidance=noall\fR 可用来完全禁用指南功能。有关指南的更多信息和构建更好的对象的建议，请参见Chapter 7, \fI"Link-Editor Quick Reference,"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBhelp\fR\fR
+.ad
+.br
+.na
+\fB\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+在标准输出中输出命令行选项的摘要并退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBignore\fR | \fBrecord\fR\fR
+.ad
+.sp .6
+.RS 4n
+忽略或记录未作为链接编辑的一部分引用的动态依赖项。忽略或记录作为链接编辑的一部分读取的可重定位对象中的未引用 \fBELF\fR 部分。缺省情况下，\fB-z\fR \fBrecord\fR 有效。
+.sp
+如果忽略 \fBELF\fR 部分，将在所生成的输出文件中删除该部分。满足以下三个条件时忽略部分。已删除的部分必须导致可分配段。已删除的部分不能提供全局符号。导致链接编辑的任何对象中的其他部分都不能引用已删除的部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBinitarray=\fR\fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+在所构建的对象的 \fB\&.init_array\fR 部分后附加一个条目。如果不存在 \fB\&.init_array\fR 部分，将创建该部分。新条目将初始化为指向 \fIfunction\fR。请参见\fI"Initialization and Termination Sections"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBinitfirst\fR\fR
+.ad
+.sp .6
+.RS 4n
+标记对象以便先对该对象进行运行时初始化，然后再对同时进入进程的任何其他对象进行运行时初始化。此外，在对该对象进行运行时终结化之前，先对同时从进程中删除的任何其他对象进行运行时终结化。此选项仅在构建共享对象时有意义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBinterpose\fR\fR
+.ad
+.sp .6
+.RS 4n
+将对象标记为插入项。在运行时，如果已使用 \fB-z interpose\fR 选项标记某个对象，则会将该对象标识为显式插入项。在使用 \fBLD_PRELOAD\fR 环境变量装入对象时，也会建立显式插入项。由于对象的装入顺序可能会出现隐含插入，但是，此隐含插入对于运行时链接程序是未知的。显式插入可确保不论对象的装入顺序如何都会进行插入。显式插入还可确保当直接绑定有效时，运行时链接程序在任何显式插入项中搜索符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBlazyload\fR | \fBnolazyload\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止将动态依赖项标记为延迟装入。标记为 \fBlazyload\fR 的动态依赖项在初始进程启动时不会装入。这些依赖项将延迟到首次绑定对象时装入。\fB注意：\fR延迟装入要求对依赖项以及进程中使用的每个动态对象的关联 runpaths 进行正确声明。请参见\fI"Lazy Loading of Dynamic Dependencies"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBld32\fR=\fIarg1\fR,\fIarg2\fR,...\fR
+.ad
+.br
+.na
+\fB\fB-z\fR \fBld64\fR=\fIarg1 \fR,\fIarg2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+链接编辑器的类受所创建的输出文件的类以及底层操作系统的功能影响。\fB-z\fR \fBld\fR[\fB 32\fR|\fB64\fR] 选项提供定义任何链接编辑器参数的方法。定义的参数分别仅由链接编辑器的 32 位类或 64 位类解释。
+.sp
+例如，支持库是类特定的，因此可以使用以下选项确保支持库的类正确：
+.sp
+.in +2
+.nf
+\fBld ... -z ld32=-Saudit32.so.1 -z ld64=-Saudit64.so.1 ...\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBloadfltr\fR\fR
+.ad
+.sp .6
+.RS 4n
+标记过滤器以指示必须在运行时立即处理 filtee。通常，过滤器处理会延迟到某个符号引用绑定到该过滤器。包含此标志的对象的运行时处理将模拟 \fBLD_LOADFLTR\fR 环境变量生效时的运行时处理。参见 \fBld.so.1\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBmapfile-add=\fR\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIname\fR 添加到已知的 \fBmapfile\fR 条件输入表达式谓词列表中。此选项等效于在链接编辑器读取的第一个 \fBmapfile\fR 的顶部放置以下行。
+.sp
+.in +2
+.nf
+$mapfile_version 2
+$add \fIname\fR
+.fi
+.in -2
+
+通过 \fB-z mapfile-add\fR 输入的名称可以与 \fBmapfile\fR \fB$if\fR 和 \fB$elif\fR 指令一起使用来有条件地处理 \fBmapfile\fR 输入。请参见Chapter 10, \fI"Mapfiles,"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBmuldefs\fR\fR
+.ad
+.br
+.na
+\fB\fB--allow-multiple-definition\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许多个符号定义。缺省情况下，在可重定位对象之间出现多个符号定义会导致致命错误条件。此选项将禁止错误条件出现，并允许采用第一个符号定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnocompstrtab\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁止压缩 \fBELF\fR 字符串表。缺省情况下，字符串压缩适用于 \fBSHT_STRTAB\fR 部分以及设置了 \fBSHF_MERGE\fR 和 \fBSHF_STRINGS\fR 部分标志的 \fBSHT_PROGBITS\fR 部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnodefaultlib\fR\fR
+.ad
+.sp .6
+.RS 4n
+标记对象以忽略在任何 \fBLD_LIBRARY_PATH\fR 或 runpaths 后使用的运行时缺省库搜索路径。此选项表明可以通过对象的 runpath 来满足对象的所有依赖项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnodelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+将对象标记为在运行时不可删除。此模式类似于通过组合使用 \fBdlopen\fR(3C) 与 \fBRTLD_NODELETE\fR 模式将对象添加到进程中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnodlopen\fR\fR
+.ad
+.sp .6
+.RS 4n
+将对象标记为对 \fBdlopen\fR(3C) 不可用，即标记为 \fBdlopen()\fR 指定的对象或标记为 \fBdlopen()\fR 指定的对象所需的任何形式的依赖项。此选项仅在构建共享对象时有意义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnodump\fR\fR
+.ad
+.sp .6
+.RS 4n
+将对象标记为对 \fBdldump\fR(3C) 不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnoldynsym\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁止在动态可执行文件或共享对象中包含 \fB\&.SUNW_ldynsym\fR 部分。\fB\&.SUNW_ldynsym\fR 部分通过为本地函数提供符号来增大 \fB\&.dynsym\fR 部分。本地函数符号允许调试器在精简程序的栈跟踪中显示本地函数名称。同样，\fBdladdr\fR(3C) 能够提供更准确的结果。
+.sp
+\fB-z\fR \fBnoldynsym\fR 选项还禁止包含与 \fB\&.SUNW_ldynsym\fR 部分相关的两个符号排序部分。\fB\&.SUNW_dynsymsort\fR 部分提供对正则函数和变量符号的有序访问。\fB\&.SUNW_dyntlssort\fR 部分提供对线程本地存储 (\fBTLS\fR) 变量符号的有序访问。
+.sp
+成为所生成文件的可分配文本段一部分的 \fB\&.SUNW_ldynsym\fR、\fB\&.SUNW_dynsymsort\fR 和 \fB\&.SUNW_dyntlssort\fR 部分无法通过 \fBstrip\fR(1) 删除。因此，\fB-z\fR \fB noldynsym\fR 选项是禁止其包含的唯一方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnopartial\fR\fR
+.ad
+.sp .6
+.RS 4n
+在要生成的输出文件中展开在可重定位对象中定义的部分初始化的符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnoversion\fR\fR
+.ad
+.sp .6
+.RS 4n
+不记录任何版本更新部分。不在输出映像中生成任何版本部分或关联的 \fB\&.dynamic\fR 部分条目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBnow\fR\fR
+.ad
+.sp .6
+.RS 4n
+将对象标记为需要 non-lazy 运行时绑定。此模式类似于通过组合使用 \fBdlopen\fR(3C) 与 \fBRTLD_NOW\fR 模式将对象添加到进程中。此模式还类似于使 \fBLD_BIND_NOW\fR 环境变量起作用。参见 \fBld.so.1\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBorigin\fR\fR
+.ad
+.sp .6
+.RS 4n
+将对象标记为需要在运行时立即进行 \fB$ORIGIN\fR 处理。维护此选项只是为了历史兼容性，因为现在缺省提供对象的运行时分析以进行 \fB$ORIGIN\fR 处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBpreinitarray=\fR\fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+在所构建的对象的 \fB\&.preinit_array\fR 部分后附加一个条目。如果不存在 \fB\&.preinit_array\fR 部分，将创建该部分。新条目将初始化为指向 \fIfunction\fR。请参见\fI"Initialization and Termination Sections"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBredlocsym\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除所有本地符号，但符号表 \fBSHT_SYMTAB\fR 中的 \fISECT\fR 符号除外。引用本地符号的所有重定位将更新为引用相应的 \fISECT\fR 符号。此选项允许使用专门对象来显著降低其符号表大小。另请参见 \fB-z\fR \fBstrip-class\fR 和 \fB-z\fR\fB noldynsym\fR 选项。
+.sp
+尽管 \fB-z\fR \fBredlocsym\fR 选项对特殊对象（例如在操作系统内核中使用的那些对象）很有用，但不建议将该选项用于一般用途。符号表 \fBSHT_SYMTAB\fR 的大小不影响运行时行为，而删除本地符号可能会对过程观察产生负面影响。删除本地符号可以减少使用编译器驱动程序 \fB-g\fR 选项生成的调试信息。删除本地符号还会删除正常写入到 \fB\&.SUNW_ldynsym\fR 部分中的信息，从而会降低调试器和工具（如 \fBpstack\fR(1) 和 \fBtruss\fR(1)）的效用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBrelaxreloc\fR\fR
+.ad
+.sp .6
+.RS 4n
+当使用引用已删除 COMDAT 部分的符号而遇到重定位时，\fBld\fR 通常会发出致命错误。如果启用 \fB-z\fR \fBrelaxreloc\fR，\fBld\fR 将改为将此类重定位重定向到保留的 COMDAT 部分中的等效符号。\fB-z\fR \fBrelaxreloc\fR 是专门选项，主要由编译器作者使用，不用于一般用途。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBrescan-now\fR\fR
+.ad
+.br
+.na
+\fB\fB-z\fR \fBrescan\fR\fR
+.ad
+.sp .6
+.RS 4n
+这些选项重新扫描提供给链接编辑的归档文件。缺省情况下，当命令行上出现归档时，将立即处理归档。传统上来说，在命令行末尾指定归档，以便其符号定义可解析任何前述引用。但是，有必要多次指定归档以满足其自身的相互依赖项。
+.sp
+\fB-z\fR \fBrescan-now\fR 是位置选项，在命令行上遇到该选项时链接编辑器会立即处理该选项。将立即重新处理命令行上此时显示的所有归档以尝试定位解析符号引用的其他归档成员。将重复此归档重新扫描操作，直到通过归档传递时未提取新成员。
+.sp
+\fB-z\fR \fBrescan\fR 是与位置无关的选项。链接编辑器会将重新扫描操作推迟到在它处理整个命令行之后再进行，然后开始对命令行上显示的所有归档执行最终重新扫描操作。\fB-z\fR \fBrescan\fR 操作可与包含初始化 (\&.init) 或终结化 (\&.fini) 部分的对象进行不正确地交互，从而禁止这些部分中的代码运行。由于此原因，\fB-z\fR \fBrescan\fR 已过时，建议使用 \fB-z\fR \fBrescan-now\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBrescan-start\fR ... \fB-z\fR \fBrescan-end\fR\fR
+.ad
+.br
+.na
+\fB\fB--start-group\fR ... \fB--end-group\fR\fR
+.ad
+.br
+.na
+\fB\fB-(\fR ... \fB-)\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义归档重新扫描组。这是位置构造，在遇到封闭分界符选项时链接编辑器会立即进行处理。将在组分界符选项中找到的归档重新处理为组以尝试定位解析符号引用的其他归档成员。将重复此归档重新扫描操作，直到通过归档传递时未提取新成员。无法嵌套归档重新扫描组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBstrip-class=\fR[\fB! \fR]\fIclass1\fR\fB,\fR[\fB!\fR]\fI class2\fR\fB,...\fR\fR
+.ad
+.sp .6
+.RS 4n
+从任何输入对象分离特定的部分类，禁止将这些部分添加到输出文件。通过此选项，可以对可在输出文件中忽略的部分进行细粒度控制。
+.sp
+下面介绍的分离类仅适用于不可分配部分。
+.sp
+可以在每个类标记前加上"\fB!\fR"，以指示不应删除该类。此定义在与 \fBnonalloc\fR 类结合时非常有用。例如，使用"\fB-z\fR \fBstrip-class=nonalloc,!comment\fR"将删除所有不可分配部分（注释部分除外）。
+.sp
+可以定义以下部分类。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnonalloc\fR\fR
+.ad
+.sp .6
+.RS 4n
+分离任何不可分配部分。这些部分标识为不包括 \fBSHF_ALLOC\fR 部分标志。此类可以封装多个其他类，其自身通常足以删除任何不需要的部分。但是，此类\fB不会\fR捕获部分的符号类。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBannotate\fR\fR
+.ad
+.sp .6
+.RS 4n
+分离任何注释部分。这些部分通过 \fBSHT_SUNW_ANNOTATE\fR 部分类型来进行标识。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcomment\fR\fR
+.ad
+.sp .6
+.RS 4n
+分离任何注释部分。这些部分通过 \fB\&.comment\fR 部分名称来进行标识。此外，\fBmcs\fR(1) 命令通常用于处理注释部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug\fR\fR
+.ad
+.sp .6
+.RS 4n
+分离通常用于包含调试数据的部分。这些部分通过 \fB\&.compcom\fR、\fB\&.line\fR、\fB\&.stab*\fR 或 \fB\&.debug*\fR 部分名称来进行标识。这些部分还可通过 \fBSHT_SUNW_DEBUG*\fR 部分类型来进行标识。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexclude\fR\fR
+.ad
+.sp .6
+.RS 4n
+分离任何可排除的部分。这些部分通过 \fBSHF_EXCLUDE\fR 部分标志来进行标识。在创建可重定位对象时此类非常有用。缺省情况下，当创建动态可执行文件或共享对象时会自动排除此类部分，在创建可重定位对象时将保留此类部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB说明\fR\fR
+.ad
+.sp .6
+.RS 4n
+分离任何注释部分。这些部分通过 \fBSHT_NOTE\fR 部分类型来进行标识。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB符号\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果输出文件不是可重定位对象，则分离任何不可分配符号表和字符串表部分。这些部分通过 \fBSHT_SYMTAB\fR 部分类型来进行标识。任何关联的字符串表也将删除。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBstub\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成桩共享对象。桩对象是完全从 \fBmapfile\fR 构建的共享对象，提供与实际对象相同的链接接口，但不包含代码或数据。不能在运行时使用桩对象。但是，可以根据桩对象构建应用程序，桩对象提供要在运行时使用的实际对象名称，然后在运行时使用实际对象。
+.sp
+只能为共享对象生成桩对象，必须提供定义要导出的全局符号的 \fBmapfile\fR。因此，在使用 \fB-z\fR \fBstub\fR 时，需要使用 \fB-G\fR 和 \fB-M\fR 选项。在生成桩目标文件时，链接编辑器将忽略在命令行中指定的任何目标文件或库文件，无需存在这些文件即可生成桩目标文件。由于可以省略编译步骤，而且链接编辑器要执行的操作相对较少，因此可以非常快地构建桩对象。
+.sp
+请参见《\fI《链接程序和库指南》\fR》中的\fI"桩对象"\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBsymbolcap\fR\fR
+.ad
+.sp .6
+.RS 4n
+将定义对象功能的可重定位对象转换为定义符号功能的可重定位对象。请参见\fI"Converting Object Capabilities to Symbol Capabilities"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBtarget=sparc|x86\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定输出对象的机器类型。支持的目标有 SPARC 和 x86。使用指定目标的 32 位机器类型，除非存在 \fB-64\fR 选项，这种情况下使用相应的 64 位机器类型。缺省情况下，要生成的对象的机器类型根据在命令行处理的第一个 \fBELF\fR 对象来决定。如果未指定任何对象，机器类型由在命令行处理的第一个归档文件中遇到的第一个对象决定。如果没有对象或归档文件，链接编辑器将假定使用本地机器。直接使用 \fBld\fR 创建其输入完全来自 \fBmapfile\fR 的对象时，此选项非常有用。参见 \fB-M\fR 选项。在极少数情况下，完全从包含不同机器类型对象的归档文件进行链接时（此时第一个对象不是所需的机器类型），此选项也非常有用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBtext\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在动态模式下，如果针对不可写但可分配部分的任何重定位持续进行，将强制发出致命错误。由于历史原因，此模式不是构建可执行文件或共享对象时的缺省模式。但是，建议使用此模式以确保可在多个正在运行的进程之间共享所构建的动态对象的文本段。共享文本段可使在装入内存时重定位系统开销最少。请参见\fI"Position-Independent Code"\fR in \fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBtextoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在动态模式下，允许针对所有可分配部分（包括不可写部分）进行重定位。此模式是构建共享对象时的缺省模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBtextwarn\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在动态模式下，如果针对不可写但可分配部分的任何重定位持续进行，将列出警告。此模式是构建可执行文件时的缺省模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fBverbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项在链接编辑期间提供附加警告诊断。当前，此选项支持以下警告。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对交换区重新定位的可疑使用。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+构建共享对象时限制使用静态 \fBTLS\fR 重定位。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+符号可见性不一致。
+.RE
+将来可能会增强此选项的功能，以提供被认为太混乱而不能在缺省情况下生成的其他诊断。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fBwrap=\fR\fIsymbol\fR\fR
+.ad
+.br
+.na
+\fB\fB-wrap=\fR \fIsymbol\fR\fR
+.ad
+.br
+.na
+\fB\fB--wrap=\fR \fI symbol\fR\fR
+.ad
+.sp .6
+.RS 4n
+重命名对 \fIsymbol\fR 的未定义引用以允许将包装代码链接到输出对象而不必修改源代码。如果指定 \fB-z wrap\fR，将修改对 \fIsymbol\fR 的所有未定义引用以引用 \fB__wrap_\fR\fIsymbol\fR，并修改对 \fB__real_\fR\fIsymbol\fR 的所有引用以引用 \fIsymbol\fR。用户应提供包含 \fB__wrap_\fR\fIsymbol\fR 函数的对象。此包装函数可以调用 \fB__real_\fR\fIsymbol\fR 以引用要包装的实际函数。
+.sp
+以下是适用于 \fBmalloc\fR(3C) 函数的包装示例。
+.sp
+.in +2
+.nf
+void *
+__wrap_malloc(size_t c)
+{
+        (void) printf("malloc called with %zu\n", c);
+        return (__real_malloc(c));
+}
+.fi
+.in -2
+
+如果使用 \fB-z\fR \fBwrap=malloc\fR 将其他代码链接到此文件以编译所有对象，则对 \fBmalloc\fR 的所有调用将改为调用函数 \fB__wrap_malloc\fR。对 \fB__real_malloc\fR 的调用将调用 \fBmalloc\fR 实函数。
+.sp
+应在单独的源文件中维护实函数和包装函数。否则，编译器或汇编程序可能会解析调用而不是将该操作留给链接编辑器执行，并且可能阻止进行包装。
+.RE
+
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_ALTEXEC\fR\fR
+.ad
+.sp .6
+.RS 4n
+备用链接编辑器路径名。\fBld\fR 执行并传递对此备用链接编辑器的控制。此环境变量提供用于覆盖从各种编译器驱动程序调用的缺省链接编辑器的通用方法。参见 \fB-z altexec64\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_LIBRARY_PATH\fR\fR
+.ad
+.sp .6
+.RS 4n
+要在其中搜索使用 \fB-l\fR 选项指定的库的目录列表。多个目录之间用冒号分隔。在最普遍的情况中，此环境变量包含两个由分号分隔的目录列表。
+.sp
+.in +2
+.nf
+\fIdirlist1\fR\fB;\fR\fIdirlist2\fR
+.fi
+.in -2
+.sp
+
+如果使用出现的任意数量的 \fB-L\fR 来调用 \fBld\fR，如下所示：
+.sp
+.in +2
+.nf
+\fBld ... -L\fIpath1\fR ... -L\fIpathn\fR ...\fR
+.fi
+.in -2
+.sp
+
+则搜索路径顺序为：
+.sp
+.in +2
+.nf
+\fB\fIdirlist1 path1\fR ... \fIpathn dirlist2\fR LIBPATH\fR
+.fi
+.in -2
+.sp
+
+如果目录列表不包含分号，该列表将被解释为 \fIdirlist2\fR。
+.sp
+\fBLD_LIBRARY_PATH\fR 环境变量还会影响动态依赖项的运行时链接程序搜索。
+.sp
+可以使用 _32 或 _64 后缀指定此环境变量。这会使环境变量分别特定于 32 位或 64 位进程，并覆盖任何有效的无后缀版的环境变量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOEXEC_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁止自动执行 64 位链接编辑器。如果第一个可重定位对象的 \fBELF\fR 类标识 64 位对象，缺省情况下链接编辑器将执行 64 位版本。32 位链接编辑器可以创建的 64 位映像具有一些限制。但是，某些链接编辑可能会发现使用 32 位链接编辑器的速度更快。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_OPTIONS\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBld\fR 的缺省选项集合。\fBLD_OPTIONS\fR 由 \fBld\fR 解释，就好像已在命令行上设置其值，紧跟在用来调用 \fBld\fR 的名称后，如下所示：
+.sp
+.in +2
+.nf
+\fBld $LD_OPTIONS ... \fIother-arguments\fR ...\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_RUN_PATH\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于指定链接编辑器的 runpath 的备用机制。参见 \fB-R\fR 选项。如果同时指定 \fBLD_RUN_PATH\fR 和 \fB-R\fR 选项，\fB-R\fR 将取代另一个选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSGS_SUPPORT\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供使用链接编辑器装入的共享对象的冒号分隔列表以及有关链接进程的给定信息。可以使用 _32 或 _64 后缀指定此环境变量。这会使环境变量分别特定于 \fBld\fR 的 32 位或 64 位类，并覆盖任何有效的无后缀版的环境变量。参见 \fB-S\fR 选项。
+.RE
+
+.sp
+.LP
+请注意，以字符 "\fBLD_\fR" 开头的环境变量名称是保留名称，供将来可能提升 \fBld\fR 和 \fBld.so.1\fR(1) 时使用。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlib\fIx\fR.so\fR\fR
+.ad
+.RS 15n
+.rt  
+共享对象库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlib\fIx\fR.a\fR\fR
+.ad
+.RS 15n
+.rt  
+归档库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa.out\fR\fR
+.ad
+.RS 15n
+.rt  
+缺省输出文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fILIBPATH\fR\fR
+.ad
+.RS 15n
+.rt  
+对于 32 位库，缺省搜索路径为 \fB/lib\fR，后跟 \fB/usr/lib\fR。对于 64 位库，缺省搜索路径为 \fB/lib/64\fR，后跟 \fB/usr/lib/64\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ld\fR\fR
+.ad
+.RS 15n
+.rt  
+包含多个可在链接编辑期间使用的 \fBmapfile\fR 的目录。这些 \fBmapfile\fR 提供多种功能，例如定义内存布局、对齐 bss 以及定义不可执行栈。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/linker
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBas\fR(1)、\fBcrle\fR(1)、\fBgprof\fR(1)、\fBld.so.1\fR(1)、\fBldd\fR(1)、\fBmcs\fR(1)、\fBpvs\fR(1)、\fBstrip\fR(1)、\fBexec\fR(2)、\fBstat\fR(2)、\fBdlopen\fR(3C)、\fBdldump\fR(3C)、\fBelf\fR(3ELF)、\fBar.h\fR(3HEAD)、\fBa.out\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR
+.SH 附注
+.sp
+.LP
+由于历史原因，维护由 \fBld\fR 应用的缺省选项。在今天的编程环境中，动态对象占主导地位，备用缺省选项通常会更有意义。但是，必须维护历史缺省选项以确保与现有程序开发环境的兼容性。本手册中在可能的地方提到了历史缺省选项。有关当前建议选项的说明，请参见Chapter 7, \fI"Link-Editor Quick Reference,"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+.LP
+如果由 \fBld\fR 创建的文件已经存在，则在处理完所有输入文件后，该文件将解除链接。然后，将创建具有指定名称的新文件。这允许 \fBld\fR 创建新版本的文件，同时允许正在访问旧文件内容的现有进程继续运行。如果旧文件没有其他链接，则当最后一个引用文件的进程终止时，将释放已删除文件的磁盘空间。
+.sp
+.LP
+在 Solaris 11 中，对于所创建的文件已存在的情况，\fBld\fR 的行为已更改。在早期版本中，将现有文件重写到适当的位置，这种方法可能会损坏任何使用该文件的正在运行的进程。此更改对于在文件系统中具有多个硬链接的输出文件有意义。以前，所有链接都保持不变，而且所有链接都可以访问新文件内容。新的 \fBld\fR 行为\fB中断\fR了此类链接，其结果是只有指定的输出文件名才能引用新文件。所有其他链接继续引用旧文件。为了确保行为一致，依赖于指向链接程序输出文件的多个硬链接的应用程序应该明确删除其他文件名，然后再重新链接这些文件名。

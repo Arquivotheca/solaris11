@@ -1,0 +1,270 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH sharectl 1M "23 Apr 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+sharectl \- configure and manage file sharing service
+.SH SYNOPSIS
+.LP
+.nf
+\fBsharectl\fR [\fB-h\fR]
+.fi
+
+.LP
+.nf
+\fBsharectl\fR status [\fB-h\fR] [\fIprotocol\fR]
+.fi
+
+.LP
+.nf
+\fBsharectl\fR get [\fB-h\fR] [\fB-p\fR \fIproperty\fR]... \fIprotocol\fR
+.fi
+
+.LP
+.nf
+\fBsharectl\fR set [\fB-h\fR] [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIprotocol\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsharectl\fR command operates on file-sharing protocols, such as NFS and SMB. The command sets the client and server operational properties, takes and restores configuration snapshots, and gets status of the protocol service.
+.sp
+.LP
+The \fBget\fR and \fBset\fR subcommands (see below) require root privileges or that you assume the Primary Administrator role. An authorized user can use \fBsharectl\fR to set global values for NFS and SMB properties in the Solaris server management facility. See \fBnfs\fR(4) and \fBsmb\fR(4).
+.SH OPTIONS
+.sp
+.LP
+The following options are supported: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays usage message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR[=\fIvalue\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Specifies a property. See "Subcommands," below.
+.RE
+
+.SS "Subcommands"
+.sp
+.LP
+\fBsharectl\fR supports the subcommands described below. The form of a \fBsharectl\fR command is:
+.sp
+.in +2
+.nf
+# \fBsharectl \fIsubcommand\fR [\fIoption\fR]\fR
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [\fB-p\fR\ \fIproperty\fR] \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Get the property values for the specified protocol. If no \fB-p\fR option is provided, get all the properties for the specified protocol. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR [\fB-p\fR\ \fIproperty\fR=\fIvalue\fR]... \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set properties for the specified file sharing protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR [\fIprotocol\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Display status of the specified protocol, or, if no protocol is specified, of all file-sharing protocols.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRGetting Properties
+.sp
+.LP
+The following command gets the properties for the NFS protocol.
+
+.sp
+.in +2
+.nf
+% \fBsharectl get nfs\fR
+lockd_listen_backlog=32
+lockd_servers=20
+lockd_retransmit_timeout=5
+grace_period=90
+nfsmapid_domain=sun.com
+servers=16
+server_versmin=2
+server_versmax=4
+max_connections=-1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command gets the value of the grace_period property for the NFS protocol.
+
+.sp
+.in +2
+.nf
+% \fBsharectl get -p grace_period nfs\fR
+grace_period=90
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRSetting a Property
+.sp
+.LP
+Note in the preceding example that the minimum version of the server NFS protocol (\fBserver_versmin\fR) is set to \fB2\fR. The following command sets the minimum version number to version 3.
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p server_versmin=3 nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRObtaining Status
+.sp
+.LP
+The following command obtains the status of all file-sharing protocols on a system.
+
+.sp
+.in +2
+.nf
+% \fBsharectl status\fR
+nfs      enabled
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRSetting Property for SMB Server
+.sp
+.LP
+The following command sets the value of the \fBserver_signing_required\fR property for the SMB protocol.
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p server_signing_required=true smb\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRSetting Property for SMB Client
+.sp
+.LP
+The following command sets the value of the \fBclient_signing_required\fR property for the SMB protocol.
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p client_signing_required=true smb\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRSetting Tracing of RPC Calls for \fBautofs\fR
+.sp
+.LP
+The following command expands each RPC call to \fBautofs\fR and logs it to the location specified for that service in \fBautomountd\fR(1M).
+
+.sp
+.in +2
+.nf
+# \fBsharectl set trace=1 autofs\fR
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInon-zero\fR\fR
+.ad
+.RS 12n
+.rt  
+Command failed.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/libshare.h\fR\fR
+.ad
+.RS 27n
+.rt  
+Error codes used for exit status.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBautomount\fR(1M), \fBautomountd\fR(1M), \fBlockd\fR(1M), \fBmountd\fR(1M), \fBnfsd\fR(1M), \fBnfsmapid\fR(1M), \fBnfs\fR(4), \fBsmb\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5), \fBrbac\fR(5), \fBsmf\fR(5), \fBstandards\fR(5)

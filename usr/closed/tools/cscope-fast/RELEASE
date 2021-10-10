@@ -1,0 +1,189 @@
+/*
+ * Copyright (c) 1999 by Sun Microsystems, Inc.
+ * All rights reserved.
+ */
+
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
+
+
+			Cscope Version 13.4
+		Enhancements Since the Toolchest Version 13.3
+
+None really, other than cc -v cleanup, cstyle cleanup, and removal of ifdefs
+not needed on solaris. The new revision is really just so we can tell if
+anybody is using the internal-to-ON version.
+
+			Cscope Version 13.3
+		Enhancements Since the Toolchest Version 12.9
+
+The "Find this global definition:" input field became "Find this
+definition:" because all local definitions are recognized, including
+parameters.
+
+The "Find this text string:" input field was replaced with "Find
+assignments to:" to show all places where a variable is set to a value,
+including declarations and initializers.
+
+The "press the space bar to display more" message was changed to "Lines
+x-y of z, press the space bar to display next lines" and is highlighted if
+possible.
+
+"Depth: n" is displayed at the top right corner of the screen when cscope
+invocations have been stacked (see Stacking Cscope and Editor Calls in the
+man pages).
+
+New options:
+
+-C	Ignore letter case when searching.
+-r	Require pressing the RETURN key after typing the selection
+	digit(s) for a displayed line to edit the file containing it,
+	which allows as many lines as possible to be displayed.
+-t hours
+	No activity timeout in hours (minimum of 4 hours).  Removing a
+	database will not release the disk space if a cscope process has
+	the file open, so a project can use this option in its script to
+	call cscope on a large database so unattended cscope processes
+	will exit overnight.
+
+The CSCOPEOPTIONS environment variable can be used to set cscope options.
+
+Text and egrep searching is much faster.
+
+The -d option will now use an existing database file in the current
+directory, otherwise it will default as before to a database file in the
+home directory.
+
+Cscope has been ported to MS-DOS (see README file).
+
+
+			Cscope Version 12.9
+		Enhancements Since the Toolchest Version 8.8
+
+The "Find this function or #define:" input field became "Find this global
+definition:" because all global definitions are recognized, including C++
+class definitions and inline class function definitions.
+
+The "Find files #including this file:" now matches on any part of the file
+name, so searching for "types.h" will find "#include <sys/types.h>".
+
+Lines starting with ## are recognized as Ingres(TM) code, and .qc and .qh
+files are recognized as source files.
+
+The ANSI keywords const, signed, and volatile are recognized.
+
+The . command has been replaced by ^Y.
+
+If your terminal has arrow keys that work in vi(1) you can use them to move
+around the input fields.
+
+The > command was changed to write all the references found to the file,
+the >> command was added to append the references to the file, the <
+command was added to read references from a file, and the ^ command was
+added to pipe the references through shell commands.  (See below for
+examples.)
+
+Other new commands:
+
+^B	Recall previous input field and search pattern.
+^F	Recall next input field and search pattern.
+^C	Toggle ignore/use letter case when searching.
+|	Pipe all lines to a shell command.
+
+New options (see EXAMPLES section of man pages):
+
+-e	Suppress the ^E command prompt between files.
+-F	Read symbol references from a file, just like the < command.
+-l	Line-oriented interface (see Calling Cscope with a Line-Oriented
+	Interface in the man pages).
+-L	Do a single search with line-oriented output when used with the
+	-<number> pattern option.
+-p n	Display the last n file path components instead of the default (1).
+	Use 0 to not display the file name at all.
+-P path	Prepend path to relative file names in a pre-built database so you do
+	not have to change to the directory where the database was built.
+-q	Build an inverted index for quick symbol searching.  (See below.)
+-T	Use only the first eight characters to match against C symbols.
+-u	Unconditionally build the database (assume that all files have
+	changed).
+-U	Do not check file time stamps (assume that some files have changed).
+
+If your source files change infrequently, you can get quick symbol
+searching by building the database with the -q option.  For a very large
+database you will be able to find a symbol in a few seconds vs. several
+minutes if built without -q, at the expense of about twice as much
+database disk space and build CPU time.  Updating a -q database takes
+about as half as long as building it.
+
+You can do the equivalent of Boolean or logical AND, OR, and NOT
+operations on searches with the ^, >, >>, and < commands.  For example, if
+you wanted all references to the symbol stderr in file invlib.c, search
+for the symbol and then use the ^ command with shell command
+
+	grep invlib.c
+
+If you wanted all the references not in this file, use the grep(1) -v
+option.  If you wanted all the lines where symbols stderr or stdout are
+used, search for the first symbol, write the references to a file with the
+> command, search for the second symbol, append the references to the same
+file with the >> command, read the file with the < command, and get rid of
+duplicate lines with the ^ command using the shell command
+
+	sort | uniq
+
+Note that all <global> references will no longer be first because the
+references will be sorted by file name.
+
+
+		Enhancements Since Version 5
+
+The "Find this egrep pattern:" input field was added to do egrep-style
+regular expression searching.
+
+To make room for the above, the functionality of "List file names
+containing this text string:" was combined with "Edit this file:" to be
+"Find this file:". The file list is searched for matching file names.  If
+there is one match the editor is called on that file, otherwise the list of
+matching file names is displayed.
+
+You can use regular expressions in these input fields
+
+	Find this C symbol:
+	Find this function or #define:
+	Find functions called by this function:
+	Find functions calling this function:
+	Find this file:
+	Find files #including this file:
+
+Except for "Find this file:" the regular expression must be an exact match
+of the symbol, that is, typing "abc.*" is equivalent to "^abc.*$".  These
+are regcmp(3X) regular expressions (see the UNIX(TM) System V Programmer
+Reference Manual), which are sightly different than egrep regular
+expressions.  The egrep | operator is not implemented and the ? operator is
+equivalent to {0,1} in a regcmp(3X) regular expression.
+		
+If there is a cscope.files file in the current directory, cscope will get
+the list of files from it, as if you had typed
+
+	cscope -i cscope.files
+
+This is handy for excluding .c files generated by lex and yacc; and
+including files that don't follow naming conventions, such as a lex file
+with a suffix of .lex instead of .l.  This file can also contain -I
+options.
+
+When searching for a C symbol, <global> references are displayed first to
+make it easy to find the definition of a symbol.
+
+To speed up output, some startup messages have been eliminated, curses(3X)
+is used, and the text of input fields and mouse menus is shorter.
+
+The -b option only builds the cross-reference.  Use it when using cscope
+with the batch or at commands.
+
+The -n options (where n is 0-8) will go to input field n and search for the
+following text argument, e.g. "-2 main" will find function main.
+
+C++ comments (// comment) are recognized.
+	
+	Joe Steffen, AT&T Bell Labs, Naperville, IL,
+	Joseph_L_Steffen@att.com

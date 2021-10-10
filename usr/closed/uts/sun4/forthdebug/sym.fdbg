@@ -1,0 +1,555 @@
+\
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License, Version 1.0 only
+\ (the "License").  You may not use this file except in compliance
+\ with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+
+\
+\ Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
+\ Use is subject to license terms.
+\
+
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
+
+#include <sys/kobj.h>
+#include <sys/machelf.h>
+#include <sys/modctl.h>
+
+\
+\ module information
+\
+Shdr
+
+Sym
+
+modctl
+	mod_next	x
+	mod_prev	x
+	mod_id		d
+	mod_mp		x
+	mod_inprogress_thread x
+	mod_modinfo	x
+	mod_linkage	x
+	mod_filename	.str
+	mod_modname	.str
+	mod_busy	x
+	mod_want	x
+	mod_prim	x
+	mod_ref		d
+	mod_loaded	x
+	mod_installed	x
+	mod_loadflags	x
+	mod_delay_unload x
+	mod_requisites	x
+	mod_loadcnt	d
+	mod_nenabled	d
+	mod_text	x
+	mod_text_size	d
+	mod_gencount	d
+	mod_requisite_loading x
+
+module
+	total_allocated	d
+	shdrs		x
+	symhdr		x
+	strhdr		x
+	depends_on	.str
+	symsize		d
+	symspace	x
+	flags		x
+	text_size	x
+	data_size	x
+	text		x
+	data		x
+	symtbl_section	d
+	symtbl		x
+	strings		x
+	hashsize	d
+	buckets		x
+	chains		x
+	nsyms		d
+	bss_align	d
+	bss_size	d
+	bss		x
+	filename	.str
+
+modctl_list
+
+forth_start
+
+: .module-list ( -- )
+   [ also modctl-words ]
+   modules-val dup            ( mod0 mod0 )
+   begin                      ( mod0 mod )
+      dup mod_next swap       ( mod0 mod' mod )
+      mod_mp ?dup  if         ( mod0 mod' mp )
+         .module cr           ( mod0 mod' )
+      then                    ( mod0 mod' )
+   2dup =  until              ( mod0 mod' )
+   2drop                      ( )
+   [ previous ]
+;
+
+: .module-name ( modctl_p -- 0 )
+   [ also modctl-words ]
+   [ also module-words ]
+   dup b u.r mod_mp dup c u.r ."  "  ( mp )
+   dup if
+      filename .str 0
+   then cr
+   [ previous ]
+   [ previous ]
+;
+
+: =module-name ( name$ modctl_p -- name$ modctl_p|0 )
+   [ also modctl-words ]
+   >r 2dup r@ mod_modname cscount compare ( name$ =? ) ( R: modctl_p )
+   r> swap if drop 0 then
+   [ previous ]
+;
+
+: modctl-action ( ??? f modctl_p -- ??? f modctl_p result|0 )
+   [ also modctl-words ]
+   2dup 2>r         ( ??? f modctl_p )    ( R: f modctl_p )
+   dup if           ( ??? f modctl_p )    ( R: f modctl_p )
+      swap execute  ( ??? result )  ( R: f modctl_p )
+   else             ( ??? f 0 )     ( R: f modctl_p )
+      nip           ( ??? 0 )       ( R: f modctl_p )
+   then             ( ??? result|0) ( R: f modctl_p )
+   2r> rot          ( ??? f modctl_p result|0 )
+   [ previous ]
+;
+ 
+\ perform f on each module on the modctl list, stop if any module
+\ returns a non-0 result.
+\ return mod0 if entire module list was circled through
+\ return mod_p if the rest of modules were not performed on
+: module-op ( ??? f modctl -- ??? f modctl|modctl-n result|0 )
+   [ also modctl-words ]
+   dup begin            ( ??? f mod0 mod )
+      swap >r           ( ??? f mod )         ( R: mod0 )
+      modctl-action     ( ??? f mod result )  ( R: mod0 )
+      ?dup if
+         r> drop exit   ( ??? f mod result )
+      then              ( ??? f mod )         ( R: mod0 )
+      mod_next r> swap  ( ??? f mod0 mod' )
+   2dup =  until        ( ??? f mod0 mod' )
+   drop 0               ( ??? f mod0 0 )
+   [ previous ]
+;
+
+: .module-names ( -- )
+   ['] .module-name modules-val module-op 3drop
+;
+
+: module-locate ( name$ -- name$ modctl_p|0 )
+   ['] =module-name
+   modules-val    ( name$ '=module-name mod0 )
+   module-op      ( name$ '=module-name modctl_p result )
+   nip nip        ( name$ result )
+;
+
+0 value sym-key
+
+: hash-char ( key char -- key' )
+   swap 4 << + dup    ( key' key' ) \ key' = char + key << 4
+   f d# 28 << and     ( key' g  )   \ g = key' & 0xf0000000
+   dup if             ( key' g  )
+      tuck            ( g key' g )
+      d# 24 >> xor    ( g key'' )   \ key'' = key' ^ (g >> 24)
+      swap            ( key'' g )
+   then               ( key   g )
+   not and            ( key&~g  )
+\  dup 8 u.r cr
+;
+
+: hash-sym ( sym$ -- )
+   bounds 0 -rot            ( 0 hi lo )
+   do i c@ hash-char loop   ( key )
+   to sym-key
+;
+
+: valid-sp? ( sp -- true | false )
+   [ also Sym-words ]
+   dup st_info f and  ( sp sp->st_info&f )
+   4 <>               ( sp !=STT_FILE )
+   swap st_shndx dup  ( !=STT_FILE sp->st_shndx sp->st_shndx )
+   0 <> swap fff2 <>  ( !=STT_FILE !=SHN_UNDEF != SHN_COMMON )
+   and and            ( true | false )
+   [ previous ]
+;
+
+: field>offset  ( field-word-addr -- offset-in-bytes )
+   >body dup l@ swap 1 la+ l@ swap lxjoin
+;
+
+: module>symid ( mp -- mp->buckets[key%hashsize] )
+   [ also module-words ]
+   sym-key over   ( mp key mp )
+   hashsize mod   ( mp key%hashsize )
+   /w * swap      ( key%hashsize*2 mp )
+   buckets + w@   ( mp->buckets[key%hashsize] )
+   [ previous ]
+;
+
+\ : module>chains ( mp -- &mp->chains )
+\     ['] chains field>offset +
+\ ;
+
+: symid>sym ( mp symid -- mp sp )
+   [ also Shdr-words ]
+   [ also module-words ]
+   >r dup symhdr sh_entsize  ( mp mp->symhdr->sh_entsize ) ( R: symid )
+   r> * over symtbl +
+   [ previous ]
+   [ previous ]
+;
+
+: mod-sym>value ( sym$ modctl_p -- sym$ adr|0 )   \ sym-key must be valid
+   [ also modctl-words ]
+   mod_mp               ( sym$ mp )
+   [ previous ]
+   dup 0= if exit then  ( sym$ 0 )
+
+   [ also module-words ]
+   [ also Sym-words ]
+   dup module>symid     ( sym$ mp id )      \ id = mp->buckets[key%hashsize]
+   begin dup while      ( sym$ mp id )
+      dup >r            ( sym$ mp id )           ( R: id )
+      symid>sym         ( sym$ mp sp )           ( R: id )
+
+      dup >r st_name    ( sym$ mp sp->st_name )  ( R: id sp )
+      over strings +    ( sym$ mp name1 )   \ name1 = sp->st_name + mp->strings
+      cscount rot       ( sym$ name1$ mp )       ( R: id sp )
+      >r 2over compare  ( sym$ strcmp )          ( R: id sp mp )
+
+      0= r> swap        ( sym$ mp !strcmp )      ( R: id sp )
+      r> dup valid-sp?  ( sym$ mp !strcmp sp ? ) ( R: id )
+      rot and r> swap   ( sym$ mp sp id good? )
+      if
+         drop st_value  ( sym$ mp adr )
+         nip exit       ( sym$ adr )
+      else
+         nip            ( sym$ mp id )
+      then
+      /w * over         ( sym$ mp id*2 mp )
+      chains + w@       ( sym$ mp id' )      \ id' = mp->chains[id] )
+   repeat               ( sym$ mp 0 )
+   nip                  ( sym$ 0 )
+   [ previous ]
+   [ previous ]
+;
+
+: unix-sym>value ( sym$ -- adr | 0 )
+   [ also modctl_list-words ]
+   [ also modctl-words ]
+   2dup hash-sym             ( sym$ )
+   primaries-val p@              ( sym$ modctl_list )
+   begin dup                 ( sym$ modctl_list modctl_list )
+   while                     ( sym$ modctl_list )
+      dup modl_modp mod_mp   ( sym$ modctl_list module )
+      ?dup if
+         2over rot           ( sym$ modctl_list sym$ module )
+         mod-sym>value       ( sym$ modctl_list sym$ adr|0 )
+         nip nip ?dup if     ( sym$ modctl_list adr|0 )
+            >r 3drop r> exit ( adr )
+         then                ( sym$ modctl_list )
+      then modl_next         ( sym$ modctl_list' )
+   repeat                    ( sym$ 0 )
+   nip nip                   ( 0 )
+   [ previous ]
+   [ previous ]
+;
+
+: primary-op ( ??? f -- ??? result|0 )
+   [ also modctl_list-words ]
+   primaries-val p@          ( ??? f modctl_list )
+   begin
+      dup >r modl_modp       ( ??? f modctl )         ( R: modctl_list )
+      modctl-action          ( ??? f modctl result )  ( R: modctl_list )
+      nip ?dup if            ( ??? f result )         ( R: modctl_list )
+         r> drop nip exit    ( ??? result )
+      then                   ( ??? f )                ( R: modctl_list )
+      r> modl_next dup       ( ??? f modctl_list' modctl_list' )
+   0= until                  ( ??? f modctl_list' )
+   2drop 0                   ( ??? 0 )
+   [ previous ]
+;
+
+: .primary-names ( -- )
+   ['] .module-name primary-op drop
+;
+
+: primary-sym>value ( sym$ -- adr | 0 )
+   2dup hash-sym ['] mod-sym>value primary-op nip nip
+;
+
+: mods-sym>value ( sym$ -- adr | 0 )
+   2dup hash-sym    \ sym-key
+   ['] mod-sym>value modules-val  ( sym$ 'mod-sym>value mod0 )
+   module-op                      ( sym$ 'mod-sym>value mod adr )
+   >r 2drop 2drop r>
+;
+
+: unix-mod?	( mod$ -- ==<unix||genunix>? )
+   2dup " unix" compare		( mod$ !=unix? )
+   if				( mod$ )	\ != unix
+      " genunix" compare	( !=genunix? )
+      if false else true then	( ==genunix? )
+   else				( mod$ )	\ ==unix
+      2drop true
+   then
+;
+
+: s>v ( sym$ -- adr | 0 )
+   ascii : left-parse-string	( mod-sym$ mod$ )
+   2swap dup			( mod$ mod-sym$ mod-sym-len )
+   if		\ there is a module name
+      2swap 2dup unix-mod?	( mod-sym$ mod$ ==<unix||genunix>? )
+      if 2drop	\ unix symbols	( mod-sym$ )
+         primary-sym>value	( adr | 0 )
+      else	\ non-unix mod	( mod-sym$ mod$ )
+         module-locate		( mod-sym$ mod$ modctl_p )
+         ?dup if   \ found mod	( mod-sym$ mod$ modctl_p )
+            >r 2drop 2dup	( mod-sym$ mod-sym$ ) ( R: modctl_p )
+            hash-sym r>		( mod-sym$ modctl_p ) \ must hash-sym before
+            mod-sym>value	( mod-sym$ adr|0 )    \ calling individual mod
+            nip nip		( adr|0 )
+         else			( mod-sym$ mod$ )
+            \ ." module " type ."  not found" cr 2drop 0 exit
+            2drop 2drop 0	( 0 )
+         then
+      then
+   else		\ global: sym$ is in mod$ due to left-parse-string
+      2drop 2dup		( mod$ mod$ )
+      primary-sym>value		( mod$ adr|0 )
+      ?dup if
+         nip nip		( adr | 0 )
+      else			( mod$ )
+         mods-sym>value		( adr | 0 )
+      then
+   then
+;
+
+\ compatible interface to replace do-sym-to-value
+: sym2value ( $sym -- adr true | $sym false )
+   2dup s>v	( $sym adr|0 )
+   dup if	( $sym adr|0 )
+      nip nip true	( adr true )
+   then		( $sym 0 )
+;
+
+' sym2value is sym>value	\ replace default sym>value lookup
+
+\ adr >= base && adr < base+size
+: segment-sym? ( adr base size -- true | false )
+   bounds     ( adr base+size base )
+   >r over r> ( adr base+size adr base )
+   >= -rot    ( adr>=base? adr base+size )
+   < and
+;
+
+\ mod_p is guaranteed to be valid
+: module-sym? ( adr mod_p -- true | false )
+   [ also module-words ]
+   2dup 2>r                ( adr mp )  ( R: adr mp )
+   dup text swap text_size ( adr mp->text mp->text_size ) ( R: adr mp )
+   segment-sym? if
+      2r> 2drop true exit
+   then
+   2r@                     ( adr mp ) ( R: adr mp )
+   dup data swap data_size ( adr mp->data mp->data_size ) ( R: adr mp )
+   segment-sym? if
+      2r> 2drop true exit
+   then
+   2r> dup bss             ( adr mp bss )
+   ?dup if
+      swap bss_size        ( adr bss bss_size )
+      segment-sym? exit    ( true | false )
+   then nip nip false
+   [ previous ]
+;
+
+-1 value symbol-off
+0 value sym-p
+
+\ a symbol entry is valid if it is global or is local function or local object
+: exam-sym? ( st_info -- valid? )
+   dup 4 >> 1 <> if          ( st_info ) \ !GLOBAL
+      dup 4 >> 0 = if        ( st_info ) \ LOCAL
+         f and               ( ELF_ST_TYPE )
+         dup 1 = swap 2 = or ( func-or-object? )
+      else
+         drop false          ( 0 )
+      then
+   then                      ( valid? )
+;
+
+\ if found a smaller offset symbol, set it to the current symbol
+: min-sym ( sym off -- sym )
+   dup 0< if
+      drop exit
+   then
+   dup symbol-off u> if
+      drop exit
+   then
+   to symbol-off
+   dup to sym-p
+;
+
+: module-value>sym ( value mod_p -- value )
+   -1 to symbol-off 0 to sym-p
+   [ also module-words ]
+   [ also Shdr-words ]
+   [ also Sym-words ]
+   >r r@ symhdr sh_entsize      ( value entsize )                ( R: mod_p )
+   r@ symtbl r> nsyms           ( value entsize sym0 nsyms )
+   1 do                         ( value entsize sym )
+      over + dup st_info        ( value entsize sym' st_info )
+      exam-sym? if             ( value entsize sym' )
+         >r over r@ st_value -  ( value entsize value-st_value ) ( R: sym' )
+         dup 0= if              ( value entsize 0 )              ( R: sym' )
+            to symbol-off
+            r> dup to sym-p     ( value entsize sym' )
+            leave
+         then                   ( value entsize value-st_value ) ( R: sym' )
+         r> swap min-sym        ( value entsize sym' )
+      then                      ( value entsize sym' )
+   loop                         ( value entsize sym' )
+   2drop                        ( value )
+   [ previous ]
+   [ previous ]
+   [ previous ]
+;
+
+\ if value does not belong to this module, symbol-off and sym-p are untouched
+: modctl-value>sym ( value modctl_p -- value adr )
+   [ also modctl-words ]
+   mod_mp               ( value mp )
+   [ previous ]
+   dup 0= if exit       ( value 0 )
+   then                 ( value mp )
+   2dup module-sym? if  ( value mp )
+      module-value>sym  ( value )
+      sym-p             ( value sym-p )
+   else
+      drop 0            ( value 0 )
+   then
+;
+
+: sym>str. ( modctl adr -- )
+   [ also Sym-words ]
+   [ also modctl-words ]
+   [ also module-words ]
+   st_name            ( modctl st_name )
+   over mod_mp        ( modctl st_name mod_p )
+   strings +          ( modctl name_p )
+   swap mod_modname   ( st_name mod_modname )
+   [ previous ]
+   [ previous ]
+   [ previous ]
+   cscount type ." :" cscount type
+   symbol-off if
+      ." +" symbol-off .
+   then
+;
+
+: v>s ( value -- true | value false )
+   ['] modctl-value>sym modules-val module-op ( value f modctl adr )
+   ?dup if
+      sym>str.		( value f )
+      2drop true exit	( true )
+   then			( value f modctl )
+   2drop false		( value false )
+;
+
+: v>m ( value -- modctl|0 )
+   ['] modctl-value>sym modules-val module-op	( value f modctl adr )
+   if						( value f modctl )
+      nip nip					( modctl )
+   else						( value f modctl )
+      3drop 0					( 0 )
+   then
+;
+
+h# modreloc-flagval value modreloc-flag-val
+: mod-reloc? ( modctl -- true | false )
+   [ also modctl-words ]
+   [ also module-words ]
+   mod_mp flags modreloc-flag-val and
+   [ previous ]
+   [ previous ]
+;
+
+: reloc? ( value -- reloc-flag-0x80 | 0 )
+   v>m			( modctl | 0 )
+   dup if		( modctl )
+      mod-reloc?	( reloc-flag | 0 )
+   then			( 0 )
+;
+
+: $sym-literal?  ( sym$ -- handled? )
+   2dup 2>r $dnumber? ?dup if		( empty | [ n .. ] #cells ) ( R: sym$ )
+      do-literal 2r> 2drop true exit	( true )
+   then	2r>				( sym$ )
+
+   2dup s>v ?dup if			( sym$ adr | sym$ )
+      nip nip 1 do-literal true exit	( adr true )
+   then					( sym$ )
+
+   name-to-value  if			( sym$ )
+      encode-string over here - allot	( encoded$ )
+      drop  name-to-value  call32  nip	( retval )
+      dup l@ l->n  if			( retval )
+         drop false			( true )
+      else				( pstr retval )
+         la1+ l@ 1 do-literal true	( true )
+      then exit				( flag )
+   then 2drop false			( flag )
+;
+
+' $sym-literal? is $handle-literal?
+
+: .addr>sym ( addr -- )
+   dup origin  u>=  if  .x  exit  then	( addr )
+   v>s if exit then		( addr )
+
+   value-to-name  if                ( addr )
+      value-to-name  call32         ( addr retval )
+      dup l@ l->n -1 <>  if         ( addr retval )
+         swap .x space              ( retval )
+         dup l@ swap la1+ cscount   ( offset name,len )
+         type  .offset  exit        (  )
+      then drop                     ( addr )
+   then                             ( addr )
+
+   \ No symbolic info available display as number
+   .x
+;
+
+also disassembler
+' .addr>sym is showaddr		\ dis
+' .addr>sym is .subname		\ ctrace
+previous
+
+   \ END OF SYMBOL - Do not edit, boot depends on it
+
+forth_end
+
+

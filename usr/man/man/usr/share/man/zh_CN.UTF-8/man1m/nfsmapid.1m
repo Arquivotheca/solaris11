@@ -1,0 +1,225 @@
+'\" te
+.\" 版权所有 (c) 1998，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH nfsmapid 1M "2011 年 3 月 22 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+nfsmapid \- NFS 用户和组 ID 映射守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/nfs/nfsmapid\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnfsmapid\fR 守护进程可来回映射 NFS 版本 4 客户机和服务器使用的 NFS 版本 4 \fBowner\fR 和 \fBowner_group\fR 标识属性以及本地 \fBUID\fR 和 \fBGID\fR 编号。
+.sp
+.LP
+\fBnfsmapid\fR 使用 \fB/etc/nsswitch.conf\fR 文件中的 \fBpasswd\fR 和 \fBgroup\fR 条目指示其如何执行映射。
+.sp
+.LP
+\fBnfsmapid\fR 守护进程没有客户可访问的外部接口。但您可以使用以下方法之一对 \fBnfsmapid\fR 进行管理配置：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+使用 \fBsharectl\fR(1M) 命令在 NFS 的 SMF 中指定 \fBnfsmapid_domain\fR 参数。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+指定 \fB_nfsv4idmapdomain\fR DNS 资源记录。
+.RE
+.sp
+.LP
+文件 \fB/var/run/nfs4_domain\fR 中包含当前选定的 NFSv4 域。
+.sp
+.LP
+有关详细信息，请参见\fI《System Administration Guide: Network Services》\fR\fI\fR。
+.SS "SMF 管理"
+.sp
+.LP
+\fBnfsmapid\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/network/nfs/mapid
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+如果该服务处于禁用状态，可通过 \fBmount_nfs\fR(1M)、\fBshare_nfs\fR(1M) 和 \fBautomountd\fR(1M) 启用它，除非其 \fBapplication/auto_enable\fR 属性设置为 \fBfalse\fR。
+.sp
+.LP
+\fBnfsmapid\fR 会缓存用户的 UID 和 GID。如果用户随后使用下面所列的实用程序之一更改了 UID 或 GID，\fBnfsmapid\fR 高速缓存将过时。此时，获取或设置属性的任何 NFS 操作都会导致交换此过时信息。要解决此问题，请重新启动 \fBnfsmapid\fR，如下所示：
+.sp
+.in +2
+.nf
+# \fBsvcadm restart svc:/network/nfs/mapid:default\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可使用 \fBsharectl\fR(1M) 命令处理指定域名 (\fBnfsmapid_domain\fR) 的启动 SMF 参数。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnfsmapid_domain\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS SMF 参数 \fBnfsmapid_domain\fR 的设置将覆盖 \fBnfsmapid\fR 分别用于构建和比较传出和传入属性字符串的域。此外，此设置还会覆盖用于设置 NFSv4 域的任何其他机制。如果缺少 \fBnfsmapid_domain\fR 设置，\fBnfsmapid\fR 守护进程将按以下方式确定 NFSv4 域：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果存在正确配置的 \fB/etc/resolv.conf\fR（请参见 \fBresolv.conf\fR(4)），\fBnfsmapid\fR 将为该域查询指定的名称服务器。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果存在正确配置的 \fB/etc/resolv.conf\fR（请参见 \fBresolv.conf\fR(4)），但查询到的名称服务器没有正确的域名记录，\fBnfsmapid\fR 将尝试通过 \fBBIND\fR 接口获取域名（请参见 \fBresolver\fR(3RESOLV)）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果不存在 \fB/etc/resolv.conf\fR，\fBnfsmapid\fR 将重新使用配置的域名（请参见 \fBdomainname\fR(1M)），返回该域名时将删除首位上的域后缀。例如，对于 \fBwidgets.sales.acme.com\fR，将返回 \fBsales.acme.com\fR。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果不存在 \fB/etc/resolv.conf\fR，且未配置域名（或者不存在 \fB/etc/defaultdomain\fR），那么在主机名包含完全限定域名 (fully qualified domain name，FQDN) 的情况下，\fBnfsmapid\fR 将重新从主机名中获取域名。
+.RE
+.RE
+
+.sp
+.LP
+如果按照前面所有的步骤仍然无法获取域名，\fBnfsmapid\fR 将不配置任何域。这会导致以下行为：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBowner\fR 和 \fBowner_group\fR 传出属性字符串将编码为文字 ID。例如，UID 12345 将编码为 \fB12345\fR。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnfsmapid\fR 会忽略传入属性字符串的 \fBdomain\fR 部分，并且只针对用户或组执行名称服务查找。如果用户/组在本地系统名称服务数据库中存在，则即使未配置任何域，也会映射正确的 UID/GID。
+.RE
+.sp
+.LP
+该行为意味着 NFSv4 客户机和服务器之间存在相同的管理用户/组域（也就是说，客户机和服务器上存在具有相同 UID/GID 的用户/组）。如果存在重叠的 ID 空间，传入属性字符串可能会映射到错误的 ID。这在功能上与将传入字符串映射到 \fBnobody\fR 没有什么不同，但可提供更大的灵活性。请参见下文的\fB\fR"示例"部分。
+.sp
+.LP
+允许更改 UID 和 GID 的实用程序包括：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusermod\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBuserdel\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgroupmod\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgroupdel\fR(1M)
+.RE
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/nfs4_domain\fR\fR
+.ad
+.RS 24n
+.rt  
+包含当前由 NFSv4 使用的域名。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR设置域名
+.sp
+.LP
+以下命令使用 \fBsharectl\fR 设置域名。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p nfsmapid_domain=sun.com nfs\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的\fB\fR"说明"部分中介绍了 \fBnfsmapid_domain\fR 属性。
+
+.LP
+\fB示例 2 \fR获取域名
+.sp
+.LP
+以下命令使用 \fBsharectl\fR 获取当前域名。
+
+.sp
+.in +2
+.nf
+# \fBsharectl get -p nfsmapid_domain nfs\fR
+nfsmapid_domain=sun.com
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/ntfsprogs
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBautomountd\fR(1M)、\fBdomainname\fR(1M)、\fBgroupdel\fR(1M)、\fBgroupmod\fR(1M)、\fBmount_nfs\fR(1M)、\fBsvcadm\fR(1M)、\fBshare_nfs\fR(1M)、\fBsharectl\fR(1M)、\fBuserdel\fR(1M)、\fBusermod\fR(1M)、\fBresolver\fR(3RESOLV)、\fBnfs\fR(4)、\fBresolv.conf\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+\fI《System Administration Guide: Network Services》\fR
+.SH 附注
+.sp
+.LP
+在未来的 Solaris 发行版中可能不存在 \fBnfsmapid\fR 守护进程。

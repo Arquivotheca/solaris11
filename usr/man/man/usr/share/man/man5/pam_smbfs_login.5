@@ -1,0 +1,185 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pam_smbfs_login 5 "23 Aug 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+pam_smbfs_login \- PAM user credential authentication module for SMB/CIFS client login
+.SH SYNOPSIS
+.LP
+.nf
+pam_smb_cred.so.1
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpam_smbfs_login\fR module  implements \fBpam_sm_setcred\fR(3PAM) to provide functions that act equivalently to the \fBsmbadm\fR(1M) \fBadd-key\fR command.
+.sp
+.LP
+This optional functionality is meant  to be used only in environments  that  do not run Active Directory or Kerberos, but which synchronize passwords between Solaris clients and their CIFS/SMB servers.
+.sp
+.LP
+This module permits the login password to be stored as if the \fBsmbadm\fR(1M) \fBadd-key\fR command was used to store a password for \fBPAM_USER\fR in the user or system default  domain. 
+.sp
+.LP
+To use this functionality,  add the following line to the \fB/etc/pam.conf\fR file:
+.sp
+.in +2
+.nf
+login  auth optional    pam_smbfs_login.so.1
+.fi
+.in -2
+
+.sp
+.LP
+Authentication service modules must implement both \fBpam_sm_authenticate\fR(3PAM) and \fBpam_sm_setcred\fR(3PAM). In this module, \fBpam_sm_authenticate\fR(3PAM) always returns \fBPAM_IGNORE\fR.
+.sp
+.LP
+The \fBpam_sm_setcred\fR(3PAM) function accepts the following flags:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_REFRESH_CRED\fR\fR
+.ad
+.sp .6
+.RS 4n
+Returns PAM_IGNORE.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_SILENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Suppresses messages.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_ESTABLISH_CRED\fR\fR
+.ad
+.br
+.na
+\fB\fBPAM_REINITIALIZE_CRED\fR\fR
+.ad
+.sp .6
+.RS 4n
+Stores the authentication token for PAM_USER in the same manner as the \fBsmbadm\fR(1M) \fBadd-key\fR command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_DELETE_CRED\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the stored password for PAM_USER in the same manner as the \fBsmbadm\fR(1M) \fBremove-key\fR command.
+.RE
+
+.sp
+.LP
+The following options can be passed to the \fBpam_smbfs_login\fR module:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug\fR\fR
+.ad
+.sp .6
+.RS 4n
+Produces \fBsyslog\fR(3C) debugging information at the \fBLOG_AUTH\fR or \fBLOG_DEBUG\fR level.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnowarn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Suppresses warning messages.
+.RE
+
+.SH ERRORS
+.sp
+.LP
+Upon successful completion of \fBpam_sm_setcred\fR(3PAM), \fBPAM_SUCCESS\fR is  returned. The  following  error codes are returned upon error:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_USER_UNKNOWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+User is unknown.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_AUTHTOK_ERR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Password is bad.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_AUTH_ERR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Domain is bad.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_SYSTEM_ERR\fR\fR
+.ad
+.sp .6
+.RS 4n
+System error.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attribute:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.76i) |cw(2.74i) 
+lw(2.76i) |lw(2.74i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT LevelMT-Safe with exceptions
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsmbadm\fR(1M), \fBsyslog\fR(3C), \fBlibpam\fR(3LIB), \fBpam\fR(3PAM), \fBpam_setcred\fR(3PAM), \fBpam_sm\fR(3PAM), \fBpam_sm_authenticate\fR(3PAM), \fBpam_sm_chauthtok\fR(3PAM), \fBpam_sm_setcred\fR(3PAM), \fBpam.conf\fR(4), \fBattributes\fR(5), \fBsmbfs\fR(7FS)
+.SH NOTES
+.sp
+.LP
+The interfaces in \fBlibpam\fR(3LIB) are MT-Safe only  if each thread within the multi-threaded application uses its own PAM handle.

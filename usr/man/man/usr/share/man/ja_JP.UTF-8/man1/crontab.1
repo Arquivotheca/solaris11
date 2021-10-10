@@ -1,0 +1,620 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH crontab 1 "2011 年 3 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+crontab \- ユーザーの crontab ファイル
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/crontab\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/crontab\fR \fB-e\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/crontab\fR \fB-l\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/crontab\fR \fB-r\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/crontab\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/crontab\fR \fB-e\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/crontab\fR \fB-l\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/crontab\fR \fB-r\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/crontab\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/crontab\fR \fB-e\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/crontab\fR \fB-l\fR [\fIusername\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/crontab\fR \fB-r\fR [\fIusername\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcrontab\fR ユーティリティーは、crontab ファイルをコピー、作成、表示、削除することにより、\fBcron\fR (\fBcron\fR(1M) を参照) を使ってユーザーのアクセスを管理します。\fB\fRオプションなしで \fBcrontab\fR を実行すると、指定したファイル (ファイルを指定しない場合は標準入力) を、全ユーザーの crontab が登録されているディレクトリにコピーします。
+.sp
+.LP
+\fBcrontab\fR にファイル名 (\fIfilename\fR) を指定して実行すると、コマンドを実行したユーザーの crontab エントリが上書きされます。\fB\fR
+.SS "\fBアクセス制御\fR"
+.sp
+.LP
+ユーザー: 次の場合 \fBcrontab\fR にアクセスできます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/cron.d/cron.allow\fR に自分の名前が登録されている場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/cron.d/cron.allow\fR が存在せず、\fB/etc/cron.d/cron.deny\fR に自分の名前が登録されていない場合
+.RE
+.sp
+.LP
+ユーザー: 次の場合 \fBcrontab\fR にアクセスできません。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/cron.d/cron.allow\fR が存在しており、かつ自分の名前がそこに登録されていない場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/cron.d/cron.allow\fR が存在せず、\fB/etc/cron.d/cron.deny\fR に自分の名前が登録されている場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/cron.d/cron.allow\fR も /etc/cron.d/cron.deny も存在しない場合、ジョブを送ることができるのは、solaris.jobs.user の承認を受けているユーザーだけです。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Solaris 監査が有効な場合、ユーザーのシェルは監査されず、ユーザーは \fBcrontab\fR の所有者になりません。これは、ユーザーが \fBSSH\fR のいずれかのバージョンなど、監査パラメータを設定しないプログラムを介してログインする場合に起こります。
+.RE
+.sp
+.LP
+なお \fBallow\fR または \fBdeny\fR の規則が \fBroot\fR に適用されるのは、 \fBallow\fR または \fBdeny\fR ファイルが存在している場合だけです。
+.sp
+.LP
+\fBallow\fR と \fBdeny\fR の両ファイルは、いずれも 1 行に 1 ユーザー名が記述される形式になっています。
+.SS "\fB入力形式\fR"
+.sp
+.LP
+\fBcrontab\fR ファイル内の各行は、6 つのフィールドで構成されています。各フィールドの間は、スペースまたはタブで区切られています。最初の 5 つのフィールドは、次の内容を指定する整数パターンです。
+.sp
+.in +2
+.nf
+minute (0\(mi59),
+hour (0\(mi23),
+day of the month (1\(mi31),
+month of the year (1\(mi12),
+day of the week (0\(mi6 with 0=Sunday).
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+整数値の代わりに、アスタリスク (有効な値全部を表す) や、コンマで区切った形式の要素リストを指定することもできます。要素は、数値 1 個で指定しますが、ある数値からある数値までの範囲を指定する場合は、数値 2 個をマイナス記号 (-) で区切って指定します。ここで指定された時間は、現在有効なタイムゾーンで解釈されます。crontab ファイルの先頭には、/etc/default/init 内でシステム全体に設定されているタイムゾーンが記述されています。ユーザーは、次のように記述して行を追加できます。
+.sp
+.in +2
+.nf
+TZ=\fItimezone\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+すべての後続エントリは、新たな \fBTZ=\fR\fItimezone\fR 行が現れるまで、そのタイムゾーンを使って解釈されます。日付は、2 つのフィールド (日および曜日) で指定できます。どちらのフィールドも、要素のリストとして指定された場合に付加されます。「\fB使用例\fR」を参照してください。
+.sp
+.LP
+\fBcrontab\fR ファイル内の行の 6 番目のフィールドは、指定した時間にシェルによって実行されるコマンド文字列です。このフィールド内の % 文字 (\fB\e\fR\| によってエスケープされているものは除く) は、\fI復帰改行 (NEWLINE)\fR 文字に変換されます。
+.sp
+.LP
+シェルによって実行されるのは、このコマンドフィールドの第 1 行 (\fB`\|%\|'\fR または行の終わりまで) のみです。その他の行は、標準入力として実行されます。空行、または \fB`\|#\|'\fR で始まる行はコメントであり、無視されます。
+.sp
+.LP
+シェルは $HOME ディレクトリから呼び出されます。$TZ の場合と同様に、$SHELL と $HOME のどちらも次の行を記述することで設定できます。
+.sp
+.in +2
+.nf
+SHELL=/usr/bin/\fIsomeshell\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+または
+.sp
+.in +2
+.nf
+HOME=\fIsomedirectory\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これによって、別の \fBHOME\fR または \fBSHELL\fR エントリが現れるまで、\fBcrontab\fR 内の残りのエントリすべてで優先されます。この呼び出しには、現在有効な $SHELL のベース名の \fBarg0\fR が使用されます。\fB\&.profile\fR や同等のファイルを実行するユーザーは、\fBcrontab\fR ファイル内でそのことを明示的に指定する必要があります。\fBcron\fR は、HOME、LOGNAME、 SHELL、TZ、PATH を定義し、すべてのシェルのデフォルト環境を指定します。ユーザーの \fBcron\fR ジョブのデフォルト PATH は \fB/usr/bin\fR で、root の \fBcron\fR ジョブのデフォルトは \fB/usr/sbin:/usr/bin\fR です。デフォルトパスは \fB/etc/default/cron\fR 中に設定できます (\fBcron\fR(1M) を参照)。TZ、HOME、および SHELL 環境変数は、その時点で \fBcrontab\fR ファイル内で有効なこれらの環境変数に合わせて設定します。
+.sp
+.LP
+コマンドの標準出力や標準エラー出力をリダイレクトするように指定していないと、生成されたすべての出力またはエラーが、ユーザーにメールで通知されることになります。
+.SS "\fBcrontab\fR 環境変数"
+.sp
+.LP
+次の変数がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替ディレクトリの選択をユーザーに許可して、コマンドの実行前に cron がディレクトリを変更できるようにします。例: 
+.sp
+.in +2
+.nf
+HOME=/var/tmp
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.sp .6
+.RS 4n
+後続のコマンドの実行に使用するシェルの名前。例: 
+.sp
+.in +2
+.nf
+SHELL=/usr/bin/ksh
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcron\fR のエントリを実行するタイムゾーンの選択をユーザーに許可します。これは、実行するコマンドの環境と、エントリのタイミングの両方に影響を及ぼします。たとえば、アイスランドのタイムゾーンでエントリを実行するには、次のように指定します。
+.sp
+.in +2
+.nf
+TZ=Iceland
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+これらの各変数は、その変数をリセットする後続行によって変数がリセットされるまで、\fBcrontab\fR ファイル内の後続行すべてに影響を及ぼします。このため、1 つの \fBcrontab\fR ファイル内で複数のタイムゾーンを指定することが可能です。
+.sp
+.LP
+これらの環境変数を設定しない行は、UNIX 標準に準拠した crontab エントリと同じです。UNIX 標準に準拠した crontab エントリについては、このマニュアルページのほかの部分に記載されています。
+.SS "複数のタイムゾーンの \fBcron\fR ジョブを設定する"
+.sp
+.LP
+\fBcron\fR デーモンのデフォルトタイムゾーンは、\fBcron\fR エントリのシステム全体のタイムゾーンとして設定されます。また、さらに \fB/etc/default/init\fR を使用してシステム全体のデフォルトタイムゾーンとして設定されます。 
+.sp
+.LP
+夏時間や冬時間などが有効になっている場合には、切り替え期間に予定されているジョブは、1 回だけ実行されたり、2 回実行されたり、またはまったく実行されないこともあります。\fB\fR\fB\fR
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 6n
+.rt  
+現在のユーザーの \fBcrontab\fR ファイルのコピーを編集します。\fBcrontab\fR が存在しない場合は、空のファイルを作成して編集します。編集が終了すると、このファイルがユーザーの \fBcrontab\fR ファイルとしてインストールされます。 
+.sp
+\fB-e\fR オプションを指定してファイルを編集するときに起動するエディタは、環境変数 \fBEDITOR\fR によって決まります。\fBcrontab\fR のジョブを登録するときは、必ず \fBcrontab\fR を使用してください。\fBcrontab\fR ファイルを直接編集してジョブを追加しないでください。これは、\fBcron\fR はこの方法による変更を認識しないためです。
+.sp
+\fBcrontab\fR ファイル内のすべての行を削除すると、古い \fBcrontab\fR ファイルが復元されます。すべての行を削除する正しい方法は、\fB-r\fR オプションを使用して \fBcrontab\fR ファイルを削除する方法です。
+.sp
+\fIusername\fR が指定された場合、 現在のユーザーの \fBcrontab\fR ファイルではなく、指定のユーザーの \fBcrontab\fR ファイルを編集します。これを行えるのは、root と \fBsolaris.jobs.admin\fR 承認を持つユーザーだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+\fBcrontab\fR を起動したユーザーの crontab ファイルの内容を表示します。\fB-l\fR オプションのあとにユーザー名を指定して、指定のユーザーの \fBcrontab\fR ファイルを表示できるのは、root または \fBsolaris.jobs.admin\fR の承認を受けているユーザーだけです。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+\fBcrontab\fR ディレクトリからユーザーの \fBcrontab\fR を削除します。\fBr\fR オプションのあとにユーザー名を指定して、指定のユーザーの \fB-crontab\fR ファイルを削除できるのは、root または \fBsolaris.jobs.admin\fR の承認を受けているユーザーだけです。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRcore ファイルを削除する
+.sp
+.LP
+平日 (月 - 金) の午前 3 時 15 分に \fBcore\fR ファイルを削除する例です。
+
+.sp
+.in +2
+.nf
+15 3 * * 1-5 find $HOME -name core 2>/dev/null | xargs rm \fB-f\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR誕生日のお祝いを送る
+.sp
+.LP
+次の例では、誕生日のお祝いメールが送信されます。
+
+.sp
+.in +2
+.nf
+0 12 14 2 * mailx john%Happy Birthday!%Time for lunch.
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR日付と曜日を同時に指定する
+.sp
+.LP
+この例では、毎月 1 日と 15 日、さらに毎週月曜日にコマンドが実行されます。
+
+.sp
+.in +2
+.nf
+0 0 1,15 * 1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+曜日だけ、もしくは日付だけを指定する場合には、もう一方のフィールドに * を指定します。例: 
+
+.sp
+.in +2
+.nf
+0 0 * * 1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+毎週月曜日にコマンドが実行されます。
+
+.LP
+\fB例 4 \fR環境変数を使用する
+.sp
+.LP
+次のエントリは、\fBcrontab\fR による特定の環境変数のサポートを利用しています。
+
+.sp
+.in +2
+.nf
+TZ=GMT
+HOME=/local/home/user
+SHELL=/usr/bin/ksh
+0 0 * * * echo $(date) >        midnight.GMT
+TZ=PST
+0 0 * * * echo $(date) >        midnight.PST
+TZ=EST
+HOME=/local/home/myuser
+SHELL=/bin/csh
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+先行するエントリにより、2 つのジョブが実行されます。最初のジョブは GMT タイムゾーンの午前 0 時、2 番目のジョブは PST タイムゾーンの午前 0 時にそれぞれ実行されます。両方とも、Korn シェルを使用してディレクトリ \fB/local/home/user\fR 内で実行されます。このファイルでは、最終的に \fBTZ\fR、\fB HOME\fR、および \fBSHELL\fR エントリにより、これらの変数がデフォルト値に戻されます。
+
+.SH 環境
+.sp
+.LP
+\fBcrontab\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL \fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SS "\fB/usr/bin/crontab\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEDITOR\fR\fR
+.ad
+.RS 10n
+.rt  
+\fB-e\fR オプションを指定したときに呼び出すエディタを指定します。\fBVISUAL\fR 環境変数がこの環境変数よりも優先されます。デフォルトのエディタは \fBvi\fR(1) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPATH\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBcrontab\fR の環境内の \fBPATH\fR には、エディタの検索に使用する検索パスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVISUAL\fR\fR
+.ad
+.RS 10n
+.rt  
+\fB-e\fR オプションを指定したときに呼び出すビジュアルエディタを指定します。\fBVISUAL\fR が指定されていない場合、環境変数 \fBEDITOR\fR で指定されたエディタが使用されます。この設定がされていない場合、デフォルトは \fBvi\fR(1) です。
+.RE
+
+.SS "\fB/usr/xpg4/bin/crontab\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEDITOR\fR\fR
+.ad
+.RS 10n
+.rt  
+\fB-e\fR オプションを指定したときに呼び出すエディタを指定します。デフォルトエディタは、\fB/usr/xpg4/bin/vi\fR です。
+.RE
+
+.SS "\fB/usr/xpg6/bin/crontab\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEDITOR\fR\fR
+.ad
+.RS 10n
+.rt  
+\fB-e\fR オプションを指定したときに呼び出すエディタを指定します。デフォルトエディタは、\fB/usr/xpg6/bin/vi\fR です。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cron.d\fR\fR
+.ad
+.RS 28n
+.rt  
+主 cron ディレクトリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cron.d/cron.allow\fR\fR
+.ad
+.RS 28n
+.rt  
+許可されているユーザーのリスト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/cron\fR\fR
+.ad
+.RS 28n
+.rt  
+cron のデフォルト設定を含む
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cron.d/cron.deny\fR\fR
+.ad
+.RS 28n
+.rt  
+許可されていないユーザーのリスト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/cron/log\fR\fR
+.ad
+.RS 28n
+.rt  
+アカウンティング情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/spool/cron/crontabs\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBcrontab\fR のスプール空間
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "\fB/usr/bin/crontab\fR"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SS "\fB/usr/xpg4/bin/crontab\fR"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+_
+インタフェースの安定性標準
+.TE
+
+.SS "\fB/usr/xpg6/bin/crontab\fR"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu6
+_
+インタフェースの安定性標準
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBatq\fR(1), \fBatrm\fR(1), \fBauths\fR(1), \fBed\fR(1), \fBsh\fR(1), \fBvi\fR(1), \fBcron\fR(1M), \fBsu\fR(1M), \fBauth_attr\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+誤って引数なしで \fBcrontab\fR コマンドを実行してしまった場合、\fBCTRL-D\fR を使って処理を中止しないでください。CTRL-D を使用すると、crontab ファイルからすべてのエントリが削除されてしまいます。処理の中止には、CTRL-C を使用してください。
+.sp
+.LP
+\fBcron\fR を更新するときには、まず、既存の \fBcrontab\fR を調べて、更新時近くにイベントがスケジュールされているかどうかをチェックします。イベントが予定されていた時刻より後に更新プロセスが完了すると、当該エントリが失われる可能性があります。この現象は次のように発生します。ユーザーの crontab ファイルの内部ビューを更新するように \fBcrontab\fR から通知されると、\fBcron\fR はまず、既存の crontab ファイルの内部ビューとスケジュールされている内部イベントを削除します。\fB\fR\fB\fR次に、新しい \fBcrontab\fR ファイルを読み取って、\fBcrontab\fR の内部ビューと内部イベントを構築し直します。この最後の段階には (特に、\fBcrontab\fR ファイルが大きいときには) 時間がかかります。既存の \fBcrontab\fR エントリが更新時のきわめて近くに予定されていると、予定された時刻の\fBあとに\fR最後の段階が完了することがありえます。安全を期すために、新しいジョブは少なくとも現在の日付と時刻の 60 秒後に起動するようにしてください。
+.sp
+.LP
+1 つの crontab ファイルを一度に複数変更すると、予期しない結果になる可能性があります。
+.sp
+.LP
+\fBTZ\fR、\fBSHELL\fR、および \fBHOME\fR 変数を \fBcrontab\fR ファイルに追加する際、これらの変数をデフォルト以外に変更することが想定されていないアプリケーションで \fBcrontab\fR ファイルが共有される可能性がある場合は注意が必要です。ファイルの末尾で値をデフォルトにリセットすると、問題が発生する危険を最小限に抑えることができます。

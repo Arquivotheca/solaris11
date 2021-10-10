@@ -1,0 +1,401 @@
+'\" te
+.\" Copyright (c) 2008, Sun Microsystems, Inc.  All Rights Reserved
+.TH mpt 7D "24 Nov 2008" "SunOS 5.11" "Devices"
+.SH NAME
+mpt \- SCSI host bus adapter driver
+.SH SYNOPSIS
+.LP
+.nf
+\fBscsi@unit-address\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBmpt\fR host bus adapter driver is a \fBSCSA\fR compliant nexus driver that supports the LSI 53C1030 SCSI, SAS1064, SAS1068 and Dell SAS 6i/R controllers.
+.sp
+.LP
+The \fBmpt\fR driver supports the standard functions provided by the \fBSCSA\fR interface, including tagged and untagged queuing, Narrow/Wide/Fast/Ultra SCSI/Ultra SCSI 2/Ultra SCSI 3/Ultra SCSI 4, and auto request sense. The \fBmpt\fR driver does not support linked commands. The \fBmpt\fR driver also supports SATA and Serial-Attached SCSI devices when connected to LSI SAS1064 (PCI-X), SAS1068 and Dell SAS 6i/R (PCI-Express) controllers.
+.SH DRIVER CONFIGURATION
+.sp
+.LP
+The \fBmpt\fR driver obtains configuration parameters from the \fB/kernel/drv/mpt.conf\fR file. These parameters can override global SCSI settings.
+.sp
+.LP
+The following configurable properties are applicable for parallel SCSI controllers and devices: \fBscsi-options\fR, \fBtarget<\fIn\fR>-scsi-options\fR, \fBscsi-reset-delay\fR, \fBscsi-tag-age-limit\fR, \fBscsi-watchdog-tick\fR, and \fBscsi-initiator-id\fR.
+.sp
+.LP
+The property \fBtarget<\fIn\fR>-scsi-options\fR overrides the \fBscsi-options\fR property value for \fBtarget<\fIn\fR>\fR, where <\fIn\fR> can vary from decimal \fB0\fR to \fB15\fR for parallel SCSI operations. The \fBmpt\fR driver supports the following parallel SCSI options: \fBSCSI_OPTIONS_DR\fR, \fBSCSI_OPTIONS_SYNC\fR, \fBSCSI_OPTIONS_TAG\fR, \fBSCSI_OPTIONS_FAST\fR, \fBSCSI_OPTIONS_WIDE\fR, \fBSCSI_OPTIONS_FAST20\fR, \fBSCSI_OPTIONS_FAST40\fR, \fBSCSI_OPTIONS_FAST80\fR, \fBSCSI_OPTIONS_FAST160\fR, and \fBSCSI_OPTIONS_QAS\fR. To view the numeric values of these options, see \fB/usr/include/sys/scsi/conf/autoconf.h\fR. 
+.sp
+.LP
+The \fBscsi-reset-delay\fR and \fBscsi-watchdog-tick\fR properties are applicable for Serial-Attached SCSI (SAS) controllers and SAS or SATA devices.
+.sp
+.LP
+After periodic interval \fBscsi-watchdog-tick\fR, the \fBmpt\fR driver searches through all current and disconnected commands for timeouts.
+.sp
+.LP
+The \fBscsi-tag-age-limit\fR property is ignored by \fBmpt\fR, regardless of controller or devices type. Refer to \fBscsi_hba_attach_setup\fR(9F) for more details of parallel SCSI properties and flags.      
+.sp
+.LP
+When supported, multipath-capable storage is attached with Serial-Attached SCSI or SATA. Solaris I/O Multipathing may be enabled for \fBmpt\fR instances. This feature is configured with the \fBmpxio-disable\fR property in the \fBmpt.conf\fR file. To perform mutipathing tasks, we recommend that you use \fBstmsboot\fR(1M). Specifying \fBmpxio-disable="no"\fR enables the feature, while specifying \fBmpxio-disable="yes"\fR disables the feature. Solaris I/O Multipathing may be enabled or disabled on a per-controller basis. The following  example shows how to disable multipathing on a controller whose parent is \fB/pci@7c0/pci@0/pci@9\fR and unit-address is 0:
+.sp
+.in +2
+.nf
+ name="mpt" parent="/pci@7c0/pci@0/pci@9" unit-address="0" mpxio-disable="yes";
+.fi
+.in -2
+
+.sp
+.LP
+Currently, \fBmpt\fR supports the \fBmpt_offline_delay\fR property. This property delays the offlining of a device until the timer has  expired. The default value is 20 seconds.
+.sp
+.LP
+\fBmpt\fR supports the \fBmpt-on-bus-time\fR property, which controls a timer that resets a bus when a bus  connection exceeds the timer value. The default value of \fBmpt-on-bus-time\fR is 15 seconds. A value of 0 disables this feature. The property can be configured in \fB/kernel/drv/mpt.conf\fR as \fBmpt-on-bus-time\fR. In the following example, the timeout is disabled for unit 4 and set to two minutes for unit 4,1:
+.sp
+.in +2
+.nf
+name="mpt" parent="/pci@1d,700000"
+        unit-address="4"
+        mpt-on-bus-time=0;
+name="mpt" parent="/pci@1d,700000"
+        unit-address="4,1"
+        mpt-on-bus-time=120;
+
+Values have the following effect:
+
+No property configured: Default, 15 second timeout
+n = 0: Disables bus timeout feature
+0 < n <= 15: Minimum (and default), 15 seconds
+15 < n <= 3435: The actual value in seconds
+3435 < n: Maximum, 3435 seconds
+.fi
+.in -2
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUsing the \fBmpt\fR Configuration File
+.sp
+.LP
+Create a file called \fB/kernel/drv/mpt.conf\fR, then add the following line: 
+
+.sp
+.in +2
+.nf
+scsi-options=0x78;
+.fi
+.in -2
+
+.sp
+.LP
+The above example disables tagged queuing, Fast/Ultra \fBSCSI\fR, and wide mode for all \fBmpt\fR instances. The property value is calculated by or-ing the individual SCSI_OPTIONS_xxx values defined in \fB/usr/include/sys/scsi/conf/autoconf.h\fR.
+
+.sp
+.LP
+The following example disables an option  for  one  specific parallel SCSI mpt device. See \fBdriver.conf\fR(4) and \fBpci\fR(4) for more details.
+
+.sp
+.in +2
+.nf
+ name="mpt" parent="/pci@1f,4000"
+	unit-address="3"
+	target1-scsi-options=0x58
+	scsi-options=0x178 scsi-initiator-id=6;
+.fi
+.in -2
+
+.sp
+.LP
+Note that the default initiator \fBID\fR is 7 and that the change to \fBID\fR 6 occurs at attach time. It may be preferable to change the initiator ID with \fBeeprom\fR(1M).
+
+.sp
+.LP
+The example above sets \fBscsi-options\fR for target 1 to \fB0x58\fR and all other targets on this SCSI bus to \fB0x178\fR.
+
+.sp
+.LP
+You can determine the physical path name of the parent by using the \fB/devices\fR tree or by following the link of the logical device name:
+
+.sp
+.in +2
+.nf
+ # ls \fB-l\fR /dev/rdsk/c0t0d0s0
+ lrwxrwxrwx  1 root   root      45 May 16 10:08 /dev/rdsk/c0t0d0s0 ->
+	.\|.\|/\|.\|.\|/devices/pci@1f,4000/scsi@3/sd@0,0:a,raw
+.fi
+.in -2
+
+.sp
+.LP
+As in the previous example, the parent is \fB/pci@1f,4000\fR and the \fBunit-address\fR is 3.
+
+.sp
+.LP
+To set \fBscsi-options\fR more specifically per target, do the following:
+
+.sp
+.in +2
+.nf
+target1-scsi-options=0x78;
+device-type-scsi-options-list =
+    "SEAGATE ST32550W", "seagate-scsi-options" ;
+seagate-scsi-options = 0x58;
+scsi-options=0x3f8;
+.fi
+.in -2
+
+.sp
+.LP
+The above sets \fBscsi-options\fR for target 1 to \fB0x78\fR. All other targets on the SCSI bus are set to \fB0x3f8\fR (with the exception of one specific disk type for which \fBscsi-options\fR is set to \fB0x58\fR).
+
+.sp
+.LP
+\fBscsi-options\fR specified per target ID have the highest precedence, followed by \fBscsi-options\fR per device type. Global \fBscsi-options\fR (for all \fBmpt\fR instances) per bus have the lowest precedence.
+
+.sp
+.LP
+You must reboot the system for the specified \fBscsi-options\fR to take effect.
+
+.SS "SCSI Transport Capabilities"
+.sp
+.LP
+SCSI transport capabilities as set by the target driver. The following capabilities can be queried and modified by the target driver: \fBsynchronous\fR, \fBtagged-qing\fR, \fBwide-xfer\fR, \fBauto-rqsense\fR, \fBqfull-retries\fR, and \fBqfull-retry-interval\fR. All other capabilities are query only.
+.sp
+.LP
+By default, \fBtagged-qing\fR, \fBauto-rqsense\fR, and \fBwide-xfer\fR capabilities are disabled, while disconnect, synchronous, and untagged-qing are enabled. These capabilities can only have binary values (0 or 1).The default value for \fBqfull-retries\fR is 10, while the default value for \fBqfull-retry-interval\fR is 100. The \fBqfull-retries\fR capability is a \fBuchar_t\fR (\fB0\fR to \fB255\fR), while \fBqfull-retry-interval\fR is a \fBushort_t\fR (\fB0\fR to \fB65535\fR).
+.sp
+.LP
+The target driver must enable \fBtagged-qing\fR and \fBwide-xfer\fR explicitly. The \fB untagged-qing\fR capability is always enabled and its value cannot be modified.
+.sp
+.LP
+If a conflict exists between the value of \fBscsi-options\fR and a capability, the value set in \fBscsi-options\fR prevails. Only \fBwhom != 0\fR is supported in the \fBscsi_ifsetcap\fR(9F) call. 
+.sp
+.LP
+Refer to \fBscsi_ifsetcap\fR(9F) and \fBscsi_ifgetcap\fR(9F) for details.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/mpt\fR\fR
+.ad
+.RS 27n
+.rt  
+32-bit \fBELF\fR kernel module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/mpt\fR\fR
+.ad
+.RS 27n
+.rt  
+64-bit SPARC \fBELF\fR kernel module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/mpt\fR\fR
+.ad
+.RS 27n
+.rt  
+64-bit x86 \fBELF\fR kernel module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/mpt.conf\fR\fR
+.ad
+.RS 27n
+.rt  
+Optional configuration file
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attribute:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureT{
+x86, SPARC (Limited to systems with LSI Fusion family SCSI I/O processors). 
+T}
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBeeprom\fR(1M), \fBprtconf\fR(1M), \fBstmsboot\fR(1M), \fBdriver.conf\fR(4), \fBpci\fR(4), \fBattributes\fR(5), \fBscsi_vhci\fR(7D), \fBscsi_abort\fR(9F), \fBscsi_hba_attach_setup\fR(9F), \fBscsi_ifgetcap\fR(9F), \fBscsi_ifsetcap\fR(9F), \fBscsi_reset\fR(9F), \fBscsi_sync_pkt\fR(9F), \fBscsi_transport\fR(9F), \fBscsi_device\fR(9S), \fBscsi_extended_sense\fR(9S), \fBscsi_inquiry\fR(9S), \fBscsi_pkt\fR(9S)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fIANSI Small Computer System Interface-2 (SCSI-2) (and later revisions).\fR
+.sp
+.LP
+\fIANSI Serial-Attached SCSI-2 (SAS2)\fR
+.sp
+.LP
+\fISYM53c1030 PCI-SCSI I/O processor Dual Channel Fast-160\fR \(em LSI Logic Inc.
+.sp
+.LP
+\fILSISASI1064 PCI-X to 4-port 3 Gb/s SAS Controller \fR- LSI Logic Inc. 
+.sp
+.LP
+\fILSISASI1068/E 4-Port PCI Express to 3 Gb/s SAS Controller \fR- LSI Logic Inc.
+.sp
+.LP
+Sun StorEdge Traffic Manager Installation and Configuration Guide
+.SH DIAGNOSTICS
+.sp
+.LP
+The messages described below are logged and may also appear on the system console.
+.sp
+.ne 2
+.mk
+.na
+\fBDevice is using a hilevel intr\fR
+.ad
+.sp .6
+.RS 4n
+The device was configured with an interrupt level that cannot be used with this \fBmtp\fR driver. Check the \fBPCI\fR device.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBMap setup failed\fR
+.ad
+.sp .6
+.RS 4n
+The driver was unable to map device registers; check for bad hardware. Driver did not attach to device; \fBSCSI\fR devices are inaccessible.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBCannot map configuration space\fR
+.ad
+.sp .6
+.RS 4n
+The driver was unable to map in the configuration registers. Check for bad hardware. \fBSCSI\fR devices will be inaccessible.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBAttach failed\fR
+.ad
+.sp .6
+.RS 4n
+The driver was unable to attach; usually preceded by another warning that indicates why attach failed. These can be considered hardware failures.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBConnected command timeout for Target <id>.\fR
+.ad
+.sp .6
+.RS 4n
+This is usually a SCSI bus problem. Check cables and termination.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTarget <id> reducing sync. transfer rate\fR
+.ad
+.sp .6
+.RS 4n
+A data transfer hang or \fBDATA-IN\fR phase parity error was detected. The driver attempts to eliminate this problem by reducing the data transfer rate.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTarget <id> reverting to async. mode\fR
+.ad
+.sp .6
+.RS 4n
+A second data transfer hang was detected for this target. The driver attempts to eliminate this problem by reducing the data transfer rate.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTarget <id> disabled wide SCSI mode\fR
+.ad
+.sp .6
+.RS 4n
+A second data phase hang was detected for this target. The driver attempts to eliminate this problem by disabling wide \fBSCSI\fR mode.
+.RE
+
+.SH NOTES
+.sp
+.LP
+The \fBmpt\fR driver supports the parallel SCSI LSI 53c1030 controller. The LSI 53c1030 controller series supports  Wide, Fast and Ultra SCSI 4 mode. The maximum LVD SCSI bandwidth is 320 MB/sec.
+.sp
+.LP
+The \fBmpt\fR driver exports properties indicating the negotiated transfer speed per target (\fBtarget<n>-sync-speed\fR), whether wide bus is supported (\fBtarget<n>-wide\fR) for that particular target (\fBtarget<n>-scsi-options\fR), and whether tagged queuing has been enabled (\fBtarget<n>-T\fRQ). The \fBsync-speed\fR property value indicates the data transfer rate in KB/sec. The \fBtarget<n>-TQ\fR and the \fBtarget<n>-wide property\fR have value 1 (to indicate that the corresponding capability is enabled for that target), or 0 (to indicate that the capability is disabled for that target). See \fBprtconf\fR(1M) (verbose option) for details on viewing the \fBmpt\fR properties. 
+.sp
+.in +2
+.nf
+scsi, instance #4
+    Driver properties:
+        name='target8-TQ' type=int items=1 dev=none
+            value=00000001
+        name='target8-wide' type=int items=1 dev=none
+            value=00000001
+        name='target8-sync-speed' type=int items=1 dev=none
+            value=00013880
+        name='target5-TQ' type=int items=1 dev=none
+            value=00000001
+        name='target5-wide' type=int items=1 dev=none
+            value=00000001
+        name='target5-sync-speed' type=int items=1 dev=none
+            value=00013880
+        name='target4-TQ' type=int items=1 dev=none
+            value=00000001
+        name='target4-wide' type=int items=1 dev=none
+            value=00000001
+        name='target4-sync-speed' type=int items=1 dev=none
+            value=00013880
+        name='pm-components' type=string items=3 dev=none
+            value='NAME=mpt4' + '0=Off (PCI D3 State)' + '3=On (PCI \e
+            D0 State)'
+        name='scsi-selection-timeout' type=int items=1 dev=(238,0)
+            value=000000fa
+        name='scsi-options' type=int items=1 dev=(238,0)
+            value=00103ff8
+        name='scsi-watchdog-tick' type=int items=1 dev=(238,0)
+            value=0000000a
+        name='scsi-tag-age-limit' type=int items=1 dev=(238,0)
+            value=00000002
+        name='scsi-reset-delay' type=int items=1 dev=(238,0)
+            value=00000bb8
+.fi
+.in -2
+.sp
+

@@ -1,0 +1,210 @@
+'\" te
+.\" 版权所有 (c) 2001，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH ncab2clf 1 "2011 年 2 月 11 日" "SunOS 5.11" "用户命令"
+.SH 名称
+ncab2clf \- 将二进制日志文件转换为通用日志文件格式
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/ncab2clf\fR [\fB-Dhv\fR] [\fB-i\fR \fIinput-file\fR] [\fB-o\fR \fIoutput-file\fR] 
+     [\fB-b\fR \fIsize\fR] [\fB-n\fR \fInumber\fR] [\fB-s\fR \fIdatetime\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBncab2clf\fR 命令用于将 Solaris 网络高速缓存和加速器 (Network Cache and Accelerator, \fBNCA\fR) 生成的日志文件从二进制格式转换为通用日志文件 (Common Log File, \fBCLF\fR) 格式。如果未指定 \fIinput-file\fR，则 \fBb2clf\fR 将使用 \fBstdin\fR。如果未指定 \fIoutput-file\fR，则输出将写入到 \fBstdout\fR。 
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 18n
+.rt  
+指定 binary-log-file 分块的大小（以千字节为单位），缺省值为 64 千字节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 18n
+.rt  
+指定禁用直接 \fBI/O\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 18n
+.rt  
+显示用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinput-file\fR\fR
+.ad
+.RS 18n
+.rt  
+指定输入文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fInumber\fR\fR
+.ad
+.RS 18n
+.rt  
+输出 \fInumber\fR 个 CLF 记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput-file\fR\fR
+.ad
+.RS 18n
+.rt  
+指定输出文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdatetime\fR\fR
+.ad
+.RS 18n
+.rt  
+跳过 \fIdatetime\fR 指定的日期和时间之前的所有记录。可以按 CLF 格式或 \fBtouch\fR(1) 实用程序指定的格式来指定日期和时间。CLF 格式是主流格式，因此 \fBb2clf\fR 首先分析使用 CLF 的 \fIdatetime\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 18n
+.rt  
+提供详细的输出。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR将二进制文件转换为通用日志文件格式
+.sp
+.LP
+以下示例将二进制文件 \fB/var//logs/.blf\fR 转换为通用日志文件格式的文件 \fB/var//logs/.clf\fR。
+
+.sp
+.in +2
+.nf
+example% ncab2clf -D -i /var/nca/logs/nca.blf -o /var/nca/logs/nca.clf
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR转换多个日志文件
+.sp
+.LP
+以下脚本可用于转换多个日志文件。由 "\fB*\fR" 指定的目录必须仅包含日志文件。 
+
+.sp
+.in +2
+.nf
+!/bin/ksh
+for filename in *
+do
+    ncab2clf -D < $filename > $filename.clf
+done
+.fi
+.in -2
+
+.LP
+\fB示例 3 \fR对原始设备使用 \fB-s\fR 和 \fB-n\fR
+.sp
+.LP
+以下示例显示了如何对原始设备使用 \fBncab2clf\fR。如果不使用 \fB-n\fR 选项，则缺省情况下会从开头到尾转换文件中的所有记录。下面所示的用 \fB-s\fR 指定的日期和时间是 CLF 格式的。
+
+.sp
+.in +2
+.nf
+example% ncab2clf -s '10/Apr/2001:09:23:13' -n 100 < /dev/dsk/c2t1d0s6
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+文件转换成功
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB>\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/network/http-cache-accelerator
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBncakmod\fR(1)、\fBnca.if\fR(4)、\fBncakmod.conf\fR(4)、\fBncalogd.conf\fR(4)、\fBattributes\fR(5)、\fBnca\fR(7d)
+.sp
+.LP
+\fI《Oracle Solaris Administration: IP Services》\fR
+.SH 附注
+.sp
+.LP
+\fBNCA\fR 生成的二进制日志文件可能会变得非常大。转换这些大型二进制文件时，请将 \fB-b\fR 选项用于 \fBncab2clf\fR 命令，以帮助提高性能。
+.sp
+.LP
+如果写入的数据没有作为大型块出现，则直接 \fBI/O\fR 对用户比较有利。不过，如果用户希望使用 \fB-b\fR 选项来转换大型块中的日志文件，则应通过使用 \fB-D\fR 选项禁用直接 \fBI/O\fR。 

@@ -1,0 +1,488 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH svc.startd 1M "2010 年 12 月 14 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+svc.startd \- 服务管理工具主重启程序
+.SH 用法概要
+.LP
+.nf
+\fB/lib/svc/bin/svc.startd\fR 
+.fi
+
+.LP
+.nf
+\fBsvc:/system/svc/restarter:default\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsvc.startd\fR 是服务管理工具 (Service Management Facility, SMF) 的主重启程序守护进程和所有服务的缺省重启程序。\fBsvc.startd\fR 基于管理请求、系统故障或应用程序故障启动、停止和重启服务。
+.sp
+.LP
+\fBsvc.startd\fR 维护服务状态，并负责根据每个服务的依赖项来管理故障。 
+.sp
+.LP
+在系统启动期间会自动调用 \fBsvc.startd\fR。如果发生任何故障，它都会重启。绝不应当直接调用 \fBsvc.startd\fR。
+.sp
+.LP
+有关所有重启程序通用的配置和行为的信息，请参见 \fBsmf_restarter\fR(5)。
+.sp
+.LP
+\fBsvcs\fR(1) 报告由服务管理工具管理的所有服务的状态。\fBsvcadm\fR(1M) 允许处理与服务的重启程序相关的服务实例。
+.SS "环境变量"
+.sp
+.LP
+带 "SMF_" 前缀的环境变量是保留的，且可以被覆盖。
+.sp
+.LP
+\fBsvc.startd\fR 将 \fBsmf_method\fR(5) 中指定的 "SMF_" 环境变量提供给方法。缺省情况下，PATH 设为 "\fB /usr/sbin:/usr/bin\fR"。缺省情况下，提供给 \fBsvc.startd\fR 的所有其他环境变量均继承自 \fBinit\fR(1M)。
+.sp
+.LP
+重复的条目将缩减为单个条目。所使用的值是未定义的。将忽略未带 "<\fIname\fR>=" 前缀的环境条目。
+.SS "重启程序选项"
+.sp
+.LP
+\fBsvc.startd\fR 不是通过命令行选项配置的。其配置是从服务配置系统信息库中读取的。您可以使用 \fBsvccfg\fR(1M) 来设置所有选项和属性。
+.sp
+.LP
+\fBoptions\fR 属性组中的下列配置变量可供开发者和管理员使用：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBboot_messages\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个 \fIastring\fR（如 \fBscf_value_is_type\fR 中所定义；请参见 \fBscf_value_is_type\fR(3SCF)），描述了在引导期间要输出到控制台的消息的缺省级别。支持的消息选项包括 \fBquiet\fR 和 \fBverbose\fR。使用 \fBquiet\fR 选项时，在引导期间向控制台输出的消息最少。\fBverbose\fR 选项针对所启动的每个服务输出一条消息来指示是成功还是失败。您可以使用 \fBboot\fR \fB-m\fR 选项来覆盖引导时的 \fBboot_messages\fR 设置。请参见 \fBkernel\fR(1M)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogging\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制 \fBsvc.startd\fR 的全局服务日志记录级别。一个 \fIastring\fR（如 \fBscf_value_is_type\fR 中所定义；请参见 \fBscf_value_is_type\fR(3SCF)），描述了要记录到 \fBsyslog\fR（请参见 \fBsyslog\fR(3C) 和 \fBsvc.startd \fR 的全局日志文件 \fB/var/svc/log/svc.startd.log\fR）中的消息的缺省级别。支持的消息选项包括 \fBquiet\fR、\fBverbose\fR 和 \fBdebug\fR。\fBquiet\fR 选项将需要管理员干预的错误消息发送到控制台、\fBsyslog\fR，以及 \fBsvc.startd\fR 的全局日志文件。\fBverbose\fR 选项将需要管理员干预的错误消息发送到控制台、\fBsyslog\fR，以及 \fBsvc.startd\fR 的全局文件，并将不需要管理员干预的错误的相关信息发送到 \fBsvc.startd\fR 的全局日志文件。还会针对所启动的每个服务向控制台发送一条消息。\fBdebug\fR 选项将 \fBsvc.startd\fR 调试消息发送到 \fBsvc.startd\fR 的全局日志文件；将需要管理员干预的错误消息发送到控制台、\fBsyslog\fR，以及 \fBsvc.startd\fR 的全局日志文件；并针对所启动的每个服务向控制台发送一条消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个 FMRI，用于确定用作缺省引导级别的里程碑。可接受的选项仅包括以下主要里程碑：
+.sp
+.in +2
+.nf
+svc:/milestone/single-user:default
+svc:/milestone/multi-user:default
+svc:/milestone/multi-user-server:default
+.fi
+.in -2
+.sp
+
+或特殊值 \fBall\fR 或 \fBnone\fR。\fBall\fR 表示依赖于每个服务的一个理想化里程碑。\fBnone\fR 是一个特殊的里程碑，除了主 \fBsvc:/system/svc/restarter:default\fR 外，没有任何服务在运行。缺省情况下，\fBsvc.startd\fR 使用 \fBall\fR 这个依赖于每个服务的综合性里程碑。如果指定了此属性，它将覆盖 \fBinittab\fR(4) 中的任何 \fBinitdefault\fR 设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsystem/reconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示已请求了重新配置重新引导。包含必须切断重新配置重新引导的操作的服务可以通过检查此属性是否存在以及是否设为 1 来确认是否请求了重新配置引导。
+.sp
+此属性由 \fBsvc.startd\fR 管理，且管理员不应对其进行修改。
+.RE
+
+.sp
+.LP
+配置错误（例如禁用 \fBsvc.startd\fR）将记录在 \fBsyslog\fR 中，但会被忽略。
+.SS "服务状态"
+.sp
+.LP
+\fBsvc.startd\fR 管理的服务可能会显示为 \fBsmf\fR(5) 中描述的任一状态。此重启程序未修改状态定义。 
+.SS "服务报告"
+.sp
+.LP
+除了由受管的服务执行的日志记录外，\fBsvc.startd\fR 还提供了一组通用的服务报告和日志记录机制。
+.sp
+.LP
+报告属性 \fBsvc.startd\fR 更新它管理的所有服务通用的一组属性。这些属性是可用来基于服务实例运行状况采取措施的通用接口。可以使用 \fBsvcs\fR(1) 来方便地显示这些属性。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/state\fR\fR
+.ad
+.br
+.na
+\fB\fBrestarter/next_state\fR\fR
+.ad
+.sp .6
+.RS 4n
+实例的当前和下一个（如果当前正在转换中）状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/auxiliary_state\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个详细介绍当前实例状态的更多相关信息的标题。\fBsvc.startd\fR 管理的服务的可用辅助状态为： 
+.sp
+.ne 2
+.mk
+.na
+\fBmaintenance\fR
+.ad
+.RS 15n
+.rt  
+.sp
+.in +2
+.nf
+fault_threshold_reached
+stop_method_failed
+administrative_request
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/state_timestamp\fR\fR
+.ad
+.sp .6
+.RS 4n
+访问当前状态的时间。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestarter/contract\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行服务实例所依据的主进程合同 ID（如果有）。
+.RE
+
+.sp
+.LP
+\fB日志\fR
+.sp
+.LP
+缺省情况下，\fBsvc.startd\fR 会将服务的重要重启程序操作以及方法标准输出和标准错误文件描述符记录到 \fB/var/svc/log/\fIservice\fR:\fIinstance\fR.log\fR 中。在系统全局位置（例如 \fB/var/svc/log/svc.startd.log\fR 和 \fBsyslog\fR）中执行的日志记录的级别是由 \fBoptions/logging\fR 属性控制的。
+.SS "服务定义"
+.sp
+.LP
+开发或配置 \fBsvc.startd\fR 管理的服务时，使用一组通用的属性来影响服务实例与重启程序之间的交互。 
+.sp
+.LP
+\fB方法\fR
+.sp
+.LP
+\fBsmf_method\fR(5) 中介绍了 \fBsvc.startd\fR 提供的 fork/exec 模型的方法的一般形式。下列方法是 \fBsvc.startd\fR 管理的服务支持的必需或可选方法。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.RS 11n
+.rt  
+在不中断服务的情况下从系统信息库或 \fBconfig\fR 文件重新装入任何适当的配置参数。这通常是通过对系统守护进程使用 \fBSIGHUP\fR 实现的。如果服务在不重新启动的情况下无法识别配置更改，则不提供 refresh 方法。
+.sp
+此方法是可选的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.RS 11n
+.rt  
+开始服务.仅在应用程序可供使用者使用后返回成功。如果某个冲突的实例已在运行或服务无法启动，此方法将失败。
+.sp
+此方法是必需的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.RS 11n
+.rt  
+停止服务。在某些情况下，当某些或全部服务已停止时可调用 stop 方法。只有在方法返回时服务未完全停止的情况下才返回错误。
+.sp
+此方法是必需的。
+.RE
+
+.sp
+.LP
+如果服务不需要在某个必需的方法中执行任何操作，则它必须为该方法指定 \fB:true\fR 标记。 
+.sp
+.LP
+\fBsvc.startd\fR 会接受为服务或任何特定方法指定的任何方法上下文。\fBsmf_method\fR(5) 中描述的方法扩展标记可在 \fBsvc.startd\fR 调用的所有方法中使用。 
+.sp
+.LP
+\fB属性\fR 
+.sp
+.LP
+\fBsmf\fR(5) 中提供了常规属性的概述。这些常规属性与 \fBsvc.startd\fR 进行交互的具体方式如下所述：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgeneral/enabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果将 enabled 设为 true，重启程序会尝试在服务的所有依赖项都满足后启动该服务。如果设为 false，服务将保持为禁用状态，不会运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgeneral/restarter\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果此 FMRI 属性为空或设为 \fBsvc:/system/svc/restarter:default\fR，则服务由 \fBsvc.startd\fR 进行管理。其他情况下，由指定的重启程序负责（在它可用后）管理该服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgeneral/single_instance\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBsingle_instance\fR 设为 true，在任意时间，\fBsvc.startd\fR 仅允许该服务的一个实例转换为 online（联机）或 degraded（降级）状态。
+.RE
+
+.sp
+.LP
+此外，\fBsvc.startd\fR 管理的服务可以在 \fBstartd\fR 属性组中定义下面列出的可选属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/duration\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBduration\fR 属性定义服务的模型。可将其设为 \fBtransient\fR、\fBchild\fR（这两者也称为 "\fBwait\fR" 模型服务）或 \fBcontract\fR（缺省值）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/ignore_error\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBignore_error\fR 属性（如果已设置）指定忽略的事件的逗号分隔列表。列表中的合法字符串值为 \fBcore\fR 和 \fBsignal\fR。缺省情况下，发生任何错误都会重新启动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/need_session\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBneed_session\fR 属性（如果设为 true）指示此实例应在其自己的会话中启动。缺省情况下不是这样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstartd/utmpx_prefix\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fButmpx_prefix\fR 字符串属性规定实例在启动方法执行前需要一个有效的 \fButmpx\fR 条目。缺省情况下，不创建 \fButmpx\fR 条目。
+.RE
+
+.SS "服务故障"
+.sp
+.LP
+如果一个方法返回非零退出代码或在指定的超时时间到期前没有完成，\fBsvc.startd\fR 将认为该方法失败。如果返回了 \fB$SMF_EXIT_ERR_CONFIG\fR 或 \fB$SMF_EXIT_ERR_FATAL\fR，\fBsvc.startd\fR 会立即将服务置于 maintenance（维护）状态。对于所有其他故障，\fBsvc.startd\fR 将服务置于 offline（脱机）状态。如果某个服务处于 offline（脱机）状态且满足了其依赖项，\fBsvc.startd\fR 会重新尝试启动该服务（请参见 \fBsmf\fR(5)）。
+.sp
+.LP
+如果在定义的超时时间到期前，合同或瞬态服务没有从其 start 方法中返回，\fBsvc.startd\fR 将向该方法发送 \fBSIGKILL\fR，并使该服务返回至 offline（脱机）状态。
+.sp
+.LP
+如果连续发生五次故障，或者服务由于一个错误而每隔 10 分钟重新启动了多次，则 \fBsvc.startd\fR 会将该服务置于 maintenance（维护）状态。
+.sp
+.LP
+服务故障的状况是由服务模型（由 \fBstartd/duration\fR 属性定义）和 \fBstartd/ignore_error\fR 属性值的组合定义的。
+.sp
+.LP
+如果发生下列任一状况，合同模型服务将失败：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+服务中的所有进程都退出
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+服务中的任意进程生成核心转储
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+服务外的进程向某个服务进程发送了致命的信号（例如，管理员使用 \fBpkill\fR 命令来终止某个服务进程）
+.RE
+.sp
+.LP
+可以通过在 \fBstartd/ignore_error\fR 中指定 core 和/或 signal 让服务忽略后两种状况。
+.sp
+.LP
+将某个服务定义为瞬态的意味着 \fBsvc.startd\fR 不会跟踪该服务的进程。因此，合同模型服务的上述潜在故障不会被认为是瞬态服务的故障。瞬态服务仅在出现某种方法故障状况时进入 maintenance（维护）状态。
+.sp
+.LP
+每当与服务相关联的子进程退出时，"\fBWait\fR" 模型的服务都将重新启动。退出的子进程不会被视为 "\fBwait\fR" 模型的服务的错误，且重复发生的故障不会导致转换为 maintenance（维护）状态。
+.SS "传统服务"
+.sp
+.LP
+\fBsvc.startd\fR 继续为在启动运行级转换期间调用的服务提供支持。每个 \fB/etc/rc?. d\fR 目录是在构成等效的运行级里程碑的所有受管理服务转换为 online（联机）状态后处理的。标准 \fBinit\fR 脚本放置在\fB/etc/rc?。d\fR 目录中的脚本按照其序列号顺序运行。
+.sp
+.LP
+里程碑到运行级的映射为： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone/single-user\fR\fR
+.ad
+.sp .6
+.RS 4n
+单用户 (\fBS\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone/multi-user\fR\fR
+.ad
+.sp .6
+.RS 4n
+多用户 (\fB2\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone/multi-user-server\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用网络服务的多用户 (\fB3\fR)
+.RE
+
+.sp
+.LP
+此外，通过将每个脚本的一个实例插入到系统信息库中，\fBsvc.startd\fR 使得这些传统服务在 SMF 中可见。可以使用标准 SMF 接口（例如 \fBsvcs \fR(1)）来访问这些传统实例，并且它们始终显示为 \fBLEGACY-RUN\fR 状态，无法修改，且无法指定为其他服务的依赖项。为了给管理员提供便利，捕获了传统服务的初始启动时间。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/svc/log\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBsvc.startd\fR 用于存储日志文件的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/svc/volatile\fR\fR
+.ad
+.RS 21n
+.rt  
+在引导过程的早期阶段，将 \fB/var\fR 挂载为可读写之前，\fBsvc.startd\fR 用于存储日志文件的目录。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR启用详细日志记录
+.sp
+.LP
+要启用详细日志记录，请键入以下命令：
+
+.sp
+.in +2
+.nf
+# /usr/sbin/svccfg -s system/svc/restarter:default
+svc:/system/svc/restarter:default> addpg options application
+svc:/system/svc/restarter:default> setprop options/logging = \e
+astring: verbose
+svc:/system/svc/restarter:default> exit
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此请求将在 \fBsvc.startd\fR 下次重新启动时生效。
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvcprop\fR(1)、\fBkernel\fR(1M)、\fBinit\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBsvc.configd\fR(1M)、\fBsetsid\fR(2)、\fBsyslog\fR(3C)、\fBlibscf\fR(3LIB)、\fBscf_value_is_type\fR(3SCF)、\fBcontract\fR(4)、\fBinit.d\fR(4)、\fBprocess\fR(4)、\fBinittab\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBsmf_method\fR(5)

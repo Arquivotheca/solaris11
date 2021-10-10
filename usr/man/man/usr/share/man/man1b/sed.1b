@@ -1,0 +1,956 @@
+'\" te
+.\"  Copyright (c) 2003, Sun Microsystems, Inc.  All Rights Reserved
+.TH sed 1B "28  Mar 1995" "SunOS 5.11" "SunOS/BSD Compatibility Package Commands"
+.SH NAME
+sed \- stream editor
+.SH SYNOPSIS
+.LP
+.nf
+\fBsed\fR [\fB-n\fR] [\fB-e\fR \fIscript\fR] [\fB-f\fR \fIsfilename\fR] [\fIfilename\fR]...
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsed\fR utility copies the  \fIfilename\fRs (standard input default) to the standard output, edited according to a script of commands.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 16n
+.rt  
+Suppresses the default output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIscript\fR\fR
+.ad
+.RS 16n
+.rt  
+\fIscript\fR is an edit command for \fBsed\fR. If there is just one \fB-e\fR option and no \fB-f\fR options, the \fB-e\fR flag may be omitted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIsfilename\fR\fR
+.ad
+.RS 16n
+.rt  
+Takes the script from \fIsfilename\fR.
+.RE
+
+.SH USAGE
+.SS "sed Scripts"
+.sp
+.LP
+\fBsed\fR \fBscripts\fR consist of editing commands, one per line, of the following form:
+.sp
+.in +2
+.nf
+[ \fIaddress\fR [\fB,\fR \fIaddress\fR ] ] \fBfunction\fR [ \fIarguments\fR ]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+In normal operation, \fBsed\fR cyclically copies a line of input into a \fIpattern space\fR (unless there is something left after a \fBD\fR command), sequentially applies all commands with  \fIaddresses\fR matching that pattern space until reaching the end of the script, copies the pattern space to the standard output (except under \fB-n\fR), and finally, deletes the pattern space.
+.sp
+.LP
+Some commands use a \fIhold space\fR to save all or part of the pattern space for subsequent retrieval.
+.sp
+.LP
+An \fIaddress\fR is either:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+a decimal number linecount, which is cumulative across input files;
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+a \fB$\fR, which addresses the last input line;
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+or a context address, which is a \fB/\fR\fIregular expression\fR\fB/\fR as described on the \fBregexp\fR(5) manual page, with the following exceptions:
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\e\fR\fI?\fRRE\fI?\fR\fR
+.ad
+.RS 24n
+.rt  
+In a context address, the construction \fB\e\fR\|\fI?regular\fR \fIexpression?,\fR where \fI?\fR is any character, is identical to \fB/\fR\fIregular expression\fR\fB/\fR. \fBNote:\fR in the context address \fB\exabc\exdefx\fR, the second \fBx\fR stands for itself, so that the regular expression is \fBabcxdef\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\en\fR\fR
+.ad
+.RS 24n
+.rt  
+Matches a  NEWLINE embedded in the pattern space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\&.\fR\fR
+.ad
+.RS 24n
+.rt  
+Matches any character except the NEWLINE ending the pattern space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInull\fR\fR
+.ad
+.RS 24n
+.rt  
+A command line with no address selects every pattern space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress\fR\fR
+.ad
+.RS 24n
+.rt  
+Selects each pattern space that matches.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress1\fR \fI,\|address2\fR\fR
+.ad
+.RS 24n
+.rt  
+Selects the inclusive range from the first pattern space matching \fIaddress1\fR to the first pattern space matching \fIaddress2\fR. Selects only one line if \fIaddress1\fR is greater than or equal to \fIaddress2\fR.
+.RE
+
+.RE
+
+.RE
+.SS "Comments"
+.sp
+.LP
+If the first nonwhite character in a line is a  `\fB#\fR' (pound sign), \fBsed\fR treats that line as a comment, and ignores it. If, however, the first such line is of the form:
+.sp
+.in +2
+.nf
+#n
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBsed\fR runs as if the \fB-n\fR flag were specified.
+.SS "Functions"
+.sp
+.LP
+The maximum number of permissible addresses for each function is indicated in parentheses in the list below.
+.sp
+.LP
+An argument denoted \fItext\fR consists of one or more lines, all but the last of which end with \fB\e\fR to hide the NEWLINE. Backslashes in text are treated like backslashes in the replacement string of an \fBs\fR command, and may be used to protect initial SPACE and TAB characters against the stripping that is done on every script line.
+.sp
+.LP
+An argument denoted \fIrfilename\fR or  \fIwfilename\fR must terminate the command line and must be preceded by exactly one SPACE. Each \fIwfilename\fR is created before processing begins. There can be at most 10 distinct \fIwfilename\fR arguments.
+.sp
+.ne 2
+.mk
+.na
+\fB(1)\fBa\e\fR\fR
+.ad
+.br
+.na
+\fB\fItext\fR\fR
+.ad
+.RS 18n
+.rt  
+Append: place \fItext\fR on the output before reading the next input line.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBb\fR \fIlabel\fR\fR
+.ad
+.RS 18n
+.rt  
+Branch to the `\fB:\fR' command bearing the \fIlabel\fR. Branch to the end of the script if \fIlabel\fR is empty.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBc\e\fR\fR
+.ad
+.br
+.na
+\fB\fItext\fR\fR
+.ad
+.RS 18n
+.rt  
+Change: delete the pattern space. With 0 or 1 address or at the end of a 2 address range, place \fItext\fR on the output. Start the next cycle.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBd\fR\fR
+.ad
+.RS 18n
+.rt  
+Delete the pattern space. Start the next cycle.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBD\fR\fR
+.ad
+.RS 18n
+.rt  
+Delete the initial segment of the  pattern space through the first NEWLINE. Start the next cycle.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBg\fR\fR
+.ad
+.RS 18n
+.rt  
+Replace the contents of the pattern space by the contents of the hold space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBG\fR\fR
+.ad
+.RS 18n
+.rt  
+Append the contents of the hold space to the pattern space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBh\fR\fR
+.ad
+.RS 18n
+.rt  
+Replace the contents of the hold space by the contents of the pattern space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBH\fR\fR
+.ad
+.RS 18n
+.rt  
+Append the contents of the pattern space to the hold space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(1)\fBi\e\fR\fR
+.ad
+.br
+.na
+\fB\fItext\fR\fR
+.ad
+.RS 18n
+.rt  
+Insert: place \fItext\fR on the standard output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBl\fR\fR
+.ad
+.RS 18n
+.rt  
+List the pattern space on the standard output in an unambiguous form. Non-printing characters are spelled in two digit \fBASCII\fR and long lines are folded.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBn\fR\fR
+.ad
+.RS 18n
+.rt  
+Copy the pattern space to the standard output. Replace the pattern space with the next line of input.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBN\fR\fR
+.ad
+.RS 18n
+.rt  
+Append the next line of input to the pattern space with an embedded newline. (The current line number changes.)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBp\fR\fR
+.ad
+.RS 18n
+.rt  
+Print: copy the pattern space to the standard output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBP\fR\fR
+.ad
+.RS 18n
+.rt  
+Copy the initial segment of the pattern space through the first NEWLINE to the standard output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(1)\|\fBq\fR\fR
+.ad
+.RS 18n
+.rt  
+Quit: branch to the end of the script. Do not start a new cycle.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBr\fR \fIrfilename\fR\fR
+.ad
+.RS 18n
+.rt  
+Read the contents of \fIrfilename\fR. Place them on the output before reading the next input line.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBs\fR\fI/regular expression/replacement/flags\fR\fR
+.ad
+.sp .6
+.RS 4n
+Substitute the  \fIreplacement\fR string for instances of the \fIregular expression\fR in the pattern space. Any character may be used instead of `\fB/\fR'. For a fuller description see \fBregexp\fR(5). \fIflags\fR is zero or more of: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fIn\fR\fR
+.ad
+.RS 15n
+.rt  
+\fIn\fR= 1 \(mi 512. Substitute for just the  \fIn\fRth occurrence of the \fIregular\fRexpression\fI\&.\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 15n
+.rt  
+Global: substitute for all nonoverlapping instances of the \fIregular expression\fR rather than just the first one.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 15n
+.rt  
+Print the pattern space if a replacement was made.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR \fIwfilename\fR\fR
+.ad
+.RS 15n
+.rt  
+Write: append the pattern space to  \fIwfilename\fR if a replacement was made.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2\fBt\fR \fIlabel\fR\fR
+.ad
+.RS 25n
+.rt  
+Test: branch to the `\fB:\fR' command bearing the  \fIlabel\fR if any substitutions have been made since the most recent reading of an input line or execution of a \fBt\fR. If  \fIlabel\fR is empty, branch to the end of the script.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBw\fR \fIwfilename\fR\fR
+.ad
+.RS 25n
+.rt  
+Write: append the pattern space to \fIwfilename\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBx\fR\fR
+.ad
+.RS 25n
+.rt  
+Exchange the contents of the pattern and hold spaces.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fBy\fR\fI/string1/string2/\fR\fR
+.ad
+.RS 25n
+.rt  
+Transform: replace all occurrences of characters in  \fIstring1\fR with the corresponding character in  \fIstring2\fR. The lengths of \fIstring1\fR and  \fIstring2\fR must be equal.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fB!\fR \fIfunction\fR\fR
+.ad
+.RS 25n
+.rt  
+Do not: apply the  \fBfunction\fR (or group, if  \fBfunction\fR is `\fB{\fR') only to lines  \fInot\fR selected by the address(es).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(0)\fB:\fR \fIlabel\fR\fR
+.ad
+.RS 25n
+.rt  
+This command does nothing. It bears a  \fIlabel\fR for \fBb\fR and \fBt\fR commands to branch to. \fBNote:\fR The maximum length of \fIlabel\fR is seven characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(1)\fB=\fR\fR
+.ad
+.RS 25n
+.rt  
+Place the current line number on the standard output as a line.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2)\fB{\fR\fR
+.ad
+.RS 25n
+.rt  
+Execute the following commands through a matching `\fB}\fR' only when the pattern space is selected.  Commands are separated by `\fB;\fR'.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(0)\fR
+.ad
+.RS 25n
+.rt  
+An empty command is ignored.
+.RE
+
+.SS "Large Files"
+.sp
+.LP
+See \fBlargefile\fR(5) for the description of the behavior of \fBsed\fR when encountering files greater than or equal to 2 Gbyte (2^31 bytes).
+.SH DIAGNOSTICS
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many commands\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command list contained more than 200 commands.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo much command text\fR  \fR
+.ad
+.sp .6
+.RS 4n
+The command list was too big for \fBsed\fR to handle. Text in the \fBa\fR, \fBc\fR, and \fBi\fR commands, text read in by \fBr\fR commands, addresses, regular expressions and replacement strings in \fBs\fR commands, and translation tables in \fBy\fR commands all require \fBsed\fR to store data internally.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCommand line too long\fR  \fR
+.ad
+.sp .6
+.RS 4n
+A command line was longer than 4000 characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many line numbers\fR  \fR
+.ad
+.sp .6
+.RS 4n
+More than 256 decimal number linecounts were specified as addresses in the command list.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many files in w commands\fR \fR
+.ad
+.sp .6
+.RS 4n
+More than 10 different files were specified in \fBw\fR commands or \fBw\fR options for \fBs\fR commands in the command list.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many labels\fR\fR
+.ad
+.sp .6
+.RS 4n
+More than 50 labels were specified in the command list.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUnrecognized command\fR \fR
+.ad
+.sp .6
+.RS 4n
+A command was not one of the ones recognized by \fBsed\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBExtra text at end of command\fR  \fR
+.ad
+.sp .6
+.RS 4n
+A command had extra text after the end.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIllegal line number\fR  \fR
+.ad
+.sp .6
+.RS 4n
+An address was neither a decimal number linecount, a \fB$\fR, nor a context address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSpace missing before filename\fR\fR
+.ad
+.sp .6
+.RS 4n
+There was no space between an \fBr\fR or \fBw\fR command, or the \fBw\fR option for a \fBs\fR command, and the filename specified for that command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many {'s\fR\fR
+.ad
+.sp .6
+.RS 4n
+There were more \fB{\fR than \fB}\fR in the list of commands to be executed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many }'s\fR\fR
+.ad
+.sp .6
+.RS 4n
+There were more \fB}\fR than \fB{\fR in the list of commands to be executed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNo addresses allowed\fR\fR
+.ad
+.sp .6
+.RS 4n
+A command that takes no addresses had an address specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOnly one address allowed\fR\fR
+.ad
+.sp .6
+.RS 4n
+A command that takes one address had two addresses specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB"\edigit"\fR out of range\fR
+.ad
+.sp .6
+.RS 4n
+The number in a \fB\e\fR\fIn\fR item in a regular expression or a replacement string in an\fBs\fR command was greater than 9.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBad number\fR\fR
+.ad
+.sp .6
+.RS 4n
+One of the endpoints in a range item in a regular expression (that is, an item of the form \fB{\fR\fIn\fR\fB}\fR or \fB{\fR\fIn\fR\fB,\fR\fIm\fR\fB}\fR) was not a number.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRange endpoint too large\fR\fR
+.ad
+.sp .6
+.RS 4n
+One of the endpoints in a range item in a regular expression was greater than 255.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMore than 2 numbers given in \e{ \e}\fR\fR
+.ad
+.sp .6
+.RS 4n
+More than two endpoints were given in a range expression.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB} expected after \e\fR\fR
+.ad
+.sp .6
+.RS 4n
+A \fB\e\fR appeared in a range expression and was not followed by a \fB}\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFirst number exceeds second in \e{ \e}\fR\fR
+.ad
+.sp .6
+.RS 4n
+The first endpoint in a range expression was greater than the second.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIllegal or missing delimiter\fR\fR
+.ad
+.sp .6
+.RS 4n
+The delimiter at the end of a regular expression was absent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\e( \e) imbalance\fR\fR
+.ad
+.sp .6
+.RS 4n
+There were more \fB\e(\fR than \fB\e)\fR, or more \fB\e)\fR than \fB\e(\fR, in a regular expression.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[ ] imbalance\fR\fR
+.ad
+.sp .6
+.RS 4n
+There were more \fB[\fR than \fB]\fR, or more \fB]\fR than \fB[\fR, in a regular expression.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFirst RE may not be null\fR\fR
+.ad
+.sp .6
+.RS 4n
+The first regular expression in an address or in a \fBs\fR command was null (empty).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEnding delimiter missing on substitution\fR \fR
+.ad
+.sp .6
+.RS 4n
+The ending delimiter in a \fBs\fR command was absent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEnding delimiter missing on string\fR \fR
+.ad
+.sp .6
+.RS 4n
+The ending delimiter in a \fBy\fR command was absent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTransform strings not the same size\fR \fR
+.ad
+.sp .6
+.RS 4n
+The two strings in a \fBy\fR command were not the same size.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSuffix too large - 512 max\fR\fR
+.ad
+.sp .6
+.RS 4n
+The suffix in a \fBs\fR command, specifying which occurrence of the regular expression should be replaced, was greater than 512.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLabel too long\fR\fR
+.ad
+.sp .6
+.RS 4n
+A label in a command was longer than 8 characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDuplicate labels\fR\fR
+.ad
+.sp .6
+.RS 4n
+The same label was specified by more than one \fB:\fR command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFile name too long\fR\fR
+.ad
+.sp .6
+.RS 4n
+The filename specified in a \fBr\fR or \fBw\fR command, or in the \fBw\fR option for a \fBs\fR command, was longer than 1024 characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOutput line too long\fR  \fR
+.ad
+.sp .6
+.RS 4n
+An output line was longer than 4000 characters long.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBToo many appends or reads after line\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+More than 20 \fBa\fR or \fBr\fR commands were to be executed for line \fIn\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHold space overflowed.\fR\fR
+.ad
+.sp .6
+.RS 4n
+More than 4000 characters were to be stored in the \fIhold space\fR.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusr/ucb/sed\fR\fR
+.ad
+.RS 15n
+.rt  
+BSD sed
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitycompatibility/ucb
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBawk\fR(1), \fBgrep\fR(1), \fBlex\fR(1), \fBattributes\fR(5), \fBlargefile\fR(5), \fBregexp\fR(5)
+.SH BUGS
+.sp
+.LP
+There is a combined limit of 200 \fB-e\fR and \fB-f\fR arguments. In addition, there are various internal size limits which, in rare cases, may overflow. To overcome these limitations, either combine or break out scripts, or use a pipeline of \fBsed\fR commands.

@@ -1,0 +1,253 @@
+'\" te
+.\"  Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH usmp 7I "27 Aug 2010" "SunOS 5.11" "Devices"
+.SH NAME
+usmp \- user SMP command interface
+.SH SYNOPSIS
+.sp
+.LP
+\fBinclude<sys/scsi/impl/usmp.h>\fR
+.sp
+.LP
+\fBioctl(int fildes, int request, struct usmp_cmd *cmd);\fR
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsmp\fR driver supports this \fBioctl\fR(2), which provides a generic user-level interface for sending SMP commands to SMP target devices. SMP target devices are generally SAS switches or expanders. Each \fBusmp\fR call directs the \fBsmp\fR(7D) driver to express a specific SMP function, and includes the data transfer to and from the designated SMP target device. 
+.sp
+.LP
+The \fBusmp_cmd\fR structure is defined in \fB<sys/scsi/impl/usmp.h>\fR and includes the following: 
+.sp
+.in +2
+.nf
+caddr_t     usmp_req;         /* address of smp request frame */
+caddr_t     usmp_rsp;         /* address of smp response frame */
+size_t      usmp_reqsize;     /* byte size of smp request frame */
+size_t      usmp_rspsize;     /* byte size of smp response frame */
+int         usmp_timeout;     /* command timeout */
+.fi
+.in -2
+
+.sp
+.LP
+The fields of the \fBusmp_cmd\fR structure have the following descriptions:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusmp_req\fR\fR
+.ad
+.RS 16n
+.rt  
+The address of the buffer containing the \fBsmp\fR request frame. The data format should conform to the definition in the Serial Attached SCSI protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusmp_rsp\fR\fR
+.ad
+.RS 16n
+.rt  
+The address of the buffer used to hold the \fBsmp\fR response frame.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusmp_reqsize\fR\fR
+.ad
+.RS 16n
+.rt  
+The size in byte of the \fBsmp\fR request frame buffer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusmp_rspsize\fR\fR
+.ad
+.RS 16n
+.rt  
+The size in byte of the \fBsmp\fR response frame buffer. The size of the buffer should not be less than eight bytes. If the buffer size is less than eight bytes the \fBsmp\fR(7D) driver immediately returns \fBEINVAL\fR. If the buffer size is less than that specified for the specific SMP function in the Serial Attached  SCSI protocol definition, the response data might be truncated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusmp_timeout\fR\fR
+.ad
+.RS 16n
+.rt  
+The time in seconds to allow for completion of the command. If it is not set in user-level, the default value is \fB60\fR.
+.RE
+
+.sp
+.LP
+The common headers of \fBsmp\fR request and response frames are found in two structures: \fBusmp_req\fR and \fBusmp_rsp\fR, both of which are defined in \fB<sys/scsi/impl/smp_frames.h>\fR\&.
+.sp
+.LP
+The structures include the following fields:
+.sp
+.in +2
+.nf
+struct usmp_req {
+  uint8_t smpo_frametype;   /* SMP frame type, should be 0x40 */
+  uint8_t smpo_function;    /* SMP function being requested */
+  uint8_t smpo_reserved;    /* reserved byte */
+  uint8_t smpo_reqsize;     /* number of dwords that follow */
+  uint8_t smpo_msgframe[1]  /* request bytes based on SMP function
+                                 plus 4-byte CRC code */
+}
+
+struct usmp_rsp {
+  uint8_t smpi_frametype;   /* SMP frame type, should be 0x41 */
+  uint8_t smpi_function;    /* SMP function being requested */
+  uint8_t smpi_result;      /* SMP function result */
+  uint8_t smpi_rspsize;     /* number of dwords that follow */
+  uint8_t smpi_msgframe[1]; /* response bytes based on SMP function */
+}
+.fi
+.in -2
+
+.SH IOCTLS
+.sp
+.LP
+The ioctl supported by the SMP target driver through the \fBusmp\fR interface is:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUSMPCMD\fR\fR
+.ad
+.RS 11n
+.rt  
+The argument is a pointer to a \fBusmp_cmd\fR structure.
+.RE
+
+.SH ERRORS
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEFAULT\fR\fR
+.ad
+.RS 13n
+.rt  
+One or more of the \fBusmp_cmd\fR, \fBusmp_req\fR or \fBusmp_rsp\fR  structures point to an invalid address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 13n
+.rt  
+A parameter has an incorrect, or unsupported value.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEIO\fR\fR
+.ad
+.RS 13n
+.rt  
+An error occurred during the execution of the command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENODEV\fR\fR
+.ad
+.RS 13n
+.rt  
+Device has gone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 13n
+.rt  
+No memory available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEOVERFLOW\fR\fR
+.ad
+.RS 13n
+.rt  
+The response buffer is shorter than required, and the data is truncated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEPERM\fR\fR
+.ad
+.RS 13n
+.rt  
+A process without \fBPRIV_SYS_DEVICES\fR privilege tried to execute the \fBUSMPCMD\fR ioctl.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBETIME\fR\fR
+.ad
+.RS 13n
+.rt  
+Command timeout.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availability\fBsystem/header\fR
+_
+Interface StabilityPrivate
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBioctl\fR(2), \fBattributes\fR(5), \fBsmp\fR(7D), \fBmpt\fR(7D)
+.sp
+.LP
+\fIANSI Small Computer System Interface - 4 (SCSI-4)\fR
+.SH NOTES
+.sp
+.LP
+\fBusmp\fR commands are designed for topology control, device accessibility, and \fBSAS\fR expander and switch configuration. Usage of \fBusmp\fR is restricted to processes running with the \fBPRIV_SYS_DEVICES\fR privilege, regardless of the file permissions on the device node. 
+.sp
+.LP
+User-level applications are not required to fill in the four bytes of \fBSAS CRC\fR code in the SMP request frame. The \fBsmp\fR(7D) driver manages this for \fBusmp\fR if the \fBSAS HBA\fR does not.

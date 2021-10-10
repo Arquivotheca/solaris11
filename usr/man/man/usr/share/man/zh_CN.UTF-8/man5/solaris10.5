@@ -1,0 +1,223 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH solaris10 5 "2011 年 7 月 25 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+solaris10 \- Solaris 10 标记区域
+.SH 描述
+.sp
+.LP
+\fBsolaris10\fR 标记使用 \fBbrands\fR(5) 中介绍的标记区域框架，使得 Solaris 10 二进制应用程序无需经过修改即可在具有最新 Solaris 操作系统内核的计算机上运行。
+.sp
+.LP
+\fBsolaris10\fR 标记只支持在区域中运行 Solaris 10 10/09（Solaris 10 更新 8）或更高发行版。
+.sp
+.LP
+\fBsolaris10\fR 标记包括将 Solaris 10 系统映像安装到非全局区域所必需的工具。它还支持将 Solaris 10 本地区域迁移到 \fBsolaris10\fR 标记区域所必需的工具。该标记支持在运行最新 Solaris 操作系统的 SPARC 或 x86 计算机上执行 32 位和 64 位 Solaris 10 应用程序。
+.SS "配置与管理"
+.sp
+.LP
+\fBsolaris10\fR 标记支持完全根非全局区域模型。所有必需的 Solaris 10 软件及任何其他软件包都安装在区域的专用文件系统中。 
+.sp
+.LP
+区域必须位于各自的 \fBzfs\fR(1M) 数据集上，并且只支持 ZFS。在安装或连接区域时，将自动创建 ZFS 数据集。如果无法创建 ZFS 数据集，区域也无法安装或连接。 
+.sp
+.LP
+\fBzonecfg\fR(1M) 实用程序可用于配置 \fBsolaris10\fR 标记区域。在创建区域时可以使用 \fBSUNWsolaris10\fR 模板，也可以手动设置配置。一旦安装了标记区域，便不能更改或删除该区域的标记。\fBzoneadm\fR(1M) 实用程序可用于报告区域的标记类型和管理区域。\fBzlogin\fR(1) 实用程序可用于登录到区域。
+.sp
+.LP
+当前对于委托 ZFS 数据集配置的支持是试验性的，尚未经过测试。对于在超虚拟化 xVM 域中运行这些区域的支持是试验性的，并且在区域中运行的 64 位 x86 应用程序存在已知问题。不能在标记区域中配置 \fB/dev/sound\fR 设备。此外，在全局区域中用于检查 \fBsolaris10\fR 标记区域中执行的进程时，\fBmdb\fR(1) 和 \fBdtrace\fR(1M) 无法完全正常运行。
+.sp
+.LP
+\fBsolaris10\fR 标记安装程序支持通过已安装的 Solaris 10 系统的映像安装区域。这可以是完整的 \fBflash_archive\fR(4)、\fBcpio\fR(1) 或 \fBpax\fR(1) \fBxustar\fR 归档文件。\fBcpio\fR 归档文件可以使用 \fBgzip(1)\fR 或 \fBbzip2(1)\fR 进行压缩。此映像也可以是级别为 0 的\fBufsdump\fR(1M)，或者是到 Solaris 10 系统根目录树顶级的路径。不能从标准的 Solaris 10 分发介质中安装区域。 
+.sp
+.LP
+为了将本地区域从 Solaris 10 系统迁移到最新的 Solaris 操作系统内核，attach 子命令支持从已安装的 Solaris 10 本地区域的归档文件中安装区域。与安装程序一样，这可以是 \fBzonepath\fR 的 \fBcpio\fR(1) 或 \fBpax\fR(1) \fBxustar\fR 归档文件。\fBcpio\fR 归档文件可以使用 \fBgzip(1)\fR 或 \fBbzip2(1)\fR 进行压缩。映像还可以是到 Solaris 10 区域的 \fBzonepath\fR 目录树顶级的路径。除了从 Solaris 10 本地区域迁移外，相同的迁移选项也可以在将 \fBsolaris10\fR 标记区域从一台主机迁移到另一台主机时使用。从 Solaris 10 进行迁移时，可以将区域配置为 \fBsparseroot\fR 区域。这种情况下，在生成归档文件前，应该在主机上已配置好区域。这样可以确保在归档文件中包含继承的目录。
+.SH 子命令
+.sp
+.LP
+支持 \fBzoneadm\fR(1M) 标记特定子命令的下列参数： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattach\fR [\fB-a\fR \fIarchive\fR | \fB-d\fR \fIpath\fR] [\fB-c\fR \fIsysidcfg\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将指定的 Solaris 10 本地区域映像连接到标记区域。如果 \fB-a\fR 或 \fB-d\fR 都未指定，则假定已使用区域文件正确安装区域的 \fBzonepath\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarchive\fR\fR
+.ad
+.RS 15n
+.rt  
+到已安装的 Solaris 10 本地区域或 \fBsolaris10\fR 标记区域的 \fBzonepath\fR 的 \fBcpio\fR(1)、\fBpax\fR(1) \fBxustar\fR 或 \fBzfs\fR 归档文件的路径。\fBcpio\fR 和 \fBzfs\fR 归档文件可以使用 \fBgzip\fR 或 \fBbzip2\fR 进行压缩。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIsysidcfg\fR\fR
+.ad
+.RS 15n
+.rt  
+指定 \fIsysidcfg\fR 文件将导致连接后在区域上发生 sys-unconfig。然后 \fIsysidcfg\fR 文件应用到区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIpath\fR\fR
+.ad
+.RS 15n
+.rt  
+到已安装的 Solaris 10 本地区域或 \fBsolaris10\fR 标记区域的 \fBzonepath\fR 的 \fBzonepath\fR 目录的路径。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclone\fR [\fB-c\fR \fBsysidcfg\fR]\fR
+.ad
+.sp .6
+.RS 4n
+安装某个区域时，可直接复制现有的已安装区域。该子命令是一种备选的区域安装方法。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fBsysidcfg\fR\fR
+.ad
+.RS 15n
+.rt  
+提供取消配置克隆的区域后将应用的 \fIsysidcfg\fR 文件。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall\fR [\fB-a\fR \fIarchive\fR] [\fB-d\fR \fIpath\fR] [\fB-p\fR] [\fB-s\fR] [\fB-u\fR] [\fB-v\fR] \e\fR
+.ad
+.br
+.na
+\fB[\fB-c\fR \fBsysidcfg\fR] \fR
+.ad
+.sp .6
+.RS 4n
+将指定的 Solaris 10 系统映像安装到区域中。要求使用 \fB-u\fR 或 \fB-p\fR 选项\fB以及\fR \fB-a\fR 或 \fB- d\fR 选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarchive\fR\fR
+.ad
+.sp .6
+.RS 4n
+到已安装的 Solaris 10 系统的 \fBflash_archive\fR(4)、\fBcpio\fR(1)、\fBpax\fR(1) \fBxustar\fR、\fBzfs\fR 归档文件或级别 \fB0\fR \fBufsdump\fR(1M) 的路径。\fBcpio\fR 和 \fBzfs\fR 归档文件可以使用 \fBgzip\fR 或 \fBbzip2\fR 进行压缩。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIsysidcfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供安装后将应用的 \fIsysidcfg\fR 文件。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+到已安装的 Solaris 10 系统的根目录的路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+在安装区域后保留系统配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+无提示安装。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+安装区域后对区域运行 \fBsys-unconfig\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+安装过程的详细输出。
+.RE
+
+.RE
+
+.SS "应用程序支持"
+.sp
+.LP
+\fBsolaris10\fR 区域只支持用户级的 Solaris10 应用程序。不能使用 \fBsolaris10\fR 区域中的 Solaris 10 设备驱动程序或 Solaris 10 内核模块。不过，取决于内核模块，您可能能够将最新的 Solaris 内核模块版本用于 Solaris 10 用户级应用程序。
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/zones/brand/brand-solaris10
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcpio\fR(1)、\fBmdb\fR(1)、\fBpax\fR(1)、\fBzlogin\fR(1)、\fBdtrace\fR(1M)、\fBufsdump\fR(1M)、\fBzfs\fR(1M)、\fBzoneadm\fR(1M)、\fBzonecfg\fR(1M)、\fBflash_archive\fR(4)、\fBattributes\fR(5)、\fBbrands\fR(5)、\fBzones\fR(5)

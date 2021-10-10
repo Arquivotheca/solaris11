@@ -1,0 +1,480 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH poolcfg 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+poolcfg \- リソースプール構成ファイルの作成および変更
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/poolcfg\fR \fB-c\fR \fIcommand\fR [\fB-d\fR | [\fIfilename\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/poolcfg\fR \fB-f\fR \fIcommand_file\fR [\fB-d\fR | [\fIfilename\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/poolcfg\fR \fB-h\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpoolcfg\fR ユーティリティーは、プールやセットに対する構成操作を行います。これらの操作は既存の構成に対して実行され、「指定された構成ファイルを変更する」という方法を取ります。\fB-d\fR オプションを使用した場合、カーネル状態に対して変更が加えられます。結果として得られた構成を実際に有効化するには、\fBpooladm\fR(1M) ユーティリティーを使用します。
+.sp
+.LP
+プール構成ファイルは、\fBpoolcfg\fR 自体を使ったか、あるいは \fBlibpool\fR(3LIB) を使って直接構築された構造化ファイルです。
+.sp
+.LP
+プールの動的な場所と書き込み権を指定した \fBpoolcfg\fR の呼び出しは、その動的な場所が書き込みのためにすでに開かれているとハングアップします。
+.sp
+.LP
+このユーティリティーによって作成された構成は、\fBpooladm\fR がターゲットホスト上でこの構成をインスタンス化するために使用できます。 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcommand\fR\fR
+.ad
+.RS 19n
+.rt  
+\fIcommand\fR に特定の編集コマンドを指定します。「\fB使用法\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 19n
+.rt  
+カーネル状態に対して直接操作を行います。\fIfilename\fR は使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.RS 19n
+.rt  
+\fIcommand_file\fR からコマンドを取得します。\fIcommand_file\fR はいくつかの編集コマンドから構成されます。コマンドは 1 行に 1 つずつ記述されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 19n
+.rt  
+編集コマンドの構文に関する詳細情報を表示します。
+.RE
+
+.SH 使用法
+.SS "スクリプト"
+.sp
+.LP
+スクリプトは、複数の編集コマンドで構成されます。スクリプト内の各行に、編集コマンドを 1 つずつ記述します。次のような書式を使用します。 
+.sp
+.ne 2
+.mk
+.na
+\fBinfo [\fIentity-name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+構成 (または指定された部分) を、人間が読める形式で標準出力に表示します。エンティティーが指定されなかった場合、システムの情報が表示されます。したがって、\fBpoolcfg \fR\fB-c\fR\fB 'info' afile\fR は、\fBpoolcfg \fR\fB-c\fR\fB 'info system name' afile\fR と同等の呼び出しになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcreate \fIentity-name\fR [\fIproperty-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたタイプと名前のエンティティーを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdestroy \fIentity-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたエンティティーを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmodify \fIentity-name\fR [\fIproperty-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたエンティティー上の指定された一連のプロパティーを変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBassociate \fIpool-name\fR [\fIresource-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+特定のプールに 1 つ以上のリソースを接続するか、1 つ以上の既存の接続を置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtransfer to [\fIresourcetype\fR] \fIname\fR[\fIcomponent-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上の個別コンポーネントを特定のリソースに転送します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtransfer [\fIquantity\fR] from [\fIresourcetype\fR] [\fIsrc\fR] to [\fItgt\fR]\fR
+.ad
+.sp .6
+.RS 4n
+特定数のリソースを \fIsrc\fR から \fItgt\fR に転送します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtransfer [\fIquantity\fR] to [\fIresourcetype\fR] [\fItgt\fR] from [\fIsrc\fR]\fR
+.ad
+.sp .6
+.RS 4n
+特定数のリソースを \fIsrc\fR から \fItgt\fR に転送します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdiscover\fR
+.ad
+.sp .6
+.RS 4n
+システムエンティティーを 1 つ作成します。このエンティティーには、1 つのプールエンティティーと現在のシステム構成に一致するリソースが格納されます。発見されたすべてのリソースタイプのすべてのリソースがファイル内に記録されます。その際、単一のプールが各リソースタイプのデフォルトリソースを参照するように記録されます。
+.sp
+\fBpoolcfg\fR がカーネルに対して直接操作を行う場合、このコマンドは何も行いません。\fB-d\fR オプションを参照してください。
+.sp
+このコマンドはできるだけ使用しないでください。構成を作成するために推奨されている方法は、\fBpooladm\fR(1M) の \fB-s\fR オプションを使って動的構成をエクスポートすることです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrename \fIentity-name\fR to \fInew-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム上の特定のエンティティーの名前を別の名前に変更します。 
+.RE
+
+.SS "プロパティーリスト"
+.sp
+.LP
+プロパティーリストは次のように指定します。
+.sp
+.in +2
+.nf
+( proptype name = value [ ; proptype name = value ]* )
+.fi
+.in -2
+
+.sp
+.LP
+ここで、特定のプロパティータイプと名前のペアについて、シーケンス内で最後に定義されたものが有効となります。プロパティーを削除するには、\fB~ proptype name\fR を使用します。 
+.SS "リソースリスト"
+.sp
+.LP
+リソースリストは次のように指定します。
+.sp
+.in +2
+.nf
+( resourcetype name [ ; resourcetype name ]* )
+.fi
+.in -2
+
+.sp
+.LP
+ここで、特定のリソースについて、シーケンス内で最後に指定されたものが有効となります。リソースリストでは、削除用の構文は存在しません。
+.SS "コンポーネントリスト"
+.sp
+.LP
+コンポーネントリストは次のように指定します。
+.sp
+.in +2
+.nf
+( componenttype name [ ; componenttype name ]* )
+.fi
+.in -2
+
+.sp
+.LP
+ここで、特定のコンポーネントについて、シーケンス内で最後に指定されたものが有効となります。コンポーネントリストでは、削除用の構文は存在しません。 
+.SS "認識されるエンティティー"
+.sp
+.ne 2
+.mk
+.na
+\fBsystem\fR
+.ad
+.RS 10n
+.rt  
+マシンレベルのエンティティー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpool\fR
+.ad
+.RS 10n
+.rt  
+リソース関連付けの集合に名前を付けたもの
+.RE
+
+.SS "リソースタイプ"
+.sp
+.ne 2
+.mk
+.na
+\fBpset\fR
+.ad
+.RS 8n
+.rt  
+プロセッサセットリソース
+.RE
+
+.SS "プロパティータイプ"
+.sp
+.ne 2
+.mk
+.na
+\fBboolean\fR
+.ad
+.RS 11n
+.rt  
+2 つの値 true、false のいずれかを取ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBint\fR
+.ad
+.RS 11n
+.rt  
+64 ビット符号付き整数値。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBuint\fR
+.ad
+.RS 11n
+.rt  
+64 ビット符号なし整数値。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstring\fR
+.ad
+.RS 11n
+.rt  
+文字列は引用符 (\fB"\fR) で区切ります。\fBformats\fR(5) で定義されている文字エスケープシーケンスがサポートされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfloat\fR
+.ad
+.RS 11n
+.rt  
+科学用の表記はサポートされません。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRpoolcfg スクリプトの記述
+.sp
+.LP
+次の \fBpoolcfg\fR スクリプトは、\fBAccounting\fR という名前のプールと、プロセッサセット \fBsmall-1\fR を作成します。まず、プロセッサセットが作成されます。次に、プールが作成され、それにプロセッサセットが関連付けられます。
+
+.sp
+.in +2
+.nf
+create pset small-1 ( uint pset.min = 1 ; uint pset.max = 4)
+create pool Accounting
+associate pool Accounting ( pset small-1 )
+.fi
+.in -2
+
+.LP
+\fB例 2 \fR\fBpool_0\fR のレポート
+.sp
+.LP
+次のコマンドは、\fBpool_0\fR に関するレポートを、人間が読める形式で標準出力に出力します。 
+
+.sp
+.in +2
+.nf
+ # poolcfg -c 'info pool pool_0' /etc/pooladm.conf
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRpool_0 とその関連付けの削除
+.sp
+.LP
+次のコマンドは、\fBpool_0\fR とその関連付けを削除します。ただし、すでに関連付けられていたリソースは削除しません。
+
+.sp
+.in +2
+.nf
+# poolcfg -c 'destroy pool pool_0' /etc/pooladm.conf
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR現在の構成の表示
+.sp
+.LP
+次のコマンドは現在の構成を表示します。
+
+.sp
+.in +2
+.nf
+$ poolcfg -c 'info' /etc/pooladm.conf
+system example_system
+               int system.version 1
+               boolean system.bind-default true
+               string system.comment Discovered by libpool
+
+               pool pool_default
+                    boolean pool.default true
+                    boolean pool.active true
+                    int pool.importance 5
+                    string pool.comment
+                    string.pool.scheduler FSS
+                    pset pset_default
+
+               pset pset_default
+                    int pset.sys_id -1
+                    string pset.units population
+                    boolean pset.default true
+                    uint pset.max 4294967295
+                    uint pset.min 1
+                    string pset.comment
+                    boolean pset.escapable false
+                    uint pset.load 0
+                    uint pset.size 2
+
+                    cpu
+                         int cpu.sys_id 0
+                         string cpu.comment
+
+                    cpu
+                         int cpu.sys_id 2
+                         string cpu.comment
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRカーネル内で ID 2 の cpu をプロセッサセット pset1 に移動する
+.sp
+.LP
+次のコマンドは、カーネル内で、ID \fB2\fR の \fBcpu\fR をプロセッサセット \fBpset1\fR に移動します。
+
+.sp
+.in +2
+.nf
+# poolcfg -dc 'transfer to pset pset1 ( cpu 2 )'
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRカーネル内で 2 つの cpu をプロセッサセット pset1 からプロセッサセット pset2 に移動する
+.sp
+.LP
+次のコマンドでは、カーネル内で、2 つの \fBcpu\fR をプロセッサセット \fBpset1\fR からプロセッサセット \fBpset2\fR に移動します。
+
+.sp
+.in +2
+.nf
+# poolcfg -dc 'transfer 2 from pset pset1 to pset2'
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/resource-mgmt/resource-pools
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+呼び出しは「確実」です。出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBpooladm\fR(1M), \fBpoolbind\fR(1M), \fBlibpool\fR(3LIB), \fBattributes\fR(5), \fBformats\fR(5)
+.sp
+.LP
+\fI\fR

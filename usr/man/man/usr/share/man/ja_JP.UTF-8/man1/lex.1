@@ -1,0 +1,790 @@
+'\" te
+.\"  Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH lex 1 "2011 年 6 月 8 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+lex \- 字句解析プログラムの生成
+.SH 形式
+.LP
+.nf
+\fBlex\fR [\fB-cntv\fR] [\fB-e\fR | \fB-w\fR] [\fB-V\fR \fB-Q\fR [\fBy\fR | \fBn\fR]] [\fIfile\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBlex\fR ユーティリティーは、文字入力の字句解析に用いる C プログラムを生成します。このプログラムは、\fByacc\fR へのインタフェースとして使用できます。\fBlex\fR ソースコードから生成された C プログラムは、ISO C 標準に準拠しています。通常 \fBlex\fR ユーティリティーは、生成したプログラムを \fBlex.yy.c\fR ファイルに書き出します。\fBlex\fR の終了ステータスがゼロでない場合、このファイルの状態は不確定です。\fBlex\fR の入力言語に関する詳細は、「\fB拡張機能説明\fR」の項を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fR
+.ad
+.RS 11n
+.rt  
+C 言語の動作 (デフォルトのオプション) を示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fR
+.ad
+.RS 11n
+.rt  
+\fBEUC\fR 文字を扱えるプログラムを生成します。本オプションは \fB-w\fR と同時に指定することはできません。\fByytext[\|]\fR の型は \fBunsigned char[\|]\fR となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fR
+.ad
+.RS 11n
+.rt  
+\fB-v\fR によって出力される合計情報の出力を抑止します。\fBlex\fR ソースコード中にテーブルのサイズが指定されず、\fB-v\fR オプションを省略した場合には、この \fB-n\fR が指定されたものと見なされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fR
+.ad
+.RS 11n
+.rt  
+生成したプログラムを、\fBlex.yy.c\fR ファイルではなく標準出力上に書き出します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fR
+.ad
+.RS 11n
+.rt  
+\fBlex\fR 統計のサマリーを標準エラー出力に書き出します (「\fBlex の定義\fR」の項にある \fBlex\fR テーブルサイズの説明を参照してください)。\fBlex\fR ソースコード中にテーブルサイズが指定され、\fB-n\fR オプションが指定されなかった場合、\fB-v\fR オプションを有効にできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBEUC\fR 文字を扱えるプログラムを生成します。本オプションは \fB-e\fR と同時に指定することはできません。\fB-yytext[\|]\fR の型は \fBwchar_t[\|]\fR となります。この点が \fBe\fR 指定と異なります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR \fR
+.ad
+.RS 11n
+.rt  
+標準エラー出力上にバージョン情報を書き出します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Q\fR\fB[y|n]\fR\fR
+.ad
+.RS 11n
+.rt  
+\fB-Qy\fR は、ファイル \fBlex.yy.c\fR にバージョン情報を書き出します。\fB-Qn\fR はバージョン情報を出力しません。デフォルト指定は Qn です。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR \fR
+.ad
+.RS 9n
+.rt  
+入力ファイルのパス名。このような複数の \fIfile\fR を指定すると、すべてのファイルが連結されて 1 つの \fBlex\fR プログラムが生成されます。\fIfile\fR オペランドを 1 つも指定しない場合、または \fIfile\fR オペランドに \fB\(mi\fR を指定した場合には、標準入力が用いられます。
+.RE
+
+.SH 出力
+.sp
+.LP
+\fBlex\fR の出力ファイルについては下記を参照してください。
+.SS "Stdout"
+.sp
+.LP
+\fB-t\fR オプションが指定されると、\fBlex\fR の C ソースコード出力のテキストファイルが標準出力に書き出されます。
+.SS "Stderr"
+.sp
+.LP
+\fB-t\fR オプションが指定されると、\fBlex\fR ソースコード入力の内容に関する情報メッセージ、エラーメッセージ、および警告メッセージが標準エラー出力に書き出されます。
+.sp
+.LP
+\fB-t\fR オプションが指定されなければ、次のようになります。
+.RS +4
+.TP
+1.
+\fBlex\fR ソースコード入力の内容に関する情報メッセージ、エラーメッセージ、および警告メッセージが標準出力または標準エラー出力に書き出されます。
+.RE
+.RS +4
+.TP
+2.
+\fB-v\fR オプションが指定され、\fB-n\fR オプションが指定されなかった場合は、\fBlex\fR 統計情報も標準エラー出力に書き出されます。\fB-n\fR オプションが指定されていないかぎり、\fBlex\fR の\fB定義\fRのセクション (「\fB拡張機能説明\fR」を参照) 内にテーブルサイズが \fB%\fR 演算子で指定された場合も、この統計情報が生成されます。\fB\fR
+.RE
+.SS "出力ファイル"
+.sp
+.LP
+C ソースコードが入ったテキストファイルが \fBlex.yy.c\fR に、または \fB-t\fR オプションが指定された場合は標準出力に書き出されます。
+.SH 拡張機能説明
+.sp
+.LP
+各入力ファイルには \fBlex\fR ソースコードが入っています。これは、C プログラムフラグメントの形式で対応するアクションを定義した正規表現のテーブルです。
+.sp
+.LP
+\fBlex.yy.c\fR がコンパイルされ \fBlex\fR ライブラリにリンクされると (\fB-c89\fR または \fBcc\fR で \fBl\fR\fB l\fR オペランドを使って)、生成されたプログラムは標準入力から文字入力を読み込み、与えられた式と一致する文字列に分割します。
+.sp
+.LP
+式が一致すると、次の処理が行われます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+一致した入力文字列は、NULL で終わっている文字列として \fIyytext\fR に残されます。\fIyytext\fR は、外部文字配列または文字列へのポインタのどちらかです。\fBlex の定義\fRのセクション で説明するように、\fB%array\fR または \fB%pointer\fR 宣言を使えば型を明示選択できますが、デフォルトは \fB%array\fR です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+照合文字列の長さが外部変数 \fBint\fR \fIyyleng\fR に設定されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+式に対応するプログラムフラグメントまたはアクションが実行されます。
+.RE
+.sp
+.LP
+パターン照合の間、\fBlex\fR はパターンセットを検索し、一致するもっとも長い文字列を見つけ出します。複数のルールが同じ長さの文字列に一致する場合は、最初のルールが選択されます。
+.sp
+.LP
+\fBlex\fR ソースの一般形式は、次のとおりです。
+.sp
+.in +2
+.nf
+\fIDefinitions\fR
+%%
+\fIRules\fR
+%%
+\fIUser Subroutines\fR
+.fi
+.in -2
+
+.sp
+.LP
+最初の \fB%%\fR はルール (正規表現とアクション) の開始を示すために必要なもので、2 番目の \fB%%\fR はユーザーサブルーチンが続く場合にのみ必要なものです。
+.sp
+.LP
+\fBlex\fR の \fBDefinitions\fR で、空白文字で始まる行は、C プログラムフラグメントとみなされ、\fBlex.yy.c\fR ファイルの外部定義域にコピーされます。\fB\fR同様に、\fB%{\fR と \fB%}\fR だけの区切り行に囲まれた部分もそのまま、\fBlex.yy.c\fR ファイルの外部定義域にコピーされます。\fB\fR\fB\fR\fB\fR
+.sp
+.LP
+\fIRules\fR セクションの始めに、ほかのルールが指定される前にこのような入力 (空白文字で始まる、または \fB%{\fR と \fB%}\fR だけの区切り行に囲まれる) がある場合、\fBlex.yy.c\fR の \fByylex\fR 関数の変数宣言のあと、および \fByylex\fR 内の最初のコード行の前に書き出されます。そのため \fByylex\fR に入ったときに実行されるアプリケーションコードだけでなく、\fByylex\fR にローカルなユーザー変数をここで宣言できます。
+.sp
+.LP
+\fIRules\fR セクションで、いくつかのルールのあとに空白文字で始まる、または \fB%{\fR と \fB%}\fR だけの区切り行に囲まれる入力があったときに \fBlex\fR が実行するアクションは未定義です。このような入力があったとき、\fByylex\fR 関数の定義にエラーが生じることがあります。
+.SS "lex 内の定義"
+.sp
+.LP
+\fBlex\fR \fB内\fRの\fB定義\fRは最初の \fB%%\fR 区切り行より前にあります。このセクション内で \fB%{\fR と \fB%}\fR 区切り行に囲まれていない行で、しかも空白文字以外で始まっている行は、 \fBlex\fR 置換文字列を定義するものとみなされます。これらの行の形式は、次のとおりです。
+.sp
+.in +2
+.nf
+\fIname   substitute\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIname\fR が ISO C 標準の識別子の条件を満たしていない場合、結果は未定義です。\fIsubstitute\fR 文字列は、ルール内で使用されると \fI{\fR \fIname\fR \fI}\fR 文字列を置き換えます。この状況で \fIname\fR 文字列が認識されるのは、中括弧が使用されていて、大括弧や二重引用符で囲まれていないときだけです。
+.sp
+.LP
+\fBlex\fR \fB内\fRの\fB定義\fRセクションでは、\fB%\fR (パーセント記号) で始まりその後ろに \fBs\fR または \fBS\fR で始まる英数字語が続く行は、開始条件セットを定義します。\fB%\fR (パーセント記号) で始まりその後ろに \fBx\fR または \fBX\fR で始まる英数字語が続く行は、排他的な開始条件セットを定義します。生成されたスキャナが \fB%s\fR 状態のときは、状態が指定されていないパターンもアクティブになります。\fB%x\fR 状態では、このようなパターンはアクティブになりません。最初の語を除いた行の残りは、空白文字で区切られた開始条件名とみなされます。開始条件名は、定義名と同じ方法で作成されます。「\fBlex の正規表現\fR」の項で説明するように、開始条件は、正規表現の照合をいくつかの状態に制限するときに使用できます。
+.sp
+.LP
+\fBlex\fR \fB内\fRの\fB定義\fRセクションで、次の排他的な宣言の 2 つのうちどちらかを使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%array\fR \fR
+.ad
+.RS 13n
+.rt  
+\fIyytext\fR の型を NULL で終わる文字配列と宣言します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%pointer\fR \fR
+.ad
+.RS 13n
+.rt  
+\fIyytext\fR の型を NULL で終わる文字配列へのポインタと宣言します。
+.RE
+
+.sp
+.LP
+\fIyytext\fR を変更するために、\fB%pointer\fR オプションと同時に \fByyless\fR 関数を使用することはできません。
+.sp
+.LP
+\fB%array\fR はデフォルトです。\fB%array\fR が指定されている (または \fB%array\fR と \fB%pointer\fR の 2 つとも指定されていない) 場合に、外部参照先を \fIyyext\fR にするには次のように書式を宣言します。
+.sp
+.LP
+\fBextern char\fR\fI yytext\fR\fB[\|]\fR
+.sp
+.LP
+\fB%pointer\fR が指定されている場合、外部参照先の書式は次のとおりです。
+.sp
+.LP
+\fBextern char *\fR\fIyytext\fR\fB;\fR
+.sp
+.LP
+\fBlex\fR では、\fBlex 内の定義\fRセクションの特定の内部テーブルサイズの設定を宣言できます。次の表に、宣言を示します。
+.sp
+.LP
+\fBlex\fR での\fBテーブル\fR\fBサイズ\fR\fB宣言\fR\fB\fR
+.sp
+
+.sp
+.TS
+tab() box;
+cw(1.28i) cw(2.94i) cw(1.28i) 
+lw(1.28i) lw(2.94i) lw(1.28i) 
+.
+\fB宣言\fR\fB機能説明\fR\fBデフォルト\fR
+_
+\fB%p\fR\fIn\fRポジションの数2500
+\fB%n\fR\fIn\fR状態の数500
+\fB%a\fR\fI n\fR遷移の数2000
+\fB%e\fR\fIn\fR解析ツリーのノード数1000
+\fB%k\fR\fIn\fRパック文字クラスの数10000
+\fB%o\fR\fIn\fR出力配列のサイズ3000
+.TE
+
+.sp
+.LP
+\fBlex\fR により生成されたプログラムは、補助コードセットの \fBEUC\fR 文字を含む入力データを処理するため、\fB-e\fR または \fB-w\fR のいずれかのオプションの指定を必要とします。この両オプションがともに省略されると、\fByytext\fR の型は \fBchar[\|]\fR となり、生成されたプログラムは \fBASCII\fR 以外のコードセットを扱うことはできません。
+.sp
+.LP
+\fB-e\fR オプションを使用すると、\fByytext\fR の型は \fBunsigned\fR \fBchar[\|]\fR となり、\fByyleng\fR は一致した文字列の\fIバイト\fR数を示すことになります。マクロ \fBinput()\fR、\fBunput(\fIc\fR)\fR、および \fBoutput(\fIc\fR)\fR は、通常の \fBASCII\fR \fBlex\fR と同様に、バイトを基準とした \fBI/O\fR を実行しなければなりません。\fB-e\fR オプションで使用できる変数はほかに 2 つあります。それは \fByywtext\fR と \fByywleng\fR で、それぞれ \fB-w\fR オプション指定時の \fByytext\fR および \fByyleng\fR と同じ動きをします。
+.sp
+.LP
+\fB-w\fR オプションを指定すると、\fByytext\fR の型は \fBwchar_t[\|]\fR となり、\fByyleng\fR には一致した文字列の\fI文字\fR数が記録されます。ユーザーがこのオプションを使って独自の \fBinput()\fR、\fBunput(\fIc\fR)\fR、または \fBoutput(\fR\fIc\fR\fB)\fR マクロを指定するのであれば、それらはワイド文字 (\fBwchar_t\fR) の形式で \fBEUC\fR 文字を返したり受け取ったりするよう設計しなければなりません。これによって、ユーザーのプログラムと lex 内部との間に別のインタフェースを設け、ほかのプログラムの処理速度を上げることが可能となります。
+.SS "lex 内のルール"
+.sp
+.LP
+\fBlex\fR ソースファイル\fB内\fRの\fBルール\fRは、左のカラムには正規表現、右のカラムにはその正規表現が認識されたときに実行されるアクション (C プログラムフラグメント) が入ったテーブルです。
+.sp
+.in +2
+.nf
+\fIERE action\fR
+\fIERE action\fR
+\&...
+.fi
+.in -2
+
+.sp
+.LP
+行の拡張正規表現 (ERE) 部分と \fIaction\fR は、1 つ以上の空白文字で区切られます。空白文字が入った正規表現は、次の条件の 1 つが満たされる場合に認識されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+表現全体が二重引用符で囲まれている
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+二重引用符または大括弧内に空白文字がある
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各空白文字の前にバックスラッシュがある
+.RE
+.SS "lex 内のユーザーサブルーチン"
+.sp
+.LP
+ユーザーサブルーチンセクション内のものはすべて、\fBlex.yy.c\fR の \fByylex\fR のあとにコピーされます。
+.SS "lex 内の正規表現"
+.sp
+.LP
+\fBlex\fR ユーティリティーは、\fBregex\fR(5) で記述されている拡張正規表現 (ERE) セットをサポートします。ただし次のように追加された構文と、例外となる構文があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\|.\|.\|.\fR\fR
+.ad
+.RS 13n
+.rt  
+二重引用符で囲まれた文字列は、二重引用符内の文字そのものを表します。ただし、バックスラッシュエスケープは認識されます (次の表を参照してください)。バックスラッシュエスケープシーケンスは、閉じる引用符で終端されます。たとえば \fB"\|\e\|01""1"\fR は、8 進数の \fB1\fR と後続の文字 \fB1\fR という単一の文字列を表します。
+.RE
+
+.sp
+.LP
+\fI<\fR\fIstate\fR\fI>\fR\fIr\fR
+.sp
+.ne 2
+.mk
+.na
+\fB<\fIstate1\fR, \fIstate2\fR, \|.\|.\|.\|>\fIr\fR\fR
+.ad
+.sp .6
+.RS 4n
+正規表現 \fIr\fR が照合されるのは、プログラムが \fIstate\fR、\fIstate1\fR などによって示される開始条件の 1 つにあるときだけです。詳細については、「\fBlex 内のアクション\fR」の項を参照してください。 (以降本書では、印刷上の規則の例外として、たとえば <\fIstate\fR> はメタ変数を表さず、記号を囲むリテラル山括弧文字を表します)。このように開始条件が認識されるのは、正規表現の始めだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIr\fR/\fIx\fR \fR
+.ad
+.sp .6
+.RS 4n
+正規表現 \fIr\fR が照合されるのは、その後ろに正規表現 \fIx\fR が続いているときだけです。\fIyytext\fR で戻されるトークンは、\fIr\fR とだけ照合されます。\fIr\fR の末尾部分が \fIx\fR の先頭部分と一致する場合の結果は不確定です。\fIr\fR 式には末尾コンテキストや \fB$\fR (行の終わり) 演算子は含めることができません。\fIx\fR には \fB&;\fR (行の始まり) 演算子、末尾コンテキスト、\fB$\fR 演算子は含めることができません。つまり \fBlex\fR 正規表現には 1 つの末尾コンテキストしか含めず、\fB^\fR 演算子が使用できるのはこのような式の始めだけです。末尾コンテキスト演算子 \fB/\fR (スラッシュ) は、括弧でグループ化できないよう制限されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB{\fR\fIname\fR\fB}\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR が \fIDefinitions\fR セクションからの置換記号の 1 つである場合、左右の中括弧も含めた文字列が \fIsubstitute\fR 値で置き換えられます。拡張正規表現内では、\fIsubstitute\fR 値は括弧で囲まれているものとして扱われます。\fB{\fR\fIname\fR\fB}\fR が大括弧や二重引用符で囲まれている場合、置換は行われません。
+.RE
+
+.sp
+.LP
+\fBERE\fR 内では、バックスラッシュ文字 (\fB\|\e\e\fR, \fB\e\|a\fR, \fB\e\|b\fR, \fB\e\|f\fR, \fB\e\|n\fR, \fB\e\|r\fR, \fB\e\|t\fR, \fB\e\|v\fR) をエスケープシーケンスの始まりとみなします。さらに次の表のエスケープシーケンスが認識されます。
+.sp
+.LP
+リテラル復帰改行文字 (NEWLINE) は、\fBERE\fR 内ではありえません。復帰改行文字を表現するには、エスケープシーケンス \fB\e\|n\fR が使用されます。復帰改行文字は、ピリオド演算子とは照合できません。
+.sp
+.LP
+\fBlex 内のエスケープシーケンス\fR
+.sp
+
+.sp
+.TS
+tab() box;
+cw(1.22i) cw(2.92i) cw(1.36i) 
+cw(1.22i) cw(2.92i) cw(1.36i) 
+.
+lex 内のエスケープシーケンス
+_
+エスケープシーケンス機能説明 意味
+_
+\e\|\fIdigits\fRT{
+バックスラッシュ文字とそのあとの 1、2、または 3 桁の 8 進数の最長シーケンス (01234567)。すべての桁が 0 なら (つまり NULL 文字なら)、動作は未定義
+T}T{
+エンコーディングが 1、2、または 3 桁の 8 進数で表現される文字。複数バイト文字は、この種のエスケープシーケンスがいくつか連続したものを必要とします。そのとき、各バイトの先頭に \e が必要です。
+T}
+_
+\e\|\fBx\fR\fIdigits\fRT{
+バックスラッシュ文字と、そのあとに続く 16 進文字の最長シーケンス (01234567abcdefABCDEF)。すべての桁が 0 (つまり NULL 文字) の場合、動作は未定義です。
+T}T{
+エンコーディングが 16 進整数で表現される文字。
+T}
+_
+\e\|\fIc\fRT{
+バックスラッシュ文字と、そのあとに続くこの表に記載されていない文字。(\|\e\e, \e\|a,\e\|b, \e\|f,\ee\|n, \e\|r,\e\|t, \e\|v)
+T}文字 c、変更なし。
+.TE
+
+.sp
+.LP
+\fBlex\fR 用の拡張正規表現の優先順位は、下の表に示すとおりです。優先度の高い順に並んでいます。
+.sp
+.LP
+エスケープ文字エントリは、これらが演算子であることを意味しませんが、真の演算子との関係を示すため、表に組み込まれています。この項で説明した配置方法の制限のため、開始条件、末尾コンテキスト、およびアンカー指定は省略されています。これらは \fBERE\fR の先頭または末尾にだけ指定できます。 
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) cw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+lex 内での ERE 優先順位
+_
+\fI照合関連の括弧記号\fR\fB[= =] [: :] [. .]\fR
+\fIエスケープ文字\fR\fB\e<\fR\fIspecial character\fR>
+\fI大括弧表現\fR\fB[ ]\fR
+\fI引用\fR\fB".\|.\|."\fR
+\fIグループ化\fR\fB()\fR
+\fI定義\fR\fB{\fR\fIname\fR}
+\fI単一文字 RE 重複\fR\fB* + ?\fR
+\fI連結\fR
+\fIインターバル表現\fR\fB{\fR\fIm\fR,\fIn\fR}
+\fI択一\fR\fB|\fR
+.TE
+
+.sp
+.LP
+\fBERE\fR アンカー演算子 (\fB\|^\fR と \fB$\fR\|) は、表にはありません。\fBlex\fR 正規表現では、これらの演算子の使用が次のように制限されています。\fB^\fR 演算子は正規表現の始めにしか使用できず、\fB$\fR 演算子は最後にしか使用できません。演算子は正規表現全体に適用されます。そのためたとえば、(\fB^abc)|(def$\fR) などのパターンは未定義です。これは 2 つの別々のルールとして書くことができます。正規表現 \fB^abc\fR と正規表現 \fBdef$\fR です。この 2 つは、特殊な \fB|\fR アクション (下記を参照のこと) を介して共通なアクションを共有します。パターンが \fB^abc|def$\fR と書かれたら、\fBabc\fR または \fBdef\fR だけの行と一致します。
+.sp
+.LP
+一般の \fBERE\fR ルールと異なり、従来のほとんどの \fBlex\fR の実装では組み込み型アンカーは許可されていません。組み込み型アンカーの例としては、\fBfoo\fR が完全な語として存在するときに foo と照合させるための (^)foo($) などのパターン用があります。これは、次の既存の \fBlex\fR 機能を使えば可能です。
+.sp
+.in +2
+.nf
+^foo/[ \e\|n]|
+" foo"/[ \e\|n]    /* found foo as a separate word */
+.fi
+.in -2
+
+.sp
+.LP
+なお \fB$\fR も末尾コンテキストの形式であり (\fB/\e\|n\fR と等価)、その演算子の別のインスタンスを含む正規表現では 使用できません (上の末尾コンテキストの説明を参照してください) 。
+.sp
+.LP
+追加の正規表現末尾コンテキスト演算子 \fB/\fR (スラッシュ) は、二重引用符で囲む (\fB"\|/\|"\fR)、前にバックスラッシュを付ける (\fB\e\|/\fR)、または大括弧で囲めば (\fB[\|/\|]\fR)、通常の文字として使用できます。開始条件 \fB<\fR と \fB>\fR 演算子は、正規表現の始めの開始条件においてだけ特別とみなされます。正規表現のその他の場所では、通常の文字として扱われます。
+.sp
+.LP
+次の例を見れば、\fBlex\fR 正規表現と本書に出てくるその他の正規表現との違いがわかります。\fIr\fR/\fIx\fR 形式の正規表現の場合、\fIr\fR と一致する文字列が常に返されます。\fIx\fR の先頭が \fIr\fR の末尾部分と一致する場合に混乱が生じることがあります。たとえば、正規表現 a*b/cc と入力 \fBaaabcc\fR が与えられると、\fIyytext\fR にはこの照合結果として \fBaaab\fR が入ります。しかし正規表現 x*/xy と入力 \fBxxxy\fR が与えられると、\fBxxx\fR は x* に一致するため、\fBxx\fR ではなく \fBxxx\fR が返されます。
+.sp
+.LP
+ルール ab*/bc では、\fIr\fR の最後の b* が末尾コンテキストの先頭まで一致するため、結果は不確定です。\fI\fRただしこのルールが ab/bc なら、テキスト \fBab\fR にテキスト \fBbc\fR が続く場合に一致します。この場合 \fIr\fR は \fIx\fR の先頭の b までに一致しないので、結果は確定的です。
+.SS "lex 内のアクション"
+.sp
+.LP
+\fBERE\fR が一致したときに実行されるアクションは、C プログラムフラグメントまたは次に説明する特殊なアクションです。プログラムフラグメントには 1 つ以上の C ステートメントと特殊なアクションが入っています。空の C ステートメント \fB;\fR は、有効なアクションです。このようなルールのパターン部分に一致する \fBlex.yy.c\fR 入力内の文字列は、実際には無視またはスキップされます。ただしアクションの不在は無効であり、このような状況で \fBlex\fR が実行するアクションは未定義です。
+.sp
+.LP
+C ステートメントと特殊アクションも含め、アクションについての仕様は、 中括弧で囲まれていれば複数行にわたることができます。
+.sp
+.in +2
+.nf
+ERE <one or more blanks> { program statement
+program statement }
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBlex.yy.c\fR プログラムへの入力内の文字列がどの表現とも一致しないときは、デフォルトアクションとして、文字列が出力にコピーされます。\fBlex\fR によって生成されるプログラムのデフォルトの動作は、入力を読み込んで出力へコピーするだけなので、 \fB%%\fR だけの最小 \fBlex\fR ソースプログラムは、入力をそのまま出力へコピーするだけの C プログラムを生成します。
+.sp
+.LP
+4 つの特殊アクションが使用可能です。
+.sp
+.in +2
+.nf
+|       ECHO;      REJECT;      BEGIN
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB|\fR
+.ad
+.RS 12n
+.rt  
+アクション \fB|\fR は、次のルールのアクションがこのルールのアクションであることを意味します。ほかの 3 つのアクションとは異なり、\fB|\fR は中括弧で囲んだりセミコロンで終わることができません。それは、ほかの動作なしで、単独で指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBECHO;\fR \fR
+.ad
+.RS 12n
+.rt  
+文字列 \fIyytext\fR の内容を出力に書き出します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBREJECT;\fR \fR
+.ad
+.RS 12n
+.rt  
+1 つの式だけを入力内の文字列と一致させるのが普通です。\fBREJECT\fR は「現在の入力と一致する次の式まで継続する」という意味で、現在のルールが実行されたあと、2 番目のルールが何であれ同じ入力に対して実行されます。\fB\fRそのため、1 つの入力文字列または重なる入力文字列に対して複数のルールを一致させて実行できます。たとえば、正規表現 \fBxyz\fR 、正規表現 \fBxy\fR、および入力 \fBxyz\fR が与えられると、通常は正規表現 \fBxyz\fR だけが一致します。次の照合は z のあとから開始されます。\fBxyz\fR ルールの最後のアクションが \fBREJECT\fR なら、このルールと \fBxy\fR ルールの両方が実行されます。\fByylex\fR の別の部分への \fBgoto\fR と同じように、制御の流れが継続しないような方法で、\fBREJECT\fR アクションを実装できます。\fBREJECT\fR を使用すると、スキャナはある程度大きくなり、実行が遅くなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBEGIN\fR \fR
+.ad
+.RS 12n
+.rt  
+アクション
+.sp
+\fBBEGIN\fR \fInewstate\fR\fB;\fR
+.sp
+は、状態 (開始条件) を \fInewstate\fR に切り替えます。文字列 \fInewstate\fR が \fBlex\fR \fB内\fRの\fB定義\fRセクションに開始条件として宣言されていないと、結果は不確定です。初期状態は、数字の \fB0\fR または \fBINITIAL\fR トークンで示されます。
+.RE
+
+.sp
+.LP
+次に説明する関数やマクロは、\fBlex\fR 入力内のユーザーコードをアクセスできます。\fBlex\fR の C コード出力に示されるかどうか、および \fBc89\fR や \fBcc\fR への \fB\fR\fB-l\fR\fB l\fR オペランドを通してだけアクセス可能かどうかは不確定です (\fBlex\fR ライブラリ)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR \fByylex(void)\fR \fR
+.ad
+.RS 21n
+.rt  
+入力の字句を解析します。これは \fBlex\fR ユーティリティーによって生成される主な関数です。この関数は、入力の終わりに達するとゼロを返します。その他の場合は、選択されたアクションによって決定されたゼロ以外の値 (トークン) を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR \fByymore(void)\fR \fR
+.ad
+.RS 21n
+.rt  
+呼び出されると、次の入力文字列がいつ認識されるかを示します。置き換えるのではなく、\fIyytext\fR の現在の値に付加されます。これに合わせて \fIyyleng\fR の値が調整されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR\fIyyless(int\fR\fB n\fR\fI)\fR \fR
+.ad
+.RS 21n
+.rt  
+NULL で終わっている \fIyytext\fR 内の最初の \fIn\fR 文字を記憶し、残りの文字は読み取っていないものとします。これに合わせて \fIyyleng\fR の値が調整されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR \fBinput(void)\fR \fR
+.ad
+.RS 21n
+.rt  
+入力から次の文字を返します。ファイルが終わりのときはゼロを返します。ストリームポインタ \fIyyin\fR から、おそらく中間バッファーを介して入力を得ます。そのためスキャニングの開始後に \fIyyin\fR の値を変更した場合の影響は未定義です。読み込まれた文字列は、スキャナの入力ストリームからそのまま取り除かれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR \fBunput(int\fR \fB\fIc\fR\fR\fB)\fR \fR
+.ad
+.RS 21n
+.rt  
+文字 \fIc\fR を入力に返します。次の式が一致するまで \fIyytext\fR と \fIyyleng\fR は未定義です。入力された文字より多い文字に対して \fIunput\fR を使用すると、結果は不確定です。
+.RE
+
+.sp
+.LP
+次の関数は \fB\fR\fB-l\fR\fB l\fR オペランドを通してアクセス可能な \fBlex\fR ライブラリ内にだけ出てきます。そのためこれらの関数は移植性のあるアプリケーションによって再定義可能です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR \fByywrap(void)\fR \fR
+.ad
+.sp .6
+.RS 4n
+ファイルの終わりで \fByylex\fR によって呼び出されます。デフォルトの \fByywrap\fR は常に 1 を返します。アプリケーションが \fByylex\fR に別の入力ソースで処理を継続させたい場合、アプリケーションは関数 \fByywrap\fR を組み込めます。これは別のファイルと外部変数 \fBFILE\fR *\fIyyin\fR を関連付け、ゼロの値を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR \fBmain(int\fR \fB\fIargc\fR,\fR \fBchar\fR \fB*\fIargv\fR[\|])\fR \fR
+.ad
+.sp .6
+.RS 4n
+字句解析のために \fByylex\fR を呼び出してから、終了します。ユーザーコードにはアプリケーションに固有な動作を実行する \fBmain\fR を組み込んだり、必要なら \fByylex\fR を呼び出したりできます。
+.RE
+
+.sp
+.LP
+移植性のあるアプリケーションによって確実に再定義可能なのは \fBlibl.a\fR の関数だけだという理由によって、前述の関数は 2 つのグループに分割されています。
+.sp
+.LP
+\fBlex\fR によって生成される名前で、\fBinput\fR 、\fBunput\fR、\fBmain\fR を除くすべての外部およびスタティック名には、接頭辞 \fByy\fR または \fBYY\fR が付きます。
+.SH 使用法
+.sp
+.LP
+\fBlex 内のルール\fRセクションではアクションのない \fBERE\fR は受け入れられないことが、移植性のあるアプリケーションに警告されますが、\fBlex\fR がエラーとして検出する必要はありません。これはコンパイルまたは実行時エラーを引き起こすことがあります。
+.sp
+.LP
+\fBinput\fR の目的は、字句分析に関して、入力ストリームから文字を 取り出し破棄することです。コメントの先頭を検出したら、コメント全体を破棄するという使い方が一般的です。
+.sp
+.LP
+\fBlex\fR ユーティリティーは、\fBlex\fR ソースコードや生成された字句アナライザにおける正規表現の扱いが完全には国際化されていません。字句アナライザの実行時に、指定された環境に応じて \fBlex\fR ソース内の正規表現を解析することが理想とされますが、現在の \fBlex\fR テクノロジではこれは不可能です。さらに \fBlex\fR によって生成される字句アナライザの特徴は、ロケール固有なことが多い入力言語の字句要件に密接に結びついている必要があります。(たとえば、フランス語に使用するアナライザを作成しても、自動的にその他の言語の処理に役立つことはありません)。
+.SH 使用例
+.LP
+\fB例 1 \fRlex の使用
+.sp
+.LP
+次の例は、Pascal に似た構文用の簡単なスキャナを実装する \fBlex\fR プログラムです。
+
+.sp
+.in +2
+.nf
+%{
+/* need this for the call to atof() below */
+#include <math.h>
+/* need this for printf(), fopen() and stdin below */
+#include <stdio.h>
+%}
+
+DIGIT    [0-9]
+ID       [a-z][a-z0-9]*
+%%
+
+{DIGIT}+	{
+                       printf("An integer: %s (%d)\en", yytext,
+                       atoi(yytext));
+                       }
+
+{DIGIT}+"."{DIGIT}*    {
+                       printf("A float: %s (%g)\en", yytext,
+                       atof(yytext));
+                       }
+
+if|then|begin|end|procedure|function        {
+                       printf("A keyword: %s\en", yytext);
+                       }
+
+{ID}                   printf("An identifier: %s\en", yytext);
+
+"+"|"-"|"*"|"/"        printf("An operator: %s\en", yytext);
+
+"{"[^}\en]*"}"         /* eat up one-line comments */
+
+[ \et\en]+               /* eat up white space */
+
+\&.                      printf("Unrecognized character: %s\en", yytext);
+
+%%
+
+int main(int argc, char *argv[\|])
+{
+                      ++argv, --argc;  /* skip over program name */
+                      if (argc > 0)
+		                  yyin = fopen(argv[0], "r");
+                      else
+                      yyin = stdin;
+	
+                      yylex();
+}
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBlex\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL \fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件developer/base-developer-utilities
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fByacc\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBregex\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fB\|.l\fR ファイルの \fByyback()\fR、\fByywrap()\fR、\fByylock()\fR などのルーチンが外部 C 関数となる場合には、C++ プログラムをコンパイルするコマンド行で \fB__EXTERN_C__\fR マクロを定義する必要があります。例: 
+.sp
+.in +2
+.nf
+example%  \fBCC -D__EXTERN_C__ ... file\fR
+.fi
+.in -2
+.sp
+

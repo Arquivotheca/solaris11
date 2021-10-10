@@ -1,0 +1,609 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.TH vrrpadm 1M "2009 年 10 月 14 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+vrrpadm \- VRRP 管理ツール
+.SH 形式
+.LP
+.nf
+\fBvrrpadm\fR \fBcreate-router\fR \fB-V\fR \fIvrid\fR \fB-l\fR \fIlink\fR \fB-A\fR \fIinet\fR | \fIinet6\fR
+        [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBdelete-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBdisable-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBenable-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBmodify-router\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR]
+        [\fB-o\fR \fIflags\fR] [\fIrouter_name\fR]
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBshow-router\fR [\fB-P\fR | \fB-x\fR] [\fB-p\fR] [\fB-o\fR \fIfield\fR[,...]] [\fIrouter_name\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBvrrpadm\fR コマンドは、システム内の VRRP (Virtual Router Redundancy Protocol) サービスを管理するために使用します。
+.sp
+.LP
+VRRP は選択プロトコルを指定し、この選択プロトコルによって、仮想ルーターの役割が LAN 内のいずれかの VRRP ルーターに動的に割り当てられます。任意の時点で、仮想ルーターに関連付けられた IPv4 または IPv6 仮想アドレスを制御する VRRP ルーター (「\fBマスター\fR」と呼ばれる) は 1 つだけであり、マスターはそれらの IP アドレスに送信されたパケットを転送します。マスターが使用不可能になった場合に、選択処理によって転送の役割が動的にフェイルオーバーされます。
+.sp
+.LP
+各 \fBvrrpadm\fR サブコマンドの処理対象は VRRP ルーターです。VRRP ルーターは管理者から与えられた名前で識別されます。1 つの LAN 内で同じ VRID とアドレスファミリを持つ複数の VRRP ルーターによって 1 つの仮想ルーターが構成されます。仮想ルーターは一連の仮想 IP アドレスを保護します。
+.sp
+.LP
+システム上に複数の VRRP ルーターが存在し、各ルーターがそれぞれ異なる仮想ルーターに所属できます。
+.SH サブコマンド
+.sp
+.LP
+次のサブコマンドがサポートされています。\fBshow-router\fR 以外のすべてのサブコマンドでは、\fBsolaris.network.vrrp\fR 承認が必要となります。\fBshow-router\fR サブコマンドに特別な承認は不要です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm create-router\fR \fB-V\fR \fIvrid\fR \fB-l\fR \fIlink\fR \fB-A\fR \fIinet\fR | \fIinet6\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された構成で VRRP ルーターを作成します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIinet\fR | \fIinet6\fR、\fB--address_family\fR=\fIinet\fR | \fIinet6\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスファミリ。IPv4、IPv6 のいずれか。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIadv_interval\fR、\fB--adv_interval\fR=\fIadv_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+通知間隔 (ミリ秒)。デフォルトは \fB1000\fR (1 秒) です。有効な間隔は、10 から 40950 の範囲です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR、\fB--link\fR=\fIlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの構成先となるデータリンク。これにより、この VRRP ルーターが動作する LAN が決まります。データリンクは物理リンク、VLAN、集約のいずれかになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIflags\fR、\fB--flags\fR=\fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+横取りモードと受け入れモードをコンマで区切ったもの。使用可能な値は次のとおりです。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpreempt\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBun_preempt\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBaccept\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnoaccept\fR
+.RE
+デフォルトでは、どちらのモードも真に設定されます。
+.sp
+\fBpreempt\fR モードは、優先度の高い有効なバックアップルーターが優先度の低いマスタールーターを横取りするかどうかを制御します。\fBpreempt\fR モードが真の場合は横取りが許可されます。それ以外の場合は横取りが禁止されます。VRRP ルーターが仮想 IP アドレスの所有者である場合には、\fBpreempt\fR モードが真である必要があります。
+.sp
+\fBaccept\fR モードは、仮想 IP アドレスのローカルパケットの受け入れを制御します。\fBaccept\fR モードが真の場合、マスターは仮想 IP アドレスに送信されたパケットを受け入れる必要があります。\fBaccept\fR モードが偽の場合、マスターはそれらのパケットを受け入れませんが、それらの受け入れない仮想 IP アドレスに対する ARP 要求や ND 要請/通知には応答します。さらにマスターは、このサブコマンドで指定されたルーターのパケットも転送する必要があります。VRRP ルーターが仮想 IP アドレスの所有者である場合には、\fBaccept\fR モードが真である必要があります。このオプションの構文の例を次に示します。
+.sp
+.in +2
+.nf
+-o preempt,no_accept
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpriority\fR、\fB--priority\fR=\fIpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された VRRP ルーターの、マスター選択で使用される優先度。この値が高いほど、このルーターがマスターとして選択される可能性が高くなります。
+.sp
+デフォルト値は 255 です。この値は、指定された VRRP ルーターが IP アドレス所有者であり、すべての仮想 IP アドレスを所有していることを示します。IP アドレス所有者は、ICMP ping や TCP 接続などで発生する、いずれかの仮想 IP アドレス宛てのパケットに応答します。
+.sp
+1 から 254 の範囲は、仮想ルーターをバックアップする VRRP ルーターで使用できます。マスター選択では、優先度の高い VRRP ルーターが選択されるように重み付けされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR \fIvrid\fR、\fB--VRID\fR=\fIvrid\fR\fR
+.ad
+.sp .6
+.RS 4n
+仮想ルーター識別子 (VRID)。これとアドレスファミリの組み合わせによって、LAN 内の 1 つの仮想ルーターが識別されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの名前。この名前は、ほかの \fBvrrpadm\fR サブコマンドで VRRP ルーターを識別するために使用されます。
+.sp
+有効なルーター名の最大長は、31 文字です。使用可能な文字は、英数字 (a-z、A-Z、0-9) と下線 (「_」) です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBdelete-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIrouter_name\fR で識別される VRRP ルーターを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBdisable-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIrouter_name\fR で識別される仮想ルーターを無効にします。無効化されたルーターは、仮想ルーターのマスター選択処理の対象から外れます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBenable-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIrouter_name\fR で識別される無効化された仮想ルーターを再度有効にします。このルーターが再度、仮想ルーターのマスター選択処理の対象になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBmodify-router\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] [\fIrouter_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIrouter_name\fR で識別される VRRP ルーターの構成を変更します。変更できるのは、優先度、通知間隔、横取りモード、および受け入れモードだけです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpriority\fR、\fB--priority\fR=\fIpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+この VRRP ルーターの新しい優先度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIadv_interval\fR、\fB--adv_interval\fR=\fIadv_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しい通知間隔。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIflags\fR、\fB--flags\fR=\fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しい横取りモードと受け入れモード。どちらか 1 つを指定することも、両方を指定することもできます。両方を指定する場合は、両者の間をコンマで区切ります。例: 
+.sp
+.in +2
+.nf
+-o preempt,no_accept
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBshow-router\fR [\fB-P\fR | \fB-x\fR] [\fB-p\fR] [\fB-o\fR \fIfield\fR[,...]] [\fIrouter_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIrouter_name\fR で識別される VRRP ルーターの情報を表示します。\fIrouter_name\fR が指定されなかった場合は、システム上のすべての VRRP ルーターの情報を表示します。
+.sp
+デフォルトでは (オプションの指定なし)、次のフィールドが表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVRID\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの VRID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの作成先となるデータリンク。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAF\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターのアドレスファミリ。\fBIPv4\fR または \fBIPv6\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+この VRRP ルーターの、マスター選択で使用される優先度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADV_INTV\fR\fR
+.ad
+.sp .6
+.RS 4n
+通知間隔 (ミリ秒)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの現在の状態。\fBINIT\fR (初期化)、\fBBACK\fR (バックアップ)、または \fBMAST\fR (マスター)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMODE\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターに関連付けられたフラグのセット。表示される可能性のある値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+ルーターが有効化されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+横取りモードが真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.RS 5n
+.rt  
+受け入れモードが真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+仮想アドレス所有者。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVNIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+この VRRP ルーター用に作成された VRRP VNIC。
+.sp
+ルーターが有効化されないかぎり、VNIC の名前は時間の経過とともに変化する可能性があります。
+.RE
+
+\fBshow-router\fR サブコマンドのオプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR、\fB--extended\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された VRRP ルーターの追加情報を表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIMARY_IP\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターによって選択されたプライマリ IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVIRTUAL_IPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーター上で構成されている仮想 IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRV_STAT\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの以前の状態。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTAT_LAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+前回の状態遷移からの時間。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR、\fB--peer\fR\fR
+.ad
+.sp .6
+.RS 4n
+バックアップ VRRP ルーターの情報を表示します。このオプションが意味を持つのは、VRRP ルーターがバックアップ状態になっている場合だけです。
+.sp
+表示されるフィールドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPEER\fR\fR
+.ad
+.sp .6
+.RS 4n
+ピア VRRP ルーターのプライマリ IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_PRIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+ピアから受信した通知に含まれていた、ピア VRRP ルーターの優先度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_INTV\fR\fR
+.ad
+.sp .6
+.RS 4n
+ピアから受信した通知に含まれていた通知間隔 (ミリ秒)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_ADV_LAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+前回ピアから通知を受信してからの時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMASTER_DOWN_INT\fR\fR
+.ad
+.sp .6
+.RS 4n
+マスター停止を宣言するまでの時間間隔 (ミリ秒)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP ルーターの情報を、マシン解析可能な形式で表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR=\fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。フィールド名は、前述のフィールドのいずれか、またはすべてのフィールドを表示するための特殊な値 \fBall\fR にする必要があります。デフォルトでは (\fB-o\fR の指定なし)、\fBvrrpadm show\fR はすべてのフィールドを表示します。
+.RE
+
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/network/routing/vrrp
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdladm\fR(1M), \fBvrrpd\fR(1M), \fBattributes\fR(5)

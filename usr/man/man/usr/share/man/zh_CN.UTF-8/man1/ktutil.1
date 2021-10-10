@@ -1,0 +1,208 @@
+'\" te
+.\" 版权所有 1987，1989，麻省理工学院学生信息处理委员会。有关复制和分发信息，请参见文件 kerberosv5/mit-sipb-copyright.h。
+.\" 部分版权所有 2006 Sun Microsystems, Inc. 保留所有权利
+.TH ktutil 1 "2006 年 11 月 16 日" "SunOS 5.11" "用户命令"
+.SH 名称
+ktutil \- Kerberos 密钥表维护实用程序
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/ktutil\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBktutil\fR 命令是用于管理密钥表文件中的密钥列表的交互式命令行界面实用程序。您必须先读入密钥表的密钥列表，然后才能对其进行管理。此外，运行 \fBktutil\fR 命令的用户必须对密钥表具有读取/写入权限。例如，如果密钥表由 root 拥有（通常如此），\fBktutil\fR 必须作为 root 运行才能拥有适当权限。
+.SH 命令
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear_list\fR\fR
+.ad
+.br
+.na
+\fB\fBclear\fR\fR
+.ad
+.RS 23n
+.rt  
+清除当前密钥列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBread_kt\fR \fIfile\fR\fR
+.ad
+.br
+.na
+\fB\fBrkt\fR \fIfile\fR\fR
+.ad
+.RS 23n
+.rt  
+将密钥表读取到当前密钥列表。必须指定要读取的密钥表\fI文件\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwrite_kt\fR \fIfile\fR\fR
+.ad
+.br
+.na
+\fB\fBwkt\fR \fIfile\fR\fR
+.ad
+.RS 23n
+.rt  
+将当前密钥列表写入密钥表\fI文件\fR。必须制定要写入的密钥表文件。如果密钥表文件已存在，当前密钥列表会附加到现有密钥表文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd_entry\fR \fInumber\fR\fR
+.ad
+.br
+.na
+\fB\fBaddent\fR \fInumber\fR\fR
+.ad
+.RS 23n
+.rt  
+添加一项到当前密钥列表。使用密钥列表槽号指定项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete_entry\fR \fInumber\fR\fR
+.ad
+.br
+.na
+\fB\fBdelent\fR \fInumber\fR\fR
+.ad
+.RS 23n
+.rt  
+从当前密钥列表删除项。使用密钥列表槽号指定项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.br
+.na
+\fB\fBl\fR\fR
+.ad
+.RS 23n
+.rt  
+列出当前密钥列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist_request\fR\fR
+.ad
+.br
+.na
+\fB\fBlr\fR\fR
+.ad
+.RS 23n
+.rt  
+列出可用请求（命令）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.br
+.na
+\fB\fBexit\fR\fR
+.ad
+.br
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 23n
+.rt  
+退出实用程序。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR从文件中删除主体
+.sp
+.LP
+以下示例从 \fB/etc/krb5/krb5.keytab\fR 文件中删除 \fBhost/denver@ACME.com\fR 主体。请注意，如果您要删除现有密钥表中的项，必须首先将密钥列表写入临时密钥表，然后使用该临时密钥表覆盖现有密钥表。这是因为 \fBwkt\fR 命令实际上会将当前密钥列表附加到现有密钥表，所以您不能使用它来覆盖密钥表。
+
+.sp
+.in +2
+.nf
+example# \fB/usr/krb5/bin/ktutil\fR
+    ktutil: rkt /etc/krb5/krb5.keytab
+    ktutil: list
+slot KVNO Principal
+---- ---- ---------------------------------------
+   1    8 host/vail@ACME.COM
+   2    5 host/denver@ACME.COM
+    ktutil:delent 2
+    ktutil:l
+slot KVNO Principal
+---- ---- --------------------------------------
+   1    8 host/vail@ACME.COM
+    ktutil:wkt /tmp/krb5.keytab
+    ktutil:q
+example# \fBmv /tmp/krb5.keytab /etc/krb5/krb5.keytab\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/krb5/krb5.keytab\fR\fR
+.ad
+.RS 25n
+.rt  
+Kerberos 客户机的密钥表文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/security/kerberos-5
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令参数是 "Committed"（已确定）。命令输出是 "Uncommitted"（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBkadmin\fR(1M)、\fBk5srvutil\fR(1M)、\fBattributes\fR(5)、\fBkerberos\fR(5) 

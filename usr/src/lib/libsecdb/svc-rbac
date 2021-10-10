@@ -1,0 +1,68 @@
+#! /usr/bin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+
+files='/etc/user_attr /etc/security/auth_attr /etc/security/exec_attr
+    /etc/security/prof_attr'
+
+PKGINST=
+export PKGINST
+PATH=/usr/bin
+export PATH
+
+irbac=/usr/sadm/install/scripts/i.rbac
+
+if [[ ! -x $irbac ]]; then
+	echo "${irbac}: not found."
+	exit $SMF_EXIT_ERR_FATAL
+fi
+
+eval $(grep '^phrase=' $irbac)
+if [[ -z "$phrase" ]]; then
+	echo "${irbac}: can't determine \$phrase."
+	exit $SMF_EXIT_ERR_FATAL
+fi
+
+for f in $files; do
+	#
+	# The current library reads the fragments directly for all databases;
+	# in order to make upgrades possible, we need to run i.rbac only once
+	# to remove the older entries.
+	#
+	if ! grep -s "$phrase" $f > /dev/null 2>&1; then
+		echo /dev/null $f | $irbac
+		chown root:sys $f
+	else
+		#
+		# When we find one updated file, then the rest is also
+		# updated and we bail out.
+		#
+		break
+	fi
+done
+
+exit $SMF_EXIT_OK

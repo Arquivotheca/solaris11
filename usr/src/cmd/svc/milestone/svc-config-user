@@ -1,0 +1,1417 @@
+#!/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+
+#
+# Establish PATH for non-built in commands
+#
+export PATH=/sbin:/usr/bin:/usr/sbin
+
+# Usage
+USAGE="Usage: $0 { start | unconfigure }"
+
+TMP_DIR=/system/volatile
+
+ETC_SHADOW=/etc/shadow
+TMP_SHADOW="${TMP_DIR}/shadow.$$"
+
+ETC_SUDOERS=/etc/sudoers
+TMP_SUDOERS="${TMP_DIR}/sudoers.$$"
+
+ETC_AUTO_HOME=/etc/auto_home
+TMP_AUTO_HOME="${TMP_DIR}/auto_home.$$"
+
+ETC_USER_ATTR=/etc/user_attr
+
+# property group definitions
+# configuration of user account
+PG_USER_ACCOUNT="user_account"
+# unconfiguration of user account
+PG_CONFIGURED_USER_ACCOUNT="configured_user"
+# configuration of root account
+PG_ROOT_ACCOUNT="root_account"
+
+# directory containing initial user profile files
+ETC_SKEL=/etc/skel
+# initial user profile files
+DOT_PROFILE=".profile"
+DOT_BASHRC=".bashrc"
+INITIAL_DOT_PROFILE="$ETC_SKEL/$DOT_PROFILE"
+INITIAL_DOT_BASHRC="$ETC_SKEL/$DOT_BASHRC"
+
+# user account properties
+# login name
+PROP_USER_LOGIN="$PG_USER_ACCOUNT/login"
+# password
+PROP_USER_PASSWORD="$PG_USER_ACCOUNT/password"
+# description (usually user's full name)
+PROP_USER_DESCRIPTION="$PG_USER_ACCOUNT/description"
+# full pathname of the program used as the user's shell on login
+PROP_USER_SHELL="$PG_USER_ACCOUNT/shell"
+# UID
+PROP_USER_UID="$PG_USER_ACCOUNT/uid"
+# GID
+PROP_USER_GID="$PG_USER_ACCOUNT/gid"
+# type (role, normal) - see user_attr(4)
+PROP_USER_TYPE="$PG_USER_ACCOUNT/type"
+# profiles
+PROP_USER_PROFILES="$PG_USER_ACCOUNT/profiles"
+# roles
+PROP_USER_ROLES="$PG_USER_ACCOUNT/roles"
+# sudoers entry
+PROP_USER_SUDOERS="$PG_USER_ACCOUNT/sudoers"
+# /etc/auto_home entry
+PROP_USER_AUTOHOME="$PG_USER_ACCOUNT/autohome"
+# expiration date for a login
+PROP_USER_EXPIRE="$PG_USER_ACCOUNT/expire"
+# name of home directory ZFS dataset 
+PROP_USER_HOME_ZFS_FS="$PG_USER_ACCOUNT/home_zfs_dataset"
+# home directory mountpoint
+PROP_USER_HOME_MOUNTPOINT="$PG_USER_ACCOUNT/home_mountpoint"
+
+# configured user account properties - utilized during unconfiguration
+# login
+PROP_CONFIGURED_USER_LOGIN="$PG_CONFIGURED_USER_ACCOUNT/login"
+
+# root account properties
+# password
+PROP_ROOT_PASSWORD="$PG_ROOT_ACCOUNT/password"
+# type (e.g. role) - see user_attr(4)
+PROP_ROOT_TYPE="$PG_ROOT_ACCOUNT/type"
+# expiration date for a login
+PROP_ROOT_EXPIRE="$PG_ROOT_ACCOUNT/expire"
+
+# default value for unconfigured properties
+SMF_UNCONFIGURED_VALUE=""
+
+#
+# Binary tested for determining if we are in ROZR zone booted in ready-only
+# mode.
+#
+ROZR_TEST_BINARY="/sbin/sh"
+# ROZR error message
+ROZR_ERR_MSG="\nDetected ROZR zone booted in read-only mode. System Configuration not permitted.\n"
+
+# Indicates whether root password was successfully configured.
+typeset root_passwd_is_configured=false
+
+#
+# check_rozr_and_abort()
+#
+# Description:
+#     If we are in ROZR non-global zone booted in read-only mode,
+#     log the error message and drop service into maintenance mode.
+#
+# Parameters:
+#     $1 - error message emitted if ROZR zone booted in read-only mode
+#          is detected.
+#
+check_rozr_and_abort()
+{
+	typeset err_msg="$1"
+
+	#
+	# Check if specified binary is writable. It is if ROZR zone is booted
+	# in writable mode. If that file is read-only, emit error message
+	# and drop service into maintenance mode.
+	#
+	if [[ ! -w "$ROZR_TEST_BINARY" ]] ; then
+		print -u1 "$err_msg" | smf_console
+
+		exit $SMF_EXIT_ERR_FATAL		
+	fi
+}
+
+#
+# enter_maintenance_mode()
+#
+# Description:
+#     Provides user with information that configuration of user or root
+#     account failed and drops service into maintenance mode.
+#
+# Parameters:
+#     $1 - failed account - defaults to user.
+#
+# Returns: exits with $SMF_EXIT_ERR_FATAL
+#
+enter_maintenance_mode()
+{
+	typeset account_type="$1"
+
+	if [[ "$account_type" != "root" ]] ; then
+		account_type="user"
+	fi
+
+	if $root_passwd_is_configured ; then
+		root_passwd_msg="the configured"
+	else
+		root_passwd_msg="an empty"
+	fi
+
+	print -u1 "\n$SMF_FMRI failed to configure $account_type" \
+	    "account." | smf_console
+	print -u1 "Entering single user mode, as login to the fully booted" \
+	    "system may not be possible." | smf_console
+	print -u1 "Once provided with the sulogin(1m) prompt, you can log in" \
+	    "as root with $root_passwd_msg password." | smf_console
+
+	#
+	# Drop service into maintenance mode. As a result of that, system
+	# will boot into single user mode, since following services have
+	# 'require_all' dependency upon this smf service:
+	#  - svc:/milestone/single-user:default
+	#  - svc:/system/console-login:default
+	#
+	exit $SMF_EXIT_ERR_FATAL
+}
+
+#
+# get_smf_prop()
+#
+# Description:
+#     Retrieve value of SMF property.
+#     For 'astring' type of property, take care of removing quoting backslashes,
+#     since according to svcprop(1) man page, shell metacharacters
+#     (';', '&', '(', ')', '|', '^', '<', '>', newline, space, tab, backslash,
+#     '"', single-quote, '`') are quoted by backslashes (\).
+#
+# Parameters:
+#     $1 - SMF property name
+#
+# Returns:
+#     0 - property was configured in SC manifest
+#     1 - property was not configured in SC manifest
+#
+get_smf_prop()
+{
+	typeset prop_name="$1"
+	typeset prop_value
+	typeset prop_type
+
+	#
+	# If property is not set for service instance (which means it was not
+	# defined in SC manifest), return with 'unconfigured' value.
+	#
+	svcprop -Cq -p "$prop_name" $SMF_FMRI
+	if (( $? != 0 )) ; then
+		print -u1 $SMF_UNCONFIGURED_VALUE
+		return 1
+	fi
+
+	#
+	# retrieve property.
+	#
+	prop_value=$(svcprop -p "$prop_name" $SMF_FMRI)
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to obtain value of <$prop_name> property" \
+		    "which is suspicious, defaulting to" \
+		    "<$SMF_UNCONFIGURED_VALUE>."
+
+		print -u1 $SMF_UNCONFIGURED_VALUE
+		return 1
+	fi
+
+	# For 'astring' type, remove backslashes from quoted metacharacters.
+	prop_type=$(svccfg -s $SMF_FMRI listprop "$prop_name" |
+	    nawk '{ print $2 }')
+
+	if [[ $prop_type == "astring" ]] ; then
+		prop_value=$(print $prop_value | sed -e 's/\\\(.\)/\1/g')
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed when trying to remove '\' from" \
+			    "<$prop_name> property, defaulting to" \
+			    "<$SMF_UNCONFIGURED_VALUE>."
+
+			print -u1 $SMF_UNCONFIGURED_VALUE
+			return 1
+		fi
+
+		#
+		# Since according to svcprop(1) man page empty ASCII string
+		# value is presented as a pair of double quotes (""), we need
+		# to check for this combination and replace it
+		# with empty string.
+		#
+		[[ "$prop_value" == "\"\"" ]] && prop_value=""
+	fi
+
+	print -u1 "$prop_value"
+	return 0
+}
+
+#
+# set_smf_prop()
+#
+# Description:
+#     Set value of SMF property.
+#
+# Parameters:
+#     $1 - SMF service
+#     $1 - property name
+#     $1 - property value
+#
+# Returns:
+#     Aborts with SMF_EXIT_ERR_FATAL in case of failure
+#
+set_smf_prop()
+{
+	typeset svc_name="$1"
+	typeset prop_name="$2"
+	typeset prop_value="$3"
+
+	svccfg -s $svc_name setprop $prop_name = $prop_value
+
+	if (( $? != 0 )) ; then
+		print -u2 "svccfg(1M) failed to set <$prop_name> property" \
+		    "to <$prop_value> for <$svc_name> smf service, aborting."
+
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	#
+	# Refresh service, so that configuration is propagated to running smf
+	# snapshot.
+	#
+	svcadm refresh $svc_name
+
+	if (( $? != 0 )) ; then
+		print -u2 "svcadm(1M) failed to refresh" \
+                    "<$svc_name> smf service, aborting."
+
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+}
+
+#
+# set_password()
+#
+# Description:
+#     configure password by modifying shadow(4) file
+#
+# Parameters:
+#     $1 - login name
+#     $2 - encrypted password
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+set_password()
+{
+	typeset user=$1
+	typeset pass=$2
+
+	# create temporary file
+	cp $ETC_SHADOW $TMP_SHADOW
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to create temporary file $TMP_SHADOW," \
+		    "aborting."
+
+		enter_maintenance_mode $user
+	fi
+
+	#
+	# read shadow(4) file and set field 'password' to desired value
+	# for matching login name
+	#
+	# format of shadow(4):
+	# username:password:lastchg:min:max:warn:inactive:expire:flag
+	#
+
+	nawk -F: '{
+		if ( $1 == login ) 
+			printf "%s:%s:%s:%s:%s:%s:%s:%s:%s\n",
+			    $1, passwd, $3, $4, $5, $6, $7, $8, $9
+		else
+			print
+	}' passwd="$pass" login="$user" $ETC_SHADOW > $TMP_SHADOW
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to set password in $ETC_SHADOW, aborting."
+
+		enter_maintenance_mode $user
+	fi
+
+	# move temporary file to the final location
+	mv $TMP_SHADOW $ETC_SHADOW
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to move temporary file $TMP_SHADOW" \
+		    "into $ETC_SHADOW, aborting."
+
+		enter_maintenance_mode $user
+	fi
+}
+
+#
+# configure_account_type()
+#
+# Description:
+#     set 'type' of user account - needs to be done separately, since
+#     useradd -K type=<type> is not supported - see useradd(1M) man page
+#
+# Parameters:
+#     $1 - login
+#     $2 - account type
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+configure_account_type()
+{
+	typeset account="$1"
+	typeset type="$2"
+	typeset cmd_mod="usermod"
+
+	#
+	# If account is a role, use rolemod(1m) to set its type, otherwise
+	# use usermod(1m).
+	#
+	account_type=$(userattr type $account)
+	if [[ $? == 0 && "$account_type" == "role" ]] ; then
+		print -u1 " <$account> is a role, using rolemod(1m) to set" \
+		    "its type."
+
+		cmd_mod="rolemod"
+	fi
+
+
+	$cmd_mod -S files -K type="$type" "$account"
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to configure <$account> account as type" \
+		    "<$type>, aborting."
+
+		enter_maintenance_mode $account
+	fi
+}
+
+#
+# set_expiration_date()
+#
+# Description:
+#     sets expiration date for account, if SMF property is set to "0" (zero)
+#     user is forced to change the password at next login
+#
+# Parameters:
+#     $1 - login
+#     $2 - expiration date
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+set_expiration_date()
+{
+	typeset account="$1"
+	typeset expire="$2"
+
+	if [[ "$expire" == "0" ]] ; then
+		print -u1 " User will be prompted to change password for"\
+		    "account <$account> at the next login."
+
+		passwd -f "$account"
+
+		if (( $? != 0 )) ; then
+			print -u2 "Calling passwd(1) -f failed for user" \
+			    "<$account>, aborting."
+
+			enter_maintenance_mode $account
+		fi
+	else
+		usermod -S files -e "$expire" "$account"
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to set expiration date to" \
+			    "<$expire> for account <$account>, aborting."
+
+			enter_maintenance_mode $account
+		fi
+	fi
+}
+
+#
+# create_initial_user_profile()
+#
+# Description:
+#     Creates initial user's profile by copying .profile and .bashrc
+#     (in case bash is used as user's shell) from /etc/skel/ directory
+#
+# Parameters:
+#     $1 - account
+#     $2 - home directory
+#     $3 - shell
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+create_initial_user_profile()
+{
+	typeset account="$1"
+	typeset home_dir="$2"
+	typeset user_shell="$3"
+
+	cp "$INITIAL_DOT_PROFILE" "${home_dir}/"
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to copy $INITIAL_DOT_PROFILE to" \
+		    "${home_dir}/, aborting."
+
+		enter_maintenance_mode
+	fi
+
+	chmod 0644 "$home_dir/$DOT_PROFILE"
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to change permissions to 0644" \
+		    "for ${home_dir}/$DOT_PROFILE, aborting."
+
+		enter_maintenance_mode
+	fi
+
+	if [[ "$user_shell" == ~(E)bash$ ]] ; then
+		print -u1 " bash(1) selected as a shell for <$account>" \
+		    "account, copying initial bash profile" \
+		    "$INITIAL_DOT_BASHRC to home directory."
+
+		cp "$INITIAL_DOT_BASHRC" "${home_dir}/"
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to copy $INITIAL_DOT_BASHRC to" \
+			    "${home_dir}/, aborting."
+
+			enter_maintenance_mode
+		fi
+
+		chmod 0644 "$home_dir/$DOT_BASHRC"
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to change permissions to 0644" \
+			    "for ${home_dir}/$DOT_BASHRC, aborting."
+
+			enter_maintenance_mode
+		fi
+	fi
+
+	#
+	# set correct ownership for files and home directory
+	#
+
+	chown -R $account:$gid "$home_dir"
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to set ownership to $account:$gid for" \
+		    "${home_dir} directory and user files, aborting."
+
+		enter_maintenance_mode
+	fi
+}
+
+#
+# set_autohome()
+#
+# Description:
+#     Adds entry into /etc/auto_home file
+#
+# Parameters:
+#     $1 - login name
+#     $2 - string representing homedir mapping
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+set_autohome()
+{
+	typeset user=$1
+	typeset homedir_map=$2
+
+	# create temporary file
+	cp $ETC_AUTO_HOME $TMP_AUTO_HOME
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to create temporary file $TMP_AUTO_HOME," \
+		    "aborting."
+
+		enter_maintenance_mode
+	fi
+
+	#
+	# Read TMP_AUTO_HOME file and add homedir mapping entry right before
+	# line starting with "+auto_home" string (representing auto_home
+	# NIS map). Remove any existing user entries.
+	#
+
+	nawk '{
+		if ( $1 == "+auto_home" )
+			printf "%s\t%s\n", login, autohome
+		if ( $1 != login )
+			print
+	}' login="$user" autohome="$homedir_map" \
+	$ETC_AUTO_HOME > $TMP_AUTO_HOME
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to add entry into $ETC_AUTO_HOME, aborting."
+
+		enter_maintenance_mode
+	fi
+
+	# move temporary file to the final location
+	mv $TMP_AUTO_HOME $ETC_AUTO_HOME
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to move temporary file $TMP_AUTO_HOME" \
+		    "to $ETC_AUTO_HOME, aborting."
+
+		enter_maintenance_mode
+	fi
+}
+
+#
+# create_user_account()
+#
+# Description:
+#     creates user account
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+create_user_account()
+{
+	typeset login_name
+	typeset uid
+	typeset gid
+	typeset shell
+	typeset roles
+	typeset home_zfs_fs
+	typeset home_mntpoint
+	typeset home_dir
+	typeset desc
+	typeset profiles
+	typeset account_type
+	typeset sudoers
+	typeset password
+	typeset expire
+	typeset autohome
+
+	# CLI options for useradd(1M)
+	typeset useradd_opt="-S files"
+
+	#
+	# User account can't be created if login is not provided.
+	# Do not treat it as fatal error, just log it
+	#
+	login_name=$(get_smf_prop $PROP_USER_LOGIN)
+	if [[ -z "$login_name" ]]; then
+		print -u1 " Login name not provided, user account" \
+		    "will not be created."
+		return
+	fi
+
+	#
+	# If user account already exists, do not proceed with the
+	# configuration. Only creating user account from scratch
+	# is supported. Thus messing with existing configuration could
+	# produce undetermined results.
+	#
+	# Also, Trusted Extensions rely on that not being treated as an error,
+	# since user account configuration may be inherited from global zone
+	# which may not be known at the time SC profile is generated.
+	#
+	grep "^${login_name}:" $ETC_SHADOW > /dev/null 2>&1
+	if (( $? == 0 )) ; then
+		print -u1 " Login <$login_name> already exists, skipping" \
+		    "user account configuration."
+
+		return
+	fi
+
+	# get UID. If not provided, let useradd(1M) fill in the default
+	uid=$(get_smf_prop $PROP_USER_UID)
+	(( $? == 0 )) && useradd_opt="$useradd_opt -u $uid"
+
+	# get GID. If not provided, use 10 (staff) as a default
+	gid=$(get_smf_prop $PROP_USER_GID)
+	(( $? != 0 )) && gid=10
+	useradd_opt="$useradd_opt -g $gid"
+
+	# get user's shell. If not provided, let useradd(1M) fill in the default
+	shell=$(get_smf_prop $PROP_USER_SHELL)
+	[[ -n "$shell" ]] &&
+	    useradd_opt="$useradd_opt -s $shell"
+
+	# get list of comma separated roles
+	roles=$(get_smf_prop $PROP_USER_ROLES)
+	[[ -n "$roles" ]] &&
+	    useradd_opt="$useradd_opt -R $roles"
+
+	# set user labels for Trusted Extensions
+	if (smf_is_system_labeled); then
+	    if (smf_is_nonglobalzone); then
+		min_label=$(plabel|atohexlabel)
+		clearance=$min_label
+	    else
+		min_label=admin_low
+		clearance=admin_high
+	    fi
+	    useradd_opt="$useradd_opt -K min_label=$min_label -K clearance=$clearance"
+	fi
+
+	#
+	# Construct name of home directory ZFS dataset.
+	#
+	# If its name is not specified in SC profile, create home ZFS dataset
+	# as a child of 'root pool' ZFS dataset - the one mounted on
+	# /<root_pool> within a zone (global or non-global).
+	# In particular, home ZFS dataset will be created as:
+	#
+	# <root_pool_dataset>/export/home/<login>
+	#
+	# If not explicitly configured in SC profile, its mountpoint will be
+	# inherited from parent dataset (<root_pool_dataset>/export/home)
+	# and will be in form of /export/home/<login>.
+	#
+	home_zfs_fs=$(get_smf_prop $PROP_USER_HOME_ZFS_FS)
+	if [[ -z "$home_zfs_fs" ]] ; then
+		#
+		# Determine name of 'root pool' ZFS dataset from root ZFS
+		# dataset (mounted on '/').
+		# Root ZFS dataset has following format:
+		#  - global zone:     <root_pool>/ROOT/<BE-name>
+		#  - non-global zone: <zone_path_dataset>/rpool/ROOT/<BE-name>
+		#
+		root_ds=$(df -k / | nawk 'NR == 2 {print $1}')
+		if [[ -z "$root_ds" ]] ; then
+			print -u2 "Could not obtain name of root ZFS dataset," \
+			    "aborting."
+
+			enter_maintenance_mode
+		fi
+
+		print -u1 " <$root_ds> detected as ZFS root dataset."
+
+		#
+		# Determine 'root pool' dataset from 'root' dataset
+		# by stripping '/ROOT/<be-name>' suffix.
+		#
+		root_pool_ds=${root_ds%/ROOT/*}
+		if [[ -z "$root_pool_ds" ]] ; then
+			print -u2 "Could not determine name of root pool ZFS" \
+			    "dataset, aborting."
+
+			enter_maintenance_mode
+		fi
+
+		print -u1 " <$root_pool_ds> detected as ZFS root pool dataset."
+
+		#
+		# Root pool dataset determined, create home dataset in form
+		# of <root_pool_ds>/export/home/<login>.
+		#
+		home_zfs_fs="${root_pool_ds}/export/home/$login_name"
+	fi
+
+	#
+	# get home directory mountpoint
+	#
+	home_mntpoint=$(get_smf_prop $PROP_USER_HOME_MOUNTPOINT)
+
+	#
+	# Configure ZFS dataset for user's home directory
+	#
+	print -u1 " Creating user home directory on <$home_zfs_fs> ZFS" \
+	    "dataset."
+
+	#
+	# Create ZFS dataset if it does not already exist.
+	#
+	zfs list "$home_zfs_fs" > /dev/null 2>&1
+
+	if (( $? != 0 )) ; then
+		#
+		# set also mountpoint if provided, otherwise let zfs
+		# inherit the mountpoint from parent dataset
+		#
+		if [[ -n "$home_mntpoint" ]] ; then
+			zfs create -p -o mountpoint="$home_mntpoint" \
+			    "$home_zfs_fs"
+		else
+			zfs create -p "$home_zfs_fs"
+		fi
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to create ZFS dataset" \
+			    "<$home_zfs_fs>, aborting."
+
+			enter_maintenance_mode
+		fi
+	else
+		#
+		# If ZFS mountpoint is not explicitly configured, go with
+		# existing ZFS mountpoint. If mountpoint can't be determined
+		# or if it is 'legacy', default to '/export/home/<login>.
+		#
+		if [[ -z "$home_mntpoint" ]] ; then
+			zfs_mntpoint=$(zfs get -H mountpoint $home_zfs_fs |
+			    nawk '{ print $3 }')
+
+			if (( $? != 0 )) ; then
+				home_mntpoint="/export/home/$login_name"
+
+				print -u1 " Could not determine mountpoint" \
+				    "for ZFS dataset <$home_zfs_fs>," \
+				    "<$home_mntpoint> will be used."
+			elif [[ "$zfs_mntpoint" == "legacy" ]] ; then
+				home_mntpoint="/export/home/$login_name"
+
+				print -u1 " ZFS dataset <$home_zfs_fs>," \
+				    "uses legacy mountpoint, it will be set" \
+				    "to <$home_mntpoint> instead."
+			fi
+		fi
+
+		if [[ -n "$home_mntpoint" ]] ; then
+			print -u1 " ZFS dataset <$home_zfs_fs> exists, only" \
+			    "ZFS mountpoint will be set to <$home_mntpoint>."
+
+			zfs set mountpoint="$home_mntpoint" "$home_zfs_fs"
+
+			if (( $? != 0 )) ; then
+				print -u2 "Failed to set mountpoint to" \
+				    "<$home_mntpoint> for ZFS dataset" \
+				    "<$home_zfs_fs>, aborting."
+
+				enter_maintenance_mode
+			fi
+		fi
+
+		# make sure existing ZFS dataset is mounted
+		mounted_prop=$(zfs get -H -o value mounted "$home_zfs_fs")
+		if (( $? != 0 )) ; then
+			print -u2 " Could not obtain value of <mounted>" \
+			    "property for ZFS dataset <$home_zfs_fs>," \
+			    "aborting."
+
+			enter_maintenance_mode
+		fi
+
+		if [[ "$mounted_prop" == "yes" ]] ; then
+			print -u1 " ZFS dataset <$home_zfs_fs> is mounted."
+		else
+			print -u1 " Mounting ZFS dataset <$home_zfs_fs>."
+
+			zfs mount "$home_zfs_fs"
+
+			if (( $? != 0 )) ; then
+				print -u2 "Could not mount ZFS dataset" \
+				    "<$home_zfs_fs>, aborting."
+
+				enter_maintenance_mode
+			fi
+		fi
+	fi
+
+	#
+	# now when ZFS dataset has been configured, use its mountpoint
+	# as user's home directory
+	#
+
+	home_mntpoint=$(zfs get -H mountpoint $home_zfs_fs |
+	    nawk '{ print $3 }')
+
+	if (( $? != 0 )) ; then
+		print -u2 "Could not determine mountpoint for ZFS dataset" \
+		    "<$home_zfs_fs>, aborting."
+
+		enter_maintenance_mode
+	fi
+
+	print -u1 " Home mountpoint: $home_mntpoint"
+
+	# set permissions to 0755 for home directory
+	chmod 0755 "$home_mntpoint"
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to change permissions to 0755 for" \
+		    "${home_mntpoint} directory, aborting."
+
+		enter_maintenance_mode
+	fi
+
+	#
+	# Create user account by means of useradd(1M).
+	# useradd(1m) automatically creates entry for user in /etc/auto_home
+	# in default form of:
+	# <login>  <nodename>:<home_directory>
+	# Prepend home directory with explicit 'localhost' hostname in order to
+	# avoid hardcoding current hostname in /etc/auto_home file. That would
+	# cause problems in scenarios when hostname is not permanent (obtained
+	# from DHCP) or is to be reconfigured (e.g. when non-global zone
+	# is created as a clone of existing one).
+	#
+	home_dir="localhost:$home_mntpoint"
+	print -u1 " Home directory: $home_dir"
+	
+	print -u1 " Calling useradd(1M) to create user account."
+	print -u1 " cmd: useradd $useradd_opt -d $home_dir $login_name"
+
+	useradd $useradd_opt -d "$home_dir" $login_name
+	typeset -i ret=$?
+
+	if [[ $ret != 0 ]] ; then
+		print -u2 -f "%s%d%s\n" \
+		    "useradd(1M) failed to create user account, (ret=" \
+		    $ret \
+		    "), aborting."
+
+		enter_maintenance_mode
+	fi
+
+	# set description for user account (usually full user name)
+	desc=$(get_smf_prop $PROP_USER_DESCRIPTION)
+	if [[ -n "$desc" ]] ; then
+		print -u1 " Setting description to <$desc> for account" \
+		    "<$login_name>."
+
+		usermod -S files -c "$desc" "$login_name"
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to set description to <$desc> for" \
+			    "<$login_name> account, aborting."
+
+			enter_maintenance_mode
+		fi
+	fi
+
+	# assign profiles to user account
+	profiles=$(get_smf_prop $PROP_USER_PROFILES)
+	if [[ -n "$profiles" ]] ; then
+		print -u1 " Assigning profiles <$profiles> to user account" \
+		    "<$login_name>."
+
+		usermod -S files -P "$profiles" "$login_name"
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to assign profiles <$profiles> to" \
+			    "<$login_name> account, aborting."
+
+			enter_maintenance_mode
+		fi	
+	fi
+
+	# set type of user account
+	account_type=$(get_smf_prop $PROP_USER_TYPE)
+	if [[ -n "$account_type" ]] ; then
+		print -u1 " Configuring <$login_name> account as type" \
+		    "<$account_type>."
+
+		configure_account_type "$login_name" "$account_type"
+	fi
+
+        #
+	# Set 'lock_after_retries' to 'no'.
+        # That prevents locking user account after the count of failed logins
+        # equals or exceeds the allowed number of retries as defined by RETRIES
+        # in /etc/default/login.
+        #
+	print -u1 " Preventing locking user account when number of allowed" \
+            "login attempts is exceeded."
+
+	usermod -S files -K lock_after_retries=no "$login_name"
+
+	if (( $? != 0 )) ; then
+		print -u2 "usermod -S files -K lock_after_retries=no command" \
+		    "failed, aborting."
+
+		enter_maintenance_mode
+	fi
+
+	# if provided, set password for created user
+	password=$(get_smf_prop $PROP_USER_PASSWORD)
+	if (( $? == 0 )); then
+		print -u1 " Setting password for user <$login_name>."
+		set_password "$login_name" "$password"
+	fi
+
+	#
+	# configure expiration date
+	#
+	# if required, forces the user to change password at the next login by
+	# expiring the password
+	#
+	expire=$(get_smf_prop $PROP_USER_EXPIRE)
+	if [[ -n "$expire" ]] ; then
+		print -u1 " Setting expire date to <$expire> for user" \
+		    "<$login_name>."
+
+		set_expiration_date "$login_name" "$expire"
+	fi
+
+	#
+	# Configure sudoers entry, if provided
+	#
+	sudoers=$(get_smf_prop $PROP_USER_SUDOERS)
+	if [[ -n "$sudoers" ]] ; then
+		print -u1 " Setting sudoers entry '$sudoers' for user" \
+		    "<$login_name>."
+
+		print "$login_name $sudoers" >> $ETC_SUDOERS
+	fi
+
+	#
+	# Add entry to /etc/auto_home, if provided
+	#
+	autohome=$(get_smf_prop $PROP_USER_AUTOHOME)
+	if [[ -n "$autohome" ]] ; then
+		print -u1 " Adding entry '$autohome' for user" \
+		    "<$login_name> into $ETC_AUTO_HOME file."
+
+		set_autohome "$login_name" "$autohome"
+	fi
+
+	#
+	# Create initial user's profile by copying .profile and .bashrc
+	# from /etc/skel/ directory.
+	#
+	create_initial_user_profile "$login_name" "$home_mntpoint" "$shell"
+
+	#
+	# Now unmount the ZFS dataset and remove mountpoint.
+	# svc:/system/filesystem/local:default SMF service will later in the
+	# boot process take care of mounting all ZFS datasets and creating
+	# mountpoints in required order.
+	#
+	print -u1 " Unmounting <$home_zfs_fs> home directory ZFS dataset."
+	zfs unmount "$home_zfs_fs"
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to unmount <$home_zfs_fs> ZFS dataset," \
+		   "aborting."
+
+		enter_maintenance_mode
+	fi
+
+	#
+	# do not check return code from rmdir - we know it might fail
+	# due to the fact that some of subdirectories might not be empty
+	#
+	print -u1 " Removing <$home_mntpoint> home directory ZFS mountpoint."
+	rmdir -ps $home_mntpoint
+
+	#
+	# Now when user account has been successfully configured, save
+	# user account login for purposes of unconfiguration.
+	#
+	set_smf_prop ${SMF_FMRI%:default} $PROP_CONFIGURED_USER_LOGIN \
+	    "$login_name"
+}
+
+#
+# remove_user_account()
+#
+# Description:
+#     removes initial user account
+#
+# Parameters:
+#     $1 - if set to true, user's home directory along with underlying dataset
+#          is removed.
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+remove_user_account()
+{
+	typeset destructive=$1
+	typeset login_name
+
+	#
+	# Obtain login of user account to be removed. If account does not
+	# exist, just log warning and return.
+	#
+	login_name=$(svcprop -p  $PROP_CONFIGURED_USER_LOGIN $SMF_FMRI)
+	if [[ -z "$login_name" || "$login_name" == '""' ]]; then
+		print -u1 " Login name not available, user account" \
+		    "will not be removed."
+
+		return
+	fi
+
+	grep "^${login_name}:" $ETC_SHADOW > /dev/null 2>&1
+	if (( $? != 0 )) ; then
+		print -u1 " Login <$login_name> does not exist, " \
+		    "user account will not be removed."
+
+		return
+	fi
+	
+	# Ensure the user we're removing is off the system
+	pkill -KILL -U $login_name
+
+	# Wait for user to disappear from utmp before continuing,
+	# otherwise userdel will fail with user "in use". If this never
+	# terminates then the timeout on the unconfigure milestone will
+	# eventually throw us into maintenance.
+	while who -q -n 1 | sed -e 's/ //g' | grep "^${login_name}\$"; do
+		sleep 1
+	done
+
+	#
+	# Call userdel(1M) to
+	#  - remove user from local databases passwd(4), shadow(4), group(4),
+	#    user_attr(4),
+	#  - remove user entry from /etc/auto_home file,
+	#  - remove home directory along with underlying ZFS dataset
+	#    if required.
+	#
+	if $destructive ; then
+		#
+		# Mount home ZFS dataset, otherwise userdel(1m)
+		# will not be able to destroy it. Instead of trying to determine
+		# which one should be mounted, just mount everything.
+		#
+		print -u1 " Mounting home ZFS dataset."
+
+		zfs mount -a
+
+		if (( $? != 0 )) ; then
+			print -u2 "'zfs mount -a' failed, aborting."
+			exit $SMF_EXIT_ERR_FATAL
+		fi
+
+		print -u1 " Calling 'userdel -S files -r $login_name' to" \
+		     "remove user account <$login_name> and home directory."
+
+		userdel -S files -r "$login_name"
+
+		if (( $? != 0 )) ; then
+			print -u2 "userdel(1M) failed to remove" \
+			    "<$login_name> user account, aborting."
+
+			#
+			# Clean up things - unmount previously mounted
+			# ZFS datasets.
+			#
+			zfs unmount -a
+
+			if (( $? != 0 )) ; then
+				print -u2 "'zfs unmount -a' failed."
+			fi
+
+			exit $SMF_EXIT_ERR_FATAL
+		fi
+
+		# Clean up things - unmount previously mounted ZFS datasets.
+		zfs unmount -a
+
+		if (( $? != 0 )) ; then
+			print -u2 "'zfs unmount -a' failed, aborting."
+			exit $SMF_EXIT_ERR_FATAL
+		fi
+	else
+		print -u1 " Calling 'userdel -S files $login_name' to remove" \
+		    "user account <$login_name>, home directory will" \
+		    "be preserved."
+
+		userdel -S files "$login_name"
+
+		if (( $? != 0 )) ; then
+			print -u2 "userdel(1M) failed to remove" \
+			    "<$login_name> user account, aborting."
+
+			exit $SMF_EXIT_ERR_FATAL
+		fi
+	fi
+
+	#
+	# Remove user entry from sudoers(4) file.
+	#
+	# create temporary file
+	cp $ETC_SUDOERS $TMP_SUDOERS
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to create temporary file $TMP_SUDOERS," \
+		    "aborting."
+
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	grep -v "^${login_name}[ 	]" $TMP_SUDOERS > $ETC_SUDOERS
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to remove entry for <$login_name>" \
+		    "from $ETC_SUDOERS file, aborting."
+
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	#
+	# Now when user account has been successfully unconfigured, clean up
+	# smf property carrying user account login.
+	#
+	set_smf_prop ${SMF_FMRI%:default} $PROP_CONFIGURED_USER_LOGIN "\"\""
+
+	print -u1 " User account successfully removed."
+}
+
+#
+# configure_root_account()
+#
+# Description:
+#     configures root account
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+configure_root_account()
+{
+	typeset password
+	typeset account_type
+	typeset expire
+
+	# password
+	password=$(get_smf_prop $PROP_ROOT_PASSWORD)
+	if (( $? == 0 )); then
+		print -u1 " Setting root password."
+		set_password root "$password"
+	fi
+
+	# root password has been successfully configured
+	root_passwd_is_configured=true
+
+	# configure account type (e.g. role)
+	# set type of user account
+	account_type=$(get_smf_prop $PROP_ROOT_TYPE)
+	if [[ -n "$account_type" ]] ; then
+		print -u1 " Configuring root account as type <$account_type>."
+		configure_account_type root "$account_type"
+	fi
+
+	# set expiration date
+	expire=$(get_smf_prop $PROP_ROOT_EXPIRE)
+	if [[ -n "$expire" ]] ; then
+		print -u1 " Setting expire date to <$expire> for root."
+		set_expiration_date root "$expire"
+	fi
+}
+
+#
+# unconfigure_root_account()
+#
+# Description:
+#     reverts changes done for root account during configuration:
+#      - password is deleted
+#      - if root was configured as a role, change it to normal account
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+unconfigure_root_account()
+{
+	# delete root password
+	passwd -r files -d root
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to delete root password, aborting."
+		exit $SMF_EXIT_ERR_FATAL
+	fi	
+
+	# if root was configured as a role, change it to normal account
+	root_type=$(userattr type root)
+	if [[ $? == 0 && "$root_type" == "role" ]] ; then
+		print -u1 " Root is currently a role, reverting it to" \
+		    "normal account."
+
+		rolemod -K type=normal root
+
+		if (( $? != 0 )) ; then
+			print -u2 "Failed to configure root as a normal" \
+			    "account, aborting."
+
+			exit $SMF_EXIT_ERR_FATAL
+		fi
+	else
+		print -u1 " Root configured as a normal account."
+	fi
+
+	print -u1 " Root account successfully unconfigured."
+}
+
+#
+# remove_pg()
+#
+# Description:
+#     removes property group from service specified by $SMF_FMRI
+# 
+# Parameters:
+#     $1 - property group
+#
+# Returns:
+#     aborts with $SMF_EXIT_ERR_FATAL in case of failure
+#
+remove_pg()
+{
+	typeset pg=$1
+
+	print -u1 " Removing property group <$pg>."
+	svccfg -s $SMF_FMRI delpg $pg
+
+	if (( $? != 0 )) ; then
+		print -u2 "Failed to remove <$pg> property group, aborting."
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	# refresh service, so that change is reflected in running smf snapshot
+	svcadm refresh $SMF_FMRI
+
+	if (( $? != 0 )) ; then
+		print -u2 "svcadm(1M) failed to refresh" \
+                    "$SMF_FMRI smf service, aborting."
+
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+}
+
+#
+# configure_user_root()
+#
+# Description:
+#     Configures user and root account.
+#
+#
+configure_user_root()
+{
+	# check if root account is to be configured
+	svcprop -C -q -p $PG_ROOT_ACCOUNT $SMF_FMRI
+	(( $? == 0 )) && configure_root=true || configure_root=false
+
+	# check if user account is to be configured
+	svcprop -C -q -p $PG_USER_ACCOUNT $SMF_FMRI
+	(( $? == 0 )) && configure_user=true || configure_user=false
+
+	# No need to proceed if there is nothing to configure.
+	if ! $configure_user && ! $configure_root ; then
+		return
+	fi
+
+        #
+        # Running configuration process is not permitted in ROZR
+	# non-global zone booted in read-only mode.
+        #
+        check_rozr_and_abort "$ROZR_ERR_MSG"
+
+	# configure root account
+	if $configure_root; then
+		print -u1 "Configuring root account."
+
+		configure_root_account
+
+		remove_pg $PG_ROOT_ACCOUNT
+
+		print -u1 "root account successfully configured."
+	fi
+
+	# configure user account
+	if $configure_user; then
+		print -u1 "Configuring user account."
+
+		create_user_account
+
+		remove_pg $PG_USER_ACCOUNT
+
+		print -u1 "User account successfully configured."
+	fi
+}
+
+#
+# unconfigure_user_root()
+#
+# Description:
+#     Unconfigures user and root account.
+#
+# Parameters:
+#     $1 - if set to true, user's home directory along with underlying dataset
+#          is removed.
+#
+unconfigure_user_root()
+{
+	typeset destructive=$1
+
+	# unconfigure user account
+	print -u1 " Removing initial user account from the system."
+
+	remove_user_account $destructive
+
+	# unconfigure root account
+	print -u1 " Reverting configuration of root account into pristine" \
+	    "state."
+
+	unconfigure_root_account
+}
+
+
+## Main ##
+#
+# Usage: /lib/svc/method/svc-config-user { start | unconfigure }
+#
+if (( $# != 1 )) ; then
+	print -u2 "$USAGE"
+	exit $SMF_EXIT_ERR_FATAL
+fi
+
+# only 'start' and 'unconfigure' methods are supported
+case "$1" in
+'start')
+	# configure user and root account
+	configure_user_root
+        ;;
+
+'unconfigure')
+        #
+        # Running unconfiguration process is not permitted in ROZR
+	# non-global zone booted in read-only mode.
+        #
+
+        check_rozr_and_abort "$ROZR_ERR_MSG"
+
+        #
+	# Destroy user's home directory (along with underlying ZFS dataset)
+	# only if UNCONFIG_DESTRUCTIVE was set to "true" by caller.
+	#
+	typeset destructive="$UNCONFIG_DESTRUCTIVE"
+	[[ -z "$destructive" ]] && destructive=false
+
+	# unconfigure user and root account
+	unconfigure_user_root $destructive
+
+	# Unroll any admin customization
+	svccfg -s $SMF_FMRI delcust
+
+	if [ $? -ne 0 ]; then
+		print -u2 "Failed to unroll administrative customizations for $SMF_FMRI"
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	svcadm refresh $SMF_FMRI
+
+	;;
+
+*)
+	print -u2 "$USAGE"
+	exit $SMF_EXIT_ERR_FATAL
+	;;
+esac
+
+exit $SMF_EXIT_OK
+

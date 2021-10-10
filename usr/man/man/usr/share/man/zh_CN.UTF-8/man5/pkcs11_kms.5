@@ -1,0 +1,207 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH pkcs11_kms 5 "2011 年 5 月 11 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+pkcs11_kms \- Oracle Key Manager 的 RSA PKCS#11 提供器
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/security/pkcs11_kms.so\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/security/64/pkcs11_kms.so\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpkcs11_kms.so\fR 对象使用 Oracle Key Manager (OKM) KMS 代理协议来实现 RSA Security Inc. PKCS#11 Cryptographic Token Interface (Cryptoki), v2.20, 规范，从而与 Oracle Key Manager 设备 (Key Manager appliance, KMA) 对话。此提供器实现 PKCS#11 规范并使用（专用）KMS 客户机协议与远程 OKM 进行通信。
+.sp
+.LP
+此提供器支持以下 PKCS#11 机制：\fBCKM_AES_KEY_GEN\fR、\fBCKM_AES_CBC_PAD\fR 和 \fBCKM_AES_CBC\fR。 
+.sp
+.LP
+此提供器支持以下 PKCS#11 接口： 
+.sp
+.in +2
+.nf
+C_Initialize
+C_Finalize
+C_GetInfo
+C_GetAttributeValue
+C_SetAttributeValue
+C_GetFunctionList
+C_GetSlotList
+C_GetSlotInfo
+C_GetTokenInfo
+C_GetMechanismList
+C_GetMechanismInfo
+C_InitToken
+C_SetPIN
+C_Login
+C_Logout
+C_FindObjectsInit/C_FindObjects/C_FindObjectsFinal
+C_GenerateKey
+C_EncryptInit/C_Encrypt/C_EncryptFinal
+C_DecryptInit/C_Decrypt/C_DecryptFinal
+C_DestroyObject
+C_OpenSession
+C_CloseSession
+C_CloseAllSessions
+C_GetSessionInfo
+C_CreateObject
+C_CopyObject
+C_GetObjectSize
+C_EncryptUpdate
+C_DecryptUpdate
+.fi
+.in -2
+
+.sp
+.LP
+在调用时，所有其他函数均返回 \fBCKR_FUNCTION_NOT_SUPPORTED\fR。
+.SS "先决条件"
+.sp
+.LP
+\fBpkcs11_kms\fR 提供器只能用于有权访问 OKM 的系统。OKM 管理员必须为每个访问 OKM 的用户（或应用程序）配置一个代理 ID。此操作通过 OKM 实用程序完成，这些实用程序属于 OKM 管理工具，并不是 Oracle Solaris 随附的。
+.sp
+.LP
+在 OKM 管理员配置了要使用的 KMA 并将参数传递给了客户机（即 Oracle Solaris 用户或应用程序）后，即可初始化 Oracle Solaris PKCS#11 KMS 提供器以供使用。
+.sp
+.LP
+KMS 提供器的初始化是通过 \fBkmscfg\fR(1M) 实用程序完成的。要初始化本地提供器配置文件以供进一步使用，\fBkmscfg\fR 要求用户至少输入配置文件的名称、OKM 代理 ID、用于保护配置文件的初始口令以及 KMA 的 IP 地址。有关详细信息，请参见 \fBkmscfg\fR(1M) 手册页。
+.sp
+.LP
+运行完 \fBkmscfg\fR 并配置了本地令牌名称空间后，用户即可初始化令牌以供使用。令牌初始化是使用 \fBpktool\fR(1) 命令（如下所示）执行的：
+.sp
+.in +2
+.nf
+$ pktool inittoken currlabel=KMS
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+用户必须提供缺省的 SO（security officer，安全官）PIN（Personal Identification Number，个人识别码）才能初始化 KMS 提供器以供使用。缺省 SO PIN 就是 OKM 管理员在最初设置 OKM 代理时所使用的 PIN。初始化令牌的用户必须知道此口令短语才能初始化提供器。
+.sp
+.LP
+在初始化提供器后，可以更改用户 PIN 的缺省值。可再次使用 \fBpktool\fR(1) 更改该 PIN 值。
+.sp
+.LP
+使用以下命令可更改本地 PIN：
+.sp
+.in +2
+.nf
+$ pktool setpin token=KMS
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+为 \fBpktool setpin\fR 操作提供的 PIN 或通过调用 \fBC_Login()\fR 和 \fBC_SetPIN()\fR 函数提供的 PIN 可以是长度介于 1 到 256 之间且不带嵌入空字符的任何字符串。
+.sp
+.LP
+访问令牌
+.sp
+.LP
+在用户初始化令牌后，即可通过 \fBpktool\fR(1)、\fBdecrypt\fR(1)、\fBencrypt\fR(1) 或通过编写 PKCS11 应用程序并指定 KMS 令牌来开始使用他们的令牌。
+.SH 示例
+.LP
+\fB示例 1 \fR在 Oracle Key Manager 上创建密钥
+.sp
+.LP
+以下命令在 Oracle Key Manager 上创建密钥：
+
+.sp
+.in +2
+.nf
+$ pktool genkey token=KMS label=mykey1 keytype=aes keylen=256
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用来自 Oracle Key Manager 的密钥对文件进行加密
+.sp
+.LP
+以下命令使用来自 Oracle Key Manager 的密钥对文件进行加密：
+
+.sp
+.in +2
+.nf
+$ encrypt -a aes -K mykey1 -T KMS -i input.txt -o output.enc
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用来自 Oracle Key Manager 的密钥对文件进行解密
+.sp
+.LP
+以下命令使用来自 Oracle Key Manager 的密钥对文件进行解密：
+
+.sp
+.in +2
+.nf
+$ decrypt -a aes -K mykey1 -T KMS -i output.enc -o output.txt
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性T{
+/system/library/security/crypto/pkcs11_kms
+T}
+_
+接口稳定性Committed（已确定）
+_
+MT 级别T{
+MT-Safe with Exceptions（多线程安全，但存在异常）。参见下文。
+T}
+_
+标准PKCS#11 v2.20 
+.TE
+
+.sp
+.LP
+多线程安全属性的异常记录在 RSA PKCS#11 v2.20 的第 6.6.2 节中。
+.SH 另请参见
+.sp
+.LP
+\fBdecrypt\fR(1)、\fBencrypt\fR(1)、\fBpktool\fR(1)、\fBcryptoadm\fR(1M)、\fBkmscfg\fR(1M)、\fBlibpkcs11\fR(3LIB)、\fBattributes\fR(5)
+.sp
+.LP
+\fIKMS 2.2：管理指南\fR
+.sp
+.LP
+\fIOracle Key Manager (OKM) Administration Guide\fR
+.SH 附注
+.sp
+.LP
+\fBpkcs11_kms.so\fR 使用一个专用目录存放初始化与 KMA 的连接所需的配置文件及其他数据。对于首次创建此专用目录的主机来说，此目录是本地目录。缺省情况下，KMS 令牌目录空间位于 \fB/var/user/kms/$USERNAME \fR 中。可以覆盖缺省 KMS 目录，方法是：先设置 \fBKMSTOKEN_DIR\fR 环境变量，然后再使用 \fBkmscfg\fR(1M)、\fBdecrypt\fR(1)、\fBencrypt\fR(1) 和 \fBpktool\fR(1) 命令。
+.sp
+.LP
+PKCS#11 客户机需要安装 Oracle Key Manager 软件版本 2.4。 
+.sp
+.LP
+如果 PKCS#11 客户机使用来自多个系统的相同代理 ID，则创建该代理时不应设置 \fBOne Time Passphrase\fR 标记。在一些成员运行早于 OKM 软件版本 2.4 的 OKM 群集中，该选项不可用。有关创建代理的帮助，请参阅《\fIOracle Key Manager (OKM) Administration Guide\fR》。
+.sp
+.LP
+在 KCS#11 客户机使用 OKM 代理创建密钥之前，OKM 代理必须分配 \fBDefault Key Group\fR。如果未向代理分配 Default Key Group，操作将失败，并显示 \fBCKR_PIN_INCORRECT\fR 错误。有关向代理分配密钥组的帮助，请参阅《\fIOracle Key Manager (OKM) Administration Guide\fR》。

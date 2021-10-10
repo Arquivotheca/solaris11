@@ -1,0 +1,143 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH packet_events 9F "29 Jun 2011" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+packet_events \- packet events overview
+.SH DESCRIPTION
+.sp
+.LP
+The implementation of the \fBip\fR(7P) protocol in Solaris supports a number of packet events that are made available through \fBnetinfo\fR(9F). The packet events that are currently available to programmers and applications are listed below. Each packet event below includes a description of the event.
+.sp
+.LP
+The hook function (\fBh_func\fR) supplied in the \fBhook_t\fR(9S) structure passed to \fBnet_hook_register\fR(9F) is called once for each packet. Returning more than one packet by the hook function by changing \fIb_next\fR is not supported. Only one packet at a time is passed in. On return from the hook function, one packet can be returned.
+.sp
+.LP
+When the hook function is called, it is passed a pointer to a \fBhook_pkt_event_t\fR structure via the info (\fBhook_data_t\fR) argument. See \fBhook_pkt_event\fR(9S) for more details about the fields in this structure and how they are used with respect to the events described herein.
+.SH \fBIP Events\fR
+.sp
+.LP
+IP events are available individually for each of the IPv4 and IPv6 protocols. Thus a party that is interested in both protocols must register two hooks: one for each protocol family. Similarly, if only one of the two protocols is of interest then the event for that protocol family can be subscribed to with no need to worry about packets from the other being presented.
+.SS "Forwarding Events"
+.sp
+.in +2
+.nf
+Packet Event: Forwarding
+Macro: NH_FORWARDING
+Name: forwarding
+.fi
+.in -2
+
+.sp
+.LP
+IP packets that are received by the host but are destined for another host where the host is doing routing across multiple network interfaces will be delivered to the forwarding packet event when the host has determined the next outgoing network interface. Packets are received by this event after they have been processed by the Internet Load Balancer (see \fBilbadm\fR(1M)).
+.sp
+.LP
+Packets that are routed using IPFilter's policy based routing features will  not be seen by the forwarding hook as they do not pass through the kernel's routing and instead use \fBnet_inject\fR(9F) to deliver packets directly to a network interface.
+.SS "Loopback Events"
+.sp
+.LP
+Loopback packet events are generated to simulate the transmission and reception of IP packets inside the kernel when it is sending a packet to itself. Packets addressed to the loopback address (127.0.0.1) will can be seen at these events. Additionally, packets that originate from an IP address that is assigned to a network interface and that carry the IP address of a network interface on the same host in the destination field also fall into this category.
+.sp
+.LP
+The loopback events are the only packet events for which a packet can be received on the loopback interface (for example, \fBlo0\fR) or any other network interface that has the loopback flag set.
+.sp
+.LP
+Network traffic that "transits" between zones that are sharing an instance of IP networking will also trigger loopback packet events. A local zone that is sharing its network instance with the global zone will typically have network interfaces named such as \fBe1000g0:1\fR, and there will be no network interfaces that are not logical network interfaces.
+.sp
+.LP
+If a firewall or other software package is only interested in packets that are being sent and received by the physical hardware and all networking activity local to the host is considered to be safe then it is not necessary to subscribe to the loopback events.
+.sp
+.LP
+Any software that receives packets from the loopback events must be aware that the packets are optimized for handling within the kernel. Thus it is possible that checksums may be missing or just incorrect because the system has no need to guard against the packet being corrupted in transmission.
+.sp
+.in +2
+.nf
+Packet Event: Loopback In
+Macro: NH_LOOPBACK_IN
+Name: LOOPBACK_IN
+.fi
+.in -2
+
+.sp
+.LP
+The "loopback in" event simulates the kernel receiving a packet from itself. For example, if a user where to run the command "\fBssh localhost\fR", a "loopback in" event would be generated for the initial connection establishment where the host "receives" a packet to port 22 from itself. In most cases, the "loopback in" event will be the second event for any packet that is local to the host; the first will be the "loopback out" event that corresponds to the application or kernel sending the packet to itself.
+.sp
+.in +2
+.nf
+Packet Event: Loopback Out
+Macro: NH_LOOPBACK_OUT
+Name: LOOPBACK_OU
+.fi
+.in -2
+
+.sp
+.LP
+The "loopback out" event simulates the kernel sending a packet to itself.
+.SS "Physical Events"
+.sp
+.LP
+The "Physical" packet events occur in IP to indicate the reception and transmission of packets by IP from an external source to IP. By way of example, all packets exchanged between network interfaces present in the \fBmac\fR(9F) layer and IP will pass through these events.
+.sp
+.LP
+Each packet received will have the IP header aligned to a 32bit boundary. There will be no other references held to the packet, thus \fIdb_ref\fR from \fBdatab\fR(9S) will be 1.
+.sp
+.in +2
+.nf
+Packet Event: Physical In
+Macro: NH_PHYSICAL_IN
+Name: PHYSICAL_IN
+.fi
+.in -2
+
+.sp
+.LP
+The "physical in" event occurs for packets that have been accepted by IP and for which a very basic set of tests is completed. This currently includes ensuring that a packet is not from a loopback address nor destined to a loopback address.
+.sp
+.LP
+All packets presented by the "physical in" will have an IP version number that matches the family of the event. Thus a packet received from the callback attached to the "physical in" event for IPv6 will always have an IP version number of 6.
+.sp
+.LP
+Packets with impossible addresses, such as those in the loopback network address space for IPv4, will not be seen at the "physical in" event as they are filtered out by IP itself. However, other checks (such as ensuring the checksum is correct) are not done until after the packet passes through this event.
+.sp
+.in +2
+.nf
+Packet Event: Physical Out
+Macro: NH_PHYSICAL_OUT
+Name: PHYSICAL_OUT
+.fi
+.in -2
+
+.sp
+.LP
+The "physical out" event occurs for packets that are being transmitted by IP. There is one event per packet that is transmitted, thus packets that are internally generated and too big will be seen as fragments when this event occurs.
+.sp
+.LP
+For network interfaces that support offloading of the checksum calculation from software into hardware for the IP suite of protocols, packets presented by this event may either have incorrect, missing (zero) or partial checksums. The function \fBnet_ispartialchecksum\fR(9F) can be used to verify if the packet is expecting hardware to complete the checksum calculations.
+.SH KSTATS
+.sp
+.LP
+Each of the packet events presented here has its own kstat entry when it is available. To access a particular packet event's kstats, the use of the packet event's name as the kstat name and the protocol as the kstat module is supported.
+.sp
+.LP
+The following example lists all kstats that have the name "\fBPHYSICAL_IN\fR". When present, there will be one for each protocol that is registered with \fBnetinfo\fR: \fBarp\fR, \fBinet\fR and \fBinet6\fR.
+.sp
+.in +2
+.nf
+# kstat -n PHYSICAL_IN
+.fi
+.in -2
+
+.sp
+.LP
+The following example displays the kstat information for the "\fBPHYSICAL_OUT\fR" event that is associated with the "\fBinet\fR" module (protocol).
+.sp
+.in +2
+.nf
+# kstat -m inet -n PHYSICAL_OUT
+.fi
+.in -2
+
+.SH SEE ALSO
+.sp
+.LP
+\fBilbadm\fR(1M), \fBip\fR(7P), \fBdatab\fR(9S), \fBhook_pkt_event\fR(9S), \fBhook_t\fR(9S), \fBmac\fR(9F), \fBnet_ispartialchecksum\fR(9F), \fBnet_hook_register\fR(9F), \fBnet_inject\fR(9F), \fBnetinfo\fR(9F)

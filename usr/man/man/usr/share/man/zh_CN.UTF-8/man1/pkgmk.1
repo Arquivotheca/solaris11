@@ -1,0 +1,260 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH pkgmk 1 "2011 年 7 月 7 日" "SunOS 5.11" "用户命令"
+.SH 名称
+pkgmk \- 生产可安装的软件包
+.SH 用法概要
+.LP
+.nf
+\fBpkgmk\fR [\fB-o\fR] [\fB-a\fR \fIarch\fR] [\fB-b\fR \fIbase_src_dir\fR] [\fB-d\fR \fIdevice\fR] 
+     [\fB-f\fR \fIprototype\fR] [\fB-l\fR \fIlimit\fR] [\fB-p\fR \fIpstamp\fR] [\fB-r\fR \fIroot_path\fR] 
+     [\fB-v\fR \fIversion\fR] [\fIvariable=value\fR]... [\fIpkginst\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpkgmk\fR 实用程序生产可安装的软件包，用作 \fBpkgadd\fR(1M) 命令的输入。软件包内容是目录结构格式。
+.sp
+.LP
+命令将软件包 \fBprototype\fR(4) 文件作为输入，创建 \fBpkgmap\fR(4) 文件。\fBprototype\fR 文件中每个条目的内容将复制到相应的输出位置。有关内容（校验和、文件大小、修改日期）的信息都在 \fBpkgmap\fR 文件中计算和存储，还包括在 \fBprototype\fR 文件中指定的信息。
+.sp
+.LP
+\fBpkgmk\fR 搜索 \fBprototype\fR(4) 文件中列出的文件，如以下条件所述。\fB注意：\fR如果样例文件包含文件的显式位置以包括在软件包中，则以下搜索说明不适用。
+.RS +4
+.TP
+1.
+如果 \fB-b\fR 或 \fB-r\fR 选项都未指定，\fBprototype\fR(4) 文件中列出的每个文件路径的文件名部分应可以在与 \fBprototype\fR(4) 文件相同的目录中找到。
+.RE
+.RS +4
+.TP
+2.
+如果 \fB-b\fR 指定为相对路径（无前导 "\fB/\fR"），则 \fIbase_src_dir\fR 会放到针对 \fBprototype\fR(4)文件的相对路径前面。将在 \fIroot_path\fR 目录中搜索生成的路径。如果未指定 \fIroot_path\fR，它缺省为 "\fB/\fR"。
+.RE
+.RS +4
+.TP
+3.
+如果 \fB-b\fR 指定为绝对路径（具有前导 "\fB/\fR"），则 \fIbase_src_dir\fR 会放到针对 \fBprototype\fR(4)文件的相对路径前面，结果即为文件的位置。\fB不\fR搜索 \fIroot_path\fR。
+.RE
+.RS +4
+.TP
+4.
+如果指定了 \fB-r\fR 选项，则使用针对 \fBprototype\fR(4) 文件的全文件路径。相对路径前面都有 \fIbase_src_dir\fR。如果未指定 \fIbase_src_dir\fR，它缺省为 \fB""\fR。在 \fIroot_path\fR 的每个目录中搜索生成的路径。
+.RE
+.sp
+.LP
+如果使用 \fB"pkgproto a/relative/path"\fR 或 \fB"pkgproto a/relative/path=install/path"\fR 创建了样例文件，则应该使用 \fB-r\fR \fIroot_path\fR 选项指定 \fBa/relative/path\fR 的位置，使 \fBpkgmk\fR 可以正确定位源文件。
+.sp
+.LP
+软件包命令，包括 \fBpkgmk\fR，都可以识别 \fBlargefile\fR(5)。它们处理大于 2 GB 的文件的方法与处理较小文件的方法相同。在当前的执行中，\fBpkgadd\fR(1M)、\fBpkgtrans\fR(1) 和其他软件包命令可以处理最大 4 GB 的数据流。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarch\fR\fR
+.ad
+.RS 19n
+.rt  
+使用 \fIarch\fR 覆盖 \fBpkginfo\fR(4) 文件中提供的体系结构信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIbase_src_dir\fR\fR
+.ad
+.RS 19n
+.rt  
+在前面添加指定的 \fIbase_src_dir\fR，来定位源计算机上的可重定位对象。使用此选项搜索样例文件中的所有对象。\fBpkgmk\fR 应分别在 /\fIbase_src_dir\fR 中查找对象，或者使用 \fB-b\fR 和 \fB-r\fR 选项定位对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdevice\fR\fR
+.ad
+.RS 19n
+.rt  
+在 \fIdevice\fR 上创建软件包。\fIdevice\fR 可以是可移除磁盘的绝对目录路径名或标识符。缺省设备是安装假脱机目录 (\fB/var/spool/pkg\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIprototype\fR\fR
+.ad
+.RS 19n
+.rt  
+使用 \fIprototype\fR 文件作为命令的输入。缺省的 \fIprototype\fR 文件名是 [\fBPp\fR]\fBrototype\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlimit\fR\fR
+.ad
+.RS 19n
+.rt  
+将输出设备的 512 字节块的最大大小指定为 \fBlimit\fR。在缺省情况下，如果输出文件是一个目录或可挂载设备，\fBpkgmk\fR 使用 \fBdf\fR(1M) 命令动态地计算输出设备中的可用空间容量。此选项在与 \fBpkgtrans\fR(1)结合使用时可用来创建数据流格式的软件包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 19n
+.rt  
+覆盖相同的实例；已存在的软件包实例会被覆盖。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpstamp\fR\fR
+.ad
+.RS 19n
+.rt  
+使用 \fIpstamp\fR 覆盖 \fBpkginfo\fR(4) 文件中的生产标记定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIroot_path\fR\fR
+.ad
+.RS 19n
+.rt  
+使用附加了源路径名的指定 \fIroot_path\fR 来定位源计算机上的对象，可以用逗号 (\fB,\fR) 作为路径元素的分隔符。如果指定了此选项，在指定的每个目录中搜索全目标路径。如果 \fB-b\fR 或 \fB-r\fR 选项都未指定，则在当前目录中搜索叶文件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIversion\fR\fR
+.ad
+.RS 19n
+.rt  
+使用 \fIversion\fR 覆盖 \fBpkginfo\fR(4) 文件中提供的版本信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvariable=value\fR\fR
+.ad
+.RS 19n
+.rt  
+将指定的变量放在软件包环境中。（有关变量规范的定义，请参见 \fBprototype\fR(4)。）
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpkginst\fR\fR
+.ad
+.RS 11n
+.rt  
+按软件包实例指定软件包。实例可以是软件包缩写或特定的实例（例如，\fBinst.1\fR 或 \fBinst.2\fR）。可以通过 \fBinst.*\fR 请求软件包的所有实例。星号字符 (\fB*\fR) 对于某些 shell 来说是特殊字符，可能需要转义。在 C-Shell 中， \fB*\fR 必须由单引号 (\fB\&'\fR) 括起来或者在前面加反斜杠 (\e)。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpkgparam\fR(1)、\fBpkgproto\fR(1)、\fBpkgtrans\fR(1)、\fBuname\fR(1)、\fBdf\fR(1M)、\fBpkgadd\fR(1M)、\fBpkginfo\fR(4)、\fBpkgmap\fR(4)、\fBprototype\fR(4)、\fBattributes\fR(5)、\fBlargefile\fR(5)
+.sp
+.LP
+\fI《Application Packaging Developer\&'s Guide》\fR
+.SH 附注
+.sp
+.LP
+体系结构信息在命令行中通过 \fB-a\fR 选项提供，或在 \fBprototype\fR(4) 文件中提供。如果没有提供体系结构信息， \fBpkgmk\fR 使用 \fBuname\fR \fB-m\fR 的输出。（请参见 \fBuname\fR(1)）。
+.sp
+.LP
+版本信息在命令行中通过 \fB-v\fR 选项提供，或在 \fBpkginfo\fR(4) 文件中提供。如果没有提供版本信息，将提供基于当前日期的缺省信息。
+.sp
+.LP
+体系结构和版本的命令行定义将覆盖 \fBprototype\fR(4) 的定义。
+.sp
+.LP
+如果使用以下区域相关参数的无效组合之一，\fBpkgmk\fR 将失败。
+.RS +4
+.TP
+1.
+\fBSUNW_PKG_ALLZONES\fR 和 \fBSUNW_PKG_THISZONE\fR 都设置为 \fBTRUE\fR。
+.RE
+.RS +4
+.TP
+2.
+\fBSUNW_PKG_HOLLOW\fR 设置为 \fBTRUE\fR，且 \fBSUNW_PKG_ALLZONES\fR 设置为 \fBFALSE\fR。
+.RE
+.RS +4
+.TP
+3.
+软件包包含请求脚本，且 \fBSUNW_PKG_THISZONE\fR 设置为 \fBTRUE\fR。
+.RE
+.sp
+.LP
+有关这些参数的其他信息，请参见 \fBpkginfo\fR(4)。

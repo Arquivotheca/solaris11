@@ -1,0 +1,704 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates.保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH inetd 1M "2009 年 10 月 12 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+inetd \- Solaris 管理工具委托的面向 inet 服务的重启程序
+.SH 用法概要
+.LP
+.nf
+\fBinetd\fR  [\fIconfiguration-file\fR] start |  stop |  refresh
+.fi
+
+.LP
+.nf
+ svc:/network/inetd:default
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBinetd\fR 是服务管理工具 (Service Management Facility, SMF) 委托的面向 Internet 服务的重启程序。其基本职责是管理服务状态以便响应管理请求、系统故障和服务故障；并在适当时侦听服务的网络请求。
+.sp
+.LP
+服务不再通过编辑 inetd 配置文件 \fBinetd.conf\fR(4) 进行管理，而应使用 \fBinetconv\fR(1M) 将配置文件内容转换为 SMF 格式服务，然后使用 \fBinetadm\fR(1M) 和 \fBsvcadm\fR(1M) 管理这些服务。\fBinetconv\fR 在对服务进行转换之后，对 \fBinetd\fR 配置文件中的旧数据所做的任何更改都不会生效。但是，当 \fBinetd\fR 发现配置文件进行了更改时，会通知管理员。有关详细信息，请参见"inetd 方法"一节下有关 start 方法的说明。
+.sp
+.LP
+另请注意，当前 \fBinetd\fR 无法在 SMF 外部运行。这表示无法从命令行运行 inetd，而以前的 \fBinetd\fR 支持从命令行运行。如果您尝试执行此操作，则会向标准错误发送一条消息，该消息显示以前的 \fBinetd\fR 所支持的选项到 \fBinetd\fR 的 SMF 版本的映射。
+.sp
+.LP
+\fBinetd\fR 代表处于 \fBonline\fR 或 \fBdegraded\fR 状态的所有服务侦听连接。当用户启用服务并且 \fBinetd\fR 尝试代表服务进行侦听时，该服务将进入上述状态之一。如果其他服务器（不管是单独的 Internet 服务还是第三方 Internet 服务）已在侦听同一端口，侦听尝试可能会失败。如果发生此种情况，\fBinetd\fR 会记录此条件，并继续尝试按配置的次数在配置的时间间隔绑定到此端口。有关更多详细信息，请参见下面"服务属性"下的属性 \fBbind_fail_max\fR。
+.sp
+.LP
+启动 \fBinetd\fR 时，会读取由 inetd 管理的所有 SMF 服务的配置。刷新 \fBinetd\fR 时，会重新读取这些配置，在响应 SMF 请求或当 inetd 收到 SIGHUP 信号时会出现此种情况。有关配置刷新的行为，请参见"inetd 方法"下有关 \fBrefresh\fR 方法的说明。
+.sp
+.LP
+使用 \fBinetadm\fR(1M) 或 \fBsvccfg\fR(1M) 实用程序可以对 SMF 系统信息库中的 Internet 服务进行配置更改。相较于 \fBsvccfg\fR 而言，\fBinetadm\fR 的优势在于它提供了 Internet/RPC 服务上下文。
+.SS "服务状态"
+.sp
+.LP
+\fBinetd\fR 为其管理的每个服务实现一台状态机，作为其服务管理职责的一部分。此计算机中的状态由 \fBsmf\fR(5) 状态集组成。这些状态的语义如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninitialized（未初始化）\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinetd\fR 尚未处理此服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline（联机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务正在处理新的网络请求，并且可能具有活动的现有连接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdegraded（降级）\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务可以侦听和处理为此服务指定的部分（而非所有）协议的请求，耗尽了其侦听重试次数，从而进入此状态。现有网络连接可能处于活动状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline（脱机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+连接可能处于活动状态，但未在处理新请求。这是瞬时状态。服务可能因下列任何原因而处于 \fBoffline\fR（脱机）状态：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不符合服务的相关性。如果符合服务相关性，将重新评估此服务的状态。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+服务已超出其配置的连接速率限制 \fBmax_con_rate\fR。服务的连接脱机计时器 \fBcon_rate_offline\fR 过期时，将重新评估此服务的状态。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+服务已达到其允许的活动连接数 \fBmax_copies\fR。活动连接数降至 \fBmax_copies\fR 以下时，将重新评估此服务的状态。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBinetd\fR 无法代表服务侦听其所有协议。如上所述，\fBinetd\fR 最多按配置的最大次数在配置的时间间隔重试。侦听尝试成功或达到重试限制时，将重新评估此服务的状态。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled（禁用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+管理员已禁用服务，该服务不接受新连接，并且没有任何连接处于活动状态。需要管理员介入才能退出此状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaintenance（维护）\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务处于此状态的原因包括：服务错误运行且需要管理员注意，或者管理员已请求此状态。
+.sp
+导致错误运行的事件包括：\fBinetd\fR 在超出服务的绑定重试限制之前无法代表任何内容侦听服务的任何协议，非启动方法返回非成功返回值，以及服务超出其故障速率。
+.sp
+请求 maintenance 状态的目的是为了对服务执行维护，例如，应用修补级别。在此状态下，不会处理新请求，但现有连接可能处于活动状态。需要管理员介入才能退出此状态。
+.RE
+
+.sp
+.LP
+使用 \fBinetadm\fR(1M) 获取受管服务的当前状态。
+.SS "服务方法"
+.sp
+.LP
+作为状态转换的一部分，\fBinetd\fR 将执行服务提供的某个方法集（如果提供）。支持的方法集包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinetd_start\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行此方法可处理 \fBonline\fR 或 \fBdegraded\fR 服务的请求。由于没有单独的状态来区分服务和活动连接，因此此方法不会作为状态转换的一部分执行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinetd_offline\fR\fR
+.ad
+.sp .6
+.RS 4n
+在服务从 \fBonline\fR 或 \fBdegraded\fR 状态转至 \fBoffline\fR 状态时执行。对于在执行时执行其自己的侦听的 \fBwait\fR 类型的服务，此方法应当会导致此服务停止侦听。在禁用 \fBonline\fR/\fBdegraded\fR 服务的情况下，将在 \fBdisable\fR 方法之前执行此方法。对于 \fBwait\fR 类型的服务，必须实现此方法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinetd_online\fR\fR
+.ad
+.sp .6
+.RS 4n
+在服务从 \fBoffline\fR 状态切换到 \fBonline\fR 状态时执行。此方法允许服务作者在服务开始处理请求之前执行某些准备工作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinetd_disable\fR\fR
+.ad
+.sp .6
+.RS 4n
+在服务从 \fBoffline\fR 状态切换到 \fBdisabled\fR 状态时执行。此方法应当会导致服务的任何活动连接终止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinetd_refresh\fR\fR
+.ad
+.sp .6
+.RS 4n
+在同时满足下列两个条件时执行：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+通过框架或 SIGHUP 刷新 \fBinetd\fR，或者请求开始刷新服务，并且
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+服务当前处于 \fBonline\fR 状态，并且没有需要将服务置于 \fBoffline\fR 状态并重新联机的任何配置更改。
+.RE
+.RE
+
+.sp
+.LP
+唯一强制性方法是 \fBinetd_start\fR 方法。在没有任何其他方法的情况下，\fBinetd\fR 不会运行任何方法，但其行为就像成功运行了某个方法一样。
+.SS "服务属性"
+.sp
+.LP
+SMF 受管服务的配置存储在 SMF 系统信息库中。此配置包括服务的基本配置，服务的每个方法的配置以及缺省配置适用于所有 \fBinetd\fR 受管服务。
+.sp
+.LP
+有关查看和修改服务配置及缺省值的详细信息，请参见 \fBinetadm\fR(1M)。
+.sp
+.LP
+服务的基本配置存储在服务中名为 \fBinetd\fR 的属性组内。构成基本配置的这些属性如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbind_addr\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务应绑定到的网络接口的地址。导致服务接受任何网络接口上的连接的空字符串值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbind_fail_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+失败绑定尝试与重置之间的时间间隔（以秒为单位）。值 \fB0\fR 和 \fB-1\fR 指定是否不会尝试重试，并且处理第一次故障的方式是否与处理超出 \fBbind_fail_max\fR 的方式相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbind_fail_max\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinetd\fR 在放弃前重试绑定到服务的关联端口的最大次数。值 \fB-1\fR 指定不会强制任何重试限制。如果在达到任何强制限制前未绑定到服务协议，该服务将进入 \fBmaintenance\fR 状态；否则，如果未绑定到所有协议，该服务将进入 \fBdegraded\fR 状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcon_rate_offline\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务超出其配置的最大连接速率 \fBmax_con_rate\fR 时将保持脱机的时间（以秒为单位）。值 \fB0\fR 和 \fB-1\fR 指定是否禁用连接速率限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnection_backlog\fR\fR
+.ad
+.sp .6
+.RS 4n
+后备队列大小。表示可在服务器的侦听端点中排队的传入客户机请求数目的限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBendpoint_type\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务使用的套接字的类型或表示基于 TLI 的服务的值 \fBtli\fR。有效套接字类型值包括：\fBstream\fR、\fBdgram\fR、\fBraw\fR、\fBseqpacket\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailrate_cnt\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务的故障速率限制的计数部分。故障速率限制适用于 \fBwait\fR 类型的服务，当在给定时间内启动服务的 \fIcount\fR 实例时，将达到此限制。超出此速率将导致服务转换到 \fBmaintenance\fR 状态。这与前面的 \fBinetd\fR 的行为不同，它会继续无限期地在每 10 分钟重试一次。\fBfailrate_cnt\fR 在使用服务请求之前检查错误运行的服务器的计数，这些服务器将继续重新启动，从而耗费系统资源。故障速率等效于以前的 \fBinetd\fR 的 \fB-r\fR 选项。值 \fB0\fR 和 \fB-1\fR 指定是否禁用此功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailrate_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务的故障速率的时间部分（以秒为单位）。值 \fB0\fR 和 \fB-1\fR 指定是否禁用此故障速率限制功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinherit_env\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，则将 \fBinetd\fR 的环境传递到服务的启动方法。不管此设置如何，\fBinetd\fR 都会在启动方法环境中设置变量 \fBSMF_FMRI\fR、\fBSMF_METHOD\fR 和 \fBSMF_RESTARTER\fR，以及在方法上下文中设置的任何环境变量。\fBsmf_method\fR(5) 中介绍了这些变量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisrpc\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，则为 RPC 服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_con_rate\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBnowait\fR 类型的服务允许的最大连接速率（以每秒连接数为单位）。值 \fB0\fR 和 \fB-1\fR 指定是否禁用连接速率限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_copies\fR\fR
+.ad
+.sp .6
+.RS 4n
+可并行运行的 \fBnowait\fR 服务的最大副本数。值 \fB0\fR 和 \fB-1\fR 指定是否禁用此副本限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.sp .6
+.RS 4n
+可设置为以下值之一：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgetservbyname\fR(3SOCKET) 已知的服务名称。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果 \fBisrpc\fR 设置为 \fBtrue\fR，则为 \fBgetrpcbyname\fR(3NSL) 已知的服务名称。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果 \fBisrpc\fR 设置为 \fBtrue\fR，则为有效 RPC 程序编号。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproto\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于基于套接字的服务，此属性是服务支持的协议的列表。有效协议包括：\fBtcp\fR、\fBtcp6\fR、\fBtcp6only\fR、\fBudp\fR、\fBudp6\fR 和 \fBudp6only\fR。对于 TLI 服务，这是服务支持的 \fBgetnetconfigent\fR(3NSL) 所识别的 netid 的列表以及值 \fBtcp6only\fR 和 \fBudp6only\fR。在此列表中，RPC/TLI 服务还支持 nettype，并且 \fBinetd\fR 首先尝试将列表成员解释为这些服务类型的 nettype。值 \fBtcp6only\fR 和 \fBudp6only\fR 是 \fBinetd\fR 中的新值，这些值请求 \fBinetd\fR 仅侦听并传递真正的 \fBIPv6\fR 请求（而非 IPv4 映射请求）。请参见下面的"为基于套接字的服务配置协议"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrpc_low_version\fR\fR
+.ad
+.sp .6
+.RS 4n
+支持的最低 RPC 版本。此参数在 \fBisrpc\fR 设置为 \fBtrue\fR 时是必需的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrpc_high_version\fR\fR
+.ad
+.sp .6
+.RS 4n
+支持的最高 RPC 版本。此参数在 \fBisrpc\fR 设置为 \fBtrue\fR 时是必需的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtcp_keepalive\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，则允许在连接的套接字上定期传输消息。如果连接方无法响应这些消息，则将连接视为已断开。这仅适用于 \fBendpoint_type\fR 设置为 \fBstreams\fR 且 wait 设置为 \fBfalse\fR 的服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtcp_trace\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，并且是 \fBnowait\fR 类型的服务，\fBinetd\fR 则会使用 \fBsyslog\fR(3C) 工具针对每个传入连接记录客户机的 IP 地址和 TCP 端口号以及服务名称。\fBinetd\fR 使用 \fBsyslog\fR 工具 \fBcode\fR 守护进程以及 \fBnotice\fR 优先级级别。有关 \fBsyslog\fR 代码和严重级别的说明，请参见 \fBsyslog.conf\fR(4)。此日志独立于 TCP 包装器工具执行的记录。
+.sp
+\fBtcp_trace\fR 等效于以前的 \fBinetd\fR 的 \fB-t\fR 选项（以及 \fB/etc/default/inetd\fR 属性 \fBENABLE_CONNECTION_LOGGING\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtcp_wrappers\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则启用 TCP 包装器访问控件。这仅适用于 \fBendpoint_type\fR 设置为 \fBstreams\fR 且 \fBwait\fR 设置为 \fBfalse\fR 的服务。\fBsyslog\fR 工具 \fBcode\fR 守护进程用于记录允许的连接（使用 \fBnotice\fR 严重级别）和拒绝的通信（使用 \fBwarning\fR 严重级别）。有关 \fBsyslog\fR 代码和严重级别的说明，请参见 \fBsyslog.conf\fR(4)。TCP 包装器工具的接口稳定性及其配置文件容易发生变化。由于 TCP 包装器工具不受 Oracle 控制，因此版本内部经常发生不兼容情况。请参见 \fBattributes\fR(5)。
+.sp
+有关配置 TCP 包装器的更多信息，请参见 \fBtcpd(1M)\fR 和 \fBhosts_access(4)\fR 手册页，这些手册页作为 Solaris 操作系统的一部分在 \fB/usr/sfw/man\fR 中提供。这些手册页不包含在标准 Solaris 手册页中，可在 \fB/usr/man\fR 上获取。
+.sp
+\fBtcp_wrappers\fR 等效于以前的 inetd 的 \fB/etc/default/inetd\fR 属性 \fBENABLE_TCPWRAPPERS\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwait\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则为 \fBwait\fR 类型的服务，否则为 \fBnowait\fR 类型的服务。\fBwait\fR 类型的服务具有下列特征：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+其 \fBinetd_start\fR 方法将在执行时接管服务的绑定端点上的侦听职责。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+执行此方法后，\fBinetd\fR 将等待此方法退出，然后才会恢复侦听职责。
+.RE
+数据报服务器必须配置为类型 \fBwait\fR，因为它们始终通过原始数据报端点进行调用，此端点将参与绑定到指定服务的服务的传送。它们没有单独的"侦听"和"接受"套接字。面向连接的服务（如 TCP 流服务）可设计为类型 \fBwait\fR 或 \fBnowait\fR。
+.RE
+
+.sp
+.LP
+服务的许多基本属性都是可选的。如果缺少这些属性，则会从 \fBinetd\fR 服务中的 \fBdefaults\fR 属性组内提供的缺省值集获取这些属性的值。下面列出了这些属性及其种子值。请注意，这些值可通过 \fBinetadm\fR(1M) 进行配置。
+.sp
+.in +2
+.nf
+bind_fail_interval  -1
+bind_fail_max       -1
+con_rate_offline    -1
+connection_backlog  10
+failrate_count      40
+failrate_time       60
+inherit_env         true
+max_con_rate        -1
+max_copies          -1
+tcp_keepalive       false
+tcp_trace           false
+tcp_wrappers        false
+.fi
+.in -2
+
+.sp
+.LP
+为服务指定的每个方法的配置都存储在 SMF 系统信息库中与相应方法同名的属性组内。这些方法允许的属性集包括为 \fBsvc.startd\fR(1M) 管理的服务指定的属性集。（有关更多详细信息，请参见 \fBsvc.startd\fR(1M)。）此外，对于 \fBinetd_start\fR 方法，可以设置 \fBarg0\fR 属性。
+.sp
+.LP
+\fBarg0\fR 属性允许与 \fBinetd\fR 服务一起使用外部包装器程序。具体而言，它允许将服务的启动方法的第一个参数 \fBargv[0]\fR 设置为除服务器程序路径以外的内容。
+.sp
+.LP
+如果希望使用外部包装器程序，并将参数传递给服务的守护进程，应将这些参数作为包装器程序的参数合并到 \fBexec\fR 属性中。例如：
+.sp
+.in +2
+.nf
+exec='/path/to/wrapper/prog service_daemon_args'
+arg0='/path/to/service/daemon'
+.fi
+.in -2
+
+.sp
+.LP
+除 \fBsmf_method\fR(5) 中提到的特殊方法标记以外，\fBinetd\fR 还对 \fBwait\fR 类型的服务支持 \fB:kill_process\fR 标记。这会导致与提供了 \fB:kill\fR 标记的行为相同的行为，但仅向 \fBwait\fR 类型的服务的 \fBstart\fR 方法的父进程发送 \fBkill\fR 信号，而不是向其包含的进程合同的所有成员发送此信号（请参见 \fBprocess\fR(4)）。
+.SS "为基于套接字的服务配置协议"
+.sp
+.LP
+当为基于套接字的服务配置 \fBinetd\fR 时，根据此服务支持的内容，可以选择在上面的 \fBproto\fR 属性下介绍的备用项。下面是要使用的 \fBproto\fR 值的准则：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于仅支持 IPv4 的服务：则为 \fBtcp\fR 和 \fBudp\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于仅支持 IPv6 的服务：则为 \fBtcp6only\fR 和 \fBudp6only\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于同时支持 IPv4 和 IPv6 的服务：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+已过时且不推荐使用的值：\fBtcp6\fR 和 \fBudp6\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+建议值：使用两个仅在原始字段存在差异的单独项。其中一个项具有 \fBtcp\fR 值，另一个项具有 \fBtcp6only\fR 值；或者其中一个项具有 \fBudp\fR，另一个项具有 \fBudp6only\fR 值。
+.RE
+.RE
+.sp
+.LP
+有关同时支持 IPv4 和 IPv6 的服务的配置示例，请参见"示例"。
+.SS "\fBinetd\fR 方法"
+.sp
+.LP
+\fBinetd\fR 提供下面列出的方法，以供主重启程序 \fBsvc.startd\fR(1M) 使用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.sp .6
+.RS 4n
+导致 \fBinetd\fR 开始提供服务。这会导致 \fBinetd\fR 开始处理其受管服务的 \fBsmf\fR 请求以及处于 \fBonline\fR 或 \fBdegraded\fR 状态的服务的网络请求。
+.sp
+此外，\fBinetd\fR 还会检查自上次执行 \fBinetconv\fR(1M) 转换以来其监视的 \fBinetd.conf\fR(4) 格式的配置文件是否已发生更改。如果已发生更改，则会在 \fBsyslog\fR 中记录一条消息，通知管理员重新运行 \fBinetconv\fR 以便实现所做的更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.sp .6
+.RS 4n
+导致 \fBinetd\fR 停止提供服务。此时，\fBinetd\fR 将未处于 \fBmaintenance\fR 或 \fBdisabled\fR 状态的各个服务转换为 \fBoffline\fR 状态，同时在此过程中运行任何适当的方法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.sp .6
+.RS 4n
+导致针对每个受管服务执行刷新，并检查 \fBinetd.conf\fR(4) 格式配置文件中的更改（如在 \fBstart\fR 方法中一样）。刷新服务时，其行为取决于服务的当前状态：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果服务处于 \fBmaintenance\fR 或 \fBdisabled\fR 状态，则不会执行任何操作，因为将在此服务退出相应状态时读取和使用配置；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果服务处于 \fBoffline\fR 状态，则会读取配置并立即使用任何更改。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果服务处于 \fBonline\fR 或 \fBdegraded\fR 状态，并且配置已发生更改且必须执行重新绑定才能与配置相符，服务将使用绑定的新配置转换到 \fBoffline\fR 状态并重新联机；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果服务处于 \fBonline\fR 状态，并且不需要重新绑定，则将运行此服务的 \fBinetd_refresh\fR 方法（如果提供），以便允许 \fBonline\fR \fBwait\fR 类型的服务使用任何其他更改。
+.RE
+.RE
+
+.SH 选项
+.sp
+.LP
+不支持任何选项。
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fB\fIconfiguration-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+为旧服务文件 (\fBinetd.conf\fR(4)) 指定一个备用位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR|\fBstop\fR|\fBrefresh\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应当运行的 \fBinetd\fR 方法。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR配置同时支持 IPv4 和 IPv6 的服务
+.sp
+.LP
+下面的命令演示同时支持 IPv4 和 IPv6 的现有服务以及如何向这些服务分配 \fBproto\fR 属性。
+
+.sp
+.in +2
+.nf
+example# \fBsvcs -a | grep mysvc\fR
+online         15:48:29 svc:/network/mysvc:dgram4
+online         15:48:29 svc:/network/mysvc:dgram6
+online         15:51:47 svc:/network/mysvc:stream4  
+online         15:52:10 svc:/network/mysvc:stream6  
+ 
+# \fBinetadm -M network/rpc/mysvc:dgram4 proto=udp\fR
+# \fBinetadm -M network/rpc/mysvc:dgram6 proto=udp6only\fR
+# \fBinetadm -M network/rpc/mysvc:stream4 proto=tcp\fR
+# \fBinetadm -M network/rpc/mysvc:stream6 proto=tcp6only\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关这些命令的说明，请参见 \fBsvcs\fR(1) 和 \fBinetadm\fR(1M)。
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBfmd\fR(1M)、\fBinetadm\fR(1M)、\fBinetconv\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBsvcs\fR(1)、\fBsvc.startd\fR(1M)、\fBsyslog\fR(3C)、\fBgetnetconfigent\fR(3NSL)、\fBgetrpcbyname\fR(3NSL)、\fBgetservbyname\fR(3SOCKET)、\fBinetd.conf\fR(4)、\fBprocess\fR(4)、\fBsyslog.conf\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBsmf_method\fR(5)
+.SH 附注
+.sp
+.LP
+\fBinetd\fR 守护进程与 Solaris 9 及早期 Solaris 操作系统版本中的同名守护进程执行相同的功能，但两者的实现方式有很大区别。在当前的 Solaris 发行版中，\fBinetd\fR 是 Solaris 管理工具（请参见 \fBsmf\fR(5)）的一部分，并且将仅在此工具中运行。
+.sp
+.LP
+\fB/etc/default/inetd\fR 文件已过时。属性 \fBENABLE_CONNECTION_LOGGING\fR 和 \fBENABLE_TCP_WRAPPERS\fR 表示的功能现在分别作为 \fBtcp_trace\fR 和 \fBtcp_wrappers\fR 属性使用。上文中的"服务属性"下介绍了这些属性。

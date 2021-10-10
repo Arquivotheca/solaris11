@@ -1,0 +1,366 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH nfsd 1M "25 Jun 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+nfsd \- NFS daemon
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/nfs/nfsd\fR [\fB-a\fR] [\fB-c\fR \fI#_conn\fR] [\fB-l\fR \fIlisten_backlog\fR] 
+     [\fB-p\fR \fIprotocol\fR] [\fB-t\fR \fIdevice\fR] [\fInservers\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBnfsd\fR is the daemon that handles client file system requests. Only users with \fB{PRIV_SYS_NFS}\fR and sufficient privileges to write to \fB/var/run\fR can run this daemon. 
+.sp
+.LP
+The \fBnfsd\fR daemon is automatically invoked using \fBshare\fR(1M) with the \fB-a\fR option.
+.sp
+.LP
+By default, \fBnfsd\fR starts over the TCP and UDP transports for versions 2 and 3. By default, it starts over the TCP for version 4. You can change this with the \fB-p\fR option.
+.sp
+.LP
+A previously invoked \fBnfsd\fR daemon started with or without options must be stopped before invoking another \fBnfsd\fR command.
+.sp
+.LP
+To change startup parameters for \fBnfsd\fR, use the \fBsharectl\fR(1M) command.
+.SS "SMF Management"
+.sp
+.LP
+The \fBnfsd\fR service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/network/nfs/server
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.
+.sp
+.LP
+If \fBnfsd\fR is killed with \fBSIGTERM\fR, it will not be restarted by the service management facility. Instead, \fBnfsd\fR can be restarted by other signals, such as \fBSIGINT\fR.
+.sp
+.LP
+The \fBsharectl\fR(1M) command can be used to manage all the parameters related to \fBnfsd\fR. The following are the parameters currently supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserver_versmax\fR=\fInum\fR\fR
+.ad
+.br
+.na
+\fB\fBserver_versmin\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+The NFS server only uses NFS versions in the range specified by these variables. Valid values or versions are: \fB2\fR, \fB3\fR, and \fB4\fR.  If one or both of these parameters are left unset, the default minimum  version is \fB2\fR,  while the default maximum version is \fB4\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserver_delegation\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+By default, this variable is \fBon\fR and the NFS server provides delegations to clients. The user can turn off delegations for all exported file systems by setting this variable to \fBoff\fR (case-sensitive). This variable applies only to NFS Version 4.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_connections\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the maximum number of concurrent, connection-oriented connections. The default is unlimited and is obtained by setting to \fB-1\fR. Equivalent to the \fB-c\fR option in \fBnfsd\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlisten_backlog\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set connection queue length for the NFS over a connection-oriented transport. The default value is \fB32\fR, meaning 32 entries in the queue. Equivalent to the \fB-l\fR option in \fBnfsd\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprotocol\fR=\fBALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Start \fBnfsd\fR over the specified protocol only. Equivalent to the -p option in \fBnfsd\fR. \fBALL\fR is equivalent to \fB-a\fR on the \fBnfsd\fR command line. Mutually exclusive of NFS SMF parameter \fBdevice\fR. One or the other of NFS SMF parameters \fBdevice\fR and \fBprotocol\fR must not be set. If both are set, the \fBnfs/server\fR service goes into maintenance mode. For the UDP protocol, only version 2 and version 3 service is established. NFS Version 4 is not supported for the UDP protocol. Equivalent to the \fB-p\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR=\fIdevname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Start NFS daemon for the transport specified by the specified device only. Equivalent to the \fB-t\fR option in \fBnfsd\fR. Mutually exclusive of NFS SMF parameter \fBprotocol\fR. One or the other of NFS SMF parameters \fBdevice\fR and \fBprotocol\fR must not be set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBservers\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Maximum number of concurrent NFS requests. Equivalent to last numeric argument on the \fBnfsd\fR command line. The default is \fB1024\fR. Equivalent to the \fInservers\fR operand.
+.RE
+
+.sp
+.LP
+See \fBEXAMPLES\fR, below.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+Start an \fBNFS\fR daemon over all available connectionless and connection-oriented transports, including UDP and TCP. Equivalent of setting the \fBprotocol\fR parameter to \fBALL\fR in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fI#_conn\fR\fR
+.ad
+.RS 15n
+.rt  
+This sets the maximum number of connections allowed to the \fBNFS\fR server over connection-oriented transports. By default, the number of connections is unlimited. Equivalent of the \fBmax_connections\fR parameter in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 15n
+.rt  
+Set connection queue length for the \fBNFS TCP\fR over a connection-oriented transport. The default value is 32 entries. Equivalent of the \fBlisten_backlog\fR parameter in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprotocol\fR\fR
+.ad
+.RS 15n
+.rt  
+Start a \fBNFS\fR daemon over the specified protocol. Equivalent of the \fBprotocol\fR parameter in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIdevice\fR\fR
+.ad
+.RS 15n
+.rt  
+Start a \fBNFS\fR daemon for the transport specified by the given device. Equivalent of the \fBdevice\fR parameter in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+
+.SH OPERANDS
+.sp
+.LP
+The following operands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fInservers\fR\fR
+.ad
+.RS 12n
+.rt  
+This sets the maximum number of concurrent \fBNFS\fR requests that the server can handle. This concurrency is achieved by up to \fInservers\fR threads created as needed in the kernel. \fInservers\fR should be based on the load expected on this server. 16 is the usual number of \fInservers\fR. If \fInservers\fR is not specified, the maximum number of concurrent \fBNFS\fR requests will default to 1. Equivalent of the \fBservers\fR parameter in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+
+.SH USAGE
+.sp
+.LP
+If the \fBNFS_PORTMON\fR variable is set in \fB/etc/system\fR, then clients are required to use privileged ports (ports < \fBIPPORT_RESERVED\fR) to get \fBNFS\fR services. This variable is equal to zero by default. This variable has been moved from the "nfs" module to the "nfssrv" module. To set the variable, edit the \fB/etc/system\fR file and add this entry:
+.sp
+.LP
+\fBset\fR \fBnfssrv:nfs_portmon\fR \fB=\fR \fB1\fR
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRTurning Off Delegation
+.sp
+.LP
+The \fBnfsd\fR properties specified in these examples are described under "SMF Management," above.
+
+.sp
+.LP
+Delegation is an NFSv4 feature in which the server delegates the management of a file to a client. For example, the server could grant (or not grant) either a read delegation or a write delegation to a client. The following command does this, setting the \fBserver_delegation\fR property to \fBoff\fR.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p server_delegation=off nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDetermining Value of Delegation
+.sp
+.LP
+The following command obtains the current value of the \fBserver_delegation\fR property.
+
+.sp
+.in +2
+.nf
+# \fBsharectl get -p server_delegation nfs\fR
+server_delegation=on
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRSetting Maximum Number of Concurrent Requests
+.sp
+.LP
+The following command sets the maximum number of concurrent NFS requests.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p servers=32 nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRSetting Connection Queue Length
+.sp
+.LP
+The following command sets the maximum queue length for the NFS over a connection-oriented transport.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p listen_backlog=48 nfs\fR
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Daemon started successfully.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+Daemon failed to start.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\&.nfs\fIXXX\fR\fR\fR
+.ad
+.RS 24n
+.rt  
+Client machine pointer to an open-but-unlinked file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/system\fR\fR
+.ad
+.RS 24n
+.rt  
+System configuration information file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/nfs/v4_state\fR\fR
+.ad
+.br
+.na
+\fB\fB/var/nfs/v4_oldstate\fR\fR
+.ad
+.RS 24n
+.rt  
+Directories used by the server to manage client state information. These directories should not be removed.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilityservice/file-system/nfs
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBps\fR(1), \fBsvcs\fR(1), \fBmountd\fR(1M), \fBshare\fR(1M), \fBsharectl\fR(1M), \fBsvcadm\fR(1M), \fBsharetab\fR(4), \fBsystem\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fISystem Administration Guide: Network Services\fR
+.SH NOTES
+.sp
+.LP
+Manually starting and restarting \fBnfsd\fR is not recommended. If it is necessary to do so, use \fBsvcadm\fR to enable or disable the \fBnfs\fR service (\fBsvc:/network/nfs/server\fR). If it is disabled, it will be enabled by \fBshare_nfs\fR(1M), unless its \fBapplication/auto_enable\fR property is set to \fBfalse\fR. See the \fISystem Administration Guide: Network Services\fR, and \fBsvcadm\fR(1M) for more information.

@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+
+	Service manifest for LLDP (IEEE 802.1AB Specification).
+-->
+
+<service_bundle type='manifest' name='SUNWlldp:lldp'>
+
+<service
+	name='network/lldp'
+	type='service'
+	version='1'>
+
+	<!--
+	    We need the datalinks to be initialized before we can enable LLDP
+	    on top of them and hence this dependency.
+	-->
+	<dependency
+		name='datalink'
+		grouping='require_all'
+		restart_on='error'
+		type='service'>
+		<service_fmri value='svc:/network/datalink-management'/>
+	</dependency>
+
+	<instance name='default' enabled='false'>
+		<exec_method
+			type='method'
+			name='stop'
+			exec=':kill'
+			timeout_seconds='120' >
+		</exec_method>
+
+		<exec_method
+			type='method'
+			name='start'
+			exec='/lib/svc/method/svc-lldpd'
+			timeout_seconds='120' >
+		</exec_method>
+
+		<!--
+		    refresh re-reads few configuration variables and will
+		    not take much time.
+		-->
+		<exec_method
+			type='method'
+			name='refresh'
+			exec=':kill -HUP'
+			timeout_seconds='60' >
+		</exec_method>
+
+		<!-- to start/stop the LLDP service -->
+		<property_group name='general' type='framework'>
+			<propval name='action_authorization' type='astring' 
+				value='solaris.smf.manage.lldp' />
+			<propval name='value_authorization' type='astring' 
+				value='solaris.smf.manage.lldp' />
+		</property_group>
+
+		<property_group name='startd' type='framework'>
+			<!--
+			    sub-process core dumps shouldn't restart session
+			-->
+			<propval name='ignore_error' type='astring'
+			     value='core,signal' />
+		</property_group>
+
+		<property_group name='lldp' type='application'>
+			<stability value='Evolving' />
+			<propval name='msgFastTx' type='count' value='1' />
+			<propval name='msgTxInterval' type='count' value='30' />
+			<propval name='reinitDelay' type='count' value='2' />
+			<propval name='msgTxHold' type='count' value='4' />
+			<propval name='txFastInit' type='count' value='4' />
+			<propval name='txCreditMax' type='count' value='5' />
+			<propval name='snmp' type='boolean' value='false' />
+			<propval name='value_authorization' type='astring'
+				value='solaris.network.lldp' />
+		</property_group>
+
+		<template>
+			<common_name>
+				<loctext xml:lang='C'>LLDP</loctext>
+			</common_name>
+			<description>
+				<loctext xml:lang='C'>
+					Implements Link Layer Discover Protocol
+				</loctext>
+			</description>
+			<documentation>
+				<manpage title='lldpd' section='1M'
+					manpath='/usr/share/man' />
+			</documentation>
+
+			<pg_pattern name='lldp' type='application' target='this'
+			    required='true'>
+				<prop_pattern name='msgTxInterval' type='count'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+indicates the time interval between the transmission of two consecutive LLDPDUs during normal transmission periods. The default value is 30 seconds.
+					</loctext></description>
+					<visibility value='readwrite'/>
+					<cardinality min='1' max='1'/>
+					<constraints>
+						<range min='1' max='3600'/>
+					</constraints>
+				</prop_pattern>
+				<prop_pattern name='msgFastTx' type='count'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+indicates the time interval between the transmission of two consecutive LLDPDUs during fast transmission periods. The default value is 1 second.
+					</loctext></description>
+					<visibility value='readwrite'/>
+					<cardinality min='1' max='1'/>
+					<constraints>
+						<range min='1' max='3600'/>
+					</constraints>
+				</prop_pattern>
+				<prop_pattern name='msgTxHold' type='count'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+The value of the TTL in the LLDPDU transmitted by the LLDP agent is determined by multiplying msgTxHold with msgTxInterval. So, if this value is set to 2 then the adjacent stations would wait for twice the msgTxInterval before aging the entries from this station. The default value is 4.
+					</loctext></description>
+					<visibility value='readwrite'/>
+					<cardinality min='1' max='1'/>
+					<constraints>
+						<range min='1' max='100'/>
+					</constraints>
+				</prop_pattern>
+				<prop_pattern name='reinitDelay' type='count'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+indicates the delay before re-initialization of LLDP state machines. The default value is 2 seconds.
+					</loctext></description>
+					<visibility value='readwrite'/>
+					<cardinality min='1' max='1'/>
+					<constraints>
+						<range min='1' max='100'/>
+					</constraints>
+				</prop_pattern>
+				<prop_pattern name='txCreditMax' type='count'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+The maximum number of consecutive LLDPDUs that can be transmitted at any time. The default value is 5.
+					</loctext></description>
+					<visibility value='readwrite'/>
+					<cardinality min='1' max='1'/>
+					<constraints>
+						<range min='1' max='10'/>
+					</constraints>
+				</prop_pattern>
+				<prop_pattern name='txFastInit' type='count'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+indicates the number of LLDPDUs that are transmitted during a fast transmission period. The default value is 4.
+					</loctext></description>
+					<visibility value='readwrite'/>
+					<cardinality min='1' max='1'/>
+					<constraints>
+						<range min='1' max='8'/>
+					</constraints>
+				</prop_pattern>
+				<prop_pattern name='snmp' type='boolean'
+				    required='true'>
+					<description><loctext xml:lang='C'>
+turns SNMP support on or off.
+					</loctext></description>
+					<visibility value='readwrite'/>
+				</prop_pattern>
+			</pg_pattern>
+		</template>
+	</instance>
+
+	<stability value='Unstable' />
+
+</service>
+
+</service_bundle>

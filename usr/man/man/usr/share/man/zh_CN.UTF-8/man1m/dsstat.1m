@@ -1,0 +1,1265 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH dsstat 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+dsstat \- 报告 Sun StorageTek Availability Suite I/O 统计信息
+.SH 用法概要
+.LP
+.nf
+\fBdsstat\fR \fB-m\fR \fImode\fR [\fB-r\fR \fIreport-options\fR] [\fB-d\fR \fIdisplay-options\fR]
+ [\fB-s\fR \fIvolume-sets\fR] [\fB-f\fR | \fB-F\fR] [\fB-z\fR] [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBdsstat\fR 命令收集并报告 Sun StorageTek Availability Suite 产品的 I/O 统计信息。
+.SH 选项
+.sp
+.LP
+\fBdsstat\fR 支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fB\fImode\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定运行模式。有效的模式为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcache\fR\fR
+.ad
+.sp .6
+.RS 4n
+高速缓存统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBii\fR\fR
+.ad
+.sp .6
+.RS 4n
+Point-in-Time Copy 统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsndr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Remote Mirror 统计信息
+.RE
+
+要同时显示多个服务的统计信息，请使用 \fB-m\fR 开关指定所需的每个模式。例如：
+.sp
+.in +2
+.nf
+% \fBdsstat -m ii -m sndr\fR
+% \fBdsstat -m ii -m sndr -m cache\fR
+.fi
+.in -2
+.sp
+
+要确定哪些统计信息报告自哪个服务，请使用如下所述的 \fIrole\fR 字段。当作为多个服务之一请求高速缓存统计信息时，\fBrkps\fR 和 \fBwkps\fR 统计信息将进一步分为 \fBcrkps\fR、\fBdrkps\fR、\fBcwkps\fR 和 \fBdwkps\fR。 如果未指定 \fB-m\fR 开关，则 \fBdsstat\fR 将显示上述所有有效模式的缺省统计信息。请参见下面的"字段说明"了解对这些字段的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fB\fIreport-options\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要显示的卷组件。每一项由单个字符表示，可以选择多个项。\fIreport-options\fR 根据上面指定的模式而不同。该选项不用于 \fBcache\fR 模式。
+.sp
+\fBii\fR 模式下的有效 \fIreport-options\fR 为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 13n
+.rt  
+主卷统计信息。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于"ii 模式下的 report-options"：\fBm\fR、\fBs\fR、\fBb\fR、\fBo\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于"sndr 模式下的 report-options"：\fBb\fR、\fBn\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于"cache 模式下的 display-options"：\fBr\fR、\fBw\fR、\fBd\fR、\fBc\fR、\fBs\fR、\fBf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于"ii 模式下的 display-options"：\fBr\fR、\fBw\fR、\fBt\fR、\fBs\fR、\fBp\fR、\fBf\fR
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+影子卷统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.RS 13n
+.rt  
+位图卷统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 13n
+.rt  
+溢出卷统计信息（如有连接）。
+.RE
+
+在 \fBsndr\fR 模式下，有效的 \fIreport-options\fR 为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.RS 13n
+.rt  
+位图卷统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBn\fR\fR
+.ad
+.RS 13n
+.rt  
+网络卷统计信息。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdisplay-options\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要显示的统计信息。统计信息类型由单个字符表示；可以指定多个类型。
+.sp
+在 \fBcache\fR 模式下，有效的 \fIdisplay-options\fR 为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 13n
+.rt  
+详细的读取统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.RS 13n
+.rt  
+详细的写入统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+摘要统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.RS 13n
+.rt  
+高速缓存行为标志。
+.RE
+
+以下 \fIdisplay-options\fR 只适用于 cache 模式，并且需要与模式选项 (\fB-m\fR) 结合使用
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 13n
+.rt  
+降级数据统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 13n
+.rt  
+写入取消统计信息。
+.RE
+
+\fBcache\fR 的缺省 \fIdisplay-options\fR 是 \fBsf\fR。
+.sp
+在 \fBii\fR 模式下，有效的 \fIdisplay-options\fR 为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细的读取统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细的写入统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.sp .6
+.RS 4n
+计时统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+摘要统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+要求同步的卷的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.sp .6
+.RS 4n
+卷类型/状态标志。
+.RE
+
+\fBii\fR 的缺省 \fIdisplay-options\fR 是 \fBspf\fR。 在 \fBsndr\fR 模式下，有效的 \fIdisplay-options\fR 为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 13n
+.rt  
+详细的读取统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.RS 13n
+.rt  
+详细的写入统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 13n
+.rt  
+计时统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+摘要统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 13n
+.rt  
+要求同步的卷的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.RS 13n
+.rt  
+卷类型/状态标志。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 13n
+.rt  
+异步队列统计信息。
+.RE
+
+以下 \fIdisplay-option\fR 只适用于 \fBsndr\fR 模式，并且需要与模式选项 (\fB-m\fR) 结合使用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 13n
+.rt  
+异步队列统计信息。
+.RE
+
+\fBsndr\fR 的缺省 \fIdisplay-options\fR 是 \fBspf\fR。
+.sp
+指定摘要 \fIdisplay-option\fR 将导致 \fBr\fR \fBw\fR \fBt\fR \fIdisplay-options\fR 被忽略。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fB\fIvolume-sets\fR\fR\fR
+.ad
+.RS 20n
+.rt  
+过滤输出以只包含指定的 \fIvolume-sets\fR，其中 \fIvolume-sets\fR 是以逗号分隔的卷名列表。显示 Remote Mirror 统计信息时，指定的名称将与 Remote Mirror 主卷进行比较，以确定其是否匹配。此外，Remote Mirror 卷应指定为 \fI<host>\fR:\fI<volume>\fR，其中 \fI<host>\fR 是主要主机或辅助主机，\fI<volume>\fR 是该主机用以识别卷集的卷名。指定多个 Remote Mirror 卷集时，请注意指定的各个卷集将使用上述规则分别进行评估。显示 Point-in-Time Copy 统计信息时，指定的卷名将与 Point-in-Time Copy 影子卷进行比较，以确定其是否匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 20n
+.rt  
+每个报告周期输出字段标题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 20n
+.rt  
+报告开始时，输出一次字段标题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.RS 20n
+.rt  
+取消显示具有零值或没有活动的报告行。
+.RE
+
+.SH 操作数
+.sp
+.LP
+\fBdsstat\fR 命令行支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+为各个报告指定 \fIinterval\fR（以秒为单位）。如果未指定 \fIinterval\fR，单个报告将以一秒的 \fIinterval\fR 输出。
+.sp
+由于给定集中的条目数不断变化以及集数量不断变化，标题信息可能会显示在要报告的集的中部。为了避免此情况，可使用 \fB-f\fR 或 \fB-F\fR 选项在所需时间显示标题信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要生成的报告数。如果未指定 \fIcount\fR，输出将继续直至中断。
+.RE
+
+.SS "字段说明"
+.sp
+.LP
+除非另有说明，否则所有字段都是基于指定 \fIinterval\fR 期间收集数据的每秒平均数。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 13n
+.rt  
+报告的实体的名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 13n
+.rt  
+卷类型
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+卷状态
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 13n
+.rt  
+高速缓存读取行为
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.RS 13n
+.rt  
+高速缓存写入行为
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpct\fR\fR
+.ad
+.RS 13n
+.rt  
+要求同步的卷的百分比
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrole\fR\fR
+.ad
+.RS 13n
+.rt  
+报告的项的角色
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtps\fR\fR
+.ad
+.RS 13n
+.rt  
+读取 + 写入的总数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrtps\fR\fR
+.ad
+.RS 13n
+.rt  
+读取数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwtps\fR\fR
+.ad
+.RS 13n
+.rt  
+写入数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkps\fR\fR
+.ad
+.RS 13n
+.rt  
+读取 + 写入的总千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrkps\fR\fR
+.ad
+.RS 13n
+.rt  
+读取的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwkps\fR\fR
+.ad
+.RS 13n
+.rt  
+写入的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrkps\fR\fR
+.ad
+.RS 13n
+.rt  
+从高速缓存读取的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdrkps\fR\fR
+.ad
+.RS 13n
+.rt  
+从磁盘读取的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcwkps\fR\fR
+.ad
+.RS 13n
+.rt  
+写入高速缓存的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdwkps\fR\fR
+.ad
+.RS 13n
+.rt  
+写入磁盘的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBckps\fR\fR
+.ad
+.RS 13n
+.rt  
+高速缓存传入传出的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdkps\fR\fR
+.ad
+.RS 13n
+.rt  
+磁盘传入传出的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvt\fR\fR
+.ad
+.RS 13n
+.rt  
+每次运行的服务时间
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhit\fR\fR
+.ad
+.RS 13n
+.rt  
+\fIinterval\fR 期间的读取命中次数 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBds/s\fR\fR
+.ad
+.RS 13n
+.rt  
+从高速缓存降级的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcn/s\fR\fR
+.ad
+.RS 13n
+.rt  
+写入取消数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 13n
+.rt  
+使用的异步队列类型
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqi\fR\fR
+.ad
+.RS 13n
+.rt  
+当前已排队的项数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqk\fR\fR
+.ad
+.RS 13n
+.rt  
+当前已排队的千字节数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqhwi\fR\fR
+.ad
+.RS 13n
+.rt  
+已排队项的高界限
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqhwk\fR\fR
+.ad
+.RS 13n
+.rt  
+已排队千字节数的高界限
+.RE
+
+.sp
+.LP
+\fBname\fR 字段只显示名称的最后 16 个字符。
+.sp
+.LP
+\fBcache\fR 的有效高速缓存行为是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBC\fR\fR
+.ad
+.RS 13n
+.rt  
+高速缓存读取/写入
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+磁盘读取/写入
+.RE
+
+.sp
+.LP
+\fBii\fR 的有效卷类型是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBI\fR\fR
+.ad
+.RS 13n
+.rt  
+独立影子卷
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+依赖影子卷
+.RE
+
+.sp
+.LP
+\fBii\fR 的有效卷状态是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBC\fR\fR
+.ad
+.RS 13n
+.rt  
+复制正在进行
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.RS 13n
+.rt  
+无复制正在进行
+.RE
+
+.sp
+.LP
+\fBsndr\fR 的有效卷类型是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 13n
+.rt  
+这是此卷集的主要主机
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR\fR
+.ad
+.RS 13n
+.rt  
+这是此卷集的辅助主机
+.RE
+
+.sp
+.LP
+\fBsndr\fR 的有效卷状态是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBL\fR\fR
+.ad
+.RS 13n
+.rt  
+正在记录对此卷的更改
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQ\fR\fR
+.ad
+.RS 13n
+.rt  
+卷处于队列模式下
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBR\fR\fR
+.ad
+.RS 13n
+.rt  
+正在将更改复制到辅助主机
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSY\fR\fR
+.ad
+.RS 13n
+.rt  
+正在进行同步。正在发送数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRS\fR\fR
+.ad
+.RS 13n
+.rt  
+正在进行反向同步。正在接收数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSN\fR\fR
+.ad
+.RS 13n
+.rt  
+需要同步
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRN\fR\fR
+.ad
+.RS 13n
+.rt  
+需要反向同步
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVF\fR\fR
+.ad
+.RS 13n
+.rt  
+卷失败
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBF\fR\fR
+.ad
+.RS 13n
+.rt  
+位图失败
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQF\fR\fR
+.ad
+.RS 13n
+.rt  
+队列失败
+.RE
+
+.sp
+.LP
+\fBsndr\fR 的有效队列类型是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+已启用基于磁盘的队列
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBM\fR\fR
+.ad
+.RS 13n
+.rt  
+已启用基于内存的队列
+.RE
+
+.sp
+.LP
+\fBsndr\fR 的卷角色是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.RS 13n
+.rt  
+网络卷统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbmp\fR\fR
+.ad
+.RS 13n
+.rt  
+位图卷统计信息
+.RE
+
+.sp
+.LP
+\fBii\fR 的卷角色是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmst\fR\fR
+.ad
+.RS 13n
+.rt  
+主卷统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshd\fR\fR
+.ad
+.RS 13n
+.rt  
+影子卷统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbmp\fR\fR
+.ad
+.RS 13n
+.rt  
+位图卷统计信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBovr\fR\fR
+.ad
+.RS 13n
+.rt  
+溢出卷统计信息
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR报告高速缓存统计信息
+.sp
+.LP
+以下示例显示报告高速缓存统计信息，其中详细划分了对高速缓存/磁盘的读取和写入。报告生成的时间间隔为五秒。报告限制到集 \fB/dev/rdsk/c1t1d0s0\fR。
+
+.sp
+.in +2
+.nf
+ # dsstat -m cache -d rw -s /dev/rdsk/c1t1d0s0 5
+- read -             - write -      
+name                ckps   dkps    hit   ckps   dkps    hit 
+dev/rdsk/c1t1d0s0      0      0   0.00      0      0   0.00 
+dev/rdsk/c1t1d0s0      3   2396   0.13    983    763 100.00 
+dev/rdsk/c1t1d0s0   2399    799  75.00   2815   2686 100.00 
+dev/rdsk/c1t1d0s0   3200    800  80.00   2755   2908 100.00 
+dev/rdsk/c1t1d0s0   3999    799  83.33   2809   2868 100.00 
+dev/rdsk/c1t1d0s0   4800    800  85.71   2867   2931 100.00
+.fi
+.in -2
+
+.LP
+\fB示例 2 \fR报告主卷、影子卷和位图卷的统计信息
+.sp
+.LP
+使用缺省输出报告 Point-in-Time Copy 主卷、影子卷和位图卷的统计信息。报告生成的时间间隔为两秒。
+
+.sp
+.in +2
+.nf
+# dsstat -m ii -r msb 2 
+name               t  s    pct role    kps   tps  svt 
+dev/rdsk/c0t1d0s5  I  C  96.15  mst  19921    38   22 
+dev/rdsk/c0t1d0s6               shd   9960    19   20 
+dev/rdsk/c0t1d0s7               bmp     39    77    2 
+dev/rdsk/c0t1d0s5  I  C  94.24  mst  19623    38   22 
+dev/rdsk/c0t1d0s6               shd   9939    19   20 
+dev/rdsk/c0t1d0s7               bmp     39    77    2 
+dev/rdsk/c0t1d0s5  I  C  92.34  mst  19969    39   22 
+dev/rdsk/c0t1d0s6               shd   9984    19   20 
+dev/rdsk/c0t1d0s7               bmp     39    78    2
+.fi
+.in -2
+
+.LP
+\fB示例 3 \fR报告 Remote Mirror 网络统计信息
+.sp
+.LP
+使用详细的读取、写入统计信息报告 Remote Mirror 的网络统计信息。报告包括卷类型/状态标志和百分比。报告生成的时间间隔为两秒。将报告限制到集 \fB/dev/rdsk/c0t1d0s0\fR。
+
+.sp
+.in +2
+.nf
+# dsstat -m sndr -r n -d rwpf -s /dev/rdsk/c0t1d0s0 2 
+name               t  s    pct role   rkps  rtps   wkps  wtps 
+dev/rdsk/c0t1d0s0  P  L 100.00  sec      0     0      0     0 
+dev/rdsk/c0t1d0s0  P SY  99.90  sec      0     0    288     9 
+dev/rdsk/c0t1d0s0  P SY  97.90  sec      0     0   5296   165 
+dev/rdsk/c0t1d0s0  P SY  95.81  sec      0     0   5184   161 
+dev/rdsk/c0t1d0s0  P SY  93.81  sec      0     0   5280   164 
+dev/rdsk/c0t1d0s0  P SY  91.71  sec      0     0   5198   162
+.fi
+.in -2
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 13n
+.rt  
+成功完成，无统计信息需要报告。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 13n
+.rt  
+遇到了无效参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 13n
+.rt  
+无内存可用于创建 \fBkstat\fR 统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 13n
+.rt  
+发生未知错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性storage/avs/avs-cache-management
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdscfg\fR(1M)、\fBsvadm\fR(1M)、\fBds.log\fR(4)、\fBrdc.cf\fR(4)、\fBattributes\fR(5)

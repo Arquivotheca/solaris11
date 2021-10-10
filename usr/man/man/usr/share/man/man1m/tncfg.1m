@@ -1,0 +1,610 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH tncfg 1M "22 Mar 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+tncfg \- configure trusted networking properties
+.SH SYNOPSIS
+.LP
+.nf
+\fBtncfg\fR [\fB-t\fR \fItemplate\fR] [\fB-e\fR|\fB-S\fR [files|ldap]] [\fIsubcommand\fR]
+.fi
+
+.LP
+.nf
+\fBtncfg\fR [\fB-t\fR \fItemplate\fR] [\fB-e\fR|\fB-S\fR [files|ldap]] \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBtncfg\fR \fB-z\fR \fIzone\fR [\fB-e\fR] [\fIsubcommand\fR]
+.fi
+
+.LP
+.nf
+\fBtncfg\fR \fB-z\fR \fIzone\fR [\fB-e\fR] \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBtncfg\fR help
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBtncfg\fR utility creates, modifies, and displays the configuration of various networking properties related to Trusted Extensions. The command requires that the SMF service, \fBsvc:/system/labeld\fR is enabled. It can be executed only in the global zone.
+.SS "Templates"
+.sp
+.LP
+A template is a collection of network security properties that define the rules for labeling packets received from remote hosts. Two host types are supported: \fBcipso\fR and \fBunlabeled\fR. Each template must specify one of these two host types. Hosts that are trusted to specify their own labels are assigned to \fBcipso\fR templates. Otherwise, hosts may be assigned to \fBunlabeled\fR templates, in which a single default label must be specified.
+.sp
+.LP
+Hosts can be specified using hostnames, IP addresses, or masks. When masks are used, a prefix length that specifies how many bits are required for a match must be appended . Hosts cannot be assigned to more than one template. When masks are used, the entry with the longest matching prefix is used to associate a host with a template. Packets from hosts without a matching template are dropped.
+.sp
+.LP
+Each template must include an upper and lower bound specifying the accreditation range of accepted labels. Additionally, up to four auxiliary labels can be specified to enumerate labels outside of this range. Services bound to multilevel ports can accept packets from hosts whose labels are within the accreditation range, or match one of the auxiliary labels.
+.sp
+.LP
+Normally, the template settings and their corresponding hosts are persistently maintained in local files or by means of an LDAP directory, depending on the \fB-S\fR option. These settings are automatically loaded into kernel memory when the user commits the updates. If the \fB-e\fR (ephemeral) option is specified, only the current in-memory properties are displayed and updated. However, the list of hosts associated with an in-memory template is generally incomplete. To view the matching template for a specific host, use the \fBget\fR subcommand.
+.sp
+.LP
+By default, an unlabeled template, \fBadmin_low\fR, is installed with a default label of \fBADMIN_LOW\fR, and two mask entries matching any IPv4 or IPv6 address, so that the global zone is initially able to contact any \fBunlabeled\fR hosts. It is recommended to remove these two mask entries once your network security policy is established. An additional template, \fBcipso\fR, is installed with no matching hosts. By default all local IP addresses are implicitly associated with this template, but it is recommended that they should be explicitly added to this or a new \fBcipso\fR-type template.
+.sp
+.LP
+Searches for template and host entries are resolved in the order specified by means of the name service configuration file, \fB/etc/nsswitch.conf\fR. The keywords, \fBtnrhdb\fR and \fBtnrhtp\fR, are used to specify the search order for hosts and templates, respectively. Both the \fBfiles\fR and \fBldap\fR repositories are supported, but it is recommended to specify \fBfiles\fR first.
+.sp
+.LP
+Creating or modifying a template requires the authorization \fBsolaris.label.network.manage\fR, which is included in the Object Label Management rights profile.
+.SS "Zones"
+.sp
+.LP
+Zones are isolated execution environments described in \fBzones\fR(5). Trusted Extensions requires a zone brand called \fBlabeled\fR to which special properties apply. Each labeled zone must have a unique label property at which it executes processes. This is also the label at which it will accept packets from remote hosts for services bound to single-level ports. Explicit multilevel port can also be specified. Services with the privilege \fBnet_bindmlp\fR can bind to these ports, and accept packets within the accreditation range or the auxiliary label set associated with the remote host.
+.sp
+.LP
+Non-global zones must be configured using \fBzonecfg\fR(1M) prior to configuring these properties. In general, updates to each zone's properties, including the global zone, are applied when it is booted. However, the multilevel port properties of running zones are reloaded into kernel memory when updates are committed. If the \fB-e\fR (ephemeral) option is specified, the zone must be in the ready or running state, and only its multilevel port properties can be updated.
+.sp
+.LP
+Creating or modifying a zone's trusted networking properties requires the authorization \fBsolaris.label.zone.manage\fR, which is included in the Object Label Management rights profile.
+.SS "Properties"
+.sp
+.LP
+The set of valid properties depends on whether the \fB-t\fR or \fB-z\fR option was used. The two sets are referred to as the template context and the zone context.
+.sp
+.LP
+Only a single property value can be specified at a time. Values containing white space must be quoted. An equal sign is required between the property and its value.
+.sp
+.LP
+The values that can be specified in the template context properties are described below.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR=\fItemplate_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The initial value for the name is specified using \fB-t\fR option using the command line. If the name is changed, the current template properties are applied to the newly named template. In this way an existing template can be cloned for subsequent editing. However, to avoid conflicts, the host entries from the initial template are not copied to the new template. The specified name must not match an existing template.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost_type\fR=\fBcipso\fR|\fBunlabeled\fR\fR
+.ad
+.sp .6
+.RS 4n
+When the \fBunlabeled\fR host type is used, the value specified using the the \fBdef_label\fR property is implicitly applied to the received packets. The \fBcipso\fR host type is used for hosts that are trusted to explicitly label their packets. The default is \fBunlabeled\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdef_label\fR=\fIsensitivity_label\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default label assigned to IP packets that are not explicitly labeled by means of \fBcipso\fR or IPsec.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdoi\fR=\fIinteger\fR\fR
+.ad
+.sp .6
+.RS 4n
+A positive integer specifying the Domain of Interpretation for the binary representation of the labels. The default is \fB1\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmin_label\fR=\fIsensitivity_label\fR\fR
+.ad
+.sp .6
+.RS 4n
+The minimum label in the accreditation range for IP packets that are accepted by multilevel services.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_label\fR=\fIsensitivity_label\fR\fR
+.ad
+.sp .6
+.RS 4n
+The maximum label in the accreditation range for IP packets that are accepted by multilevel services.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaux_label\fR=\fIsensitivity_label\fR\fR
+.ad
+.sp .6
+.RS 4n
+Additional labels, outside of the accreditation range, for IP packets that are accepted by multilevel services. Up to four labels may be specified, using the \fBadd\fR subcommand repetitively.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR=\fIhostname\fR|\fIIP address\fR[/\fIprefix\fR]\fR
+.ad
+.sp .6
+.RS 4n
+A hostname or an IP address to which the template properties apply. For IP addresses, both IPv4 and IPv6 formats can be used, followed by an optional slash and prefix length specifying the number of bits to match again IP addresses. The IPv4 address \fB0.0.0.0\fR has an implied prefix length of zero, and matches any IPv4 address. Multiple host values can be specified, using the \fBadd\fR subcommand repetitively. There is no specific limit.
+.RE
+
+.sp
+.LP
+The values that may be specified in the zone context properties are described below.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR=\fIzone_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the zone, which must have previously been configured using \fBzonecfg\fR(1M). The initial value for the name is specified using \fB-z\fR option on the command line. If the name is changed, the current zone properties are applied to the newly named zone. In this way an existing template can be cloned for subsequent editing. However, to avoid conflicts, the initial label value is not copied to the new zone configuration. The specified name must correspond to an existing zone without a trusted networking configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlabel\fR=\fIsensitivity_label\fR\fR
+.ad
+.sp .6
+.RS 4n
+The sensitivity label of the zone. It must be unique for each zone. The global zone value must be \fBadmin_low\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvisible\fR=\fByes\fR|\fBno\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies whether the zone responds to ping requests from hosts whose labels don't match the zone's label. The default is \fBno\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmlp_private\fR=\fIport\fR|[-\fIport2\fR]/\fBtcp\fR|\fBudp\fR\fR
+.ad
+.sp .6
+.RS 4n
+A single port number, or a range of ports that privileged services can bind to and then accept requests from clients whose labels are with the accreditation range or the set of auxiliary labels specified in their matching templates. The port specification must be followed by a a protocol, either \fBtcp\fR or \fBudp\fR. This value applies to all interfaces that are private to the zone. Multiple \fBmlp_private\fR values can be specified, using the \fBadd\fR subcommand repetitively. This is only limited by the number of available ports.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmlp_shared\fR=\fIport\fR|[-\fIport2\fR]/\fBtcp\fR|\fBudp\fR\fR
+.ad
+.sp .6
+.RS 4n
+A single port number, or a range of ports that privileged services can bind to and then accept requests from clients whose labels are with the accreditation range or the set of auxiliary labels specified in their matching templates. The port specification must be followed by a protocol, either \fBtcp\fR or \fBudp\fR. This value applies to any \fBall-zones\fR interfaces, and must not overlap with the \fBmlp_shared\fR ports specifications for other zones. Multiple \fBmlp_shared\fR values can be specified, using the \fBadd\fR subcommand repetitively. This is only limited by the number of available ports.
+.RE
+
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the data is ephemeral, affecting only what is currently loaded into kernel memory.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the name of \fBtncfg\fR command file. \fIcommand_file\fR is a text file of \fBtncfg\fR subcommands, one per line.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItemplate\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the template name. If the named template does not exist, a new template is created. If neither \fB-t\fR nor \fB-z\fR is specified, the template context is assumed using \fBcipso\fR as the default template name.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIrepository\fR\fR
+.ad
+.sp .6
+.RS 4n
+The valid repositories are \fBfiles\fR and \fBldap\fR. The repository specifies which name service will be updated. The default repository is files.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzone\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the zone name. The zone must have previously been configured by means of \fBzonecfg\fR(1M).
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+Subcommands can be provided on the command line or interactively. Multiple subcommands, separated by semicolons, can be specified on the command line by enclosing the entire set in quotation marks. The lack of subcommands implies an interactive session, during which auto-completion of subcommands can be invoked using the tab key.
+.sp
+.LP
+The add, clear, and remove subcommands are used for properties that can accept multiple values. However, only one value can be specified at a time.
+.sp
+.LP
+Subcommands which can result in destructive actions or loss of work have an \fB-F\fR option to force the action. If input is from a terminal device, the user is prompted when appropriate if such a subcommand is given without the \fB-F\fR option.  Otherwise, the action is disallowed, with a diagnostic message written to standard error.
+.sp
+.LP
+The following subcommands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR \fIproperty-name\fR=\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Adds the specified value to the current property values. This subcommand can only be applied to properties that accept multiple values. Use the \fBset\fR subcommand for single-value properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIproperty-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Clears all of the values for the property. Only those properties that accept multiple assignments, using the \fBadd\fR subcommand, can be cleared.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+Commits the current configuration from memory to stable storage and into the kernel. The configuration must be committed for the changes to take effect. Until the in-memory configuration  is committed, you can remove changes with the \fBrevert\fR subcommand. The commit operation is attempted automatically upon completion of a \fBtncfg\fR session. Since a configuration must be correct to be committed, this operation automatically does a \fBverify\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the specified template or zone configuration from the current name service.
+.sp
+Specify the \fB-F\fR option to force the action. If the deletion is allowed, its action is instantaneous and the session is terminated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-f\fR \fIoutput-file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Displays configuration to standard output. Use the \fB-f\fR option to display the configuration to \fIoutput-file\fR. This option produces output in a form suitable for use in a command file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR host=\fIhostname\fR | \fIIP address\fR[/\fIprefix\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Displays the template name corresponding to the specified host using the kernel's in-memory mapping.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fBusage\fR] [\fBsubcommands\fR] [\fBproperties\fR] [\fIsubcommand\fR] [\fIproperty\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Displays general help or help about a given topic.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfo\fR \fIproperty-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays information about the current template or zone, or the specified property in a parseable format.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+Lists the names of the templates or zones that have been configured.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fIproperty-name\fR=\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes the specified value from the property. Only those properties that accept multiple assignments, using the \fBadd\fR subcommand, can be removed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIproperty-name\fR=\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets a given property name to the given value. Properties that can take multiple values are assigned using the \fBadd\fR subcommand, instead of \fBset\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verifies the current configuration for correctness:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The required properties are specified;
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+the values are valid for each key word;
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+the user is authorized to specify the values.
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Causes the configuration to revert to the last committed state. The \fB-F\fR option can be used to force the action.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Exits the \fBtncfg\fR session. A \fBcommit\fR is automatically attempted if needed. You can also use an EOF character to exit \fBtncfg\fR. The \fB-F\fR option can be used to force the action.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUsing the \fBinfo\fR Subcommand
+.sp
+.LP
+The command below displays the properties of a \fBcipso\fR template are displayed. The subcommand is specified on the command line.
+
+.sp
+.in +2
+.nf
+example% \fBtncfg -t cipso info\fR
+             name=cipso
+             host_type=cipso
+             doi=1
+             min_label=ADMIN_LOW
+             max_label=ADMIN_LOW
+             host=10.5.233.74
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRUsing the \fBexport\fR Subcommand
+.sp
+.LP
+The following example shows an interactive session that exports the configuration of a zone in a format the could be imported to another machine with an equivalent zone.
+
+.sp
+.in +2
+.nf
+example% \fBtncfg -t public\fR
+tncfg:public> \fBexport\fR
+set name=public
+set host_type=unlabeled
+set doi=1
+set def_label="PUBLIC"
+set min_label="PUBLIC"
+set max_label="CONFIDENTIAL : NEED TO KNOW"
+add aux_label="SANDBOX PLAYGROUND"
+add host=myserver.oracle.com
+add host=10.5.0.0/16
+tncfg:public> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRAssigning Properties to a Zone
+.sp
+.LP
+In the following example, the public zone is configured to be a multi-level NFS server.
+
+.sp
+.in +2
+.nf
+example% \fBtncfg -z public\fR
+tncfg:public> \fBinfo\fR
+     name=public
+     label=PUBLIC
+     visible=no
+tncfg:public> \fBadd mlp_private=111/tcp\fR
+tncfg:public> \fBadd mlp_private=111/ucp\fR
+tncfg:public> \fBadd mlp_private=2049/tcp\fR
+tncfg:public> \fBcommit\fR
+tncfg:public> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.SH FILES
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/security/tsol/tnrhtp\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/security/tsol/tnrhdb\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/security/tsol/tnzonecfg\fR
+.RE
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/trusted
+_
+Interface StabilitySee below.
+.TE
+
+.sp
+.LP
+The invocation and subcommands are committed. Output, except for the \fBexport\fR and \fBinfo\fR subcommands, is Not-an-Interface.
+.SH SEE ALSO
+.sp
+.LP
+\fBtnctl\fR(1M), \fBtnd\fR(1M), \fBtninfo\fR(1M), \fBtxzonemgr\fR(1M), \fBzonecfg\fR(1M), \fBnsswitch.conf\fR(4), \fBattributes\fR(5), \fBlabels\fR(5), \fBzones\fR(5)
+.SH NOTES
+.sp
+.LP
+The Labeled Zone Manager, \fBtxzonemgr\fR(1M), is an alternative application for configuring Trusted Extensions. It invokes the \fBtncfg\fR command internally, and provides an interactive GUI-based user interface.

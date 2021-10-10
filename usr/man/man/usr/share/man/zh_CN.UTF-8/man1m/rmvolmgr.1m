@@ -1,0 +1,136 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH rmvolmgr 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+rmvolmgr \- 能够识别 HAL 的可移除卷管理器
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/rmvolmgr\fR [\fB-chns\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBrmvolmgr\fR 命令是一个卷管理器，它能够自动挂载和卸载可移除的介质和可热插拔的存储器。缺省挂载点是 \fB/media\fR。
+.sp
+.LP
+\fBrmvolmgr\fR 是 Solaris 操作系统附带的许多能够识别硬件抽象层 (Hardware Abstraction Layer, HAL) 的工具中的一种。请参见 \fBhald\fR(1M)。
+.sp
+.LP
+可以同时运行 \fBrmvolmgr\fR 的多个实例。\fBrmvolmgr\fR 的系统实例在缺省情况下作为服务管理工具 (Service Management Facility, SMF) 服务运行（请参见 \fBsmf\fR(5)）。其故障管理资源标识符 (fault management resource identifier, FMRI) 为：
+.sp
+.in +2
+.nf
+svc:/system/filesystem/rmvolmgr
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过将 \fBrmvolmgr\fR 实例添加到 \fB\&.xinitrc\fR 文件或类似的会话启动脚本，您可以运行自己的 rmvolmgr 实例。在这种情况下，\fB系统\fR \fBrmvolmgr\fR 实例将不会管理属于您（启动脚本的所有者）的卷。例如，如果一个用户登录到工作站控制台 (\fB/dev/console\fR) 并调用了自己的 \fBrmvolmgr\fR 实例，则该用户将成为在本地连接的设备的所有者，如 CD-ROM 驱动器和连接到本地 USB 或 FireWire 端口的设备。
+.sp
+.LP
+除了在 \fB/media\fR 下挂载卷，\fBrmvolmgr\fR 还在 \fB/cdrom\fR 和 \fB/rmdisk\fR 下创建传统的符号链接。
+.sp
+.LP
+通过在 \fB/tmp/.removable\fR 下维护通知文件，\fBrmvolmgr\fR 还提供与 CDE 可移除介质接口的向后兼容性。可以使用 \fB-c\fR 选项禁用该功能。
+.sp
+.LP
+也可以将 \fB-c\fR 和 \fB-n\fR 选项指定为 SMF 属性。请参见"示例"。
+.SH 选项
+.sp
+.LP
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+禁用 CDE 兼容性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 6n
+.rt  
+显示帮助信息并退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+不创建传统的挂载点符号链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+以系统实例模式进行调用。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 SMF 属性设置选项
+.sp
+.LP
+下面的 \fBsvccfg\fR(1M) 命令和子命令使用 SMF 属性来设置 \fB-c\fR 和 \fB-n\fR 选项。
+
+.sp
+.in +2
+.nf
+example# \fBsvccfg\fR
+svc:> \fBselect rmvolmgr\fR
+svc:/system/filesystem/rmvolmgr> \fBlistprop rmvolmgr/*\fR
+rmvolmgr/legacy_mountpoints     boolean  true
+rmvolmgr/cde_compatible         boolean  true
+svc:/system/filesystem/rmvolmgr> \fBsetprop \e
+  rmvolmgr/legacy_mountpoints=false\fR
+svc:/system/filesystem/rmvolmgr> \fBsetprop rmvolmgr/cde_compatible=false\fR
+svc:/system/filesystem/rmvolmgr> \fBexit\fR
+example#
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/storage/media-volume-manager
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBhald\fR(1M)、\fBsvccfg\fR(1M)、\fBattributes\fR(5)、\fBhal\fR(5)、\fBsmf\fR(5)

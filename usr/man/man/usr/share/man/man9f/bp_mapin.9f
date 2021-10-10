@@ -1,0 +1,62 @@
+'\" te
+.\" Copyright (c) 1992, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH bp_mapin 9F "21 Dec 2010" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+bp_mapin \- allocate virtual address space
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/types.h>
+#include <sys/buf.h>
+
+\fBvoid\fR \fBbp_mapin\fR(\fBstruct buf *\fR\fIbp\fR);
+.fi
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Architecture independent level 1 (DDI/DKI).
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbp\fR\fR
+.ad
+.RS 6n
+.rt  
+Pointer to the buffer header structure.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBbp_mapin()\fR function makes buffer data accessible to a driver by mapping the data into a contiguous kernel virtual address region. After \fBbp_mapin()\fR, the mapped buffer is accessible via the \fIbp\fR\(em>\fIb_un.b_addr\fR field of the \fBbuf\fR(9S) structure.
+.sp
+.LP
+If \fBbp_mapin()\fR is unable to establish a mapping, it returns without allocating space and no mapping is performed.
+.sp
+.LP
+Any resources associated with establishing the mapping are deallocated by the \fBbp_mapout\fR(9F) function.
+.SH CONTEXT
+.sp
+.LP
+The \fBbp_mapin()\fR function can be called from user and kernel contexts.
+.SH SEE ALSO
+.sp
+.LP
+\fBbioaligned\fR(9F), \fBbp_mapout\fR(9F), \fBbuf\fR(9S) 
+.sp
+.LP
+\fIWriting Device Drivers\fR 
+.SH WARNINGS
+.sp
+.LP
+Because \fBbp_mapin()\fR does not keep a reference count, \fBbp_mapout()\fR will wipe out any kernel mapping, including mappings that a layer above the device driver might still rely on.  See \fBbp_mapout\fR(9F) for details.
+.sp
+.LP
+When a driver needs to look directly at buffer data, it should call \fBbp_mapin()\fR without conditioning the call on other aspects of the \fBbuf\fR(9S) structure like \fIb_flags\fR.
+.sp
+.LP
+To check alignment of buffer memory, it may be more efficient for a driver to use \fBbioaligned\fR(9F) instead of \fBbp_mapin()\fR.

@@ -1,0 +1,203 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH bmc 7D "25 Feb 2011" "SunOS 5.11" "Devices"
+.SH NAME
+bmc \- legacy service processor driver interfaces
+.SH SYNOPSIS
+.sp
+.LP
+\fB#include <sys/mbc_intf.h>\fR
+.sp
+.LP
+\fBopen("/dev/bmc", mode);\fR
+.SH DESCRIPTION
+.sp
+.LP
+The \fBbmc\fR streams driver provides access to a system's service processor using the legacy Sun BMC driver interface. 
+.sp
+.LP
+\fBbmc\fR uses \fBputmsg()\fR and \fBgetmsg()\fR as the primary method to communicate with a system service processor. A streams message which contains a \fBbmc_req_t\fRstructure and response buffer is sent to the driver with \fBputmsg()\fR. The driver issues the request to the system service processor. The driver retrieves the response from the system BMC and puts the response in the buffer. When the user-land application issues a streams \fBgetmsg()\fR the original request and the response from the BMC are returned.
+.SS "Properties"
+.sp
+.LP
+This is the original \fBbmc\fR driver module. If you only need the Sun legacy \fBbmc\fR driver then this is the driver module that you should use.
+.sp
+.LP
+If you want the extended features of the new OpenIPMI driver, but still require legacy \fBbmc\fR driver functionality you have the choice of using the new \fBsbmc/ipmi\fR driver module pair. This new pair offers an OpenIPMI compatible driver (\fBipmi\fR) and a legacy \fBbmc\fR compatible driver, \fBsbmc\fR, both of which can be used at the same time. 
+.sp
+.LP
+You can only have the original \fBbmc\fR or the new pair \fBsbmc/ipmi\fR enabled. You can not have both enabled. 
+.sp
+.LP
+This choice is made though driver properties as follows:
+.sp
+.in +2
+.nf
+Driver Module  Functionality         Enable Property
+
+bmc            Legacy bmc driver     bmc.conf/bmc-enable
+ipmi           OpenIPMI driver       ipmi.conf/ipmi-enable
+sbmc           bmc compatibility     sbmc.conf/sbmc-enable
+                for OpenIPMI
+.fi
+.in -2
+
+.sp
+.LP
+The driver properties are set by editing the related configuration files. The configuration file for the \fBbmc\fR driver is \fBbmc.conf\fR. The configuration file for the \fBbmc\fR compatibility module for OpenIPMI is \fBsbmc.conf\fR. When the \fBipmi\fR module is enabled there is a \fBbmc\fR compatibility mode module called \fBsbmc\fR and its related configuration file, \fBsbmc.conf\fR. 
+.sp
+.LP
+The following properties are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbmc-enable\fR\fR
+.ad
+.RS 15n
+.rt  
+Enables or disables the \fBbmc\fR driver. When the driver is disabled it does not attach and is not active.
+.sp
+When set to \fB1\fR the \fBbmc\fR driver is enabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsbmc-enable\fR\fR
+.ad
+.RS 15n
+.rt  
+Enables or disables the \fBbmc\fR driver. When the driver is disabled it does not attach and is not active.
+.sp
+When this is set to \fB1\fR the \fBsbmc\fR compatible driver is enabled. The default is disabled (\fB0\fR). 
+.sp
+If this property is enabled then \fBipmi\fR must be enabled and \fBbmc\fR must not be enabled.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/bmc\fR\fR
+.ad
+.RS 28n
+.rt  
+Legacy \fBbmc\fR driver file node
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/ipmi0\fR\fR
+.ad
+.RS 28n
+.rt  
+OpenIPMI compatible driver file node
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/bmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit x86 kernel \fBbmc\fR driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/sbmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit x86 kernel \fBbmc\fR compatible driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/bmc.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBbmc\fR configuration file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/ipmi.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+OpenIPMI driver property configuration file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sbmc.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBbmc\fR compatibility module for OpenIPMI configuration file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/bmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit SPARC kernel \fBbmc\fR driver module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/sbmc\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit SPARC kernel \fBbmc\fR compatible driver module
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureSPARC, x86
+_
+Availability\fBdriver/management/bmc\fR
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBgetmsg\fR(2), \fBputmsg\fR(2), \fBattributes\fR(5), \fBipmi\fR(7D)

@@ -1,0 +1,368 @@
+'\" te
+.\"  Copyright 1989 AT&T
+.\" Copyright (C) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH rlogin 1 "2010 年 4 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+rlogin \- リモートログイン
+.SH 形式
+.LP
+.nf
+\fBrlogin\fR [\fB-8EL\fR] [\fB-e\fIc\fR\fR ] [\fB-A\fR] [\fB-K\fR] [\fB-x\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-f\fR | \fB-F\fR] [\fB-a\fR] 
+     [\fB-l\fR \fIusername\fR] [\fB-k\fR \fIrealm\fR] \fIhostname\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBrlogin\fR ユーティリティーは、使用している端末から \fIhostname\fR で指定したリモートマシンへのリモートログインセッションを確立します。ユーザーは、Kerberos V5 を使用して rlogin セッションを Kerberos 認証するかどうかを選択できます。また、転送されるデータも保護できます。
+.sp
+.LP
+ホスト名のリストは \fIhosts\fR データべースに格納されています。このデータべースは \fB/etc/hosts\fR ファイル、ネットワーク情報サービス (\fBNIS\fR) の \fBhosts\fR マップ、インターネットドメインネームサーバーのいずれかに含まれています。このうちのいくつかに含まれている場合もあります。各ホストには 1 つの正式名 (データべースエントリの最初の名前) があり、さらにいくつかのニックネームが存在することもあります。\fIhostname\fR には、正式ホスト名とニックネームのどちらでも指定できます。
+.sp
+.LP
+ユーザーは、Kerberos V5 認証を使用して、rlogin セッションをセキュリティー保護することもできます。また、転送されるデータも暗号化できます。rlogin セッションで Kerberos 認証を使用するには、任意の Kerberos 固有オプションを使用します 　 (\fB-A\fR、\fB-PN\fR または \fB-PO\fR、\fB-x\fR、\fB-f\fR または \fB-F\fR、および \fB-k\fR \fIrealm\fR)。これらのオプションのうち、\fB-A\fR、\fB-x\fR、\fB-PN\fR または \fB-PO\fR、および \fB-f\fR または \fB-F\fR は、\fBkrb5.conf\fR(4) の \fB[appdefaults]\fR セクションにも指定できます。これらのオプションの使用法と期待される動作については、次の「オプション」セクションを参照してください。Kerberos 承認を使用する場合、アカウントの承認は、\fBkrb5_auth_rules\fR(5) の規則によって制御されます。この認証が失敗した場合、\fB-PO\fR オプションをコマンド行に明示的に指定するか、\fBkrb5.conf\fR(4) 経由で指定している場合にのみ、\fBrhosts\fR を使用する通常の \fBrlogin\fR へのフォールバックが発生します。\fB-PN\fR または \fB-PO\fR、\fB-x\fR、\fB-f\fR または \fB-F\fR、および \fB-k\fR \fIrealm\fR オプションは、\fB-A\fR オプションの上位集合です。
+.sp
+.LP
+リモートの端末タイプは、環境変数 \fBTERM\fR を使用して、ローカルの端末タイプと同じになります。端末またはウィンドウのサイズもリモートシステムにコピーされます (ただし、サーバーがこのオプションをサポートしている場合)。また、サイズの変更も、リモートシステムに反映されます。処理内容は常にリモート側にエコーされるので、遅延が発生している場合以外は、リモートログイン処理であることを意識せずに操作できます。また Control-S や Control-Q を使ったフロー制御、割り込み時の入出力のフラッシュも正しく処理されます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-8\fR\fR
+.ad
+.RS 15n
+.rt  
+ネットワーク間で、7 ビットデータではなく 8 ビットデータを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+リモートマシンがパスワードをたずねるようにします。具体的には、ヌルのローカルユーザー名を送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.RS 15n
+.rt  
+このオプションは、Kerberos 認証を明示的に有効にし、アクセス制御において \fB\&.k5login\fR ファイルを信用します。サーバー側での \fBin.rlogind\fR(1M) による承認チェックが成功して、なおかつ、\fB\&.k5login\fR ファイルがアクセス権を許可する場合、ユーザーはパスワードを入力せずにログインすることが許可されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fIc\fR\fR
+.ad
+.RS 15n
+.rt  
+リモートホストとの接続を解除する際のエスケープ文字として、標準の文字ではなく \fIc\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.RS 15n
+.rt  
+すべての文字が、エスケープ文字として認識されなくなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 15n
+.rt  
+ローカルの証明書 (Kerberos チケット許可チケット) のコピーをリモートシステムに転送します。この証明書は再転送可能ではありません。このチケット許可チケットを転送する必要があるのは、リモートホスト上で Kerberos 認証を使用しているほかのネットワークサービスで自分自身を認証する必要がある場合です。たとえば、リモートホスト上にある自分のホームディレクトリが Kerberos V5 経由で \fBNFS\fR マウントされている場合などです。この場合、ローカルの証明書を転送しなければ、自分のホームディレクトリにアクセスできません。このオプションは、\fB-F\fR オプションと互いに排他の関係にあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 15n
+.rt  
+ローカルの証明書 (Kerberos チケット許可チケット) のコピーをリモートシステムに転送します。この証明書は再転送可能です。\fB-F\fR オプションは、\fB-f\fR オプションが提供する機能の上位集合を提供します。たとえば、\fB-f\fR オプションの場合、リモートホストに接続したあとに、\fB/usr/bin/ftp\fR、\fB/usr/bin/telnet\fR、\fB/usr/bin/rlogin\fR、または \fB/usr/bin/rsh\fR を \fB-f\fR オプションまたは \fB-F\fR オプションで呼び出そうとしても失敗します。つまり、単一のネットワーク署名をほかのシステムにプッシュできません。このオプションは、\fB-f\fR オプションとは相互排他的です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIrealm\fR\fR
+.ad
+.RS 15n
+.rt  
+このオプションにより、\fBrlogin\fR は、\fBkrb5.conf\fR(4) で定義されているリモートホストの領域ではなく、指定した \fIrealm\fR 内のリモートホスト用のチケットを取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.RS 15n
+.rt  
+このオプションは、Kerberos 認証を明示的に無効にします。このオプションを使用すると、\fBkrb5.conf\fR(4) の \fBautologin\fR 変数を上書きできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIusername\fR\fR
+.ad
+.RS 15n
+.rt  
+リモートログイン時のユーザー名として別の名前 (\fIusername\fR) を指定します。このオプションを使用しない場合、使用されるリモートユーザー名はローカルユーザー名と同じになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBlitout\fR モードでの rlogin セッションの実行を許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-PN\fR\fR
+.ad
+.br
+.na
+\fB\fB-PO\fR\fR
+.ad
+.RS 15n
+.rt  
+Kerberos の「\fBrcmd\fR」プロトコルの新しいバージョン (\fB-PN\fR) または古いバージョン (\fB-PO\fR) を明示的に要求します。新しいプロトコルは、古いプロトコルにおける多くのセキュリティー問題を回避し、はるかに安全であると考えられますが、古い (MIT/SEAM) サーバーとは相互運用できません。これらのオプションを使うか、\fBkrb5.conf\fR(4) を使って明示的に指定していない限り、デフォルトでは、新しいプロトコルが使用されます。古い「\fBrcmd\fR」プロトコルを使用しているときに Kerberos 承認が失敗した場合、Kerberos 承認を使用しない通常の \fBrlogin\fR へのフォールバックが発生します。これは、新しい、より安全な「\fBrcmd\fR」プロトコルを使用しているときには当てはまりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 15n
+.rt  
+rlogin セッションを通過するすべてのデータに \fBDES\fR 暗号化を有効にします。これによって、応答時間が低下し、\fBCPU\fR 使用率が上昇します。
+.RE
+
+.SS "エスケープシーケンス"
+.sp
+.LP
+端末から入力した行がチルド (\fB~\fR) で始まっている場合、その行はエスケープシーケンスとみなされます。\fB-e\fR オプションを使って、エスケープ文字をチルド以外に変更することもできます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~.\fR\fR
+.ad
+.RS 10n
+.rt  
+リモートホストとの接続を切断します。ローカルホストはリモート側に警告を出さずに切断を実行します。この点で通常のログアウトとは異なります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~susp\fR\fR
+.ad
+.RS 10n
+.rt  
+ログインセッションを一時的に中断します。この指定は、ジョブ制御機能を持つシェルを使用している場合にのみ有効です。\fBsusp\fR は中断用の文字であり、通常は CTRL Z です。\fBtty\fR(1) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~dsusp\fR\fR
+.ad
+.RS 10n
+.rt  
+ログインの途中で入力を一時中断しますが、出力は表示します。この指定は、ジョブ制御機能を持つシェルを使用している場合にのみ有効です。\fBdsusp\fR は一時的中断用の文字であり、通常は CTRL Y です。\fBtty\fR(1) を参照してください。
+.RE
+
+.SH オペランド
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhostname\fR\fR
+.ad
+.RS 12n
+.rt  
+\fIrlogin\fR がリモートログインセッションを確立するリモートマシンです。
+.RE
+
+.SH 使用法
+.sp
+.LP
+Kerberos 承認を使用する rlogin セッションの場合、各ユーザーは自分のホームディレクトリの \fB\&.k5login\fR ファイルに、専用の承認リストを持つことができます。このファイルの各行には、形式 \fIprincipal\fR/\fIinstance@realm\fR の Kerberos 主体名が入っている必要があります。\fB~/.k5login\fR ファイルが存在する場合、起点ユーザーが \fB~/.k5login\fR ファイルに指定された主体の 1 人であると認証された場合にのみ、起点ユーザーのアカウントにアクセス権が付与されます。\fI~/.k5login\fR ファイルが存在しない場合、\fIauthenticated-principal-name\fR \(-> local-user-name マッピング規則を使用して、起点ユーザーの認証された主体名をローカルアカウント名にマッピングできる場合にのみ、起点ユーザーのアカウントにアクセス権が付与されます。\fB\&.k5login\fR ファイル (アクセス制御用) が処理されるのは、Kerberos 認証が行われるときだけです。
+.sp
+.LP
+セキュリティー保護されていない rlogin セッションの場合、各リモートマシンで \fB/etc/hosts.equiv\fR という名のファイルを使用できます。このファイルには、そのマシンとユーザー名を共有する、信頼できるホスト名のリストが含まれています。ローカルマシン上とリモートマシン上でのユーザー名が同一のユーザーは、リモートマシンの \fB/etc/hosts.equiv\fR ファイルにリストされているマシンから、パスワードを入力せずに \fBrlogin\fR を実行できます。個々のユーザーは、このような同等名リストを個人用の \fB\&.rhosts\fR ファイルとして、自身のホームディレクトリに作成できます。このファイル中の各行には 2 つの名前、ホスト名とユーザー名が含まれ、両者はスペースで区切られます。リモートユーザーの \fB\&.rhosts\fR ファイルの \fIusername\fR に指定されているユーザーが \fIhostname\fR に指定されているホストにログインしていれば、そのユーザーはリモートユーザーとしてリモートマシンにパスワードなしでログインできます。ローカルホスト名がリモートマシン上の \fB/etc/hosts.equiv\fR ファイル中に見つからず、ローカルのユーザー名とホスト名がリモートユーザーの .\fBrhosts\fR ファイル中に見つからない場合、リモートマシンからパスワードを要求されます。\fB/etc/hosts.equiv\fR または \fB\&.rhosts\fR ファイルに記録されているホスト名は、\fBhosts\fR データべースに登録されている正式なホスト名である必要があります。この両ファイル中には、ニックネームは指定できません。
+.sp
+.LP
+セキュリティー上の理由から、\fB\&.rhosts\fR ファイルの所有者はリモートユーザーまたは root でなければなりません。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 23n
+.rt  
+ユーザーアカウントに関する情報が含まれています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/hosts/*\fR\fR
+.ad
+.RS 23n
+.rt  
+コマンドの \fIhostname\fR バージョンです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts.equiv\fR\fR
+.ad
+.RS 23n
+.rt  
+ユーザー名を共有する、信頼できるホスト名が記述されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nologin\fR\fR
+.ad
+.RS 23n
+.rt  
+マシンのシャットダウン中にログインしようとするユーザーへのメッセージです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.rhosts\fR\fR
+.ad
+.RS 23n
+.rt  
+個々のユーザー用のリストであり、ホスト名とユーザー名の組み合わせがエントリになっています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.k5login\fR\fR
+.ad
+.RS 23n
+.rt  
+アクセスを許可する Kerberos 主体を含むファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/krb5/krb5.conf\fR\fR
+.ad
+.RS 23n
+.rt  
+Kerberos 構成ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts\fR\fR
+.ad
+.RS 23n
+.rt  
+ホストデータベース。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/network-clients
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBrsh\fR(1), \fBstty\fR(1), \fBtty\fR(1), \fBin.rlogind\fR(1M), \fBhosts\fR(4),\fBhosts.equiv\fR(4), \fBkrb5.conf\fR(4), \fBnologin\fR(4), \fBattributes\fR(5), \fBkrb5_auth_rules\fR(5)
+.SH 診断
+.sp
+.LP
+次のメッセージは、マシンがシャットダウン中で、ログインできないことを表します。
+.sp
+.in +2
+.nf
+NO LOGINS: System going down in \fIN\fR \fBminutes\fR
+.fi
+.in -2
+.sp
+
+.SH 注意事項
+.sp
+.LP
+\fBhosts.equiv\fR に登録されているシステムのセキュリティーは、少なくともローカルシステムのセキュリティーと 同レベルである必要があります。セキュリティーレベルの低いシステムが \fBhosts.equiv\fR 中に 1 つでも存在していると、システム全体のセキュリティーが損なわれる可能性があります。
+.sp
+.LP
+ネットワーク情報サービス (\fBNIS\fR) は、以前は Sun Yellow Pages (\fBYP\fR) として知られていました。これらの機能は同等です。名前が異なっているだけです。
+.sp
+.LP
+この実装では \fBTCP\fR ネットワークサービス以外は使用できません。

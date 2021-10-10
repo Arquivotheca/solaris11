@@ -1,0 +1,724 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH cryptoadm 1M "2010 年 12 月 9 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cryptoadm \- 暗号化フレームワークの管理
+.SH 形式
+.LP
+.nf
+\fBcryptoadm\fR list [\fB-mpv\fR] [provider=\fIprovider-name\fR] 
+     [mechanism=\fImechanism-list\fR]
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR disable
+     provider=\fIprovider-name\fR mechanism=\fImechanism-list\fR | random | all
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR enable
+     provider=\fIprovider-name\fR mechanism=\fImechanism-list\fR | random | all
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR install provider=\fIprovider-name\fR
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR install provider=\fIprovider-name\fR 
+     [mechanism=\fImechanism-list\fR]
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR uninstall provider=\fIprovider-name\fR
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR unload provider=\fIprovider-name\fR
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR disable fips-140
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR enable fips-140
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR list fips-140
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR refresh
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR start
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR stop
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR \fB-\fR\fB-help\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcryptoadm\fR ユーティリティーは、システムの暗号化プロバイダ情報の表示、各プロバイダのメカニズムポリシーの構成、および暗号化プロバイダのインストールとアンインストールを行います。暗号化フレームワークでは、ユーザーレベルプロバイダ (PKCS11 共有ライブラリ)、カーネルソフトウェアプロバイダ (読み込み可能なカーネルソフトウェアモジュール)、およびカーネルハードウェアプロバイダ (暗号化ハードウェアデバイス) の 3 種類のプロバイダがサポートされます。
+.sp
+.LP
+カーネルソフトウェアプロバイダ用に、\fBcryptoadm\fR ユーティリティーには \fBunload\fR サブコマンドが用意されています。このサブコマンドは、カーネルソフトウェアプロバイダを読み込み解除するようにカーネルに指示します。
+.sp
+.LP
+暗号化フレームワークのメタスロット用に、\fBcryptoadm\fR ユーティリティーには、メタスロットの機能を有効/無効にする、メタスロットの構成を一覧表示する、代替の永続オブジェクトストレージを指定する、およびメタスロットのメカニズムポリシーを構成するための各サブコマンドが用意されています。
+.sp
+.LP
+\fBcryptoadm\fR ユーティリティーには、暗号化フレームワークで FIPS-140 モードを有効/無効にするためのサブコマンドが用意されています。また、FIPS-140 モードの現在のステータスを表示するための \fBlist\fR サブコマンドも用意されています。
+.sp
+.LP
+管理者は、暗号化サブシステムの管理に \fBsyslog\fR 機能 (\fBsyslogd\fR(1M) および \fBlogadm\fR(1M) を参照) を使用すると便利です。ログは、次のような状況で特に役立ちます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+カーネルレベルのデーモンが停止し、すべてのアプリケーションでエラーが発生した場合。この状況を syslog から把握し、\fBsvcadm\fR(1M) を使用して \fBsvc:/system/cryptosvc \fR サービスをリブートできます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+問題のあるプロバイダがフレームワークに接続されている場合、この状況を syslog から把握して、問題のあるプロバイダをフレームワークから削除できます。
+.RE
+.sp
+.LP
+下記のサブコマンドまたはオプションを除き、\fBcryptoadm\fR コマンドは特権ユーザーが実行する必要があります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サブコマンド \fBlist\fR、任意のオプション
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サブコマンド \fB-\fR\fB-help\fR
+.RE
+.SH オプション
+.sp
+.LP
+\fBcryptoadm\fR ユーティリティーには、次に示すようなサブコマンドとオプションのさまざまな組み合わせがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストールされているプロバイダの一覧を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist metaslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+メタスロットのシステム全体の構成を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR \fB-m\fR \fB[ provider=\fIprovider-name\fR | metaslot ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストールされているプロバイダまたはメタスロットで使用できるメカニズムの一覧を表示します。プロバイダを指定した場合、指定されたプロバイダの名前と、そのプロバイダで使用できるメカニズムの一覧を表示します。metaslot キーワードを指定した場合、メタスロットで使用できるメカニズムの一覧を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR \fB-p\fR \fB[ provider=\fIprovider-name\fR | metaslot ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストールされているプロバイダのメカニズムポリシー (つまり、どのメカニズムが使用できて、どのメカニズムが使用できないか) を表示します。プロバイダ機能のポリシーまたはメタスロットも表示します。プロバイダを指定した場合、プロバイダの名前と、そのプロバイダにのみ適用されているメカニズムポリシーを表示します。metaslot キーワードを指定した場合、メタスロットに適用されているメカニズムポリシーを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR \fB-v\fR \fBprovider=\fIprovider-name\fR | metaslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロバイダを指定した場合、指定されたプロバイダに関する詳細情報を表示します。metaslot キーワードを指定した場合、メタスロットに関する詳細情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+上記のさまざまな \fBlist\fR サブコマンド (\fBlist\fR \fB-p\fR を除く) で、\fB-v\fR (詳細) オプションは、プロバイダ、メカニズム、およびスロットの詳細情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBdisable provider=\fIprovider-name\fR\fR\fR
+.ad
+.br
+.na
+\fB[ mechanism=\fImechanism-list\fR | \fIprovider-feature\fR \fB\&... |\fR \fBall\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+プロバイダに指定されているメカニズムまたはプロバイダの機能を無効にします。\fImechanism\fR、\fIprovider-feature\fR、および \fBall\fR キーワードの説明については、「オペランド」の節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fB[ mechanism=\fImechanism-list\fR ] [ auto-key-migrate ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化フレームワークでメタスロット機能を無効にするか、またはメタスロット機能の一部を無効にします。オペランドを指定しない場合、このコマンドは、暗号化フレームワークでメタスロット機能を無効にします。メカニズムのリストを指定した場合、メタスロットの指定されたメカニズムを無効にします。メタスロットのすべてのメカニズムを無効にした場合、メタスロットは無効化されます。メカニズムの説明については、「オペランド」の節を参照してください。\fBauto-key-migrate\fR キーワードを指定した場合、暗号化操作を実行するために必要な場合であっても、機密性の高いトークンオブジェクトのほかのスロットへの移行が無効になります。\fBauto-key-migrate\fR の説明については、「オペランド」の節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBenable provider=\fIprovider-name\fR\fR\fR
+.ad
+.br
+.na
+\fB[ mechanism=\fImechanism-list\fR | \fIprovider-feature\fR \fB\&... |\fR \fBall\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+プロバイダに指定されているメカニズムまたはプロバイダの機能を有効にします。\fImechanism\fR、\fIprovider-feature\fR、および \fBall\fR キーワードの説明については、「オペランド」の節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBenable metaslot [ mechanism=\fImechanism-list\fR ] |\fR\fR
+.ad
+.br
+.na
+\fB\fB[ [ token=\fItoken-label\fR] [ slot=\fIslot-description\fR] |\fR\fR
+.ad
+.br
+.na
+\fB\fBdefault-keystore ] | [ auto-key-migrate ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+オペランドを指定しない場合、このコマンドは、暗号化フレームワークでメタスロット機能を有効にします。メカニズムのリストを指定した場合、メタスロットの一連の指定されたメカニズムのみを有効にします。\fItoken-label\fR を指定した場合、指定したトークンが永続オブジェクトストアとして使用されます。\fIslot-description\fR を指定した場合、指定したスロットが永続オブジェクトストアとして使用されます。\fItoken-label\fR と \fIslot-description\fR の両方を指定した場合、一致するトークンラベルとスロットの説明を持つプロバイダが永続オブジェクトストアとして使用されます。\fBdefault-keystore\fR キーワードを指定した場合、メタスロットでデフォルトの永続オブジェクトストアが使用されます。\fBauto-key-migrate\fR キーワードを指定した場合、特定の暗号化操作を完了するために、必要に応じて機密性の高いトークンオブジェクトがほかのスロットに自動的に移行されます。メカニズム、トークン、スロット、\fBdefault-keystore\fR、および \fBauto-key-migrate\fR の説明については、「オペランド」の節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBinstall provider=\fIprovider-name\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーレベルプロバイダをシステムにインストールします。\fIprovider\fR オペランドは、対応する共有ライブラリの絶対パス名である必要があります。ライブラリの 32 ビットバージョンと 64 ビットバージョンの両方がある場合は、\fB$ISA\fR を含むパス名を使用してこのコマンドを 1 回だけ実行するようにしてください。\fB$ISA\fR は、環境変数への参照ではありません。また、\fB$ISA\fR を引用符で囲むか (単一引用符を使用、[例: \fB\&'$ISA'\fR])、\fB$\fR をエスケープして、シェルによって誤って展開されないようにする必要があります。ユーザーレベルフレームワークでは、\fB$ISA\fR が空の文字列またはアーキテクチャー固有のディレクトリ (例: \fBsparcv9\fR) に展開されます。
+.sp
+ユーザーレベルプロバイダをインストールする場合は、プロバイダのパッケージをビルドすることをお勧めします。詳細は、『\fISolaris セキュリティーサービス開発ガイド\fR』を参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBinstall provider=\fIprovider-name\fR\fR\fR
+.ad
+.br
+.na
+\fBmechanism=\fImechanism-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+カーネルソフトウェアプロバイダをシステムにインストールします。provider には、ベース名のみを含めるようにしてください。\fImechanism-list\fR オペランドには、このプロバイダでサポートするメカニズムの完全なリストを指定します。
+.sp
+カーネルソフトウェアプロバイダをインストールする場合は、プロバイダのパッケージをビルドすることをお勧めします。詳細は、『\fISolaris セキュリティーサービス開発ガイド\fR』を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBuninstall provider=\fIprovider-name\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIprovider\fR と、関連付けられているメカニズムポリシーをシステムからアンインストールします。このサブコマンドは、ユーザーレベルプロバイダまたはカーネルソフトウェアプロバイダのみに適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBunload provider=\fIprovider-name\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIprovider\fR によって指定されたカーネルソフトウェアモジュールを読み込み解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBdisable fips-140\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化フレームワークおよびハードウェアプロバイダにおいて FIPS-140 モードを無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBenable fips-140\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化フレームワークおよびハードウェアプロバイダにおいて FIPS-140 モードを有効にします。このサブコマンドは、ユーザーレベル \fBpkcs11_softtoken\fR ライブラリおよびカーネルソフトウェアプロバイダの FIPS 未承認アルゴリズムは無効にしません。FIPS 承認アルゴリズムのみを使用するかどうかは、フレームワークの消費者しだいです。
+.sp
+このサブコマンドが完了すると、境界外に追加されたプラグインによって FIPS への準拠が無効化される可能性があること、およびそれらのプラグインのセキュリティーポリシーの確認が必要というメッセージが管理者に表示されます。 
+.sp
+暗号化アルゴリズムテストおよびソフトウェア完全性テストを含む電源投入時自己診断を実行するために、システムをリブートする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist fips-140\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化フレームワークおよびハードウェアプロバイダにおける FIPS-140 モードの現在の設定を表示します。FIPS-140 モードのステータスは、\fBenabled\fR または \fBdisabled\fR です。デフォルトの FIPS-140 モードは、\fBdisabled\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBrefresh\fR\fR
+.ad
+.br
+.na
+\fB\fBcryptoadm\fR \fBstart\fR\fR
+.ad
+.br
+.na
+\fB\fBcryptoadm\fR \fBstop\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsmf\fR(5) によって使用される非公開インタフェースです。これらは直接使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fB-help\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの使用法を表示します。
+.RE
+
+.SH オペランド
+.sp
+.ne 2
+.mk
+.na
+\fBprovider=\fIprovider-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーレベルプロバイダ (PKCS11 共有ライブラリ)、カーネルソフトウェアプロバイダ (読み込み可能なカーネルソフトウェアモジュール)、またはカーネルハードウェアプロバイダ (暗号化ハードウェアデバイス) です。
+.sp
+\fIprovider\fR オペランドの有効な値は、\fBcryptoadm\fR \fIlist\fR 形式のコマンドの出力からの 1 つのエントリです。ユーザーレベルプロバイダの場合の \fIprovider\fR オペランドは、対応する共有ライブラリの絶対パス名です。カーネルソフトウェアプロバイダの場合の \fIprovider\fR オペランドには、ベース名のみを含めます。カーネルハードウェアプロバイダの場合の \fIprovider\fR オペランドは、「\fIname\fR/\fInumber\fR」の形式で指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmechanism=\fImechanism-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上の PKCS #11 メカニズムのコンマ区切りのリストです。PKCS #11 の仕様で定義されている暗号化操作を実装するプロセスです。\fImechanism-list\fR の代わりに \fBall\fR を使用することで、プロバイダのすべてのメカニズムを指定できます。下記の \fBall\fR キーワードについての説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprovider-feature\fR\fR
+.ad
+.sp .6
+.RS 4n
+所定のプロバイダの暗号化フレームワークの機能です。現時点では、\fBrandom\fR のみが機能として受け入れられます。ユーザーレベルプロバイダの場合、ランダム機能を無効にすると、PKCS #11 ルーチン \fBC_GenerateRandom\fR および \fBC_SeedRandom\fR がプロバイダから使用できなくなります。カーネルプロバイダの場合、ランダム機能を無効にすると、\fB/dev/random\fR でプロバイダから乱数を収集できなくなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーワード \fBall\fR を \fBdisable\fR サブコマンドおよび \fBenable\fR サブコマンドとともに使用すると、すべてのプロバイダ機能に対して実行できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken=\fR\fItoken-label\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化フレームワークにおけるいずれかのプロバイダのトークンのラベルです。
+.sp
+token オペランドの有効な値は、コマンド \fBcryptoadm list\fR \fB-v\fR の出力の「Token Label」に示されている項目です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslot=\fR\fIslot-description\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化フレームワークにおけるいずれかのプロバイダのスロットの説明です。
+.sp
+slot オペランドの有効な値は、コマンド \fBcryptoadm list\fR \fB-v\fR の出力の「機能説明」に示されている項目です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-keystore\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーワード \fBdefault-keystore\fR は、メタスロットの場合のみ有効です。このキーワードを指定すると、メタスロットの永続オブジェクトストアの設定が、デフォルトのストアを使用するように戻されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauto-key-migrate\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーワード auto-key-migrate は、メタスロットの場合のみ有効です。このキーワードを指定して、暗号化操作を実行するために、メタスロットで、機密性の高いトークンオブジェクトをトークンオブジェクトスロットからほかのスロットに移動できるようにするかどうかを構成します。
+.RE
+
+.sp
+.LP
+キーワード \fBall\fR は、2 とおりの方法で \fBdisable\fR サブコマンドおよび \fBenable\fR サブコマンドと組み合わせて使用できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+次のように、\fBall\fR を \fBmechanism\fR=\fImechanism-list\fR およびその他の provider-feature の代わりに使用できます。
+.sp
+.in +2
+.nf
+# \fBcryptoadm enable provider=dca/0 all\fR
+.fi
+.in -2
+.sp
+
+次のコマンドでは、プロバイダのメカニズムおよびその他の provider-feature (\fBrandom\fR など) が有効になります。\fB\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+次のように、\fBall\fR を \fBmechanism\fR の引数として使用することもできます。
+.sp
+.in +2
+.nf
+# \fBcryptoadm enable provider=des mechanism=all\fR
+.fi
+.in -2
+.sp
+
+このコマンドでは、プロバイダのすべてのメカニズムが有効になりますが、ほかの provider-feature (\fBrandom\fR など) は有効にはなりません。
+.RE
+.SH 使用例
+.LP
+\fB例 1 \fRシステムにインストールされているプロバイダの一覧の表示
+.sp
+.LP
+次のコマンドは、インストールされているすべてのプロバイダの一覧を表示します。
+
+.sp
+.in +2
+.nf
+example% \fBcryptoadm list\fR
+user-level providers:
+/usr/lib/security/$ISA/pkcs11_kernel.so
+/usr/lib/security/$ISA/pkcs11_softtoken.so
+/opt/lib/libcryptoki.so.1
+/opt/system/core-osonn/lib/$ISA/libpkcs11.so.1
+  
+kernel software providers:
+    des
+    aes
+    bfish
+    sha1
+    md5
+
+kernel hardware providers:
+    dca/0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBmd5\fR プロバイダのメカニズムの一覧の表示
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドの一種です。
+
+.sp
+.in +2
+.nf
+example% \fBcryptoadm list -m provider=md5\fR
+md5: CKM_MD5,CKM_MD5_HMAC,CKM_MD5_HMAC_GENERAL
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRカーネルソフトウェアプロバイダの特定のメカニズムの無効化
+.sp
+.LP
+次のコマンドは、カーネルソフトウェアプロバイダ \fBdes\fR のメカニズム \fBCKM_DES3_ECB\fR および \fBCKM_DES3_CBC\fR を無効にします。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm disable provider=des\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRプロバイダのメカニズムポリシーの表示
+.sp
+.LP
+次のコマンドは、\fBdes\fR プロバイダのメカニズムポリシーを表示します。
+
+.sp
+.in +2
+.nf
+example% \fBcryptoadm list -p provider=des\fR
+des: All mechanisms are enabled, except CKM_DES3_ECB, CKM_DES3_CBC
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRプロバイダの特定のメカニズムの有効化
+.sp
+.LP
+次のコマンドは、カーネルソフトウェアプロバイダ \fBdes\fR の \fBCKM_DES3_ECB\fR メカニズムを有効にします。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm enable provider=des mechanism=CKM_DES3_ECB\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRユーザーレベルプロバイダのインストール
+.sp
+.LP
+次のコマンドは、ユーザーレベルプロバイダをインストールします。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm install provider=/opt/lib/libcryptoki.so.1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR32 ビットバージョンと 64 ビットバージョンを含むユーザーレベルプロバイダのインストール
+.sp
+.LP
+次のコマンドは、32 ビットバージョンと 64 ビットバージョンの両方を含むユーザーレベルプロバイダをインストールします。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm install \e\fR
+provider=/opt/system/core-osonn/lib/'$ISA'/libpkcs11.so.1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRプロバイダのアンインストール
+.sp
+.LP
+次のコマンドは、\fBmd5\fR プロバイダをアンインストールします。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm uninstall provider=md5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRメタスロットの無効化
+.sp
+.LP
+次のコマンドは、暗号化フレームワークでメタスロット機能を無効にします。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm disable metaslot\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR指定されたトークンを永続オブジェクトストアとして使用するようにメタスロットを指定する
+.sp
+.LP
+次のコマンドは、メタスロットが Venus トークンを永続オブジェクトストアとして使用するように指定します。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm enable metaslot token="SUNW,venus"\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+\fBstart\fR、\fBstop\fR、および \fBrefresh\fR の各オプションは、非公開インタフェースです。その他すべてのオプションおよびユーティリティー名は「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBlogadm\fR(1M), \fBsvcadm\fR(1M), \fBsyslogd\fR(1M), \fBlibpkcs11\fR(3LIB), \fBexec_attr\fR(4), \fBprof_attr\fR(4), \fBattributes\fR(5), \fBsmf\fR(5), \fBrandom\fR(7D)
+.sp
+.LP
+
+.sp
+.LP
+『\fISolaris セキュリティーサービス開発ガイド\fR』
+.SH 注意事項
+.sp
+.LP
+ハードウェアプロバイダのポリシーが明示的になっていて (つまり、そのメカニズムの一部が無効になっていて)、ハードウェアプロバイダが切り離されていた場合、このハードウェアプロバイダのポリシーは、引き続き一覧に表示されます。
+.sp
+.LP
+\fBcryptoadm\fR では、少なくとも、32 ビット共有オブジェクトが各ユーザーレベルプロバイダに提供されていることを前提としています。32 ビットおよび 64 ビット共有オブジェクトの両方が提供されている場合、2 つのバージョンが同じ機能を提供している必要があります。両方に同じメカニズムポリシーが適用されます。

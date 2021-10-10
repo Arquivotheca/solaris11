@@ -1,0 +1,1438 @@
+'\" te
+.\" Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH boot 1M "2011 年 7 月 6 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+boot \- システムカーネルまたはスタンドアロンプログラムのブート
+.SH 形式
+.SS "SPARC"
+.LP
+.nf
+\fBboot\fR [\fIOBP\fR \fInames\fR] [\fIfile\fR] [\fB-aLV\fR] [\fB-F\fR \fIobject\fR] [\fB-D\fR \fIdefault-file\fR]
+     [\fB-Z\fR \fIdataset\fR] [\fIboot-flags\fR] [\fB\(mi\(mi\fR] [\fIclient-program-args\fR]
+.fi
+
+.SS "x86"
+.LP
+.nf
+\fBkernel$\fR \fB/platform/i86pc/kernel/$ISADIR/unix\fR [\fIboot-args\fR]
+     [\fB-B\fR \fIprop\fR=\fIval\fR [,\fIval\fR...]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+ブートストラップとは、スタンドアロンプログラムを読み込んで実行する処理のことです。ここでのブートストラップとは、ブート可能なオペレーティングシステムを読み込んで実行することを意味します。通常、スタンドアロンプログラムはオペレーティングシステムカーネル (\fBkernel\fR(1M) を参照) ですが、代わりに任意のスタンドアロンプログラムをブートすることもできます。SPARC ベースのシステムでは、オペレーティングシステム以外にブートできるスタンドアロンプログラムの代表的な例として、マシンの診断モニターがあります。
+.sp
+.LP
+スタンドアロンプログラムが動的にリンクされる実行可能プログラムとして識別された場合、\fBboot\fR は実行可能形式によって指定されたインタプリタ (リンカー / ローダー) をロードし、そのインタプリタに制御を渡します。スタンドアロンプログラムが静的にリンクされている場合は、そのスタンドアロンプログラムに直接ジャンプします。
+.sp
+.LP
+カーネルは読み込まれると、UNIX システムを起動して、必要なファイルシステム (\fBvfstab\fR(4) を参照) をマウントし、\fB/usr/sbin/init\fR を実行して、システムを \fB/etc/inittab\fR で指定されている「initdefault」状態にします。\fBinittab\fR(4) を参照してください。
+.SS "SPARC でのブートストラップ手続き"
+.sp
+.LP
+SPARC ベースのシステムでは、ほとんどのマシンでのブートストラップ手続きは次の基本フェーズからなります。
+.sp
+.LP
+マシンの電源を投入すると、(PROM 内の) システムファームウェアが電源投入時自己診断テスト (POST) を実行します。この診断テストの形式と範囲は、システムに搭載されているファームウェアのバージョンによって異なります。
+.sp
+.LP
+診断テストが正常に完了した後、ファームウェアが使用する不揮発性記憶領域に適切なフラグが設定されていれば、ファームウェアは自動ブートを試みます。ファームウェアは、読み込むファイルの名前とそのファイルを読み込むデバイスを選択することができます。
+.sp
+.LP
+これらのフラグと名前は、シェルから \fBeeprom\fR(1M) コマンドを使用するか、またはシステムの停止後に \fBok\fR プロンプトで \fBPROM\fR コマンドを使用することにより、設定できます。
+.sp
+.LP
+第 2 レベルのプログラムは、ファイルシステム固有のブートブロック (ディスクからブートする場合) または \fBinetboot\fR または \fBwanboot\fR (ネットワークからブートする場合) のどれかです。
+.sp
+.LP
+ネットワークブート
+.sp
+.LP
+ネットワークブートは 2 段階で行われます。 まず、クライアントが、二次ブートプログラムの読み込みに必要な IP アドレスとその他のすべてのパラメータを取得します。次に、二次ブートプログラムがブートデバイスからブートアーカイブをロードします。
+.sp
+.LP
+IP アドレスは、 PROM で使用可能な機能と PROM の構成に応じて、RARP、DHCP、手動構成のいずれかの方法を使って取得できます。\fBsun4u\fR および \fBsun4v\fR カーネルアーキテクチャーのマシンは、DHCP に対応した PROM を備えています。
+.sp
+.LP
+次に、2 種類のネットワークブート方式を指定する boot コマンド構文を示します。
+.sp
+.in +2
+.nf
+boot net:rarp
+boot net:dhcp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドを見てください。
+.sp
+.in +2
+.nf
+boot net
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドのように、\fBrarp\fR または \fBdhcp\fR 指示子を指定しないと、\fBnet\fR が別名になっているネットワークインタフェースを介して、デフォルトのネットワークブート方式が呼び出されます。
+.sp
+.LP
+以降では、RARP/\fBbootparams\fR を使用するネットワークブートのイベントシーケンスについて説明します。そのあとで、DHCP を用いたシーケンスについて説明します。\fB\fR 
+.sp
+.LP
+RARP/\fBbootparams\fR を使ってネットワークからブートする場合、PROM はまず、応答を受信するまで逆 ARP 要求をブロードキャストします。応答を受信すると、TFTP 要求をブロードキャストして \fBinetboot\fR の最初のブロックを取得します。続いて、その最初のブロック要求に一番先に応答したサーバーに後続の要求が送信されます。読み込みの完了後、\fBinetboot\fR も同様に、逆 ARP を使って IP アドレスを取得した後、\fBbootparams\fR RPC 呼び出し (\fBbootparams\fR(4) を参照) をブロードキャストすることで、構成情報とルートファイルシステムを検索します。次に、\fBinetboot\fR が NFS を使用してブートアーカイブをロードし、そのアーカイブに制御を渡します。
+.sp
+.LP
+DHCP を使用してネットワークからブートする場合、PROM はハードウェアアドレスおよびカーネルアーキテクチャをブロードキャストし、IPアドレス、ブートパラメータ、およびネットワーク構成情報を要求します。(可能性のある複数のサーバーの中から) DHCP サーバーが応答し選択されると、そのサーバーがクライアントに IP アドレスおよびクライアントのブートに必要な他のすべての情報を送信します。この情報を受信したクライアントの PROM は、読み込むファイルの名前を調べ、そのファイル名が HTTP URL であるかどうかにより、2 種類の動作のいずれかを実行します。ファイル名が HTTP URL でなかった場合、PROM は、\fBinetboot\fR をダウンロードし、それをメモリー内に読み込んで実行します。\fBinetboot\fR はブートアーカイブをロードし、そのブートアーカイブがマシンを引き継いで \fBinetboot\fR を解放します。その後、開始スクリプトが DHCP エージェント (\fBdhcpagent\fR(1M) を参照) を開始します。以降の DHCP アクティビティは、その DHCP エージェントによって実行されます。
+.sp
+.LP
+読み込むファイルが HTTP URL の場合、PROM は、その参照ファイルを HTTP を使って読み込みます。クライアントが HMACSHA-1 鍵を使って構成されていた場合、クライアントは読み込んだファイルの整合性を検査した後で、そのファイルを実行します。そのファイルは \fBwanboot\fR バイナリであるとみなされます。WAN ブートプロセスは、DHCP または NVRAM プロパティーのどちらかを使用してインストールサーバーとルーター、およびその接続に必要なプロキシを発見するように構成できます。ブートされた \fBwanboot\fR は、処理を継続できるだけの情報がそろっているかどうかを判断します。必要な情報が不足していた場合は、適切なエラーを出力して処理を終了するか、コマンドインタプリタを起動して必要な構成情報の入力をユーザーに求めます。必要な情報を取得した \fBwanboot\fR は、HTTP 経由でブートローダーをメモリー内に読み込みます。クライアントに暗号化鍵がインストールされている場合、\fBwanboot\fR は、ブートローダーの署名とそれに付随するハッシュを確認します。暗号化鍵は存在するが、ハッシュキーがない場合はエラーとなります。
+.sp
+.LP
+\fBwanboot\fR ブートローダーは、HTTP またはセキュリティー保護された HTTP のどちらかを使用してクライアントと通信できます。 HTTP を使用する場合でかつ、クライアントが HMAC SHA-1 鍵を使って構成されていた場合、ブートローダーはルートファイルシステムの整合性検査を実行します。ルートファイルシステムがメモリーに読み込まれた (場合によっては、さらに整合性検査が実行された) あと、ブートアーカイブがサーバーから転送されます。なお、\fBwanboot.conf\fR(4)ファイルで \fBboot_logger\fR URL が指定されていた場合、\fBwanboot\fR は処理状況に関するログを定期的に記録します。
+.sp
+.LP
+すべての PROM が URL を処理できるわけではありません。クライアントにその機能が備わっているかどうかを判断するには、\fBlist-security-keys\fR OBP コマンド (\fBmonitor\fR(1M) を参照) を使用します。
+.sp
+.LP
+現在のところ、x86 プラットフォーム上では WANブートは利用できません。
+.sp
+.LP
+\fBwanboot\fR コマンド行
+.sp
+.LP
+クライアントプログラムが \fBwanboot\fR である場合、クライアントプログラムは、次の形式の \fBclient-program-args\fR を受け入れます。
+.sp
+.in +2
+.nf
+boot ... -o \fIopt1\fR[,\fIopt2\fR[,...]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、各オプションに指定できるアクションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 経由で構成パラメータを取得するように \fBwanboot\fR に指示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドインタプリタをブートするように \fBwanboot\fR に指示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fI<cmd>\fR\fR
+.ad
+.sp .6
+.RS 4n
+下記のインタプリタコマンドのいずれか。
+.RE
+
+.sp
+.LP
+\&...または、下のインタプリタパラメータ名を使用した代入文。
+.sp
+.LP
+\fBwanboot\fR コマンドインタプリタ
+.sp
+.LP
+ブート時に \fBclient-program-args\fR として「\fB-o prompt\fR」を指定すると、\fBwanboot\fR コマンドインタプリタがブートされます。単一のコマンドまたは代入文、もしくは、コンマで区切られた一連のコマンドまたは代入文が入力可能です。利用可能な構成パラメータは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントの IP アドレス (ドット区切り 10 進表記)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのルーターの IP アドレス (ドット区切り 10 進表記)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.sp .6
+.RS 4n
+サブネットマスク (ドット区切り 10 進表記)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclient-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP クライアント識別子 (引用符付き ASCII 文字列または 16 進 ASCII)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP トランザクションで要求するホスト名 (ASCII)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp-proxy\fR\fR
+.ad
+.sp .6
+.RS 4n
+HTTP プロキシサーバー指定 (IPADDR[: PORT])。
+.RE
+
+.sp
+.LP
+利用可能な鍵名は、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3des\fR\fR
+.ad
+.sp .6
+.RS 4n
+トリプル DES 暗号鍵 (48 個の 16 進 ASCII 文字)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaes\fR\fR
+.ad
+.sp .6
+.RS 4n
+AES 暗号鍵 (32 個の 16 進 ASCII 文字)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsha1\fR\fR
+.ad
+.sp .6
+.RS 4n
+HMAC SHA-1 署名鍵 (40 個の 16 進 ASCII 文字)。
+.RE
+
+.sp
+.LP
+最後に、WANブート CGI の URL を参照する方法を示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbootserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+WANブート CGI の URL (OBP の \fBfile\fR パラメータと同等)。
+.RE
+
+.sp
+.LP
+インタプリタが受け入れるコマンドは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+利用可能なコマンドの簡単な説明文を出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIvar\fR=\fIval\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIval\fRを \fIvar\fR に代入します。ここで、\fIvar\fRは、構成パラメータ名、鍵名、\fBbootserver\fR のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIvar\fR=\fR\fR
+.ad
+.sp .6
+.RS 4n
+パラメータ \fIvar\fR の設定を解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべてのパラメータとその設定値を一覧表示します (OBP 経由で取得された鍵の値は表示されません)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+未設定パラメータに対する値の入力を、ユーザーに求めます。各パラメータの名前と現在値 (もしあれば) が出力されます。ユーザーは、Return キーを押して現在値を受け入れることもできますし、新しい値を入力することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgo\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての値の入力を完了したら、インタプリタを終了しブート処理を継続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートインタプリタを終了し、OBPの \fBok\fR プロンプトに戻ります。
+.RE
+
+.sp
+.LP
+前述の代入文やコマンドは、コマンド行の \fB-o\fR オプションの一部として、いくつでも指定できますが、boot コマンドの引数の長さには 128 バイトの OBP 制限があります。たとえば、「\fB-o\fR \fBlist,go\fR」とすると、パラメータの現在値 (デフォルト値) が一覧表示された後、ブート処理が継続します。
+.SS "iSCSI ブート"
+.sp
+.LP
+iSCSI ブートは、x86 と SPARC の両方でサポートされています。
+.SS "x86 上の iSCSI ブート"
+.sp
+.LP
+x86 上の iSCSI ブートの場合は、ブートされるホストに iBFT (iSCSI Boot Firmware Table) に対応した NIC が装着されているか、またはメインボードの BIOS が iBFT に対応している必要があります。ACPI (Advanced Configuration and Power Interface) 3.0b 仕様で定義された iBFT では、iSCSI ブートプロセスに有効な、さまざまなパラメータを含む情報のブロックが指定されています。
+.sp
+.LP
+ファームウェアで実装された iBFT は、iSCSI ターゲットへの接続を確立することによって、ブート可能なデバイスとしてブート中に BIOS 内に iSCSI ディスクを提供します。iSCSI ブートの残りの処理は、ローカルディスクからのブートと同じです。
+.sp
+.LP
+ユーザーが iBFT を正しく構成するには、各ハードウェアベンダーのドキュメントを参照する必要があります。
+.SS "SPARC 上の iSCSI ブート"
+.sp
+.LP
+SPARC 上の iSCSI ブートは OpenBoot レベル 4.31 以降でサポートされ、特定の NIC は必要ありません。
+.sp
+.LP
+OpenBoot でのブートコマンドには、\fIkeyword\fR=\fIvalue\fR 形式に従った、宛先の iSCSI ターゲットを識別するための一連のキーワードを指定します。iSCSI ブートコマンドの完全な形式は次のとおりです。
+.sp
+.in +2
+.nf
+boot net:iscsi-target-ip=\fIt-ip\fR,iscsi-target-name=\fIname\fR
+     host-ip=\fIh-ip\fR[,router-ip=\fIr-ip\fR]
+     [,subnet-mask=\fIm-ip\fR]
+     [,iscsi-port=\fIport\fR]
+     [,iscsi-lun=\fIlun\fR]
+     [,iscsi-partition=\fIpartition\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述のキーワードの説明を次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.RS 21n
+.rt  
+ブート対象ホストの IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.RS 21n
+.rt  
+経路指定するゲートウェイの IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBhost-ip\fR のサブネットマスク。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-target-ip\fR\fR
+.ad
+.RS 21n
+.rt  
+OS を格納している iSCSI ターゲットの IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-target-name\fR\fR
+.ad
+.RS 21n
+.rt  
+OS を格納している iSCSI ターゲットの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-partition\fR\fR
+.ad
+.RS 21n
+.rt  
+ブート可能なルートを含むパーティション。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-port\fR\fR
+.ad
+.RS 21n
+.rt  
+ターゲットの IP ポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-lun\fR\fR
+.ad
+.RS 21n
+.rt  
+ターゲット上のブートされる LUN。
+.RE
+
+.sp
+.LP
+\fBiscsi-target-ip\fR、\fBroute-ip\fR、および \fBsubnet-mask\fR の値は、標準の IPv4 ドット区切り 10 進数の形式です。たとえば、\fBsubnet-mask\fR に \fB255.255.255.0\fR を指定します。IPv6 は、現在の OpenBoot 実装ではサポートされていません。
+.sp
+.LP
+\fBiscsi-port\fR の値は、1 から 65535 までの 10 進数です。
+.sp
+.LP
+\fBiscsi-lun\fR の値は、ダッシュで区切られた 16 進数の LUN、\fIffff\fR-\fIffff\fR-\fIffff\fR-\fIffff\fR の形式です。詳細は、RFC 4173 のセクション 5 を参照してください。先頭のゼロと以降のダッシュは除外できます。そのため、たとえば、\fB3\fR は \fB0003-0000-0000-0000\fR と同等です。
+.sp
+.LP
+\fBiscsi-partition\fR の値は、ルートパーティションを指定するために使用される 1 つの ASCII 文字です。一般には、\fBa\fR です。
+.sp
+.LP
+\fBiscsi-target-name\fR の値は、RFC 3720 と RFC 3722 によって指定されている文字列の形式です。
+.sp
+.LP
+ターゲット側での CHAP 認証を提供するために、2 つのセキュリティーキーが追加されます。これらのキーは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-user\fR\fR
+.ad
+.RS 17n
+.rt  
+CHAP 名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-password\fR\fR
+.ad
+.RS 17n
+.rt  
+CHAP シークレット
+.RE
+
+.sp
+.LP
+現在、これらの 2 つのキーは、OpenBoot PROM (\fBok\fR) プロンプトでコマンド \fBset-ascii-security-key\fR を使用して設定できます。例: 
+.sp
+.in +2
+.nf
+ok \fBset-ascii-security-key chap-user \fIchap name\fR\fR
+ok \fBset-ascii-security-key chap-password \fIchap password\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+双方向の認証は、まだサポートされていません。これらの 2 つの変数は、OpenBoot PROM プロンプトでのみ変更できます。
+.sp
+.LP
+DHCP サーバーから iSCSI ブート情報を取得するために、RFC 4173 がサポートされています。DHCP サーバーは、ブート対象クライアントのルートパスオプションを指定する必要があります。そのあと、クライアントは、単純コマンドを使用して iSCSI ブートを実行できます。
+.sp
+.in +2
+.nf
+boot net:dhcp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+現在は、iSCSI ブート中に物理ブートデバイスのパスを取得するために、キー \fBboot-device\fR が使用されます。このキーは、Solaris のインストール中に設定されます。キー値を手動で変更すると、iSCSI ブートが停止することがあります。
+.SS "ディスクからのブート"
+.sp
+.LP
+ディスクからブートする場合、OpenBoot PROM ファームウェアは、ブートデバイスとして指定されたパーティションのブロック 1 ～ 15 からブートブロックを読み取ります。このスタンドアロンのブートプログラムには通常、ブートアーカイブを読み取ることができる、ファイルシステム固有のリーダーが含まれています。
+.sp
+.LP
+スタンドアロンプログラムのパス名が相対パス名の場合 (スラッシュで始まらない場合)、第 2 レベルのブートにおいて、プラットフォームに依存する検索パスでスタンドアロンプログラムが検索されます。このパスには必ず、\fB/platform/\fR\fIplatform-name\fR が含まれています。多くのSPARC プラットフォームでは、次にプラットフォーム固有のパスエントリ \fB/platform/\fR\fIhardware-class-name\fR が検索されます。\fBfilesystem\fR(5) を参照してください。絶対パス名の場合、\fBboot\fR は指定されたパスを使用します。その後、\fBboot\fR プログラムは該当するアドレスからスタンドアロンプログラムをロードし、制御を渡します。
+.sp
+.LP
+ブートアーカイブがブートデバイスから転送されたあと、Solaris はマシンを初期化し、その制御を引き継ぐことができます。このプロセスは、下の「ブートアーカイブのフェーズ」でさらに詳細に説明されており、すべてのプラットフォーム上で同一です。
+.sp
+.LP
+ファイル名がコマンド行で、または \fBboot-file\fR NVRAM 変数などで指定されていない場合、\fBboot\fR はシステムにインストールされているソフトウェア、ハードウェアおよびファームウェアの能力に基づいて、読み込むべきデフォルトのファイルを選択します。
+.sp
+.LP
+カーネルへのパスには、スペースを含めてはいけません。
+.SS "ZFS からのブート"
+.sp
+.LP
+ZFS では、デバイス指定子によって単一のルートファイルシステムではなく、ストレージプールが識別されるため、ZFS からのブートは UFS からのブートとは異なります。ストレージプールには、複数のブート可能データセット (つまり、ルートファイルシステム) が含まれていることがあります。そのため、ZFS からブートする場合、ブートデバイスを指定するだけでは十分ではありません。ブートデバイスによって識別されたプール内のルートファイルシステムも指定する必要があります。デフォルトでは、プールの \fBbootfs\fR プロパティーで指定されているデータセットが、ブート用に選択されます。このデフォルトの選択は、\fB-Z\fR オプションで代替のブート可能データセットを指定することによって上書きできます。ZFS プール内のブート可能データセットを一覧表示するには、\fB-L\fR オプションを使用します。 
+.SS "ブートアーカイブのフェーズ"
+.sp
+.LP
+ブートアーカイブには、メモリー内ディスクを使用してマウントされるファイルシステムイメージが含まれています。このイメージは自己記述型であり、特にブートブロックにはファイルシステムリーダーが含まれています。このファイルシステムリーダーは RAM ディスクイメージをマウントして開いたあと、その中に含まれているカーネルを読み取って実行します。 デフォルトでは、このカーネルは次の場所にあります。
+.sp
+.in +2
+.nf
+/platform/`uname -i`/kernel/unix
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ZFS からブートする場合は、アーカイブとカーネルファイルの両方のパス名が、前の節で説明した、ブート用に選択されたルートファイルシステム (つまり、データセット) 内で解決されます。
+.sp
+.LP
+カーネルの初期化は、I/O をオンにし、ルートファイルシステムをマウントできるまで、メモリー内ファイルシステムから必要なドライバとモジュールを読み込むことにより続行されます。ルートファイルシステムがマウントされると、メモリー内ファイルシステムは必要なくなり、破棄されます。
+.SS "OpenBoot PROM \fBboot\fR コマンドの動作"
+.sp
+.LP
+OpenBoot \fBboot\fR コマンドは、次の形式の引数をとります。
+.sp
+.in +2
+.nf
+ok boot [\fIdevice-specifier\fR] [\fIarguments\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+デフォルトの \fBboot\fR コマンドに引数はありません。
+.sp
+.in +2
+.nf
+ok boot
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBboot\fR コマンド行で \fIdevice-specifier\fR を指定しない場合、OpenBoot は通常、\fIboot-device\fR 変数または \fIdiag-device\fR \fBNVRAM\fR 変数を使用します。オプションの \fIarguments\fR をコマンド行で指定しないと、OpenBoot は通常、\fIboot-file\fR または \fIdiag-file\fR \fBNVRAM\fR 変数をデフォルトの \fBboot\fR 引数として使用します。(システムが診断モードの場合、\fIboot-device\fR および \fIboot-file\fR の代わりに、\fIdiag-device\fR と \fIdiag-file\fR が使用されます)。
+.sp
+.LP
+\fIarguments\fR には複数の文字列を指定できます。すべての \fIargument\fR 文字列は二次ブートプログラムに渡され、OpenBoot では解釈されません。 
+.sp
+.LP
+\fBboot\fR コマンド行に \fIarguments\fR を指定した場合、\fIboot-file\fR または \fIdiag-file\fR \fBNVRAM\fR 変数のどちらも使用されません。\fBNVRAM\fR 変数の内容がコマンド行の引数とマージされることもありません。次に例を示します。
+.sp
+.in +2
+.nf
+ok \fBboot\fR \fB-s\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドでは、\fIboot-file\fR および \fIdiag-file\fR の設定値は無視され、文字列 \fB-s\fR は \fIarguments\fR として解釈されます。この場合、\fBboot\fR は \fIboot-file\fR または \fIdiag-file\fR の内容を使用しません。
+.sp
+.LP
+以前の PROM におけるコマンド例を示します。
+.sp
+.in +2
+.nf
+ok \fBboot net\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドでは引数が指定されていないため、代わりに、\fIboot-file\fR または \fIdiag-file\fR の設定値 (設定されている場合) が、boot に渡すデフォルトのファイル名および引数として使用されます。ほとんどの場合、システムタイプ、システムのハードウェアとファームウェア、およびルートファイルシステムにインストールされているソフトウェアに基づいて \fBboot\fR コマンドに適切なデフォルト値を選択させるのが、最善の方法です。\fIboot-file\fR または \fIdiag-file\fR を変更すると、状況によっては予期せぬ結果を招くおそれがあります。
+.sp
+.LP
+これは、大部分の OpenBoot 2.x および 3.x ベースのシステムにおける一般的な動作です。ただし、プラットフォームによっては動作が異なる可能性もあります。
+.sp
+.LP
+次のコマンドを見てください。
+.sp
+.LP
+ok \fBboot cdrom\fR
+.sp
+.LP
+\&...このコマンドも通常は、引数を指定しません。したがって、\fIboot-file\fR に 64ビットカーネルのファイル名が設定されている環境で、「\fBboot cdrom\fR」と入力してインストール CD または DVD をブートしようとしても、インストールメディアに 32 ビットカーネルしか含まれていなければ、そのブート処理は失敗します。
+.sp
+.LP
+使用される \fBboot\fR コマンドの形式によっては、\fIboot-file\fRまたは \fIdiag-file\fR の内容が無視されるので、プロダクションシステムで \fIboot-file\fR に依存することは一般に推奨しません。
+.sp
+.LP
+ローカル (CD または DVD 上) に存在する \fBwanboot\fR コピーから WAN ブートを実行するには、次のコマンドを使用する必要があります。
+.sp
+.LP
+ok \fBboot cdrom -F wanboot - install\fR
+.sp
+.LP
+最近の PROM に含まれるネットワークブートサポートパッケージは、次の構文をサポートするように強化されており、引数を処理できるようになっています。
+.sp
+.LP
+[\fIprotocol\fR,] [\fIkey\fR=\fIvalue\fR,]*
+.sp
+.LP
+すべての引数は省略可能であり、指定する順序にも制限はありません。ただし、リストの末尾でない限り、引数の後にはコンマが必要です。ここで指定した引数は、すべてのデフォルト値よりも優先されるほか、DHCP を使ってブートする場合には、それらの引数に対応する DHCP サーバーから提供される構成情報よりも優先されます。
+.sp
+.LP
+前述の \fIprotocol\fR  には、使用するアドレス検索プロトコルを指定します。
+.sp
+.LP
+\fIkey\fR=\fIvalue\fR 属性ペアには、以下の構成パラメータを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtftp-server\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP サーバーの IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP を使ってダウンロードするファイルの名前、または WANブートの URL。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントの IP アドレス (ドット区切り 10 進表記)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのルーターの IP アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.sp .6
+.RS 4n
+サブネットマスク (ドット区切り 10 進表記)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclient-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP クライアント識別子。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP トランザクションで使用するホスト名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp-proxy\fR\fR
+.ad
+.sp .6
+.RS 4n
+HTTP プロキシサーバー指定 (IPADDR[: PORT])。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtftp-retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP の最大リトライ回数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp-retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP の最大リトライ回数。
+.RE
+
+.sp
+.LP
+ネットワークブートサポートパッケージによって処理される一連の引数は、次のいずれかの方法で指定します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+パッケージの \fBopen\fR メソッドに渡される引数として
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NVRAM 変数 \fBnetwork-boot-arguments\fR 内に指定する引数として
+.RE
+.sp
+.LP
+\fBnetwork-boot-arguments\fR 内に指定された引数は、パッケージの \fBopen\fR メソッドに引数が 1 つも渡されなかった場合にのみ処理されます。
+.sp
+.LP
+引数の値
+.sp
+.LP
+\fIprotocol\fR には、使用するアドレス検索プロトコルを指定します。\fBrarp\fR、\fBdhcp\fR のいずれかを指定できます。
+.sp
+.LP
+このドキュメントで定められた新しい構文とスタイルを使って他の構成パラメータが指定されていた場合、\fIprotocol\fR パラメータが指定されていなければ、手動の構成を意味します。
+.sp
+.LP
+他の構成パラメータが 1 つも指定されていない場合や、他の構成パラメータが現在サポートされている位置に基づくパラメータ構文を使って指定されていた場合、\fIprotocol\fR パラメータを指定しなければ、ネットワークブートサポートパッケージは、プラットフォーム固有のデフォルトのアドレス検索プロトコルを使用することになります。
+.sp
+.LP
+手動構成を行う場合、IP アドレス、ブートファイル名、ブートファイルイメージの提供元サーバーのアドレスの各情報を、クライアントに提供する必要があります。また、ネットワークの構成によっては、\fBsubnet-mask\fR と \fBrouter-ip\fR も指定する必要があります。
+.sp
+.LP
+\fIprotocol\fR 引数が指定されなかった場合、ネットワークブートサポートパッケージは、プラットフォーム固有のデフォルトのアドレス検索プロトコルを使用します。
+.sp
+.LP
+\fBtftp-server\fR は、TFTP を使用する場合、ダウンロードするファイルを提供する TFTP サーバーの IP アドレス (標準 IPv4 のドット区切り 10 進表記) です。
+.sp
+.LP
+DHCP を使用する場合、その値は、DHCP 応答に指定された TFTP サーバーの値よりも優先されます。
+.sp
+.LP
+サーバーが引数として指定された場合と DHCP 応答内に指定された場合、TFTP RRQ はサーバーにユニキャストされます。それ以外の場合、TFTP RRQ はブロードキャストされます。
+.sp
+.LP
+\fIfile\fR には、TFTP を使用する場合は TFTP サーバーから読み込むファイルを指定し、HTTP を使用する場合は URL を指定します。ファイル名が URL である場合、すなわち、ファイル名が \fBhttp:\fR で始まる場合 (大文字小文字の区別あり)、HTTP が使用されます。
+.sp
+.LP
+RARP と TFTP を使用する場合、このドキュメントで前述したように、デフォルトのファイル名はクライアントの IP アドレスの ASCII 16 進表記になります。
+.sp
+.LP
+DHCP を使用する場合、この引数は、DHCP 応答に指定されたブートファイル名よりも優先されます。
+.sp
+.LP
+DHCP と TFTP を使用する場合、デフォルトのファイル名は、root ノードの \fBname\fR プロパティーから自動生成されます。その際、コンマ (,) はピリオド (.) に置き換えられます。
+.sp
+.LP
+ファイル名をコマンド行から指定する場合、ファイル名にスラッシュ (\fB/\fR) を含めることはできません。
+.sp
+.LP
+URL の形式については、RFC 2396 で説明されています。HTTP サーバーは、IP アドレス (標準 IPv4 のドット区切り 10 進表記) として指定する必要があります。ポート番号 (省略可能) は、10 進数として指定します。ポートを指定しなかった場合、ポート 80 (10 進) が使用されます。
+.sp
+.LP
+指定された URL は「安全にエンコードされている」必要があります。というのも、パッケージは、指定された URL にエスケープエンコーディングを適用しないからです。コンマを含む URL は、引用符付きの文字列として指定する必要があります。それ以外の URL は、必ずしも引用符で囲む必要はありません。
+.sp
+.LP
+\fBhost-ip\fR には、クライアントすなわちブート対象システムの、IP アドレス (標準 IPv4 のドット区切り 10 進表記) を指定します。アドレス検索プロトコルとして RARP を使用している場合にこの引数を指定すると、RARP を使用する必要がなくなります。
+.sp
+.LP
+DHCP を使用している場合に \fBhost-ip\fR 引数を指定すると、クライアントは、RFC 2131の「Externally Configured Network Address」で規定されている手順に従うようになります。
+.sp
+.LP
+\fBrouter-ip\fR には、直接接続されたネットワーク上にあるルーターの IP アドレス (標準 IPv4のドット区切り 10 進表記) を指定します。このルーターは、ネットワーク通信の最初の接続先として使用されます。この引数を指定した場合、そこで指定されたルーターは、DHCP 応答に指定された推奨ルーターよりも優先されます。
+.sp
+.LP
+\fBsubnet-mask\fR (標準 IPv4 のドット区切り 10 進表記で指定) は、クライアントが存在するネットワークのサブネットマスクです。サブネットマスクが (この引数または DHCP 応答を通じて) 指定されなかった場合、ブート対象クライアントに割り当てられたアドレスに対するネットワーククラス (Class A、B、C のいずれか) に適するデフォルトマスクが使用されます。
+.sp
+.LP
+\fBclient-id\fR には、クライアントの一意に決まる識別子を指定します。DHCP クライアント識別子は、この値に基づいて生成されます。クライアント識別子の指定方法には、次の 2 つがあります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+識別子の ASCII 16 進表現
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+引用符付きの文字列
+.RE
+.sp
+.LP
+したがって、「\fBclient-id="openboot"\fR」と「\fBclient-id=6f70656e626f6f74\fR」はどちらも、DHCP クライアント識別子 6F70656E626F6F74 を表わします。
+.sp
+.LP
+コマンド行から指定される識別子には、スラッシュ (\fB/\fR) やスペースを含めることはできません。
+.sp
+.LP
+DHCP クライアント識別子の最大長は、32 バイト (ASCII 16 進形式を使用する場合は 32 バイトを表す 64 文字) です。後者の形式を使用する場合、識別子を構成する文字数は偶数でなければなりません。有効な文字は、0 ～ 9、a ～ f、A ～ F です。
+.sp
+.LP
+クライアントが正しく認識されるためには、クライアントが接続されているサブネット上で、クライアント識別子が一意に決まる必要があります。この要件を満足する識別子を選択するのは、システム管理者の役割です。
+.sp
+.LP
+コマンド行で指定されたクライアント識別子は、任意の DHCP メカニズムを使って指定された識別子よりも優先されます。
+.sp
+.LP
+\fBhostname\fR (文字列として指定) には、DHCP トランザクション内で使用されるホスト名を指定します。この名前は、ローカルドメイン名で修飾してもしなくてもかまいません。ホスト名の最大長は、255 文字です。
+.LP
+注 - 
+.sp
+.RS 2
+\fBhostname\fR パラメータは、クライアントが、希望するホスト名を DHCP サーバーに提供することが必要なサービス環境で使用できます。クライアントが、希望するホスト名を DHCP サーバーに提供すると、DHCP サーバーは、そのホスト名とクライアントに割り当てられた IP アドレスを、DNS を使って登録します。
+.RE
+.sp
+.LP
+\fBhttp-proxy\fR は、次のようなホストの標準記法を使って指定します。
+.sp
+.in +2
+.nf
+\fIhost\fR [":"" \fIport\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...ここで、\fIhost\fR には IP アドレス (標準 IPv4 のドット区切り 10 進表記) を指定し、\fIport\fR (省略可能) には 10 進数を指定します。ポートを指定しなかった場合、ポート 8080 (10 進) が使用されます。
+.sp
+.LP
+\fBtftp-retries\fR は、TFTP 処理が失敗したとみなされるまでの、最大リトライ回数 (10進で指定) です。デフォルトのリトライ回数は、無限回です。
+.sp
+.LP
+\fBdhcp-retries\fRは、DHCP 処理が失敗したとみなされるまでの、最大リトライ回数 (10 進で指定) です。デフォルトのリトライ回数は、無限回です。
+.SS "x86 でのブートストラップ手続き"
+.sp
+.LP
+x86 システム上では、ブートストラップ手続きは、カーネルのロードと、カーネルの初期化という概念的に異なる 2 つのフェーズからなります。カーネルのロードは、システムボード上の BIOS ROM および周辺装置上の BIOS ROM 拡張機能を使用して、GRUB (GRand Unified Bootloader)  上で実装されます。BIOS は、ハードディスク、DVD、または CD の先頭の物理セクターから開始して GRUB をロードします。ネットワークアダプター上の ROM でサポートされている場合は、BIOS はネットワークサーバーから \fBpxegrub\fR バイナリをダウンロードすることもできます。GRUB は配置されると、メニューにあるコマンドを実行して \fBUNIX\fR カーネルと、カーネルモジュールやデータを含む、事前に構成されたブートアーカイブをロードします。
+.sp
+.LP
+GRUB によってブートデバイスとして識別されたデバイスに ZFS ストレージプールが含まれている場合は、GRUB メニューを作成するために使用される \fBmenu.lst\fR ファイルが、プールのデータセット階層のルートにあるデータセット内で検索されます。 これは、プール自体と同じ名前のデータセットです。プール内にはこのようなデータセットが常に正確に 1 つ存在するため、このデータセットは、\fBmenu.lst\fR ファイルなどのプール全体にわたるデータに適しています。システムがブートされたあと、このデータセットは、ルートファイルシステム内の /\fIpoolname\fR にマウントされます。
+.sp
+.LP
+プール内に複数のブート可能データセット (つまり、ルートファイルシステム) が存在することがあります。デフォルトでは、\fBmenu.lst\fR ファイル内のファイル名のエントリが解決されるファイルシステムは、そのプールの \fBbootfs\fR プロパティーによって識別されるファイルシステムです (\fBzpool\fR(1M) を参照)。ただし、\fBmenu.lst\fR のエントリに \fBbootfs\fR コマンドを含めて、プールの代替データセットを指定することもできます。このように、\fBmenu.lst\fR ファイルには、プール内の複数のルートファイルシステムに対応するエントリが含まれている場合があります。
+.sp
+.LP
+カーネルの初期化は、GRUB がブートアーカイブの読み込みを完了し、\fBUNIX\fR バイナリに制御を渡した時点で開始されます。この時点で、GRUB は非アクティブとなり、ブートデバイスとの入出力はこれ以上発生しません。UNIX オペレーティングシステムは、ルートファイルシステムを初期化し、ブートアーカイブの必要なモジュール内にリンクして、実際のルートデバイスにマウントします。この時点で、カーネルは、ストレージに対する入出力を再開し、さらなるファイルシステムをマウントします (\fBvfstab\fR(4) を参照)。そして、多様なオペレーティングシステムのサービスを開始します (\fBsmf\fR(5) を参照)。
+.SS "自動リブートの有効化 (x86)"
+.sp
+.LP
+Solaris オペレーティングシステムでは、古いブートアーカイブなどの状況から回復するために、現在のブートデバイスからシステムを自動的にリブートできる \fBsmf\fR(5) プロパティーがサポートされています。
+.sp
+.LP
+サービス \fBsvc:/system/boot-config:default\fR には、ブール型のプロパティー \fBauto-reboot-safe\fR (デフォルトで \fBfalse\fR の設定) が含まれます。これを \fBtrue\fR に設定すると、システムの BIOS およびデフォルトの GRUB メニューエントリの両方が、現在のブートデバイスからブートされるよう設定するための通信が行われます。このプロパティーの値は、\fBsvccfg\fR(1M) および \fBsvcadm\fR(1M) を使用して変更できます。たとえば、自動リブートを有効にするように \fBauto-reboot-safe\fR を設定するには、次のようにコマンドを入力します。
+.sp
+.in +2
+.nf
+example# \fBsvccfg -s svc:/system/boot-config:default \e\fR
+      \fBsetprop config/auto-reboot-safe = true\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ほとんどのシステムは、現在のブートデバイスから自動的にリブートするように構成されています。ただし、場合によって、不明なオペレーティングシステムへの自動リブートにより、好ましくない結果が生じることがあります。このような場合に \fBauto-reboot-safe\fR プロパティーを使用すると、目的の動作を指定できます。
+.SS "フェイルセーフモード"
+.sp
+.LP
+ブートアーカイブに組み込まれたルートファイルシステムのイメージからブートし、ルートを実際のルートデバイスに再マウントするためには、ブートアーカイブとルートファイルシステムの内容に一貫性が必要です。 そうでない場合は、マシンの正しい動作や整合性を保証できません。
+.sp
+.LP
+「一貫性がある」という用語は、ルートファイルシステム内のすべてのファイルとモジュールがブートアーカイブ内にも存在し、かつ同一の内容であることを示します。このブート方式では、最初にブートアーカイブを読み取って第 1 段階のルートイメージとしてマウントすることが必要なため、実際のルートファイルシステムと一致させるには、ロード不可能なすべてのカーネルモジュールと、ブートアーカイブの内容に基づいた初期化が必要です。このような一貫性がない場合、システムの実行に際して、リブート前にルートデバイスには適用されたがルートアーカイブではまだ更新されていないカーネルモジュールやパラメータが使用される可能性があります。この不一致のために、システムが不安定になったり、データが損失したりすることがあります。
+.sp
+.LP
+ルートファイルシステムがマウントされたあと、メモリー内ファイルシステムを放棄する前に、Solaris はこの 2 つのファイルシステムに対する一貫性検証を実行します。不一致が検出された場合、Solaris は通常のブートシーケンスを中断し、フェイルセーフモードにフォールバックします。この状態を修正するには、管理者が次の 2 つの手順のうちの 1 つを実行する必要があります。推奨される手順は、フェイルセーフアーカイブにリブートし、ブートアーカイブを再構築するこことです。これにより、既知のカーネルがブートされ、アーカイブの再構築処理に対して機能することが保証されます。あるいは、この不一致によって正しいシステム動作が損なわれることがない場合、管理者は、一貫性のないブートアーカイブのサービス状態をクリアーし、システムの動作を続行することを選択できます。\fBsvcadm\fR(1M) を参照してください。
+.sp
+.LP
+ブートアーカイブサービスがクリアーされ、システムの動作が続行された場合 (上の 2 番目の選択)、システムは、ルートファイルシステムに関して期限が切れたロード不可能なカーネルドライバまたはその他のモジュールを使用して実行される可能性があります。そのため、正しいシステム動作が損なわれることがあります。
+.sp
+.LP
+ブートアーカイブの一貫性を保証するために、\fBreboot\fR(1M) や \fBshutdown\fR(1M) によって開始される通常のシステムシャットダウン処理では、\fBumountall\fR(1M) マイルストーンの完了時にブートアーカイブへの更新をチェックし、適用します。
+.sp
+.LP
+\fBumountall\fR サービスが完了したあとにブートアーカイブに含める必要のあるカーネルファイル、ドライバ、モジュール、またはドライバ構成ファイルになんらかの更新が発生すると、次回のブート中にブートアーカイブの一貫性検査は失敗します。この事態を回避するために、常にマシンをクリーンな状態で停止することをお勧めします。
+.sp
+.LP
+\fBumountall\fR サービスの完了後にカーネルへの更新が必要な場合、管理者は、次の呼び出しによってアーカイブを再構築することを選択できます。
+.sp
+.in +2
+.nf
+# \fBbootadm update-archive\fR
+.fi
+.in -2
+.sp
+
+.SS "フェイルセーフブートアーカイブ"
+.sp
+.LP
+フェイルセーフアーカイブを使用すると、保守またはトラブルシューティングのために、マシンを任意の時点でブートできます。フェイルセーフブートアーカイブは、ミニルートアーカイブをソースとしてマシンにインストールされます。フェイルセーフアーカイブをブートすると、マシンは、メモリー内ファイルシステムをルートデバイスとして使用してブートされます。
+.SS "SPARC"
+.sp
+.LP
+SPARC フェイルセーフアーカイブは次のとおりです。
+.sp
+.in +2
+.nf
+/platform/`uname -i`/failsafe
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...また、次のようにブートできます。
+.sp
+.in +2
+.nf
+ok \fBboot [\fIdevice-specifier\fR] -F failsafe\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ユーザーが特定の ZFS ブート可能データセットからのフェイルセーフアーカイブのブートを希望する場合は、これを次のように実行できます。
+.sp
+.in +2
+.nf
+ok \fBboot [\fIdevice-specifier\fR] -Z \fIdataset\fR -F failsafe\fR
+.fi
+.in -2
+.sp
+
+.SS "x86"
+.sp
+.LP
+x86 フェイルセーフアーカイブは次のとおりです。
+.sp
+.in +2
+.nf
+/boot/x86.miniroot-safe
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...また、GRUB メニューから \fBSolaris フェイルセーフ\fRの項目を選択することによってブートできます。
+.SH オプション
+.SS "SPARC"
+.sp
+.LP
+次の SPARC オプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+boot プログラムはこのフラグを問い合わせと解釈し、スタンドアロンプログラムの名前を要求します。\fB\fR\fB\&'\fR\fB-a\fR\fB\&'\fR フラグはその後、スタンドアロンプログラムに渡されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIdefault-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdefault-file\fR を明示的に指定します。一部のシステムでは、なにも指定されていない場合、\fBboot\fR は動的デフォルトファイルを選択します。このオプションを使用すると、\fIdefault-file\fR を明示的に設定できます。\fBkmdb\fR(1) をブートする場合に便利です。これは、\fBkmdb\fR がデフォルトで、\fBboot\fR プログラムによってエクスポートされたデフォルトファイルを読み込むためです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIobject\fR\fR
+.ad
+.sp .6
+.RS 4n
+名前付きオブジェクトを使用してブートします。このオブジェクトは、ELF 実行可能ファイル、またはブートブロックを含むブート可能なオブジェクトのどちらかである必要があります。主に、フェイルセーフまたは \fBwanboot\fR ブートアーカイブのブートに使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.sp .6
+.RS 4n
+ZFS プール内のブート可能データセットを一覧表示します。リスト内のいずれかのブート可能データセットを選択できます。そのあと、そのデータセットをブートするための詳細な手順が表示されます。その手順に従って、選択したデータセットをブートします。 このオプションは、ブートデバイスに ZFS ストレージプールが含まれている場合にのみサポートされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細なデバッグ情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIboot-flags\fR\fR
+.ad
+.sp .6
+.RS 4n
+boot プログラムはすべての \fIboot-flags\fR を \fBfile\fR に渡します。これらの引数は、\fBboot\fR では解釈されません。デフォルトのスタンドアロンプログラムで使用できるオプションについては \fBkernel\fR(1M) および \fBkmdb\fR(1) のマニュアルページを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIclient-program-args\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBboot\fR プログラムはすべての \fIclient-program-args\fR を \fIfile\fR に渡します。これらの引数は、\fBboot\fR では解釈されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートするスタンドアロンプログラムの名前。\fB\fR\fBboot\fR コマンド行または \fIboot-file\fR NVRAM 変数でファイル名を明示的に指定しないと、\fBboot\fR は適切なデフォルトファイル名を選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIOBP\fR \fInames\fR\fR
+.ad
+.sp .6
+.RS 4n
+OpenBoot PROM 指定を行います。たとえば、Desktop SPARC ベースのシステム上で \fB/sbus/esp@0,800000/sd@3,0:a\fR を指定した場合は、スロット 0 の esp ホストアダプタで、\fBSCSI\fR バス上の lun0 、ターゲット 3 の \fBSCSI\fR ディスク (sd) を意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR \fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した ZFS データセット内のルートファイルシステムからブートします。
+.RE
+
+.SS "x86"
+.sp
+.LP
+次の x86 オプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fIprop\fR=\fIval\fR...\fR
+.ad
+.sp .6
+.RS 4n
+カーネルに渡される 1 つ以上の属性値ペア。複数の設定値ペアはコンマで区切られる必要があります。このオプションの使用方法は、次のコマンドと同様です。 \fBeeprom\fR \fIprop\fR=\fIval\fR設定情報とその有効な値については、 \fBeeprom\fR(1M) を参照してください。
+.sp
+このメニューエントリに対応するルートファイルシステムが ZFS データセットである場合は、メニューエントリに次のオプションを追加する必要があります。
+.sp
+.in +2
+.nf
+-B $ZFS-BOOTFS
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIboot-args\fR\fR
+.ad
+.sp .6
+.RS 4n
+boot プログラムはすべての \fIboot-args\fR を \fBfile\fR に渡します。これらの引数は、\fBboot\fR では解釈されません。カーネルで使用できるオプションについては、\fBkernel\fR(1M) および \fBkmdb\fR(1) を参照してください。
+.RE
+
+.sp
+.LP
+特に指定しないかぎり、x86 システムでは \fB/platform/i86pc/kernel/amd64/unix\fR がブートされます。
+.SH X86 でのブートシーケンスの詳細
+.sp
+.LP
+PC 互換マシンの電源を投入すると、\fBBIOS ROM\fR のシステムファームウェアが電源投入時自己診断テスト (POST) を実行し、周辺ボード上の \fBROM\fR の \fBBIOS\fR 拡張機能を実行し、ソフトウェア割り込み INT 19h のブートストラップをブートします。INT 19h のハンドラは通常、標準の PC 互換ブートを実行します。その場合、1 番目のハードディスクから先頭物理セクターの読み取りを試みます。次にプロセッサは、メモリー内でこのセクターイメージの先頭バイトにジャンプします。
+.SH X86 での一次ブート
+.sp
+.LP
+ディスクメディアの先頭セクターにはマスターブートブロック (GRUB \fBステージ 1\fR) があります。ステージ 1 は GRUB \fBステージ 2\fR をロードします。この時点で GRUB は準備が完全に整います。GRUB は、メニューファイル (\fB/boot/grub/menu.lst\fR) を読み込み、実行します。同様のシーケンスが DVD あるいは、CD ブートでも発生します。しかし、マスターブートブロックの位置と内容は El Torito 仕様で規定されています。El Torito 準拠のブートでも、\fBstrap.com\fR が読み込まれ、それが次に \fBboot.bin\fR が読み込まれます。
+.sp
+.LP
+ハードディスクの最初のセクターには、マスターブートブロックがあり、そのブロックにはマスターブートプログラムと \fBFDISK\fR テーブルが含まれており、\fBPC\fR プログラムがそのテーブルを管理しています。マスターブートは、 \fBFDISK\fR テーブルの中のアクティブパーティションを探し、その先頭セクター (GRUB \fB ステージ 1 \fR) をロードして、メモリー内の先頭バイトにジャンプします。ハードディスクからの標準の PC 互換ブート処理はこれで完了します。GRUB \fBステージ 1\fR  がマスターブートブロック上にインストールされると ( \fBinstallgrub\fR(1M) の \fB-m\fR を参照)、\fBステージ 2\fR が、アクティブパーティションかどうかにはかかわらず Solaris  \fBFDISK\fR パーティションから直接ロードされます。
+.sp
+.LP
+Solaris ソフトウェア用 x86 \fBFDISK\fR のパーティションは、1 シリンダのブートスライスから始まり、これは、GRUB のステージ 1 を先頭セクターに含んでいます。そして、第 2 および第 3 のセクターは、標準 Solaris ディスクラベルおよびボリューム構成テーブル (VTOC) を含んでいます。そして、第 50 とその後続セクターは、GRUB のステージ 2 を含んでいます。\fB\fR\fB\fR第 4 から 第 49 までのセクターには、Solaris の古いバージョンのブートブロックが含まれている可能性があります。これによって、同じ FDISK の中に、複数の Solaris リリースを同時に存在させることが可能になります。Solaris ソフトウェア用 \fBFDISK\fR パーティションがアクティブパーティションの場合、マスターブートプログラム (\fBmboot\fR) は、先頭セクターにあるパーティションブートプログラムをメモリーの中に読み込み、そこへジャンプします。次に GRUB \fBステージ 2 \fR プログラムをメモリーに読み込み、そこへジャンプします。GRUB メニューが表示されると、ユーザーは異なるパーティション、異なるディスク、あるいは 可能であればネットワークからオペレーティングシステムをブートできるよう選択できます。
+.sp
+.LP
+Intel の Preboot eXecution Environment (PXE) 規格が、ネットワークブートのためにサポートされています。PXE を使用してネットワークからのブートを行う場合には、システムあるいはネットワークアダプタの BIOS が DHCP を使用してブートサーバ上のネットワークブートストラッププログラム (\fBpxegrub\fR) を見つけ、Trivial File Transfer Protocol (TFTP) を使用してそのプログラムを読み込みます。BIOS  が、メモリ上の先頭バイトにジャンプすることで、\fBpxegrub\fR を実行します。\fBpxegrub\fR は、メニューファイルをダウンロードし、ユーザーにその項目を表示します。
+.SH X86 カーネルの開始
+.sp
+.LP
+カーネルの開始処理は、カーネルのロード処理に依存しません。カーネルが開始している間、コンソール入出力は、\fBconsole\fR プロパティーで指定されたデバイスで行われます。
+.sp
+.LP
+UFS からブートする場合、ルートデバイスは \fBbootpath\fR プロパティーで指定され、ルートファイルシステムの種類は \fBfstype\fR プロパティーで指定されます。これらのプロパティーは、Solaris インストールおよびアップグレード処理で\fB/boot/solaris/bootenv.rc\fR の中に設定されるべきです。そして、前述のように (\fBeeprom\fR(1M) を参照) \fB-B\fR で上書きされます。
+.sp
+.LP
+ZFS からブートする場合、ルートデバイスは、GRUB メニューエントリ内の \fBkernel\fR または \fBmodule\fR のどちらかの行にある \fB-B\fR \fB$ZFS-BOOTFS\fR パラメータが指定するブートパラメータで指定されます。この値は、\fB-B\fR オプションで指定されるすべてのパラメータと同様に、GRUB によってカーネルに渡されます。
+.sp
+.LP
+コンソールプロパティーが存在しない場合、コンソールの入出力は、デフォルトで \fBscreen\fR と \fBkeyboard\fR になります。ルートデバイスはデフォルトで \fBramdisk\fR になり、ファイルシステムはデフォルトで \fBufs\fR になります。
+.SH 使用例
+.SS "SPARC"
+.LP
+\fB例 1 \fR対話モードでシングルユーザーとしてデフォルトのカーネルをブートする
+.sp
+.LP
+対話モードでシングルユーザーとしてデフォルトのカーネルをブートするには、\fBok\fR プロンプトで次のいずれかを入力します。
+
+.sp
+.in +2
+.nf
+\fBboot\fR \fB\fR\fB-as\fR
+
+\fBboot\fR \fBdisk3\fR \fB-as\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRWANブートに対応した PROM によるネットワークブート
+.sp
+.LP
+さまざまな boot コマンド行呼び出し間の微妙な違いを示すために、ここでは \fBnetwork-boot-arguments\fR が設定されており、以下のコマンドのように \fBnet\fR に対してデバイス別名が設定されているものとします。
+
+.sp
+.LP
+次のコマンドでは、デバイス別名内のデバイス引数が、デバイスドライバによって処理されます。ネットワークブートサポートパッケージは、\fBnetwork-boot-arguments\fR 内の引数を処理します。
+
+.sp
+.in +2
+.nf
+\fBboot net\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドでは、デバイス引数なし、とみなされます。ネットワークブートサポートパッケージは、\fBnetwork-boot-arguments\fR 内の引数を処理します。
+
+.sp
+.in +2
+.nf
+\fBboot net:\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドでは、デバイス引数なし、とみなされます。\fBrarp\fR は唯一のネットワークブートサポートパッケージ引数です。\fBnetwork-boot-arguments\fR は無視されます。
+
+.sp
+.in +2
+.nf
+\fBboot net:rarp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドでは、指定されたデバイス引数が処理されます。ネットワークブートサポートパッケージは、\fBnetwork-boot-arguments\fR 内の引数を処理します。
+
+.sp
+.in +2
+.nf
+\fBboot net:speed=100,duplex=full\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR以前の PROM における \fBwanboot\fR の使用
+.sp
+.LP
+次のコマンドでは、DVD または CD から \fBwanboot\fR バイナリが読み込まれます。読み込まれた \fBwanboot\fR は、DHCP の実行時にコマンドインタプリタをブートし、鍵やその他の必要な構成情報をユーザーが入力できるようにします。
+
+.sp
+.in +2
+.nf
+\fBboot cdrom -F wanboot -o dhcp,prompt\fR
+.fi
+.in -2
+.sp
+
+.SS "x86"
+.LP
+\fB例 4 \fR対話モードでシングルユーザーとしてデフォルトのカーネルをブートする
+.sp
+.LP
+シングルユーザー状態の対話モードでデフォルトのカーネルをブートするには、コマンド行で GRUB を次のように編集します。
+
+.sp
+.in +2
+.nf
+kernel /platform/i86pc/kernel/amd64/unix -as
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inittab\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinitdefault\fR 状態が指定されているテーブル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/sbin/init\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinitdefault\fR 状態にシステムを移行するプログラム
+.RE
+
+.SS "SPARC のみ"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/\fR\fIplatform-name\fR\fB/kernel/sparcv9/unix\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムをブートするデフォルトのプログラム。
+.RE
+
+.SS "x86 のみ"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/boot\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートに関連するファイルが置かれているディレクトリ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/rpool/boot/grub/menu.lst\fR\fR
+.ad
+.sp .6
+.RS 4n
+GRUB によって表示されるブート可能なオペレーティングシステムのメニュー。\fB/rpool\fR は共通する規約です。パス名は、インストーラの機能に応じて構成可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/i86pc/kernel/amd64/unix\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムをブートするデフォルトのプログラム。
+.RE
+
+.SH 関連項目
+.sp
+.LP
+\fBkmdb\fR(1), \fBuname\fR(1), \fBbootadm\fR(1M), \fBeeprom\fR(1M), \fBinit\fR(1M), \fBinstallboot\fR(1M), \fBkernel\fR(1M), \fBmonitor\fR(1M), \fBshutdown\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBumountall\fR(1M), \fBzpool\fR(1M), \fBuadmin\fR(2), \fBbootparams\fR(4), \fBinittab\fR(4), \fBvfstab\fR(4), \fBwanboot.conf\fR(4), \fBattributes\fR(5), \fBfilesystem\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+RFC 903, \fIA Reverse Address Resolution Protocol\fR, \fBhttp://www.ietf.org/rfc/rfc903.txt\fR
+.sp
+.LP
+RFC 2131, \fIDynamic Host Configuration Protocol\fR, \fBhttp://www.ietf.org/rfc/rfc2131.txt\fR
+.sp
+.LP
+RFC 2132, \fIDHCP Options and BOOTP Vendor Extensions\fR, \fBhttp://www.ietf.org/rfc/rfc2132.txt\fR
+.sp
+.LP
+RFC 2396, \fIUniform Resource Identifiers (URI): Generic Syntax\fR, \fBhttp://www.ietf.org/rfc/rfc2396.txt\fR
+.sp
+.LP
+\fI\fR
+.sp
+.LP
+\fI『Sun ハードウェアマニュアル』\fR
+.sp
+.LP
+『\fIOpenBoot Command Reference Manual\fR』
+.SH 警告
+.sp
+.LP
+\fBboot\fR ユーティリティは、ブート可能プログラムとして使用できるファイルかどうか判別できません。ブート不可能なファイルをブートするように要求された場合、\fBboot\fR ユーティリティはそのファイルをロードし、そのファイルに制御を渡します。その場合の結果は予測できません。
+.SH 注意事項
+.sp
+.LP
+\fIplatform-name\fR を調べるには、\fBuname\fR(1) の \fB-i\fR オプションを使用します。\fIhardware-class-name\fR を調べるには、\fBuname\fR(1) の \fB-m\fR オプションを使用します。
+.sp
+.LP
+現在のリリースの Solaris オペレーティングシステムは、UltraSPARC-I CPU を搭載するマシンをサポートしません。

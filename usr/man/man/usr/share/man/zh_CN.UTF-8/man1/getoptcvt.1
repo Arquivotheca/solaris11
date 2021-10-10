@@ -1,0 +1,208 @@
+'\" te
+.\"  版权所有 1989 AT&T
+.\" 版权所有 (c) 2000，Oracle 和/或其附属公司。保留所有权利。
+.TH getoptcvt 1 "2000 年 1 月 7 日" "SunOS 5.11" "用户命令"
+.SH 名称
+getoptcvt \-  转换到 getopts 以解析命令选项
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/getoptcvt\fR [\fB-b\fR] \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/getoptcvt\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fB/usr/lib/getoptcvt\fR 读取 \fIfilename\fR 中的 shell 脚本，将其转换为使用 \fBgetopts\fR 而不是 \fBgetopt\fR，然后在标准输出中写入结果。
+.sp
+.LP
+\fBgetopts\fR 是一个内置 Bourne shell 命令，用于解析位置参数和检查有效选项。请参见 \fBsh\fR(1)。它支持命令语法标准的所有适用规则（请参见 \fBIntro\fR(1) 中的规则 3 至 10）。应该使用该命令来替代 \fBgetopt\fR 命令。（请参见下面的"注意"部分。）shell 的内置 \fBgetopts\fR 命令的语法为：
+.sp
+.LP
+\fBgetopts\fR \fIoptstring\fR \fI name\fR [ \fIargument\fR\|.\|.\|.\|]
+.sp
+.LP
+\fIoptstring\fR 必须包含使用 \fBgetopts\fR 的命令可以识别的选项字母；如果字母后面跟有冒号 (\fB:\fR)，则该选项需要有一个参数，或一组参数，必须使用空格将其与参数分隔。
+.sp
+.LP
+每次被调用时，\fBgetopts\fR 会将下一个选项放在 shell 变量 \fIname\fR 中，将下一个要处理的参数的索引放在 shell 变量 \fBOPTIND\fR 中。只要调用 shell 或 shell 脚本，就会将 \fBOPTIND\fR 初始化为 \fB1\fR。
+.sp
+.LP
+如果某个选项需要选项参数，\fBgetopts\fR 会将其放置在 shell 变量 \fBOPTARG\fR 中。
+.sp
+.LP
+如果遇到非法选项，会将 \fB?\fR 放置在 \fIname\fR 中。
+.sp
+.LP
+当遇到选项的结尾时，\fBgetopts\fR 将以非零退出状态退出。可以使用特殊选项 \fB\(mi\(mi\fR 来限定选项的结尾。
+.sp
+.LP
+缺省情况下，\fBgetopts\fR 解析位置参数。如果在 (\fIargument\fR .\|.\|.)  \fBgetopts\fR 命令行上指定了额外的参数 (argument .\|.\|.)，\fBgetopts\fR  改而对它们进行解析。
+.sp
+.LP
+这样，所有新命令将遵循 \fBIntro\fR(1) 中介绍的命令语法标准，它们应该使用 \fBgetopts\fR 或 \fBgetopt\fR 来解析位置参数和检查对该命令有效的选项（请参见下面的"注意"部分）。
+.SH 选项
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 6n
+.rt  
+使转换的脚本可移植到 UNIX 系统的早期发行版。\fB/usr/lib/getoptcvt\fR 修改 \fIfilename\fR 中的 shell 脚本，使得在执行所得到的 shell 脚本时，由它在运行时确定是调用 \fBgetopts\fR 还是 \fBgetopt\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR为命令处理参数
+.sp
+.LP
+以下 shell 程序片段显示了如何为可以接受选项 \fB-a\fR 或 \fB-b\fR，以及选项 \fB-o\fR（该选项需要一个选项参数）的命令处理参数：
+
+.sp
+.in +2
+.nf
+while getopts abo: c
+do
+      case $c in
+      a | b)     FLAG=$c;;
+      o)         OARG=$OPTARG;;
+      \e?)        echo $USAGE
+                 exit 2;;
+      esac
+done
+shift `expr $OPTIND \(mi 1`
+.fi
+.in -2
+
+.LP
+\fB示例 2 \fR等效的代码表达式
+.sp
+.LP
+此代码将下列各个输入视为等效的：
+
+.sp
+.in +2
+.nf
+\fBcmd -a -b -o "xxx z yy" filename
+cmd -a -b -o "xxx z yy" -filename
+cmd -ab -o xxx,z,yy filename
+cmd -ab -o "xxx z yy" filename
+cmd -o xxx,z,yy b a filename\fR
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+有关影响 \fBgetopts\fR 执行的环境变量 \fBLC_CTYPE\fR、\fBLC_MESSAGES\fR 和 \fBNLSPATH\fR 的描述，请参见 \fBenviron\fR(5)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB OPTIND\fR \fR
+.ad
+.RS 12n
+.rt  
+\fBgetoptcvt\fR 将该变量用作要处理的下一个参数的索引。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOPTARG\fR \fR
+.ad
+.RS 12n
+.rt  
+如果某个选项使用了参数，\fBgetoptcvt\fR 将使用该变量来存储参数。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 7n
+.rt  
+找到了一个选项，可能是也可能不是由 \fIoptstring\fR 指定的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+遇到选项的结尾，或发生错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+CSIenabled（已启用）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBIntro\fR(1)、\fBgetopts\fR(1)、\fBsh\fR(1)、\fBshell_builtins\fR(1)、\fBgetopt\fR(3C)、\fBattributes\fR(5)
+.SH 诊断
+.sp
+.LP
+如果 \fBgetopts\fR 遇到不包括在 \fIoptstring\fR 中的选项字母，将会在标准错误上输出一条错误消息。
+.SH 附注
+.sp
+.LP
+尽管在当前实现中，允许以下命令语法规则（请参见 \fBIntro\fR(1)）放宽，但也不应使用这些语法规则，因为系统的将来发行版可能不支持它们。如上面的"示例"部分所示，\fB-a\fR 和 \fB-b\fR 均为选项，选项 \fB-o\fR 需要一个选项参数。以下示例违反了规则 5：具有选项参数的选项不得与其他选项组合在一起：
+.sp
+.in +2
+.nf
+example% \fBcmd -aboxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下示例违反了规则 6：在接受选项参数的选项后面必须有空格：
+.sp
+.in +2
+.nf
+example% \fBcmd -ab oxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+更改 shell 变量 \fBOPTIND\fR 的值或解析不同的参数集合可能会导致意外结果。

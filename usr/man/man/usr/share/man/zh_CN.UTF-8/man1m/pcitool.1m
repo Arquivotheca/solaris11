@@ -1,0 +1,351 @@
+'\" te
+.\" 版权所有 (c) 2010，Oracle 和/或其附属公司。保留所有权利。
+.TH pcitool 1M "2010 年 6 月 30 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+pcitool \- 中断路由工具
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR \fB-h\fR
+.fi
+
+.LP
+.nf
+x86:
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-i\fR \fIcpu#\fR,\fIino#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.LP
+.nf
+SPARC:
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-i\fR \fIino#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/pcitool\fR pci@\fIunit-address\fR \fB-m\fR \fImsi#\fR | all [\fB-r\fR [\fB-c\fR] |
+     \fB-w\fR \fIcpu#\fR [\fB-g\fR] ] [\fB-v\fR] [\fB-q\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBPCItool\fR 是一个低级工具，提供一个用于获取和设置中断路由信息的工具。
+.SS "中断路由"
+.sp
+.LP
+\fBpcitool\fR \fB-i\fR 命令可显示给定结点上 INO 的设备和 CPU 路由信息，并允许将给定 INO 或 INO 组重新路由至特定 CPU。
+.sp
+.LP
+在 SPARC 平台上，INO 将映射到某个中断 mondo，而一个或多个 MSI/X 将映射到一个 INO。因此，INO 和 MSI/X 可单独重新确定目标。使用 \fB-i\fR 选项可以检索或重新路由给定的 INO；使用 \fB-m\fR 选项可以检索或重新路由 MSI/X。
+.sp
+.LP
+在 x86 平台上可以指定 \fIcpu#\fR。与 \fIino#\fR 配合使用可标识一个独占向量。SPARC 平台不支持 \fIcpu#\fR 参数。
+.SS "所需特权"
+.sp
+.LP
+要访问中断信息，用户必须具有所有特权。一般用户在通过 \fBsu\fR(1M) 成为超级用户之后便可以访问中断信息，或者，如果他在 \fBuser_attr\fR 文件中被授予"维护和修复"权限，也可以访问中断信息。请参见 \fBuser_attr\fR(4) 和 \fBrbac\fR(5)。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示命令用法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+没有以消息形式显示任何错误。但是，\fBpcitool\fR 仍会返回 Unix 错误代码。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR [\fB-c\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示给定结点上 INO 的设备和 CPU 路由信息。显示每个显示的 INO 的每个设备的设备路径和实例编号。在某些平台上，专用于根联合体的中断由附加到其路径名的字符串 \fB(Internal)\fR 表示。
+.sp
+使用 \fB-c\fR，可转储中断控制器信息。
+.sp
+如果命令行上既未提供 \fB-r\fR，也未提供 \fB-w\fR，则假定使用 \fB-r\fR。请参见\fB示例\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIcpu#\fR [\fB-g\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将给定 INO 或 MSI/X 路由到给定 CPU。显示新的和原始的路由信息。必须指定 INO 或 MSI/X。
+.sp
+在某些平台上（如 x86），单个功能的多个 MSI 中断需要一起重新路由。使用 \fB-g\fR 执行此操作。\fB-g\fR 选项仅适用于支持的平台，并且仅适用于 MSI 中断组。（可接受 1"组"。）使用 \fB-g\fR 时，提供的向量必须是组中编号最小的向量。组的大小在内部确定。请参见\fB示例\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR显示所有 INO
+.sp
+.LP
+用于显示 \fB/pci@0,0\fR 上所有 INO 的命令为：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i all\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR显示特定 INO 的输出
+.sp
+.LP
+用于在根结点 \fB/pci@0,0\fR 上显示 INO \fB0x0,0x21\fR 的命令对于 x86 平台和 SPARC 平台略有不同。
+
+.sp
+.LP
+在 x86 平台上：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 0,21\fR
+0x0,0x21:                   mpt                          0
+/pci@7b,0/pci1022,7458@11/pci1000,3060@2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在 SPARC 平台上：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 21\fR
+0x0,0x21:                   mpt                          0
+/pci@7b,0/pci1022,7458@11/pci1000,3060@2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上面显示的输出是一个示例，可能会与您的输出有所不同。
+
+.LP
+\fB示例 3 \fR显示特定 MSI 的输出
+.sp
+.LP
+下面是用于在根结点 \fB/pci@0,0\fR 上显示 MSI \fB0x1\fR 的命令和样例输出。
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -m 0x1\fR
+0x0,0x1: pcieb     0    /pci@7b,0/pci10de,5d@e
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR将 INO 从一个 CPU 重新路由到另一个 CPU
+.sp
+.LP
+将 INO 21 从 CPU 0 成功重新路由到 CPU 1 将生成以下输出。
+
+.sp
+.LP
+在 x86 平台上：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 0,21 -w 1\fR
+0x0,0x21 -> 0x1,0x20
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在 SPARC 平台上：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 21 -w 1\fR
+0x0,0x21 -> 0x1,0x20
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR将 MSI 从一个 CPU 重新路由到另一个 CPU
+.sp
+.LP
+将 MSI 1 从 CPU 1 成功重新路由到 CPU 0 将生成以下输出。
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -m 1 -w 0\fR
+0x1,0x1 -> 0x0,0x1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR重新路由 INO 组
+.sp
+.LP
+将以 24 开始的 INO 组从 CPU 0 成功重新路由到 CPU 1 将生成以下输出。
+
+.sp
+.LP
+在 x86 平台上：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 3,24 -w 1 -g\fR
+0x3,0x24 => 0x1,0x22
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在 SPARC 平台上：
+
+.sp
+.in +2
+.nf
+# \fBpcitool /pci@0,0 -i 24 -w 1 -g\fR
+0x3,0x24 => 0x1,0x22
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+无错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+传入的参数超出范围、对齐错误或是无效参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBETIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+将中断更改为新 CPU 之前等待暂挂中断解决问题的超时时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+发生了 I/O 错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+体系结构T{
+PCI-based systems（基于 PCI 的系统）
+T}
+_
+可用性system/management/pcitool
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsu\fR(1M)、\fBpci\fR(4)、\fBuser_attr\fR(4)、\fBattributes\fR(5)、\fBrbac\fR(5)
+.sp
+.LP
+PCI 规范（可从 \fBwww.pcisig.org\fR 获取）
+.SH 附注
+.sp
+.LP
+所有值均以十六进制输入。
+.sp
+.LP
+并非所有命令均适用于所有平台。

@@ -1,0 +1,260 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T.
+# All rights reserved.
+#
+#
+# Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+
+# Make sure that the libraries essential to this stage of booting can be found.
+LD_LIBRARY_PATH=/lib; export LD_LIBRARY_PATH
+
+#
+# If DHCP was used on a primary interface then set the hostname
+# that was returned. If no hostname was returned, set the name
+# to be "unknown". The hostname must be set to something, because
+# tooltalk will hang unless the name can be locally resolved.
+# Sendmail also requires the name to be resolvable locally.
+# The use of bootparams as a fallback for all non-DHCP cases provides
+# compatibility with the behavior of the system before netstrategy was
+# introduced.
+#
+# For non-global zones, fall back to the `uname -n` value provided by the
+# kernel if svc:/system/identity:node config/nodename does not have a value, 
+# as is expected on an initial boot.
+#
+SVCCFG=/usr/sbin/svccfg
+SVCADM=/usr/sbin/svcadm
+SVCPROP=/usr/bin/svcprop
+SVC=svc:/system/identity:node
+SVC_LOOPBACK=config/loopback
+SVC_NODENAME=config/nodename
+
+NAWK=/usr/bin/nawk
+GREP=/usr/bin/grep
+
+PATH=/usr/bin:/usr/sbin
+
+HOSTS=/etc/inet/hosts
+
+#
+# Set the service loopback property.
+#
+set_loopback_prop ()
+{
+	if $SVCCFG -s $SVC setprop $SVC_LOOPBACK = astring: "$1"; then
+		$SVCADM refresh $SVC 
+	else
+		echo "$SVC failed to set loopback"
+	fi
+}
+
+#
+# Modify the loopback entries in hosts(4).
+#
+modify_hosts ()
+{
+	export new_loopback=$1
+	export old_loopback=$LOOPBACK_PROP
+
+	$NAWK <$HOSTS >$HOSTS.$$ '
+		function writeit() {
+			split(ENVIRON["old_loopback"], p) 
+			c=split($0, s)
+			for (n=1; n<=c; ++n) {
+				if (s[n] != p[1])
+					printf("%s ", s[n]);
+			}
+			split(ENVIRON["new_loopback"], h) 
+			printf("%s\n", h[1]);
+		}
+		$1 == "127.0.0.1" {writeit(); next }
+		$1 == "::1" {writeit(); next }
+		{ printf("%s\n", $0); next } '
+
+	/usr/bin/mv $HOSTS.$$ $HOSTS
+	/usr/bin/chmod 644 $HOSTS
+	/usr/bin/chown root:sys $HOSTS
+}
+
+#
+# This function will remove the loopback mapping in hosts(4).
+# The loopback property itself has already been removed by
+# 'svcfg delcust'.
+#
+unconfigure_loopback ()
+{
+	# If no loopback mapping exists, then nothing to do
+	[[ -z $LOOPBACK_PROP ]] && return
+
+	modify_hosts
+}
+
+#
+# This function attempts to make sure that the system nodename has
+# a locally resolvable IP address associated with it by mapping
+# the system nodename to loopback. If the system nodename is already
+# mapped to an IP address, then this function will not map it to
+# loopback.
+#
+update_loopback ()
+{
+	# Trim a FQDN down to the hostname.
+	new_loopback=`echo $1 | cut -f1 -d'.'`
+
+	# If no loopback mapping exists yet, then initialize the property.
+	[[ -z $LOOPBACK_PROP ]] && set_loopback_prop $new_loopback
+	old_loopback=$LOOPBACK_PROP
+
+	# If the hostname is already mapped to an IP address, then it
+	# has either already been mapped to loopback or the administrator
+	# has decided to override the behavior of mapping to loopback.
+	# Either way, there is nothing to do. Return without modifying
+	# hosts(4).
+	$GREP -v '^#' $HOSTS | $GREP -iwsq $new_loopback
+	[[ $? -eq 0 ]] && return
+
+	# We have a new hostname to map to loopback. Remove any prior
+	# mapping and add the new one.
+	modify_hosts $new_loopback
+
+	[[ $new_loopback != $old_loopback ]] && \
+	    set_loopback_prop $new_loopback
+
+	unset new_loopback
+	unset old_loopback
+}
+
+set_hostname() {
+        if $SVCCFG -s $SVC setprop $SVC_NODENAME = astring: "$1"; then
+                $SVCADM refresh $SVC 
+        else
+	        echo "$SVC failed to set nodename"
+        fi
+}
+
+# Retrieve loopback property value for hosts(4) update
+LOOPBACK_PROP=$($SVCPROP -p $SVC_LOOPBACK $SVC)
+[[ "$LOOPBACK_PROP" = '""' ]] && LOOPBACK_PROP=""
+
+smf_netstrategy
+
+case "$1" in
+'start')
+	hostname=$($SVCPROP -p $SVC_NODENAME $SVC)
+        print -u1 "Hostname is"
+	[[ "$hostname" = '""' ]] && hostname=""
+	if [[ -z "$hostname" && -e /etc/nodename ]]; then
+		hostname=$(cat /etc/nodename)
+                set_hostname $hostname
+		rm /etc/nodename
+	fi
+
+	case "$_INIT_NET_STRATEGY" in
+		"dhcp") hostname=$(/usr/sbin/dhcpinfo Hostname) ;;
+		"rarp") hostname=$(/usr/sbin/hostconfig -h -p bootparams)
+			trap 'intr=1' 2 3
+			while [[ -z "$hostname" && ! -f /etc/.UNCONFIGURED && \
+		    	-z "$intr" ]]; do
+				echo "re-trying host configuration..."
+				# Restrict this to IPv4 interfaces.
+				/usr/sbin/ifconfig -adD4 auto-revarp up
+				hostname=$(/usr/sbin/hostconfig -h -p \
+				    bootparams)
+			done
+			trap 2 3 ;;
+		"none") nb_hostname=$(/usr/lib/inet/wanboot/netbootinfo \
+		    hostname 2>/dev/null)
+			if [[ $? -eq 0 && ! -z "$nb_hostname" &&  \
+		    		"$nb_hostname" != "none" ]]; then
+				hostname=$nb_hostname
+			fi
+			if [[ -z "$hostname" ]]; then
+				if smf_is_globalzone; then
+					hostname=$(/usr/sbin/hostconfig -h -p \
+					    bootparams)
+				else
+					hostname=$(/usr/sbin/uname -n)
+				fi
+			fi ;;
+	esac
+        ;;
+'unconfigure')
+	# Unroll any admin customization
+	$SVCCFG -s $SVC delcust
+
+	if [ $? -ne 0 ]; then
+		echo "Failed to unroll administrative customizations for $SVC"
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	$SVCADM refresh $SVC
+	;;
+*)
+	"Usage: $0 { start | unconfigure }"
+	exit $SMF_EXIT_ERR_FATAL
+	;;
+esac
+
+#
+# If the netstrategy was unsuccessful and we haven't got a locally configured
+# name, default to "unknown"
+# If the unconfigure case was called, the locally configured name is set to
+# unknown
+if [[ -z "$hostname" ]]; then
+	hostname=$($SVCPROP -p $SVC_NODENAME $SVC)
+	[[ "$hostname" = '""' ]] && hostname=""
+	if [[ -z "$hostname" ]]; then
+		hostname="unknown"
+	fi
+fi
+
+/usr/sbin/uname -S $hostname
+if [ $? -ne 0 ] ; then
+	exit $SMF_EXIT_ERR_FATAL
+fi
+
+echo "Hostname: $(/usr/sbin/uname -n)" > /dev/msglog
+
+# Map the hostname to loopback in hosts(4).
+if [[ ! -f $HOSTS ]] ; then
+	echo "$HOSTS does not exist. No loopback mapping possible."
+else
+	case "$1" in
+	'start')
+		update_loopback $hostname 
+		;;
+	'unconfigure')
+		unconfigure_loopback
+		;;
+	esac
+fi
+
+# Reset the library path now that we are past the critical stage
+unset LD_LIBRARY_PATH
+
+exit $SMF_EXIT_OK

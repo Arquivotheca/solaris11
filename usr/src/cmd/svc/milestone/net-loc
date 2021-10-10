@@ -1,0 +1,940 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+. /lib/svc/share/nwam_include.sh
+
+# FMRI consts
+AUTOFS_FMRI="svc:/system/filesystem/autofs"
+DNS_CLIENT_FMRI="svc:/network/dns/client"
+IPSEC_IKE_FMRI="svc:/network/ipsec/ike"
+IPSEC_POLICY_FMRI="svc:/network/ipsec/policy"
+IPFILTER_FMRI="svc:/network/ipfilter:default"
+LDAP_CLIENT_FMRI="svc:/network/ldap/client"
+LOCATION_FMRI="svc:/network/location:default"
+MAPID_FMRI="svc:/network/nfs/mapid:default"
+NIS_CLIENT_FMRI="svc:/network/nis/client"
+NIS_DOMAIN_FMRI="svc:/network/nis/domain"
+NS_SWITCH_FMRI="svc:/system/name-service/switch:default"
+
+# commands
+CP=/usr/bin/cp
+DHCPINFO=/usr/sbin/dhcpinfo
+DOMAINNAME=/usr/bin/domainname
+GREP=/usr/bin/grep
+LDAPCLIENT=/usr/sbin/ldapclient
+MV=/usr/bin/mv
+NAWK=/usr/bin/nawk
+NETADM=/usr/sbin/netadm
+NETCFG=/usr/sbin/netcfg
+NSCFG=/usr/sbin/nscfg
+RM=/usr/bin/rm
+SED=/usr/bin/sed
+SVCADM=/usr/sbin/svcadm
+SVCCFG=/usr/sbin/svccfg
+SVCPROP=/usr/bin/svcprop
+
+# Path to directories
+USER_LOC_PATH=/etc/nwam/loc/User
+
+#
+# Default *.conf files
+# Set appropriate config SMF property to these files when NWAM is stopped
+# and corresponding config properties in the Legacy location are empty.
+#
+IPF6_DEFAULT_CONFIG_FILE=/etc/ipf/ipf6.conf
+IPNAT_DEFAULT_CONFIG_FILE=/etc/ipf/ipnat.conf
+IPPOOL_DEFAULT_CONFIG_FILE=/etc/ipf/ippool.conf
+IPSEC_IKE_DEFAULT_CONFIG_FILE=/etc/inet/ike/config
+IPSEC_POLICY_DEFAULT_CONFIG_FILE=/etc/inet/ipsecinit.conf
+
+#
+# echoes DHCP controlled interfaces separated by commas
+#
+# Don't parse the output of ifconfig(1M) because interfaces that haven't
+# acquired a DHCP lease also have the DHCP flag set.
+#
+get_dhcp_interfaces () {
+	#
+	# 1. parse netstat(1M) output for v4 interfaces in BOUND
+	#    or INFORMATION state
+	# 2. make a space-separated list of interface names
+	#
+	netstat -D -f inet | $NAWK '
+	    $2 ~ /BOUND/ { printf "%s ", $1 }
+	    $2 ~ /INFORMATION/ { printf "%s ", $1 }'
+}
+
+#
+# get_dhcpinfo <code/identifier>
+#
+# echoes the value received through each interface controlled by DHCP;
+# multiple values are echoed as a space-separated list
+#
+# returns:
+#	0 => property is set
+#	1 => property is not set
+#
+get_dhcpinfo () {
+	code=$1
+
+	# Get all interfaces with DHCP control, IFS is " "
+	interfaces=`get_dhcp_interfaces`
+
+	info=""
+ 	for intf in $interfaces; do
+		val=`$DHCPINFO -i $intf $code`
+		if [ $? -eq 0 ]; then
+			if [ "$info" = "" ]; then
+				info="$val"
+			else
+				info="$info $val"
+			fi
+		fi
+ 	done
+	echo $info
+}
+
+#
+# refresh_svc <fmri>
+#
+# Refreshes the service.
+#
+refresh_svc () {
+	$SVCADM refresh $1
+}
+
+#
+# start_svc <fmri>
+#
+# Starts the service temporarily.  If the service is already enabled,
+# svcadm(1M) does nothing.
+#
+start_svc () {
+	$SVCADM enable -t $1
+}
+
+#
+# stop_svc <fmri>
+#
+# Temporarily disables the service.
+#
+stop_svc () {
+	$SVCADM disable -t $1
+}
+
+#
+# copy_default <dir> <file>
+#
+# Copies <dir>/<file>.dfl to <dir>/<file>
+#
+copy_default () {
+	$CP -p $1/$2.dfl $1/$2
+}
+
+#
+# trim <string>
+#
+# Removes trailing whitespace of the given string
+#
+trim () {
+	echo $1
+}
+
+#
+# remove_dups <list>
+#
+# Removes duplicate entries from the given list
+#
+remove_dups () {
+	vals=`echo $1 | $NAWK '{ for (i = 1; i <= NF; i++) { \
+	    if ($i != "" && !a[$i]++) printf("%s ", $i); } print "" }'`
+	# remove trailing whitespace added in printf() above
+	trim "$vals"
+}
+
+#
+# do_dns <location>
+#
+# Installs DNS information in the svc:/network/dns/client SMF service for the
+# given location.
+#
+# Returns 0 on success, 1 on failure
+#
+do_dns () {
+	loc=$1
+
+	DNS_CONFIGSRC=`nwam_get_loc_list_prop "$loc" dns-nameservice-configsrc`
+	if [ -z "$DNS_CONFIGSRC" ]; then
+		echo "missing 'dns-nameservice-configsrc' property for '$loc'"
+		return 1
+	fi
+
+	for configsrc in $DNS_CONFIGSRC; do
+		case "$configsrc" in
+		'manual')
+			DNS_MAN_SERVERS=`nwam_get_loc_list_prop "$loc" \
+			    dns-nameservice-servers`
+			if [ -z "$DNS_MAN_SERVERS" ]; then
+				echo "DNS nameserver not set for '$loc'"
+				return 1
+			fi
+			DNS_MAN_DOMAIN=`nwam_get_loc_prop "$loc" \
+			    dns-nameservice-domain`
+			DNS_MAN_SEARCH=`nwam_get_loc_list_prop "$loc" \
+			    dns-nameservice-search`
+			DNS_MAN_OPTIONS=`nwam_get_loc_list_prop "$loc" \
+			    dns-nameservice-options`
+			sortlist=`nwam_get_loc_list_prop "$loc" \
+			    dns-nameservice-sortlist`
+			#
+			# dns-nameservice-sortlist is stored as
+			# A.B.C.D/W.X.Y.Z in /etc/resolv.conf.  The SMF
+			# property takes the value as A.B.C.D/P.
+			#
+			for val in $sortlist
+			do
+				addr=`echo $val | $NAWK 'FS="/" { print $1 }'`
+				mask=`echo $val | $NAWK 'FS="/" { print $2 }'`
+				plen=`netmask2plen $mask`
+				if [ $? -eq 0 -a "$plen" != "0" ]; then
+					MAN_SORT="${MAN_SORT}$addr/$plen "
+				else
+					MAN_SORT="${MAN_SORT}$addr "
+				fi
+			done
+			DNS_MAN_SORTLIST=`trim "$MAN_SORT"`
+			;;
+		'dhcp')
+			DNS_DHCP_DOMAIN=`get_dhcpinfo DNSdmain`
+			DNS_DHCP_SERVERS=`get_dhcpinfo DNSserv`
+			# No DNS search info for IPv4
+			;;
+		'*')
+			echo "Unrecognized DNS configsrc ${configsrc}; ignoring"
+			;;
+		esac
+	done
+
+	# If both domain and search exist, ignore the domain
+	if [ -n "$DNS_MAN_DOMAIN" -a -n "$DNS_MAN_SEARCH" ]; then
+		DNS_MAN_DOMAIN=""
+	fi
+
+	# user-supplied domain or search overrides the dhcp-supplied domain
+	if [ -n "$DNS_DHCP_DOMAIN" ]; then
+		if [ -n "$DNS_MAN_DOMAIN" -o -n "$DNS_MAN_SEARCH" ]; then
+			DNS_DHCP_DOMAIN=""
+		fi
+	fi
+
+	# combine and remove duplicates, if any, from nameservers and domain
+	DNS_SERVERS=`remove_dups "$DNS_MAN_SERVERS $DNS_DHCP_SERVERS"`
+	DNS_DOMAIN=`remove_dups "$DNS_MAN_DOMAIN $DNS_DHCP_DOMAIN"`
+
+	# Retrieve the existing DNS settings from SMF
+	get_smf_prop $DNS_CLIENT_FMRI config/domain | read C_DNS_DOMAIN
+	get_smf_prop $DNS_CLIENT_FMRI config/search | read C_DNS_SEARCH
+	get_smf_prop $DNS_CLIENT_FMRI config/nameserver | read C_DNS_SERVERS
+	get_smf_prop $DNS_CLIENT_FMRI config/sortlist | read C_DNS_SORTLIST
+	get_smf_prop $DNS_CLIENT_FMRI config/options | read C_DNS_OPTIONS
+
+	#
+	# If a DNS setting to write does not exist and it does in SMF, remove
+	# the SMF property.  Write the value to SMF only if it is different
+	# from the value already in the SMF property.  Refresh
+	# svc:/network/dns/client only if a change is made.
+	#
+	refresh=false
+	if [ -z "$DNS_DOMAIN" -a -n "$C_DNS_DOMAIN" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI delprop config/domain
+		refresh=true
+	elif [ "$DNS_DOMAIN" != "$C_DNS_DOMAIN" ]; then
+		set_smf_prop $DNS_CLIENT_FMRI config/domain "$DNS_DOMAIN"
+		refresh=true
+	fi
+	if [ -z "$DNS_MAN_SEARCH" -a -n "$C_DNS_SEARCH" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI delprop config/search
+		refresh=true	
+	elif [ "$DNS_MAN_SEARCH" != "$C_DNS_SEARCH" ]; then
+		set_smf_prop $DNS_CLIENT_FMRI config/search "$DNS_MAN_SEARCH"
+		refresh=true
+	fi
+	if [ -z "$DNS_SERVERS" -a -n "$C_DNS_SERVERS" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI delprop config/nameserver
+		refresh=true
+	elif [ "$DNS_SERVERS" != "$C_DNS_SERVERS" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI \
+		    'setprop config/nameserver = net_address: (' $DNS_SERVERS ')'
+		refresh=true
+	fi
+	if [ -z "$DNS_MAN_SORTLIST" -a -n "$C_DNS_SORTLIST" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI delprop config/sortlist
+		refresh=true
+	elif [ "$DNS_MAN_SORTLIST" != "$C_DNS_SORTLIST" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI \
+		    'setprop config/sortlist = net_address: ('$DNS_MAN_SORTLIST')'
+		refresh=true
+	fi
+	if [ -z "$DNS_MAN_OPTIONS" -a -n "$C_DNS_OPTIONS" ]; then
+		$SVCCFG -s $DNS_CLIENT_FMRI delprop config/options
+		refresh=true
+	elif [ "$DNS_MAN_OPTIONS" != "$C_DNS_OPTIONS" ]; then
+		set_smf_prop $DNS_CLIENT_FMRI config/options "$DNS_MAN_OPTIONS"
+		refresh=true
+	fi
+
+	if [ "$refresh" = "true" ]; then
+		refresh_svc $DNS_CLIENT_FMRI
+	fi
+	start_svc $DNS_CLIENT_FMRI
+
+	return 0
+}
+
+#
+# do_nis <location>
+#
+# Installs NIS information in svc:/network/nis/domain and
+# svc:/network/nis/client SMF services for the given location.
+#
+# Returns 0 on success, 1 on failure
+#
+do_nis () {
+	loc=$1
+
+	NIS_CONFIGSRC=`nwam_get_loc_list_prop "$loc" nis-nameservice-configsrc`
+	if [ -z "$NIS_CONFIGSRC" ]; then
+		echo "missing 'nis-nameservice-configsrc' property for '$loc'"
+		return 1
+	fi
+
+	for configsrc in $NIS_CONFIGSRC; do
+		case "$configsrc" in
+		'manual')
+			NIS_MAN_SERVERS=`nwam_get_loc_list_prop "$loc" \
+			    nis-nameservice-servers`
+			MAN_DEFAULT_DOMAIN=`nwam_get_loc_prop "$loc" \
+			    default-domain`
+			# user-specified default-domain always wins
+			if [ -z "$MAN_DEFAULT_DOMAIN" ]; then
+				echo "'default-domain' not set for '$loc'"
+				return 1
+			fi
+			;;
+		'dhcp')
+			# Use only the first name
+			DHCP_DEFAULT_DOMAIN=`get_dhcpinfo NISdmain | \
+			    $NAWK '{ print $1 }'`
+			NIS_DHCP_SERVERS=`get_dhcpinfo NISservs`
+			;;
+		'*')
+			echo "Unrecognized NIS configsrc ${configsrc}; ignoring"
+			;;
+		esac
+	done
+
+	# If a user has specified a default-domain, use that
+	if [ -n "$MAN_DEFAULT_DOMAIN" ]; then
+		DEFAULT_DOMAIN=$MAN_DEFAULT_DOMAIN
+	else
+		DEFAULT_DOMAIN=$DHCP_DEFAULT_DOMAIN
+	fi
+	if [ -z "$DEFAULT_DOMAIN" ]; then
+		echo "no 'domainname' for NIS for '$loc'"
+		return 1
+	fi
+
+	#
+	# If the domains are the same, combine the ypservers list.  If they are
+	# different, use the ones that corresponds to the default-domain.
+	#
+	if [ "$MAN_DEFAULT_DOMAIN" = "$DHCP_DEFAULT_DOMAIN" ]; then
+		NIS_SERVERS=`remove_dups "$NIS_MAN_SERVERS $NIS_DHCP_SERVERS"`
+	elif [ "$DEFAULT_DOMAIN" = "$MAN_DEFAULT_DOMAIN" ]; then
+		NIS_SERVERS="$NIS_MAN_SERVERS"
+	elif [ "$DEFAULT_DOMAIN" = "$DHCP_DEFAULT_DOMAIN" ]; then
+		NIS_SERVERS="$NIS_DHCP_SERVERS"
+	fi
+
+	# Retrieve the existing NIS settings from SMF
+	get_smf_prop $NIS_DOMAIN_FMRI config/domainname | read C_DEF_DOMAIN
+	get_smf_prop $NIS_DOMAIN_FMRI config/ypservers | read C_NIS_SERVERS
+
+	#
+	# If a NIS setting to configure does not exist and it does in SMF,
+	# remove the SMF property.  Write the value to SMF only if it is
+	# different from the value already in the SMF property.  Refresh
+	# svc:/network/nis/domain and svc:/network/nis/client only if a change
+	# is made.
+	#
+	refresh=false
+	if [ "$DEFAULT_DOMAIN" != "$C_DEF_DOMAIN" ]; then
+		$SVCCFG -s $NIS_DOMAIN_FMRI \
+		    'setprop config/domainname = hostname: (' $DEFAULT_DOMAIN ')'
+		refresh=true
+	fi
+	if [ -z "NIS_SERVERS" -a -n "$C_NIS_SERVERS" ]; then
+		$SVCCFG -s $NIS_DOMAIN_FMRI delprop config/ypservers
+		refresh=true
+	elif [ "$NIS_SERVERS" != "$C_NIS_SERVERS" ]; then
+		$SVCCFG -s $NIS_DOMAIN_FMRI \
+		    'setprop config/ypservers = host: (' $NIS_SERVERS ')'
+		refresh=true
+	fi
+
+	if [ "$refresh" = "true" ]; then
+		refresh_svc $NIS_DOMAIN_FMRI
+		refresh_svc $NIS_CLIENT_FMRI
+	fi
+	start_svc $NIS_DOMAIN_FMRI
+	start_svc $NIS_CLIENT_FMRI
+	
+	return 0
+}
+
+#
+# do_ldap <location>
+#
+# Installs LDAP information using ldapclient(1M) for location
+#
+# Returns 0 on success, 1 on failure
+#
+do_ldap () {
+	loc=$1
+
+	LDAP_CONFIGSRC=`nwam_get_loc_list_prop "$loc" ldap-nameservice-configsrc`
+	if [ -z "$LDAP_CONFIGSRC" ]; then
+		echo "missing 'ldap-nameservice-configsrc' property for '$loc'"
+		return 1
+	fi
+
+	for configsrc in $LDAP_CONFIGSRC; do
+		case "$configsrc" in
+		'manual')
+			LDAP_SERVERS=`nwam_get_loc_list_prop "$loc" \
+			    ldap-nameservice-servers`
+			DEFAULT_DOMAIN=`nwam_get_loc_prop "$loc" default-domain`
+			if [ -z $LDAP_SERVERS -o -z $DEFAULT_DOMAIN ]; then
+				echo "LDAP configuration could not be set "\
+				    "for '$loc'"
+				return 1
+			fi
+			;;
+		'*')
+			echo "Invalid LDAP configsrc ${configsrc}; ignoring"
+			;;
+		esac
+
+	done
+
+	# Retrieve the existing domain name from SMF
+	get_smf_prop $NIS_DOMAIN_FMRI config/domainname | read C_DEF_DOMAIN
+
+	# If the domainname has changed from the existing value in SMF, set it
+	refresh=false
+	if [ "$DEFAULT_DOMAIN" != "$C_DEF_DOMAIN" ]; then
+		$SVCCFG -s $NIS_DOMAIN_FMRI \
+		    'setprop config/domainname = hostname: (' $DEFAULT_DOMAIN ')'
+		refresh=true
+	fi
+
+	# Use ldapclient(1M) to initialize LDAP client settings.
+	if [ -n "$DEFAULT_DOMAIN" -o -n "$LDAP_SERVERS" ]; then
+		$PFEXEC $LDAPCLIENT init -a domainName=$DEFAULT_DOMAIN \
+		    $LDAP_SERVERS
+	fi
+
+	if [ "$refresh" = "true" ]; then
+		refresh_svc $NIS_DOMAIN_FMRI
+		refresh_svc $LDAP_CLIENT_FMRI
+	fi
+	start_svc $NIS_DOMAIN_FMRI
+	start_svc $LDAP_CLIENT_FMRI
+
+	return 0
+}
+
+#
+# do_ns <location>
+#
+# Installs different nameservices for location 
+#
+# Returns 0 on success, 1 on failure
+#
+do_ns () {
+	loc=$1
+
+	#
+	# nsswitch.conf: copy the file given file to /etc/nsswitch.conf, import
+	# it to SMF and refresh svc:/system/name-service/switch:default.
+	#
+	NAMESERVICES_CONFIG_FILE=`nwam_get_loc_prop "$loc" \
+	    nameservices-config-file`
+	if [ -z "$NAMESERVICES_CONFIG_FILE" ]; then
+		echo "missing 'nameservices-config-file' property for '$loc'"
+		return 1
+	fi
+	$CP -p $NAMESERVICES_CONFIG_FILE /etc/nsswitch.conf
+	# Import and refresh the switch to the new configuration
+	$NSCFG import -f $NS_SWITCH_FMRI || return 1
+	refresh_svc $NS_SWITCH_FMRI
+
+	NAMESERVICES=`nwam_get_loc_list_prop "$loc" nameservices`
+	if [ -z "$NAMESERVICES" ]; then
+		echo "missing 'nameservices' property for location '$loc'"
+		return 1
+	fi
+
+	dns_configured=false
+	nis_configured=false
+	ldap_configured=false
+	for ns in $NAMESERVICES; do
+		case "$ns" in
+		'files')
+			# no additional setup needed for files nameservice
+			;;
+		'dns')
+			do_dns "$loc" || return 1
+			dns_configured=true
+			;;
+		'nis')
+			do_nis "$loc" || return 1
+			nis_configured=true
+			;;
+		'ldap')
+			do_ldap "$loc" || return 1
+			ldap_configured=true
+			;;
+		'*')
+			echo "Unrecognized nameservices value ${ns}; ignoring"
+			;;
+		esac
+	done
+
+	#
+	# If a nameservice is not configured, disable the related services.
+	# If it is configured, it has already been refreshed and enabled.
+	#
+	if [ "$dns_configured" = "false" ]; then
+		stop_svc $DNS_CLIENT_FMRI
+	fi
+	if [ "$nis_configured" = "false" ]; then
+		stop_svc $NIS_CLIENT_FMRI
+		# $NIS_DOMAIN_FMRI is also used by LDAP
+		if [ "$ldap_configured" = "false" ]; then
+			stop_svc $NIS_DOMAIN_FMRI
+			#
+			# stopping nis/domain does not clear out
+			# domainname(1M) and /etc/defaultdomain
+			#
+			$DOMAINNAME ""
+			$RM -f /etc/defaultdomain
+		fi
+	fi
+	if [ "$ldap_configured" = "false" ]; then
+		stop_svc $LDAP_CLIENT_FMRI
+	fi
+	
+	return 0
+}
+
+#
+# do_sec <location>
+#
+# If config properties are set, update the SMF property and refresh the
+# service.  If config properties are not set, delete the SMF property and
+# stop the service.
+#
+# If we are activating the Legacy location, we need special handling for the
+# config files.  They were copied to /etc/nwam/loc/Legacy/ but the location
+# properties hold the location of where the files originally were.  We copy
+# the file back to that location and set the SMF property for the service to
+# point to that location.
+#
+# Returns 0 on success, 1 on failure
+#
+do_sec () {
+	loc=$1
+
+	ike_file=`nwam_get_loc_prop "$loc" ike-config-file`
+	pol_file=`nwam_get_loc_prop "$loc" ipsecpolicy-config-file`
+	ipf_file=`nwam_get_loc_prop "$loc" ipfilter-config-file`
+	ipf6_file=`nwam_get_loc_prop "$loc" ipfilter-v6-config-file`
+	ipnat_file=`nwam_get_loc_prop "$loc" ipnat-config-file`
+	ippool_file=`nwam_get_loc_prop "$loc" ippool-config-file`
+
+	# There is special handling for Legacy location
+	if [ "$loc" = "Legacy" ]; then
+		LEGACY=0
+	fi
+
+	# IKE
+	if [ -n "$ike_file" ]; then
+		[[ $LEGACY ]] && copy_from_legacy_loc $ike_file
+		set_smf_prop $IPSEC_IKE_FMRI config/config_file $ike_file
+		refresh_svc $IPSEC_IKE_FMRI
+		start_svc $IPSEC_IKE_FMRI
+	else
+		[[ $LEGACY ]] && set_smf_prop $IPSEC_IKE_FMRI \
+		    config/config_file $IPSEC_IKE_DEFAULT_CONFIG_FILE
+		stop_svc $IPSEC_IKE_FMRI
+	fi
+
+	# IPsec
+	if [ -n "$pol_file" ]; then
+		[[ $LEGACY ]] && copy_from_legacy_loc $pol_file
+		set_smf_prop $IPSEC_POLICY_FMRI config/config_file $pol_file
+		refresh_svc $IPSEC_POLICY_FMRI
+		start_svc $IPSEC_POLICY_FMRI
+	else
+		[[ $LEGACY ]] && set_smf_prop $IPSEC_POLICY_FMRI \
+		   config/config_file $IPSEC_POLICY_DEFAULT_CONFIG_FILE
+		stop_svc $IPSEC_POLICY_FMRI
+	fi
+
+	# IPFilter
+	refresh_ipf=false
+	if [ -n "$ipf_file" ]; then
+		# change /none, /allow, and /deny to firewall policy
+		if [ "$ipf_file" = "/none" -o "$ipf_file" = "/allow" \
+		    -o "$ipf_file" = "/deny" ]; then
+			policy=`echo "$ipf_file" | $NAWK 'FS="/" { print $2 }'`
+			set_smf_prop $IPFILTER_FMRI \
+			    firewall_config_default/policy $policy
+			# no need to clear custom_policy_file, it isn't "custom"
+		else
+			[[ $LEGACY ]] && copy_from_legacy_loc $ipf_file
+			set_smf_prop $IPFILTER_FMRI \
+			    firewall_config_default/policy "custom"
+			set_smf_prop $IPFILTER_FMRI \
+			    firewall_config_default/custom_policy_file $ipf_file
+		fi
+		refresh_ipf=true
+	else
+		# change policy to "none", no need to clear custom_policy_file
+		set_smf_prop $IPFILTER_FMRI firewall_config_default/policy \
+		    "none"
+		# IPFilter has to be refreshed to make the changes effective.
+		# Don't set $refresh_ipf as it keeps IPFilter online rather
+		# than disabled.  Refresh after IPFilter is disabled below.
+	fi
+	if [ -n "$ipf6_file" ]; then
+		[[ $LEGACY ]] && copy_from_legacy_loc $ipf6_file
+		set_smf_prop $IPFILTER_FMRI config/ipf6_config_file $ipf6_file
+		refresh_ipf=true
+	else
+		[[ $LEGACY ]] && set_smf_prop $IPFILTER_FMRI \
+		   config/ipf6_config_file $IPF6_DEFAULT_CONFIG_FILE
+	fi
+	if [ -n "$ipnat_file" ]; then
+		[[ $LEGACY ]] && copy_from_legacy_loc $ipnat_file
+		set_smf_prop $IPFILTER_FMRI config/ipnat_config_file $ipnat_file
+		refresh_ipf=true
+	else
+		[[ $LEGACY ]] && set_smf_prop $IPFILTER_FMRI \
+		   config/ipnat_config_file $IPNAT_DEFAULT_CONFIG_FILE
+	fi
+	if [ -n "$ippool_file" ]; then
+		[[ $LEGACY ]] && copy_from_legacy_loc $ippool_file
+		set_smf_prop $IPFILTER_FMRI config/ippool_config_file \
+		    $ippool_file
+		refresh_ipf=true
+	else
+                [[ $LEGACY ]] && set_smf_prop $IPFILTER_FMRI \
+		    config/ippool_config_file $IPPOOL_DEFAULT_CONFIG_FILE
+	fi
+
+	if [ "$refresh_ipf" = "true" ]; then
+		refresh_svc $IPFILTER_FMRI
+		start_svc $IPFILTER_FMRI
+	else
+		#
+		# If the IPFilter service is in maintenance state and there
+		# may be rules in place, then disabing the IPFilter service
+		# below will clear the maintenance state but will not remove
+		# the rules. Explicitly run the stop method to clear the rules.
+		#
+		if service_is_in_maintenance $IPFILTER_FMRI; then
+			/lib/svc/method/ipfilter stop
+		fi
+		stop_svc $IPFILTER_FMRI
+		refresh_svc $IPFILTER_FMRI
+	fi
+
+	return 0
+}
+
+#
+# do_nfsv4 <location>
+#
+# Updates NFSv4 domain for location in SMF
+#
+# Returns 0 on success, 1 on failure
+#
+do_nfsv4 () {
+	loc=$1
+
+	NFSV4_DOMAIN=`nwam_get_loc_prop "$loc" nfsv4-domain`
+	if [ $? -eq 1 ]; then
+		# If no value is retrieved, set it to empty string
+		NFSV4_DOMAIN=""
+	fi
+
+	# Set the nfs-props/nfsmapid_domain only if we are changing the domain.
+	CUR_DOMAIN=`get_smf_prop $MAPID_FMRI nfs-props/nfsmapid_domain`
+	if [ "$NFSV4_DOMAIN" != "$CUR_DOMAIN" ]; then
+		set_smf_prop $MAPID_FMRI nfs-props/nfsmapid_domain "$NFSV4_DOMAIN"
+		refresh_svc $MAPID_FMRI
+	fi
+	start_svc $MAPID_FMRI
+
+	return 0
+}
+
+#
+# activate_loc <location>
+#
+# Activates the given location
+#
+# Returns 0 on success, 1 on failure
+#
+activate_loc () {
+	loc=$1
+
+	echo "activating '$loc' location"
+
+	#
+	# if we fail to complete any part of the config,
+	# stop activation work and report failure.
+	#
+	do_sec "$loc" && do_ns "$loc" && do_nfsv4 "$loc" && return 0
+	return 1
+}
+
+#
+# Script entry point
+#
+# Arguments to net-loc are
+#	method ('start' or 'refresh')
+
+#
+# In a shared-IP zone we need this service to be up, but all of the work
+# it tries to do is irrelevant (and will actually lead to the service
+# failing if we try to do it), so just bail out.
+# In the global zone and exclusive-IP zones we proceed.
+#
+smf_configure_ip || exit $SMF_EXIT_OK
+
+case "$1" in
+
+'start' | 'refresh')
+	#
+	# We need to create the default (NoNet and Automatic)
+	# locations, if they don't already exist.  So: first check
+	# for the existence of each, and then run the appropriate
+	# netcfg script(s) as needed. Restart nwamd if a location is
+	# created, as it needs to read it in.
+	#
+	LOC_CREATED="false"
+	if ! loc_exists Automatic ; then
+		$NETCFG -f /etc/nwam/loc/create_loc_auto
+		LOC_CREATED="true"
+	fi
+
+	if ! loc_exists NoNet ; then
+		NONETPATH=/etc/nwam/loc/NoNet
+		NONETFILES="ipf.conf ipf6.conf"
+		for file in $NONETFILES; do
+			copy_default $NONETPATH $file
+		done
+		$NETCFG -f /etc/nwam/loc/create_loc_nonet
+		LOC_CREATED="true"
+	fi
+
+	if [ "$LOC_CREATED" = "true" ]; then
+		refresh_svc $NP_DEFAULT_FMRI
+	fi
+
+	#
+	# If nwam is not enabled and the location/selected property is not
+	# "Legacy", do nothing and return.  If the location/selected property
+	# is set to "Legacy", then activate this location to restore the
+	# Legacy configuration.  This location and the location/selected
+	# property is deleted at the end after the configuration has been
+	# applied.
+	#
+	if ! reactive_ncp_enabled; then
+		loc=`$SVCPROP -c -p location/selected $SMF_FMRI 2>/dev/null`
+		if [ "$loc" != "Legacy" ]; then
+			exit $SMF_EXIT_OK
+		fi
+	fi
+
+	# location selection/activation happens below
+	;;
+
+*)
+	echo "Usage: $0 start|refresh"
+	exit 1
+	;;
+
+esac
+
+#
+# If the Legacy location doesn't exist and the file to create the Legacy
+# location exists, create the Legacy location.  Make a copy of it as the user's
+# intentions before upgrade.  Then activate the User location if NIS is
+# involved.  Because NIS affects more parts of the system (e.g. automounts) we
+# are not willing to make NIS part of the Automatic location (i.e. enable it
+# automatically based on external input) as we do with DHCP-driven DNS.
+#
+activate_user_loc=0
+$NETCFG list loc Legacy >/dev/null 2>&1
+if [ $? -eq 1 -a -f "$VOL_NETCFG_PATH/create_loc_legacy" ]; then
+	#
+	# We built the script in and pointing to $SMF_SYSVOL_FS because we
+	# may not have a writable filesystem in net-nwam.  So here we move the
+	# components and rewrite the script to point at the writable filesystem.
+	#
+	$CP -r $VOL_LEGACY_PATH /etc/nwam/loc
+	$MV $VOL_NETCFG_PATH/create_loc_legacy $VOL_NETCFG_PATH/vcreate_loc_legacy
+	$SED -e"s,$VOL_NETCFG_PATH/Legacy,$LEGACY_LOC_PATH," \
+	    $VOL_NETCFG_PATH/vcreate_loc_legacy >$VOL_NETCFG_PATH/create_loc_legacy
+	$RM -f $VOL_NETCFG_PATH/vcreate_loc_legacy
+	$NETCFG -f $VOL_NETCFG_PATH/create_loc_legacy
+	loc_ver=`$SVCPROP -c -p location_upgrade/version $LOCATION_FMRI \
+	    2>/dev/null`
+	if [ $? -eq 1 ]; then
+		#
+		# We are rewriting configuration variables from the Legacy
+		# location to the User location.  Use variable ULP to keep REs
+		# within a line.
+		#
+		ULP=$USER_LOC_PATH
+		$SED -e"s,Legacy,User," \
+		    -e"s,activation-mode=system,activation-mode=manual," \
+		    -e"s,\(ipfilter-config-file=\).*/\(.*\),\1$ULP/\2," \
+		    -e"s,\(ipfilter-v6-config-file=\).*/\(.*\),\1$ULP/\2," \
+		    -e"s,\(ipnat-config-file=\).*/\(.*\),\1$ULP/\2," \
+		    -e"s,\(ippool-config-file=\).*/\(.*\),\1$ULP/\2," \
+		    -e"s,\(ike-config-file=\).*/\(.*\),\1$ULP/\2," \
+		    -e"s,\(ipsecpolicy-config-file=\).*/\(.*\),\1$ULP/\2," \
+		    $VOL_NETCFG_PATH/create_loc_legacy | \
+			$SED -e's,/etc/nwam/loc/User/none,/none,' \
+			-e's,/etc/nwam/loc/User/allow,/allow,' \
+			-e's,/etc/nwam/loc/User/deny,/deny,' \
+			>$VOL_NETCFG_PATH/create_loc_user
+		#
+		# We are creating the User location here.  The User location
+		# is an appromixation of the machine configuration when the
+		# user change or upgraded to this version of NWAM.  First
+		# we make sure there isn't an existing User location or any
+		# existing User location data.  We then copy all the data
+		# from the Legacy location and create a location pointing at
+		# that data.  Lastly we create a version property to note
+		# that we have done this.
+		#
+		$NETCFG destroy loc User 2>/dev/null
+		$RM -rf $USER_LOC_PATH
+		$CP -r $LEGACY_LOC_PATH $USER_LOC_PATH
+		$RM -f $USER_LOC_PATH/resolv.conf
+		$NETCFG -f $VOL_NETCFG_PATH/create_loc_user
+		$RM -f $VOL_NETCFG_PATH/create_loc_user
+		# The User location is activated if 'nis' is in a non comment
+		# line of nsswitch.conf.
+		$GREP -v "^#" $USER_LOC_PATH/nsswitch.conf |\
+		    $SED -e 's/[^:]*://' | $GREP nis >/dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			activate_user_loc=1
+		fi
+		$SVCCFG -s $SMF_FMRI addpg location_upgrade application \
+		    2>/dev/null
+		$SVCCFG -s $SMF_FMRI setprop location_upgrade/version = \
+		    astring: "1"
+	fi
+
+	# cleanup scripts
+	$RM -f $VOL_NETCFG_PATH/create_loc_legacy
+	$RM -rf $VOL_NETCFG_PATH/Legacy
+fi
+
+#
+# Activate a location.  If we've just finished upgrading, and
+# the User location should be activated, do that (and use netadm
+# to do so, so the enabled property gets set and nwamd knows this
+# selection has been made).  Otherwise, if our location/selected
+# property has a value, we activate that location; else we activate
+# the fallback location as a default value.  By default the fallback
+# location is NoNet but this can be overridden (via the location/fallback
+# property).
+#
+if [ $activate_user_loc -eq 1 ]; then
+	$NETADM enable -p loc User
+else
+	$SVCPROP -c -p location/fallback $SMF_FMRI 2>/dev/null | read fallback
+	if [ $? -eq 1 ]; then
+		fallback=NoNet
+	fi
+	$SVCPROP -c -p location/selected $SMF_FMRI 2>/dev/null | read sel_loc
+	if [ $? -eq 1 ]; then
+		# location hasn't been selected; default to fallback location .
+		activate_loc $fallback
+	else
+		#
+		# If the selected location does not exist, revert to fallback
+		# location.  The location may have been destroyed during the
+		# time nwamd selected and now.  Refresh nwamd so that it will
+		# check conditions for a better choice.
+		#
+		if ! loc_exists "$sel_loc" ; then
+			echo "location '$sel_loc' doesn't exist"
+			activate_loc $fallback
+			refresh_svc $NP_DEFAULT_FMRI
+		else
+			# activate selected location
+			if ! activate_loc "$sel_loc" ; then
+				echo "failed to activate '$sel_loc'"
+				activate_loc $fallback
+				refresh_svc $NP_DEFAULT_FMRI
+			fi
+		fi
+	fi
+fi
+
+
+#
+# If we just activated the Legacy location, remove the Legacy location
+# directory and the location itself.  Also remove the location
+# property group from svc:/network/location:default.
+#
+if [ "$loc" = "Legacy" ]; then
+	$RM -rf $LEGACY_LOC_PATH
+	$NETCFG destroy loc legacy
+	$SVCCFG -s $NET_LOC_FMRI delpg location
+fi
+
+exit $SMF_EXIT_OK

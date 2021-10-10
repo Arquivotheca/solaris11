@@ -1,0 +1,194 @@
+'\" te
+.\"  Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved..
+.TH elfwrap 1 "2011 年 6 月 8 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+elfwrap \- \fBELF\fR ファイルにデータをラップする
+.SH 形式
+.LP
+.nf
+\fBelfwrap\fR [\fB-64\fR] [\fB-o\fR \fIrelobj-file\fR] [\fB-z\fR target=\fBsparc\fR | \fBx86\fR]
+\fIdata-file\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBelfwrap\fR ユーティリティーは、1 つ以上のデータファイルから \fBELF\fR 再配置可能オブジェクトファイルを作成します。再配置可能オブジェクトは、個々のセクション内の各データファイルを、セクションの参照に使用できるシンボルとともにカプセル化します。再配置可能オブジェクトを含めておくと、以後のリンク編集で便利です。ユーザーは、関連付けられているシンボルを使用すると、カプセル化されたデータを参照できます。
+.sp
+.LP
+デフォルトでは、\fBelfwrap\fR が実行されるマシンに適した 32 ビット \fBELF\fR 再配置可能オブジェクトが作成されます。\fB-64\fR オプションを使用すると、64 ビット \fBELF\fR 再配置可能オブジェクトを作成できます。\fB-z target\fR オプションを使用すると、特定の機械タイプ用の再配置可能オブジェクトを作成できます。
+.LP
+注 - 
+.sp
+.RS 2
+\fBelfwrap\fR でカプセル化されたデータはすべて、対象のターゲットに適した形式である必要があります。
+.RE
+.sp
+.LP
+デフォルトでは、再配置可能オブジェクト \fBa.wrap.o\fR が作成されます。\fB-o\fR オプションを使用すると、別の再配置可能オブジェクト名を指定できます。
+.sp
+.LP
+各データファイルの \fBbasename\fR(1) を使用して、さまざまな \fBELF\fR 情報を作成します。たとえば、入力データファイルが \fBISV/isv-data\fR である場合、次の \fBELF\fR 情報が再配置可能オブジェクト内に作成されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\&.isv-data\fR という名前の \fBELF\fR セクション\fR
+.ad
+.sp .6
+.RS 4n
+このセクションには、入力データファイルのすべての内容が含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisv-data_start\fR という名前の \fBELF\fR シンボル\fR
+.ad
+.sp .6
+.RS 4n
+このシンボルは、\fB\&.isv-data\fR セクションの開始アドレスを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisv-data_end\fR という名前の \fBELF\fR シンボル\fR
+.ad
+.sp .6
+.RS 4n
+このシンボルは、\fB\&.isv-data\fR セクションのあとにある、最初の場所のアドレスを示します。
+.RE
+
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-64\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビット \fBELF\fR 再配置可能オブジェクトを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIrelobj-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIrelobj-file\fR という名前の再配置可能オブジェクトを生成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR target=\fBsparc\fR | \fBx86\fR\fR
+.ad
+.sp .6
+.RS 4n
+出力される再配置可能オブジェクトの機械タイプを指定します。サポートされるターゲットは、\fBsparc\fR および \fBx86\fR です。\fB-64\fR オプションも存在していて、対応する 64 ビット機械タイプが使用されている場合を除き、指定されたターゲット用の 32 ビット機械タイプが使用されます。デフォルトでは、\fBelfwrap\fR が実行されるマシン用の 32 ビットの再配置可能オブジェクトが生成されます。
+.RE
+
+.SH 使用例
+.sp
+.LP
+次の例は、システム \fBpasswd\fR ファイルとシステム \fBgroup\fR ファイルを再配置可能オブジェクト \fBpassgroup.o\fR 内にカプセル化します。
+.sp
+.in +2
+.nf
+example% \fBelfwrap -o passgroup.o /etc/passwd /etc/group\fR
+example% \fBelfdump -s passgroup.o | egrep "passwd|group"\fR
+  [2]  0x00000000 0x00000000  SECT LOCL  D  0 .passwd        
+  [3]  0x00000000 0x00000000  SECT LOCL  D  0 .group         
+  [7]  0x00000000 0x000002f0  OBJT GLOB  D  0 .passwd  passwd_start
+  [8]  0x000002f0 0x00000000  OBJT GLOB  D  0 .passwd  passwd_end
+  [9]  0x00000000 0x00000121  OBJT GLOB  D  0 .group   group_start
+ [10]  0x00000121 0x00000000  OBJT GLOB  D  0 .group   group_end
+example% \fBstrings -N.passwd passgroup.o | head -1\fR
+root:x:0:0:Super-User:/:/usr/sbin/sh
+example% \fBstrings -N.group passgroup.o | head -1\fR
+root::0:
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この再配置可能オブジェクトは、次のユーザーコードから参照できます。
+.sp
+.in +2
+.nf
+example% \fBcat main.c\fR
+#include        <stdio.h>
+
+extern char     passwd_start, passwd_end;
+
+void main()
+{
+    char    *pstart = &passwd_start, *pend = &passwd_end;
+    char    *str, *lstr;
+
+    for (lstr = str = pstart; str < pend; str++) {
+        if ((*str == '\n') && (str != (pend - 1)))  {
+            (void) printf("%.*s", (++str - lstr), lstr);
+	    lstr = str;
+        }
+    }
+}
+example% \fBcc -o main main.c passgroup.o\fR
+example% \fB\&./main\fR
+root:x:0:0:Super-User:/://usr/sbin/sh
+\&....
+nobody4:x:65534:65534:SunOS 4.x NFS Anonymous Access User:/:
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa.wrap.o\fR\fR
+.ad
+.RS 12n
+.rt  
+作成されるデフォルトの再配置可能オブジェクトファイル。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件developer/base-developer-utilities
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBelfdump\fR(1), \fBld\fR(1), \fBstrings\fR(1), \fBelf\fR(3ELF), \fBattributes\fR(5), \fBddi_modopen\fR(9F)
+.sp
+.LP
+\fI『Linker and Libraries Guide』\fR

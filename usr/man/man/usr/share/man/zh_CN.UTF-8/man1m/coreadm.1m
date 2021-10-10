@@ -1,0 +1,669 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH coreadm 1M "2008 年 9 月 30 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+coreadm \- 核心文件管理
+.SH 用法概要
+.LP
+.nf
+\fBcoreadm\fR [\fB-g\fR \fIpattern\fR] [\fB-G\fR \fIcontent\fR] [\fB-i\fR \fIpattern\fR] [\fB-I\fR \fIcontent\fR] 
+     [\fB-d\fR \fIoption\fR]... [\fB-e\fR \fIoption\fR]...
+.fi
+
+.LP
+.nf
+\fBcoreadm\fR [\fB-p\fR \fIpattern\fR] [\fB-P\fR \fIcontent\fR] [\fIpid\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBcoreadm\fR 指定异常终止的进程生成的核心文件的名称和位置。请参见 \fBcore\fR(4)。 
+.sp
+.LP
+仅属于"维护和修复"RBAC 配置文件的用户和角色可以执行第一种格式的 \fBSYNOPSIS\fR（用法概要）。此用法概要可以配置系统范围的核心文件选项，包括全局核心文件名称模式和 \fBinit\fR(1M) 进程的核心文件名称模式。所有设置都会永久保存，并在引导时应用。
+.sp
+.LP
+非特权用户可以执行第二种格式的 \fBSYNOPSIS\fR（用法概要）。此语法格式可指定操作系统用于生成每进程核心文件的文件名称模式和核心文件内容。
+.sp
+.LP
+核心文件名称模式是包含以前导字符 \fB%\fR 指定的嵌入变量的常规文件系统路径名。变量基于操作系统生成核心文件时的有效值进行扩展。可能的嵌入变量如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%d\fR\fR
+.ad
+.sp .6
+.RS 4n
+可执行文件目录名，最多包含 \fBMAXPATHLEN\fR 个字符
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%f\fR\fR
+.ad
+.sp .6
+.RS 4n
+可执行文件名，最多包含 \fBMAXCOMLEN\fR 个字符 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%g\fR\fR
+.ad
+.sp .6
+.RS 4n
+有效组 \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%m\fR\fR
+.ad
+.sp .6
+.RS 4n
+机器名 (\fBuname\fR \fB-m\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%n\fR\fR
+.ad
+.sp .6
+.RS 4n
+系统节点名 (\fBuname\fR \fB-n\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%p\fR\fR
+.ad
+.sp .6
+.RS 4n
+进程 \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%t\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtime\fR(2) 的十进制值 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%u\fR\fR
+.ad
+.sp .6
+.RS 4n
+有效用户 \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%z\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行的进程所在的区域名称 (\fBzonename\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%%\fR\fR
+.ad
+.sp .6
+.RS 4n
+字面值 \fB%\fR
+.RE
+
+.sp
+.LP
+例如，核心文件名称模式 \fB/var/cores/core.%f.%p\fR 对于进程 \fBID\fR 为 \fB1234\fR 的 \fBfoo\fR 命令，将生成核心文件名称 \fB/var/cores/core.foo.1234\fR。
+.sp
+.LP
+通过使用一系列标记来标识进程的二进制图像的各个部分，可以指定核心文件内容描述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanon\fR\fR
+.ad
+.sp .6
+.RS 4n
+匿名专用映射，包括非主线程栈的线程栈
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBctf\fR\fR
+.ad
+.sp .6
+.RS 4n
+装入的对象文件的 CTF 类型信息部分
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdata\fR\fR
+.ad
+.sp .6
+.RS 4n
+可写的专用文件映射
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdism\fR\fR
+.ad
+.sp .6
+.RS 4n
+DISM 映射
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheap\fR\fR
+.ad
+.sp .6
+.RS 4n
+进程堆
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBism\fR\fR
+.ad
+.sp .6
+.RS 4n
+ISM 映射
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrodata\fR\fR
+.ad
+.sp .6
+.RS 4n
+只读专用文件映射
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshanon\fR\fR
+.ad
+.sp .6
+.RS 4n
+匿名共享映射
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+文件支持的共享映射
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshm\fR\fR
+.ad
+.sp .6
+.RS 4n
+System V 共享内存
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstack\fR\fR
+.ad
+.sp .6
+.RS 4n
+进程栈
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsymtab\fR\fR
+.ad
+.sp .6
+.RS 4n
+装入的对象文件的符号表部分
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtext\fR\fR
+.ad
+.sp .6
+.RS 4n
+可读且可执行的专用文件映射
+.RE
+
+.sp
+.LP
+此外，可以使用标记 \fBall\fR 来表示核心文件应该包含进程的二进制图像的所有这些部分。可以使用标记 \fBnone\fR 来指示将不包含任何映射。\fBdefault\fR 标记指示包含系统缺省内容 (\fBstack+heap+shm+ism+dism+text+data+rodata+anon+shanon+ctf+symtab\fR)。无论映射内容是什么，核心文件中始终存在 \fB/proc\fR 文件系统数据结构。
+.sp
+.LP
+可以使用 \fB+\fR 和 \fB-\fR 来串联标记。例如，核心文件内容 \fBdefault-ism\fR 将生成包含缺省映射集但不含任何锁定共享内存映射的核心文件。
+.sp
+.LP
+不带参数的 \fBcoreadm\fR 命令将报告当前系统配置，例如：
+.sp
+.in +2
+.nf
+$ coreadm
+    global core file pattern: /var/cores/core.%f.%p
+    global core file content: all
+      init core file pattern: core
+      init core file content: default
+           global core dumps: enabled
+      per-process core dumps: enabled
+     global setid core dumps: enabled
+per-process setid core dumps: disabled
+    global core dump logging: disabled
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+仅带进程 \fBID\fR 列表的 \fBcoreadm\fR 命令将报告每个进程的每进程核心文件名称模式，例如： 
+.sp
+.in +2
+.nf
+$ coreadm 278 5678
+  278:   core.%f.%p default
+  5678:  /home/george/cores/%f.%p.%t all-ism
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+只有进程所有者或具有 \fBproc_owner\fR 特权的用户才能以这种方式查询进程。
+.sp
+.LP
+当进程进行核心转储时，最多会生成三个核心文件：一个在每进程的位置，一个在系统范围的全局位置，还有一个在运行的进程所在区域的全局位置（如果该进程在本地区域而非全局区域中运行）。将根据对应位置的有效选项生成每个核心文件。
+.sp
+.LP
+生成全局核心文件后，该文件将具有 \fB600\fR 模式，并由超级用户拥有。非特权用户不能检查此类文件。
+.sp
+.LP
+将通过进程凭证在模式 \fB600\fR 下创建普通的每进程核心文件。进程所有者可以检查此类文件。
+.sp
+.LP
+一直是或者自从上一次 \fBexec\fR(2) 之后成为 \fBsetuid\fR 或 \fBsetgid\fR 的进程存在与核心转储相关的安全问题。同样，最初具有超级用户特权但因 \fBsetuid\fR(2) 失去这些特权的进程也存在与核心转储相关的安全问题。上述任何一种类型的进程都可以在该进程的当前非特权所有者无法访问的地址空间中包含敏感信息。如果启用 \fBsetid\fR 核心文件，则生成的文件将处于模式 \fB600\fR 并由超级用户拥有。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIoption\fR...\fR
+.ad
+.sp .6
+.RS 4n
+禁用指定的核心文件选项。有关可能的选项的描述，请参见 \fB-e\fR \fIoption\fR。
+.sp
+可以在命令行上指定多个 \fB-e\fR 和 \fB-d\fR 选项。只有属于"维护和修复"RBAC 配置文件的用户和角色才能使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIoption\fR...\fR
+.ad
+.sp .6
+.RS 4n
+启用指定的核心文件选项。将 \fIoption\fR 指定为以下类型之一：
+.sp
+.ne 2
+.mk
+.na
+\fBglobal\fR
+.ad
+.sp .6
+.RS 4n
+允许使用全局核心模式的核心转储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal-setid\fR
+.ad
+.sp .6
+.RS 4n
+允许使用全局核心模式的 set-id 核心转储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlog\fR
+.ad
+.sp .6
+.RS 4n
+尝试生成全局核心文件时，生成 \fBsyslog\fR(3C) 消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBprocess\fR
+.ad
+.sp .6
+.RS 4n
+允许使用每进程核心模式的核心转储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBproc-setid\fR
+.ad
+.sp .6
+.RS 4n
+允许使用每进程核心模式的 set-id 核心转储。
+.sp
+可以在命令行上指定多个 \fB-e\fR 和 \fB-d\fR 选项。只有属于"维护和修复"RBAC 配置文件的用户和角色才能使用此选项。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+将全局核心文件名称模式设置为 \fIpattern\fR。模式必须以 \fB/\fR 开头，可以包含\fB描述\fR中介绍的任何特殊 \fB%\fR 变量。 
+.sp
+只有属于"维护和修复"RBAC 配置文件的用户和角色才能使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIcontent\fR\fR
+.ad
+.sp .6
+.RS 4n
+将全局核心文件内容设置为 content。必须使用\fB描述\fR中介绍的标记来指定内容。
+.sp
+只有属于"维护和修复"RBAC 配置文件的用户和角色才能使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+将缺省的每进程核心文件名称设置为 \fIpattern\fR。此选项更改每进程模式仍设置为缺省值的任何进程的每进程模式。已设置了每进程模式的进程或从一个已设置每进程模式的进程派生的进程（使用 \fB-p\fR 选项）不受影响。重新引导后仍会保持此缺省值。
+.sp
+只有属于"维护和修复"RBAC 配置文件的用户和角色才能使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIcontent\fR\fR
+.ad
+.sp .6
+.RS 4n
+将缺省的每进程核心文件内容设置为 \fIcontent\fR。此选项更改每进程内容仍设置为缺省值的任何进程的每进程内容。已设置了每进程内容的进程或从一个已设置每进程内容的进程派生的进程（使用 \fB-P\fR 选项）不受影响。重新引导后仍会保持此缺省值。
+.sp
+只有属于"维护和修复"RBAC 配置文件的用户和角色才能使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对每个指定的进程 \fBID\fR，将每进程核心文件名称模式设置为 \fIpattern\fR。模式可以包含\fB描述\fR中介绍的任何特殊 \fB%\fR 变量，无需以 \fB/\fR 开头。如果模式不是以 \fB/\fR 开头，则会相对于进程生成核心文件时使用的目录对其进行评估。 
+.sp
+非特权用户只能将 \fB-p\fR 选项应用于该用户所拥有的进程。具有 \fBproc_owner\fR 特权的用户可以将该选项应用于任何进程。受影响进程的未来子进程将继承每进程核心文件名称模式。请参见 \fBfork\fR(2)。 
+.sp
+如果没有指定进程 \fBID\fR，则 \fB-p\fR 选项将在父进程（通常是运行 \fBcoreadm\fR 的 shell）上将每进程核心文件名称模式设置为 \fIpattern\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIcontent\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对每个指定的进程 ID，将每进程核心文件内容设置为 \fIcontent\fR。必须使用\fB描述\fR中介绍的标记来指定内容。 
+.sp
+非特权用户只能将 \fB-p\fR 选项应用于该用户所拥有的进程。具有 \fBproc_owner\fR 特权的用户可以将该选项应用于任何进程。受影响进程的未来子进程将继承每进程核心文件名称模式。请参见 \fBfork\fR(2)。
+.sp
+如果没有指定进程 \fBID\fR，则 \fB-P\fR 选项将在父进程（通常是运行 \fBcoreadm\fR 的 shell）上将每进程文件内容设置为 \fIcontent\fR。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+进程 \fBID\fR
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR设置核心文件名称模式
+.sp
+.LP
+从用户的 \fB$HOME/.profile\fR 或 \fB$HOME/.login\fR 执行时，以下命令将为登录会话期间运行的所有进程设置核心文件名称模式：
+
+.sp
+.in +2
+.nf
+example$  coreadm -p core.%f.%p
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，由于省略了进程 \fBID\fR，因此将在当前运行的 shell 中设置每进程核心文件名称模式，且该模式将被所有子进程继承。 
+
+.LP
+\fB示例 2 \fR将用户文件转储至子目录
+.sp
+.LP
+以下命令将用户的所有核心转储转储至起始目录的 \fBcorefiles\fR 子目录中，通过系统节点名称进行区分。该命令对于使用多个不同机器但具有一个共享起始目录的用户非常有用。
+
+.sp
+.in +2
+.nf
+example$  coreadm -p $HOME/corefiles/%n.%f.%p 1234
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR选择全局核心文件系统信息库
+.sp
+.LP
+以下命令将系统设置为仅当从 \fB/usr/bin\fR 或 \fB/usr/sbin\fR 运行可执行文件时，才在全局系统信息库中生成核心文件。
+
+.sp
+.in +2
+.nf
+example# mkdir -p /var/cores/usr/bin
+example# mkdir -p /var/cores/usr/sbin
+example# coreadm -G all -g /var/cores/%d/%f.%p.%n
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/cores\fR\fR
+.ad
+.sp .6
+.RS 4n
+为全局核心文件存储提供的目录。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB1\fR
+.ad
+.sp .6
+.RS 4n
+获取或修改系统核心文件配置时发生致命错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB2\fR
+.ad
+.sp .6
+.RS 4n
+指定的命令行选项无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBgcore\fR(1)、\fBpfexec\fR(1)、\fBsvcs\fR(1)、\fBinit\fR(1M)、\fBsvcadm\fR(1M)、\fBexec\fR(2)、\fBfork\fR(2)、\fBsetuid\fR(2)、\fBtime\fR(2)、\fBsyslog\fR(3C)、\fBcore\fR(4)、\fBprof_attr\fR(4)、\fBuser_attr\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+在本地（非全局）区域中，全局设置应用于该区域中运行的进程。此外，全局区域设置还应用于其他任何区域中运行的进程。
+.sp
+.LP
+术语\fB全局设置\fR指的是应用于系统或区域整体的设置，但并不一定表示这些设置对全局区域有效。
+.sp
+.LP
+\fBcoreadm\fR  服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/system/coreadm:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+已经获得 \fBsolaris.smf.manage.coreadm\fR 和 \fBsolaris.smf.value.coreadm\fR 授权的用户、角色或配置文件也可以使用 \fB-g\fR、\fB-G\fR、\fB-i\fR、\fB-I\fR、\fB-e\fR 和 \fB-d\fR 选项。

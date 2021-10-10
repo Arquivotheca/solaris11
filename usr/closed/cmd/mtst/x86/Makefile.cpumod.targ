@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+#
+
+ROOTMTSTLIBDIR = $(LIBDIR)
+ROOTMTSTLIB = $(LIB:%=$(ROOTMTSTLIBDIR)/%)
+
+$(OBJS) := CFLAGS += $(CTF_FLAGS) $(CC_PICFLAGS)
+$(TONICBUILD)include $(CLOSED)/Makefile.tonic
+
+all: $(LIB)
+
+install: $(LIB) $(ROOTMTSTLIB)
+
+lint: $(LINTFILES)
+	$(LINT) $(LINTFLAGS) $(LINTFILES) $(LDLIBS)
+
+clean:
+	$(RM) $(OBJS) $(LINTFILES)
+
+clobber: clean
+	$(RM) $(LIB)
+
+$(LIB): $(OBJS)
+	$(LINK.c) $(GSHARED) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
+	$(CTFMERGE) -L VERSION -o $@ $(OBJS)
+	$(POST_PROCESS_SO)
+
+%.o: $(LIBSRCDIR)/%.c
+	$(COMPILE.c) $<
+	$(CTFCONVERT_O)
+
+%.ln: $(LIBSRCDIR)/%.c
+	$(LINT.c) -c $<
+
+$(ROOTMTSTLIBDIR)/%: % $(ROOTMTSTLIBDIR)
+	$(INS.file)
+
+$(ROOTMTSTLIBDIR):
+	$(INS.dir)

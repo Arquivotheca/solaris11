@@ -1,0 +1,259 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH asr-notify 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+asr-notify \- auto service request notification daemon for Fault Management events
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/fm/notify/asr-notify\fR [\fB-\fR \fI\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBasr-notify\fR is a daemon that subscribes to Fault Management life cycle events and produces HTTPS/XML notifications based on a set of notification preferences that are stored in the SMF service configuration repository.
+.sp
+.LP
+The messages will be sent to the Oracle Auto Service Request (ASR) service offering once the service has been registered using the \fBasradm\fR(1M) command or by setting SMF auto registration properties. If the auto registration properties are set, the service will attempt to register on either startup or refresh. If registration fails, the service will go into maintenance mode. If registration is successful, the SMF auto registration properties will be deleted.
+.sp
+.LP
+\fBasr-notify\fR is managed by the service management facility, \fBsmf\fR(5), under the service FMRI:
+.sp
+.in +2
+.nf
+svc:/system/fm/asr-notify:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.
+.sp
+.LP
+ASR notification preferences are set using \fBsvccfg\fR(1M).
+.SS "Properties"
+.sp
+.LP
+The following service properties can be set:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig\fR/\fIrootdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that defaults to \fB/\fR. When set, the specified root directory will be used for all pathnames evaluated by \fBasr-notify\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig\fR/\fIhttp_timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an integer property that sets the number of seconds to wait for HTTP connections before generating an error.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig\fR/\fIendpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that sets the endpoint URL used for registration and all message telemetry. The endpoint URL can be set to a local ASR Manager that will aggregate telemetry from many hosts instances. If not set, then all telemetry will be sent directly to the Oracle Auto Service Request service.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoreg\fR/\fIuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that is used to set the My Oracle Support user name used for auto registration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoreg\fR/\fIpassword\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that is used to set the My Oracle Support password used for auto registration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoreg\fR/\fIproxy-host\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that is used to set the HTTP proxy \fIhostname\fR:\fIport\fR and needs to be set only if an HTTP proxy is used to connect to the internet.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoreg\fR/\fIproxy-user\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that is used to set the HTTP proxy user name and needs to be set only if the HTTP proxy requires credentials.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoreg\fR/\fIproxy-password\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that is used to set the HTTP proxy password and needs to be set only if the HTTP proxy requires credentials.
+.RE
+
+.SS "Messages"
+.sp
+.LP
+The service will send the following types of messages:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+fault messages when an FMA fault is created
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+daily heartbeat messages to indicate that the system is still active
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+running and weekly audit messages to provide a full inventory of operational components
+.RE
+.sp
+.LP
+The contents of each message are an XML document that adheres to the ASR message XML schema.  Each message starts with a common message header followed by event specific content.
+.sp
+.LP
+ASR event header information:
+.sp
+.in +2
+.nf
+XML Element     Description
+------------    -----------
+site-id         the serial number of the host sending
+                the event
+host-id         the hostname(1) of the system that the
+                message is about
+message-uuid    a unique id generated for each message
+message-time    local time on the system that generated
+                the message
+system-id       the serial number of the system that the
+                message is about
+asset-id        the registered service tag for the system
+product-id      the unique product identifier for the system
+product-name    the name of the product for the system
+event           element containing fault specific event
+                information
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The fault-specific content in the event will be contained within the primary-event-information XML element.
+.sp
+.in +2
+.nf
+XML Element     Description
+-----------     -----------
+message-id      the knowledge article message ID
+event-uuid      the FMA event UUID
+event-time      the time that the FMA event was generated
+severity        the severity of the FMA event
+component       element containing list of suspects
+summary         a short summary of the event
+description     event description
+payload         the raw FMA event contents
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+For each suspect FRU associated with a fault event, a hardware-component element will be included within the component.
+.sp
+.in +2
+.nf
+XML Element              Description
+-----------              -----------
+name                     the component path name of the FRU
+serial                   the FRU serial number
+part                     the FRU part number
+revision                 the FRU revision level
+additional-information   a list of additional properties
+                         containing values such as FRU
+                         manufacturer and FRU model
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Some faults might be associated with a software issue instead of a hardware issue. In this case, the fault event will contain a software-module element within the component list.
+.sp
+.in +2
+.nf
+XML Element              Description
+-----------              -----------
+name                     the name or FMRI of the software
+                         module in error
+description              a description of the software
+                         module error
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Heartbeat events do not contain any additional data and audit events contain a list of all hardware-component, software-package, and software-module elements available to the system.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/fault-management/asr-notify
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBasradm\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)

@@ -1,0 +1,118 @@
+#!/bin/ksh -p
+#
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+PATH=/usr/bin:/usr/sbin
+
+. /lib/svc/share/smf_include.sh
+
+USAGE="Usage: $0 { start | refresh }"
+
+if [ $# -ne 1 ] ; then
+    echo $USAGE
+    exit 2
+fi
+
+
+#
+#   if cache file exist && cache file is up to date
+#      return
+#   else
+#      make index file for /usr/share/man
+#      make index file for /usr/gnu/share/man
+#      for file in /usr/share/man/index.d
+#
+
+gen_index ()
+{
+  echo $1
+
+  P=$1
+  if [ -a "$P/man-index/.index-cache" ]; then
+    RESULT=`ls -td $P/* $P/man-index/.index-cache | head -1`
+    #echo $RESULT
+    if [ x$RESULT = "x$P/man-index/.index-cache" ]; then            
+      echo "up to date"
+      return
+    fi
+  fi
+
+  if [ -w $P ]; then
+    nice catman -w -M $P
+    touch $P/man-index/.index-cache
+  else
+    echo "Cannot write to $P"
+  fi
+}
+
+#
+#   Generate index file for:
+#       /usr/share/man
+#	/usr/gnu/share/man
+#	symbolic dirs in /usr/share/man/index.d
+#
+start_man_index ()
+{
+  for i in /usr/share/man /usr/gnu/share/man; do
+    gen_index $i
+  done
+
+  MPATH="/usr/share/man/index.d"
+  if [ -d $MPATH ]; then
+    for f in `ls $MPATH`; do
+      if [ -h $MPATH/$f ]; then
+        gen_index `readlink $MPATH/$f`
+      fi
+    done
+  fi
+}
+
+refresh_man_index ()
+{
+  start_man_index
+}
+
+METHOD=$1
+
+case "$METHOD" in
+    'start')
+	# Continue with rest of script
+	;;
+    'refresh')
+	# Continue with rest of script
+	;;
+    -*)
+	echo $USAGE
+	exit 2
+	;;
+    *)
+	echo "Invalid method $METHOD"
+	exit 2
+	;;
+esac
+
+${METHOD}_man_index &
+
+exit $SMF_EXIT_OK

@@ -1,0 +1,893 @@
+'\" te
+.\"  Copyright (c) 1980 Regents of the University of California. All rights reserved. The Berkeley software License Agreement specifies the terms and conditions for redistribution. Copyright (c) 2001, Sun Microsystems, Inc. All Rights Reserved
+.TH tip 1 "2001 年 11 月 28 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+tip \- リモートシステムへ接続する
+.SH 形式
+.LP
+.nf
+\fBtip\fR [\fB-v\fR] [\fB-speed-entry\fR] {\fIhostname\fR | \fIphone-number\fR | \fIdevice\fR}
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtip\fR ユーティリティーはリモートホストに対し、全二重端末接続を確立します。いったん接続が確立されると、\fBtip\fR を使用したリモートセッションはローカル端末での対話型セッションのように振舞います。
+.sp
+.LP
+\fBremote\fR ファイルは \fBtip\fR が使用するリモートシステムと回線速度のことを記述したエントリを含みます。
+.sp
+.LP
+各ホストは接続に対してデフォルトのボーレートを持っています。特定のスピードを設定する場合は、\fB-\fR\fIspeed-entry\fR　コマンド行の引数として指定します。
+.sp
+.LP
+\fIphone-number\fR が指定されると、\fBtip\fR は \fBremote\fR ファイルに次の形式のエントリを探します:
+.sp
+.in +2
+.nf
+tip -\fIspeed-entry\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBtip\fR がこのようなエントリを見つけた場合は、それに従って接続速度を設定します。そのようなエントリを見つからない場合は\fBtip\fR は、\fB-\fR\fIspeed-entry\fR をシステム名のように解釈し、エラーメッセージを出します。
+.sp
+.LP
+\fB-\fR\fIspeed-entry\fR を省略した場合、\fBtip\fR は \fBtip0\fR エントリを使用して接続速度を設定します。
+.sp
+.LP
+\fIdevice\fR が指定されると、\fBtip\fR はそのデバイスを開こうとします。しかしその際、\fBtip\fR の通常アクセス特権 (\fBsetuid uucp\fR) ではなく、ユーザー特権でアクセスします。そのユーザーはそのデバイスへの読み取り/書込み権限がなければなりません。\fBtip\fR ユーティリティーはどんなキャラクタ文字列でもスラッシュ文字 (\|\fB/\fR\|) で始まるものをデバイス名として解釈します。
+.sp
+.LP
+接続を確立すると、\fBtip\fR は接続メッセージをリモートシステムへ送信します。メッセージのデフォルト値は \fBremote\fR ファイルにあります。
+.sp
+.LP
+リモートシステムに接続を試みる際、\fBtip\fRは、exclusive-open \fBioctl\fR(2) 呼び出しで関連デバイスをオープンします。このように、一度に一ユーザーのみがデバイスにアクセスできます。これは端末回線をマルチプロセスがサンプリングすることを回避するためです。さらに、\fBtip\fR は \fBuucp\fR(1C) の使用するロッキングプロトコルを尊重します。
+.sp
+.LP
+\fBtip\fR が起動すると、それはファイル \fB\&.tiprc\fR からユーザーのホームディレクトリへコマンドを読み込みます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+実行に従い、\fB\&.tiprc\fR ファイルからコマンドを表示します。
+.RE
+
+.SH 使用法
+.sp
+.LP
+入力した文字列は通常エコーされることなく直接リモートマシンへ転送されます。
+.sp
+.LP
+\fBtip\fR がプロンプトを表示する場合 (たとえば、ファイル転送の設定中に)、入力した行は標準の削除および kill 文字で編集できます。プロンプトに対して空行を入力したり、中断を実行したりすると、対話が終了してリモートマシンへ戻ります。
+.SS "コマンド (Commands)"
+.sp
+.LP
+行の最初にあるチルダ (\fB~\fR) はエスケープ信号で、\fBtip\fR に何か特別の動作をさせます。\fBtip\fR は次のエスケープシーケンスを理解します:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^D\fR\fR
+.ad
+.br
+.na
+\fB\fB~.\fR\fR
+.ad
+.RS 18n
+.rt  
+接続を破棄し終了する (ユーザーはまだリモートマシンにログイン中)。\fB注意:\fR rlogin した上でリモートホスト上で \fBtip\fR を実行中の場合、 \fBtip\fR セッションを終了するために \fB~~.\fR (チルダチルダドット) を入力しなければなりません。\fB~.\fR (チルダドット)を入力すると、rlogin を終了してしまいます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~c\fR [\fIname\fR]\fR
+.ad
+.RS 18n
+.rt  
+ディレクトリを \fIname\fR に変えます。何の引数も与えなければ自分のホームディレクトリへ移ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~!\fR\fR
+.ad
+.RS 18n
+.rt  
+ローカルマシンで対話型シェルにエスケープします。シェルから抜けると \fBtip\fR へ戻ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~>\fR\fR
+.ad
+.RS 18n
+.rt  
+ローカルからリモートへファイルをコピーします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~<\fR\fR
+.ad
+.RS 18n
+.rt  
+リモートからローカルへファイルをコピーします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~p\fR\fI from\fR [\fI to \fR]\fR
+.ad
+.RS 18n
+.rt  
+UNIX システムを実行しているリモートホストへファイルを送ります。put コマンドを使用すると、リモートシステムはコマンド文字列を実行します。
+.sp
+.in +2
+.nf
+\fBcat > \fR\fIto\fR
+.fi
+.in -2
+.sp
+
+\fBtip\fR がそれを \fIfrom\fR ファイルへ送ります。\fIto\fR ファイルを指定していなければ、\fIfrom\fR ファイル名が使用されます。このコマンドは実際 UNIX システム固有バージョンの `\fB~>\fR' コマンドです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~t\fR\fI from\fR [\fI to \fR]\fR
+.ad
+.RS 18n
+.rt  
+UNIX システムを実行しているリモートホストからファイルを取得します。put コマンドにおける \fIto\fR ファイルのようにファイル名を指定しなければ \fIfrom\fR ファイル名が標準になります。リモートホストは以下のコマンド行を実行して 
+.sp
+.in +2
+.nf
+\fBcat \fR\fIfrom\fR\fB\|;  echo ^A\fR
+.fi
+.in -2
+.sp
+
+ファイルを \fBtip\fR へ送ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~|\fR\fR
+.ad
+.RS 18n
+.rt  
+リモートコマンドの出力をローカルプロセスへパイプします。ローカルシステムへ送られたコマンド文字列はシェルで処理されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~C\fR\fR
+.ad
+.RS 18n
+.rt  
+プログラムをリモートマシンへ接続します。プログラムへ送られたコマンド文字列はシェルで処理されます。プログラムはファイル記述子 0 をリモート入力行、 1 をリモート出力行、 2 を tty 標準エラーとして継承します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~$\fR\fR
+.ad
+.RS 18n
+.rt  
+ローカルプロセスの出力をリモートホストへパイプします。ローカルシステムへ送られたコマンド文字列はシェルで処理されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~#\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBBREAK\fR をリモートシステムへ送ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~s\fR\fR
+.ad
+.RS 18n
+.rt  
+変数を設定します(下記参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^Z\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBtip\fR を終了します。C シェルのようにジョブ制御をサポートするシェルの元で実行した場合にのみ使用可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^Y\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBtip\fR の "local side" のみを停止し ま す。C シェルのようにジョブ制御をサポートするシェルの元で実行した場合にのみ使用可能です。\fBtip\fR の "remote side"、すなわち、リモートホストからの出力を表示する側面は実行し続けるということです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~?\fR\fR
+.ad
+.RS 18n
+.rt  
+チルダエスケープの要約を取得します。
+.RE
+
+.sp
+.LP
+ファイルのコピーにはリモートホストの協力をいくらか必要とします。ファイルを送るために \fB~>\fR または \fB~<\fR エスケープを使用する場合、\fBtip\fR は (送信または受信する) ファイル名を求めます。そしてリモートホストからファイルを受信する場合、リモートホストへコマンドが送信されます。\fBtip\fR がファイルを転送中、転送行数はスクリーンに表示され続けます。ファイル転送は割り込みによって中断されます。
+.SS "Auto-call ユニット"
+.sp
+.LP
+\fBtip\fR は、多くの　auto-call ユニット (\fBACU\fR) を使用したリモートホストへのダイアルアップに使用することができます。リモートシステムの説明が \fBdu\fR 機能を含んでいれば、\fBtip\fR は提供された call ユニット (\fBcu\fR)、\fBACU\fR タイプ (\fBat\fR)、電話番号 (\fBpn\fR) を使用します。通常、\fBtip\fR ダイアル中に詳細なメッセージを表示します。
+.sp
+.LP
+接続の確立に使用した auto-dialer の種類によっては、接続時に、リモートホストに文字化けした内容が送信されているかもしれません。別ホストに向けて最初に入力した文字が必ず最初に届くとは限りません。推奨されるやり方は接続確立したところでただちに \fBkill\fR 文字を入力することです。(ほとんどの UNIX システムは \fB@\fR か Control-U を初期 kill 文字としてサポートしています)。
+.sp
+.LP
+\fBtip\fR は今のところ Ventel MD-212+ モデムと DC Hayes 互換モデムをサポートしています。
+.sp
+.LP
+\fBtip\fR がダイアルするために Hayes 互換モデムを初期化すると、  それはモデムを auto-answer に設定します。通常、通信が終了すると、\fBtip\fR は\fBDTR\fR を落としモデムを "hang up" させます。
+.sp
+.LP
+ほとんどのモデムは \fBDTR\fR が落ちたとき、自分でプログラム以前の状態に再初期化するよう、設定できます。必要な場合は、この方法でモデムをリセットし auto-answer を無効にできます。
+.sp
+.LP
+さらに、電話番号をヘイズの \fBS\fR コマンドで開始して、モデムをダイアル前に設定することができます。たとえば、auto-answer を無効にするには、\fBpn=S0=0DT5551212\fR のようにして全電話番号を \fB/etc/remote\fR の中に設定できます。\fBS0=0\fR は auto-answer を無効にします。
+.SS "リモートホストの説明"
+.sp
+.LP
+リモートホストの説明は通常 system-wide ファイル  \fB/etc/remote\fR の中に あります。 しかし、ユーザーは個人的な説明のファイル(と電話番号を) シェル変数 \fBREMOTE\fR に定義してエクスポートすることもできます。\fBremote\fR は \fBtip\fR  によって読み取り可能でなければなりません。しかし電話番号を記述した二次ファイルはユー ザーによってのみ読み取り可能でも構いません。この二次電話番号ファイルはシェル変数 \fBPHONES\fR が定義されエクスポートされない限り \fB/etc/phones\fR です。電話番号ファイルは以下の書式に従った行を含みます:
+.sp
+.in +2
+.nf
+\fIsystem-name phone-number\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムのための各電話番号は接続を確立するかファイルの終わりに到達するまで試されます。電話番号は `\fB0123456789\(mi=*\fR' で構成されます。`\fB=\fR' と `\fB*\fR' は第二発信音を (\fBACU\fR に応じて) 待つべきであるということを示すために使用されます。
+.SS "tip の内部変数"
+.sp
+.LP
+\fBtip\fR は通常の操作に使用する変数のセットを持っています。これらの変数のいくつかは一般ユーザーには読み取り専用です。(root ユーザーは何でも変更することができます)。変数は \fB~s\fR エスケープ で表示、設定できます。変数の構文は \fBvi\fR(1) と \fBmail\fR(1) にならって作られています。\fBall\fR を \fB~s\fR エスケープの引数として与えることでユーザーが読むことの出来るすべての値が表示されます。 その代わりに、\fB?\fR ユーザーは最後に ?  をつけることで指定の値を表示するよう要求できます。たとえば、`\fB~s escape?\fR' は現在のエスケープ文字を表示します。
+.sp
+.LP
+値は数値 (num)、文字列 (str)、文字型 (char)またははブール (bool) 値です。ブール値は単に名前を特定するためにのみ設定されます。それらは名前の先頭に \fB!\fR を追加することでリセットされるかもしれません。他の変数は \fB=\fR と値を後ろに付けることで設定します。全割り当てに空白があってはいけません。1 セットのコマンドで値の数値を調べたり設定したりできます。
+.sp
+.LP
+変数は実行時に設定コマンドを(\fB~s\fR を前につけることなしに)ユーザーのホームディレクトリにある \fB\&.tiprc\fR ファイルに記述することで初期化できます。\fB-v\fR オプションは \fBtip\fR が設定されたとおりに表示します。\fB#\fR の印をつけたコメントを \fB\&.tiprc\fR ファイルの中に記述できます。
+.sp
+.LP
+最後に、変数名は完全に指定するか省略形も指定できます。次に示すのは \fBtip\fR の理解できる変数です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeautify\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) セッションが用意されると出力不可能な文字列を破棄します。 省略形 \fBbe\fR。\fBnb\fR 能力がある場合は、\fBbeautify\fR はまず \fBoff\fR に設定されます。そうでない場合は、\fBbeautify\fR はまず \fBon\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbaudrate\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) 接続確立時のボーレート。省略形は \fBba\fR。ボーレートがコマンド行で指定された場合は、\fBbaudrate\fR はまず指定した値に設定されます。または、\fBbr\fR 能力がある場合は、\fBbaudrate\fR はまずその能力に合わせて設定されます。そうでない場合は、\fBbaudrate\fR は 300 ボーに設定されます。いったん \fBtip\fR が起動すると、\fBbaudrate\fR はスーパーユーザーのみが変更できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdialtimeout\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) 電話番号をダイヤルしているとき、接続が確立するまでに待つ時間(秒)。省略形は \fBdial\fR。\fBdialtimeout\fR はまず 60 秒に設定され、スーパーユーザーのみが変更できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 切断するためにリモートホストへ送る文字列。省略形は \fBdi\fR。 \fBdi\fR 能力がある場合は、\fBdisconnect\fR はまずその能力に合わせて設定されます。そうでない場合は、\fBdisconnect\fR は NULL 文字列 (\fB""\fR)に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBechocheck\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 転送された最終文字のエコーを待つことでファイル転送中にリモートホストと同期します。省略形は \fBec\fR。\fBec\fR 能力がある場合は、\fBechocheck\fR はまず \fBon\fR に設定されます。そうでない場合は、\fBechocheck\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeofread\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) ファイル転送コマンド \fB~<\fR の最中に転送終了を示す文字列。省略形は \fBeofr\fR。\fBie\fR 能力がある場合は、\fBeofread\fR はまず値をその能力に設定します。そうでない場合は、\fBeofread\fR は NULL 文字列 (\fB""\fR) に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeofwrite\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 文字列はファイル転送コマンド \fB~>\fR の最中に転送終了を示す文字列。省略形は \fBeofw\fR。\fBoe\fR 能力がある場合は、\fBeofread\fR はまず値をその能力に設定します。そうでない場合は、\fBeofread\fR は NULL 文字列 (\fB""\fR) に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeol\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 行の終わりを示す文字列。\fBtip\fR は end-of-line の後でのみエスケープ文字を認識します。\fBel\fR 能力がある場合は、\fBeol\fR はまずその能力に合わせて設定されます。そうでない場合は、\fBeol\fR は NULL 文字列 (\fB""\fR)に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBescape\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) (escape) 文字列を頭につけるコマンド。省略形は \fBes\fR。\fBes\fR 能力がある場合は、\fBescape\fR はまずその能力に合わせて設定されます。そうでない場合、\fBescape\fR は `\fB\|~\|\fR\&' に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBetimeout\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) \fBechocheck\fR が設定されているとき、\fBtip\fR がエコーチェックの応答を待たなければならない時間 (秒単位)。省略形は \fBet\fR。\fBet\fR 能力がある場合は、\fBetimeout\fR はまずその能力に合わせて設定されます。そうでない場合は、\fBetimeout\fR は 10 秒に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexceptions\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) beautify スイッチによって破棄してはいけない文字列。省略形は \fBex\fR。\fBex\fR 能力がある場合は、\fBexceptions\fR はまずその能力に合わせて値を設定します。そうでない場合は、\fBexceptions\fR は `\fB\et\en\ef\eb\fR\&' に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforce\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) リテラルデータ転送を強制するための文字列。省略形は \fBfo\fR。\fBfo\fR 能力がある場合は、\fBforce\fR はまず値をその能力に合わせて設定します。そうでない場合は、\fBforce\fR は \fB\e377\fR (使用不能)に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBframesize\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) ファイル受信時にファイルシステム書込み間でバッファーするデータ量 (バイト単位)。省略形は \fBfr\fR。\fBfs\fR 能力がある場合は、\fBframesize\fR はまず値をその能力に合わせて設定します。そうでない場合は、\fBframesize\fR は \fB1024\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhalfduplex\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) ホストが半二重なのでローカルエコーを行います。省略形は \fBhdx\fR。\fBhd\fR 能力がある場合は、\fBhalfduplex\fR はまず \fBon\fR に設定されます。そうでない場合は、\fBhalfduplex\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhardwareflow\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) ハードウェアフロー制御を行います。省略形は \fBhf\fR。\fBhf\fR 能力がある場合は、\fBhardwareflow\fR はまず \fBon\fR に設定されます。そうでない場合は、\fBhardwareflowcontrol\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 接続したホストの名前。省略形は \fBho\fR。\fBhost\fR  はコマンド行上で与えられるか \fBHOST\fR 環境変数で設定した名前に恒久的に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocalecho\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) \fBhalfduplex\fR と同義。省略形は \fBle\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlog\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 外向けの電話かけに関するログ情報ファイルの名前。\fBlog\fR はまず \fB/var/adm/aculog\fR に設定されます。それからスーパーユーザーのみが調査または変更できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparity\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) リモートホストに更新するときパリティーが生成されチェックされます。 省略形 \fBpar\fR。指定可能な値は:  
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnone\fR>\fR
+.ad
+.br
+.na
+\fB\fBzero\fR\fR
+.ad
+.RS 9n
+.rt  
+入力ではパリティーはチェックされません。そして出力ではパリティーはゼロに設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBone\fR\fR
+.ad
+.RS 9n
+.rt  
+入力ではパリティーはチェックされません。そして出力ではパリティービットが設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeven\fR\fR
+.ad
+.RS 9n
+.rt  
+入力では偶数パリティーがチェックされ、出力では生成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBodd\fR\fR
+.ad
+.RS 9n
+.rt  
+入力では奇数パリティーがチェックされ、出力では生成されます。
+.RE
+
+\fBpa\fR 能力がある場合は、\fBparity\fR はまず値をその能力に設定します。 そうでない場合は、\fBparity\fR は \fBnone\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBphones\fR\fR
+.ad
+.RS 16n
+.rt  
+隠し電話番号を入れておくファイル。もし環境変数 \fBPHONES\fR が設定されていれば、\fBphones\fR は \fBPHONES\fR の値に設定されます。そうでない場合は、\fBphones\fR は \fB/etc/phones\fR に設定されます。\fBphones\fR の値は \fBtip\fR から変更することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) リモートホストで「行の終端」を示す文字列。省略形 \fBpr\fR。この値はデータ転送中、同期を行うために使用されます。ファイル転送コマンド中の行数はこの文字列の受領によって確定します。\fBpr\fR 能力がある場合は、 \fBprompt\fR  はまず値をその能力に合わせ ます。そうでない場合は、\fBprompt\fR は \fB\en\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBraise\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 大文字マッピングモード。省略形は \fBra\fR。このモードが有効化されていると、リモートマシンとの転送においてすべての文字は \fBtip\fR によって大文字に割り当てられます。\fBra\fR 能力がある場合は、\fBraise\fR はまず \fBon\fR に設定されます。そうでない場合は、\fBraise\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBraisechar\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) 大文字マッピングモードを切り替える入力文字。省略形は \fBrc\fR。\fBrc\fR 能力がある場合は、\fBraisechar\fR はまずその能力に合わせて設定されます。そうでない場合は、\fBraisechar\fR は \fB\e377\fR (使用不能)に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrawftp\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) ファイル転送中に全文字列を送信します。印刷不可能文字をフィルタせず、\fB\en\fR を \fB\er\fR にのような変換を行わない。省略形は \fBraw\fR。\fBrw\fR 能力がある場合は、\fBrawftp\fR はまず \fBon\fR に設定されます。そうでない場合は、\fBrawftp\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecord\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) セッションスクリプトが記録されるファイル名。省略形は \fBrec\fR。\fBre\fR 能力がある場合は、\fBrecord\fR はまずその能力に合わせて設定されます。そうでない場合は、\fBrecord\fR は \fBtip.record\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremote\fR\fR
+.ad
+.RS 16n
+.rt  
+リモートシステム説明を記載したファイル。環境変数 \fBREMOTE\fR が設定されていれる場合、\fBremote\fR は \fBREMOTE\fR の値に設定されます。そうでない場合は、\fBremote\fR は \fB/etc/remote\fR に設定されます。 \fBremote\fR の値は \fBtip\fR で変更することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscript\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) セッションスクリプトモード。省略形は \fBsc\fR。\fBscript\fR が\fBon\fR の時、\fBtip\fR はリモートホストによって転送されたすべてを \fBrecord\fR の中に指定されたスクリプト記録ファイルに記録します。\fBbeautify\fR スイッチが on の場合、\fBASCII\fR 文字のみがスクリプトファイルに含まれます。(これらの文字は 040 と 0177 の間 です)。値 \fBexceptions\fR は通常の beautify ルールにはずれる文字を示すために使用します。\fBsc\fR 能力がある場合は、\fBscript\fR はまず \fBon\fR に設定されます。そうでない場合は、\fB script\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtabexpand\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) ファイル転送中 \fBTAB\fR 文字を \fBSPACE\fR 文字に展開します。 省略形 \fBtab\fR。\fBtabexpand\fRが \fBon\fR のとき、各 tab は 8 つの SPACE 文字に展開されます。\fBtb\fR 能力があれば\fBtabexpand\fR はまず \fBon\fR に設定されます。そうでない場合は、\fBtabexpand\fR はまず \fBoff\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtandem\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) リモートホストから送られるデータのレートを制限するために \fBXON\fR/\fBXOFF\fR フロー制御を使用します。省略形は \fBta\fR。\fBnt\fR 能力がある場合は、\fBtandem\fR はまず \fBoff\fR に設定されます。そうでない場合は、\fBtandem\fR はまず \fBon\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 冗長モード。省略形は \fBverb\fR。冗長モードが有効な場合、\fBtip\fR はダイアル中にメッセージを、ファイル転送操作中に現在の電話番号を、さらに多くを表示します。\fBnv\fR 能力がある場合は、\fBverbose\fR はまず \fBoff\fR に設定されます。そうでない場合は、\fBverbose\fR はまず \fBon\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) \fB~!\fR コマンドに使用されるシェル。標準値は \fB/bin/sh\fR です、そうでない場合は環境から取得されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) \fB~c\fR コマンドの使用するホームディレクトリ。標準値は環境から取得されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRtip コマンドを使う
+.sp
+.LP
+ファイル転送に使用するダイアログの例は以下の通りです。
+
+.sp
+.in +2
+.nf
+arpa% \fBtip monet\fR
+[connected]
+\&...(assume we are talking to a UNIX system)...
+ucbmonet login: sam
+Password:
+monet% cat  sylvester.c
+~> Filename: sylvester.c
+32 lines transferred in 1 minute 3 seconds
+monet%
+monet% ~< Filename: reply.c
+List command for remote host: cat reply.c
+65 lines transferred in 2 minutes
+monet%
+\&...(or, equivalently)...
+monet% ~p sylvester.c
+\&...(actually echoes as ~[put] sylvester.c)...
+32 lines transferred in 1 minute 3 seconds
+monet%
+monet% ~t reply.c
+\&...(actually echoes as ~[take] reply.c)...
+65 lines transferred in 2 minutes
+monet%
+\&...(to print a file locally)...
+monet% ~|Local command: pr h sylvester.c | lpr
+List command for remote host: cat sylvester.c
+monet% ~^D
+[EOT]
+\&...(back on the local system)... 
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+次の環境変数は \fBtip\fR によって読み込まれます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBREMOTE\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBremote\fR ファイルの場所。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPHONES\fR\fR
+.ad
+.RS 10n
+.rt  
+個人電話番号が記載されているファイルの場所。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOST\fR\fR
+.ad
+.RS 10n
+.rt  
+デフォルト接続先ホスト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.RS 10n
+.rt  
+ユーザーのログインディレクトリ(chdirs のために)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.RS 10n
+.rt  
+`\fB~!\fR' エスケープでフォークするシェル。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/phones\fR\fR
+.ad
+.RS 29n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/remote\fR\fR
+.ad
+.RS 29n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/spool/locks/LCK.\|.*\fR\fR
+.ad
+.RS 29n
+.rt  
+\fBUUCP\fR との競合を避けるためのロックファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/aculog\fR\fR
+.ad
+.RS 29n
+.rt  
+外向けの発信がログされるファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~/.tiprc\fR\fR
+.ad
+.RS 29n
+.rt  
+初期化ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcu\fR(1C), \fBmail\fR(1), \fBuucp\fR(1C), \fBvi\fR(1), \fBioctl\fR(2), \fBattributes\fR(5)
+.SH 使用上の留意点
+.sp
+.LP
+2 つの追加変数 \fBchardelay\fR と \fBlinedelay\fR があるが現在は実装していない。

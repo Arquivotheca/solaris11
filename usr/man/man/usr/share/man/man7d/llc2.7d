@@ -1,0 +1,351 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH llc2 7D "16 Aug 2011" "SunOS 5.11" "Devices"
+.SH NAME
+llc2 \- Class II logical link control driver
+.SH DESCRIPTION
+.sp
+.LP
+The \fBllc2\fR logical link control driver interfaces network software (NetBIOS, SNA, OSI, and so on) running under the Solaris operating environment to a physical \fBLAN\fR network controlled by one of the supported communications adapters. The \fBllc2\fR driver, which appears as a \fBSTREAMS\fR driver to the network software, resides in the kernel and is accessed by standard UNIX \fBSTREAMS functions.\fR 
+.sp
+.LP
+This version of the \fBllc2\fR driver includes support for both connectionless and connection-oriented logical link control class II (\fBllc2\fR) operations for Ethernet, Token Ring,  and \fBFDDI\fR adapters when accessed through the appropriate Solaris MAC layer driver. The Data Link Provider Interface (\fBDLPI\fR) to the \fBllc2\fR driver enables multiple and different protocol stacks, (including NetBIOS and SNA), to operate simultaneously over one or more local area networks.
+.sp
+.LP
+To start the \fBllc2\fR driver by default, rename file \fB/etc/llc2/llc2_start.default\fR to \fB/etc/llc2/llc2_start\fR. This allows the \fB/etc/rc2.d/S40llc2\fR script to build up the configuration file for each \fBppa\fR interface in \fB/etc/llc2/default/llc2.*\fR and start \fBllc2\fR on each interface. To verify the configuration files, manually run \fB/usr/lib/llc2/llc2_autoconfig\fR.
+.sp
+.LP
+For more information on the \fBllc2\fR driver, see the IEEE standard \fI 802.2 Logical Link Control\fR.
+.SH OBTAINING LLC2 STATISTICS 
+.sp
+.LP
+You can obtain LLC2 statistics or reset the statistics counter to zero using the \fBILD_LLC2\fR ioctl. The \fBILD_LLC2\fR ioctl has a number of subcommands. The following retrieve LLC2 statistics:
+.sp
+
+.sp
+.TS
+tab();
+cw(2.47i) |cw(3.03i) 
+lw(2.47i) |lw(3.03i) 
+.
+NameFunction
+_
+LLC2_GET_STA_STATSGet station statistics
+LLC2_GET_SAP_STATSGet SAP statistics 
+LLC2_GET_CON_STATSGet connection statistics
+.TE
+
+.sp
+.LP
+The structure used depends on the subcommand sent.  
+.SH LLC2_GET_STA_ STATS 
+.sp
+.LP
+\fBThe LLC2_GET_STA_STATS\fR command retrieves statistics on a particular Physical Point of Attachment (\fBPPA\fR).  
+.sp
+.LP
+When sending the \fBLLC2_GET_STA_STATS\fR command, the \fIllc2GetStaStats\fR structure is used:  
+.sp
+.in +2
+.nf
+typedef struct llc2GetStaStats {
+uint_t ppa;
+uint_t cmd;
+uchar_t clearFlag;
+uchar_t state;
+ushort_t numSaps;
+uchar_t saps[LLC2_MAX_SAPS];
+uint_t nullSapXidCmdRcvd;
+uint_t nullSapXidRspSent;
+uint_t nullSapTestCmdRcvd;
+uint_t nullSapTestRspSent;
+uint_t outOfState;
+uint_t allocFail;
+uint_t protocolError;
+} llc2GetStaStats_t;  
+.fi
+.in -2
+
+.sp
+.LP
+The members of the structure are:
+.sp
+
+.sp
+.TS
+tab();
+cw(2.22i) |cw(3.28i) 
+lw(2.22i) |lw(3.28i) 
+.
+MemberDescription
+_
+cmdLLC2_GET_STA_STATS
+clearFlagT{
+Clear counters flag. Set this to 0 to retreive statistics and to 1 to reset all counters to 0.
+T}
+stateT{
+Station component state. Possible values are ?????
+T}
+numSapsNumber of active SAPs in the saps array
+sapsAn array of active SAP values
+nullSapXidCmdRcvdNumber of NULL SAP XID commands received
+nullSapXidRspSentNumber of NULL SAP XID responses sent
+nullSapTestCmdRcvdT{
+Number of NULL SAP TEST commands received
+T}
+nullSapTestRspSentNumber of NULL SAP TEST responses sent
+outOfStateNumber of invalid events received
+allocFailNumber of buffer allocation failures
+protocolErrorNumber of protocol errors
+.TE
+
+.SH LLC2_GET_SAP_ STATS
+.sp
+.LP
+The \fBLLC2_GET_SAP_STATS\fR command retrieves statistics related to a particular \fBSAP\fR. When sending the \fBLLC2_GET_SAP_STATS\fR command, the \fIllc2GetSapStats\fR structure is  used:  
+.sp
+.in +2
+.nf
+typedef struct llc2GetSapStats {
+uint_t ppa;
+uint_t cmd;
+uchar_t sap;
+uchar_t clearFlag;
+uchar_t state;
+uint_t numCons;
+ushort_t cons[LLC2_MAX_CONS];
+uint_t xidCmdSent;
+uint_t xidCmdRcvd;
+uint_t xidRspSent;
+uint_t xidRspRcvd;
+uint_t testCmdSent;
+uint_t testCmdRcvd;
+uint_t testRspSent;
+uint_t testRspRcvd;
+uint_t uiSent;
+uint_t uiRcvd;
+uint_t outOfState;
+uint_t allocFail;
+uint_t protocolError;
+} llc2GetSapStats_t;  
+.fi
+.in -2
+
+.sp
+.LP
+The members are:      
+.sp
+
+.sp
+.TS
+tab();
+cw(1.75i) |cw(3.75i) 
+lw(1.75i) |lw(3.75i) 
+.
+MemberDescription
+_
+ppaPhysical Point of Attachment number
+cmdLLC2_GET_SAP_STATS
+sapSAP value
+clearFlagT{
+Clear counters flag. Set this to 0 to retreive statistics and to 1      to reset all counters to 0.
+T}
+stateSAP component state
+numConsT{
+Number of active connections in the cons array
+T}
+cons Array of active connection indexes
+xidCmdSentNumber of XID commands sent
+xidCmdRcvdNumber of XID responses received
+xidRspSentNumber of XID responses sent
+xidRspRcvdNumber of XID responses received
+testCmdSentNumber of TEST commands sent
+testCmdRcvdNumber of TEST commands received
+testRspSentNumber of TEST responses sent
+testRspRcvdNumber of TEST responses received
+uiSentNumber of UI frames sent
+uiRcvdNumber of UI frames received
+outOfStateNumber of invalid events received
+allocFailNumber of buffer allocation failures
+protocolErrorNumber of protocol errors
+.TE
+
+.SH LLC2_GET_CON_STATS
+.sp
+.LP
+The \fBLLC2_GET_CON_STATS\fR command retrieves statistics related to  a particular connection component. When sending the \fBLLC2_GET_CON_STATS\fR command, the \fIllc2GetConStats\fR structure is used:  
+.sp
+.in +2
+.nf
+typedef struct llc2GetConStats { 
+uint_t ppa; 
+uint_t cmd; 
+uchar_t sap; 
+ushort_t con; 
+uchar_t clearFlag; 
+uchar_t stateOldest; 
+uchar_t stateOlder; 
+uchar_t stateOld; 
+uchar_t state; 
+ushort_t sid; 
+dlsap_t rem; 
+ushort_t flag; 
+uchar_t dataFlag; 
+uchar_t k; 
+uchar_t vs; 
+uchar_t vr; 
+uchar_t nrRcvd; 
+ushort_t retryCount; 
+uint_t numToBeAcked; 
+uint_t numToResend; 
+uint_t macOutSave; 
+uint_t macOutDump; 
+uchar_t timerOn; 
+uint_t iSent; 
+uint_t iRcvd; 
+uint_t frmrSent; 
+uint_t frmrRcvd; 
+uint_t rrSent; 
+uint_t rrRcvd; 
+uint_t rnrSent; 
+uint_t rnrRcvd; 
+uint_t rejSent; 
+uint_t rejRcvd; 
+uint_t sabmeSent; 
+uint_t sabmeRcvd; 
+uint_t uaSent; 
+uint_t uaRcvd; 
+uint_t discSent; 
+uint_t outOfState; 
+uint_t allocFail; 
+uint_t protocolError; 
+uint_t localBusy; 
+uint_t remoteBusy; 
+uint_t maxRetryFail; 
+uint_t ackTimerExp; 
+uint_t pollTimerExp; 
+uint_t rejTimerExp; 
+uint_t remBusyTimerExp; 
+uint_t inactTimerExp; 
+uint_t sendAckTimerExp;
+ } llc2GetConStats_t;  
+.fi
+.in -2
+
+.sp
+.LP
+The members of the structure are:
+.sp
+
+.sp
+.TS
+tab();
+cw(2.47i) |cw(3.03i) 
+lw(2.47i) |lw(3.03i) 
+.
+MemberDescription
+_
+ppaPhysical Point of Attachment number
+cmdLLC2_GET_CON_STATS
+sapSAP value
+conConnection index
+clearFlagT{
+Clear counters flag. Set this to 0 to retreive statistics and to 1 to reset all counters to 0.
+T}
+stateOldest, stateOlder, stateOld, stateT{
+The four previous dlpi states of the connection
+T}
+sidSAP value and connection index
+dlsap_t rem T{
+Structure containing the remote MAC address and SAP
+T}
+flagConnection component processing flag
+dataFlagDATA_FLAG
+ktransmit window size
+vsT{
+Sequence number of the next I-frame to send
+T}
+vrT{
+Sequence number of the next I-frame expected
+T}
+nrRcvdT{
+Sequence number of the last I-frame acknowledged by the remote node
+T}
+retryCountNumber of timer expirations
+numToBeAckedT{
+Number of outbound I-frames to be acknowledged
+T}
+numToResendT{
+Number of outbound I-frames to be re-sent
+T}
+macOutSaveT{
+Number of outbound I-frames held by the MAC    driver to be saved on return to LLC2
+T}
+macOutDumpT{
+Number of outbound I-frames held by the MAC    driver to be dumped on return to LLC2
+T}
+timerOnTimer activity flag
+iSentNumber of I-frames sent
+iRcvdNumber of I-frames received
+frmrSentNumber of frame rejects sent
+frmrRcvdNumber of frame rejects received
+rrSentNumber of RRs sent
+rrRcvdNumber of RRs received
+rnrRcvdNumber of RNRs received
+rejSentNumber of rejects sent
+rejRcvdNumber of rejects received
+sabmeSentNumber of SABMEs sent
+sabmeRcvdNumber of SABMEs received
+uaSentNumber of UAs sent
+uaRcvdNumber of UAs received
+discSentNumber of DISCs sent
+outOfStateNumber of invalid events received
+allocFailNumber of buffer allocation failures
+protocolErrorNumber of protocol errors
+localBusyNumber of times in a local busy state
+remoteBusyNumber of times in a remote busy state
+maxRetryFailT{
+Number of failures due to reaching maxRetry
+T}
+ackTimerExpNumber of ack timer expirations
+pollTimerExpNumber of P-timer expirations
+rejTimerExpNumber of reject timer expirations
+remBusyTimerExpNumber of remote busy timer expirations
+inactTimerExpNumber of inactivity timer expirations
+sendAckTimerExpNumber of send ack timer expirations
+
+.TE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/llc2\fR \fR
+.ad
+.RS 14n
+.rt  
+Clone device used to access the driver \fB/etc/llc2/default/llc2.?\fR configuration files (One file per \fBppa\fR interface.)
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attribute:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availability system/network/llc2
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBllc2_autoconfig\fR(1), \fBllc2_config\fR(1), \fBllc2\fR(4)

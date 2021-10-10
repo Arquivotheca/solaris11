@@ -1,0 +1,3097 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ipadm 1M "22 Jul 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+ipadm \- configure Internet Protocol network interfaces and TCP/IP tunables
+.SH SYNOPSIS
+.LP
+.nf
+\fBipadm\fR create-ip [\fB-t\fR] \fIIP-interface\fR
+\fBipadm\fR delete-ip \fIIP-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-vni [\fB-t\fR] \fIVNI-interface\fR
+\fBipadm\fR delete-vni \fIVNI-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-ipmp [\fB-t\fR] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR
+\fBipadm\fR delete-ipmp [\fB-f\fR] \fIIPMP-interface\fR
+\fBipadm\fR add-ipmp [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...]
+     \fIIPMP-interface\fR
+\fBipadm\fR remove-ipmp [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...]
+     \fIIPMP-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR show-if [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIinterface\fR]
+\fBipadm\fR disable-if \fB-t\fR \fIinterface\fR
+\fBipadm\fR enable-if \fB-t\fR \fIinterface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-ifprop [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR prop=\fIvalue\fR[,...] \fIinterface\fR
+\fBipadm\fR reset-ifprop [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR \fIprop\fR \fIinterface\fR
+\fBipadm\fR show-ifprop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...]
+     [\fB-m\fR \fIprotocol\fR] [\fIinterface\fR]
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR static [\fB-d\fR]
+     \fB-a\fR {local|remote}=\fIaddr\fR[/\fIprefixlen\fR],... \fIaddrobj\fR
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR dhcp [\fB-w\fR \fIseconds\fR | forever]
+     [\fB-h\fR \fIhostname\fR] \fIaddrobj\fR
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR addrconf [\fB-i\fR {local|remote}=\fIinterface-id\fR]
+     [\fB-p\fR {stateful|stateless}={yes|no},..] \fIaddrobj\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR delete-addr [\fB-r\fR] \fIaddrobj\fR
+\fBipadm\fR show-addr [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-d\fR] [\fIaddrobj\fR | \fIinterface\fR/]
+\fBipadm\fR up-addr [\fB-t\fR] \fIaddrobj\fR
+\fBipadm\fR down-addr [\fB-t\fR] \fIaddrobj\fR
+\fBipadm\fR refresh-addr [\fB-i\fR] \fIaddrobj\fR
+\fBipadm\fR disable-addr \fB-t\fR \fIaddrobj\fR
+\fBipadm\fR enable-addr \fB-t\fR \fIaddrobj\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-addrprop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR
+\fBipadm\fR reset-addrprop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR
+\fBipadm\fR show-addrprop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...]] [\fIaddrobj\fR]
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-prop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIprotocol\fR
+\fBipadm\fR reset-prop [\fB-t\fR] \fB-p\fR prop \fIprotocol\fR
+\fBipadm\fR show-prop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...] \fIprotocol\fR | \fIprotocol\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBipadm\fRcommand provides a set of subcommands that can be used to:
+.sp
+.ne 2
+.mk
+.na
+\fBmanage interfaces:\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+create and delete interfaces of interface classes \fBip\fR, \fBipmp\fR, and \fBvni\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+modify interface properties
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+display interface configuration
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmanage addresses:\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+create and delete addresses
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+modify address properties
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+display address configuration
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmanage TCP/IP protocol properties:\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+modify TCP/IP properties
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+display TCP/IP properties
+.RE
+.RE
+
+.sp
+.LP
+The various operands to \fBipadm\fR subcommands are described in the "Operands" section, which follows "Subcommands".
+.SS "Required Authorization and Privilege"
+.sp
+.LP
+The following subcommands require \fBsolaris.network.interface.config\fR authorization and \fBPRIV_SYS_IP_CONFIG\fR privilege.
+.sp
+.in +2
+.nf
+create-ip          create-addr
+delete-ip          up-addr
+create-vni         down-addr
+delete-vni         refresh-addr
+create-ipmp        disable-addr
+delete-ipmp        enable-addr
+add-ipmp           set-addrprop
+remove-ipmp        reset-addrprop
+disable-if         set-prop
+enable-if          reset-prop
+set-ifprop
+reset-ifprop
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+In addition to the authorization and privilege specified above, the \fBipadm\fR subcommands \fBcreate-ip\fR, \fBcreate-vni\fR, \fBcreate-ipmp\fR, and \fBenable-if\fR need \fBPRIV_NET_RAWACCESS\fR privilege.
+.SH SUB-COMMANDS
+.sp
+.LP
+The following subcommands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-ip\fR [\fB-t\fR] \fIIP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create an IP interface that handles both IPv4 and IPv6 packets. The address of the IPv4 interface will be set to \fB0.0.0.0\fR and the address of the IPv6 interface will be set to \fB::\fR. This subcommand, by default, causes the information to persist, so that on the next reboot this interface will be instantiated.
+.sp
+An interface is implicitly enabled for IPv4 and IPv6 when it is created. See the \fBdisable-if\fR and \fBenable-if\fR subcommands below, to disable or enable an interface.
+.sp
+Note that \fBlo0\fR is a special interface, called the loopback interface. It is a virtual IP interface and is not associated with any physical hardware. It is one of the first IP interfaces to be created on the system, with IPv4 address of \fB127.0.0.1\fR and IPv6 address of \fB::/128\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the operation is temporary and must not persist. The operation affects only the active configuration.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-ip\fR \fIIP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the IP interface from active configuration. All addresses configured on the interface will be torn down. Further, all the persistent information related to the interface will be removed from the persistent data store and, for this reason, \fIinterface\fR will not be instantiated upon reboot. To disable an interface from active configuration (rather than delete the interface), use the \fBdisable-if\fR subcommand.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-vni\fR [\fB-t\fR] \fIVNI-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create a VNI interface that handles both IPv4 and IPv6 packets. The address of the IPv4 interface will be set to \fB0.0.0.0\fR and the address of the IPv6 interface will be set to \fB::\fR. This subcommand, by default, causes the information to persist, so that on the next reboot this interface will be instantiated.
+.sp
+The interface is implicitly enabled for IPv4 and IPv6 when it is created. See the \fBdisable-if\fR and \fBenable-if\fR subcommands below, to disable or enable an interface.
+.sp
+Note that \fBvni\fR is a special interface, in that it is a virtual interface and does not have any hardware associated with it. See \fBvni\fR(7D).
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the operation is temporary and must not persist. The operation affects only the active configuration.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-vni\fR \fIVNI-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the VNI interface from active configuration. All addresses configured on the interface will be torn down. Further, all the persistent information related to the IP interface will be removed from the persistent data store and, for this reason, interface will not be instantiated upon reboot. To disable the interface from active configuration (rather than delete the interface), use the \fBdisable-if\fR subcommand.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-ipmp\fR [\fB-t\fR] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create a IPMP interface that handles both IPv4 and IPv6 packets. The address of the IPv4 interface will be set to \fB0.0.0.0\fR and the address of the IPv6 interface will be set to \fB::\fR. This subcommand, by default, causes the information to persist, so that on the next reboot this interface will be instantiated.
+.sp
+The interface is implicitly enabled for IPv4 and IPv6 when it is created. See the \fBdisable-if\fR and \fBenable-if\fR subcommands below, to disable or enable an IPMP interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the operation is temporary and must not persist. The operation affects only the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of interfaces to be added as underlying interfaces to the IPMP interface. The specified interfaces must exist in the active configuration to be successfully added to the IPMP group and must not be present in any other IPMP group. More than one \fB-i\fR option is allowed. The command returns with partial success if the IPMP interface was created but none of the given underlying interfaces were added successfully.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-ipmp\fR [\fB-f\fR] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the IPMP interface from active configuration. All addresses configured on the interface will be torn down. The command fails if the IPMP interface has any underlying interfaces, unless the \fB-f\fR option is specified. Further, all the persistent information related to the IPMP interface will be removed from the persistent data store and, for this reason, interface will not be instantiated upon reboot. To disable the interface from active configuration only (rather than delete the interface), use the \fBdisable-if\fR subcommand.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the IPMP interface has any underlying interfaces, specifying this option removes all the underlying interfaces from the group first, before deleting the IPMP interface.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-ipmp\fR  [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Adds one or more underlying IP interfaces to the given IPMP interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the operation is temporary and must not persist. The operation affects only the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of interfaces to be added as underlying interfaces to the IPMP interface. The specified interfaces must exist in the active configuration to be successfully added to the IPMP group and must not be present in any other IPMP group. The command returns with partial success if at least one interface was added and adding the remaining interfaces failed. More than one \fB-i\fR option is allowed.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-ipmp\fR  [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes one or more underlying IP interfaces from the IPMP interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the operation is temporary and must not persist. The operation affects only the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of underlying interfaces to be removed from the IPMP interface. The specified interfaces must already be underlying interfaces for the given IPMP group. More than one \fB-i\fR option is allowed. The command returns with partial success if at least one interface was removed and removing the remaining interfaces failed.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-if\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIinterface\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show network interface configuration information, either for all the network interfaces configured on the system, including the ones that are only in the persistent configuration, or for the specified network interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The \fIfield\fR name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each network interface, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the IP interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCLASS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates one of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip\fR\fR
+.ad
+.sp .6
+.RS 4n
+An interface that is plumbed over an underlying datalink.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmp\fR\fR
+.ad
+.sp .6
+.RS 4n
+An IPMP interface that is created over one or more underlying IP interfaces.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBloopback\fR\fR
+.ad
+.sp .6
+.RS 4n
+A loopback interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvni\fR\fR
+.ad
+.sp .6
+.RS 4n
+A virtual IP interface. See \fBvni\fR(7D).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates one of the following for the displayed interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates that the required resources for an interface are allocated. For some interfaces this also indicates that the link is up.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline\fR\fR
+.ad
+.sp .6
+.RS 4n
+The interface is offline and thus cannot send or receive IP data traffic. See \fBif_mpadm\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates that the datalink is down. If the interface is part of an IPMP group it could also mean that the interface has failed (that is, IFF_FAILED is set). Failed interfaces will not be used to send or receive IP data traffic. If this is set on a physical IP interface in an IPMP group, IP data traffic will continue to flow over other usable IP interfaces in the IPMP group. If this is set on an IPMP IP interface, the entire group has failed and no data traffic can be sent or received over any interfaces in that group. See \fBin.mpathd\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates that the interface is administratively down, preventing any IP packets from being sent or received through it.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates that the interface has been disabled from the active configuration using the \fBdisable-if\fR subcommand.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBACTIVE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Either \fByes\fR or \fBno\fR, depending on whether the IP interface is being used by the system for IP data traffic.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+For interface objects, in active configuration, it indicates any of the following flags.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface supports broadcast
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface supports multicast
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface is a point-to-point link
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBv\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface is a virtual interface (for example, \fBvni\fR(7D), loopback), that is, the physical interface has no underlying hardware.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP interface is marked standby administratively. See \fBin.mpathd\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface is an underlying interface for an IPMP interface. See \fBin.mpathd\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.sp .6
+.RS 4n
+Underlying interface is inactive. See \fBin.mpathd\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBV\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface is a VRRP interface
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP interface is in accept mode (~\fBIFF_NOACCEPT\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+Layer-3 protection of IP addresses for the interface has been administratively enforced.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface can handle IPv4 packets
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+interface can handle IPv6 packets
+.RE
+
+Note that \fBb\fR and \fBp\fR are mutually exclusive.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the configuration that will be applied when the interface object is instantiated on reboot or re-enabled using the \fBenable-if\fR subcommand. It can be any or all of \fBs\fR, \fBl\fR, \fB4\fR, and \fB6\fR (see above). This field is not shown by default and will be shown only when \fBall\fR or \fBpersistent\fR is specified with \fB-o\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOVER\fR\fR
+.ad
+.sp .6
+.RS 4n
+The underlying interface(s) over which the IPMP interface is created. This does not apply to other interface classes.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-if\fR \fB-t\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Disables the specified \fIinterface\fR by removing it from the active configuration. All the addresses configured on the interface will be disabled. If the interface object was created persistently to begin with, then the persistent configuration is unchanged. To re-enable this interface, one should use \fBenable-if\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the disable is temporary and changes apply only to the active configuration.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-if\fR \fB-t\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables the given interface by reading the configuration from the persistent store. All the persistent interface properties, if any, are applied and all the persistent addresses, if any, on the given interface will be enabled.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the enable is temporary and changes apply only to the active configuration.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-ifprop\fR [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR prop=\fIvalue\fR[,...] \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Modifies an interface property to the value specified by the user. If the property takes multiple values then the values should be specified with a comma as the delimiter. Only one property can be specified at a time. The properties supported on an interface and the property's possible values can be retrieved using \fBshow-ifprop\fR subcommand. Only one property at a time can be modified.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the changes are temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR, \fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies whether property should be applied for IPv4 or IPv6 packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop=\fIvalue\fR[,...], \fB-prop\fR prop=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A property to set to the specified values.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-ifprop\fR [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR \fIprop\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Resets a property of the specified interface to its default value. If \fB-t\fR is not used, any persisted value of the property will be deleted. Only one property can be modified at a time.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the resets are temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR, \fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies whether the property being reset affects either IPv4 or IPv6 packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR, \fB-prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+A property to set to the specified values.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-ifprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...] [\fB-m\fR \fIprotocol\fR] [\fIinterface\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the current and persistent values of one or more properties, either for all the created interfaces or for the specified interface. Several properties of interest can be retrieved at one time by providing comma-separated property names to \fB-p\fR option. If the \fB-p\fR option is not specified, all available interface properties are displayed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The \fIfield\fR name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each interface, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROTO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the protocol the property belongs to. The protocols currently supported are IPv4 and IPv6.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The read/write permissions of the property. The value shown will be \fBr\fR (read-only), \fBw\fR (write-only) or \fBrw\fR (read-and-write).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current value of the property. For disabled interfaces, because a value is not set, it will be shown as \fB--\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The persistent value of the property. Persistent values are the values that will be reapplied on reboot.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default value of the property. If the property has no default value, \fB--\fR is displayed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of the values the property can have. If the values span a numeric range, \fImin\fR - \fImax\fR might be displayed as shorthand. If the possible values are unknown, \fB?\fR is displayed or if they are unbounded, \fB--\fR is displayed.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,..., \fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display. See the sections on interface properties following subcommand descriptions.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR, \fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays properties matching the given protocol. Valid values are \fBipv4\fR and \fBipv6\fR.
+.RE
+
+For the supported list of interface properties, see "Interface Properties" below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR static [\fB-d\fR] \fB-a\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],... \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Creates a static IPv4 or IPv6 address on the interface specified in \fIaddrobj\fR. The interface on which the \fIaddrobj\fR is being created must already exist. The created static address will be identified by \fIaddrobj\fR.
+.sp
+By default, a configured address will be marked \fBup\fR, so that it can be used as a source or destination of or for outbound and inbound packets.
+.sp
+All address objects are enabled when they are created. See the \fBdisable-addr\fR and \fBenable-addr\fR subcommands for instructions on disabling or enabling an address object.
+.sp
+A persistent operation cannot be performed on a temporary object. That is, if the interface is temporarily created, then one cannot create the address object persistently.
+.sp
+If the interface specified in the \fIaddrobj\fR name is an IPMP interface, a static data address is created on the IPMP interface. If the interface specifed in the \fIaddrobj\fR name is an underlying interface for an IPMP group, a static test address is created on the underlying interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the configured address is temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--down\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the configured address should be marked \fBdown\fR, that is, the address will not be used as a source or destination of IP packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],...\fR
+.ad
+.br
+.na
+\fB\fB--address\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],...\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddr\fR indicates a literal IP address or a hostname corresponding to the local or remote end-point (for point-to-point interfaces).
+.sp
+If a hostname is specified its numeric value is uniquely obtained using the entry in \fB/etc/hosts\fR. If no numeric IP address is defined in the file, then the numeric value is uniquely obtained using the resolver order specifed for \fBhosts\fR or \fBipnodes\fR in \fBnsswitch.conf\fR(4). If there are multiple entries for a given hostname, an error will be generated. Because IP addresses are created before naming services have been brought online during the boot process, it is important that any hostname used be included in \fB/etc/hosts\fR.
+.sp
+If the \fIprefixlen\fR is not explicitly specified in the command-line, the netmask for the address is obtained by following the search in the order listed below:
+.RS +4
+.TP
+1.
+using the order specified for \fBnetmasks\fR in \fBnsswitch.conf\fR(4)
+.RE
+.RS +4
+.TP
+2.
+interpreting IPv4 address using Classful subnetting semantics defined in RFC 791, and interpreting IPv6 addresses using the definitions in RFC 4291.
+.RE
+For point-to-point interfaces, along with the address of the local end-point the address of the remote end-point must be specified (for example, \fB-a\fR local=\fIladdr\fR,remote=\fIraddr\fR). If \fIprefixlen\fR for the remote end-point is specified, an error will be returned.
+.sp
+Note that if the interface requires only a local address, specify it directly with the \fB-a\fR option as follows: \fB-a\fR \fIaddr\fR[/\fIprefixlen\fR]. The address will automatically be considered a local address.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR dhcp [\fB-w\fR \fIseconds\fR | forever] \fB-h\fR \fIhostname\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Creates a DHCP-controlled IPv4 address on an interface specified in \fIaddrobj\fR. The created IPv4 address will be identified by \fIaddrobj\fR. When the \fIaddrobj\fR contains an underlying interface, this command creates a test address; when it contains an IPMP interface, it creates a data address.
+.sp
+All the address objects are enabled when they are created. See the \fBdisable-addr\fR and \fBenable-addr\fR subcommands for instructions on disabling and enabling an address object.
+.sp
+A persistent operation cannot be performed on a temporary object. That is, if the interface is temporarily created, one cannot create the address object persistently.
+.sp
+If the interface specified in the \fIaddrobj\fR name is an IPMP interface, the address obtained through DHCP is created as a data address on the IPMP interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the hostname to which the client would like the DHCP server to map the client's leased IPv4 address. There is no guarantee that the DHCP server will be able to fulfill the hostname request.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the configured address is temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIseconds\fR | forever, \fB--wait\fR \fIseconds\fR | forever\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the amount of time, in seconds, to wait until the operation completes. If no wait interval is given, and the operation is one that cannot complete immediately, \fBipadm\fR will, by default, wait 120 seconds for the requested operation to complete. Note that the default wait time is subject to change in future releases. The symbolic value \fBforever\fR can be used as well, with obvious meaning.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR addrconf [\fB-i\fR {local | remote}=\fIinterface-id\fR] [\fB-p\fR {stateful | stateless}={yes | no},..] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Creates an auto-configured IPv6 address on an interface specified in \fIaddrobj\fR. The created IPv6 addresses will be identified by \fIaddrobj\fR.
+.sp
+The system uses the default interface ID (for the media-type Ethernet, the Interface ID is the MAC address of the interface) to generate auto-configured addresses. This behavior can be overridden using \fB-i\fR option.
+.sp
+By default:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IPv6 addresses will be auto-configured based on prefixes advertised by routers as described in RFC 4862 and...
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IPv6 addresses will be auto-configured on the specified interface using the IPv6 address offered by DHCPv6 server as described in RFC 3315. (That is, \fB-p\fR \fBstateful=yes,stateless=yes\fR is the default option.)
+.RE
+All the address objects are enabled when they are created. See the \fBdisable-addr\fR and \fBenable-addr\fR subcommands for instructions on disabling and enabling an address object.
+.sp
+A persistent operation cannot be performed on a temporary object. That is, if the interface is temporarily created, then one cannot create the address object persistently.
+.sp
+If the interface specified in the \fIaddrobj\fR name is an IPMP interface, the addresses obtained through IPv6 autoconfiguration are created as data addresses on the IPMP interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the configured address is temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR {local | remote}=\fIinterface-id\fR, \fB--interface-id\fR {local | remote}=\fIinterface-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the interface ID to be used for generating auto-configured addresses.
+.sp
+For point-to-point interfaces, the interface id of the remote end-point can be specified (for example, \fB-i\fR \fBlocal=\fR\fIlid\fR,\fBremote=\fR\fIrid\fR).
+.sp
+Note that if the interface requires only a local interface id, specify it directly with the \fB-i\fR option as follows: \fB-i\fR \fIlid\fR. The interface id will automatically be considered a local interface id.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR {stateful | stateless}={yes | no},..\fR
+.ad
+.br
+.na
+\fB\fB--prop\fR {stateful | stateless}={yes | no},..\fR
+.ad
+.sp .6
+.RS 4n
+Specifies if stateful or stateless or both methods of auto-configuration should be enabled or not.
+.sp
+If \fB-p\fR \fBstateful=no\fR is specified, then stateful auto-configuration based on DHCPv6-specified IPv6 addresses will not be performed.
+.sp
+If \fB-p\fR \fBstateless=no\fR is specified, then stateless auto-configuration based on the router-advertised prefixes will not be performed.
+.sp
+If \fB-p\fR \fBstateful=no,stateless=no\fR is specified, then both the methods of auto-configuration will not be performed.
+.sp
+With the \fB-T\fR \fBaddrconf\fR option, \fB-p\fR \fBstateful=yes,stateless=yes\fR is used by default.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-addr\fR [\fB-r\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes all the addresses identified by \fIaddrobj\fR on the interface specified in the \fIaddrobj\fR. It also removes these addresses from the persistent data-store; thus, these addresses will not be instantiated on reboot.
+.sp
+If the address object is a DHCP-controlled address, \fBdelete-addr\fR removes the address from the system without notifying the DHCP server, and records the current lease for later use.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR, \fB--release\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the \fIaddrobj\fR is a DHCP-controlled address, this option brings about the relinquishing of the DHCP-controlled IP addresses on the interface by notifying the server and the discarding of the current lease.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-addr\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-d\fR] [\fIaddrobj\fR | \fIinterface\fR/]\fR
+.ad
+.sp .6
+.RS 4n
+Show address information, either for the given \fIaddrobj\fR or all the address objects configured on the specified interface, including the address objects that are only in the persistent configuration.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The \fIfield\fR name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each interface, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDROBJ\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the address object.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Type of the address object. It will be one of: \fBfrom-gz\fR, \fBstatic\fR, \fBdhcp\fR, or \fBaddrconf\fR. The \fBstatic\fR, \fBdhcp\fR, and \fBaddrconf\fR types correspond to the type of the address object specified by the \fB-T\fR option of \fBcreate-addr\fR. The \fBfrom-gz\fR type will only be displayed in non-global zones, and indicates that the address was configured based on the \fBallowed-address\fR property configured for the non-global exclusive-IP zone from the global zone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+State of the address object. This field is shown only when \fBall\fR is specified with \fB-o\fR. This indicates one of the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address is not part of the active configuration (see \fBdisable-addr\fR and \fBdisable-if\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address is administratively down (see \fBdown-addr\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBduplicate\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address was found to conflict with another system's IP address by duplicate address detection (DAD) and cannot be used until the conflict is resolved. The system will periodically rerun DAD to determine if the conflict has been resolved. Alternatively, \fBrefresh-addr\fR can be used to immediately rerun DAD.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinaccessible\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address cannot be used because the IP interface it is configured on has failed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address is enabled, up, and functioning properly. The system will accept IP packets destined to this address, and will originate IP packets with this address in accordance with the configured IP source address selection policy.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtentative\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address is currently undergoing duplicate address detection (for example, as part of \fBup-addr\fR or \fBrefresh-addr\fR).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+For address objects in active configuration, it indicates any of the following flags. This field is not shown by default and will be shown only when \fBall\fR or \fBcurrent\fR is specified with \fB-o\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR (deprecated)\fR
+.ad
+.sp .6
+.RS 4n
+Will not be used as source address for outbound packets unless either there are no other addresses available on the interface or the application has explicitly bound to this address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR (private)\fR
+.ad
+.sp .6
+.RS 4n
+Address not advertised by the routing daemon.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR (temporary)\fR
+.ad
+.sp .6
+.RS 4n
+Temporary IPv6 address as defined in RFC 3041.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBU\fR (up)\fR
+.ad
+.sp .6
+.RS 4n
+Address is marked up for use as a source/destination of outbound/inbound packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR (unnumbered)\fR
+.ad
+.sp .6
+.RS 4n
+Address matches the local address of some other link in the system.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the configuration that will be applied when the address object is instantiated on reboot or re-enabled using the \fBenable-addr\fR subcommand. It can be any or all of \fBU\fR, \fBp\fR, and \fBd\fR (see above).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Numeric IPv4 or IPv6 address. In the case of point-to- point interfaces, the addresses of both the endpoints, are displayed (\fIladdr\fR-->\fIraddr\fR). For an address object of type \fBdhcp\fR, if the state of the address object is \fBdisabled\fR, or if the address is \fB0.0.0.0\fR for IPv4 or \fB::\fR for IPv6, then a question mark (\fB?\fR) is displayed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCID-TYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of the Client ID used by the \fBdhcpagent\fR(1M), if the address is being obtained using DHCP. For IPv4, this shows the type of the DUID used in constructing the RFC 4361 Client ID. The type is one of \fBDUID-LLT\fR, \fBDUID-EN\fR, \fBDUID-LL\fR, \fBother\fR, or \fBdefault\fR. This field is not shown in the default output. It can be shown using \fB-d\fR or using \fBcid-type\fR or \fBall\fR with \fB-o\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-LLT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Type 1 RFC 3315 DUID is used in constructing \fBCID-VALUE\fR (for example, \fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR). Refer to the RFC for more details.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-EN\fR\fR
+.ad
+.sp .6
+.RS 4n
+Type 2 RFC 3315 DUID is used in constructing \fBCID-VALUE\fR (for example, \fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR). Refer to the RFC for more details.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-LL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Type 3 RFC 3315 DUID is used in constructing \fBCID-VALUE\fR (for example, \fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR). Refer to the RFC for more details.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBother\fR\fR
+.ad
+.sp .6
+.RS 4n
+An RFC 3315 DUID of a Type in {0,4-65535} is used to derive the Client ID (for example, \fB4,0x734633\fR) or the \fBCID-VALUE\fR is a raw Client ID (for example, \fBSun\fR, \fB0xab3146\fR) that does not conform to RFC 3315.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates that the RFC 3315 DUID is not being used to construct the Client ID. Instead, Client ID is derived using the MAC address of the interface as per RFC 2132. \fBCID-VALUE\fR will contain the string \fB0x01\fR followed by the MAC address hex string. This is applicable only for IPv4.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCID-VALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Value of the Client ID used by the \fBdhcpagent\fR(1M), if the address is being obtained using DHCP. Format used follows that of the configuration parameter \fBCLIENT_ID\fR in file \fB/etc/default/dhcpagent\fR. Refer to the description of \fBCLIENT_ID\fR in \fBdhcpagent\fR(1M). When the \fBCID-TYPE\fR is default, the \fBCID-VALUE\fR contains the legacy \fBCLIENT-ID\fR, constructed as per RFC 2132. This field is not shown in the default output. It can be shown using \fB-d\fR or using \fBcid-type\fR or all with \fB-o\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBEGIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The time at which the lease began, if one is available, for the addresses obtained using DHCP. The time is displayed in the format dictated by the \fBLC_TIME\fR locale environment variable. For addresses not configured using DHCP or for DHCP addresses that do not have a lease yet, \fB--\fR (two hyphens) will be displayed. This field is not shown in the default output. It can be shown using \fB-d\fR or using \fBcid-type\fR or all with \fB-o\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEXPIRE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The time at which the lease expires, if one is available, for the addresses obtained using DHCP. The time is displayed in the format dictated by the \fBLC_TIME\fR locale environment variable. For addresses not configured using DHCP or for DHCP addresses that do not have a lease yet, \fB--\fR (two hyphens) will be displayed. This field is not shown in the default output. It can be shown using \fB-d\fR or using \fBcid-type\fR or all with \fB-o\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRENEW\fR\fR
+.ad
+.sp .6
+.RS 4n
+The time at which the lease was last renewed for the addresses obtained using DHCP. The time is displayed in the format dictated by the \fBLC_TIME\fR locale environment variable. For addresses not configured using DHCP or for DHCP addresses that do not have a lease yet, \fB--\fR (two hyphens) will be displayed. This field is not shown in the default output. It can be shown using \fB-d\fR or using \fBcid-type\fR or all with \fB-o\fR.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--dhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display the \fBdhcp\fR status fields for addresses acquired using DHCP. The fields displayed are \fBADDROBJ\fR, \fBSTATE\fR, \fBADDR\fR, \fBCID-TYPE\fR, \fBCID-VALUE\fR, \fBBEGIN\fR, \fBEXPIRE\fR, and \fBRENEW\fR. This option displays only the human-readable output and cannot be used in conjunction with \fB-p\fR.
+.RE
+
+.LP
+Note - 
+.sp
+.RS 2
+In some cases the name of the address object starts with an underbar (\fB_\fR), as in \fBe1000g1/_a\fR or \fBe1000g1/_b\fR. These names were automatically generated for applications that used the \fBipadm\fR programming library. You will also see addresses that have a question mark (\fB?\fR) in the address object name. This means that those addresses were created outside the \fBipadm\fR library and therefore not known to \fBipadm\fR.
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown-addr\fR [\fB-t\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+The address identified by \fIaddrobj\fR is marked down, so that it cannot be used as a source/destination of outbound/inbound packets. This command has no effect if the address object was already marked down prior to the \fBdown-addr\fR invocation. If the address object is of type \fBaddrconf\fR, the command returns an error.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the configured address is temporary and changes apply only to the active configuration. This option is mandatory if the address object type is \fBdhcp\fR.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBup-addr\fR [\fB-t\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+The address identified by \fIaddrobj\fR is marked up, so that it can be used as a source/destination of outbound/inbound packets. This subcommand has no effect if the address object has been marked down by the system because it is a duplicate address, or if the address was marked up prior to the \fBup-addr\fR invocation. If the address object is of type \fBaddrconf\fR, the command returns an error.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the configured address is temporary and changes apply only to the active configuration. This option is mandatory if the address object type is \fBdhcp\fR.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh-addr\fR [\fB-i\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the \fIaddrobj\fR is of the type \fBstatic\fR then DAD (Duplicate Address Detection) will be restarted (if necessary) on the address identified by the address object.
+.sp
+If the \fIaddrobj\fR is of the type \fBdhcp\fR, then the lease duration obtained on the address will be extended by the DHCP client daemon.
+.sp
+If the \fIaddrobj\fR is of the type \fBaddrconf\fR then the command returns an error.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB--inform\fR\fR
+.ad
+.sp .6
+.RS 4n
+For a specified IP address, obtains network configuration parameters from DHCP without obtaining a lease on it. This is useful in situations where an IP address is obtained through mechanisms other than DHCP.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-addr\fR \fB-t\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Disables the address by removing it from the active configuration. If the address object was originally created persistently, then the persistent configuration is unchanged. To re-enable this \fIaddrobj\fR, one should use \fBenable-addr\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the disabling is temporary and changes apply only to the active configuration.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-addr\fR \fB-t\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables the given \fIaddrobj\fR by reading the configuration from the persistent store. All the persistent address properties are applied to the address object. This subcommand requires that the interface on which the address object is being enabled be present. If the interface itself is missing in active configuration and is present in persistent store, that is, if the interface is disabled, then the user has to run \fBenable-if\fR before invoking \fBenable-addr\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the enabling is temporary and changes apply only to the active configuration.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-addrprop\fR [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the value of a property on the \fIaddrobj\fR specified. If the \fIaddrobj\fR maps to several addresses, then property changes applies to all the addresses referenced by the \fIaddrobj\fR. Only one property can be specified at a time. The properties supported on the \fIaddrobj\fR and the property's possible values can be retrieved using \fBshow-addrprop\fR subcommand. If the \fIaddrobj\fR is of type \fBaddrconf\fR, the command returns an error.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the changes are temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop=\fIvalue\fR[,...], \fB--prop\fR prop=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A property to set to the specified values.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-addrprop\fR [\fB-t\fR] \fB-p\fR \fIprop\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+Resets the given address property to its default value. If \fB-t\fR is not used, any persistent value of the property will be deleted. Only one property can be modified at a time. If the \fIaddrobj\fR is of type \fBaddrconf\fR, the command returns an error.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the resets are temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR, \fB--prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+A property to be reset.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-addrprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...] [\fIaddrobj\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the current and persistent values of one or more properties, either for all the configured address objects or for the specified \fIaddrobj\fR. Several properties of interest can be retrieved at one time by providing comma-separated property names to \fB-p\fR option. If the \fB-p\fR option is not specified, all available properties are displayed. If the \fIaddrobj\fR is of type \fBaddrconf\fR, the command returns an error.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The \fIfield\fR name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each \fIaddrobj\fR, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDROBJ\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the address object.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The read/write permissions of the property. The value shown will be \fBr\fR (read only), \fBw\fR (write only) or \fBrw\fR (read/write).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current value of the property. For the disabled addresses, because the value is not set, the value displays as a double hyphen (\fB--\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The persistent value of a property. Persistent values are the values that will be reapplied on reboot.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default value of the property. If the property has no default value, double hyphen (\fB--\fR) is shown.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of the values a property can have. If the values span a numeric range, \fImin\fR - \fImax\fR might be shown as shorthand. If the possible values are unknown, a question mark (\fB?\fR) is displayed or if they are unbounded, double hyphen (\fB--\fR) will be shown.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,..., \fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display. See the sections on address object properties following subcommand descriptions.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-prop\fR [\fB-t\fR] \fB-p\fR prop[+ | -]=\fIvalue\fR[,...] \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Modifies the value of a protocol property to the \fIvalue\fR specified. If the property takes multiple values, the values should be specified with a comma as the delimiter. Only one property can be specified at a time. By default, the value is persistent and will be reapplied on reboot. The properties supported on a protocol and the property's possible values can be retrieved using the \fBshow-prop\fR subcommand
+.sp
+The following protocols are supported: \fBip\fR, \fBipv4\fR, \fBipv6\fR, \fBicmp\fR, \fBtcp\fR, \fBudp\fR and \fBsctp\fR.
+.sp
+Note that for some properties, it might be possible to set the value of the property both globally, and on a per-interface basis. The per-interface value can be set using the \fBset-ifprop\fR subcommand. In such cases, if the administrator chooses to customize the per-interface value of the property to be distinct from the global value, the per-interface value overrides the global setting for that interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the changes to properties are temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop[+|-]=\fIvalue\fR[,...], \fB--prop\fR prop[+|-]=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A property to set to the specified values. It also provides the following "qualifiers" to perform add and delete operations in addition to assignment.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.sp .6
+.RS 4n
+Adds the given value to the current list of value(s).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes the given value from the current list of value(s).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.sp .6
+.RS 4n
+Makes a new assignment and removes all the current value(s).
+.RE
+
+See \fBEXAMPLES\fR for more information on how to use the qualifiers.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-prop\fR [\fB-t\fR] \fB-p\fR \fIprop\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Resets a property of the specified protocol to the default value of the property. If -t is not used, any persistent value of the property will be deleted. Only one property can be modified at a time.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the resets are temporary and changes apply only to the active configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR, \fB--prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+A property to be reset.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-prop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...] \fIprotocol\fR | \fIprotocol\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the current and persistent values of one or more properties, either for all supported protocols or for the specified protocol. Several properties of interest can be retrieved at a time by providing comma-separated property names to \fB-p\fR option. If the \fB-p\fR option is not specified, all available properties are displayed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The \fIfield\fR name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each \fIprotocol\fR, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROTO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The read/write permissions of the property. The value shown will be \fBr\fR (read only), \fBw\fR (write only) or \fBrw\fR (read/write).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current value of the property. For the disabled addresses, because the value is not set, the value displays as a double hyphen (\fB--\fR). If the value is unknown, it is displayed as a question mark (\fB?\fR). If the current value of the property is not in the set of listed \fBPOSSIBLE\fR values, the keyword \fBcustom\fR is displayed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The persistent value of a property. Persistent values are the values that will be reapplied on reboot.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default value of the property. If the property has no default value, double hyphen (\fB--\fR) is shown.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of the values for the property setting to be used with the \fBset-prop\fR subcommand. If the values span a numeric range, \fImin\fR - \fImax\fR might be shown as shorthand. If the possible values are unknown, a question mark (\fB?\fR) is displayed or if they are unbounded, double hyphen (\fB--\fR) will be shown.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,..., \fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display. See the sections on protocol properties following subcommand descriptions.
+.RE
+
+For the supported list of properties for every protocol, see "Protocol Properties" below.
+.RE
+
+.SS "Parseable Output Format"
+.sp
+.LP
+The \fBipadm\fR "show" subcommands have an \fB-o\fR option that displays output in a machine-parsable format. The output format is one or more lines of colon (:) delimited fields. The fields displayed are specific to the subcommand used and are listed under the entry for the \fB-o\fR option for a given subcommand. Output includes only those fields requested by means of the \fB-o\fR option, in the order requested. Note that the \fB-o\fR \fBall\fR option, which displays all the fields for a given subcommand, cannot be used with parsable output option.
+.sp
+.LP
+When you request multiple fields, any literal colon characters are escaped by a backslash (\fB\\fR) before being output. Similarly, literal backslash characters are also escaped (\fB\\\fR). This escape format is parsable by using shell \fBread\fR(1) functions with the environment variable set as \fBIFS=:\fR Note that escaping is not done when you request only a single field.
+.SS "Protocol Properties"
+.sp
+.LP
+The following protocol properties are supported:
+.LP
+Note - 
+.sp
+.RS 2
+There are protocol properties, specific to a protocol, that begin with "\fB_\fR" (underbar). These properties are subject to change or removal and by default, are not displayed in \fBipadm show-prop\fR output. See \fIOracle Solaris Tunable Parameters Reference Manual\fR for details.
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcong_default\fR (TCP, SCTP)\fR
+.ad
+.sp .6
+.RS 4n
+Specify the default congestion control algorithm used by the protocol when new connections are created. Applications can opt to choose a different algorithm at a later point in the connnection's lifetime. Only enabled algorithms can be set as default (see \fBcong_enabled\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcong_enabled\fR (TCP, SCTP)\fR
+.ad
+.sp .6
+.RS 4n
+This option can be used to enable or disable congestion control algorithms. By default, all algorithms installed on the systems are enabled. Disabled algorithms cannot be set as default (see \fBcong_default\fR) or used by applications.
+.sp
+Algorithms can be added or removed using the \fBset-prop\fR subcommand and the modifiers \fB+\fR and \fB-\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBecn\fR (TCP)\fR
+.ad
+.sp .6
+.RS 4n
+Explicit Congestion Control (see RFC 3168 for more information). Possible values are the same as above: \fBnever\fR, \fBpassive\fR, and \fBactive\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextra_priv_ports\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+This option define additional privileged ports outside of the 1-1023 range. Any program that attempts to bind the ports listed here must run as root. This prevents normal users from starting server processes on specific ports.
+.sp
+These ports can be added, removed, or assigned using the \fBset-prop\fR subcommand and the modifiers \fB+\fR, \fB-\fR, and \fB=\fR. See \fBEXAMPLES\fR below on usage.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforwarding\fR (IPv4), \fBforwarding\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+Enable/disable global IPv4 or IPv6 forwarding. All the configured interfaces will start/stop forwarding packets. Individual interfaces can override the global option using \fBset-ifprop\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostmodel\fR (IPv4), \fBhostmodel\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+Control send/receive behavior for IP packets on a multi-homed system. The value of \fBhostmodel\fR can be set to \fBstrong\fR or \fBweak\fR, corresponding to the equivalent end-system model definitions of RFC 1122. In addition, a third value of \fBsrc-priority\fR is also supported. In the \fBsrc-priority\fR \fBhostmodel\fR scenario, a packet will be accepted on any interface, as long as the packet's destination IP address is configured and marked \fBUP\fR on one of the host's interfaces. When transmitting a packet, if multiple routes for the IP destination in the packet are available, the system will prefer routes where the IP source address in the packet is configured on the outgoing interface. If no such route is available, the system will fall back to selecting the "best" route, as with the weak ES case.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.sp .6
+.RS 4n
+Maximum size of the send or receive socket buffer. The current value of this property limits the maximum value of \fBrecv_buf\fR and \fBsend_buf\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.br
+.na
+\fB\fBsend_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.sp .6
+.RS 4n
+Modifies the receive or send buffer sizes for the specified protocol. The maximum value of these properties is bound by the current value of the \fBmax_buf\fR property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsack\fR (TCP)\fR
+.ad
+.sp .6
+.RS 4n
+Selective acknowledgment (SACK) allows recipients to selectively acknowledge out-of-sequence data and is intended to increase performance for data transfers over lossy links. See RFC 2018 for information on the SACK. Possible values and meanings:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnever\fR\fR
+.ad
+.sp .6
+.RS 4n
+Will neither accept SACK nor send out SACK information.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpassive\fR\fR
+.ad
+.sp .6
+.RS 4n
+Will accept SACK but not send out.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactive\fR\fR
+.ad
+.sp .6
+.RS 4n
+Will both accept SACK and send out SACK information.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmallest_anon_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.br
+.na
+\fB\fBlargest_anon_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+These options define the upper and lower bounds on ephemeral ports. Ephemeral (means short-lived) ports are used when establishing outbound network connections. Note that the current value of the \fBsmallest_anon_port\fR should be always less than or equal to the current value of \fBlargest_anon_port\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmallest_nonpriv_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+This option define the start of non-privileged ports. The non-privileged port range normally starts at 1024. Any program that attempts to bind a non-privileged port does not have to run as root.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBttl\fR (IPv4), \fBhoplimit\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the value that will be set for \fBttl/hoplimit\fR field of an IPv4 or IPv6 header. Can be used to prevent the system from reaching other systems more than \fIN\fR hops away where \fIN\fR was the value specified.
+.RE
+
+.SS "Interface Properties"
+.sp
+.LP
+The following interface properties are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBarp\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables/disables the use of the Address Resolution Protocol (ARP) on an interface. ARP is used in mapping between network level addresses and link level addresses. This is currently implemented for mapping between IPv4 addresses and MAC addresses. Possible values are \fBon\fR or \fBoff\fR. Default is \fBon\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexchange_routes\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables/disables exchanging of routing information on this interface. Possible values are \fBon\fR or \fBoff\fR. Default is \fBoff\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the group name of the IPMP interface for which this interface is an underlying interface. If the interface is of class IPMP, this specifies the name of the IPMP group. It is a read-write property only on IPMP interfaces. For other interface classes, this property is read-only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforwarding\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables/disables IP forwarding on an interface. When enabled, the IP packets can be forwarded to and from the interface. Possible values are \fBon\fR or \fBoff\fR. Default is \fBoff\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmetric\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set the routing metric of the interface to \fIn\fR; if no value is specified, the default is \fB0\fR. The routing metric is used by the routing protocol. Higher metrics have the effect of making a route less favorable. Metrics are counted as additional hops to the destination network or host.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set the maximum transmission unit of the interface to \fIn\fR. For many types of networks, the MTU has an upper limit, for example, 1500 for Ethernet.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnud\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables/disables the neighbor unreachability detection mechanism on a point-to-point physical interface. Possible values are \fBon\fR or \fBoff\fR. Default is \fBon\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstandby\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies whether the interface is configured as a standby interface for an IPMP group. This property is not applicable to IPMP interfaces.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusesrc\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies a physical or virtual interface to be used for source address selection. If the keyword \fBnone\fR is used, then any previous selection is cleared.  Default is \fBnone\fR.
+.RE
+
+.SS "Address Properties"
+.sp
+.LP
+The address properties listed below are supported. Note that modifying address properties for \fBaddrconf\fR address objects is not supported.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeprecated\fR\fR
+.ad
+.sp .6
+.RS 4n
+The address should no longer used as a source address in new communications, but packets addressed to this address are processed as expected. Possible values are \fBon\fR or \fBoff\fR. Default is \fBoff\fR. This property is not supported on an address object of type \fBdhcp\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprefixlen\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the number of left-most contiguous bits of the address that comprise the IPv6 prefix or IPv4 netmask of the address. The remaining low-order bits define the host part of the address. When \fBprefixlen\fR is converted to a text representation of the address, the address contain 1's for the bit positions that are to be used for the network part, and 0's for the host part. The \fBprefixlen\fR must be specified as a single decimal number. This property is not supported on an address object of type \fBdhcp\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivate\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the addresses should not be advertised by the \fBin.routed\fR routing daemon. Possible values are \fBon\fR or \fBoff\fR. Default is \fBoff\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreqhost\fR\fR
+.ad
+.sp .6
+.RS 4n
+The hostname to which the client would like the DHCP server to map the client's leased IPv4. A hostname request is not guaranteed to be fulfilled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransmit\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables packets to be transmitted using the addresses referenced by the address object. This is the default behavior when the address is up. Possible values are \fBon\fR or \fBoff\fR. Default is \fBon\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzone\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the zone in which all the addresses referenced by the address object should be placed. The named zone must be active in the kernel in the ready or running state. The interface is unplumbed when the zone is halted or rebooted. The zone must be configured to be an shared-IP zone. \fBzonecfg\fR(1M) is used to assign network interface names to exclusive-IP zones. To modify the zone assignment such that it persists across reboots, please use \fBzonecfg\fR(1M). Possible values are the list of all the zones configured on the system. Default is \fBglobal\fR.
+.RE
+
+.SH OPERANDS
+.sp
+.LP
+Each \fBipadm\fR subcommand operates on one of the following objects:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+An address configured on a network interface is identified by an \fIaddrobj\fR. An \fIaddrobj\fR consists of two parts. The first part is the name of the network interface on which the address is configured. The second part is a user-specified string that can use any of the alphanumeric characters and can be at-most 32 characters in length and must begin with a letter. The two parts of the \fIaddrobj\fR are delimited by a slash (\fB/\fR). An address object always represents a unique set of address(es) in a system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Name of the network interface on which network address is configured. In general, the name can use any alphanumeric characters, plus the underscore (\fB_\fR) and the period (\fB\&.\fR), but must start with an alphabetic character and end with a number.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Name of the TCP/IP Internet protocol family for which a property is to be configured. Following protocols are supported: \fBip\fR, \fBipv4\fR, \fBipv6\fR, \fBicmp\fR, \fBtcp\fR, \fBsctp\fR and \fBudp\fR.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCreating IPv4 Static Addresses
+.sp
+.LP
+The following command creates the address 10.2.3.4/24 on interface \fBbge1\fR (linkname \fBnet1\fR) and marks the address \fBup\fR, for use.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command creates another address 10.2.3.5/24 on interface \fBnet1\fR but marks the address \fBdown\fR until explicitly marked up.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-addr -T static -d -a 10.2.3.5/24 net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Note that 10.2.3.5/24 is assumed to be the local address, because local was not used and there was only one address.
+
+.sp
+.LP
+The following command marks the address object \fBnet1/v4static2\fR \fBup\fR that was previously marked \fBdown\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm up-addr net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+If the \fBDUPLICATE\fR flag was set on the address object, then \fBrefresh-addr\fR will verify that the address is still a duplicate on the network. If it is not, the address will be marked \fBup\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm refresh-addr net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command lists the addresses that were configured. This shows that the address \fBnet1/v4static2\fR is not a duplicate.
+
+.sp
+.in +2
+.nf
+# \fBipadm show-addr\fR
+ADDROBJ          TYPE    STATE      ADDR
+lo0/v4           static  ok         127.0.0.1/8
+lo0/v6           static  ok         ::/128
+net1/v4static1   static  ok         10.2.3.4/24
+net1/v4static2   static  ok         10.2.3.10/24
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRCreating DHCPv4-controlled Addresses
+.sp
+.LP
+The following command obtains a DHCPv4 address on interface \fBbge1\fR (linkname \fBnet1\fR).
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T dhcp net1/dhaddr\fR
+# \fBipadm show-addr net1/dhaddr\fR
+ADDROBJ          TYPE    STATE      ADDR
+net1/dhaddr      dhcp    ok         10.8.48.173/25
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command extends the lease duration for the DHCPv4 address object \fBnet1/dhaddr\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm refresh-addr net1/dhaddr\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRCreating IPv6 Addresses
+.sp
+.LP
+The following sequence of commands auto-configures IPv6 addresses on \fBbge1\fR (linkname \fBnet1\fR) using \fBin.ndpd\fR with the default interface ID. A link-local address is configured first, followed by \fBin.ndpd\fR adding the stateless and stateful auto-configured addresses.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T addrconf net1/v6addr\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command creates a IPv6 static address. To be able to configure an IPv6 address that is not a link-local address, the interface should already have a link-local address configured on it. It was accomplished by the previous step with \fB-T\fR \fBaddrconf\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-addr -T static -a local=2ff0::f3ad/64 net1/v6static\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command changes the prefix length of an IPv6 address.
+
+.sp
+.in +2
+.nf
+# \fBipadm set-addrprop -p prefixlen=80 net1/v6static\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+All the auto-configured addresses and the updated prefix length can be viewed by listing the addresses:
+
+.sp
+.in +2
+.nf
+# \fBipadm show-addr\fR
+ADDROBJ       TYPE     STATE     ADDR
+lo0/v4        static   ok        127.0.0.1/8
+lo0/v6        static   ok        ::/128
+net1/v6addr   addrconf ok        fe80::203:baff:fe94:2f01/10
+net1/v6addr   addrconf ok        2002:a08:39f0:1:203:baff:\e
+                                            fe94:2f00/64
+net1/v6addr   addrconf ok        2001:db8:1:2::402f/128
+net1/v6static static   ok        2ff0::f3ad/80
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRConfiguring an IPv4 Tunnel
+.sp
+.LP
+The first command below (\fBipadm\fR) creates the tunnel source address. Then, a \fBdladm\fR command creates the tunnel link. The final \fBipadm\fR commands configure the IPv4 and IPv6 addresses on the tunnel IP interface.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static\fR
+# \fBdladm create-iptun -T ipv4 -a local=10.2.3.4,remote=10.2.3.5 tun0\fR
+# \fBipadm create-ip tun0\fR 
+# \fBipadm create-addr -T static \e\fR
+       \fB-a local=173.129.134.1,remote=173.129.134.2 tun0/v4tunaddr\fR
+# \fBipadm create-addr -T static \e\fR
+       \fB-a local=2ff1::3344,remote=2ff1::3345 tun0/v6tunaddr\fR
+# \fBipadm show-addr\fR
+ADDROBJ        TYPE   STATE     ADDR
+lo0/v4         static ok        127.0.0.1/8
+lo0/v6         static ok        ::/128
+net1/v4static  static ok        10.2.3.4/24
+tun0/v4tunaddr static ok        173.129.134.1-->173.129.134.2
+tun0/v6tunaddr static ok        2ff1::3344-->2ff1::3345
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRViewing All of the Interfaces
+.sp
+.LP
+The following command enables you to view all interfaces.
+
+.sp
+.in +2
+.nf
+# \fBipadm show-if -o all\fR
+IFNAME  CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+lo0     loopback ok       yes    -m-v------46  --46       --
+net0    ip       ok       yes    bm--------46  --46       --
+e1000g0 ip       ok       yes    bm---l----46  -l46       --
+e1000g1 ip       ok       yes    bm---l----46  -l46       --
+ipmp0   ipmp     down     yes    bm--------46  --46       e1000g0 e1000g1
+tun0    ip       failed   no     -mp-------46  --46       --
+vni0    vni      disabled no     bm-v--------  --46       --
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRDisplaying Interface Properties
+.sp
+.LP
+The following command displays all interface properties for a specified interface.
+
+.sp
+.in +2
+.nf
+# \fBipadm show-ifprop net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   arp             ipv4  rw   on      --         on       on,off
+net0   forwarding      ipv4  rw   off     on         off      on,off
+net0   metric          ipv4  rw   2       2          0        --
+net0   mtu             ipv4  rw   1500    --         1500     68-1500
+net0   exchange_routes ipv4  rw   off     --         off      on,off
+net0   usesrc          ipv4  rw   none    --         none     --
+net0   forwarding      ipv6  rw   off     --         off      on,off
+net0   metric          ipv6  rw   2       2          0        --
+net0   mtu             ipv6  rw   1500    --         1500     1280-1500
+net0   nud             ipv6  rw   on      --         on       on,off
+net0   exchange_routes ipv6  rw   off     on         off      on,off
+net0   usesrc          ipv6  rw   none    --         none     --
+net0   group           ip    rw   grp0    --         --       --
+net0   standby         ip    r-   off     --         off      on,off
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 7 \fRConfiguring per-Interface Properties
+.sp
+.LP
+The following command sets the IPv4 MTU of the interface \fBnet0\fR to \fB900\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm set-ifprop -m ipv4 -p mtu=900 net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command sets the IPv6 MTU of the interface \fBnet0\fR to \fB1400\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm set-ifprop -m ipv6 -p mtu 1400 net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+View the results:
+
+.sp
+.in +2
+.nf
+# \fBipadm show-ifprop -p mtu net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   mtu             ipv4  rw   900     900        1500     68-1500
+net0   mtu             ipv6  rw   1400    1400       1500     1280-1500
+
+# \fBipadm show-ifprop -m ipv6 -p mtu net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   mtu             ipv6  rw   1400    1400       1500     1280-1500
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fRDisplaying Supported Properties
+.sp
+.LP
+The following command displays the properties supported on TCP.
+
+.sp
+.in +2
+.nf
+# \fBipadm show-prop tcp\fR
+PROTO PROPERTY              PERM CURRENT PERSISTENT DEFAULT   POSSIBLE
+tcp   ecn                   rw   active  active     passive   never,passive,
+                                                                      active
+tcp   extra_priv_ports      rw   --      1,65535    2049,4045 1-65535
+tcp   largest_anon_port     rw   32768   32768      65535     1024-65535
+tcp   sack                  rw   active  --         active    never,passive,
+                                                                      active
+tcp   recv_buf              rw   29567   --         49152     2048-1073741824
+tcp   send_buf              rw   21354   --         49152     4096-1073741824
+tcp   max_buf               ro   65536   --         32768     4096-1073741824
+tcp   smallest_anon_port    rw   32768   --         32768     1024-65535
+tcp   smallest_nonpriv_port rw   1024    --         1024      1024-32768
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 9 \fRConfiguring Global IPv4 Forwarding
+.sp
+.LP
+The following command sequence configures global IPv4 forwarding and overrides that setting for interface \fBnet0\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p forwarding=on ipv4\fR
+# \fBipadm set-ifprop -p forwarding=off -m ipv4 net0\fR
+# \fBipadm show-prop -p forwarding ipv4\fR
+PROTO PROPERTY              PERM CURRENT PERSISTENT DEFAULT POSSIBLE
+ipv4  forwarding            rw   on      on         off     on,off
+
+# \fBshow-ifprop -p forwarding -m ipv4 net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   forwarding      ipv4  rw   off     off        off      on,off
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 10 \fRUsing Qualifiers in \fBset-prop\fR Subcommand
+.sp
+.LP
+The following command sequence uses the plus and minus (\fB+\fR, \fB-\fR) qualifiers to add 1047, 1048, and 1049 as extra privileged ports for TCP.
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p extra_priv_ports=1047 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1048 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1049 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1050 tcp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command deletes 1048 as extra privileged port.
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p extra_priv_ports-=1048\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command displays all the extra privileged ports for TCP.
+
+.sp
+.in +2
+.nf
+# \fBipadm show-prop -p extra_priv_ports tcp\fR
+PROTO PROPERTY             PERM CURRENT    PERSISTENT  DEFAULT   POSSIBLE
+ipv4  extra_priv_ports     rw   1047,1049, 1047,1049,  2049,4045 1-65535
+                                1050       1050
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 11 \fREnabling and Disabling Objects
+.sp
+.LP
+The following command sequences enables and disables interface and address objects and display the results of those actions.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static\fR
+# \fBipadm set-addrprop -p private=yes net1/v4static\fR
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command disables the address object \fBnet1/v4static\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-addr -t net1/v4static\fR
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command disables the interface object \fBnet1\fR.
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t net1\fR
+# \fBipadm show-if net1 -o all\fR
+IFNAME     CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+net1       ip       disabled no     bm----------  --46       --
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command enables the interface object from the persistent configuration.
+
+.sp
+.in +2
+.nf
+# \fBipadm enable-if -t net1\fR
+# \fBipadm show-if net1 -o all\fR
+IFNAME     CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+net1       ip       ok       yes    bm--------46  --46       --
+
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Note that when the interface object is enabled all the address objects configured on that interface are enabled also.
+
+.sp
+.LP
+The following command creates persistent configuration for the \fBnet0\fR interface in a non-global exclusive-IP zone so that the \fBnet0\fR interface will be configured with the set of addresses made available through the \fBallowed-address\fR resource from the global zone on the next reboot.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fBnet0\fR interface can also be configured with the available set of \fBallowed-address\fR values in the non-global exclusive-IP zone without a reboot by executing the following commands:
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t net0\fR
+# \fBipadm enable-if -t net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 12 \fRCreating IPMP Interfaces
+.sp
+.LP
+The following command sequence creates an IPMP interface and adds underlying interfaces to it.
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip e1000g0\fR
+# \fBipadm create-ip e1000g1\fR
+# \fBipadm create-ip e1000g2\fR
+# \fBipadm set-ifprop -p standby=on -m ip e1000g2\fR
+# \fBipadm create-ipmp testgroup0\fR
+# \fBipadm add-ipmp -i e1000g0 -i e1000g1 -i e1000g2 testgroup0\fR
+# \fBipadm create-addr -T static -a local=192.168.80.5/24 testgroup0/data1\fR
+# \fBipadm create-addr -T static -a local=192.168.80.6/24 testgroup0/data2\fR
+# \fBipadm show-if\fR
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+e1000g0    ip       ok       yes    --
+e1000g1    ip       ok       yes    --
+ipmp0      ipmp     ok       yes    e1000g0 e1000g1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command sequence disables and subsequently enables the IPMP interface.
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t testgroup0\fR
+\fBipadm show-if\fR
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+e1000g0    ip       disabled no     --
+e1000g1    ip       disabled no     --
+ipmp0      ipmp     disabled no     e1000g0 e1000g1
+# \fBipadm enable-if -t testgroup0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command sequence removes underlying interface from the IPMP interface and then deletes the IPMP interface.
+
+.sp
+.in +2
+.nf
+\fBipadm remove-ipmp -i e1000g0 -i e1000g1 testgroup0\fR
+\fBipadm delete-ipmp testgroup0\fR
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBread\fR(1), \fBarp\fR(1M), \fBcfgadm\fR(1M), \fBdhcpagent\fR(1M), \fBdladm\fR(1M), \fBif_mpadm\fR(1M), \fBifconfig\fR(1M), \fBin.mpathd\fR(1M), \fBin.ndpd\fR(1M), \fBndd\fR(1M), \fBzonecfg\fR(1M), \fBnsswitch.conf\fR(4), \fBattributes\fR(5), \fBdhcp\fR(5), \fBvni\fR(7D)
+.sp
+.LP
+\fIOracle Solaris Tunable Parameters Reference Manual\fR
+.sp
+.LP
+Postel, J., RFC 791, \fIInternet Protocol - DARPA Internet Program Protocol Specification\fR, Information Sciences Institute, University of Southern California, September 1981.
+.sp
+.LP
+Hinden, R. and S. Deering, \fIIP Version 6 Addressing Architecture\fR, RFC 4291, February 2006.
+.sp
+.LP
+Thomson, S., Narten, T., and T. Jinmei, \fIIPv6 Stateless Address AutoConfiguration\fR, RFC 4862, September 2007.
+.sp
+.LP
+Droms, R., Bound, J., Volz, B., Lemon, T., Perkins, C., and M. Carney, \fIDynamic Host Configuration Protocol for IPv6 (DHCPv6)\fR, RFC 3315, July 2003.
+.sp
+.LP
+Narten, T., Draves, R., and S. Krishnan, \fIPrivacy Extensions for Stateless Address AutoConfiguration in IPv6\fR, RFC 4941, September 2007.
+.sp
+.LP
+S. Routhier, Ed., \fIManagement Information Base for the Internet Protocol (IP)\fR, RFC 4293, April 2006
+.sp
+.LP
+Braden, R., RFC 1122, \fIRequirements for Internet Hosts -  Communication  Layers\fR,  Information Sciences Institute,  University of Southern California, October 1989.

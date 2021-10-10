@@ -1,0 +1,233 @@
+'\" te
+.\"  Copyright (c) 1992-1996 Competitive Automation, Inc. 
+.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved.
+.TH dhcpinfo 1 "2009 年 5 月 15 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+dhcpinfo \- DHCP を介して受信されたパラメータ値の表示
+.SH 形式
+.LP
+.nf
+\fBdhcpinfo\fR [\fB-c\fR] [\fB-i\fR \fIinterface\fR] [\fB-n\fR \fIlimit\fR] [\fB-v 4|6\fR] \fIcode\fR
+.fi
+
+.LP
+.nf
+\fBdhcpinfo\fR [\fB-c\fR] [\fB-i\fR \fIinterface\fR] [\fB-n\fR \fIlimit\fR] [\fB-v 4|6\fR] \fIidentifier\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBdhcpinfo\fR ユーティリティは、コマンド行で要求されたパラメータの \fBDHCP\fR 提供値を出力します。このパラメータは、\fBDHCP\fR 仕様の数値コードか、\fBdhcp_inittab\fR(4) にリストされているニーモニック識別子のどちらかによって識別されます。このコマンドは、システムブート時に \fBinit\fR(1M) によってブートされるシェルスクリプトのコマンド置換で使用されます。このコマンドは、システムブート時またはイベントスクリプト内で、\fBDHCP\fR クライアントデーモンと最初に通信を行います。詳細は、\fBdhcpagent\fR(1M) を参照してください。このコマンドはまず DHCP クライアントデーモンの \fBdhcpagent\fR(1M) と通信して、要求されたインタフェースで \fBDHCP\fR が正常に終了したかどうかを確認します。\fBDHCP\fR が、要求されたインタフェースで正常に終了していれば、\fBdhcpinfo\fR は要求されたパラメータの値を取り出します。\fBdhcpinfo\fR が表示したパラメータ値は、その終了ステータスを検査してから使用します。\fBexit\fR(1) を参照してください。
+.sp
+.LP
+すべての \fBDHCP\fR パラメータのニーモニック識別コードの一覧は、\fBdhcp_inittab\fR(4) を参照してください。DHCPv4 パラメータの詳細は、「\fIRFC 2132, DHCP Options and BOOTP Vendor Extensions\fR」を参照してください。DHCPv6 パラメータの詳細は、「RFC 3315, Dynamic Host Configuration Protocol for IPv6 (DHCPv6)」を参照してください。
+.SS "出力形式"
+.sp
+.LP
+\fBdhcpinfo\fR からの出力は、1 行または複数行の \fBASCII\fR テキストからなります。出力の書式は、要求されたパラメータによって異なります。行ごとに返される値の数と、特定のパラメータで出力される行の合計数は、\fBdhcp_inittab\fR(4) で規定されているように、それぞれ、パラメータ指定の精度と最大値によって決まります。\fB\fR\fB\fR
+.sp
+.LP
+各値の書式は、\fBdhcp_inittab\fR(4) で規定されているオプションのデータ型によって決まります。使用できるデータ型と書式は次のとおりです。 
+.sp
+
+.sp
+.TS
+tab();
+cw(1.4i) cw(2.1i) cw(2i) 
+lw(1.4i) lw(2.1i) lw(2i) 
+.
+データ型表記形式\fBdhcp_inittab\fR(4) 型
+符号なし数値１ つまたは複数の １０ 進数T{
+\fBUNUMBER8\fR, \fBUNUMBER16\fR, \fBUNUMBER32\fR, \fBUNUMBER64\fR
+T}
+符号付き数値T{
+１ つまたは複数の １０ 進数、負符号を付けることができる
+T}T{
+\fBSNUMBER8\fR, \fBSNUMBER16\fR, \fBSNUMBER32\fR, \fBSNUMBER64\fR
+T}
+\fBIP\fR アドレス小数点付きの表記\fBIP\fR
+IPv6 アドレスコロン区切りの表記\fBIPv6\fR
+オクテットT{
+\fB0x\fR の後に 2 桁の 16 進数が続く文字列
+T}\fBOCTET\fR
+文字列T{
+0 個またはそれ以上の \fBASCII\fR 文字
+T}\fBASCII\fR
+DUIDDHCP 一意識別子のテキスト\fBDUID\fR
+ドメイン名T{
+RFC 1035 の書式に基づく標準のドット区切りドメイン名
+T}\fBDOMAIN\fR
+.TE
+
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 16n
+.rt  
+出力を標準の書式で表示します。これは、精度 \fB1\fR の \fBOCTET\fR 書式と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinterface\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBDHCP\fR パラメータの値を取り出すインタフェースを指定します。このオプションを指定しないと、一次インタフェースが使用されます。
+.sp
+\fBifconfig\fR(1M) によりシステムの一次インタフェースが選択されていない場合、または \fB-i\fR によりこのコマンドの一次インタフェースが選択されていない場合、システムはインタフェースを自動的に選択してそれを現在のコマンド呼び出しの一次インタフェースとみなします。このときに選択されるのは、名前が語彙的に先頭にあり、DHCP パラメータが付加されているインタフェースです。選択内容が、システムの状態に影響を及ぼすことはありません。一次インタフェースの設定には、\fBifconfig\fR(1M) を使用します。 
+.sp
+\fBdhcpagent\fR(1M) \fBeventhook\fR スクリプトを操作する場合には、一次選択に依存するのではなく、\fB-i\fR を使用して目的のインタフェースを指定することをお勧めします。
+.sp
+DHCPv6 では、インタフェース名は、\fBdhcpagent\fR により作成されたいずれかの論理インタフェースではなく、物理インタフェースの名前を使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIlimit\fR\fR
+.ad
+.RS 16n
+.rt  
+表示される値のリストを \fIlimit\fR で指定された行数に制限します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fB4 | 6\fR\fR
+.ad
+.RS 16n
+.rt  
+クエリー検索を行う DHCP バージョンを指定します。DHCPv4 では \fB-v4\fR を、DHCPv6 では \fB-v6\fR をそれぞれ使用します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcode\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBDHCP\fR 仕様で定義されている、要求された \fBDHCP\fR パラメータの数値コード。ベンダーオプションには、DHCPv4 では \fB256\fR を、DHCPv6 では \fB65536\fR をそれぞれ実際のベンダーコードに追加して指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIidentifier\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBdhcp_inittab\fR(4) にリストされている、要求された \fBDHCP\fR パラメータのニーモニック記号
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+処理が正常に終了しなかった。\fBDHCP\fR クライアントデーモンが実行されていない、インタフェースが構成できなかった、あるいは十分な \fBDHCP\fR 応答が受信されなかった。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+不正な引数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+処理がタイムアウトした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.RS 5n
+.rt  
+起きるはずのないシステムエラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdhcpagent\fR(1M), \fBifconfig\fR(1M), \fBinit\fR(1M), \fBdhcp_inittab\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+『\fIRFC 2132, DHCP Options and BOOTP Vendor Extensions\fR』、Alexander, S. (Silicon Graphics, Inc.)、R. Droms (Bucknell University) 共著、1997 年 3 月
+.sp
+.LP
+『\fIRFC 3315, Dynamic Host Configuration Protocol for IPv6 (DHCPv6)\fR』、Droms, R. (Cisco Systems) 著、2003 年 7 月 
+.sp
+.LP
+『\fIRFC 1035, Domain names - implementation and specification\fR』、Mockapetris, P.V. (ISI) 著、1987 年 11 月

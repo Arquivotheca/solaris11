@@ -1,0 +1,364 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH fsck 1M "2010 年 9 月 13 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fsck \- ファイルシステムの検査および修復
+.SH 形式
+.LP
+.nf
+\fBfsck\fR [\fB-F\fR \fIFSType\fR] [\fB-m\fR] [\fB-V\fR] [\fB-v\fR] [\fIspecial\fR]...
+.fi
+
+.LP
+.nf
+\fBfsck\fR [\fB-F\fR \fIFSType\fR] [\fB-n\fR | N | y | Y] [\fB-V\fR] [\fB-v\fR] 
+     [\fB-o\fR \fIFSType-specific-options\fR] [\fIspecial\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfsck\fR はファイルシステムの状態を検査し、不整合を対話形式で修復します。ファイルシステムに不整合がある場合、デフォルトでは、修復処理を行う前に、ユーザーからの \fByes\fR または \fBno\fR の応答を待機します。ユーザーに書き込み権が与えられていない場合、\fBfsck\fR はデフォルトで \fBno\fR の応答に対する動作をします。修復処理によっては、データが失われることがあります。データが失われる量と重要度は、診断出力から判断できます。
+.sp
+.LP
+\fIFSType-specific-options\fR は、(スペースを入れずに) コンマで区切ったオプションのリストまたはキーワード / 属性のペアのリストとして指定します。これらは、\fIFSType-\fR 固有のコマンドモジュールによって解釈されます。
+.sp
+.LP
+\fIspecial\fR は、ファイルシステムが配置されている文字型特殊デバイスを指定します。\fB/dev/rdsk/c1t0d0s7\fR などがその例です。注 : ブロック型特殊デバイスではなく、文字型特殊デバイスを使用してください。\fBfsck\fR は、ブロック型特殊デバイスがマウントされている場合には、動作しません。
+.sp
+.LP
+\fIspecial\fR デバイスを指定しなかった場合、\fBfsck\fR は \fB/etc/vfstab\fR に指定されているファイルシステムを検査します。\fB/etc/vfstab\fR の中で、\fBfsckdev\fR フィールドに文字型特殊デバイスエントリがあり、\fBfsckpass\fR フィールドにゼロ以外の数値エントリのあるエントリが検査されます。\fB-F\fR\fI FSType\fR を指定すると、指示されたタイプのファイルシステムタイプだけが検査されます。
+.sp
+.LP
+\fIspecial\fR が指定されていても、 \fB-F\fR が指定されていない場合は、\fB/etc/vfstab\fR の対応するエントリを探すことによって、ファイルシステムタイプが判別されます。対応するエントリがない場合は、\fB/etc/default/fs\fR に指定されているデフォルトのローカルファイルシステムタイプが使用されます。
+.sp
+.LP
+ファイルシステムタイプが並列検査をサポートしている場合 (たとえば \fBufs\fR) 、検査可能ないくつかのファイルシステムを並列に検査できます。詳細は、ファイルシステム固有のマニュアルページ (\fBfsck_ufs\fR(1M) など) を参照してください。
+.SH オプション
+.sp
+.LP
+以下の汎用オプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIFSType\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作するファイルシステムのタイプを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+検査だけで修復は行いません。このオプションを指定すると、ファイルシステムがマウントできるステータスかどうかが検査され、該当する終了ステータスが返されます。ファイルシステムがマウントできる状態であれば、\fBfsck\fR は次のメッセージを表示します。 
+.sp
+.in +2
+.nf
+ufs fsck: sanity check: /dev/rdsk/c0t3d0s1 okay
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR | \fB-N\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfsck\fR からのすべての問い合わせに対して \fBno\fR の応答をするものとみなします。ファイルシステムを書き込みでオープンしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド行を展開して表示しますが、コマンドは実行しません。このオプションは、コマンド行の検査および検証するのに使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細な出力を有効にします。一部のファイルシステム固有の \fBfsck\fR 実装では、サポートされない可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR | \fBY\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfsck\fR からのすべての問い合わせに対して \fByes\fR の応答をするとみなします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIspecific-options\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIspecific-options\fR には、次のサブオプションの組み合わせを (スペースは入れずに) コンマで区切って指定します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムのスーパーブロックとしてブロック \fIn\fR を使用します。ブロック 32 はつねに、代替スーパーブロックの 1 つです。\fB-Nv\fR オプションを指定して \fBnewfs\fR(1M) を実行すると、他のスーパーブロックの位置を調べることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.sp .6
+.RS 4n
+古い (静的テーブル) 形式のファイルシステムを新しい (動的テーブル) 形式に変換します。ファイルシステムが新しい形式のときは、ファイルシステム構成が古い形式をサポートできる場合、古い形式に変換します。対話モードの場合、変換の向きが表示され、変換を実行するかどうかが尋ねられます。\fB\fR否定応答を返すと、そのファイルシステムに対してそれ以上の操作は実行されません。非対話モードの場合は、変換の向きが表示され、可能であれば、ユーザーとの対話なしで実行されます。すべてのファイルシステムを一括変換する場合は、非対話モードでの変換が便利です。ファイルシステムのタイプは \fBfstyp\fR(1M) の出力の先頭行からわかります。注 : \fBc\fR オプションを使用することはほとんどありません。4.1 より前のリリースとの互換性を確保する場合に限って指定してください。今後のリリースにこのオプションが含まれるかどうかは保証されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.sp .6
+.RS 4n
+スーパーブロックのクリーンフラグの状態に関係なく、ファイルシステムを強制的に検査します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+非対話 (preen) モードでファイルシステムを検査して修復します。ユーザーとの対話を必要とする問題が検出された場合には、ただちに終了します。並列ファイルシステム検査を有効にする場合、このオプションは必須です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み可能なファイルシステムだけを検査します。
+.RE
+
+.RE
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムがマウント解除されており、問題なし
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+誤ったパラメータが指定された
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB32\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムがマウント解除されており、検査が必要 (\fBfsck \fR\fB-m\fR オプションの場合のみ)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB33\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムはマウント済み
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB34\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスの状態が取得できない
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB35\fR\fR
+.ad
+.sp .6
+.RS 4n
+読み取り/書き込み用にマウントされたファイルシステムが変更された - リブート
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB36\fR\fR
+.ad
+.sp .6
+.RS 4n
+修正不可能なエラーが検出された - 通常どおりに終了
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB37\fR\fR
+.ad
+.sp .6
+.RS 4n
+処理中にシグナルが捕捉された
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB39\fR\fR
+.ad
+.sp .6
+.RS 4n
+修正不可能なエラーが検出された - 即時終了
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB40\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムは読み取り専用でマウントされており、問題なし
+.RE
+
+.SH 使用法
+.sp
+.LP
+\fBfsck\fR コマンドは、\fBlargefile\fR(5) のマニュアルページに従い、UFS ファイルシステムの\fB大規模ファイルを認識\fRします。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/fs\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのローカルのファイルシステムタイプ。デフォルト値は、\fB/etc/default/fs\fR 内で次のように設定されています。例:  \fBLOCAL=ufs\fR。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLOCAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+FSType が指定されていない場合はコマンドのデフォルトファイルタイプ
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+各ファイルシステム用のデフォルトのパラメータリスト
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBclri\fR(1M), \fBfsck_ufs\fR(1M), \fBfsdb_ufs\fR(1M), \fBfsirand\fR(1M), \fBfstyp\fR(1M), \fBmkfs\fR(1M), \fBmkfs_ufs\fR(1M), \fBmountall\fR(1M), \fBnewfs\fR(1M), \fBreboot\fR( 1M), \fBvfstab\fR(4), \fBattributes\fR(5), \fBlargefile\fR(5), \fBufs\fR(7FS)
+.SH 警告
+.sp
+.LP
+オペレーティングシステムはファイルシステムデータをバッファリングします。マウントされているファイルシステムに \fBfsck\fR を実行すると、オペレーティングシステムのバッファー内容がディスク上のものよりも古くなります。そのため、\fBfsck\fR を使用する場合は、ファイルシステムをマウント解除してください。\fI\fRそれができない場合は、\fBfsck\fR の実行後に、システムを停止させ、ただちにリブートしてください。それでも不十分な場合がしばしばあります。ファイルシステム上で \fBfsck\fR を実行した結果、ファイルシステムが変更された場合には、パニックが発生することがあります。
+.SH 注意事項
+.sp
+.LP
+このコマンドは、すべての \fIFSTypes\fR で使用できるわけではありません。
+.sp
+.LP
+Solaris 9 以降、\fBfsck\fR はディスク上の拡張属性データを管理します (拡張ファイル属性については、\fBfsattr\fR(5) を参照)。 拡張属性が設定されたファイルシステムを、属性を認識しないバージョンの Solaris (Solaris 9 より前のバージョン) にマウントすることはできますが、属性にアクセスすることはできません。\fBfsck\fR はファイルからそれらの属性を取り除き、\fBlost+found\fRに移します。属性が取り除かれたファイルシステムは、属性を認識するバージョンの Solaris 上でも完全に安定動作しますが、破壊しているファイルシステムとみなされてしまいます。この場合、属性を認識するバージョンの \fBfsck\fR を実行し、ファイルシステムを安定させてから、属性を認識する環境でそのファイルシステムを使用してください。

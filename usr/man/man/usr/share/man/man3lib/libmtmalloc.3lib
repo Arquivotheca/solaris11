@@ -1,0 +1,168 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH libmtmalloc 3LIB "23 Aug 2011" "SunOS 5.11" "Interface Libraries"
+.SH NAME
+libmtmalloc \- multi-threaded memory allocator library
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR... ] \fIfile\fR... \fB-lmtmalloc\fR [ \fIlibrary\fR... ]
+#include <\fBmtmalloc.h\fR>
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+Functions in this library provide concurrent access to heap space.
+.SH INTERFACES
+.sp
+.LP
+The shared object \fBlibmtmalloc.so.1\fR provides the public interfaces defined below. See \fBIntro\fR(3) for additional information on shared object interfaces.
+.sp
+
+.sp
+.TS
+tab();
+lw(2.75i) lw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+\fBfree\fR\fBmalloc\fR
+\fBmallocctl\fR\fBmemalign\fR
+\fBrealloc\fR\fBvalloc\fR
+.TE
+
+.SH ENVIRONMENT VARIABLES
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMTMALLOC_OPTIONS\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma separated list of options. The supported options are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMTEXCLUSIVE\fR=Y\fR
+.ad
+.sp .6
+.RS 4n
+By default, \fBlibmtmalloc\fR allocates 2*\fBNCPUS\fR buckets from which allocations occur. Threads share buckets based on their thread ID. If \fBMTEXCLUSIVE\fR is invoked, then 4*\fBNCPUS\fR buckets are used. Threads with thread id less than 2*\fBNCPUS\fR receive an exclusive bucket and thus do not need to use locks. Allocation performance for these buckets may be dramatically increased. One enabled \fBMTEXCLUSIVE\fR can not be disabled. This feature can be enabled by setting the \fBMTMALLOC_OPTION\fR \fBMTEXCLUSIVE\fR to "Y" or "y" or anything beginning with "y". Alternatively it can be enabled by a call to \fBmallocctl\fR(3MALLOC).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMTMAXCACHE\fR=16, 17, 18, 19, 20, or 21\fR
+.ad
+.sp .6
+.RS 4n
+By default, allocations less than 2^16 bytes are allocated from buckets indexed by thread id. Using this \fBMTMALLOC_OPTION\fR setting, variable size of the cached allocations can be increased to 2^17, 2^18, 2^18, 2^19, 2^20, or 2^21 by setting \fBMTMAXCACHE\fR to 17, 18, 19, 20, or 21. If \fBMTMAXCACHE\fR is set to less than 16 it is reset to 16. If \fBMTMAXCACHE\fR is set to more than 21, then it is reset to 21. This all occurs silently.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMTCHUNKSIZE\fR=\fIxx\fR\fR
+.ad
+.sp .6
+.RS 4n
+Allocation buckets are sized by the chunk size and the size of the allocation request. The default setting is 9 for 32-bit applications and 64 for 64 bit applications. For the cost of address space, performance can sometimes be enhanced by increasing this parameter. See \fBmallocctl\fR(3MALLOC).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMTREALFREE\fR=\fIxx\fR\fR
+.ad
+.sp .6
+.RS 4n
+If \fIxx\fR > 1, set the threshold for calling \fBmadvise\fR(3C) with \fBMADV_FREE\fR. Calling \fBmadvise()\fR will result in the memory associated with the allocation being returned to the kernel. When freed, allocations greater than \fIxx\fR*\fIpagesize\fR will have \fBmadvise()\fR called. If \fIxx\fR is less than 2, it will be set to 2.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMTDEBUGPATTERN\fR=Y\fR
+.ad
+.sp .6
+.RS 4n
+Writes misaligned data into the buffer after \fBfree()\fR. When the buffer is reallocated, the contents are verified to ensure that there was no access to the buffer after the free. If the buffer has been dirtied, a \fBSIGABRT\fR signal is delivered to the process. The default behavior is not to write misaligned data. The pattern used is 0xdeadbeef. Use of this option results in a performance penalty.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIMTINITBUFFER\fR=\fIY\fR\fR
+.ad
+.sp .6
+.RS 4n
+Writes misaligned data into the newly allocated buffer. This option is useful for detecting some accesses before initialization. The default behavior is not to write misaligned data to the newly allocated buffer. The pattern used is 0xbaddcafe. Use of this option results in a performance penalty.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIMTDOUBLEFREE\fR=\fIY\fR\fR
+.ad
+.sp .6
+.RS 4n
+Allows double free of a pointer. The default behavior of double free results in a core dump.
+.RE
+
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/libmtmalloc.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+shared object
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/libmtmalloc.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+64-bit shared object
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/library
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBpvs\fR(1), \fBsbrk\fR(2), \fBIntro\fR(3), \fBmalloc\fR(3C), \fBmalloc\fR(3MALLOC), \fBmapmalloc\fR(3MALLOC), \fBmtmalloc\fR(3MALLOC), \fBattributes\fR(5) 

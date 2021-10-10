@@ -1,0 +1,392 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved
+.TH pginfo 1M "18 Aug 2010" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+pginfo \- display information about processor groups
+.SH SYNOPSIS
+.LP
+.nf
+\fBpginfo\fR [\fB-T\fR] [\fB-p\fR] [\fB-v\fR] [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR]
+     [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-s\fR [\fB-v\fR] [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-c\fR | \fB-I\fR [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-h\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpginfo\fR displays information about the Processor Group (PG) hierarchy, its contents, and its characteristics. A PG is a set of CPUs that are grouped together by a common characteristic.
+.sp
+.LP
+PGs are used by the operating system to represent the CPUs that share performance relevant hardware such as the execution pipelines, caches, and so forth. These PGs are organized into a hierarchy that models the processor topology of the machine. In this hierarchy, each CPU (strand) has a leaf PG that represents the CPUs that share the most hardware with it. Each successive ancestor of the leaf PG shares progressively less hardware with the CPU until the root PG is reached. The root PG contains all of the CPUs in the system and represents the group of CPUs sharing the least hardware with each other. (See \fBEXAMPLES\fR below for an example of PG hierarchy.)
+.sp
+.LP
+If a machine does not have any performance-relevant hardware sharing relationships, then \fBpginfo\fR displays only a root PG that contains all of the CPUs in the system.
+.sp
+.LP
+By default, \fBpginfo\fR displays information about each PG in the system, including its PG ID, sharing relationship, and online and offline CPUs. It displays the PGs in depth first order by default and uses indentation to help show how the PGs are related to each other (see \fBEXAMPLES\fR below).
+.sp
+.LP
+You can specify options to:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Display the PG hierarchy graphically
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+List the PG sharing relationships that exist on the running system
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Give current PG utilization information, specifying PGs of interest by PG ID, CPU ID, or sharing relationship
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Specify that only CPU or PG IDs be displayed
+.RE
+.sp
+.LP
+In addition, there is a \fB-p\fR option to show which PGs contain the CPUs that correspond to the CPUs with a common physical relationship such as \fBsystem\fR, \fBchip\fR, and \fBcore\fR. These physical relationships describe the physical characteristics of the CPUs and might or might not encapsulate performance-relevant processor sharing relationships.
+.sp
+.LP
+If the system configuration repeatedly changes when \fBpginfo\fR is obtaining a snapshot of system data, \fBpginfo\fR displays an error message and terminates with exit status 1.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIprocessor_id\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+Interpret arguments as processor IDs and display only information about PGs that contain the specified processors.
+.sp
+When used with the \fB-T\fR option, this option limits the PG hierarchy displayed to include only the lineage of each of the specified CPUs. This option cannot be used when specifying PGs of interest by PG ID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display only CPU IDs for all CPUs belonging to the PGs. This option cannot be used at the same time as the \fB-I\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display short help message and exit with exit status 0.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display only PG IDs for the PGs. This option cannot be used at the same time as the \fB-C\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display the physical relationship that corresponds to a PGs. If a PG has the same CPUs as the whole system, a processor core, or a chip, \fBsystem\fR, \fBcore\fR, or \fBchip\fR will be displayed, as appropriate, after the sharing relationship of the PG in square brackets ("\fB[]\fR").
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIstring1\fR,\fIstring2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+Display only information about PGs with a sharing relationship name that matches any of the specified strings.
+.sp
+Each specified string can be a whole relationship name or a portion of one or more relationship names and the string matching is case-insensitive. The possible relationship names are in the list of sharing relationships that the \fB-s\fR option displays.
+.sp
+You can specify multiple \fB-r\fR options, which results in matching all PGs with a relationship name that contain any of the specified strings. When used with the \fB-T\fR option, this option limits the PG hierarchy displayed to include only the lineage of each of the PGs with the specified relationship.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIstring1\fR,\fIstring2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+Display only information about PGs with a sharing relationship name \fBother\fR than the one(s) specified.
+.sp
+String matching is the same as described above for the \fB-r\fR option. Multiple \fB-R\fR options can be entered.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display all sharing relationships supported on the running system for the specified PGs. The \fB-v\fR option can be used with this option to get the list of PGs for each sharing relationship.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+In the resulting hierarchy, the lineage of each CPU (hardware strand) is arranged from the PGs that share the most hardware in common with the CPU to the PGs that share the least with the CPU.  If any CPUs, PGs, or relationships of interest are specified, the resulting PG hierarchy is limited to the lineages of the PGs with the specified CPUs, PGs, or relationships in the PG hierarchy.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verbose mode. Display additional information about PGs. When used without -s, -C, or -I, it is equivalent to giving the -T and -p options together at the same time. When used with the -s option, it gives the list of PGs for each sharing relationship.
+.RE
+
+.SH OPERANDS
+.sp
+.LP
+The following operands can be given on the command line by specifying one or more of their corresponding IDs or the keyword \fBall\fR. Multiple IDs can be specified as a space-separated list (for example, \fB1 3\fR), a range of numbers (for example, \fB5-8\fR), or both (for example, \fB1 3 5-8 13-16\fR). PGs and CPUs cannot be specified at the same time.
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpg\fR\fR
+.ad
+.RS 16n
+.rt  
+PGs of interest can be specified on the command line by PG ID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+When the \fB-c\fR option is entered, CPUs of interest can be specified on the command line by CPU ID.
+.RE
+
+.sp
+.LP
+If an invalid PG or CPU is specified, the \fBpginfo\fR command displays a message on standard error showing the invalid ID and continues processing other PGs or CPUs specified on the command line. When none of the specified PGs or CPUs are valid, \fBpginfo\fR exits with an exit status of 2.
+.SH EXAMPLES
+.sp
+.LP
+In the examples below, the system contains one UltraSPARC T1 processor chip with 8 cores and 32 strands.
+.LP
+\fBExample 1 \fRDisplaying Information About Every PG
+.sp
+.LP
+The following command, using no arguments, displays information about every PG.
+
+.sp
+.in +2
+.nf
+$ \fBpginfo\fR
+PG  RELATIONSHIP            CPUs
+0   System                  0-31
+3    Data_Pipe_to_memory    0-31
+2     Floating_Point_Unit   0-31
+1      Integer_Pipeline     0-3
+4      Integer_Pipeline     4-7
+5      Integer_Pipeline     8-11
+6      Integer_Pipeline     12-15
+7      Integer_Pipeline     16-19
+8      Integer_Pipeline     20-23
+9      Integer_Pipeline     24-27
+10     Integer_Pipeline     28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDisplaying Information About All Sharing Relationships
+.sp
+.LP
+The following command displays information about all sharing relationships.
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -s -v\fR
+RELATIONSHIP         PGs
+-------------------- -------
+System               0
+Data_Pipe_to_memory  3
+Floating_Point_Unit  2
+Integer_Pipeline     1 4-10
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRDisplaying PG Hierarchy
+.sp
+.LP
+The following command displays general information about all PGs in the system. The output shows which PGs belong to chips and cores.
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -p -T\fR
+0 (System) CPUs: 0-31
+`-- 3 (Data_Pipe_to_memory [system,chip]) CPUs: 0-31
+    `-- 2 (Floating_Point_Unit [system,chip]) CPUs: 0-31
+        |-- 1 (Integer_Pipeline [core]) CPUs: 0-3
+        |-- 4 (Integer_Pipeline [core]) CPUs: 4-7
+        |-- 5 (Integer_Pipeline [core]) CPUs: 8-11
+        |-- 6 (Integer_Pipeline [core]) CPUs: 12-15
+        |-- 7 (Integer_Pipeline [core]) CPUs: 16-19
+        |-- 8 (Integer_Pipeline [core]) CPUs: 20-23
+        |-- 9 (Integer_Pipeline [core]) CPUs: 24-27
+        `-- 10 (Integer_Pipeline [core]) CPUs: 28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRDisplaying List with Specific Criterion
+.sp
+.LP
+The following command displays a list of CPUs sharing integer pipeline with CPU 0. This example also demonstrates the use of -r option to filter PGs by sharing relationship name.
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -r integer_pipeline -C -c 0\fR
+0 1 2 3
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRUsing Option to Exclude by Specific Criterion
+.sp
+.LP
+The following command lists all PGs other than the ones that have \fBInteger_Pipeline\fR as their relationship.
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -R Integer_Pipeline\fR
+PG RELATIONSHIP            CPUs
+0  System                  0-31
+3  Data_Pipe_to_memory     0-31
+2  Floating_Point_Unit     0-31
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalid syntax.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityUncommitted
+.TE
+
+.sp
+.LP
+The command line options and output are Uncommitted.
+.SH SEE ALSO
+.sp
+.LP
+\fBpgstat\fR(1M), \fBattributes\fR(5)

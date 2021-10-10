@@ -1,0 +1,223 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH share 1M "10 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+share \- display file system shares or make local file system available for mounting by remote systems
+.SH SYNOPSIS
+.LP
+.nf
+\fBshare\fR [\fB-F\fR \fIprotocol\fR] \fB-a\fR
+.fi
+
+.LP
+.nf
+\fBshare\fR [\fB-F\fR \fIprotocol\fR] [\fB-o\fR \fIoptions\fR] [\fB-d\fR \fIdescription\fR] \fIpathname\fR [\fIsharename\fR]
+.fi
+
+.LP
+.nf
+\fBshare\fR [\fB-F\fR \fIprotocol\fR] [\fB-A\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBshare\fR command defines and publishes a file system share, which means the file system is available for mounting through a sharing protocol.
+.sp
+.LP
+If the \fB-F\fR \fIprotocol\fR option is omitted, the first file sharing protocol listed in \fB/etc/dfs/fstypes\fR is used as the default.
+.sp
+.LP
+For a description of NFS-specific share options, see \fBshare_nfs\fR(1M). For a description of SMB specific share options, see \fBshare_smb\fR(1M).
+.sp
+.LP
+Using the \fBshare\fR command to define and publish an NFS or SMB share of a ZFS file system is considered a legacy operation. Consider using the \fBzfs set share\fR command to define NFS or SMB share properties and then set the ZFS \fBsharenfs\fR or \fBsharesmb\fR property to publish the share. For more information, see \fBzfs\fR(1M) and \fBshare_smb\fR(1M).
+.sp
+.LP
+In the third form of \fBshare\fR command, as shown in the Synopsis above, \fBshare\fR displays published shares or, with the \fB-A\fR option, displays all configured (defined) shares.
+.SH OPTIONS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify the file sharing protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIspecific_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrw\fR\fR
+.ad
+.sp .6
+.RS 4n
+Share \fIpathname\fR is published with read and write access to all clients. This is the default behavior.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrw=\fR\fIclient\fR[\fI:client\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+Share \fIpathname\fR is published with read and write access only to the listed clients. No other systems can access the share pathname.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro\fR\fR
+.ad
+.sp .6
+.RS 4n
+Share pathname is published with read-only access to all clients.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro=\fR\fIclient\fR[\fI:client\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+Share pathname is published with read-only access only to the listed clients. No other systems can access the share pathname.
+.RE
+
+Separate multiple options with commas. Separate multiple operands for an option with colons. See EXAMPLES.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+Provide a comment that describes the file system share to be published.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Publish all defined shares.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display all defined shares.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRPublishing an NFS Share With Read-Only Access
+.sp
+.LP
+The following command defines and publishes an NFS share of \fB/ufsfs\fR with read-only access.
+
+.sp
+.in +2
+.nf
+# \fBshare -F nfs -o ro /ufsfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRPublishing an NFS Share with Multiple Share Options
+.sp
+.LP
+The following command defines and publishes an NFS share of the \fB/export/manuals\fR file system with a \fBnetgroup\fR called \fBusers_nfs\fR who have read-only access and users from specified hosts who have read and write access.
+
+.sp
+.in +2
+.nf
+# \fBshare -F nfs -o ro=users_nfs,rw=host1:host2:host3 /export/manuals\fR
+.fi
+.in -2
+.sp
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/dfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+This file is obsolete. An SMF service publishes NFS or SMB shares at boot time.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/fstypes\fR\fR
+.ad
+.sp .6
+.RS 4n
+List of file-sharing protocols. NFS is the default file sharing protocol.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+AvailabilitySUNWcs
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBmountd\fR(1M), \fBnfsd\fR(1M), \fBshare_nfs\fR(1M), \fBshare_smb\fR(1M), \fBshareall\fR(1M), \fBunshare\fR(1M), \fBzfs\fR(1M), \fBattributes\fR(5) 
+.SH NOTES
+.sp
+.LP
+If \fBshare\fR commands are invoked multiple times on the same file system, the last \fBshare\fR invocation supersedes the previous invocation. The options set by the last \fBshare\fR command replace the old options. For example, if read-write permission was granted to \fBusera\fR on \fB/somefs\fR, then you want to grant read-write permission also to \fBuserb\fR on \fB/somefs\fR, use the following syntax:
+.sp
+.in +2
+.nf
+example% \fBshare -F nfs -o rw=usera:userb /somefs\fR
+.fi
+.in -2
+.sp
+

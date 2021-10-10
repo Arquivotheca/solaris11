@@ -1,0 +1,716 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH fmdump 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+fmdump \- 故障管理日志查看器
+.SH 用法概要
+.LP
+.nf
+\fBfmdump\fR [[\fB-e\fR | \fB-i\fR | \fB-I\fR] | \fB-A\fR ] [\fB-f\fR] [\fB-mvVp\fR] [\fB-c\fR \fIclass\fR] [\fB-R\fR \fIroot\fR]
+     [\fB-t\fR \fItime\fR] [\fB-T\fR \fItime\fR] [\fB-u\fR \fIuid\fR] [\fB-n\fR \fIname\fR[.\fIname\fR]*[=\fIvalue\fR]]
+     [\fB-E\fR \fIENA\fR] [\fIfile\fR] ...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBfmdump\fR 实用程序可用于显示与 Solaris Fault Manager \fBfmd\fR(1M) 有关的任何日志文件的内容。Fault Manager 在每个 Solaris 系统的后台运行。它接收与系统软件检测到的问题有关的遥测信息，诊断这些问题，启动主动式自我修复活动，如禁用故障组件等。
+.sp
+.LP
+\fBfmdump\fR 实用程序不用作 Fault Manager 的主要管理接口。就此目的，请使用 \fBfmadm\fR（并参见 \fBfmadm\fR(1M)）。\fBfmdump\fR 实用程序只会转储 Fault Manager 历史日志（几乎没有更多解释），且可以包含没有解释的实现详细信息。请参见下面的\fB\fR"属性"部分。
+.sp
+.LP
+Fault Manager 维护几组日志文件，供服务人员以及在少数情况下供管理员使用。
+.sp
+.ne 2
+.mk
+.na
+\fB错误日志\fR
+.ad
+.RS 16n
+.rt  
+记录错误遥测以及系统检测到的问题症状的日志。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB信息日志\fR
+.ad
+.RS 16n
+.rt  
+记录信息事件的日志。此类日志体现为两组日志文件：高价值信息事件和其他信息事件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB故障日志\fR
+.ad
+.RS 16n
+.rt  
+记录故障诊断信息以及被认为解释了错误日志和信息日志中记录的症状之问题的日志。
+.RE
+
+.sp
+.LP
+日志文件组包括当前活动的日志文件，以及该组中数量不定的旧轮转日志文件。所有日志都由 \fBlogadm\fR(1M) 管理，\fB/etc/logadm.conf\fR 下有相应的条目。
+.sp
+.LP
+请注意，\fBfmdump\fR 实用程序会转储目标组的当前日志文件，以及所有的轮转日志文件。因此，它会显示完整的日志历史。特别是对于故障日志，必须认识到 \fBfmdump\fR 会显示曾经诊断出的所有\fB\fR问题而不是仅限制为当前的问题，这一点非常重要。（使用 \fBfmadm\fR 实用程序可了解此信息。）
+.sp
+.LP
+缺省情况下，\fBfmdump\fR 会显示故障日志的内容，其中记录了 Fault Manager 或其某个组件模块做出的每个诊断的结果。错误日志可使用 \fB-e\fR 进行选择，信息日志使用 \fB-i\fR 进行选择，而高价值信息日志使用 \fB-I\fR 进行选择。或者，也可以在命令行中以 [\fIfile\fR] 形式指定具体的日志文件路径（此时将仅转储此文件，不会查找日志的轮转版本）。用户也可以使用选项 \fB-A\fR 聚合所有日志，或是命令行上列出的一组日志文件路径。
+.sp
+.LP
+下面是一个缺省 \fBfmdump\fR 显示示例：
+.sp
+.in +2
+.nf
+# \fBfmdump\fR
+TIME                 UUID                                 SUNW-MSG-ID EVENT
+Mar 23 14:06:35.2682 0a11a1a7-a8ce-c941-8527-8d7a9d320071 ZFS-8000-CS Diagnosed
+Mar 25 14:51:41.2261 0a11a1a7-a8ce-c941-8527-8d7a9d320071 FMD-8000-4M Repaired
+Mar 25 14:51:41.2523 0a11a1a7-a8ce-c941-8527-8d7a9d320071 FMD-8000-6U Resolved
+May 31 23:35:39.9146 c63ac52e-506b-c1cc-e965-ff3b8544490d SMF-8000-YX Diagnosed
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+（显示的输出在 80 个字符以内换行。）
+.sp
+.LP
+这会转储故障日志，因为没有命令行选项或参数选择其他任何日志。故障日志记录了在 Fault Manager 或其组件模块诊断出的问题的整个生命周期，从最初问题诊断到问题解决的所有情况。
+.sp
+.LP
+故障日志中记录的每个问题都具有以下标识：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+事件时间戳－描述问题的生命周期状态更改。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+通用唯一标识符 (UUID)－可在任何系统组之间唯一标识此特定问题。描述给定问题的问题生命周期状态更改的所有事件都将使用同一个 UUID（如上：我们看到最初诊断以及随后的修复和解决全部引用相同的问题 UUID）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+消息标示符－可用于访问 Oracle Web 站点上对应的知识文章：http://www.oracle.com/us/sun/msg/
+.RE
+.sp
+.LP
+如果问题需要管理员、服务技术人员采取操作，或是影响了系统行为，Fault Manager 也会向 \fBsyslogd\fR(1M) 发布一条用户可读的消息。该消息提供一个问题总结，以及 Oracle Web 站点上的知识文章参考：http://www.oracle.com/us/sun/msg/。\fBfmdump\fR 实用程序可以使用 \fB-m\fR 选项，以类似格式将 \fBfltlog\fR 条目转储到提供的 \fBsyslog\fR。
+.sp
+.LP
+您可以使用 \fB-v\fR 和 \fB-V\fR 选项，将显示的单行总结扩展成每个日志记录事件的详细信息的多行显示。\fB-p\fR 选项可与 \fB-V\fR 一起使用，以请求"更漂亮"的输出。
+.sp
+.LP
+可以使用 \fB-c\fR、\fB-t\fR、\fB-T\fR、\fB-n\fR 和 \fB-u\fR 选项来过滤输出，方法是仅选择那些与指定类、时间范围或 uuid 匹配的事件。如果命令行中存在多个过滤器选项，这些选项会组合在一起，从而仅显示由选项逻辑 \fBAND\fR 运算后选择的事件。如果命令行中存在同一过滤器选项的多个实例，同类选项会组合在一起以显示由选项逻辑 \fBOR\fR 运算后选择的事件。例如，命令: 
+.sp
+.in +2
+.nf
+# \fBfmdump -u uuid1 -u uuid2 -t 02Dec09\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...选择那些属性为 (\fBuuid1 OR uuid2\fR) \fBAND\fR（时间在 \fB\fR2009 年 2 月 2 日当天或以后）的事件。 
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行日志聚合。如果命令行中列出一个或多个日志文件路径，则会聚合这些文件，否则会聚合所有已知的日志类型，包括所有的 \fBlogadm\fR 轮转文件。日志按照时间顺序合并，但是如果两个记录来自同一个日志文件，聚合时会按照它们在原始日志文件中的顺序（即它们被 Fault Manager 接收和处理的顺序，基本上就是时间顺序）。
+.sp
+不能将其他的日志组选择选项 \fB-e\fR、\fB-i\fR 或 \fB-I\fR 与 \fB-A\fR 一起使用。可以使用 \fB-c\fR、\fB-t\fR、\fB-T\fR 和 \fB-n\fR 等过滤器选项，但不能使用 \fB-u\fR。可以使用输出选项 \fB-v\fR、\fB-V\fR 和 \fB-p\fR，但不能使用 \fB-m\fR。选项 \fB-f\fR 将跟随所有选择的日志。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择与指定类匹配的事件。class 参数可以使用 \fBsh\fR(1) 中描述的 glob 模式匹配语法。class 代表说明遥测事件类型的分层分类字符串。要了解关于 Oracle 遥测协议的更多信息，请访问 Oracle Web 站点 http://www.oracle.com/us/sun/msg/。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示故障管理错误日志（而不是故障日志）中的事件。
+.sp
+错误日志包含 Sun 自动诊断软件使用的"专用"遥测信息。记录此信息是为了便于问题的事后分析和事件重放，而不应对其进行解析或用于开发脚本和其他工具。请参见 \fBattributes\fR(5)，了解有关 Oracle Private（专用）接口规则的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIENA\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择与指定 ENA 值匹配的任何一代事件。对于支持 ENA 的检测器，可以使用该选项显示与同一操作有关的多个事件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过等待附加数据，跟踪日志文件（如果使用 \fB-A\fR，则有多个文件）的增长。\fBfmdump\fR 进入无限循环，其间会休眠一秒钟，尝试读取并格式化日志文件中的新数据，然后返回休眠状态。可以通过发送中断 (\fBControl-C\fR) 随时终止此循环。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出与故障日志中的每个条目有关的本地化诊断消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR[.\fIname\fR]*[=\fIvalue\fR]\fR
+.ad
+.sp .6
+.RS 4n
+选择其属性具有匹配名称（也可以是匹配值）的日志事件（从命令行上选择的日志中进行选择）。对于字符串属性，值可以是一个正则表达式匹配项。正则表达式语法在 \fBregex\fR(5) 手册页的"扩展正则表达式"部分中进行了介绍。使用以下字符时要小心：
+.sp
+.in +2
+.nf
+$  *  {  ^  |  (  )  \e
+.fi
+.in -2
+.sp
+
+\&...或正则表达式，因为它们对 shell 是有意义的。最安全的方法是，将它们用单引号括起来。对于数字属性，其值可以是八进制、十六进制或十进制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+与 \fB-V\fR（非常详细）选项组合使用，请求实际执行可用的漂亮打印选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fBfmdump\fR 访问的日志文件使用指定的根目录，而不是默认的根目录 (\fB/\fR)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择在指定时间或之后发生的事件。可以使用以下任一格式指定时间： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy hh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+月、日、年、小时（24 小时格式）、分钟和秒。以任意数量的空格分隔日期和时间。应该将参数用引号括起来，这样 Shell 会将两个字符串解释为一个参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy hh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+月、日、年、小时（24 小时格式）和分钟。以任意数量的空格分隔日期和时间。应该将参数用引号括起来，这样 Shell 会将两个字符串解释为一个参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定月、日、年当天的凌晨 00:00:00。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIddMonyy hh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+日、月名、年、小时（24 小时格式）、分钟和秒。以任意数量的空格分隔日期和时间。应该将参数用引号括起来，这样 Shell 会将两个字符串解释为一个参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIddMonyy hh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+日、月名、年、小时（24 小时格式）和分钟。以任意数量的空格分隔日期和时间。应该将参数用引号括起来，这样 Shell 会将两个字符串解释为一个参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIMon\fR \fIdd\fR \fIhh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前年份的月、日、小时（24 小时格式）、分钟和秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIyyyy\fR-\fImm\fR-\fIdd\fR [T \fIhh\fR:\fImm\fR[:\fIss\fR]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+年、月、日、小时（24 小时格式，可选）、分钟和秒。可以选择忽略秒或小时、分钟和秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIddMonyy\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定日、月名、年的凌晨 00:00:00。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIhh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+当天的小时（24 小时格式）、分钟和秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIhh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+当天的小时（24 小时格式）和分钟。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIT\fR\fBns\fR | \fIT\fR\fBnsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 纳秒以前，其中 T 是按照以 10 为底数的形式指定的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRus |\fIT\fRusec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 微秒以前，其中 T 是按照以 10 为底数的形式指定的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIT\fR\fBms\fR | \fIT\fR\fBmsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+T 毫秒以前，其中 T 是按照以 10 为底数的形式指定的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRs | \fIT\fRsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+T 秒以前，其中 \fIT\fR 是按照以 10 为底数的形式指定的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRm |\fIT\fRmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 分钟以前，其中 \fIT\fR 是按照以 10 为底数的形式指定的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRh |\fIT\fRhour\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 小时以前，其中 \fIT\fR 是按照以 10 为底数的形式指定的整数值。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRd |\fIT\fRday\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 日以前，其中 \fIT\fR 是按照以 10 为底数的形式指定的整数值。
+.RE
+
+您可以向任意 \fB-t\fR 选项参数附加 \fB\&.\fR\fIn\fR 格式的小数，表示超出指定时间的秒数（小数形式）。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择在指定时间或之前发生的事件。\fItime\fR 可以使用针对 \fB-t\fR 选项描述的任何时间格式进行指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+在故障日志中选择与指定 \fIuuid\fR 完全匹配的问题诊断事件。为了便于识别，每个诊断都与一个通用唯一标识符 (Universal Unique Identifier, UUID) 相关联。\fB-u\fR 选项可以与其他选项（如 \fB-v\fR）组合使用，以显示与特定诊断相关的所有详细信息。请注意，多个故障日志事件可以与同一问题诊断 UUID 相关－描述一个问题生命周期的所有事件（从最初诊断到最终解决）引用同一个问题 UUID。
+.sp
+如果 \fB-e\fR 选项和 \fB-u\fR 选项都存在，会显示被指定诊断交叉引用的错误事件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示详细的事件详细信息。事件显示会被放大，以显示选定事件的其他公共成员。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示非常详细的事件详细信息。事件显示会被放大，以显示与每个事件相关的名称-值对列表中的每个成员。此外，对于故障日志，事件显示还包括一个与诊断相关联的对应错误的交叉引用列表。
+.sp
+使用 \fB-p\fR 和 \fB-V\fR 选项可请求漂亮打印。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+指定要显示的备用日志文件（如果使用 \fB-A\fR，则为多个文件），而不是显示系统故障日志。\fBfmdump\fR 实用程序会自动确定指定日志的类型，并为选定日志生成相应的输出。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR从 \fBfmd\fR 日志检索给定的类
+.sp
+.LP
+使用以下任一命令从 \fBfmd\fR 日志中检索有关指定类的信息。完整的类名称是 \fBereport.io.ddi.context\fR。
+
+.sp
+.in +2
+.nf
+# \fBfmdump -Ve -c 'ereport.io.ddi.context'\fR
+# \fBfmdump -Ve -c 'ereport.*.context'\fR
+# \fBfmdump -Ve -n 'class=ereport.io.ddi.context'\fR
+# \fBfmdump -Ve -n 'class=ereport.*.context'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前面的任一命令都会生成以下输出：
+
+.sp
+.in +2
+.nf
+Oct 06 2007 11:53:20.975021712 ereport.io.ddi.context
+        nvlist version: 0
+                class = ereport.io.ddi.context
+                ena = 0x1b03a15ecf00001
+                detector = (embedded nvlist)
+                nvlist version: 0
+                        version = 0x0
+                        scheme = dev
+                        device-path = /
+                (end detector)
+
+                __ttl = 0x1
+                __tod = 0x470706b0 0x3a1da690
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR从 \fBfmd\fR 日志检索特定的检测器设备路径
+.sp
+.LP
+以下命令从 \fBfmd\fR 日志检索检测器设备路径。
+
+.sp
+.in +2
+.nf
+# \fBfmdump -Ve -n 'detector.device-path=.*/disk@1,0$'\fR
+Oct 06 2007 12:04:28.065660760 ereport.io.scsi.disk.rqs
+nvlist version: 0
+       class = ereport.io.scsi.disk.rqs
+       ena = 0x453ff3732400401
+       detector = (embedded nvlist)
+                nvlist version: 0
+                        version = 0x0
+                        scheme = dev
+                        device-path = /pci@0,0/pci1000,3060@3/disk@1,0
+                (end detector)
+
+                __ttl = 0x1
+                __tod = 0x4707094c 0x3e9e758
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。日志文件中的所有记录都已成功检查。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+发生了致命错误。这会阻止对任何日志文件数据的检查，例如，无法打开指定文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+日志文件成功打开，但是有一个或多个日志文件记录无法显示，原因可能是 I/O 错误，或是记录本身的格式不正确。\fBfmdump\fR 对每个无法显示的记录发出一条警告消息，然后继续执行，并尝试显示其他记录。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd\fR\fR
+.ad
+.RS 29n
+.rt  
+故障管理日志目录
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/errlog\fR\fR
+.ad
+.RS 29n
+.rt  
+故障管理错误日志
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/fltlog\fR\fR
+.ad
+.RS 29n
+.rt  
+故障管理故障日志
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/infolog_hival\fR\fR
+.ad
+.RS 29n
+.rt  
+高价值信息日志
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/infolog\fR\fR
+.ad
+.RS 29n
+.rt  
+信息日志
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/fault-management
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令行选项为 Uncommitted（未确定）。用户可读错误日志和信息日志输出为 Private（专用）。用户可读故障日志输出为 Uncommitted（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBsh\fR(1)、\fBfmadm\fR(1M)、\fBfmd\fR(1M)、\fBfmstat\fR(1M)、\fBlogadm\fR(1M)、\fBsyslogd\fR(1M)、\fBlibexacct\fR(3LIB)、\fBattributes\fR(5)、\fBregex\fR(5)
+.sp
+.LP
+\fI\fR
+.sp
+.LP
+http://www.oracle.com/us/sun/msg/
+.SH 附注
+.sp
+.LP
+故障日志包含对存储在错误日志中的记录的引用，可以通过 \fBfmdump\fR \fB-V\fR 显示这些记录引用，以了解特定故障诊断中使用的错误。如果在日志轮转中对某个错误日志进行了重命名，会保留这些链接。它们会在移除错误日志文件，或是移动到其他文件系统目录时被破坏。\fBfmdump\fR 不能显示此类断开链接的错误信息。它会继续显示故障日志中的信息。

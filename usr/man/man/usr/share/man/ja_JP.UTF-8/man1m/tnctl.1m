@@ -1,0 +1,251 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH tnctl 1M "2011 年 6 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+tnctl \- Trusted Extensions ネットワークパラメータの構成
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/tnctl\fR [\fB-dfv\fR] [\fB-h\fR \fIhost\fR [/\fIprefix\fR] [:\fItemplate\fR]]
+     [\fB-m\fR \fIzone\fR:\fImlp\fR:\fIshared-mlp\fR][\fB-t\fR \fItemplate\fR [:\fIkey=val\fR [;\fIkey=val\fR]]] 
+     [\fB-HTz\fR] \fIfile\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtnctl\fR は、Solaris カーネル内のトラステッドネットワークパラメータを操作するためのインタフェースを提供します。
+.sp
+.LP
+システムの起動時に、Solaris Trusted Extensions の初期化処理の一部として、\fBsmf\fR(5) スクリプトにより \fBtnctl\fR が大域ゾーン内で実行されます。\fBtnctl\fR は、通常のシステム管理での使用を意図したコマンドではありません。代わりに、ローカルのトラステッドネットワークデータベースファイルが変更された場合、管理者は最初に \fBtnchkdb\fR(1M ) を発行して構文を検査し、次にこのコマンドを使用してカーネルのコピーを更新します。
+.sp
+.in +2
+.nf
+# \fBsvcadm restart svc:/network/tnctl\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+実行中のシステム上の遠隔ホストおよびテンプレート情報を変更することの危険については、「\fB警告\fR」を参照してください。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+一致するエントリをカーネルから削除します。デフォルトでは、新規エントリを追加します。
+.sp
+MLP を削除する場合は、MLP の範囲が正確に一致している必要があります。MLP の指定は、次の形式で行います。
+.sp
+.in +2
+.nf
+\fIport\fR[-\fIport\fR]/\fIprotocol\fR
+.fi
+.in -2
+.sp
+
+ここで、\fIport\fR には 1 から 65535 の範囲の数値を指定できます。または、任意の既知のサービスを指定できます (\fBservices\fR(4) を参照)。protocol には 1 から 255 の範囲の数値、または任意の既知のプロトコル (\fBprotocols\fR(4) を参照) を指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド行で指定されたエントリをロードする前に、すべてのカーネルエントリをフラッシュします。1 つ以上のエントリの構文解析が成功しない場合、フラッシュは実行されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モードを有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost\fR[/\fI prefix\fR][:\fItemplate\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIhost\fR のローカルホスト上のカーネル遠隔ホストキャッシュを更新します。テンプレート名が指定されている場合は、指定された \fItemplate\fR を使ってカーネルのキャッシュを変更します。\fIprefix\fR が指定されていない場合、\fBtnrhdb\fR の解釈に使用した規則に従って、示された接頭辞の長さが決定されます。\fB-d\fR を指定する場合は、テンプレート名は指定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIzone\fR:\fI mlp\fR:\fIshared-mlp\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIzone\fR に対するカーネルのマルチレベルポート (MLP) 構成キャッシュを変更します。\fIzone\fR には、更新するゾーンを指定します。\fImlp\fR および \fIshared-mlp\fR は、ゾーン固有および共有の IP アドレス用の MLP を指定します。\fIshared-mlp\fR フィールドは、大域ゾーンのみで有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItemplate\fR[\fIkey=val\fR[;\fIkey=val\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+\fItemplate\fR のカーネルテンプレートキャッシュを更新します。また、\fIkey=val\fR ペアのリストが指定された場合は、カーネルのキャッシュを変更して指定されたエントリを使用します。\fB-d\fR が指定された場合は、\fIkey=val\fR ペアは指定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIfile\fR 内のテンプレートエントリすべてをカーネルキャッシュに読み込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIfile\fR 内の遠隔ホストエントリすべてをカーネルキャッシュに読み込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+大域ゾーンの MLP だけを \fIfile\fR からカーネルキャッシュに読み込みます。非大域ゾーンの MLP の再読み込みを行うには、ゾーンをリブートします。
+.sp
+.in +2
+.nf
+# \fBzoneadm -z\fR \fInon-global zone\fR \fBreboot\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/trusted
+_
+インタフェースの安定性不確実
+.TE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラステッドネットワーク遠隔ホストデータベース
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhtp\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラステッドネットワーク遠隔ホストテンプレート
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnzonecfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラステッドゾーン構成データベース
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nsswitch.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネームサービススイッチの構成ファイル
+.RE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBtninfo\fR(1M), \fBtnd\fR(1M), \fBtnchkdb\fR(1M), \fBzoneadm\fR(1M), \fBnsswitch.conf\fR(4), \fBprotocols\fR(4), \fBservices\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fISolaris Trusted Extensions Administrator\&'s Procedures \fR
+.SH 警告
+.sp
+.LP
+ネットワークの稼働中にテンプレートを変更すると、不特定数のホストのセキュリティー表示が変更される可能性があります。
+.SH 注意事項
+.sp
+.LP
+このマニュアルページに記載されている機能を利用できるのは、システムが Trusted Extensions を使用して構成されている場合だけです。
+.sp
+.LP
+\fBtnctl\fR サービスは、サービス管理機能 \fBsmf\fR(5) により、サービス識別子の下で管理されます。
+.sp
+.in +2
+.nf
+svc:/network/tnctl
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+サービスのステータスは、\fBsvcs\fR(1) を使って問い合わせることができます。このサービスに対する管理操作 (カーネルキャッシュの更新など) は、\fBsvcadm\fR(1M) を使って実行できます。次に例を示します。
+.sp
+.in +2
+.nf
+svcadm restart svc:/network/tnctl
+.fi
+.in -2
+.sp
+

@@ -1,0 +1,247 @@
+'\" te
+.\" Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH apptrace 1 "2010 年 7 月 14 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+apptrace \- Solaris 共有ライブラリに対するアプリケーション関数呼び出しの追跡
+.SH 形式
+.LP
+.nf
+\fBapptrace\fR [\fB-f\fR] [\fB-F\fR [!] \fItracefromlist\fR] [\fB-T\fR [!] \fItracetolist\fR] 
+     [\fB-o\fR \fIoutputfile\fR] [ [\fB-tv\fR] [!] \fIcall\fR ,...] \fIcommand\fR 
+     [\fIcommand\fR \fIarguments\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBapptrace\fR ユーティリティは、\fIcommand\fR により指定された実行可能プログラムを実行して、プログラムの \fIcommand\fR が Solaris 共有ライブラリに対して行うすべての関数呼び出しを追跡します。\fBapptrace\fR における追跡では、プログラムによる関数呼び出しごとに、呼び出されたライブラリインタフェースの名前、渡された引数の値、および戻り値が報告されます。
+.sp
+.LP
+デフォルトでは、\fBapptrace\fR は、実行可能オブジェクトからそれが依存するすべての共有オブジェクトに対する直接呼出しを追跡します。間接呼び出し (つまり、実行可能プログラムが依存する共有オブジェクト間で行われた呼び出し) は、デフォルトでは報告されません。
+.sp
+.LP
+追加共有オブジェクトとの間で実行される呼び出しは、\fB-F\fR または \fB-T\fR オプションを指定することにより追跡できます (下記参照)。
+.sp
+.LP
+デフォルトのレポート形式は、呼び出しごとに 1 行であり、参照によって渡された引数またはデータ構造体のフォーマット出力はありません。
+.sp
+.LP
+追加引数の詳細を示すフォーマット出力は、\fB-v\fR オプションを使用すると得られます (下記参照)。
+.sp
+.LP
+デフォルトでは、共有オブジェクトによって提供されるインタフェースは、呼び出された場合、すべて追跡されます。ただし、\fB-t\fR または \fB-v\fR オプションのいずれか、あるいは両方を使用することにより、追跡するインタフェース群を制限できます。
+.sp
+.LP
+通常、実行時にリンクされる動的オブジェクト (実行可能オブジェクトと依存対象のすべての共有オブジェクト) 間の呼び出しを追跡することができるため、追跡された各呼び出しのレポートには、呼び出し元のオブジェクトの名前が示されます。
+.sp
+.LP
+\fBapptrace\fR は、プロシージャリンケージテーブルを介して動的オブジェクト間で発生するすべてのプロシージャ呼び出しを追跡します。そのため、そのテーブルを介して結合されているプロシージャ呼び出しだけが追跡されます。\fI『Linker and Libraries Guide』\fR を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fR
+.ad
+.RS 24n
+.rt  
+\fBfork\fR(2) によって作成されたすべての子プロセスを追跡します。また、各行の先頭にプロセス ID を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fB[!]\fR\fItracefromlist\fR \fR
+.ad
+.RS 24n
+.rt  
+コンマで区切られた共有オブジェクトのリストからの呼び出しを追跡します。これらの共有オブジェクトからの呼び出しだけが追跡されます。デフォルトでは、メインの実行可能オブジェクトからの呼び出しだけが追跡されます。共有オブジェクトのベース名だけが必要になります。たとえば、\fIlibc\fR は \fI/usr/lib/libc.so.1\fR に一致します。また、\fBfnmatch\fR(5) で説明されているように、シェルのワイルドカード文字がサポートされています。! が前に付いたリストは、そこからの呼び出しが追跡から除外されるオブジェクト群を定義します。\fIcommand\fR からの呼び出しの追跡が必要な場合、\fIcommand\fR は \fItracefromlist\fR のメンバーでなければなりません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutputfile\fR \fR
+.ad
+.RS 24n
+.rt  
+\fBapptrace\fR の出力を \fIoutputfile\fR に送ります。デフォルトでは、\fBapptrace\fR の出力は、追跡されるプロセスの stderr ストリームに送られます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [\fB!\fR]\fIcall,\|.\|.\|.\fR\fR
+.ad
+.RS 24n
+.rt  
+関数呼び出しを追跡、または除外します。コンマで区切られたリスト \fIcall\fR に指定された呼び出しが追跡されます。リストが ! で始まる場合、指定した関数呼び出しが追跡出力から除外されます。デフォルト値は \fB-t\fR \fB*\fR です。シェルスタイルのワイルドカードを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fB[!]\fR\fItracetolist\fR \fR
+.ad
+.RS 24n
+.rt  
+コンマで区切られた共有オブジェクトのリストへの呼び出しを追跡します。デフォルトでは、すべての共有オブジェクトへの呼び出しが追跡されます。前述のとおり、ベース名だけが必要であり、ワイルドカードを使用できます。! が前に付いたリストは、そこへの呼び出しが追跡から除外されるオブジェクト群を示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR [\fB!\fR]\fIcall,\|.\|.\|.\fR\fR
+.ad
+.RS 24n
+.rt  
+指定された関数呼び出しの引数と戻り値を示す冗長な、フォーマット出力を提供します (前述の \fB-t\fR オプションと同様)。\fBtruss\fR(1) と違って、\fB-v\fR オプションで指定した呼び出しは、\fB-t\fR オプションで指定する必要はありません。たとえば、\fBapptrace\fR \fB-v\fR \fBopen\fR は、\fBtruss\fR \fB-t\fR \fBopen\fR \fB-v\fR \fBopen\fR と同等です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRdate コマンドの追跡
+.sp
+.in +2
+.nf
+% \fBapptrace date\fR
+-> date     -> libc.so.1:atexit(0xff3bf9ac, 0x22000, 0x0) ** NR
+-> date     -> libc.so.1:atexit(0x11550, 0xfefeef80, 0xab268) ** NR
+-> date     -> libc.so.1:setlocale(0x6, 0x11560, 0x0) ** NR
+-> date     -> libc.so.1:textdomain(0x11564, 0xfefce156, 0xff160200) ** NR
+-> date     -> libc.so.1:int getopt(int = 0x1,
+                        const char * * = 0xffbffa5c,
+                        const char * = 0x11574 "a:u")
+<- date     -> libc.so.1:getopt() = 0xffffffff
+-> date     -> libc.so.1:time_t time(time_t * = 0x225c0)
+<- date     -> libc.so.1:time() = 0x41ab6e82
+-> date     -> libc.so.1:char * nl_langinfo(nl_item = 0x3a)
+<- date     -> libc.so.1:nl_langinfo() = 0xfefd3e10
+-> date     -> libc.so.1:struct tm * localtime(const time_t * = 0x225c0)
+<- date     -> libc.so.1:localtime() = 0xff160240
+-> date     -> libc.so.1:memcpy(0xffbff9cc, 0xff160240, 0x24) ** NR
+-> date     -> libc.so.1:size_t strftime(char * = 0x225c4 "",
+                        size_t = 0x400,
+                        const char * = 0xfefd3e10 "%a %b %e %T %Z %Y",
+                        const struct tm * = 0xffbff9cc)
+<- date     -> libc.so.1:strftime() = 0x1c
+-> date     -> libc.so.1:int puts(const char * = 0x225c4
+                        "Mon Nov 29 10:46:26 PST 2004")
+                        Mon Nov 29 10:46:26 PST 2004
+<- date     -> libc.so.1:puts() = 0x1d
+-> date     -> libc.so.1:exit(0x0, 0x22400, 0x0) ** NR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR冗長性セットによる特定のインタフェース群の追跡
+.sp
+.in +2
+.nf
+% \fBapptrace -v localtime,strftime,puts date\fR
+-> date     -> libc.so.1:struct tm * localtime(const time_t * = 0x225c0)
+        arg0 = (const time_t *) 0x225c0
+        return = (struct tm *) 0xff160280 (struct tm) {
+        tm_sec: (int) 0x4
+        tm_min: (int) 0x34
+        tm_hour: (int) 0xa
+        tm_mday: (int) 0x1d
+        tm_mon: (int) 0xa
+        tm_year: (int) 0x68
+        tm_wday: (int) 0x1
+        tm_yday: (int) 0x14d
+        tm_isdst: (int) 0
+        }
+<- date     -> libc.so.1:localtime() = 0xff160280
+-> date     -> libc.so.1:size_t strftime(char * = 0x225c4 "",
+                        size_t = 0x400,
+                        const char * = 0xfefd3e10 "%a %b %e %T %Z %Y",
+                        const struct tm * = 0xffbff99c)
+        arg0 = (char *) 0x225c4 ""
+        arg1 = (size_t) 0x400
+        arg2 = (const char *) 0xfefd3e10 "%a %b %e %T %Z %Y"
+        arg3 = (const struct tm *) 0xffbff99c (struct tm) {
+        tm_sec: (int) 0x4
+        tm_min: (int) 0x34
+        tm_hour: (int) 0xa
+        tm_mday: (int) 0x1d
+        tm_mon: (int) 0xa
+        tm_year: (int) 0x68
+        tm_wday: (int) 0x1
+        tm_yday: (int) 0x14d
+        tm_isdst: (int) 0
+        }
+        return = (size_t) 0x1c
+<- date     -> libc.so.1:strftime() = 0x1c
+-> date     -> libc.so.1:int puts(const char * = 0x225c4
+                        "Mon Nov 29 10:52:04 PST 2004")
+        arg0 = (const char *) 0x225c4 "Mon Nov 29 10:52:04 PST 2004"
+                        Mon Nov 29 10:52:04 PST 2004
+        return = (int) 0x1d
+<- date     -> libc.so.1:puts() = 0x1d
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+** NR - 関数呼び出しの戻り値は追跡できません。
+.SH ファイル
+.sp
+.LP
+\fBapptrace\fR の基本実行時サポートは Solaris 実行時リンカー (\fBld.so.1\fR(1)) のリンク監査機能によって提供され、\fBapptrace\fR コマンドは、\fB/usr/lib/abi\fR に格納されている監査オブジェクト (\fBapptrace.so.1\fR) に依存してこの機能を使用します。
+.SH 制限事項
+.sp
+.LP
+一般に、\fBapptrace\fR は、変数引数リストを受け入れる関数への呼び出しを追跡することはできません。一部の特別な場合、特に \fBprintf\fR および \fBscanf\fR ファミリでは、この制限事項に対処するために、適切なコーディング方法がいくつか用いられています。
+.sp
+.LP
+\fBapptrace\fR ユーティリティは、戻り値のタイプが \fBstruct\fR または \fBunion\fR である関数呼び出しの戻り値を追跡することができません。
+.sp
+.LP
+スタックを調べようとする関数、または呼び出し元に関する情報を抽出しようとする関数は追跡できません。たとえば、\fB[gs]etcontext()\fR、\fB[sig]longjmp()\fR、\fB[sig]setjmp()\fR、\fBvfork()\fR がこれに相当します。
+.sp
+.LP
+\fBexit\fR(2) などの値を返さない関数では、戻り値については追跡されません。
+.sp
+.LP
+セキュリティ上の理由から、適切な特権を持つプロセスだけが \fBapptrace\fR を使用して \fBsetuid\fR/\fBsetgid\fR プログラムを追跡できます。
+.sp
+.LP
+<\fBvarargs.h\fR> の取り込みを必要とする関数 (\fBvwprintw\fR(3XCURSES) や \fBvwscanw\fR(3XCURSES) など) を追跡するときは、引数の出力は書式化されません。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件developer/apptrace (32 ビット)
+SUNWcstlx (64 ビット)
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBld.so.1\fR(1), \fBtruss\fR(1), \fBvwprintw\fR(3XCURSES), \fBvwscanw\fR(3XCURSES), \fBattributes\fR(5), \fBfnmatch\fR(5) 
+.sp
+.LP
+\fI『Linker and Libraries Guide』\fR 

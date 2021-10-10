@@ -1,0 +1,1224 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH idmap 1M "2010 年 9 月 2 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+idmap \- ネイティブアイデンティティーマッピングサービスの構成と管理
+.SH 形式
+.LP
+.nf
+\fBidmap\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR \fB-f\fR \fIcommand-file\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR add [\fB-d\fR] \fIname1\fR \fIname2\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR dump [\fB-n\fR] [\fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBidmap\fR export [\fB-f\fR \fIfile\fR] \fIformat\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR flush [\fB-a\fR]
+.fi
+
+.LP
+.nf
+\fBidmap\fR get-namemap \fIname\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR help
+.fi
+
+.LP
+.nf
+\fBidmap\fR import [\fB-F\fR] [\fB-f\fR \fIfile\fR] \fIformat\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR list
+.fi
+
+.LP
+.nf
+\fBidmap\fR remove [\fB-t\fR|\fB-f\fR] \fIname\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR remove \fB-a\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR remove [\fB-d\fR] \fIname1\fR \fIname2\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR set-namemap [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR]
+     [\fB-j\fR \fIpasswdfile\fR] \fIname1\fR \fIname2\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR show [\fB-c\fR] [\fB-v\fR] [\fB-V\fR] \fIidentity\fR [\fItarget-type\fR]
+.fi
+
+.LP
+.nf
+\fBidmap\fR unset-namemap [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR]
+     [\fB-j\fR \fIpasswdfile\fR] \fIname\fR [\fItarget-type\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBidmap\fR ユーティリティーは、ネイティブアイデンティティーマッピングサービスの構成や管理に使用されます。
+.sp
+.LP
+ネイティブアイデンティティーマッピングサービスでは、Windows のセキュリティー識別子 (SID) と POSIX のユーザー ID およびグループ ID (UID および GID) との次のタイプのマッピングをサポートします。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB名前ベースマッピング。\fR管理者が、Windows と UNIX のユーザーやグループのマッピングを名前に基づいて行います。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB一時 ID マッピング。\fRまだ名前に基づいてマッピングされていないすべての SID に、UID または GID が動的に割り当てられます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBローカル SID マッピング。\fR一時的でない UID や GID が、アルゴリズムで生成されたローカル SID にマッピングされます。
+.RE
+.sp
+.LP
+\fBidmap\fR ユーティリティーを使用すると、名前ベースマッピングの作成や管理を行なったり、使用中のマッピングを監視したりできます。
+.sp
+.LP
+\fBidmap\fR ユーティリティーの呼び出し時にサブコマンドもオプションも指定されなかった場合、ユーティリティーは標準入力からサブコマンドを読み取ります。標準入力が TTY であった場合、\fBidmap\fR コマンドは使用方法に関するメッセージを出力したあとに終了します。
+.SS "マッピングメカニズム"
+.sp
+.LP
+\fBidmapd\fR(1M) デーモンは次のようにして、Windows のユーザーやグループの SID を UNIX の UID や GID にマッピングします。
+.RS +4
+.TP
+1.
+SID が名前に基づいてマッピングされます。
+.sp
+このマッピングでは、システム管理者が手動で設定した名前ベースマッピングが使用されます。
+.RE
+.RS +4
+.TP
+2.
+名前ベースマッピングが見つからない場合、SID は動的に割り当てられた一時 ID にマッピングされます。
+.sp
+この割り当てでは、2^31 から 2^32 - 2 の範囲内で次に使用可能な UID または GID が使用されます。
+.RE
+.sp
+.LP
+ローカル SID マッピングは、UNIX から Windows へのマッピングを行う場合に使用されます。
+.sp
+.LP
+別名の問題が発生しないようにするには、すべてのファイルシステム、アーカイブおよびバックアップ形式、およびプロトコルが、SID を格納するか、あるいは 2^31 から 2^32 - 2 の範囲内の UID および GID をすべて \fBnobody\fR ユーザーおよびグループにマッピングする必要があります。
+.sp
+.LP
+また、対角マッピングを作成することもできます。これは、Windows グループと Solaris ユーザーとの間、および Solaris グループと Windows ユーザーとの間のマッピングです。こうしたマッピングが必要となるのは、Windows があるグループアイデンティティーをファイル所有者として使用したり、その逆を行なったりする場合です。
+.SS "名前ベースマッピング"
+.sp
+.LP
+名前ベースマッピングは、Windows のユーザーやグループと UNIX ネームサービスの対応する情報との間に、名前の等価性を確立します。これらのマッピングはリブート後も持続します。たとえば、次のコマンドは、Windows ユーザーを同じ名前の UNIX ユーザーにマッピングします。
+.sp
+.in +2
+.nf
+# \fBidmap add "winuser:*@mywindomain.com" "unixuser:*"\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBidmapd\fR(1M) は、ディレクトリサービスを使用するように構成されている場合は、まず Active Directory (AD) またはネイティブ LDAP ディレクトリサービス、あるいはその両方のユーザーオブジェクトまたはグループオブジェクトに格納されたマッピング情報の使用を試みます。たとえば、特定の Windows ユーザーまたはグループの AD オブジェクトを拡張し、対応する Solaris ユーザーまたはグループの名前や数値 ID を含めることができます。同様に、特定の Solaris ユーザーまたはグループのネイティブ LDAP オブジェクトを拡張し、対応する Windows ユーザーまたはグループの名前を含めることができます。
+.sp
+.LP
+AD またはネイティブ LDAP ディレクトリ、あるいはその両方に基づく名前マッピングを使用するように \fBidmapd\fR(1M) を構成するには、\fBidmap\fR サービスの対応するサービス管理機能 (SMF) プロパティーを設定します。詳細については、後述の「サービスプロパティー」を参照してください。
+.sp
+.LP
+ディレクトリベースの名前マッピングが構成されていない場合や、構成されていても見つからない場合には、\fBidmapd\fR(1M) はローカルに格納された名前ベースのマッピング規則を処理します。
+.sp
+.LP
+\fBidmap\fR では、Windows の既知の名前のマッピングがサポートされています。そのいくつかを次に一覧表示します。
+.sp
+.in +2
+.nf
+Administrator
+Guest
+KRBTGT
+Domain Admins
+Domain Users
+Domain Guest
+Domain Computers
+Domain Controllers
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBidmap\fR 規則を追加すると、これらの既知の名前が標準形式に展開されます。つまり、デフォルトドメイン名が追加される (既知でない名前の場合) か、あるいは適切な組み込みのドメイン名が追加されます。このドメイン名は、その既知の名前の種類に応じて null、\fBBUILTIN\fR、またはローカルホスト名のいずれかになります。
+.sp
+.LP
+次の一連の \fBidmap\fR コマンドは、既知でない名前 \fBfred\fR と既知の名前 \fBadministrator\fR、\fBguest\fR がどのように処理されるかを示したものです。
+.sp
+.in +2
+.nf
+# \fBidmap add winname:fred unixuser:fredf\fR
+add     winname:fred    unixuser:fredf
+
+# \fBidmap add winname:administrator unixuser:root\fR
+add     winname:administrator   unixuser:root
+
+# \fBidmap add winname:guest unixuser:nobody\fR
+add     winname:guest   unixuser:nobody
+
+# \fBidmap add wingroup:administrators sysadmin\fR
+add     wingroup:administrators unixgroup:sysadmin
+
+# \fBidmap list\fR
+add     winname:Administrator@examplehost  unixuser:root
+add     winname:Guest@examplehost  unixuser:nobody
+add     wingroup:Administrators@BUILTIN unixgroup:sysadmin
+add     winname:fred@example.com       unixuser:fredf
+.fi
+.in -2
+.sp
+
+.SS "一時マッピング"
+.sp
+.LP
+\fBidmapd\fR デーモンは、その再起動の前後で一時 ID マッピングの維持を試みます。しかし、ID の維持に失敗した場合、デーモンは以前にマッピングされていた各 SID を新しい一時 UID または GID の値にマッピングします。このデーモンは、一時 UID または GID の再利用を行いません。\fBidmapd\fR デーモンが一時 UID および GID を使い果たしてしまうと、エラーが返され、さらに名前によるマッピングが不可能な SID のデフォルトの UID または GID が返されます。
+.sp
+.LP
+動的な ID マッピングは、リブート後は維持されません。このため、UNIX の UID や GID に動的にマッピングされた SID はすべて、システムリブート後に別の ID にマッピングされる可能性が高くなります。
+.SS "ローカル SID マッピング"
+.sp
+.LP
+名前ベースマッピングが見つからない場合、一時的でない UID や GID は、アルゴリズムで生成されたローカル SID にマッピングされます。マッピングの生成方法は次のとおりです。
+.sp
+.in +2
+.nf
+local SID for UID = \fI<machine SID>\fR - \fI<1000 + UID>\fR
+local SID for GID = \fI<machine SID>\fR - \fI<2^31 + GID>\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fI<machine SID>\fR は、\fBidmap\fR サービスがその実行元となるホストに対して生成する一意の SID です。
+.SS "規則検索順序"
+.sp
+.LP
+Windows 名から UNIX 名へのマッピング時には、名前ベースマッピング規則の検索が次の順序で実行されます。
+.RS +4
+.TP
+1.
+\fIwindows-name\fR\fB@\fR\fIdomain\fR から \fB""\fR
+.RE
+.RS +4
+.TP
+2.
+\fIwindows-name\fR\fB@\fR\fIdomain\fR から \fIunix-name\fR
+.RE
+.RS +4
+.TP
+3.
+\fIwindows-name\fR\fB@*\fR から \fB""\fR
+.RE
+.RS +4
+.TP
+4.
+\fIwindows-name\fR\fB@*\fR から \fIunix-name\fR
+.RE
+.RS +4
+.TP
+5.
+\fB*@\fR\fIdomain\fR から \fB*\fR
+.RE
+.RS +4
+.TP
+6.
+\fB*@\fR\fIdomain\fR から \fB""\fR
+.RE
+.RS +4
+.TP
+7.
+\fB*@\fR\fIdomain\fR から \fIunix-name\fR
+.RE
+.RS +4
+.TP
+8.
+\fB*@*\fR から \fB*\fR
+.RE
+.RS +4
+.TP
+9.
+\fB*@*\fR から \fB""\fR
+.RE
+.RS +4
+.TP
+10.
+\fB*@*\fR から \fIunix-name\fR
+.RE
+.sp
+.LP
+UNIX 名から Windows 名へのマッピング時には、名前ベースマッピング規則の検索が次の順序で実行されます。
+.RS +4
+.TP
+1.
+\fIunix-name\fR から \fB""\fR
+.RE
+.RS +4
+.TP
+2.
+\fIunix-name\fR から \fIwindows-name\fR\fB@\fR\fIdomain\fR
+.RE
+.RS +4
+.TP
+3.
+\fB*\fR から \fB*@\fR\fIdomain\fR
+.RE
+.RS +4
+.TP
+4.
+\fB*\fR から \fB""\fR
+.RE
+.RS +4
+.TP
+5.
+\fB*\fR から \fIwindows-name\fR\fB@\fR\fIdomain\fR
+.RE
+.SS "サービスプロパティー"
+.sp
+.LP
+\fBidmapd\fR(1M) デーモンの動作はサービスプロパティーによって決まります。これらのプロパティーは、SMF リポジトリ (\fBsmf\fR(5) を参照) のプロパティーグループ \fBconfig\fR の下に格納されます。これらのプロパティーへのアクセスや変更を行うには、\fBsvccfg\fR(1M) を使用しますが、それには \fBsolaris.smf.value.idmap\fR 承認が必要となります。\fBidmap\fR サービスのサービスプロパティーを次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/ad_unixuser_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+UNIX ユーザー名を含む AD 属性の名前を指定します。デフォルトはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/ad_unixgroup_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+UNIX グループ名を含む AD 属性の名前を指定します。デフォルトはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/nldap_winname_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Windows ユーザー/グループ名を含むネイティブ LDAP 属性の名前を指定します。デフォルトはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/directory_based_mapping\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディレクトリサービスに格納されたデータを使用したアイデンティティーマッピングのサポートを制御します。
+.sp
+\fBnone\fR を指定すると、ディレクトリベースのマッピングが無効になります。
+.sp
+\fBname\fR を指定すると、前述のプロパティーを使用した名前ベースマッピングが有効になります。
+.sp
+\fBidmu\fR を指定すると、Microsoft の Identity Management for UNIX (IDMU) を使用したマッピングが有効になります。この Windows コンポーネントを使用すると、管理者は各 Windows ユーザーの UNIX ユーザー ID を指定できるため、Windows アイデンティティーから対応する UNIX アイデンティティーへのマッピングが可能となります。使用されるのは、Solaris システムをメンバーに持つドメインからの IDMU データだけです。
+.RE
+
+.sp
+.LP
+サービスプロパティーを変更しても、実行中の \fBidmap\fR サービスには何の影響もありません。変更を反映するには、(\fBsvcadm\fR(1M) を使用して) サービスを更新する必要があります。
+.SH オペランド
+.sp
+.LP
+\fBidmap\fR コマンドで使用できるオペランドは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIformat\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBexport\fR および \fBimport\fR サブコマンド向けの、ユーザー名マッピングの記述形式を指定します。サポートされている外部形式は、Netapp \fBusermap.cfg\fR と Samba \fBsmbusers\fR です。これらの外部形式を使用できるのはユーザーに対して\fBのみ\fRであり、グループには使用できません。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusermap.cfg\fR 規則マッピング形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fIwindows-username\fR [\fIdirection\fR] \fIunix-username\fR
+.fi
+.in -2
+.sp
+
+\fIwindows-username\fR は、\fIdomain\fR\e\fIusername\fR または \fIusername\fR\fB@\fR\fIdomain\fR のいずれかの形式の Windows ユーザー名です。
+.sp
+\fIunix-username\fR は UNIX ユーザー名です。
+.sp
+.LP
+\fIdirection\fR は次のいずれかになります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB==\fR は双方向マッピングを意味します。これがデフォルトです。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB=>\fR または \fB<=\fR は単方向マッピングを意味します。
+.RE
+IP 修飾子はサポートされません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsmbusers\fR 規則マッピング形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fIunixname\fR = \fIwinname1\fR \fIwinname2\fR ...
+.fi
+.in -2
+.sp
+
+\fIwinname\fR にスペースが含まれる場合は、値を二重引用符で囲んでスペースをエスケープします。たとえば次のファイルは、\fBidmap\fR コマンドの有効な形式でスペースを指定する方法を示したものです。
+.sp
+.in +2
+.nf
+$ \fBcat myusermap\fR
+terry="Terry Maddox"
+pat="Pat Flynn"
+cal=cbrown
+.fi
+.in -2
+.sp
+
+これらのマッピングは、Windows 名から UNIX 名への単方向マッピングとしてインポートされます。
+.sp
+この形式は、\fBsamba.org\fR Web サイトで利用可能な \fBsmb.conf\fR マニュアルページの「username map」エントリに基づいています。\fIwindows-name\fR でのアスタリスク (\fB*\fR) の使用はサポートされています。ただし、\fB@group\fR 指令やマッピングの連鎖はサポートされていません。
+.sp
+\fBsmbusers\fR ファイルにマッピングエントリが 1 つも含まれていない場合、Samba はデフォルトで \fIwindows-name\fR を、それと同等の \fIunix-name\fR が存在する場合はその名前にマッピングします。Samba と同じマッピングを設定する場合には、次の \fBidmap\fR コマンドを使用します。
+.sp
+.in +2
+.nf
+idmap add -d "winuser:*@*" "unixuser:*"
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIidentity\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザー名、ユーザー ID、グループ名、グループ ID のいずれかを指定します。\fIidentity\fR は \fItype\fR\fB:\fR\fIvalue\fR として指定します。\fItype\fR は次のいずれかになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusid\fR\fR
+.ad
+.RS 13n
+.rt  
+テキスト形式の Windows ユーザー SID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgsid\fR\fR
+.ad
+.RS 13n
+.rt  
+テキスト形式の Windows グループ SID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsid\fR\fR
+.ad
+.RS 13n
+.rt  
+ユーザー、グループのいずれかに所属可能なテキスト形式の Windows グループ SID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid\fR\fR
+.ad
+.RS 13n
+.rt  
+数値 POSIX UID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid\fR\fR
+.ad
+.RS 13n
+.rt  
+数値 POSIX GID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunixuser\fR\fR
+.ad
+.RS 13n
+.rt  
+UNIX ユーザー名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunixgroup\fR\fR
+.ad
+.RS 13n
+.rt  
+UNIX グループ名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwinuser\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows ユーザー名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwingroup\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows グループ名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwinname\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows ユーザー名またはグループ名
+.RE
+
+\fIvalue\fR は、指定された \fItype\fR に適した数値または文字列です。たとえば、\fBunixgroup:staff\fR は、UNIX グループ名 \fBstaff\fR を指定します。アイデンティティー \fBgid:10\fR は、UNIX グループ \fBstaff\fR に対応する GID 10 を表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+名前ベースマッピング規則で使用可能な UNIX 名 (\fBunixuser\fR、\fBunixgroup\fR) または Windows 名 (\fBwinuser\fR、\fBwingroup\fR) を指定します。
+.sp
+.LP
+Windows セキュリティーエンティティー名は、次のいずれかの方法で指定できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIdomain\fR\e\fIname\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIname\fR\fB@\fR\fIdomain\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIname\fR。デフォルトのマッピングドメインが使用されます。
+.RE
+\fIname\fR が空の文字列 (\fB""\fR) の場合、マッピングが抑制されます。マッピングされていない Windows ユーザーのログインを防止するため、\fB""\fR を名前として使用しないようにしてください。
+.sp
+\fIname\fR でワイルドカード (\fB*\fR) が使用された場合、それは、ほかのマッピングに一致しないすべての名前に一致します。同様に、\fIname\fR がワイルドカードを使用した Windows 名 (\fB*@*\fR) である場合、それは、ほかのマッピングに一致しないすべてのドメイン内のすべての名前に一致します。
+.sp
+マッピング規則の両側で \fIname\fR にワイルドカードが使用された場合、Windows ユーザーと Solaris ユーザーの名前は同じになります。たとえば、規則が \fB"*@domain" == "*"\fR の場合、Windows ユーザー名の \fBjp@domain\fR はこの規則に一致し、Solaris ユーザー名の \fBjp\fR にマッピングされます。
+.sp
+\fIname\fR のタイプは、コマンド行に指定されたほかの引数やタイプから推定できる場合には、指定しなくてもかまいません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItarget-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBshow\fR および \fBunset-namemap\fR サブコマンドで使用されます。\fBshow\fR の場合、表示するべきマッピングタイプを指定します。たとえば、\fItarget-type\fR が \fBsid\fR の場合、コマンド行に指定されたアイデンティティーにマッピングされている SID が \fBidmap show\fR から返されます。\fBunset-namemap\fR の場合、\fIname\fR オペランドで指定されたオブジェクト内の属性を特定します。
+.RE
+
+.SH オプション
+.sp
+.LP
+\fBidmap\fR コマンドでは 1 つのオプションと一連のサブコマンドがサポートされます。サブコマンドにもオプションがあります。
+.SS "コマンド行のオプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIcommand-file\fR から \fBidmap\fR のサブコマンドを読み取って実行します。\fBidmap\fR \fB-f\fR \fB-\fR コマンドは標準入力から読み取ります。このオプションは、サブコマンドでは使用されません。
+.RE
+
+.SS "サブコマンド"
+.sp
+.LP
+サポートされているサブコマンドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR [\fB-d\fR] \fIname1\fR \fIname2\fR\fR
+.ad
+.sp .6
+.RS 4n
+名前ベースマッピング規則を追加します。名前マッピングはデフォルトでは双方向になります。\fB-d\fR オプションを使用すると、\fIname1\fR から \fIname2\fR への単方向マッピングが作成されます。
+.sp
+\fIname1\fR、\fIname2\fR の一方が Windows 名、他方が UNIX 名でなければなりません。Windows 名の場合、\fBwinname\fR アイデンティティータイプは使用できません。代わりに、\fBwinuser\fR または \fBwingroup\fR のいずれかのタイプを指定します。\fIname\fR オペランドについては、「オペランド」を参照してください。
+.sp
+マッピング対象となる名前が同じでマッピング方向が異なる 2 つの単方向マッピングは、1 つの双方向マッピングと同等です。
+.sp
+このサブコマンドでは \fBsolaris.admin.idmap.rules\fR 承認が必要となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdump\fR [\fB-n\fR] [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+前回のシステム起動以降にキャッシュされたすべてのマッピングをダンプします。\fB-n\fR オプションを指定すると、名前も表示されます。デフォルトで表示されるのは、\fBsid\fR、\fBuid\fR、および \fBgid\fR だけです。\fB-v\fR オプションを指定すると、マッピングがどのようにして生成されたかが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-f\fR \fIfile\fR] \fIformat\fR\fR
+.ad
+.sp .6
+.RS 4n
+名前ベースマッピング規則を、指定された \fIformat\fR で標準出力にエクスポートします。\fB-f\fR \fIfile\fR オプションを指定すると、指定された出力ファイルに規則が書き込まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflush\fR [\fB-a\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将来のマッピング要求が現在の規則やディレクトリ情報に基づいて完全に処理されるように、アイデンティティーマッピングのキャッシュをフラッシュします。これは中断を伴わない操作です。規則が変更されると自動的にキャッシュがフラッシュされます。この手動操作を使用すると、新しく変更されたディレクトリ情報を強制的に有効化できます。
+.sp
+\fB-a\fR を指定すると、キャッシュがクリーンアップされます。この操作は、実行中の操作を中断する可能性があるため、アイドル状態のシステムでのみ使用するようにしてください。\fB-a\fR が必要になることは通常は考えられませんが、「白紙状態」のテストケースを設定する場合には、このオプションが役立つ可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget-namemap\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前で表される AD またはネイティブ LDAP ユーザーオブジェクトまたはグループオブジェクトから、ディレクトリベース名前マッピングの情報を取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用方法に関するメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR [\fB-F\fR] [\fB-f\fR \fIfile\fR] \fIformat\fR\fR
+.ad
+.sp .6
+.RS 4n
+名前ベースマッピング規則を、指定された \fIformat\fR を使用して標準入力からインポートします。\fB-f\fR \fIfile\fR オプションを指定すると、指定されたファイルから規則が読み取られます。\fB-F\fR オプションを指定すると、既存の名前ベースマッピング規則がフラッシュされたあとで新しい規則が追加されます。
+.sp
+どの外部形式を使用する場合でも、インポートした規則を処理する際には、前述の「規則検索順序」節で説明したセマンティクスや順序が使用されます。
+.sp
+このサブコマンドでは \fBsolaris.admin.idmap.rules\fR 承認が必要となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての名前ベースマッピング規則を一覧表示します。各規則は \fBidmap add\fR 形式で表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-t\fR|\fB-f\fR] \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前を含む名前ベースマッピング規則をすべて削除します。\fIname\fR には UNIX、Windows のいずれかのユーザー名またはグループ名を指定できます。
+.sp
+\fB-f\fR オプションを指定すると、\fIname\fR をマッピング元として使用する規則が削除されます。\fB-t\fR オプションを指定すると、\fIname\fR をマッピング先として使用する規則が削除されます。これらのオプションは相互に排他的です。
+.sp
+このサブコマンドでは \fBsolaris.admin.idmap.rules\fR 承認が必要となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての名前ベースマッピング規則を削除します。
+.sp
+このサブコマンドでは \fBsolaris.admin.idmap.rules\fR 承認が必要となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-d\fR] \fIname1\fR \fIname2\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname1\fR と \fIname2\fR との間の名前ベースマッピング規則を削除します。\fB-d\fR オプションを指定すると、\fIname1\fR から \fIname2\fR への規則が削除されます。
+.sp
+\fIname1\fR、\fIname2\fR の一方が Windows 名、他方が UNIX 名でなければなりません。
+.sp
+このサブコマンドでは \fBsolaris.admin.idmap.rules\fR 承認が必要となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-namemap\fR [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR] [\fB-j\fR \fIpasswdfile\fR] \fIname1\fR \fIname2\fR\fR
+.ad
+.sp .6
+.RS 4n
+AD またはネイティブ LDAP のユーザーオブジェクトまたはグループオブジェクトに、名前マッピング情報を設定します。\fIname1\fR、\fIname2\fR の一方が Windows 名、他方が UNIX 名でなければなりません。
+.sp
+\fIname1\fR が Windows 名の場合は、\fIname1\fR で表される AD オブジェクトに UNIX 名 \fIname2\fR が追加されます。同様に、\fIname1\fR が UNIX 名の場合は、\fIname1\fR で表されるネイティブ LDAP エントリに Windows 名 \fIname2\fR が追加されます。
+.sp
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIauthenticationMethod\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネイティブ LDAP エントリを変更するときの認証方式を指定します。詳細については、\fBldapaddent\fR(1M) を参照してください。デフォルト値は \fBsasl/GSSAPI\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIbindDN\fR\fR
+.ad
+.sp .6
+.RS 4n
+識別名 \fIbindDN\fR を使用してディレクトリにバインドします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-j\fR \fIpasswdfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディレクトリへの認証用のパスワードを含むファイルを指定します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow\fR [\fB-c\fR] [\fB-v\fR] [\fB-V\fR] \fIname\fR [\fItarget-type\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIname\fR のマッピング先となる \fItarget-type\fR タイプのアイデンティティーを表示します。省略可能な \fItarget-type\fR を省略した場合には、非対角マッピングが表示されます。
+.sp
+このサブコマンドがデフォルトで表示するのは、すでに確立されたマッピングだけです。\fB-c\fR オプションを指定すると、名前ベースマッピング構成の評価や ID の動的割り当てが強制的に行われます。
+.sp
+\fB-v\fR オプションを指定すると、このマッピングがどのように生成されたのかが表示されるほか、このマッピングが単純に生成されたのか、またはキャッシュから取得されたのかも表示されます。\fB-V\fR オプションを指定すると、拒否された暫定的な手順やアプローチなど、マッピングを決定する際に決定された具体的な手順が詳しく表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunset-namemap\fR [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR] [\fB-j\fR \fIpasswdfile\fR] \fIname\fR [\fItarget-type\fR] \fR
+.ad
+.sp .6
+.RS 4n
+指定された名前や省略可能なターゲットのタイプで表される AD またはネイティブ LDAP ユーザーオブジェクトまたはグループオブジェクトから、ディレクトリベース名前マッピングの情報を設定解除します。
+.sp
+オプションについては、\fBset-namemap\fR サブコマンドを参照してください。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR名前ベースマッピング規則の両側でのワイルドカードの使用
+.sp
+.LP
+次のコマンドは、\fBxyz.com\fR ドメインのすべての Windows ユーザー名を同じ名前の UNIX ユーザーにマッピングします。ただし、そのような UNIX ユーザーが存在しない場合や別のマッピングが存在する場合は除きます。そのような規則に一致したが UNIX ユーザー名が存在しなかった場合、一時 ID マッピングが使用されます。
+
+.sp
+.in +2
+.nf
+# \fBidmap add "winuser:*@xyz.com" "unixuser:*"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR名前ベースマッピング規則の片側でのワイルドカードの使用
+.sp
+.LP
+次のコマンドは、\fBxyz.com\fR ドメイン内のマッピングされていないすべての Windows ユーザーを \fBguest\fR UNIX ユーザーにマッピングします。\fB-d\fR オプションは、\fB*@xyz.com\fR ユーザーから \fBguest\fR ユーザーへの単方向マッピングを指定します。
+
+.sp
+.in +2
+.nf
+# \fBidmap add -d "winuser:*@xyz.com" unixuser:guest\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR双方向の名前ベースマッピング規則の追加
+.sp
+.LP
+次のコマンドは、Windows ユーザー \fBfoobar@example.com\fR から UNIX ユーザー \fBfoo\fR へのマッピング、およびその逆のマッピングを行います。
+
+.sp
+.in +2
+.nf
+# \fBidmap add winuser:foobar@example.com unixuser:foo\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、前述のコマンドで追加されたマッピングの削除方法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBidmap remove winuser:foobar@example.com unixuser:foo\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRUID - SID 間マッピングの表示
+.RS +4
+.TP
+.ie t \(bu
+.el o
+次のコマンドは、指定された UID \fBuid:50000\fR のマッピング先となる SID を表示します。
+.sp
+.in +2
+.nf
+# \fBidmap show uid:50000 sid\fR
+uid:50000 -> usid:S-1-5-21-3223191800-2000
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+次のコマンドは、指定された Windows ユーザー名 \fBjoe@example.com\fR のマッピング先となる UNIX ユーザー名を表示します。
+.sp
+.in +2
+.nf
+# \fBidmap show joe@example.com unixuser\fR
+winuser:joe@example.com -> unixuser:joes
+.fi
+.in -2
+.sp
+
+.RE
+.LP
+\fB例 5 \fRキャッシュ内の SID - UID 間マッピングの一覧表示
+.sp
+.LP
+次のコマンドは、キャッシュ内に存在するすべての SID- UID マッピングを表示します。
+
+.sp
+.in +2
+.nf
+# \fBidmap dump | grep "uid:"\fR
+usid:S-1-5-21-3223191800-2000    ==     uid:50000
+usid:S-1-5-21-3223191800-2001    ==     uid:50001
+usid:S-1-5-21-3223191800-2006    ==     uid:50010
+usid:S-1-5-21-3223191900-3000    ==     uid:2147491840
+usid:S-1-5-21-3223191700-4000    =>     uid:60001
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR\fBidmap\fR 要求のバッチ処理
+.sp
+.LP
+次のコマンドは、\fBidmap\fR 要求のバッチ処理を行う方法を示したものです。この特定のコマンドシーケンスで実行される処理は、次のとおりです。
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfoobar@example.com\fR に対する以前の規則をすべて削除します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Windows ユーザー \fBfoobar@example.com\fR から UNIX ユーザー \fBbar\fR へのマッピング、およびその逆のマッピングを行います。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Windows グループ \fBmembers\fR から UNIX グループ \fBstaff\fR へのマッピング、およびその逆のマッピングを行います。
+.RE
+.sp
+.in +2
+.nf
+# \fBidmap <<EOF\fR
+       \fBremove winuser:foobar@example.com\fR
+       \fBadd winuser:foobar@example.com unixuser:bar\fR
+       \fBadd wingroup:members unixgroup:staff\fR
+\fBEOF\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR名前ベースマッピング規則の一覧表示
+.sp
+.LP
+次のコマンドは、名前ベースマッピング規則を一覧表示する方法を示したものです。
+
+.sp
+.in +2
+.nf
+# \fBidmap list\fR
+add winuser:foobar@example.com unixuser:bar
+add wingroup:members unixgroup:staff
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR\fBusermap.cfg\fR ファイルからの名前ベースマッピング規則のインポート
+.sp
+.LP
+\fBusermap.cfg\fR ファイルを使用すると、名前ベースマッピング規則を構成できます。次の \fBusermap.cfg\fR ファイルは、Windows ユーザー \fBfoo@example.com\fR を UNIX ユーザー \fBfoo\fR にマッピングし、\fBfoobar@example.com\fR を UNIX ユーザー \fBfoo\fR にマッピングするマッピング規則を示しています。
+
+.sp
+.in +2
+.nf
+# \fBcat usermap.cfg\fR
+foo@example.com == foo
+foobar@example.com => foo
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の \fBidmap\fR コマンドは、\fBusermap.cfg\fR の情報を \fBidmapd\fR データベースにインポートします。
+
+.sp
+.in +2
+.nf
+# \fBcat usermap.cfg | idmap import usermap.cfg\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドは、1 つ前のコマンドと同じ処理を行います。
+
+.sp
+.in +2
+.nf
+# \fBidmap import -f usermap.cfg usermap.cfg\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、前述の \fBidmap import\fR コマンドと同等です。
+
+.sp
+.in +2
+.nf
+# \fBidmap <<EOF\fR
+       \fBadd winuser:foo@example.com unixuser:foo\fR
+       \fBadd -d winuser:foobar@example.com unixuser:foo\fR
+\fBEOF\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRアイデンティティー機能マッピングや例外とともに使用する、名前ベースマッピングと一時 ID マッピング
+.sp
+.LP
+次のコマンドは、\fBexample.com\fR Windows ドメイン内のすべてのユーザーを同じ名前の UNIX ユーザーアカウントにマッピングします。また、このコマンドでは次の Windows ユーザーのマッピングも指定されています。\fBjoe@example.com\fR、\fBjane.doe@example.com\fR、\fBadministrator@example.com\fR。すべてのドメイン内の \fBadministrator\fR が \fBnobody\fR にマッピングされています。対応する UNIX アカウントを持たない Windows ユーザーはすべて、使用可能な一時 UID に動的にマッピングされます。
+
+.sp
+.in +2
+.nf
+# \fBidmap import usermap.cfg <<EOF\fR
+       \fBjoe@example.com == joes\fR
+       \fBjane.doe@example.com == janed\fR
+       \fBadministrator@* => nobody\fR
+       \fB*@example.com == *\fR
+       \fB*@example.com => nobody\fR
+\fBEOF\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fRAD ユーザーオブジェクトへのディレクトリベース名前マッピングの追加
+.sp
+.LP
+次のコマンドは、Windows ユーザー \fBjoe@example.com\fR を UNIX ユーザー \fBjoe\fR にマッピングするために、\fBjoe@example.com\fR の AD オブジェクトにその UNIX 名を追加します。
+
+.sp
+.in +2
+.nf
+# \fBidmap set-namemap winuser:joe@example.com joes\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRネイティブ LDAP ユーザーオブジェクトへのディレクトリベース名前マッピングの追加
+.sp
+.LP
+次のコマンドは、UNIX ユーザー \fBfoo\fR を Windows ユーザー \fBfoobar@example.com\fR にマッピングするために、\fBfoo\fR のネイティブ LDAP オブジェクトにその Windows 名を追加します。
+
+.sp
+.in +2
+.nf
+# \fBidmap set-namemap unixuser:foo foobar@example.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRAD ユーザーオブジェクトからのディレクトリベース名前マッピングの削除
+.sp
+.LP
+次のコマンドは、\fBjoe@example.com\fR を表す AD オブジェクトから UNIX ユーザー名 \fBunixuser\fR を削除します。
+
+.sp
+.in +2
+.nf
+# \fBidmap unset-namemap winuser:joe@example.com unixuser\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。診断メッセージが標準エラー出力に書き込まれます。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBidmapd\fR(1M), \fBldapaddent\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBad\fR(5), \fBattributes\fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBidmapd\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって管理されます。\fBidmapd\fR サービスのサービス識別子は、\fBsvc:/system/idmap\fR です。
+.sp
+.LP
+サービスの有効化、無効化、再起動などの管理操作をこのサービスで実行するには、\fBsvcadm\fR コマンドを使用します。これらのアクションには \fBsolaris.smf.manage.idmap\fR 承認が必要となります。サービスのステータスに対するクエリーを実行するには、\fBsvcs\fR コマンドを使用します。
+.sp
+.LP
+Windows ユーザー名では大文字と小文字の区別がありませんが、UNIX ユーザー名ではその区別があります。\fBidmap\fR の名前規則や \fBidmap show\fR コマンド行で Windows 名が大文字、小文字のどちらで表示されるかは、重要ではありません。
+.sp
+.LP
+すべて小文字のユーザー名を使用するのが UNIX 環境の一般的な方法であるため、ワイルドカード名前規則による Windows 名から UNIX ユーザー/グループ名へのマッピングは、次のようになります。まず、標準の Windows 名 (つまり、ディレクトリに表示されるとおりの大文字、小文字の使い方を採用した名前) が、UNIX ユーザー名またはグループ名として使用されます。そのような UNIX エンティティーが存在しない場合には、Windows 名の大文字がすべて小文字に変換され、その結果が UNIX ユーザー名またはグループ名として使用されます。
+.sp
+.LP
+この大文字、小文字に応じた処理が異なるため、一致すると思われるユーザー名が一致として認識されない場合が発生します。大文字、小文字の使い方だけが異なるそのような文字列のペアを処理するための規則を作成する必要があります。たとえば、Windows ユーザー \fBsam@example\fR を Solaris ユーザー \fBSam\fR にマッピングするには、次の規則を作成する必要があります。
+.sp
+.in +2
+.nf
+# \fBidmap add "winuser:*@example" "unixuser:*"\fR
+# \fBidmap add winuser:sam@example unixuser:Sam\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Active Directory スキーマの変更に関するガイダンスについては、Microsoft のドキュメント『\fIスキーマおよび表示 Specifier を使った Active Directory の高度な管理\fR』を参照してください。このドキュメントは、\fBtechnet\fR Web サイト \fBhttp://technet.microsoft.com/ja-jp/library/bb727064.aspx\fR から入手できます。

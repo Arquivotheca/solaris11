@@ -1,0 +1,878 @@
+'\" te
+.\" 版权所有 (c) 2009，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH kmfcfg 1 "2010 年 8 月 12 日" "SunOS 5.11" "用户命令"
+.SH 名称
+kmfcfg \- 密钥管理策略和插件配置实用程序
+.SH 用法概要
+.LP
+.nf
+\fBkmfcfg\fR \fIsubcommand\fR [\fIoption\fR ...] 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBkmfcfg\fR 命令允许用户配置密钥管理框架 (Key Management Framework, KMF) 策略数据库。KMF 策略数据库 (database, DB) 限制使用通过 KMF 框架管理的密钥和证书。 
+.sp
+.LP
+\fBkmfcfg\fR 提供在系统缺省数据库文件 \fB/etc/security/kmfpolicy.xml\fR 或用户自定义数据库文件中列出、创建、修改、删除、导入和导出策略定义的能力。
+.sp
+.LP
+对于插件配置，\fBkmfcfg\fR 允许用户显示插件信息、安装或卸载 KMF 插件以及修改插件选项。
+.SH 子命令
+.sp
+.LP
+支持以下子命令： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate\fR\fR
+.ad
+.sp .6
+.RS 4n
+将新策略添加到策略数据库文件中。 
+.sp
+\fBcreate\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+create [dbfile=\fIdbfile\fR] policy=\fIpolicyname\fR
+    [ignore-date=true|false]
+    [ignore-unknown-eku=true|false]
+    [ignore-trust-anchor=true|false]
+    [validity-adjusttime=\fIadjusttime\fR]
+    [ta-name=trust anchor subject DN]
+    [ta-name=trust anchor subject DN | search]
+    [ta-serial=trust anchor serial number]
+    [ocsp-responder=\fIURL\fR]
+    [ocsp-proxy=\fIURL\fR]
+    [ocsp-use-cert-responder=true|false]
+    [ocsp-response-lifetime=timelimit]
+    [ocsp-ignore-response-sign=true|false]
+    [ocsp-responder-cert-name=Issuer DN]
+    [ocsp-responder-cert-serial=\fIserial number\fR]
+    [crl-basefilename=\fIbasefilename\fR]
+    [crl-directory=\fIdirectory\fR]
+    [crl-get-crl-uri=true|false]
+    [crl-proxy=\fIURL\fR]
+    [crl-ignore-crl-sign=true|false]
+    [crl-ignore-crl-date=true|false]
+    [keyusage=digitalSignature|nonRepudiation
+              |keyEncipherment | dataEncipherment |
+              keyAgreement |keyCertSign |
+              cRLSign | encipherOnly | decipherOnly],[...]
+    [ekunames=serverAuth | clientAuth |
+             codeSigning | emailProtection |
+             ipsecEndSystem | ipsecTunnel |
+             ipsecUser | timeStamping |
+             OCSPSigning],[...]
+    [ekuoids=\fIOID,OID,OID...\fR]
+    [mapper-name=\fIname of the mapper\fR]
+    [mapper-dir=\fIdir where mapper library resides\fR]
+    [mapper-path=\fIfull pathname of mapper library\fR]
+    [mapper-options=\fImapper options\fR]
+.fi
+.in -2
+.sp
+
+\fBcreate\fR 子命令支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-basefilename=\fR\fIfilename\fR\fR
+.ad
+.br
+.na
+\fB\fBcrl-directory=\fR\fIdirectory\fR\fR
+.ad
+.sp .6
+.RS 4n
+这两个属性用于指定 CRL 文件的位置。\fBcrl-basefilename\fR 属性表示 CRL 文件的基文件名。\fBcrl-directory\fR 属性表示 CRL 文件的目录，缺省为当前目录。
+.sp
+如果 \fBcrl-get-crl-uri\fR 属性设置为 \fBtrue\fR 并且没有指定 \fBcrl-basefilename\fR，则高速缓存的 CRL 文件的\fB basefilename\fR 是用于提取 CRL 文件的 URI 的根基名称。
+.sp
+如果 \fBcrl-get-crl-uri\fR 属性设置为 \fBfalse\fR，需要指定 \fBcrl-basefilename\fR 来指示输入 CRL 文件。缺省情况下，\fBcrl-get-crl-uri\fR 的设置为 \fBfalse\fR。
+.sp
+这两个属性只适用于基于文件的 CRL 插件。当前基于文件的 CRL 插件为 \fBfile\fR 和 \fBpkcs11\fR Keystore。对于 \fBnss\fR Keystore，CRL 位置始终为 NSS 内部数据库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-get-crl-uri=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置是否将动态提取和高速缓存 CRL 文件作为证书验证的一部分，使用来自证书的分发点扩展的 URI 信息。
+.sp
+此属性的缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-ignore-crl-date=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBcrl-ignore-crl-date\fR 设置为 true，不会检查 CRL 的有效时间段。
+.sp
+此属性的缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-ignore-crl-sign=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBcrl-ignore-crl-sign\fR 设置为 \fBtrue \fR，不会检查 CRL 的签名。 
+.sp
+此属性的缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-proxy=\fR \fIURL\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcrl-get-crl-uri\fR 设置为 \fBtrue\fR 时，设置代理服务器名称和端口以便动态检索 CRL 文件。
+.sp
+端口号为可选。如果未指定端口号，缺省值为 \fB8080\fR。\fBcrl-proxy\fR 设置的一个示例为：\fBcrl-proxy=webcache.sfbay:8080\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+添加新策略的 DB 文件。如果未指定，缺省值将是系统 KMF 策略数据库文件 \fB/etc/security/kmfpolicy.xml\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBekuoids=\fR\fIEKUOIDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+正在定义的策略所需的以逗号分隔的扩展密钥使用 OID 列表。OID 以\fB点记法\fR表示，例如 \fB1.2.3.4\fR。\fBekuoids\fR 设置的一个示例为：\fBekuoids=1.2.3.4,9.8.7.6.5\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBekunames=\fR\fIEKUNAMES\fR\fR
+.ad
+.sp .6
+.RS 4n
+正在定义的策略所需的以逗号分隔的扩展密钥使用名称列表。允许用于 \fIEKUNAMES\fR 的值列表为：\fBserverAuth\fR、\fBclientAuth\fR、\fBcodeSigning\fR、\fBemailProtection\fR、\fBipsecEndSystem \fR、\fBipsecTunnel\fR、\fBipsecUser\fR、\fBtimeStamping\fR 和 \fBOCSPSigning\fR
+.sp
+缺省情况下，OCSP、CRL、密钥使用和扩展密钥使用检查处于关闭状态。要启用其中任何一个，请为特定检查指定一个或多个属性。例如，如果设置了 \fBocsp-responder\fR 属性，则会启用 OCSP 检查。如果设置了 \fBekuname\fR 属性或 \fBekuoids\fR 属性，则会启用扩展密钥使用检查。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignore-date=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+为此策略设置 "\fBIgnore Date\fR"（忽略日期）选项。缺省情况下此值为 \fBfalse\fR。如果指定了 \fBtrue\fR，策略会在评估证书有效性时忽略证书中定义的有效期。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignore-unknown-eku=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+为策略设置 "\fBIgnore Unknown EKU\fR"（忽略未知 EKU）选项。缺省情况下此值为 \fBfalse\fR。如果为 \fBtrue\fR，策略会忽略扩展密钥使用扩展中任何无法识别的 EKU 值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignore-trust-anchor=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+为此策略设置 "\fBIgnore Trust Anchor\fR"（忽略信任锚）选项。缺省情况下此值为 \fBfalse\fR。如果指定了 \fBtrue\fR，策略不会在验证时使用信任锚证书验证主题证书的签名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyusage=\fR\fIKUVALUES\fR\fR
+.ad
+.sp .6
+.RS 4n
+正在定义的策略所需的以逗号分隔的扩展密钥使用列表。允许的值列表为：\fBdigitalSignature\fR、\fBnonRepudiation\fR、\fBkeyEncipherment\fR、\fBdataEncipherment\fR、\fBkeyAgreement\fR、\fBkeyCertSign \fR、\fBcRLSign\fR、\fBencipherOnly\fR、\fBdecipherOnly\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-ignore-response-sign=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果该属性设置为 \fBtrue\fR，则不会验证 OCSP 响应的签名。此属性值缺省为\fB false\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-proxy=\fR\fIURL\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 OCSP 设置代理服务器名称和端口。端口号为可选。如果未指定端口号，则缺省值为 8080。\fBocsp-proxy\fR 设置的一个示例为：\fBocsp-proxy="webcache.sfbay:8080" \fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-response-lifetime=\fR\fItimelimit \fR\fR
+.ad
+.sp .6
+.RS 4n
+设置响应必须处于的\fB有效时间\fR段。\fItimelimit\fR 可由\fI数字-day\fR、\fI数字-hour\fR、\fI数字-minute \fR或\fI数字-second\fR 指定。\fB ocsp-response-lifetime\fR 设置的一个示例为：\fBocsp-response-lifetime=6-hour\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-responder-cert-name=\fR\fIIssuerDN \fR\fR
+.ad
+.br
+.na
+\fB\fBocsp-responder-cert-serial=\fR\fI serialNumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+这两个属性表示 OCSP 响应者证书。\fBocsp-responder-cert-name\fR 用于指定证书的签发者名称。有关示例，请参见 \fBta-name\fR 选项。\fIocsp-responder-cert-serial\fR 表示序列号，必须指定为十六进制值，例如 \fB0x0102030405060708090a0b0c0d0e0f\fR。如果 OCSP 响应者与证书的签发者不同，并且如果需要验证 OCSP 响应，应该提供 OCSP 响应者证书信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-responder=\fR\fIURL\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置 OCSP 响应者 URL 以便与 OCSP 验证方式一起使用。例如 \fBocsp-responder=http://ocsp.verisign.com/ocsp/status \fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBo\fBcsp-use-cert-responder=true | fals\fRe\fR
+.ad
+.sp .6
+.RS 4n
+将此策略配置为始终使用证书自身中定义的响应者（如果可能）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.sp .6
+.RS 4n
+要创建的策略记录。\fIpolicyname\fR 是必需的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBta-name=\fR\fItrust anchor subject DN\fR | \fBsearch\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBta-name\fR 标识用于验证证书的信任锚。KMF 策略引擎不会执行完全 PKIX 路径验证，而只会将信任锚视为要验证的证书的父证书。 
+.sp
+如果指定了显式"主题 DN"，它必须与\fB ta-serial\fR 值结合，以便唯一地标识要使用的证书。此外，标识的证书必须可用于选择的 keystore 中。 
+.sp
+如果使用了值 \fBsearch\fR 而不是显式主题和序列号，KMF 策略引擎会尝试查找与待验证证书的签发者名称匹配的证书并使用其进行验证。 
+.sp
+如果使用 \fBsearch\fR，会忽略 \fBta-serial\fR 值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBta-serial=\fR\fItrust anchor serial number\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果将 \fBta-name\fR 指定为显式主题名称，则此证书的序列号必须由\fB ta-serial\fR 值指示。此序列号必须以十六进制格式表示，例如 \fBta-serial=0x01020a0b\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalidity-adjusttime=\fR\fIadjusttime \fR\fR
+.ad
+.sp .6
+.RS 4n
+为证书有效期的两个端点设置调整时间。时间可由\fI数字-day、数字-hour、数字-minute 或数字-second\fR 指定。\fBvalidity-adjusttime \fR设置的一个示例为：\fBvalidity-adjusttime=6-hour。ta-name="Subject DN" ta-serial=serialNumber\fR
+.sp
+这两个属性表示信任锚证书，用于查找 keystore 中的信任锚证书。\fIta-name \fR用于指定信任锚证书主题名称的标识名。例如，\fBta-name="O=Sun Microsystems Inc., \ OU=Solaris Security Technologies Group, \ L=Ashburn, ST=VA, C=US, CN=John Smith"\fR TA 证书的序列号。它和"签发者 DN"一起用于查找 keystore 中的 TA 证书。必须将序列号指定为十六进制值，例如 \fB0x0102030405060708090a0b0c0d0e\fR 如果 \fBignore-trust-anchor \fR属性的值为 false，需要设置信任锚属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmapper-name=\fR\fIname\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-dir=\fR\fIdirectory\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-path=\fR\fIpath\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-options=\fR\fIoptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+这四个选项支持证书到名称映射。\fBmapper-name\fR 提供映射器的名称。例如，\fBcn\fR 名称表示映射器对象 \fBkmf_mapper_cn.so.1\fR。\fB mapper-dir\fR 覆盖缺省映射器目录 \fB/lib/crypto \fR。mapper-path 指定映射器对象的全路径。\fBmapper-options \fR是最长为 255 字节的仅 ASII 字符串。它的格式是映射器特定的，但映射器会接受以逗号分隔的选项列表，例如 \fBcasesensitive,ignoredomain\fR。\fBmapper-path \fR和 \fBmapper-name\fR 相互排斥。只有设置了 \fBmapper-name\fR 才能设置 \fBmapper-dir\fR。只有设置了 \fBmapper-name\fR 或 \fBmapper-path\fR 才能设置 \fBmapper-options\fR。尝试使用上述任何一个不正确设置都会导致错误，且无法修改策略数据库。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除与指定策略名称匹配的任何策略。无法删除系统缺省策略 (\fBdefault\fR)。
+.sp
+\fBdelete\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+delete [dbfile=\fIdbfile\fR] policy=\fIpolicyname\fR
+.fi
+.in -2
+.sp
+
+\fBdelete\fR 子命令支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.RS 21n
+.rt  
+从指定文件中读取策略定义。如果未指定\fI dbfile\fR，缺省值将是系统 KMF 策略数据库文件：\fB/etc/security/kmfpolicy.xml\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 21n
+.rt  
+要删除的策略的名称。如果使用系统数据库，则需要 \fIpolicyname\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR\fR
+.ad
+.sp .6
+.RS 4n
+将策略从一个策略数据库文件导出到另一个策略数据库文件。
+.sp
+\fBexport\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+kmfcfg export policy=\fIpolicyname\fR outfile=\fInewdbfile\fR [dbfile=\fIdbfile\fR]
+.fi
+.in -2
+.sp
+
+\fBexport\fR 子命令支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.RS 24n
+.rt  
+从中读取导出策略的 DB 文件。如果未指定 \fIdbfile\fR，缺省值将是系统 KMF 策略数据库文件：\fB/etc/security/kmfpolicy.xml\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutfile=\fR\fIoutputdbfile\fR\fR
+.ad
+.RS 24n
+.rt  
+在其中存储导出策略的 DB 文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 24n
+.rt  
+要导出的策略记录。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示关于 \fBkmfcfg\fR 命令的帮助。
+.sp
+\fBhelp\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+help
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR\fR
+.ad
+.sp .6
+.RS 4n
+将策略从一个策略数据库文件导入到另一个策略数据库文件。 
+.sp
+\fBimport\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+kmfcfg import policy=\fIpolicyname\fR infile=\fIinputdbfile\fR [dbfile=\fIdbfile\fR]
+.fi
+.in -2
+.sp
+
+\fBimport\fR 子命令支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 22n
+.rt  
+要导入的策略记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfile=\fR\fIinputdbfile\fR\fR
+.ad
+.RS 22n
+.rt  
+要从中读取策略的 DB 文件。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIoutdbfile\fR\fR
+.ad
+.RS 22n
+.rt  
+添加新策略的 DB 文件。如果未指定，缺省值将是系统 KMF 策略数据库文件 \fB/etc/security/kmfpolicy.xml\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果不指定参数，将列出缺省系统数据库中的所有策略定义。
+.sp
+\fBlist\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+list [dbfile=\fIdbfile\fR] [policy=\fIpolicyname\fR]
+.fi
+.in -2
+.sp
+
+\fBlist\fR 子命令支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.RS 21n
+.rt  
+从指定文件读取策略定义。如果未指定，缺省值将是系统 KMF 策略数据库文件 \fB/etc/security/kmfpolicy.xml\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 21n
+.rt  
+只显示已命名策略的策略定义。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改与指定名称匹配的任何策略。无法修改系统缺省策略 (\fBdefault\fR)。
+.sp
+\fBmodify\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+modify [dbfile=\fIdbfile\fR] policy=\fIpolicyname\fR
+    [ignore-date=true|false]
+    [ignore-unknown-eku=true|false]
+    [ignore-trust-anchor=true|false]
+    [validity-adjusttime=\fIadjusttime\fR]
+    [ta-name=trust anchor subject DN]
+    [ta-serial=trust anchor serial number]
+    [ocsp-responder=\fIURL\fR]
+    [ocsp-proxy=\fIURL\fR]
+    [ocsp-use-cert-responder=true|false]
+    [ocsp-response-lifetime=timelimit]
+    [ocsp-ignore-response-sign=true|false]
+    [ocsp-responder-cert-name=Issuer DN]
+    [ocsp-responder-cert-serial=serial number]
+    [ocsp-none=true|false]
+    [crl-basefilename=\fIbasefilename\fR]
+    [crl-directory=\fIdirectory\fR]
+    [crl-get-crl-uri=true|false]
+    [crl-proxy=URL]
+    [crl-ignore-crl-sign=true|false]
+    [crl-ignore-crl-date=true|false]
+    [crl-none=true|false]
+    [keyusage=digitalSignature| nonRepudiation
+              |keyEncipherment | dataEncipherment |
+              keyAgreement |keyCertSign |
+              cRLSign | encipherOnly | decipherOnly],[...]
+    [keyusage-none=true|false]
+    [ekunames=serverAuth | clientAuth |
+             codeSigning | emailProtection |
+             ipsecEndSystem | ipsecTunnel |
+             ipsecUser | timeStamping |
+             OCSPSigning],[...]
+    [ekuoids=OID,OID,OID]
+    [eku-none=true|false]
+    [mapper-name=\fIname of the mapper\fR]
+    [mapper-dir=\fIdir where mapper library resides\fR]
+    [mapper-path=\fIfull pathname of mapper library\fR]
+    [mapper-options=\fImapper options\fR]
+.fi
+.in -2
+.sp
+
+\fBmodify\fR 子命令支持与 \fBcreate\fR 子命令相同的许多选项。有关共享选项的说明，请参见 create 子命令。 
+.sp
+\fBmodify\fR 子命令支持以下唯一选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+如果 \fBcrl-none\fR 设置为 \fBtrue\fR，将禁用 CRL 检查。如果此属性设置为 \fBtrue\fR，则无法设置其他 CRL 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdfile=[\fR\fIdbfile\fR\fB ]\fR\fR
+.ad
+.RS 30n
+.rt  
+要修改策略的数据库文件。如果未指定，缺省值将是系统 KMF 策略数据库文件 \fB/etc/security/kmfpolicy.xml\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeku-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+如果 \fBeku-none\fR 设置为 \fBtrue\fR，将禁用扩展密钥使用检查。如果 \fBeku-none\fR 设置为 \fBtrue\fR，无法同时设置扩展密钥使用属性\fB ekuname\fR 和 \fBekuoids\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyusage-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+如果 \fBkeyusage-none\fR 设置为 true，将禁用密钥使用检查。 
+.sp
+如果此属性设置为 \fBtrue\fR，无法同时设置 \fBkeyusage\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+如果 \fBocsp-none\fR 设置为 true，将禁用 OCSP 检查。如果此属性设置为 \fBtrue\fR，不会同时设置任何其他 OCSP 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 30n
+.rt  
+要修改的策略的名称。\fIpolicyname\fR 是必需的。无法修改系统 KMF 策略数据库中的 \fBdefault\fR 策略。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmapper-name=\fR\fIname\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-dir=\fR\fIdirectory\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-path=\fR\fIpath\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-options=\fR\fIoptions\fR\fR
+.ad
+.RS 30n
+.rt  
+有关更多信息，请参见 \fBcreate\fR 子命令。
+.RE
+
+.RE
+
+.SS "插件子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall keystore=\fR\fIkeystore_name \fR \fBmodulepath=\fR\fIpathname\fR\e \fB [option=\fR\fIoption_str\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+将插件安装到系统中。\fBmodulepath\fR 字段指定 KMF 插件共享库对象的路径名。如果未将 \fIpathname \fR指定为绝对路径名，共享库对象会假定为与 \fB/lib/security/$ISA/\fR 相对。\fBISA\fR 标记会由实施定义的目录名称替换，该名称可定义相对于调用程序指令集体系结构的路径名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist plugin\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 KMF 插件信息。
+.sp
+不使用 \fBplugin\fR 关键字，\fBkmfcfg list\fR 会如"\fB子命令\fR"一节中所述显示策略信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify plugin keystore=\fR\fIkeystore_name \fR \fBoption=\fR\fIoption_str\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改 \fBplugin\fR 选项。\fBplugin\fR 选项是由插件定义的，并且由此插件专门解释，因此此命令接受任何选项字符串。
+.sp
+不使用 \fBplugin\fR 关键字，\fBkmfcfg modify\fR 会如"\fB子命令\fR"一节中所述更新策略配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninstall keystore=\fR\fIkeystore_name \fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载具有 \fIkeystore_name\fR 的插件。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建新策略
+.sp
+.LP
+以下示例会在系统数据库中创建一个名为 IPSEC 的新策略：
+
+.sp
+.in +2
+.nf
+$ kmfcfg create IPSEC \e
+ignore-trust-anchor=true \e
+ocsp-use-cert-responder=true \e
+keyusage=keyAgreement,keyEncipherment,dataEncipherment \e
+ekuname=ipsecTunnel,ipsecUser
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/kmfpolicy.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省系统策略数据库
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBattributes\fR(5)

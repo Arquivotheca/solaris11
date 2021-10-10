@@ -1,0 +1,298 @@
+'\" te
+.\" Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH smf_notify_set_params 3SCF "30 Jul 2010" "SunOS 5.11" "Service Configuration Facility Library Functions"
+.SH NAME
+smf_notify_set_params, smf_notify_get_params, smf_notify_del_params \- store, retrieve and delete notification parameters in the Service Configuration Facility
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR\&.\|.\|. ] \fIfile\fR\&.\|.\|. \fB-lscf\fR [ \fIlibrary\fR\&.\|.\|. ] 
+#include <libscf.h>
+
+int smf_notify_set_params(const char *\fIclass\fR, nvlist_t *\fIattr\fR);
+.fi
+
+.LP
+.nf
+int smf_notify_get_params(nvlist_t **\fIparams\fR, nvlist_t *\fInvl\fR);
+.fi
+
+.LP
+.nf
+int smf_notify_del_params(const char *\fIclass\fR, const char *\fIfmri\fR,
+     int32_t \fItset\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+class of events to which the function call refers.  For SMF state transition events, you should use a subclass of \fBSCF_SVC_TRANSITION_CLASS\fR defined in \fB<libscf.h>\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItset\fR\fR
+.ad
+.sp .6
+.RS 4n
+set of SMF state transitions encoded in an \fBint32_t\fR value. The encoded states are defined in \fB<libscf.h>\fR by the macros \fBSCF_STATE_\fR*. The encoding of a initial state is obtained by shifting 16 bits to the left the encoded value for that state. For example, the value of \fItset\fR that represents the state transition set (see \fBsmf\fR(5), State Transition Sets) for to-maintenance, from-maintenance and form-online is given by:
+.sp
+.in +2
+.nf
+set = ((SCF_STATE_MAINT | SCF_STATE_ONLINE) << 16) | SCF_STATE_MAINT;
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfmri\fR\fR
+.ad
+.sp .6
+.RS 4n
+FMRI of an SMF service or instance
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIparams\fR\fR
+.ad
+.sp .6
+.RS 4n
+address of a pointer to an \fBnvlist_t\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInvl\fR\fR
+.ad
+.sp .6
+.RS 4n
+a pointer to the event payload \fBnvlist_t\fR, such as is provided to an event delivery callback in \fBlibfmevent\fR(3LIB)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+a pointer to \fBnvlist_t\fR with the notification parameters
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+These interfaces are used to manipulate Notification Parameters for Software Events. See \fBsmf\fR(5)
+.sp
+.LP
+The \fBsmf_notify_set_params()\fR function stores the notification parameters for \fIclass\fR. The \fBattr nvlist_t\fR containing the notification parameters must follow the format:
+.sp
+.in +2
+.nf
+version (uint32_t)
+fmri (string)
+tset (int32_t)
+SCF_NOTIFY_PARAMS (embedded nvlist)
+     <mechanism-name> (embedded nvlist)
+          <parameter-name> <parameter-type>
+          ...
+     (end <mechanism-name>)
+     ...
+(end notify-params)
+.fi
+.in -2
+
+.sp
+.LP
+The version field must be \fBSCF_NOTIFY_PARAMS_VERSION\fR, defined in \fB<libscf.h>\fR. The fields \fIfmri\fR and \fItset\fR are only required for SMF state transitions events. They are ignored otherwise. Existing notification parameters are replaced by this function.
+.sp
+.LP
+The \fBsmf_notify_get_params()\fR function creates and populates the \fIparams\fR \fBnvlist_t\fR with the notification parameters for the Event class in \fInvl\fR. If the Event in \fInvl\fR is an SMF state transition event, this function will perform a composed lookup in \fBscf_instance_get_pg_composed\fR(3SCF) for the instance FMRI in \fInvl\fR. If notification parameters are not found in the composed lookup, the function will look for the system-wide notification parameters at \fBSCF_INSTANCE_GLOBAL\fR. The caller is responsible for calling \fBnvlist_free\fR(3NVPAIR) after using \fIparams\fR. The \fIparams\fR \fBnvlist_t\fR has the following format:
+.sp
+.in +2
+.nf
+version (uint32_t)
+SCF_NOTIFY_PARAMS (array of embedded nvlists)
+     (start of notify-params[0])
+          tset (int32_t)
+          <mechanism-name> (embedded nvlist)
+               <parameter-name> <parameter-type>
+               ...
+          (end <mechanism-name>)
+          ...
+     (end of notify-params[0])
+     ...
+.fi
+.in -2
+
+.sp
+.LP
+The \fBSCF_NOTIFY_PARAMS\fR is an array of \fBnvlist_t\fR because SMF state transitions have notification parameters for both end states of the transitions.
+.sp
+.LP
+The \fBsmf_notify_del_params()\fR function deletes the notification parameters for the given class. If \fIclass\fR is not a subclass of \fBSCF_SVC_TRANSITION_CLASS\fR, \fIfmri\fR and \fItset\fR are ignored.
+.sp
+.LP
+Both \fBsmf_notify_del_params()\fR and \fBsmf_notify_set_params()\fR refresh all instances affected by the changes.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion \fBsmf_notify_del_params()\fR, \fBsmf_notify_get_params()\fR and \fBsmf_notify_set_params()\fR return \fBSCF_SUCCESS\fR. Otherwise they return \fBSCF_FAILED\fR.
+.SH ERRORS
+.sp
+.LP
+These functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_BACKEND_ACCESS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The  storage  mechanism that the repository server (\fBsvc.configd\fR(1M)) chose for the operation denied access.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_CONNECTION_BROKEN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The connection to the repository was lost.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_DELETED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The entity being operated on has been deleted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INTERNAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+An internal error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INVALID_ARGUMENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+An argument passed is invalid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NO_MEMORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+There is not enough memory.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NO_RESOURCES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The server does not have the resources to complete the request.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_FOUND\fR\fR
+.ad
+.sp .6
+.RS 4n
+The entity was not found.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_PERMISSION_DENIED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The caller does not have permission to access or modify the repository.
+.RE
+
+.sp
+.LP
+The \fBsmf_notify_del_params()\fR and \fBsmf_notify_set_params()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_BACKEND_READONLY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The repository backend is read-only.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBlibfmevent\fR(3LIB), \fBlibnvpair\fR(3LIB), \fBlibscf\fR(3LIB), \fBnvlist_free\fR(3NVPAIR), \fBscf_error\fR(3SCF), \fBscf_instance_get_pg_composed\fR(3SCF), \fBattributes\fR(5), \fBsmf\fR(5)

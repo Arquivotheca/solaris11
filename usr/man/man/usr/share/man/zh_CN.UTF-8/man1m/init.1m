@@ -1,0 +1,474 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH init 1M "2011 年 6 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+init \- 进程控制初始化
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/init\fR [0123456abcQqSs]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBinit\fR 是缺省的最初用户进程。（正如 \fBkernel\fR(1M) 中所述，引导期间提供给内核的选项可能会导致调用备用原始用户进程）。\fBinit\fR 启动服务管理工具的核心组件 \fBsvc.configd\fR(1M) 和 \fBsvc.startd\fR(1M)，如果这些组件失败则会重新启动它们。如下所述，为了实现向后兼容性，\fBinit\fR 还可以根据 \fB/etc/inittab\fR 启动或重新启动一般进程。
+.sp
+.LP
+下面给出的运行级别和系统引导描述仅为兼容性目的提供，除此以外服务管理工具 \fBsmf\fR(5) 已将其废弃。
+.SS "init 失败"
+.sp
+.LP
+如果 \fBinit\fR 由于系统关闭以外的任何原因而退出，它将会以进程-\fBID\fR 1 重新启动。 
+.SS "定义的运行级别"
+.sp
+.LP
+在任意给定时间，系统都处于八个可能的运行级别。运行级别是一个软件配置，其下只存在一组选定的进程。\fBinit\fR 为这些运行级别中的每个级别产生的进程都在 \fB/etc/inittab\fR 中进行定义。\fBinit\fR 可以处于八个运行级别 \fB0\(mi6\fR 和 \fBS\fR 或 \fBs\fR（\fBS\fR 和 \fBs\fR 相同）中的一个级别。特权用户运行 \fB/usr/sbin/init\fR 时，运行级别会改变。
+.SS "init 和系统引导"
+.sp
+.LP
+引导系统时，会调用 \fBinit\fR 并进行以下操作。首先，它会读取 \fBsvc:/system/environment:init\fR 服务的属性。这些属性中包含与语言环境相关的环境的值，例如 \fBLANG\fR 或 \fBLC_CTYPE \fR。\fBinit\fR 随后会在 \fB/etc/inittab\fR 中查找 \fBinitdefault\fR 项（请参见 \fBinittab\fR(4)）。如果 \fBinitdefault\fR 项：
+.sp
+.ne 2
+.mk
+.na
+\fB存在\fR
+.ad
+.sp .6
+.RS 4n
+仅当尚未为 \fBsvc.startd\fR(1M) 指定选项/里程碑属性时，\fBinit\fR 通常会使用该项中指定的运行级别作为要进入的初始运行级别相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB不存在\fR
+.ad
+.sp .6
+.RS 4n
+服务管理工具 \fBsmf\fR(5) 检查其在 \fBsvc.startd\fR(1M) 中的指定配置，然后进入选项/里程碑属性指定的里程碑。
+.RE
+
+.sp
+.LP
+\fB/etc/inittab\fR 中的 \fBinitdefault\fR 项对应于以下运行级别：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR 或 \fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR 进入单用户状态。在该状态下，将打开系统控制台设备 (\fB/dev/console\fR) 以读取和写入，并调用命令 \fB/usr/sbin/su\fR（请参见 \fBsu\fR(1M)）。使用 \fBinit\fR 更改系统的运行级别。请注意，如果终止 shell（使用文件结束符），则 \fB/etc/inittab\fR 不存在时，\fBinit\fR 仅重新初始化到单用户状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0-6\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR 进入相应的运行级别。运行级别 \fB0\fR、\fB5\fR 和 \fB6\fR 是为关闭系统而保留的状态。运行级别 \fB2\fR、\fB3\fR 和 \fB4\fR 都可用作多用户操作状态。
+.RE
+
+.sp
+.LP
+如果这是开机后 \fBinit\fR 第一次进入了除单用户状态之外的运行级别，\fBinit\fR 会首先扫描 \fB/etc/inittab\fR 以查找 \fBboot\fR 和 \fBbootwait\fR 项（请参见 \fBinittab\fR(4)）。如果进入的运行级别与这些项的运行级别匹配，会在对 \fB/etc/inittab\fR 进行任何其他处理之前执行这些项。这样，可以在系统允许用户之前进行操作系统的任何特殊初始化，如挂载文件系统。然后，\fBinit\fR 扫描 \fB/etc/inittab\fR，并执行该运行级别要处理的所有其他项。
+.sp
+.LP
+要在 \fB/etc/inittab\fR 中产生每个进程，\fBinit\fR 读取每个项，对于应该重新产生的每个项，它会派生一个子进程。派生了 \fB/etc/inittab\fR 指定的所有进程后，\fBinit\fR 等会待其一个后代进程的终止、\fBpowerfail\fR 信号或来自其他 \fBinit\fR 进程的要求更改系统运行级别的信号。出现以上一个条件时，\fBinit\fR 会重新检查 \fB/etc/inittab\fR。
+.SS "添加 inittab 项"
+.sp
+.LP
+可随时向 \fB/etc/inittab\fR 添加新项，但是，\fBinit\fR 仍会等待出现以上三个条件之一后才重新检查 \fB/etc/inittab\fR。要解决此问题，\fBinit Q\fR 或 \fBinit q\fR 命令可以唤醒 \fBinit\fR 以立即重新检查 \fB/etc/inittab\fR。
+.sp
+.LP
+\fBinit\fR 在引导时间工作时，只要系统从单用户状态改为其他运行状态，\fBinit\fR 都会将控制台的 \fBioctl\fR(2) 状态设置为文件 \fB/etc/ioctl.syscon\fR 中保存的那些模式。进入单用户状态时，\fBinit\fR 都会向此文件写入。
+.SS "运行级别更改"
+.sp
+.LP
+提出运行级别更改请求时，\fBinit\fR 或某个指令会向未在目标运行级别中定义的所有进程发送警告信号 (\fBSIGTERM\fR)。在 \fBinit\fR 或其指令通过发送中止信号 (\fBSIGKILL\fR) 来强行终止这些进程之前，会观察一个五秒钟的最小时间间隔。此外，init 还会通知 \fBsvc.startd\fR(1M)，说明将更改运行级别。\fBsvc.startd\fR(1M) 随后禁止系统使用与运行级别更改相对应的里程碑所依赖的服务集合。
+.sp
+.LP
+\fBinit\fR 收到信号告知其产生的进程已经终止时，它会在 \fB/var/adm/utmpx\fR 和 \fB/var/adm/wtmpx\fR 中记录其终止的事实和原因，如果有的话（请参见 \fBwho\fR(1)）。产生的进程的历史保存在 \fB/var/adm/wtmpx\fR 中。
+.sp
+.LP
+如果 \fBinit\fR 收到 \fBpowerfail\fR 信号 (\fBSIGPWR\fR)，它会扫描 \fB/etc/inittab\fR，查找 \fBpowerfail\fR 和 \fBpowerwait\fR 类型的特殊项。将在进一步处理发生之前调用这些项（如果运行级别允许）。这样，\fBinit\fR 可以在操作系统电源关闭期间执行各种清理和记录功能。
+.SS "设置环境变量"
+.sp
+.LP
+对于 \fBsvc:/system/environment:init\fR 服务的属性列表中的环境变量（例如时区和字符格式化等项），您可以为其设置缺省值。
+.SH 安全
+.sp
+.LP
+\fBinit\fR 使用 \fBpam\fR(3PAM) 来进行会话管理。通过 \fB/etc/pam.conf\fR 列出的 \fBPAM\fR 配置策略可以指定要用于 \fBinit\fR 的会话管理模块。下面是部分 \fBpam.conf\fR 文件，包含针对使用 UNIX 会话管理模块的 \fBinit\fR 的项。
+.sp
+.in +2
+.nf
+init   session   required    pam_unix_session.so.1
+.fi
+.in -2
+
+.sp
+.LP
+如果没有用于 \fBinit\fR 服务的项，将使用用于"其他"服务的项。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+进入固件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+将系统置于系统管理员模式。挂载所有本地文件系统。只剩下一小部分必需的内核进程在运行。该模式用于安装可选实用程序包等管理任务。所有文件均可访问，没有用户在系统上登录。
+.sp
+该请求对应于 \fBsmf\fR(5) 将系统里程碑限制为 svc:/milestone/single-user:default 的请求。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+将系统置于多用户模式。将产生所有多用户环境终端进程和守护进程。该状态通常称为多用户状态。
+.sp
+该请求对应于 \fBsmf\fR(5) 将系统里程碑限制为 svc:/milestone/multi-user:default 的请求。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过使本地资源可在网络中使用来扩展多用户模式。
+.sp
+该请求对应于 \fBsmf\fR(5) 将系统里程碑限制为 svc:/milestone/multi-user-server:default 的请求。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以定义为备用多用户环境配置。它对于系统操作不是必需的，通常不使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB5\fR\fR
+.ad
+.sp .6
+.RS 4n
+关闭机器，从而安全拔下电源。如果可能，拔下机器上的电源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+停止操作系统，重新引导至 \fB/etc/inittab\fR 中的 \fBinitdefault\fR 项定义的状态。
+.sp
+缺省情况下，启用服务 \fBsvc:/system/boot-config:default\fR。\fBconfig/fastreboot_default\fR 属性设置为 \fBtrue\fR 时，\fBinit 6\fR 会根据系统的具体功能，跳过某些固件初始化和测试步骤。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR,\fBb\fR,\fBc\fR\fR
+.ad
+.sp .6
+.RS 4n
+只处理设置了 \fBa\fR、\fBb\fR 或 \fBc\fR 运行级别的那些 \fB/etc/inittab\fR 项。这些是伪状态，可以定义它们来运行某些命令，但是不会改变当前的运行级别。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQ\fR,\fBq\fR\fR
+.ad
+.sp .6
+.RS 4n
+重新检查 \fB/etc/inittab\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR, \fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+进入单用户模式。这是唯一不需要存在正确格式化的 \fB/etc/inittab\fR 文件的运行级别。如果该文件不存在，缺省情况下，\fBinit\fR 可以进入的唯一合法运行级别是单用户模式。在单用户模式下时，将会挂载基本系统操作所需的文件系统。系统降为单用户模式时，这些文件系统会保持挂载（即使是由远程文件服务器提供），且任何其他文件系统也会保留挂载。向下转换为单用户模式过程中，\fBinit\fR 或 \fBinit.d\fR 脚本启动的、应只在多用户模式下运行的所有进程都会被中止。此外，还将中止具有 \fButmpx\fR 项的任何进程。此最后一个条件确保将中止 \fBSAC\fR 启动的所有端口监控器，并且将中止这些端口监控器启动的所有服务，包括 \fBttymon\fR 登录服务。
+.sp
+该请求对应于 \fBsmf\fR(5) 将系统里程碑限制为 svc:/milestone/single-user:default 的请求。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/console\fR\fR
+.ad
+.sp .6
+.RS 4n
+系统控制台设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/init\fR\fR
+.ad
+.sp .6
+.RS 4n
+该文件已过时，在将来的发行版中可能会被删除。\fBinit\fR 进程会读取 \fBsvc:/system/environment:init\fR 服务的属性，而不是从该文件获取值。为了对之前通过编辑 \fB /etc/default/init\fR 所做的更改进行更改，具有系统管理员或系统配置权限配置文件的管理员可以设置 \fBinit\fR 服务实例的相应属性并刷新该实例。
+.sp
+该只读文件包含环境变量及其缺省值。这些变量是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+始终设置为 \fBlocaltime\fR。要设置系统时区，管理员必须设置 \fBtimezone:default\fR SMF 服务中的 \fBtimezone/localtime\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCMASK\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR 使用的以及每个进程从 \fBinit\fR 进程继承的掩码（请参见 \fBumask\fR(1)）。如果没有设置，\fBinit\fR 使用从内核继承的掩码。请注意，\fBinit\fR 在创建文件前始终尝试使用 022 \fBumask\fR，而不管 \fBCMASK\fR 的设置
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+字符特征化信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.sp .6
+.RS 4n
+消息转换
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MONETARY\fR\fR
+.ad
+.sp .6
+.RS 4n
+货币格式化信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_NUMERIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+数字格式化信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_TIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+时间格式化信息
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_ALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果设置，所有其他 \fBLC_*\fR 环境变量都会采用此值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLANG\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果未设置 \fBLC_ALL\fR，也未设置任何特定 \fBLC_*\fR，\fBLANG\fR 值会用于该特定环境变量。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inittab\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过 \fBinit\fR 控制进程分发。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ioctl.syscon\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制台的 ioctl 状态，由 \fBinit\fR 保存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/svc/volatile/init.state\fR\fR
+.ad
+.sp .6
+.RS 4n
+从故障恢复所需的 \fBinit\fR 状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/utmpx\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户访问和管理信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/wtmpx\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关用户访问和管理信息的历史记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/initpipe\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于内部通信的命名管道。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBlogin\fR(1)、\fBsh\fR(1)、\fBstty\fR(1)、\fBwho\fR(1)、\fBkernel\fR(1M)、\fBshutdown\fR(1M)、\fBsu\fR(1M)、\fBsvc.configd\fR(1M)、\fBsvc.startd\fR(1M)、\fBttymon\fR(1M)、\fBioctl\fR(2)、\fBkill\fR(2)、\fBctime\fR(3C)、\fBpam\fR(3PAM)、\fBinit.d\fR(4)、\fBinittab\fR(4)、\fBpam.conf\fR(4)、\fBTIMEZONE\fR(4)、\fButmpx\fR(4)、\fBattributes\fR(5)、\fBpam_unix_session\fR(5)、\fBsmf\fR(5)、\fBtermio\fR(7I)
+.SH 诊断
+.sp
+.LP
+如果 \fBinit\fR 发现它在两分钟内从 \fB/etc/inittab\fR 重新产生某个项超过十次，它会认定该项中的命令字符串中有错误，并在系统控制台生成错误消息。然后，它拒绝重新产生此项，直到过去了五分钟时间或者它收到来自用户产生的 \fBinit\fR 命令的信号。这样可以防止 \fBinit\fR 在以下情况时用光系统资源：有人在 \fBinittab\fR 文件中犯了打字错误，或者 \fB/etc/inittab\fR 中引用的某个程序已被删除。
+.SH 附注
+.sp
+.LP
+\fBinit\fR 仅可由特权用户运行。
+.sp
+.LP
+\fBS\fR 或 \fBs\fR 状态不能在 \fB/etc/inittab\fR 中无差别地使用。修改此文件时，最好避免将此状态添加到除 \fBinitdefault\fR 之外的任何行。
+.sp
+.LP
+如果未在 \fB/etc/inittab\fR 中的 \fBinitdefault\fR 项中指定缺省状态，会进入状态 \fB6\fR。结果，系统会陷入循环，不断地进入固件和重新引导。
+.sp
+.LP
+如果在引导系统时无法创建 \fButmpx\fR 文件，无论 \fB/etc/inittab\fR 中的 \fBinitdefault\fR 中指定了什么状态，系统都会引导至状态 \fBs\fR。如果无法访问 \fB/var\fR 文件系统，会发生这种情况。
+.sp
+.LP
+系统向下转换为 \fBS\fR 或 \fBs\fR 状态时，会创建 \fB/etc/nologin\fR 文件（请参见 \fBnologin\fR(4)）。在后续转换至运行级别 2 时，将删除该文件。
+.sp
+.LP
+\fBinit\fR 使用 \fB/var/run/initpipe\fR（命名管道）进行内部通信。

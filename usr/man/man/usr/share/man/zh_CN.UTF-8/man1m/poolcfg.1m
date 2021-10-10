@@ -1,0 +1,480 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH poolcfg 1M "2011 年 8 月 16" "SunOS 5.11" "系统管理命令"
+.SH 名称
+poolcfg \- 创建和修改资源池配置文件
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/poolcfg\fR \fB-c\fR \fIcommand\fR [\fB-d\fR | [\fIfilename\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/poolcfg\fR \fB-f\fR \fIcommand_file\fR [\fB-d\fR | [\fIfilename\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/poolcfg\fR \fB-h\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpoolcfg\fR 实用程序提供有关池和集合的配置操作。这些操作针对现有配置执行，并采取修改指定配置文件的形式。如果使用 \fB-d\fR 选项，则对内核状态进行修改。对所获得的配置的实际激活操作通过 \fBpooladm\fR(1M) 实用程序完成。
+.sp
+.LP
+池配置文件必须是使用 \fBpoolcfg\fR 本身或 \fBlibpool\fR(3LIB) 直接构建的结构化文件。
+.sp
+.LP
+如果动态位置已开放用于写入，则使用池动态位置和写入权限的 \fBpoolcfg\fR 调用将挂起。
+.sp
+.LP
+\fBpooladm\fR 可以使用此实用程序创建的配置在目标主机上对配置进行实例化。 
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcommand\fR\fR
+.ad
+.RS 19n
+.rt  
+将 \fIcommand\fR 指定为编辑命令。请参见 \fBUSAGE\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 19n
+.rt  
+直接对内核状态进行操作。不允许使用 \fIfilename\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.RS 19n
+.rt  
+从 \fIcommand_file\fR 中获取命令。\fIcommand_file\fR 由编辑命令组成，每行一个命令。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 19n
+.rt  
+显示有关编辑命令语法的扩展信息。
+.RE
+
+.SH 用法
+.SS "脚本"
+.sp
+.LP
+脚本包含以下编辑命令，每行一个命令： 
+.sp
+.ne 2
+.mk
+.na
+\fBinfo [\fIentity-name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+以用户可读的形式将配置（或指定部分）显示至标准输出。如果没有指定实体，将显示系统信息。因此，\fBpoolcfg\fR \fB-c\fR \fB\&'info' afile\fR 是等同于 \fBpoolcfg\fR \fB- c\fR \fB\&'info system name' afile\fR 的调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcreate \fIentity-name\fR [\fIproperty-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+创建具有指定类型和名称的实体。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdestroy \fIentity-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除指定的实体。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmodify \fIentity-name\fR [\fIproperty-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+更改指定实体上列出的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBassociate \fIpool-name\fR [\fIresource-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将一个或多个资源连接到池，或者替换一个或多个现有连接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtransfer to [\fIresourcetype\fR] \fIname\fR[\fIcomponent-list\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将一个或多个离散组件传输到资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtransfer [\fIquantity\fR] from [\fIresourcetype\fR] [\fIsrc\fR] to [\fItgt\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将资源数量从 \fIsrc\fR 传输到 \fItgt\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtransfer [\fIquantity\fR] to [\fIresourcetype\fR] [\fItgt\fR] from [\fIsrc\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将资源数量从 \fItgt\fR 传输到 \fIsrc\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdiscover\fR
+.ad
+.sp .6
+.RS 4n
+创建系统实体，其中一个池实体和资源与当前系统配置匹配。所发现的每个资源类型的所有资源均记录在文件中，其中单个池引用每个资源类型的缺省资源。
+.sp
+当 \fBpoolcfg\fR 直接对内核进行操作时，此命令是一个 NO-OP。请参见 \fB-d\fR 选项。
+.sp
+应避免使用此命令。创建配置的首选方法是配合使用 \fBpooladm\fR(1M) 和 \fB-s\fR 选项来导出动态配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrename \fIentity-name\fR to \fInew-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+将系统上实体的名称更改为新名称。 
+.RE
+
+.SS "属性列表"
+.sp
+.LP
+属性列表按以下方式指定：
+.sp
+.in +2
+.nf
+( proptype name = value [ ; proptype name = value ]* )
+.fi
+.in -2
+
+.sp
+.LP
+其中对于给定的属性类型 (proptype) 和名称 (name) 对，将采用序列中最后一个定义。要删除属性，请使用 \fB~ proptype name\fR。 
+.SS "资源列表"
+.sp
+.LP
+资源列表按以下方式指定：
+.sp
+.in +2
+.nf
+( resourcetype name [ ; resourcetype name ]* )
+.fi
+.in -2
+
+.sp
+.LP
+其中对于某个资源，将采用序列中最后一个指定资源。没有适用于资源列表的删除语法。
+.SS "组件列表"
+.sp
+.LP
+组件列表按以下方式指定：
+.sp
+.in +2
+.nf
+( componenttype name [ ; componenttype name ]* )
+.fi
+.in -2
+
+.sp
+.LP
+其中对于某个组件，将采用序列中最后一个指定组件。没有适用于组件列表的删除语法。 
+.SS "识别的实体"
+.sp
+.ne 2
+.mk
+.na
+\fBsystem\fR
+.ad
+.RS 10n
+.rt  
+计算机级别实体
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpool\fR
+.ad
+.RS 10n
+.rt  
+资源关联的命名集合
+.RE
+
+.SS "资源类型"
+.sp
+.ne 2
+.mk
+.na
+\fBpset\fR
+.ad
+.RS 8n
+.rt  
+处理器集资源
+.RE
+
+.SS "属性类型"
+.sp
+.ne 2
+.mk
+.na
+\fBboolean\fR
+.ad
+.RS 11n
+.rt  
+值为 true 或 false 之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBint\fR
+.ad
+.RS 11n
+.rt  
+64 位带符号的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBuint\fR
+.ad
+.RS 11n
+.rt  
+64 位不带符号的整数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstring\fR
+.ad
+.RS 11n
+.rt  
+字符串由引号 (\fB"\fR) 分隔，并且支持以 \fBformats\fR(5) 定义的字符转义序列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfloat\fR
+.ad
+.RS 11n
+.rt  
+不支持科学记数法。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR编写 poolcfg 脚本
+.sp
+.LP
+以下 \fBpoolcfg\fR 脚本将创建一个名为 \fBAccounting\fR 的池和一个处理器集 \fBsmall-1\fR。首先创建处理器集，然后创建池，再将其与处理器集关联。
+
+.sp
+.in +2
+.nf
+create pset small-1 ( uint pset.min = 1 ; uint pset.max = 4)
+create pool Accounting
+associate pool Accounting ( pset small-1 )
+.fi
+.in -2
+
+.LP
+\fB示例 2 \fR报告 \fBpool_0\fR
+.sp
+.LP
+以下命令以用户可读形式在标准输出中提供有关 \fBpool_0\fR 的报告： 
+
+.sp
+.in +2
+.nf
+ # poolcfg -c 'info pool pool_0' /etc/pooladm.conf
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR销毁 pool_0 及其关联
+.sp
+.LP
+以下命令将销毁 \fBpool_0\fR 及关联，但不会销毁之前已关联的资源：
+
+.sp
+.in +2
+.nf
+# poolcfg -c 'destroy pool pool_0' /etc/pooladm.conf
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR现实当前配置
+.sp
+.LP
+以下命令将显示当前配置：
+
+.sp
+.in +2
+.nf
+$ poolcfg -c 'info' /etc/pooladm.conf
+system example_system
+               int system.version 1
+               boolean system.bind-default true
+               string system.comment Discovered by libpool
+
+               pool pool_default
+                    boolean pool.default true
+                    boolean pool.active true
+                    int pool.importance 5
+                    string pool.comment
+                    string.pool.scheduler FSS
+                    pset pset_default
+
+               pset pset_default
+                    int pset.sys_id -1
+                    string pset.units population
+                    boolean pset.default true
+                    uint pset.max 4294967295
+                    uint pset.min 1
+                    string pset.comment
+                    boolean pset.escapable false
+                    uint pset.load 0
+                    uint pset.size 2
+
+                    cpu
+                         int cpu.sys_id 0
+                         string cpu.comment
+
+                    cpu
+                         int cpu.sys_id 2
+                         string cpu.comment
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR将 ID 为 2 的 cpu 移动到内核中的处理器集 pset1
+.sp
+.LP
+以下命令将 ID 为 \fB2\fR 的 \fBcpu\fR 移动到内核中的处理器集 \fBpset1\fR：
+
+.sp
+.in +2
+.nf
+# poolcfg -dc 'transfer to pset pset1 ( cpu 2 )'
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR将 2 个 cpu 从内核中的处理器集 pset1 移动到处理器集 pset2 中
+.sp
+.LP
+以下命令将 2 个 \fBcpu\fR 从内核中的处理器集 \fBpset1\fR 移动到处理器集 \fBpset2\fR 中：
+
+.sp
+.in +2
+.nf
+# poolcfg -dc 'transfer 2 from pset pset1 to pset2'
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/resource-mgmt/resource-pools
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+调用为 Committed（已确定）。输出为 Uncommitted（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBpooladm\fR(1M)、\fBpoolbind\fR(1M)、\fBlibpool\fR(3LIB)、\fBattributes\fR(5)、\fBformats\fR(5)
+.sp
+.LP
+\fI\fR

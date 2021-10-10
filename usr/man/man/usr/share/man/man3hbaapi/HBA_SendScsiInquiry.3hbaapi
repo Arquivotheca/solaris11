@@ -1,0 +1,621 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH HBA_SendScsiInquiry 3HBAAPI "1 Sep 2003" "SunOS 5.11" "Common Fibre Channel HBA Information Library Functions"
+.SH NAME
+HBA_SendScsiInquiry, HBA_ScsiInquiryV2, HBA_SendReportLUNs, HBA_ScsiReportLUNsV2, HBA_SendReadCapacity, HBA_ScsiReadCapacityV2 \- gather SCSI information from discovered ports
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR\&.\|.\|. ] \fIfile\fR\&.\|.\|. \fB-lHBAAPI\fR [ \fIlibrary\fR\&.\|.\|. ]
+#include <hbaapi.h>
+
+\fBHBA_STATUS\fR \fBHBA_SendScsiInquiry\fR(\fBHBA_HANDLE\fR \fIhandle\fR, \fBHBA_WWN\fR \fIPortWWN\fR,
+     \fBHBA_UINT64\fR \fIfcLUN\fR, \fBHBA_UINT8\fR \fIEVPD\fR, \fBHBA_UINT32\fR \fIPageCode\fR,
+     \fBvoid *\fR\fIpRspBuffer\fR, \fBHBA_UINT32\fR \fIRspBufferSize\fR,
+     \fBvoid *\fR\fIpSenseBuffer\fR, \fBHBA_UINT32\fR \fISenseBufferSize\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_ScsiInquiryV2\fR(\fBHBA_HANDLE\fR \fIhandle\fR, \fBHBA_WWN\fR \fIhbaPortWWN\fR,
+     \fBHBA_WWN\fR \fIdiscoveredPortWWN\fR, \fBHBA_UINT64\fR \fIfcLUN\fR, \fBHBA_UINT8\fR \fICDB_BYTE1\fR,
+     \fBHBA_UINT8\fR \fICDB_BYTE2\fR, \fBvoid *\fR\fIpRspBuffer\fR, \fBHBA_UINT32 *\fR\fIpRspBufferSize\fR,
+     \fBHBA_UINT8 *\fR\fIpScsiStatus\fR, \fBvoid *\fR\fIpSenseBuffer\fR,
+     \fBHBA_UINT32 *\fR\fIpSenseBufferSize\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_SendReportLUNs\fR(\fBHBA_HANDLE\fR \fIhandle\fR, \fBHBA_WWN\fR \fIPortWWN\fR,
+     \fBvoid *\fR\fIpRspBuffer\fR, \fBHBA_UINT32\fR \fIRspBufferSize\fR,
+     \fBvoid *\fR\fIpSenseBuffer\fR, \fBHBA_UINT32\fR \fISenseBufferSize\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_ScsiReportLUNsV2\fR(\fBHBA_HANDLE\fR \fIhandle\fR, \fBHBA_WWN\fR \fIhbaPortWWN\fR,
+     \fBHBA_WWN\fR \fIdiscoveredPortWWN\fR, \fBvoid *\fR\fIpRspBuffer\fR,
+     \fBHBA_UINT32 *\fR\fIpRspBufferSize\fR, \fBHBA_UINT8 *\fR\fIpScsiStatus\fR,
+     \fBvoid *\fR\fIpSenseBuffer\fR, \fBHBA_UINT32 *\fR\fIpSenseBufferSize\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_SendReadCapacity\fR(\fBHBA_HANDLE\fR \fIhandle\fR, \fBHBA_WWN\fR \fIPortWWN\fR,
+     \fBHBA_UINT64\fR \fIfcLUN\fR, \fBvoid *\fR\fIpRspBuffer\fR, \fBHBA_UINT32\fR \fIRspBufferSize\fR,
+     \fBvoid *\fR\fIpSenseBuffer\fR, \fBHBA_UINT32\fR \fISenseBufferSize\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_ScsiReadCapacityV2\fR(\fBHBA_HANDLE\fR \fIhandle\fR
+     \fBHBA_WWN\fR \fIhbaPortWWN\fR, \fBHBA_WWN\fR \fIdiscoveredPortWWN\fR,
+     \fBHBA_UINT64\fR \fIfcLUN\fR, \fBvoid *\fR\fIpRspBuffer\fR, \fBHBA_UINT32 *\fR\fIpRspBufferSize\fR,
+     \fBHBA_UINT8 *\fR\fIpScsiStatus\fR, \fBvoid *\fR\fIpSenseBuffer\fR,
+     \fBHBA_UINT32 *\fR\fIpSenseBufferSize\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhandle\fR\fR
+.ad
+.sp .6
+.RS 4n
+an open handle returned from \fBHBA_OpenAdapter\fR(3HBAAPI)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIPortWWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+the port WWN of the discovered remote device to which the command is sent
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhbaPortWWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_ScsiInquiryV2()\fR\fR
+.ad
+.sp .6
+.RS 4n
+the Port WWN of the local HBA through which the \fBSCSI INQUIRY\fR command is issued
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_ScsiReportLUNsV2()\fR\fR
+.ad
+.sp .6
+.RS 4n
+the Port WWN of the local HBA through which the \fBSCSI REPORT LUNS\fR command is issued
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_ScsiReadCapacityV2()\fR\fR
+.ad
+.sp .6
+.RS 4n
+the Port WWN of a local HBA through which the \fBSCSI READ CAPACITY\fR command is issued
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdiscoveredPortWWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_ScsiInquiryV2()\fR\fR
+.ad
+.RS 28n
+.rt  
+the Remote Port WWN to which the \fBSCSI INQUIRY\fR command is being sent
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_ScsiReportLUNsV2()\fR\fR
+.ad
+.RS 28n
+.rt  
+the Remote Port WWN to which the \fBSCSI REPORT LUNS\fR command is sent
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_ScsiReadCapacityV2()\fR\fR
+.ad
+.RS 28n
+.rt  
+the Remote Port WWN to which the \fBSCSI READ CAPACITY\fR command is sent
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfcLUN\fR\fR
+.ad
+.sp .6
+.RS 4n
+the FCP LUN as defined in the T10 specification SAM-2 to which the command is sent
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIEVPD\fR\fR
+.ad
+.sp .6
+.RS 4n
+If set to 0, indicates a Standard Inquiry should be returned.  If set to 1, indicates Vital Product Data should be returned.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIPageCode\fR\fR
+.ad
+.sp .6
+.RS 4n
+If \fIEVPD\fR is set to 1, \fIPageCode\fR indicates which Vital Product Data page should be returned.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fICDB_Byte1\fR\fR
+.ad
+.sp .6
+.RS 4n
+the second byte of the CDB for the \fBSCSI INQUIRY\fR command
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fICDB_Byte2\fR\fR
+.ad
+.sp .6
+.RS 4n
+the third byte of the CDB for the \fBSCSI INQUIRY\fR command
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpRspBuffer\fR\fR
+.ad
+.sp .6
+.RS 4n
+a buffer in which to store the response payload
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIRspBufferSize\fR\fR
+.ad
+.sp .6
+.RS 4n
+the size of the response buffer
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpRspBufferSize\fR\fR
+.ad
+.sp .6
+.RS 4n
+a pointer to the size of the response buffer
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpScsiStatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+a buffer to receive SCSI sense data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpSenseBuffer\fR\fR
+.ad
+.sp .6
+.RS 4n
+a buffer in which to store any SCSI sense data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fISenseBufferSize\fR\fR
+.ad
+.sp .6
+.RS 4n
+the size of the sense buffer
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpSenseBufferSize\fR\fR
+.ad
+.sp .6
+.RS 4n
+a pointer to the size of the sense buffer
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBHBA_SendScsiInquiry()\fR and \fBHBA_SendScsiInquiryV2()\fR functions send a SCSI Inquiry command as defined in the T10 specification SPC-2 to a remote FCP port.
+.sp
+.LP
+The \fBHBA_SendReportLUNs()\fR and \fBHBA_SendReportLUNsV2()\fR functions send a SCSI Report LUNs command as defined in the T10 specification SPC-2 to a remote FCP port.
+.sp
+.LP
+The \fBHBA_SendReadCapacity()\fR and \fBHBA_SendReadCapacityV2()\fR functions end a SCSI Read Capacity command as defined in the T10 specification SBC-2 to a remote FCP port.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBHBA_SendScsiInquiry()\fR function returns the following value:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command has completed. Success or failure should be determined by verifying that the sense data does not contain a check-condition.  If a check-condition is present, the content of \fIpRspBuffer\fR is undefined.
+.RE
+
+.sp
+.LP
+The \fBHBA_ScsiInquiryV2()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command has completed.  The complete payload of the \fBSCSI INQUIRY\fR command is returned in \fIpRspBuffer\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_ILLEGAL_WWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The port WWN \fIhbaPortWWN\fR is not a WWN contained by the HBA specified by \fIhandle\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_NOT_A_TARGET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The identified remote Port does not have SCSI Target functionality.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_TARGET_BUSY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command cannot be sent due to a SCSI overlapped command condition.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.LP
+The \fBHBA_SendReportLUNs()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command has completed. Success or failure should be determined by verifying the sense data does not contain a check-condition.  If a check-condition is present, the content of \fIpRspBuffer\fR is undefined.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_SCSI_CHECK_CONDITION\fR\fR
+.ad
+.sp .6
+.RS 4n
+The HBA detected a check-condition state. Details are present in the \fIpSenseBuffer\fR payload. The content of \fIpRspBuffer\fR is undefined. Not all VSLs support this error condition.
+.RE
+
+.sp
+.LP
+Other error values indicate the content of \fIpRspBuffer\fR is undefined. In some cases, the \fIpSenseBuffer\fR can contain sense data.
+.sp
+.LP
+The \fBHBA_SendReportLUNsV2()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command has completed. Sense data must be verified to ensure that it does not contain a check-condition to determine success. If a check-condition is present, the content of \fIpRspBuffer\fR is undefined.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_ILLEGAL_WWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The port WWN \fIhbaPortWWN\fR is not a WWN contained by the HBA specified by \fIhandle\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_NOT_A_TARGET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The identified remote Port does not have SCSI Target functionality.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_TARGET_BUSY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command cannot be sent due to a SCSI overlapped command condition.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.LP
+The \fBHBA_SendReadCapacity()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command has completed. Success or failure should be determined by verifying that the sense data does not contain a check-condition.  If a check-condition is present, the content of \fIpRspBuffer\fR is undefined.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_SCSI_CHECK_CONDITION\fR\fR
+.ad
+.sp .6
+.RS 4n
+The HBA detected a check-condition state. Details are present in the \fIpSenseBuffer\fR payload. The content of \fIpRspBuffer\fR is undefined. Not all VSLs support this error condition.
+.RE
+
+.sp
+.LP
+Other error values indicate the content of \fIpRspBuffer\fR is undefined. In some cases, the \fIpSenseBuffer\fR can contain sense data.
+.sp
+.LP
+The \fBHBA_ScsiReadCapacityV2()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command has completed. Sense data must be verified to ensure that it does not contain a check-condition to determine success. If a check-condition is present, the content of \fIpRspBuffer\fR is undefined.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_ILLEGAL_WWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The port WWN \fIhbaPortWWN\fR is not a WWN contained by the HBA specified by \fIhandle\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_NOT_A_TARGET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The identified remote Port does not have SCSI Target functionality.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_TARGET_BUSY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The command cannot be sent due to a SCSI overlapped command condition.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.LP
+Other error values indicate the content of \fIpRspBuffer\fR is undefined. In some cases, the \fIpSenseBuffer\fR can contain sense data.
+.SH ERRORS
+.sp
+.LP
+See \fBlibhbaapi\fR(3LIB) for general error status values.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSend a SCSI inquiry to the given discovered Target port WWN.
+.sp
+.LP
+The following example sends a SCSI inquiry to the given discovered Target port WWN.
+
+.sp
+.in +2
+.nf
+memset(&inq, 0, sizeof (inq));
+memset(&sense, 0, sizeof (sense));
+if ((status = HBA_SendScsiInquiry(handle,
+        discPortAttrs.PortWWN, 0, 0, 0, &inq,
+        sizeof (inq), &sense, sizeof (sense))) !=
+        HBA_STATUS_OK) {
+    fprintf(stderr, "Unable to send SCSI "	
+        "inquiry, reason %d\en", status);
+    continue;
+}
+printf("    Vendor: %.*s\en", 8, inq.inq_vid); 
+printf("    Model: %.*s\en", 16, inq.inq_pid); 
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5)  for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+T{
+Standard: FC-HBA Version 4 (API version 2)
+T}
+_
+MT-LevelSafe
+_
+StandardFC-MI 1.92 (API version 1)
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBHBA_OpenAdapter\fR(3HBAAPI), \fBlibhbaapi\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+T11 FC-MI Specification
+.SH BUGS
+.sp
+.LP
+The \fBHBA_SendScsiInquiry()\fR, \fBHBA_SendReportLUNs()\fR, and \fBHBA_SendReadCapacity()\fR functions do not take a \fIportindex\fR to define through which port of a multi-ported HBA the command should be sent. The behavior on multi-ported HBAs is vendor-specific and can result in the command being sent through the first HBA port, the first HBA port the given \fIPortWWN\fR is connected to, or other vendor-specific behavior.  SNIA version 2 defines \fBHBA_ScsiInquiryV2()\fR, \fBHBA_ScsiReportLUNs()\fR, and \fBHBA_ScsiReadCapacity()\fR to take a Port WWN as an argument. This fixes the bug with multi-ported HBAs in \fBHBA_ScsiInquiry()\fR, \fBHBA_SendReportLUNs()\fR, and \fBHBA_SendReadCapacity()\fR.

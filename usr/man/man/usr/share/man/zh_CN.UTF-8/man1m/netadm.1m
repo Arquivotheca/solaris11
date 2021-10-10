@@ -1,0 +1,405 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH netadm 1M "2011 年 6 月 30 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+netadm \- 管理网络配置文件
+.SH 用法概要
+.LP
+.nf
+\fBnetadm enable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR
+.fi
+
+.LP
+.nf
+\fBnetadm disable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR
+.fi
+
+.LP
+.nf
+\fBnetadm list\fR [ \fB-x\fR ] [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ]
+     [ \fIprofile-name\fR ]
+.fi
+
+.LP
+.nf
+\fBnetadm show-events\fR
+.fi
+
+.LP
+.nf
+\fBnetadm scan-wifi\fR \fIlinkname\fR
+.fi
+
+.LP
+.nf
+\fBnetadm select-wifi\fR \fIlinkname\fR
+.fi
+
+.LP
+.nf
+\fBnetadm help\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnetadm\fR 实用程序用于管理网络配置文件以及与 NWAM 守护进程交互。
+.sp
+.LP
+有三种类型的网络配置文件：网络配置文件 (Network Configuration Profile, NCP)、位置和外部网络修饰器 (External Network Modifier, ENM)。
+.sp
+.LP
+在任何给定的时间，系统上都有一个活动的 NCP 和一个活动的位置配置文件。（通过激活模式 \fBmanual\fR 启用不同的 NCP 或位置配置文件将隐式禁用当前活动的 NCP 或位置配置文件。也可以禁用当前位置配置文件（如果其激活模式为 \fBmanual\fR），但这样做会"关闭"系统联网功能的某些方面（如名称服务）。不允许显式禁用 NCP，因为这会切实关闭系统的基本网络连接。仅当启用不同的 NCP 时才会隐式禁用原来的 NCP。
+.sp
+.LP
+与此相反，在任何给定的时间，可以不存在任何 ENM 或存在多个 ENM。因此，启用或禁用一个 ENM 对其他活动的 ENM 没有任何影响。
+.sp
+.LP
+允许启用和禁用单个 NCU；指定的 NCU 必须是当前活动 NCP 的一部分，并且必须将其激活模式设置为 \fBmanual\fR。如果未指定 NCU 类，将启用或禁用具有给定名称的所有 NCU（一个链接和/或一个接口）。
+.sp
+.LP
+对象的启用和禁用以异步方式执行。因此，可能会出现启用或禁用请求成功，但操作本身失败的情况。此类失败将反映在对象状态中；\fBmaintenance\fR 状态表示所执行的最后一项操作失败。
+.SH 子命令
+.sp
+.LP
+支持以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用指定的配置文件。如果配置文件名称不唯一，则必须指定配置文件类型以标识要启用的配置文件。如果配置文件类型为 NCU 并且名称不唯一（即，链接 NCU 和接口 NCU 同名），将启用这两个 NCU，除非使用 \fB-c\fR 选项指定 NCU 类。配置文件类型必须是 \fBncp\fR、\fBncu\fR、\fBloc\fR 或 \fBenm\fR 其中之一；NCU 类必须是 \fBphys\fR 或 \fBip\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用指定的配置文件。如果配置文件名称不唯一，则必须指定配置文件类型以标识要禁用的配置文件。如果配置文件类型为 NCU 并且名称不唯一（即，链接 NCU 和接口 NCU 同名），将禁用这两个 NCU，除非使用 \fB-c\fR 选项指定 NCU 类。配置文件类型必须是 \fBncu\fR、\fBloc\fR 或 \fBenm\fR 其中之一；NCU 类必须是 \fBphys\fR 或 \fBip\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [ \fB-x\fR ] [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] [ \fIprofile-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列出所有可用配置文件及其当前状态。如果按名称指定某个特定配置文件，将仅列出该配置文件的当前状态。如果配置文件名称不唯一，将列出具有给定名称的所有配置文件；或者，也可以指定配置文件类型和/或 NCU 类来标识特定配置文件。如果仅提供一种类型，将列出该类型的所有配置文件。列出活动的 NCP 将包括构成该 NCP 的 NCU。
+.sp
+\fB-x\fR 选项可使 \fBlist\fR 子命令在缺省显示的前三列标题（\fBTYPE\fR、\fBPROFILE\fR 和 \fBSTATE\fR）之后，显示输出的第四列，该列以 \fBAUXILIARY STATE\fR 为标题。\fBAUXILIARY STATE\fR 列显示配置文件处于给定状态的原因。
+.sp
+可能的 \fBSTATE\fR 值为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled（禁用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+需要手动激活的配置文件尚未激活。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline（脱机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+需要根据条件激活或由系统激活的配置文件尚未激活。该配置文件之所以未处于活动状态，可能是因为条件未满足；也可能是因为另一个配置文件具有更多已满足的特定条件而被激活（对于一次必须激活一个配置文件的配置文件类型可能会发生这种情况，如位置配置文件）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline（联机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+需要根据条件激活或由系统激活的配置文件的条件已满足，并已成功激活；或者需要手动激活的配置文件在用户请求下已成功激活。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaintenance（维护）\fR\fR
+.ad
+.sp .6
+.RS 4n
+试图激活配置文件，但失败。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitialized（已初始化）\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置文件表示一个尚未对其采取任何操作的有效配置对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninitialized（未初始化）\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置文件表示一个系统中不存在的配置对象；例如，对应于已删除的物理链接的 NCU。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-events\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 NWAM 守护进程侦听事件流并显示它们。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscan-wifi\fR \fIlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+在链接 linkname 上启动无线扫描。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect-wifi\fR \fIlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+从链接 linkname 上的扫描结果中选择一个要连接的无线网络。如有必要，可提示进行选择、提供 WiFi 密钥等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示其中包含每个子命令的简短描述的用法消息。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR启用用户指定的位置配置文件
+.sp
+.LP
+以下命令将启用一个用户指定的位置。
+
+.sp
+.in +2
+.nf
+# \fBnetadm enable -p loc office\fR
+Disabled loc 'home'.
+Enabled loc 'office'
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR禁用 ENM
+.sp
+.LP
+以下命令将禁用某个 ENM。
+
+.sp
+.in +2
+.nf
+# \fBnetadm disable -p enm myvpn\fR
+Disabled enm 'myvpn'.
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR列出所有 NCP
+.sp
+.LP
+以下命令将列出所有 NCP。
+
+.sp
+.in +2
+.nf
+# \fBnetadm list -xp ncp\fR
+TYPE         PROFILE        STATE          AUXILIARY STATE
+ncp          Automatic      disabled       disabled by administrator
+ncp          User           online         active
+ncu:phys     nge0           online         interface/link is up
+ncu:ip       nge0           online         interface/link is up
+ncu:phys     nge1           offline        interface/link is down
+ncu:ip       nge1           offline        conditions for activation are
+                                           unmet
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR列出活动 NCP 中的 NCU
+.sp
+.LP
+以下命令将列出活动 NCP 中的所有 \fBip\fR NCU。
+
+.sp
+.in +2
+.nf
+# \fBnetadm list -c ip\fR
+TYPE        PROFILE        STATE
+ncu:ip      bge0           online
+ncu:ip      bge1           disabled
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR强制执行扫描
+.sp
+.LP
+以下命令将在无线接口 \fBwpi0\fR 上强制执行扫描。
+
+.sp
+.in +2
+.nf
+# \fBnetadm scan-wifi wpi0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR选择 WiFi 网络
+.sp
+.LP
+以下命令将选择正在广播其 ESSID 的 WiFi 网络。
+
+.sp
+.in +2
+.nf
+# \fBnetadm select-wifi wpi0\fR
+1: ESSID testing BSSID 0:40:96:29:e9:d8
+2: ESSID sunwifi BSSID 0:b:e:9f:b5:80
+3: ESSID sunwifi BSSID 0:b:e:85:26:c0
+4: ESSID sunwifi BSSID 0:b:e:49:2f:80
+5: Other
+
+Choose WLAN to connect to [1-5]: \fB2\fR
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR选择 WiFi 网络（另一种情况）
+.sp
+.LP
+以下命令将选择未在广播其 ESSID 的 WiFi 网络。
+
+.sp
+.in +2
+.nf
+# \fBnetadm select-wifi wpi0\fR
+1: ESSID testing BSSID 0:40:96:29:e9:d8
+2: ESSID sunwifi BSSID 0:b:e:85:26:c0
+3: ESSID sunwifi BSSID 0:b:e:9f:b5:80
+4: ESSID sunwifi BSSID 0:b:e:49:2f:80
+5: ESSID sunwifi BSSID 0:b:e:49:62:c0
+6: Other
+
+Choose WLAN to connect to [1-6]: \fB6\fR
+
+Enter WLAN name: \fBoraclewifi\fR
+1: None
+2: WEP
+3: WPA
+Enter security mode: \fB2\fR
+
+Enter WLAN key for ESSID oraclewifi: \fB123456\fR
+
+Enter key slot [1-4]: \fB1\fR
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR监视 \fBnwamd\fR
+.sp
+.LP
+在切换位置时，以下命令将监视 \fBnwamd\fR(1M)。
+
+.sp
+.in +2
+.nf
+# \fBnetadm show-events\fR
+EVENT           DESCRIPTION
+OBJECT_ACTION   loc Automatic -> action refresh
+OBJECT_STATE    loc Automatic -> state offline*, method/service executi
+OBJECT_STATE    loc Automatic -> state online, active
+OBJECT_ACTION   loc home -> action refresh
+OBJECT_ACTION   loc NoNet -> action refresh
+OBJECT_ACTION   loc User -> action refresh
+OBJECT_ACTION   loc home -> action enable
+OBJECT_STATE    loc home -> state offline*, method/service executing
+OBJECT_STATE    loc Automatic -> state offline, conditions for activati
+OBJECT_STATE    loc home -> state online, active
+\fB^C\fR
+#
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBnetcfgd\fR(1M)、\fBnetcfg\fR(1M)、\fBnwamd\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+另请参见 JDS/GNOME 手册页集合中的 \fBnwam-manager(1M)\fR。

@@ -1,0 +1,555 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH smf_template 5 "2011 年 5 月 20 日" "SunOS 5.11" "標準、環境、マクロ"
+.SH 名前
+smf_template \- サービス管理フレームワークのサービスメタデータのサポート
+.SH 機能説明
+.sp
+.LP
+テンプレートはサービス開発者によって定義され、サービスに関するメタデータを記述します。サービスの全体的な構成プロパティーや個別の構成プロパティーに記述され、人間が読める形式の説明と、有効な構成の定義を含んでいます。
+.sp
+.LP
+管理者は SMF コマンドを介してテンプレートにアクセスし、構成値を記述したり、テンプレートと照合して構成を検証したりできます。
+.sp
+.LP
+ツール開発者はテンプレートを使用して、サービスの構成に役立つユーザーインタフェースを作成できます。
+.SS "テンプレートデータ"
+.sp
+.LP
+サービスのメタデータは、テンプレートでサービスマニフェストの一部として定義されます。
+.SS "テンプレートデータの使用"
+.sp
+.LP
+\fBsvcs -lv\fR コマンドと \fBsvccfg describe\fR コマンドを使用すると、人間が読める形式でプロパティーに関するメタデータにアクセスできます。
+.sp
+.LP
+\fBsvccfg\fR(1M) の \fBvalidate\fR サブコマンドを使用すると、テンプレートデータと照合してサービスインスタンスやマニフェストを検証できます。テンプレートデータにアクセスするには、一連の \fBlibscf\fR(3LIB) インタフェースを使用できます。
+.SS "テンプレートの定義"
+.sp
+.LP
+テンプレートを定義するための唯一のインタフェースはサービスマニフェストです。
+.sp
+.LP
+サービスの作成者は、サービス固有のプロパティーグループおよびそれらに導入されるプロパティーに、\fBcommon_names\fR、\fBdescriptions\fR、\fBchoices\fR、\fBconstraints\fR などのテンプレートメタデータを指定するようにしてください。サービスの作成者は、少なくともプロパティーグループとプロパティーの説明を C ロケールで指定する必要があります。サービスの作成者は、メソッドや依存関係といったフレームワークによって提供されるプロパティーグループには、テンプレートメタデータを指定しないようにしてください。
+.sp
+.LP
+サービスのテンプレート定義の作成例については、「\fB使用例\fR」の節を参照してください。
+.SS "テンプレートの構成"
+.sp
+.LP
+すべてのテンプレートインタフェースは、プロパティーグループに関するテンプレートデータを、最初にインスタンスで、次にサービスで、3 番目にサービスのリスタータで、最後にグローバルに検索します。
+.sp
+.LP
+プロパティーグループのテンプレートはその作成者によって定義され、特定のインスタンス、サービスとそのすべてのインスタンス、リスタータの委任、あるいはグローバルに適用されます。通常、サービスの作成者はインスタンスまたはサービスにテンプレートを定義します。インスタンスに定義されたテンプレートは、そのインスタンスだけに適用され、サービスに定義されているそのプロパティーグループのテンプレートよりも優先されます。サービスに定義されたテンプレートは、そのサービスのすべてのインスタンスに適用されます。
+.sp
+.LP
+リスタータの作成者は、そのリスタータを使用するすべてのサービスに適用されるテンプレートをマニフェストで定義できます。これは「\fB委任\fR」とも呼ばれます。SMF フレームワークの作成者は、SMF フレームワーク全体に対する既知の意味を指定したプロパティーグループのテンプレートを \fBsvc:/system/svc/global\fR のマニフェストに定義してあります。
+.sp
+.LP
+グローバルにまたはリスタータによって定義されたテンプレートは、サービスまたはインスタンスで再定義されると、検証エラーとしてフラグが設定されます。サービスの作成者は、SMF フレームワークでは使用されない、そのサービスに固有のプロパティーグループだけにテンプレートを作成することで、このようなエラーを避けることができます。
+.sp
+.LP
+プロパティーグループのテンプレートは、名前やタイプによるワイルドカード方式でも指定できます。プロパティーグループに適用可能なテンプレート定義のうち、もっとも限定的なものだけが適用されます。
+.SS "テンプレートの詳細"
+.SS "サービスおよびインスタンスのテンプレート"
+.sp
+.LP
+\fBtemplate\fR 要素は、template ブロックの開始を定義します。後述するほかの定義はすべて、template ブロックに含めることができます。\fBtemplate\fR 要素は、\fBservice\fR 要素または \fBinstance\fR 要素に含めることができます。\fBservice\fR 要素に含めた場合は、サービスおよびそのサービスのすべてのインスタンスに適用されます。\fBinstance\fR 要素に含めた場合は、サービスのそのインスタンスだけに適用されます。
+.sp
+.LP
+可能な場合は常に、サービス全体のテンプレートデータを定義することをお勧めします。
+.sp
+.in +2
+.nf
+<service ... >
+   <template>
+   </template>
+</service>
+.fi
+.in -2
+
+.SS "サービスおよびインスタンスの一般的な名前"
+.sp
+.LP
+サービス全体またはインスタンスには、そのサービスまたはインスタンスの目的を表す一般的な名前を定義できます。
+.sp
+.in +2
+.nf
+<template>
+  <common_name>
+      <loctext xml:lang='C'>console login</loctext>
+  </common_name>
+<template>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR は自由形式の文字列ですが、GUI または CLI でラベルとして使用されます。 
+.sp
+.LP
+一般的な名前を定義するときは、次のガイドラインに従ってください。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+短くします。通常は、1 語または 2 語が適切です。名前の長さは 40 文字以下にしてください。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+明確にします。サービス名、プロパティーグループ名、またはプロパティー名は人間にはわかりにくい場合がありますが、\fIcommon_name\fR はその目的を明確に示すようにしてください。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+句読文字は使用しません。\fIcommon_name\fR は文章ではありません。節や句を含むべきではありません。句読文字は、商標で必要になる場合にかぎり使用するようにしてください。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+大文字は頭字語または固有名だけに使用する必要があります。英語以外のロケールでは、文の要素に適切な大文字を使用してください。
+.RE
+.SS "サービスおよびインスタンスの説明"
+.sp
+.LP
+description 要素には、ステータス行やツールヒントに適した、プロパティーグループに関する長い説明が記述されます。
+.sp
+.in +2
+.nf
+<template>
+  <description>
+     <loctext xml:lang='C'>Provide the text login prompt on console.
+     </loctext>
+  </description>
+<template>
+.fi
+.in -2
+
+.sp
+.LP
+\fIdescription\fR のガイドライン
+.RS +4
+.TP
+.ie t \(bu
+.el o
+正しい文法を使用します。\fIdescription\fR は人間が読むための文です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+短くします。通常は、数個の文がもっとも適切です。
+.RE
+.SS "ドキュメント"
+.sp
+.LP
+このサービスのドキュメントを明示的に定義することにより、サービスで問題が発生した場合やサービスの利用者が詳細な情報を必要としている場合に、ドキュメントを簡単に見つけることができます。
+.SS "プロパティーグループ"
+.sp
+.LP
+\fBpg_pattern\fR 要素には、プロパティーグループの定義が記述されます。
+.sp
+.in +2
+.nf
+<template>
+  <pg_pattern name="pgname" type="pgtype" target="this" required="true">
+  </pg_pattern>
+</template>
+.fi
+.in -2
+
+.sp
+.LP
+\fIname\fR はプロパティーグループの名前、\fItype\fR はプロパティーグループのタイプです。
+.sp
+.LP
+\fBtarget\fR は、この定義の対象を指定します。\fB"this"\fR と指定すると、これを定義しているサービスまたはインスタンスを指します。\fB"instance"\fR は、サービスの template ブロックでのみ使用でき、定義がこのサービスのすべてのインスタンスに適用されることを意味します。\fB "delegate"\fR は、リスタータの template ブロックでのみ使用でき、そのリスタータに委任されたすべてのインスタンスに適用されることを意味します。\fB"all"\fR は、マスターリスタータでのみ使用でき、システム上のすべてのサービスを指します。target のデフォルト値は \fB"this"\fR です。
+.sp
+.LP
+\fIrequired\fR は、このプロパティーグループが必須かどうかを示します。\fIrequired\fR のデフォルト値は \fBfalse\fR です。\fIrequired\fR が \fBtrue\fR の場合は、\fIname\fR と \fI type\fR の両方を指定する必要があります。
+.sp
+.LP
+\fIname\fR と \fItype\fR は、一方または両方を省略できます。これらの属性のいずれかが省略されている場合、その属性はワイルドカードとして扱われます。たとえば、\fBpg_pattern\fR 定義で name 属性が省略されている場合、\fBpg_pattern\fR は指定されたタイプのすべてのプロパティーグループに適用されます。
+.SS "プロパティーグループの名前"
+.sp
+.LP
+\fIcommon_name\fR 要素には、人間が読めるローカライズされた形式で、プロパティーグループの名前が記述されます。
+.sp
+.in +2
+.nf
+<pg_pattern ...>
+  <common_name>
+    <loctext xml:lang='C'>start method</loctext>
+  </common_name>
+</pg_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR は自由形式の文字列ですが、GUI または CLI でラベルとして使用されます。 
+.sp
+.LP
+前述の「サービスおよびインスタンスの一般的な名前」に示されている \fIcommon_name\fR に関するガイドラインを参照してください。
+.SS "プロパティーグループの説明"
+.sp
+.LP
+\fIdescription\fR 要素には、ステータス行やツールヒントに適した、プロパティーグループに関する長い説明が記述されます。 
+.sp
+.in +2
+.nf
+<pg_pattern ...>
+  <description>
+    <loctext xml:lang='C'>A required method which starts the service.
+   </loctext>
+   </description>
+</pg_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+前述の「サービスおよびインスタンスの説明」に示されている \fIdescription\fR の指定方法に関するガイドラインを参照してください。
+.SS "プロパティー"
+.sp
+.LP
+\fIprop_pattern\fR 要素には、特定のプロパティーの定義が記述されます。
+.sp
+.in +2
+.nf
+<pg_pattern ...>
+  <prop_pattern name="propname" type="proptype" required="true">
+  </prop_pattern>
+</pg_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIname\fR はプロパティーの名前、\fItype\fR はプロパティーのタイプです。
+.sp
+.LP
+\fBrequired\fR は、このプロパティーが必須かどうかを示します。\fBrequired\fR のデフォルト値は \fBfalse\fR です。
+.sp
+.LP
+\fIname\fR は常に必須です。\fBrequired\fR が \fBfalse\fR の場合のみ、\fItype\fR は省略可能です。
+.SS "プロパティーの名前"
+.sp
+.LP
+\fIcommon_name\fR 要素には、人間が読めるローカライズされた形式で、プロパティーの名前が記述されます。
+.sp
+.in +2
+.nf
+
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR は自由形式の文字列フィールドですが、GUI または CLI でラベルとして使用されます。 
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+<common_name>
+  <loctext xml:lang='C'>retry interval</loctext>
+</common_name>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+前述の「サービスおよびインスタンスの一般的な名前」に示されている \fIcommon_name\fR に関するガイドラインを参照してください。
+.SS "プロパティーの単位"
+.sp
+.LP
+\fIunits\fR 要素には、人間が読めるローカライズされた形式で、数値プロパティーの単位が記述されます。
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+  <units>
+    <loctext xml:lang='C'>seconds</loctext>
+  </units>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIunits\fR のガイドライン
+.RS +4
+.TP
+.ie t \(bu
+.el o
+短くします。1 語または 1 ラベルだけを使用するようにします。通常は、複数形がもっとも適切です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+句読文字は使用しません。\fIunits\fR は文章ではありません。節や句を含むべきではありません。句読文字は、商標で必要になる場合にかぎり使用するようにしてください。
+.RE
+.SS "プロパティーの説明"
+.sp
+.LP
+\fIdescription\fR 要素には、ステータス行やツールヒントに適した、プロパティーに関する長い説明が記述されます。
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+   <description> <loctext xml:lang='C'>
+    The number of seconds to wait before retry.
+    </loctext> </description>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+前述の「サービスおよびインスタンスの説明」に示されている \fIdescription\fR の指定方法に関するガイドラインを参照してください。
+.SS "プロパティーの可視設定"
+.sp
+.LP
+\fIvisibility\fR 要素は、より上位のソフトウェアの簡易表示でこのプロパティーを表示するかどうかを指定します。 
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+  <visibility value="hidden | readonly | readwrite"/>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+一部のプロパティーは、内部の実装の詳細であり、構成の設定として表示されるべきではありません。単に読み取り専用のものもあります。このプロパティーは、このような制約を指定するために使用されます。値 hidden は、そのプロパティーを表示しないことを示します。\fBreadonly\fR は、そのプロパティーを変更できないことを意味します。\fBreadwrite\fR は、そのプロパティーが変更可能であることを示します。
+.sp
+.LP
+これはセキュリティーメカニズムでなく、単にユーザー自身の誤りを防ぎ、CLI の出力や GUI の表示から不要な情報を取り除くためのものです。非表示のプロパティーは、多くのコマンドおよび UI の完全開示モードで表示されます。
+.SS "プロパティーの形式"
+.sp
+.LP
+\fIcardinality\fR 要素と \fIinternal_separators\fR 要素には、プロパティーの構造が記述されます。
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+  <cardinality min="1" max="1"/>
+  <internal_separators>,</internal_separators>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcardinality\fR は、指定できるプロパティー値の数を示します。\fImin\fR は最小数、\fImax\fR は最大数です。どちらも省略可能です。どちらも指定されていない場合、\fB<cardinality/>\fR はデフォルトと同じ、0 個以上の値になります。
+.sp
+.LP
+\fIinternal_separators\fR は、実際の値を複数保持するプロパティー値に使用する区切り文字を指定します。
+.SS "値の制約"
+.sp
+.LP
+\fIconstraints\fR 要素は、プロパティーに使用できる値を指定します。
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+<constraints>
+       <value name="blue" />
+       <range min="1" max="7"/>
+       <include_values type="values"/>
+</constraints>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIvalue\fR 要素には、プロパティーの取り得る値が記述されます。range には、整数の範囲が記述されます。
+.sp
+.LP
+\fIvalue\fR と \fIrange\fR は、使用を制限すると有効な説明の多くが使用できなくなるため、任意の組み合わせで使用できます。値の制約が指定されていない場合、そのプロパティーは任意の値を取ることができます。
+.sp
+.LP
+\fIinclude_values\fR には、values ブロックで指定されたすべての値が記述されます (「値の説明」の節を参照)。\fB\fR
+.SS "値の選択肢"
+.sp
+.LP
+choices ブロックは、UI でユーザーに提供する値を示します。
+.sp
+.in +2
+.nf
+<prop_pattern ...>
+<choices>
+      <range min="1" max="3"/>
+      <value name="vt100" />
+      <value name="xterm" />
+      <include_values type="constraints"/>
+      <include_values type="values"/>
+</choices>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+constraints と同様に、\fBrange\fR と \fBvalue\fR には範囲と個々の値が記述されます。
+.sp
+.LP
+\fIinclude_values\fR には、constraints ブロックまたは values ブロックで指定されたすべての値が記述されます (次の節を参照)。
+.SS "値の説明"
+.sp
+.LP
+プロパティー名と同様に、プロパティーが取る値にも、わかりにくい表現のものが存在します。values 要素には、人間が読めるローカライズされた形式で、特定のプロパティー値の説明が記述されます。
+.sp
+.in +2
+.nf
+<prop_pattern>
+<values>
+      <value name="blue">
+              <common_name>
+                      <loctext xml:lang='C'>blue</loctext>
+              </common_name>
+              <description>
+                      <loctext xml:lang='C>
+                              The color between green and indigo.
+                      </loctext>
+              </description>
+      </value>
+</values>
+</prop_pattern>
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommon_name\fR は自由形式の文字列フィールドですが、GUI または CLI でラベルとして使用されます。
+.sp
+.LP
+前述の「サービスおよびインスタンスの一般的な名前」に示されている \fIcommon_name\fR に関するガイドラインを参照してください。
+.SH 使用例
+.sp
+.LP
+次のような基本的なサービスがあり、その基本的なテンプレートデータを定義する場合を考えます。
+.sp
+.in +2
+.nf
+<?xml version="1.0"?
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<service_bundle type='manifest' name='FOOfoo:foo'>
+<service name='system/foo' type='service' version='1'>
+      <dependency>
+              name='multi-user'
+              type='service'
+              grouping='require_all'
+              restart_on='none'
+              <service_fmri value='svc:/milestone/multi-user' />
+      </dependency>
+      <exec_method
+              type='method'
+              name='start'
+              exec='/opt/foo/food'
+              timeout_seconds='60'>
+      </exec_method>
+      <exec_method
+              type='method'
+              name='stop'
+              exec=':kill'
+              timeout_seconds='60'>
+      </exec_method>
+      <property_group name='config' type='application'>
+              <propval name='local_only' type='boolean' value='false' />
+              <propval name='config_file' type='astring'
+                  value='/opt/foo/foo.conf' />
+      <property name='modules' type='astring'>
+         <astring_list>
+               <value_node value='bar'/>
+               <value_node value='baz'/>
+         </astring_list>
+        </property>
+      </property_group>
+
+      <instance name='default' enabled='false' />
+</service>
+</service_bundle>
+.fi
+.in -2
+
+.sp
+.LP
+このサービスを使用する管理者に役立つように、基本的なテンプレートデータを \fB<service>\fR タグの内側に定義できます。もっとも役立つのは、サービス自体の目的と、サービス固有の構成を記述することです。
+.sp
+.in +2
+.nf
+<template>
+       <common_name> <loctext xml:lang='C'>
+           all-purpose demonstration
+       </loctext> </common_name>
+       <documentation>
+                <manpage title='food' section='1M'
+                         manpath='/opt/foo/man' />
+       </documentation>
+
+       <pg_pattern name='config' type='application' target='this'
+           required='true'>
+               <description> <loctext xml:lang='C'>
+                   Basic configuration for foo.
+                </loctext> </description>
+                <prop_pattern name='local_only' type='boolean'
+                    required='false'>
+                       <description> <loctext xml:lang='C'>
+                           Only listen to local connection requests.
+                       </loctext> </description>
+                </prop_pattern>
+                <prop_pattern name='config_file' type='astring'
+                     required='true'>
+                        <cardinality min='1' max='1'/>
+                        <description> <loctext xml:lang='C'>
+                             Configuration file for foo.
+                         </loctext> </description>
+                 </prop_pattern>
+                 <prop_pattern name='modules' type='astring'
+                     required='false'>
+                         <description> <loctext xml:lang='C'>
+                             Plugin modules for foo.
+                          </loctext> /description>
+                          <values>
+                                   <value name='bar'>
+                                   <description> <loctext xml:lang='C'>
+                                       Allow foo to access the bar.
+                                    </loctext> </description>
+                                    </value>
+                                    <value name='baz'>
+                                    <description> <loctext xml:lang='C'>
+                                       Allow foo to access baz functions.
+                                    </loctext> </description>
+                                    </value>
+                                    <value name='qux'>
+                                    <description> <loctext xml:lang='C'>
+                                       Allow foo to access qux functions.
+                                     </loctext> </description>
+                                     </value>
+                         </values>
+                         <choices>
+                             <include_values type='values'/>
+                         </choices>
+                  <prop_pattern>
+        </pg_pattern>
+</template>
+.fi
+.in -2
+
+.SH ファイル
+.sp
+.LP
+\fB/usr/share/lib/xml/dtd/service_bundle.dtd.1\fR
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvccfg\fR(1M), \fBlibscf\fR(3LIB), \fBservice_bundle\fR(4), \fBsmf\fR(5)

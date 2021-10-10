@@ -1,0 +1,740 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH cpio 1 "2011 年 7 月 7 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+cpio \- アーカイブからのファイルの抽出または復元
+.SH 形式
+.LP
+.nf
+\fBcpio\fR \fB-i\fR [\fB-bBcdfkmPrsStuvV6@/\fR] [\fB-C\fR \fIbufsize\fR] [\fB-E\fR \fIfile\fR] 
+     [\fB-H\fR \fIheader\fR] [\fB-I\fR \fI\fR [\fB-M\fR \fImessage\fR]] [\fB-R\fR \fIid\fR] [\fIpattern\fR]...
+.fi
+
+.LP
+.nf
+\fBcpio\fR \fB-o\fR [\fB-aABcLPvV@/\fR] [\fB-C\fR \fIbufsize\fR] [\fB-H\fR \fIheader\fR] 
+     [\fB-O\fR \fIfile\fR [\fB-M\fR \fImessage\fR]]
+.fi
+
+.LP
+.nf
+\fBcpio\fR \fB-p\fR [\fB-adlLmPuvV@/\fR] [\fB-R\fR \fIid\fR] \fIdirectory\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcpio\fR コマンドは、ファイルを \fBcpio\fR アーカイブへコピーしたり、cpio からコピーしたりします。\fBcpio\fR アーカイブは複数のボリュームにわたることができます。\fB-i\fR、\fB-o\fR、\fB-p\fR の各オプションは、実行する処理を選択します。以下に、これらの各処理を説明します。これらの処理は相互に排他的です。
+.SS "復元モード"
+.sp
+.LP
+\fBcpio\fR \fB-i\fR (copy in、復元) は、以前に \fBcpio\fR \fB-o\fR コマンドが生成した出力を標準入力としてファイルを抽出します。\fIpattern\fR の 1 つに一致する名前を持つファイルのみが選択されます。\fIpattern\fR についての詳細は、後述する「オペランド」の項および \fBsh\fR(1) の説明を参照してください。抽出されたファイルは条件に応じて作成され、以下に述べるオプションに基づいて現在のディレクトリにコピーされます。ファイルのアクセス権は前の \fBcpio o\fR コマンドと同じです。所有者とグループは、現在のユーザーが \fB{PRIV_FILE_CHOWN_SELF}\fR 特権を保持している場合を除き、現在のユーザーと同じです。\fBchown\fR(2) を参照してください。このような場合は、所有者およびグループは、前に実行した \fBcpio -o\fR コマンドの結果と同じになります。\fBcpio\fR \fB-i\fR が作成しようとするファイルがすでに存在していて、さらに既存のファイルが同じか新しいバージョンのときは、メッセージが出力されファイルは置換されないので注意してください。\fB\fR\fB\fR\fB-u\fR オプションは既存のファイルを無条件に置換するときに使用します。
+.SS "保管モード"
+.sp
+.LP
+\fBcpio\fR \fB-o\fR (copy out、保管) は、ファイルのパス名のリストを標準入力から読み込んで、それらのファイルをパス名およびステータス情報と共に、\fBcpio\fR アーカイブ形式で標準出力へコピーします。出力は、デフォルトでは 8192 バイト境界でブロック化されますが、(\fB-B\fR または \fB-C\fR オプションを使用して) ユーザーが指定したブロックサイズまたは (CTC テープのように) デバイスに依存したブロックサイズでの出力も可能です。
+.SS "パスモード"
+.sp
+.LP
+\fBcpio\fR \fB-p\fR (pass、パス) は、ファイルのパス名のリストを標準入力から読み込んで、条件に応じてファイルを作成し、以下のオプションに基づいてコピー先のディレクトリへコピーします。
+.sp
+.LP
+ソースファイルの基盤となるファイルシステムが \fBpathconf\fR(2) で報告されるホールの検出をサポートしており、かつそのファイルが疎ファイルで、宛先ファイルがシーク可能である場合、その疎ファイル内のホールはパスモードに保持されます。それ以外の場合は、ホールが 0 で埋められます。
+.sp
+.LP
+\fBcpio\fR は 4 バイトワードを前提としています。
+.sp
+.LP
+文字デバイスへの出力 (\fB-o\fR) または文字デバイスからの入力 (\fB-i\fR) 時に、\fBcpio\fR が媒体の終わりに到達し、さらに \fB-O\fR オプションや \fB-I\fR オプションが使用されていないと、\fBcpio\fR は次のメッセージを表示します。
+.sp
+.in +2
+.nf
+To continue, type device/file name when ready.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+継続するには、媒体を交換して文字型特殊デバイス名を入力して RETURN キーを押してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+(copy in、復元) 標準入力からアーカイブを読み込んで、条件に応じて、アーカイブに含まれているファイルを抽出し、現在のディレクトリツリーに配置します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 6n
+.rt  
+(copy out、保管) ファイルのパス名のリストを標準入力から読み込んで、そのファイルを \fBcpio\fR 形式で標準出力へコピーします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+(pass、パス) ファイルのパス名のリストを標準入力から読み込んで、条件に応じて、読み込んだファイルを宛先のディレクトリツリーへコピーします。
+.RE
+
+.sp
+.LP
+前述の \fB-i\fR、\fB-o\fR、\fB-p\fR オプションのいずれかを指定したあとに、次のオプションを任意の順序で指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-0\fR \fR
+.ad
+.RS 14n
+.rt  
+名前に NEWLINES を含むファイルをアーカイブできるように、NEWLINE ではなく NULL 文字で終わるファイル名のリストを読み込みます。この種のファイル名リストを生成する方法としては、\fBfind\fR とともに \fB-print0\fR オプションを使用する方法があります。 
+.sp
+このオプションは、保管モードとコピーパスモードで使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 14n
+.rt  
+コピー後に入力ファイルのアクセス時間をリセットして、\fBcpio\fR によるアクセスの痕跡を消去します。\fBcpio\fR \fB-pla\fR が指定されていると、リンクされたファイルのアクセス時間はリセットされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.RS 14n
+.rt  
+ファイルをアーカイブへ追加します。\fB-A\fR オプションには \fB-O\fR が必要です。このオプションは、ファイル、またはハードディスクパーティションのアーカイブにのみ有効です。アーカイブ内に以前から存在する、リンクされたファイルへの影響は予測不能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 14n
+.rt  
+各ワード内のバイト順を逆にします。\fB-i\fR オプションとのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR\fR
+.ad
+.RS 14n
+.rt  
+入出力を 5120 バイトでブロック化します。このオプションと \fB-C\fR オプションを使用していないときのデフォルトのバッファサイズは 8192 バイトです。\fB-B\fR は \fB-p\fR (pass、パス) オプションには適用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 14n
+.rt  
+可搬性のために、\fBASCII\fR 文字形式でヘッダー情報を読み書きします。このヘッダー形式に関して\fBユーザー ID\fR または\fBグループ ID\fR の制限はありません。SVR4 をベースとしたマシン間ではこのオプションを使用してください。また種類が不明なマシン間では \fB-H\fR \fBodc\fR オプションを使用してください。\fB-c\fR オプションは、SVR4 ベースのシステムでだけサポートされている拡張デバイス番号を使うことを意味しています。SunOS 4 または Interactive UNIX と、Solaris 2.6 オペレーティング環境またはその互換バージョンとの間でファイルを転送する場合は、\fB-H\fR \fBodc\fR を使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIbufsize\fR\fR
+.ad
+.RS 14n
+.rt  
+入出力を \fIbufsize\fR 単位でブロック化します。\fIbufsize\fR は正の整数で置き換えられます。このオプションと \fB-B\fR オプションを使用していないときのデフォルトのバッファサイズは 8192 バイトです。\fB-C\fR は \fB-p\fR (pass、パス) オプションには適用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 14n
+.rt  
+必要に応じてディレクトリを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIfile\fR\fR
+.ad
+.RS 14n
+.rt  
+アーカイブから抽出するファイル名のリストを含む (1 行 1 ファイル名の) 入力ファイル (\fIfile\fR) を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIpattern\fR で指定されたものを除くすべてのファイルを抽出します。\fIpattern\fR については「オペランド」の項を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fIheader\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIheader\fR 形式でヘッダー情報を読み書きします。コピー先とコピー元のマシンが異なるタイプのときは常にこのオプション (または \fB-c\fR オプション) を使用してください。このオプションは、\fB-c\fR および \fB-6\fR と同時には使用できません。
+.sp
+\fIheader\fR として有効な値は以下のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbar\fR\fR
+.ad
+.RS 21n
+.rt  
+ \fBbar\fR ヘッダーと形式。\fB-i\fR オプション (読み取り専用) とのみ使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrc\fR | \fBCRC\fR\fR
+.ad
+.RS 21n
+.rt  
+\fB拡張デバイス番号とファイル単位のチェックサムを持った ASCII ヘッダー。\fRこのヘッダー形式に関して\fBユーザー ID\fR または\fBグループ ID\fR の制限はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBodc\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBスモールデバイス番号を持った ASCII ヘッダー。\fRこれは IEEE/P1003 データ交換標準による cpio のヘッダーと形式です。他のヘッダー形式と比べて、最も幅広い可搬性を提供します。POSIX に準拠したシステム間でファイル転送を行う場合の公式の形式です (\fBstandards\fR(5) を参照)。SunOS 4 または Interactive UNIX と通信する場合には、この形式を使用してください。このヘッダー形式では、ヘッダーに\fBユーザー ID\fR と\fBグループ ID\fR を最大 262143 まで格納できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtar\fR または \fBTAR\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBtar\fR ヘッダーと形式。これは 2097151 までの\fBユーザー ID\fR と\fBグループ ID\fR を格納できる、古い \fBtar\fR ヘッダー形式です。\fB-i\fR オプションと一緒に使用して、古い形式のアーカイブを読み込むためにのみ用意されています。
+.sp
+このアーカイブ形式を \fB-o\fR オプションと一緒に使用すると、"ustar" 形式を指定した場合と同じ効果が得られます。つまり、出力アーカイブは \fBustar\fR 形式になり、アーカイブの読み込みには \fB-H\fR \fBustar\fR を使用する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBustar\fR | \fBUSTAR\fR\fR
+.ad
+.RS 21n
+.rt  
+IEEE/P1003 データ交換標準の tar ヘッダーと形式。このヘッダー形式では、ヘッダーに\fBユーザー ID\fR と\fBグループ ID\fR を最大 2097151 まで格納できます。
+.RE
+
+前述の制限よりも大きい\fBユーザー ID\fR および\fBグループ ID\fR を持つファイルは \fB60001\fR の\fBユーザー ID\fR および\fBグループ ID\fR で格納されます。大規模ファイル (8G バイト \(em 1G バイト) を転送するには、ヘッダー形式は \fBtar または TAR\fR、\fBustar または USTAR\fR、\fBodc\fR のいずれかのみを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIfile\fR\fR
+.ad
+.RS 14n
+.rt  
+入力アーカイブとして、標準入力の代わりに \fIfile\fR の内容を読み込みます。\fIfile\fR が文字型特殊デバイスで、現在の媒体をすべて読み終えた場合、処理を続けるために媒体を交換して RETURN キーを押してください。このオプションは \fB-i\fR オプションとのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 14n
+.rt  
+破壊されたファイルヘッダーや I/O エラーを読み飛ばします。破壊されたりシーケンスが乱れたりした媒体からファイルをコピーしたい場合は、このオプションによって正常なヘッダーを持つファイルだけを読むことができます。ほかの \fBcpio\fR アーカイブを含む \fBcpio\fR アーカイブの場合、エラーが発生すると \fBcpio\fR は途中で終了できます。\fBcpio\fR はより小さいアーカイブのヘッダーである可能性のある次の正常なヘッダーを検索し、より小さいアーカイブのトレーラが見つかった時点で終了します。\fB-i\fR オプションとのみ使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 14n
+.rt  
+パスモードでは、可能な場合は必ずリンク元とリンク先の間にハードリンクを作成します。\fB-L\fR オプションを同時に指定した場合は、シンボリックリンクによって参照されているファイルに対してハードリンクを作成します。そうでない場合は、シンボリックリンク自体に対してハードリンクを作成します。このオプションは、\fB-p\fR オプションとのみ使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 14n
+.rt  
+シンボリックリンクをたどります。シンボリックリンクの宛先がディレクトリであった場合は、参照されているディレクトリを、そのリンクの名前で保存します。そうでない場合は、参照されているファイルを、そのリンクの名前で保存します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 14n
+.rt  
+以前のファイル更新時間を保持します。このオプションは、コピー中のディレクトリには無効です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR \fImessage\fR\fR
+.ad
+.RS 14n
+.rt  
+メディア交換時の \fImessage\fR を定義します。オプション \fB-O\fR または \fB-I\fR を使用して、文字型特殊デバイスを指定しているときに、媒体の終わりに達したときに出力されるメッセージを定義します。次の媒体のシーケンス番号を表示するのに 1 つの \fB%d\fR を使用できます。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR \fIfile\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBcpio\fR の出力先を、標準出力から \fIfile\fR に変更します。\fIfile\fR が文字型特殊デバイスで現在の媒体が一杯のとき処理を継続するには、媒体を交換してキャリッジリターンを押してください。\fB-o\fR オプションとのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBACL\fR を保持します。このオプションを出力用に使用した場合、既存の \fBACL\fR が、拡張属性以外のその他の属性とともに標準出力に書き込まれます。\fBACL\fR は、特殊なファイルタイプを持つ特殊ファイルとして作成されます。このオプションを入力用に使用した場合、\fBACL\fR は他の属性とともに標準入力から抽出されます。このオプションは特殊ファイルタイプを認識できます。\fBACL\fR を持つ \fBcpio\fR アーカイブを旧バージョンの \fBcpio\fR によって抽出した場合、エラーが発生することに注意してください。\fBACL\fR がすべてのシステムにサポートされているとはかぎらず、可搬性がないため、このオプションは \fB-c\fR オプションとともに使用しないでください。可搬性を保つために \fBASCII\fR ヘッダーを使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 14n
+.rt  
+対話形式でファイル名を変更します。キャリッジリターンだけを押すと、そのファイルを飛ばします。"." と入力すると、元のパス名が使用されます。\fBcpio\fR \fB-p\fR とは使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIid\fR\fR
+.ad
+.RS 14n
+.rt  
+各ファイルの所有者とグループ情報をユーザー ID に再割り当てします(ID は \fBpasswd\fR データベース内の有効なログイン ID でなければなりません)。このオプションが有効なのは、ID が呼び出し元のユーザーまたはスーパーユーザーの場合だけです。「\fB注意事項\fR」 を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 14n
+.rt  
+各ハーフワード毎にバイトを交換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.RS 14n
+.rt  
+各ワード毎にハーフワードを交換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 14n
+.rt  
+入力の内容を表示します。入力したファイルに拡張属性が含まれている場合は、それらの属性も表示します。ファイルは生成されません。\fB-t\fR と \fB-V\fR は同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.RS 14n
+.rt  
+無条件にコピーを実行します。通常、古いファイルは同一名の新しいファイルを置換しませんが、古いディレクトリは新しいディレクトリを更新します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 14n
+.rt  
+冗長。ファイル名のリストと拡張属性の名前を出力します。\fB-t\fR オプションと一緒に使用すると \fBls\fR \fB-l\fR コマンドの出力のようになります (\fBls\fR(1) 参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.RS 14n
+.rt  
+詳細表示。入力または出力した各ファイルの内容を完全に表示します。すべてのファイル名を表示せずに \fBcpio\fR が動作していることをユーザーが確認するときに便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-6\fR\fR
+.ad
+.RS 14n
+.rt  
+UNIX System Sixth Edition 形式のアーカイブ形式ファイルを処理します。\fB-i\fR オプションとのみ使用できます。このオプションは、\fB-c\fR および \fB-H\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-@\fR\fR
+.ad
+.RS 14n
+.rt  
+拡張属性をアーカイブに含めます。デフォルトでは、\fBcpio\fR は拡張属性をアーカイブに含めません。このフラグを指定すると \fBcpio\fR は、アーカイブ内のファイルに拡張属性が存在するかどうかを検査し、存在する場合は、その拡張属性を通常のファイルと同様にアーカイブに含めます。拡張属性ファイルは、特殊なファイルタイプを持つ特殊ファイルとしてアーカイブに収められます。\fB-@\fR フラグをオプション \fB-i\fR または \fB-p\fR と一緒に使用すると、\fBcpio\fR は、拡張属性のデータを通常のファイルデータと一緒に復元します。拡張属性ファイルは、通常のファイルのデータの一部としてのみ抽出できます。拡張属性ファイルだけを明示的に抽出しようとすると無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-/\fR\fR
+.ad
+.RS 14n
+.rt  
+拡張システム属性をアーカイブに含めます。デフォルトでは、\fBcpio\fR は拡張システム属性をアーカイブに含めません。このフラグを指定すると \fBcpio\fR は、アーカイブ内のファイルに拡張システム属性が存在するかどうかを検査し、存在する場合は、そのシステム属性を通常のファイルと同様にアーカイブに含めます。拡張属性ファイルは、特殊なファイルタイプを持つ特殊ファイルとしてアーカイブに収められます。\fB-/\fR フラグをオプション \fB-i\fR または \fB-p\fR と一緒に使用すると、\fBcpio\fR は、拡張システム属性のデータを通常のファイルデータと一緒に復元します。拡張システム属性ファイルは、通常のファイルのデータの一部としてのみ抽出できます。拡張属性ファイルだけを明示的に抽出しようとすると無視されます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdirectory\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBcpio\fR \fB-p\fR の対象となる既存ディレクトリのパス名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpattern\fR\fR
+.ad
+.RS 13n
+.rt  
+パターンマッチング用の表現方法を利用した式。これはシェルがファイル名のパターンマッチングに利用する式 (\fBsh\fR(1) を参照) や正規表現に似たものです。以下に示すメタキャラクタが定義されています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB*\fR\fR
+.ad
+.RS 9n
+.rt  
+空の文字列を含み、あらゆる文字列と一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.RS 9n
+.rt  
+任意の単一文字と一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[...]\fR\fR
+.ad
+.RS 9n
+.rt  
+括弧内のいずれか 1 文字を表します。2 つの文字を \(mi で区切って指定すると、システムのデフォルトの照合シーケンスに従ってその 2 文字の間のすべての文字 (2 文字自身も含む) と一致します。先頭の \fB[\fR の次の文字が ! である場合、\fB\fR結果は不確定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fR
+.ad
+.RS 9n
+.rt  
+!(感嘆符) は\fI否定\fRを表します。たとえば \fB!abc*\fR と指定すると、文字列 \fBabc\fR で始まるファイル名とは一致しません。
+.RE
+
+\fIpattern\fR 指定において、メタキャラクタ \fB?\fR、\fB*\fR、\fB[\fR\|. \|.\|.\fB]\fR はスラッシュ (\fB/\fR) と一致し、バックスラッシュ (\fB\e\fR) はエスケープと一致します。複数 \fIpattern\fR も指定可能で、\fIpattern\fR が何も指定されなければデフォルト値として \fB*\fR (すなわち、すべてのファイルを選択する) が採用されます。\fI\fR
+.sp
+各パターンは二重引用符で囲む必要があります。そうしないと、現在のディレクトリ内のファイルが使用されることがあります。
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルが 2 ギガバイト (2^31 バイト) 以上ある場合の \fBcpio\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.sp
+.LP
+以下に \fBcpio\fR の使用例を示します。
+.LP
+\fB例 1 \fR標準入力を使用する
+.sp
+.in +2
+.nf
+example% \fBls | cpio -oc > ../newfile\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の例のように標準入力をパイプ経由で \fBcpio \fR\fB-o\fR に渡すと、ファイルがグループ化されて 1 つのアーカイブファイル (\fB\&../newfile\fR) にまとめられます。\fB-c\fR オプションは (\fB-H\fR オプションと同様に)、アーカイブファイルのほかのマシンとの互換性を保証します。ファイル名のリストをパイプ経由で \fBcpio\fR に渡すには、\fBls\fR(1) の代わりに \fBfind\fR(1)、\fBecho\fR(1)、\fBcat\fR(1) などを使用できます。ファイルではなくデバイスへ出力先を変更することもできます。
+
+.LP
+\fB例 2 \fRディレクトリにファイルを抽出する
+.sp
+.in +2
+.nf
+example% \fBcat newfile | cpio -icd "memo/a1" "memo/b*"\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、\fBcpio\fR \fB-i\fR は \fBcpio\fR \fB-o\fR の出力を使用して (\fBcat\fR を使用してパイプに渡している)、パターン (\fBmemo/a1\fR、\fBmemo/b*\fR) に一致するファイルを抽出します。さらに必要に応じて現在のディレクトリ下にディレクトリを作成し (\fB-d\fR オプション)、適切なディレクトリにファイルを格納します。\fB-c\fR オプションは互換性のあるヘッダーで入力ファイルが作成されているときに使用します。何もパターンを指定しないと、\fBnewfile\fR 内のすべてのファイルをディレクトリに格納します。
+
+.LP
+\fB例 3 \fR別のディレクトリにファイルをコピーまたはリンクする
+.sp
+.in +2
+.nf
+example% \fBfind . -depth -print | cpio -pdlmv newdir\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、\fBcpio\fR \fB-p\fR はパイプ経由でファイル名を読み込んで、それらのファイルを別のディレクトリ (\fBnewdir\fR) へコピーまたはリンク (\fB-l\fR オプション) します。\fB-d\fR オプションは必要に応じてディレクトリを作成します。\fB-m\fR オプションは変更時間を保持します。(\fBcpio\fR に渡すパス名を作成するには \fBfind\fR(1) の \fB-depth\fR オプションを使用してください。これによって読み取りのみが許可されたディレクトリ下にファイルを作成しようとするときに発生する問題を排除できます。)\fB\fRコピー先のディレクトリ \fBnewdir\fR が存在している必要があります。
+
+.sp
+.LP
+\fBfind\fR と一緒に \fBcpio\fR を使用する場合、\fBcpio\fR のオプションに \fB-L\fR を使用しているときは \fBfind\fR のオプションに \fB-follow\fR を (逆の場合も同様) 使用してください。それ以外の場合、予期しない結果になります。
+.sp
+.LP
+マルチリールアーカイブに対しては、古いボリュームのマウントを解除し、新しいボリュームをマウントし、さらに次の装置名を入力して (通常、最初のリールと同じ) 次のテープに引き継いでください。停止するには、RETURN キーを押すと \fBcpio\fR が終了します。
+.SH 環境
+.sp
+.LP
+\fBcpio\fR の実行に影響を与える次の環境変数の詳細については、\fBenviron\fR(5) を参照してください。\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBTZ\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTMPDIR\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBcpio\fR の一時ファイルは、デフォルトでは \fB/var/tmp\fR に作成されます。それ以外の場合は、\fBTMPDIR\fR で指定したディレクトリに作成されます。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生した。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、マニュアルページの \fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBar\fR(1), \fBcat\fR(1), \fBecho\fR(1), \fBfind\fR(1), \fBls\fR(1), \fBpax\fR(1), \fBsetfacl\fR(1), \fBsh\fR(1), \fBtar\fR(1), \fBchown\fR(2), \fBarchives.h\fR(3HEAD), \fBattributes\fR(5), \fBenviron\fR(5), \fBfsattr\fR(5), \fBlargefile\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBcpio\fR アーカイブで使用できるパス名の最大長は、そのアーカイブに含まれているヘッダータイプによって決まります。以下の表に、サポートされているヘッダータイプと、そのヘッダータイプで許可されている最大パス長を示します。
+.sp
+
+.sp
+.TS
+tab();
+cw(1.83i) cw(1.83i) cw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+ヘッダータイプコマンド行オプション最大パス長
+BINARY"\fB-o\fR"256
+POSIX"\fB-oH\fR odc"256
+ASCII"\fB-oc\fR"1023
+CRC"\fB-oH\fR crc"1023
+USTAR"\fB-oH\fR ustar"255
+.TE
+
+.sp
+.LP
+コマンド行オプション "\fB-o\fR \fB-H\fR \fBtar\fR" を指定した場合は、作成されるアーカイブのタイプは \fBUSTAR\fR になります。つまり、このアーカイブをコマンド行オプション "\fB-i\fR \fB- H\fR \fBtar\fR" を使用して読み込むとエラーが発生します。このアーカイブの読み込みには、コマンド行オプション "\fB-i\fR \fB-H\fR \fBustar\fR" を使用してください。"\fB-i\fR \fB-H\fR \fBtar\fR" オプションは、古い tar アーカイブ形式を読み込むためのものです。
+.sp
+.LP
+選択されたヘッダー形式に対して\fBユーザー ID\fR または\fBグループ ID\fR が大きすぎるファイルについてはエラーメッセージが出力されます。\fBユーザー ID\fR または\fBグループ ID\fR のすべての値をサポートできるアーカイブを作成するには、\fB-H\fR \fBcrc\fR あるいは \fB-c\fR を使用してください。
+.sp
+.LP
+スーパーユーザーだけが特殊ファイルをコピーできます。
+.sp
+.LP
+512 バイトを 1 ブロックとみなします。
+.sp
+.LP
+ファイルのアクセス権が \fB000\fR で、なんらかの文字データを持ち、さらにユーザーが root でない場合、そのファイルは保管または復元されません。
+.sp
+.LP
+cpio が \fB{PRIV_FILE_CHOWN_SELF}\fR 特権を持つユーザーにより、そして特に \fB{_POSIX_CHOWN_RESTRICTED}\fR が有効でない (上書きされる場合を除き、この特権を事実上すべてのユーザーに許可する) システムに対して、復元モードまたはコピーパスモードで呼び出されると、抽出またはコピーされたファイルの所有者およびグループが、呼び出し元のユーザーとは異なる、元のアーカイブ済みファイルに指定されたものになる可能性があります。これはユーザーの意図した動作ではない可能性があります。\fB\fR\fB\fRユーザーの ID を指定した場合には、必要に応じ、\fB-R\fR オプションを指定することでファイルの所有権を保持できます。
+.sp
+.LP
+ヘッダーに書かれている i ノード番号 (\fB/usr/include/archives.h\fR) は unsigned short (2 バイト) です。このため、この i ノード番号は \fB0\fR から \fB65535\fR までの値となります。ハードリンクされたファイルはこの i ノード番号の範囲に入る必要があります。これはベンダーが異なるマシン間で \fBcpio\fR アーカイブを移動する場合に問題となることがあります。
+.sp
+.LP
+テープからハードディスクへファイルを 取り出したりコピーしたりする場合は、ハードディスクからテープへコピーした時と同じブロック化因数を使用してください。したがって、\fB-B\fR オプションまたは \fB-C\fR オプションを指定してください。
+.sp
+.LP
+\fB-p\fR および \fB-o\fR の処理中は、標準入力上のファイルリストは、\fBcpio\fR によって一時ファイルに保存されます。
+.sp
+.LP
+大規模ファイルに対しては、新しい \fBpax\fR(1) 形式とそれをサポートするコマンド (\fBtar\fR など) を使用する必要があります。現在、\fBcpio\fR コマンドは最新の POSIX 標準の一部でありませんので、\fBpax\fR の方が推奨されます。

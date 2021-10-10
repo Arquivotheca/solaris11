@@ -1,0 +1,44 @@
+#!/usr/bin/python2.6
+#
+# 
+#
+
+#
+# Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Check each bug referenced in a comments list (from stdin) has a valid RTI
+#
+
+import sys, os, getopt
+
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), "..", "lib",
+                                "python%d.%d" % sys.version_info[:2]))
+
+# Allow running from the source tree, using the modules in the source tree
+sys.path.insert(2, os.path.join(os.path.dirname(__file__), '..'))
+
+from onbld.Checks.Rti import rti
+
+
+def usage():
+    print 'usage: rtichk [-g gate] [-c consolidation] bugids...'
+    sys.exit(2)
+
+try:
+	opts, bugs = getopt.getopt(sys.argv[1:], "c:g:r:t:")
+except getopt.GetoptError:
+	usage()
+	sys.exit(2)
+
+gate = None
+consolidation = None
+
+for opt, arg in opts:
+	if opt == '-c': consolidation = arg
+	elif opt == '-g': gate = arg
+
+ret = not rti(bugs, consolidation=consolidation, gatePath=gate,
+	      output=sys.stdout)
+sys.exit(ret)

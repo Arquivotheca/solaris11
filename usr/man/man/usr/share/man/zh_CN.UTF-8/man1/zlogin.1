@@ -1,0 +1,262 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH zlogin 1 "2011 年 6 月 13 日" "SunOS 5.11" "用户命令"
+.SH 名称
+zlogin \- 进入一个区域
+.SH 用法概要
+.LP
+.nf
+\fBzlogin\fR [\fB-dCE\fR] [\fB-e\fR \fIc\fR] [\fB-l\fR \fIusername\fR] \fIzonename\fR
+.fi
+
+.LP
+.nf
+\fBzlogin\fR [\fB-ES\fR] [\fB-e\fR \fIc\fR] [\fB-l\fR \fIusername\fR] \fIzonename\fR \fIutility\fR 
+     [\fIargument\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzlogin\fR 实用程序用于进入操作系统区域。只有在全局系统区域内进行操作的用户才能使用该实用程序，并且执行该实用程序时必须拥有所有特权。此外，用户必须先获得授权，然后才能使用 \fBOPTIONS\fR 部分中所述的特定选项。
+.sp
+.LP
+\fBzlogin\fR 检查前缀可为指定的\fB区域名称\fR并且以斜杠字符开头的授权字符串。如果省略区域名称，用户将有权进入任何区域。
+.sp
+.LP
+\fBzlogin\fR 采用以下三种模式之一运行：
+.sp
+.ne 2
+.mk
+.na
+\fB交互模式\fR
+.ad
+.RS 19n
+.rt  
+如果未指定任何实用程序参数并且 \fBzlogin\fR 进程的标准输入文件描述符为 tty 设备，则 \fBzlogin\fR 的运行模式为\fB交互模式\fR。在该模式下，\fBzlogin\fR 会创建一个新的伪终端供在登录会话中使用。需要 tty 设备的程序（如 \fBvi\fR(1)）可以在该模式下正常运行。在该模式下，\fBzlogin\fR 会调用 \fBlogin\fR(1) 以提供合适的登录会话。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB非交互模式\fR
+.ad
+.RS 19n
+.rt  
+如果指定了实用程序，则 \fBzlogin\fR 的运行模式为\fB非交互模式\fR。该模式对脚本作者很有用，因为 \fBstdin\fR、\fBstdout\fR 和 \fBstderr\fR 均被保留，并且一旦终止就会返回 \fI utility\fR 的退出状态。在该模式下，\fBzlogin\fR 会调用 \fBsu\fR(1M) 以便设置用户环境并提供登录环境。
+.sp
+指定的命令以字符串形式进行传递，并由在非全局区域中运行的 shell 解释。请参见 \fBrsh\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB控制台模式\fR
+.ad
+.RS 19n
+.rt  
+如果指定了 \fB-C\fR 选项，用户将连接到区域控制台设备并且 \fBzlogin\fR 会在\fB控制台模式\fR下运行。一旦区域处于已安装状态，便可使用区域控制台。在重新引导区域的过程中，将始终保持与控制台的连接。
+.RE
+
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 15n
+.rt  
+连接到区域控制台。访问区域控制台需具备 \fBzone.manage/\fIzonename\fR\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 15n
+.rt  
+如果区域停止，则断开与控制台的连接。该选项只能和 \fB-C\fR 选项一起指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIc\fR\fR
+.ad
+.RS 15n
+.rt  
+指定另外一个转义符 \fIc\fR，作为用于访问扩展函数以及断开登录连接的键序。缺省的转义符为波浪号 (\fB~\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.RS 15n
+.rt  
+使用转义序列符禁止访问扩展函数或断开登录连接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIusername\fR\fR
+.ad
+.RS 15n
+.rt  
+为区域登录指定其他 \fIusername\fR。如果不使用该选项，则使用的区域用户名为 \fBroot\fR。如果指定了 \fB-C\fR 选项，该选项将无效。
+.sp
+用户名必须在区域内有效。对于交互式登录，需具备 \fBsolaris.zone.login/\fIzonename\fR\fR 授权并且在区域内进行口令验证。对于非交互式登录或要跳过口令验证，则需具备 \fBsolaris.zone.manage/\fIzonename\fR\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB安全\fR登录模式。\fBzlogin\fR 将进行最少处理，并且不调用 \fBlogin\fR(1) 或 \fBsu\fR(1M)。区域用户名设置为 \fBroot\fR。如果通过 \fB-l\fR 选项指定了用户名，而该用户名无法用于控制台登录，则 \fB-S\fR 选项将无效。只有当其他登录方式变得不可用时，才应使用该模式恢复受损的区域。
+.sp
+使用该选项需具备 \fBsolaris.zone.manage/\fIzonename\fR\fR 授权。
+.RE
+
+.SS "转义序列"
+.sp
+.LP
+键入的以波浪号字符 (\fB~\fR) 开头的行即"转义序列"。转义符可通过 \fB-e\fR 选项更改。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~.\fR\fR
+.ad
+.RS 6n
+.rt  
+与区域断开连接。与区域断开连接和注销不同，因为本地主机在断开连接时不会向区域结尾发送警告信息。
+.RE
+
+.SH 安全
+.sp
+.LP
+一旦将某进程置于全局区域以外的区域，该进程及其所有子进程便无法重新更改区域。
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIzonename\fR\fR
+.ad
+.RS 15n
+.rt  
+要进入的区域的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIutility\fR\fR
+.ad
+.RS 15n
+.rt  
+要在指定区域中运行的实用程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIargument...\fR\fR
+.ad
+.RS 15n
+.rt  
+传递给实用程序的参数。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+在交互模式和非交互模式下，当该命令或非全局区域中的 shell 退出时，\fBzlogin\fR 实用程序也会退出。在非交互模式下，将返回远程程序的退出状态作为 \fBzlogin\fR 的退出状态。在交互模式和控制台登录模式下，不会返回退出状态。只要没有出现与连接有关的错误，\fBzlogin\fR 便会返回 \fB0\fR 退出状态。
+.sp
+.LP
+在所有模式下，如果无法建立与区域的连接，连接将会意外失败；或者如果用户没有足够的特权执行所请求的操作，\fBzlogin\fR 将会退出并返回状态 \fB1\fR。
+.sp
+.LP
+综上所述，返回的退出值如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 10n
+.rt  
+成功进入区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 10n
+.rt  
+权限被拒绝或无法进入区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB任何\fR
+.ad
+.RS 10n
+.rt  
+来自实用程序或 \fBsu\fR(1M) 的返回码（如果在非交互模式下运行）。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/zones
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBlogin\fR(1)、\fBrsh\fR(1)、\fBvi\fR(1)、\fBsu\fR(1M)、\fBzoneadm\fR(1M)、\fBzonecfg\fR(1M)、\fBattributes\fR(5)、\fBzones\fR(5)
+.SH 附注
+.sp
+.LP
+如果 \fBzlogin\fR 的打开文件或其地址空间的任何部分与某个 NFS 文件对应，该命令将会失败。这包括该可执行文件本身或共享库。

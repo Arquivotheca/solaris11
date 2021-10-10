@@ -1,0 +1,158 @@
+'\" te
+.\"  Copyright (c) 2000 Sun Microsystems Inc.  All Rights Reserved.
+.TH pcn 7D "20 Oct 2000" "SunOS 5.11" "Devices"
+.SH NAME
+pcn \- AMD PCnet Ethernet controller device driver
+.SH SYNOPSIS
+.LP
+.nf
+\fB/dev/pcn\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The  \fBpcn\fR Ethernet driver is a multi-threaded,  loadable, clonable driver for the  AMD PCnet family of Ethernet controllers that use the Generic  \fBLAN\fR Driver (\fBGLD\fR) facility to implement the required  \fBSTREAMS\fR and Data Link Provider (see  \fBdlpi\fR(7P)) interfaces.
+.sp
+.LP
+This driver supports a number of integrated motherboards and  add-in adapters based on the AMD PCnet-ISA, PCnet-PCI, and  PCnet-32 controller chips. The  \fBpcn\fR driver functions include controller initialization, frame  transmit and receive, functional addresses,  promiscuous and multicast support, and error  recovery and reporting.
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The cloning character-special device, \fB/dev/pcn\fR, is used to access all PCnet devices installed in the system.
+.SH \fBpcn\fR AND \fBDLPI\fR
+.sp
+.LP
+The \fBpcn\fR driver uses the Solaris \fBGLD\fR module  which handles all the \fBSTREAMS\fR and \fBDLPI\fR specific functions of the driver. It is a \fIstyle 2\fR \fBDLPI\fR driver and therefore supports only the connectionless mode of data transfer. Thus, a \fBDLPI\fR user should issue a \fBDL_ATTACH_REQ\fR primitive to select the device to be used. Valid \fBDLPI\fR primitives are defined in \fB<sys/dlpi.h>\fR\&. Refer to \fBdlpi\fR(7P) for more information.
+.sp
+.LP
+The device is initialized on the first attach and de-initialized (stopped) on the last detach.
+.sp
+.LP
+The values returned by the driver in the \fBDL_INFO_ACK\fR primitive in response to a \fBDL_INFO_REQ\fR from the user are:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum \fBSDU\fR is \fB1500\fR (\fBETHERMTU\fR - defined in \fB<sys/ethernet.h>\fR).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum \fBSDU\fR is \fB0\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDLSAP\fR address length is \fB8\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMAC\fR type is \fBDL_ETHER\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsap\fR length value is \fB\(mi2\fR, meaning the physical address component is followed immediately by a 2-byte \fBsap\fR component within the \fBDLSAP\fR address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Service mode is \fBDL_CLDLS\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+No optional quality of service (QOS) support is included at present, accordingly, the \fBQOS\fR fields are \fB0\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Provider style is \fBDL_STYLE2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Version is \fBDL_VERSION_2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Broadcast address value is the Ethernet/IEEE broadcast address (\fBFF:FF:FF:FF:FF:FF\fR).
+.RE
+.sp
+.LP
+Once in the \fBDL_ATTACHED\fR state, the user must send a \fBDL_BIND_REQ\fR to associate a particular Service Access Point (SAP) with the stream.
+.SS "Known Problems and Limitations"
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Occasional data corruption has occurred when \fBpcn\fR and \fBpcscsi\fR drivers in HP Vectra XU 5/90 and Compaq Deskpro XL systems are used under high network and  \fBSCSI\fR loads. These drivers do not perform well in a production server. A possible workaround is to disable the  \fBpcn\fR device with the system BIOS and use a separate add-in network interface.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The Solaris \fBpcn \fRdriver does not support IRQ 4.
+.RE
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/pcn\fR\fR
+.ad
+.RS 24n
+.rt  
+Character special device
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/pcn.conf\fR\fR
+.ad
+.RS 24n
+.rt  
+Configuration file
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Architecturex86
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBstandards\fR(5), \fBdlpi\fR(7P), \fBstreamio\fR(7I)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR

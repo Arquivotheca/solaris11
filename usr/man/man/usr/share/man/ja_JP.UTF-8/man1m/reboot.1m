@@ -1,0 +1,357 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1983 Regents of the University of California. All rights reserved.The Berkeley software License Agreement specifies the terms and conditions for redistribution.
+.TH reboot 1M "2010 年 1 月 26 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+reboot \- オペレーティングシステムのリブート
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/reboot\fR [\fB-dlnq\fR] [\fB-f\fR | \fB-p\fR] [\fIboot_arguments\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/reboot\fR [\fB-f\fR [\fB-e\fR \fIenvironment\fR] | \fB-p\fR] [\fB-dlnq\fR] [\fIboot_arguments\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBreboot\fR ユーティリティはカーネルをリブートします。カーネルは PROM モニターによってメモリーに読み込まれ、読み込まれたカーネルに制御が渡されます。
+.sp
+.LP
+x86 システムでは、\fB-f\fR フラグを指定した場合、実行中のカーネルによって次のカーネルがメモリーに読み込まれ、続いて新しく読み込まれたカーネルに制御が渡されます。この \fBreboot\fR の形式は、前述の「形式」の 2 番目に示されています。
+.sp
+.LP
+スーパーユーザーはいつでも \fBreboot\fR を実行できますが、通常は \fBshutdown\fR(1M) を使用して、これからサービスがシャットダウンされることを、すべてのユーザーに事前に警告する必要があります。詳細については、\fBshutdown\fR(1M) を参照してください。
+.sp
+.LP
+\fBreboot\fR ユーティリティは \fBsync\fR(1M) 操作をディスクに実行して、その後マルチユーザーのリブートが開始されます。詳細については、\fBinit\fR(1M) を参照してください。x86  システムでは、リブートの成功を確実にするために、reboot が、ブートアーカイブを必要に応じて変更することがあります。
+.sp
+.LP
+\fBreboot\fR ユーティリティは通常、リブートの記録をシステムログデーモン \fBsyslogd\fR(1M) に送信し、シャットダウンの記録をログインアカウンティングファイル \fB/var/adm/wtmpx \fR に保存します。これらの処理を抑制するには、\fB-n\fR または \fB-q\fR オプションを指定します。
+.sp
+.LP
+通常、システムはパワーアップ時やクラッシュ後にリブートします。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+リブートする前に、システムクラッシュダンプを行います。システムクラッシュダンプの設定については、\fBdumpadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-f\fR を指定すると、指定されたブート環境でリブートします。
+.sp
+このオプションは現在、x86 システムでのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+x86 システムの場合
+.sp
+高速リブート、ファームウェアのバイパス、およびブートローダー。実行中のカーネルによって、新しいカーネルがメモリーに読み込まれ、新しく読み込まれたカーネルに制御が渡されます。ディスクまたはカーネルの引数を指定する場合は、ほかの起動引数の前にこれらを指定する必要があります。
+.sp
+SPARC システムの場合:
+.sp
+一部の POST テストをスキップすることによりリブートを高速化します。
+.sp
+サービス \fBsvc:/system/boot-config:default\fR がデフォルトで有効です。\fBaction_authorization\fR および \fBvalue_authorization\fR に \fBsolaris.system.shutdown\fR が必要です。\fBconfig/fastreboot_default\fR プロパティーが \fBtrue\fR に設定されている場合、\fBreboot\fR は \fBreboot\fR \fB-f\fR として動作します。このプロパティーの値は、\fBsvccfg\fR(1M ) および \fBsvcadm\fR(1M) を使用して変更でき、デフォルトのリブート動作を制御できます。
+.sp
+詳細は、「\fB使用例\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムログデーモン \fBsyslogd\fR(1M) へのメッセージ (誰が \fBreboot\fR を実行したかを示す) の送信を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsync\fR(2) の呼び出しは行わず、\fB syslogd\fR(1M) または \fB/var/adm/wtmpx\fR にリブートの記録を保存しないようにします。カーネルはリブート前にファイルシステムとの同期を取ろうとします。ただし、\fB-d\fR オプションも指定した場合は例外です。\fB-d\fR と \fB-n\fR を一緒に指定した場合、カーネルはファイルシステムとの同期を取りません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+PROM でリブートします。このフラグは、\fBsystem/boot-config\fR サービスの \fBconfig/fastreboot_default\fR プロパティー設定で指定されたデフォルトのリブート動作を変更せずに、ファームウェアを通じてシステムをリブートする場合に使用できます。
+.sp
+\fB-p\fR オプションと \fB-f\fR オプションを同時に指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+即時。実行中のプロセスを停止せずに、ただちにリブートします。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fIboot_arguments\fR\fR
+.ad
+.sp .6
+.RS 4n
+オプションの \fIboot_arguments\fR 文字列を指定すると、\fBuadmin\fR(2) 関数に引数を指定できます。これらの引数はリブート時にブートプログラムとカーネルに渡されます。引数の形式と一覧については、\fBboot\fR(1M) のマニュアルページと \fB kernel\fR(1M) のマニュアルページを参照してください。これらの引数を指定する場合、引数間のスペースは、シェルのために引用符で囲まれていない限り、単一のスペースに置換されます。\fIboot_arguments\fR がハイフン (-) で始まる場合、区切り文字列 (2 つのハイフン) を boot_arguments のハイフンの前に指定して、\fBreboot\fR 引数リストの終わりを示す必要があります (「使用例」の項を参照)。\fB\fR
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fB-r\fR と \fB-v\fR 引数を \fBboot\fR に渡す
+.sp
+.LP
+次の例では、区切り文字列「\fB\(mi\(mi\fR」 (2 つのハイフン) を使用して、\fBreboot\fR のオプションを \fBboot\fR(1M) の引数から分離する必要があります。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -dl -- -rv\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR特定のディスクとカーネルを使用してリブートする
+.sp
+.LP
+次の例は、特定のディスクとカーネルを使用してリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot disk1 kernel.test/unix\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR高速でリブートする
+.sp
+.LP
+次の例では、\fB-f\fR オプションを使用して、高速リブートを実行します。
+
+.sp
+.LP
+サービス \fBsvc:/system/boot-config:default\fR が有効になっており、プロパティー \fBconfig/fastreboot_default\fR が \fBtrue\fR に設定されている場合、\fB-f\fR オプションを省略できます。
+
+.sp
+.LP
+x86 システムでは、次のコマンドが、GRUB (\fBgrub\fR(5) を参照) メニューファイル \fBmenu.lst\fR でのデフォルトエントリでリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、別の UFS ルートディスクでリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f -- '/dev/dsk/c1d0s0'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、別の ZFS ルートプールでリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f -- 'rpool/ROOT/root2'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、\fB-k\fR オプションを付けて、同じディスク上の \fBmykernel\fR でリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f -- '/platform/i86pc/mykernel/amd64/unix -k'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、\fB/mnt\fR にマウントされた別のルートディスクから、\fBmykernel\fR でリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f -- '/mnt/platform/i86pc/mykernel/amd64/unix -k'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、\fBsecond_root\fR という名前の別のブート環境上の \fB/platform/i86pc/kernel/$ISADIR/unix\fR でリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f -e second_root\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、\fB-kv\fR オプションを付けて、同じカーネルでリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBreboot -f -- '-kv'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、デフォルトの高速リブート動作を無効にします。
+
+.sp
+.in +2
+.nf
+example# \fBsvccfg -s "system/boot-config:default" \e\fR
+\fBsetprop config/fastreboot_default=false\fR
+example# \fBsvcadm refresh svc:/system/boot-config:default\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、デフォルトの高速リブート動作を再度有効にします。
+
+.sp
+.in +2
+.nf
+example# \fBsvccfg -s "system/boot-config:default" \e\fR
+\fBsetprop config/fastreboot_default=true\fR
+example# \fBsvcadm refresh svc:/system/boot-config:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR特定の GRUB メニューでリブートする
+.sp
+.LP
+次のコマンドは、GRUB メニューのエントリ \fB2\fR でリブートします。
+
+.sp
+.in +2
+.nf
+example# \fBbootadm list-menu\fR
+  the location for the active GRUB menu is: /rpool/boot/grub/menu.lst
+  default 0
+  timeout 10
+  0 zfsbe1
+  1 zfsbe1 failsafe
+  2 zfsbe2
+  3 zfsbe2 Solaris xVM
+  4 zfsbe2 failsafe
+example# \fBreboot 2\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/wtmpx\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログインアカウンティングファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBmdb\fR(1), \fBboot\fR(1M), \fBdumpadm\fR(1M), \fBfsck\fR(1M), \fBhalt\fR(1M), \fBinit\fR(1M), \fBkernel\fR(1M), \fBshutdown\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsync\fR(1M), \fBsyslogd\fR(1M), \fBsync\fR(2), \fBuadmin\fR(2), \fBreboot\fR(3C), \fBattributes\fR(5), \fBgrub\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBreboot\fR ユーティリティは \fB/etc/rc\fInum\fR.d\fR 内のスクリプトや \fBinittab\fR(4) 内のシャットダウンアクションを実行しません。システムサービスを完全にシャットダウンするためには、\fBshutdown\fR(1M) または \fBinit\fR(1M) を使用して Solaris システムをリブートします。

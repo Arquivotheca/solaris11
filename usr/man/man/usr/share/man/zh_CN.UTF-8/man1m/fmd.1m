@@ -1,0 +1,240 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH fmd 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+fmd \- Fault Manager 守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/fm/fmd/fmd\fR [\fB-V\fR] [\fB-f\fR \fIfile\fR] [\fB-o\fR \fIopt\fR=\fIval\fR] [\fB-R\fR \fIdir\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBfmd\fR 是运行在每个 Solaris 系统后台的守护进程。\fBfmd\fR 接收与系统软件检测到的问题有关的遥测信息，诊断这些问题，启动主动式自我修复活动，如禁用故障组件等。Fault Manager 还会在适当的情况下向 \fBsyslogd\fR(1M) 服务发送消息，通知管理员已检测到故障。该消息可指示管理员查阅 Oracle 的 Web 站点 \fBhttps://support.oracle.com\fR 中的知识文章，了解有关故障影响的详细信息以及相应的应对措施。
+.sp
+.LP
+Fault Manager 诊断的每个问题都分配了一个通用唯一标识符 (Universal Unique Identifier, \fBUUID\fR)。\fBUUID\fR 可在各种系统集之间唯一标识该特定问题。可以使用 \fBfmdump\fR(1M) 实用程序查看 Fault Manager 诊断的问题列表，以及它们的 \fBUUID\fR 和知识文章消息标识符。可以使用 \fBfmadm\fR(1M) 实用程序查看系统中确认存在故障的资源。可以使用 \fBfmstat\fR(1M) 实用程序报告 Fault Manager 保存的统计信息。当 Solaris 引导时会自动启动 Fault Manager，因此没有必要直接使用 \fBfmd\fR 命令。Oracle 的 Web 站点介绍了当前 Solaris 上可用于 Fault Manager 的功能的详细信息。
+.SS "通知服务"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsyslog\fR（软件包 \fBsystem/fault-management\fR）\fR
+.ad
+.sp .6
+.RS 4n
+新诊断的标准通知机制是通过 \fBsyslog\fR 实现的，即，使用在与 \fBfmd\fR 本身相同的软件包中交付的 \fBsyslog-msgs\fR \fBfmd\fR 模块。
+.sp
+缺省情况下，只有新的问题诊断是通过 \fBsyslog-msgs\fR 发送消息，并使用如下表所列的 \fBsyslog\fR 工具和严重性。管理员可使用 \fBsvccfg\fR(1M) 请求通过 \fBsyslog-msgs\fR 发送有关处于问题解决方案生命周期中的其他事件的消息。
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify \fIevent\fR syslog:{active|inactive}\fR
+.fi
+.in -2
+.sp
+
+有关其他详细信息，请参见 \fBsvccfg\fR(1M)。
+.sp
+.in +2
+.nf
+Event                Disposition Facility        Severity
+--------------- ---------------- --------------- -------------
+problem-diagnosed       active   LOG_DAEMON      LOG_ERR
+problem-updated         inactive LOG_DAEMON      LOG_NOTICE
+problem-repaired        inactive LOG_DAEMON      LOG_NOTICE
+problem-resolved        inactive LOG_DAEMON      LOG_NOTICE
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBEmail（软件包 \fBsystem/fault-management/smtp-notify\fR）\fR
+.ad
+.sp .6
+.RS 4n
+必须安装附加软件包时，可以通过电子邮件发送通知。SMF 服务 \fBsvc:/system/fm/smtp-notify:default\fR 是通过 \fBsystem/fault-management/smtp-notify\fR 软件包以及通过 \fBsvccfg\fR(1M) 配置的通知首选项进行交付的。有关其他详细信息，请参见 \fBsmtp-notify\fR(1M)。请注意，除了配置以上列出的问题生命周期事件（problem-diagnosed 等）的通知首选项，还可以通过 \fBsvccfg\fR(1M) 配置该机制以提供 SMF 实例状态转换和其他事件的通知。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSNMP（软件包 \fBsystem/fault-management/snmp-notify\fR）\fR
+.ad
+.sp .6
+.RS 4n
+使用 SNMP 陷阱的新事件通知是一个通过 \fBsystem/fault-management/snmp-notify\fR 软件包交付的选项。服务 \fBsvc:/system/fm/snmp-notify:default\fR 负责提出用于问题生命周期和其他指定事件（如果进行了配置，还包括 SMF 实例状态转换事件）的 SNMP 陷阱。有关其他详细信息，请参见 \fBsnmp-notify\fR(1M)。
+.RE
+
+.SS "全局和非全局 Solaris 区域"
+.sp
+.LP
+Fault Manager 服务 \fBsvc:/system/fmd:default\fR 在全局 Solaris 区域和非全局 Solaris 区域中均进行了配置。在非全局区域中，各种面向硬件的 Fault Manager 模块未交付，因此它是在对应区域运行的精简 Fault Manager。在非全局区域中，Fault Manager 专注于软件事件。
+.SH 选项
+.sp
+.LP
+支持以下选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+在搜索任何缺省的 Fault Manager 配置文件之前，读取指定的配置 \fIfile\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIopt\fR\fB=\fR\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的 Fault Manager 选项设置为指定的值。当前 Fault Manager 选项是专用接口；有关专用接口的信息，请参见 \fBattributes\fR(5)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 Fault Manager 评估的所有路径名称使用指定的根目录，而不是缺省的根目录 (\fB/\fR)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 Fault Manager 的版本输出到 stdout 中，然后退出。 
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+出现一个阻止 Fault Manager 进行初始化的错误，例如无法打开遥测传输。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。 
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault Manager 配置目录
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault Manager 库目录
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault Manager 日志目录
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/fault-management
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBfmadm\fR(1M)、\fBfmdump\fR(1M)、\fBfmstat\fR(1M)、\fBsmtp-notify\fR(1M)、\fBsnmp-notify\fR(1M)、\fBsvccfg\fR(1M)、\fBsyslogd\fR(1M)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+http://www.sun.com/msg/
+.SH 附注
+.sp
+.LP
+Fault Manager 由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+ svc:/system/fmd:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。管理员不应该禁用 Fault Manager 服务。

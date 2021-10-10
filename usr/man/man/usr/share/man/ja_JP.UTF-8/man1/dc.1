@@ -1,0 +1,583 @@
+'\" te
+.\"  Copyright 1989 AT&T Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved
+.TH dc 1 "2003 年 8 月 29 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+dc \- 電卓機能
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/dc\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/dc\fR [\fIfilename\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBdc\fR は、任意の精度の算術演算パッケージです。通常 dc は、10 進整数を処理しますが、入力の基数、出力の基数、および少数の桁数を指定することもできます。\fBdc\fR の全体構造は、スタック式 (逆ポーランド式) 計算機です。引数を指定すると、入力は指定したファイルから読み取られ、ファイルの終わりに致達すると標準入力から読み取られます。
+.sp
+.LP
+\fBbc\fR は、中置記法と、機能を実装するための C 言語スタイルの構文を備えた、\fBdc\fR のプリプロセッサです。\fBbc\fR は、プログラムに対する合理的な制御構造も規定しています。詳細については、\fBbc\fR(1) を参照してください。
+.SH 使用法
+.SS "/usr/bin/dc, /usr/xpg6/bin/dc"
+.sp
+.LP
+次の構文は、\fB/usr/bin/dc\fR と \fB/usr/xpg6/bin/dc\fR の両方で認識されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fInumber\fR\fR
+.ad
+.RS 15n
+.rt  
+数値が、スタックにプッシュされます。数は、0 - 9 の数字からなる連続した文字列です。負の数を入力するには、下線 (\fB_\fR) を前に付けます。数値には、小数点が含まれる場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fIx\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値がポップされ、レジスタ \fIx\fR に格納されます。ここで \fIx\fR は任意の文字です。\fBs\fR を大文字にすると、\fIx\fR はスタックとみなされ、値はそこにプッシュされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fIx\fR\fR
+.ad
+.RS 15n
+.rt  
+レジスタ \fIx\fR の値がスタックにプッシュされます。レジスタ \fIx\fR は変更されません。すべてのレジスタは、最初は 0 に設定されます。\fBl\fR を大文字にすると、レジスタ \fIx\fR はスタックとみなされ、その先頭の値がポップされ、メインスタックにプッシュされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値が複製されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値が出力されます。先頭の値はそのままです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値を ASCII 文字列として解釈し、それをスタックから削除し、出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.RS 15n
+.rt  
+スタック上のすべての値が出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 15n
+.rt  
+プログラムを終了します。文字列を処理している場合、再帰レベルは 2 レベルだけポップします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQ\fR\fR
+.ad
+.RS 15n
+.rt  
+プログラムを終了します。スタックの先頭の値がポップされ、文字列実行レベルはその値の分ポップします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBx\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭要素を文字列とみなし、それを \fBdc\fR コマンドの文字列として実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBX\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値をそのスケールファクタで置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[ ... ]\fR\fR
+.ad
+.RS 15n
+.rt  
+角括弧で囲まれた ASCII 文字列をスタックの先頭に入れます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<\fR\fIx \fR \fB>\fR\fIx \fR \fB=\fR\fIx \fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の要素 2個がポップされ、比較されます。レジスタ \fIx\fR は、指定された関係が成立していれば評価されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBv\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の要素をその平方根で置き換えます。引数に小数部分があるときは、それが考慮されますが、スケールファクタは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fR
+.ad
+.RS 15n
+.rt  
+残りの行をシェルコマンドとして解釈します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 15n
+.rt  
+スタック上のすべての値がポップされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値がポップされ、以後の入力の基数として使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBI\fR\fR
+.ad
+.RS 15n
+.rt  
+入力の基数をスタックの先頭にプッシュします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値がポップされ、以後の出力の基数として使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBO\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭に出力の基数をプッシュします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBk\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の値がポップされ、その値が負ではないスケールファクタとして使用されます。 出力の際には、適切な桁数の保持に、また乗算、除算、および累乗の際には、位置取りの保持に使用されます。スケールファクタ、入力の基数、および出力の基数の相互作用は、これらすべてを一度に変更した場合には妥当なものになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBK\fR\fR
+.ad
+.RS 15n
+.rt  
+現在のスケールファクタをスタックの先頭にプッシュします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBz\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックレベルをスタックにプッシュします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZ\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の数をその長さで置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.RS 15n
+.rt  
+入力行が入力ソース (通常は端末) から取られて実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBY\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBdc\fR デバッグ情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB; :\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBbc\fR(1) が配列演算に使用します。
+.RE
+
+.SS "/usr/bin/dc"
+.sp
+.LP
+次の構文は、\fB/usr/bin/dc\fR で認識されます。どのような場合でも、結果のスケールが使用されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+ - / * % ^\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の 2 つの値が、加算 (\fB+\fR)、減算 (\fB\(mi\fR)、乗算 (\fB*\fR)、除算 (\fB/\fR)、剰余計算 (\fB%\fR)、または累乗 (\fB^\fR) されます。2 つの値は、スタックからポップされます。結果は、スタックのその場所にプッシュされます。指数の小数部分は無視されます。
+.RE
+
+.SS "/usr/xpg6/bin/dc"
+.sp
+.LP
+次の構文は、\fB/usr/xpg6/bin/dc\fR で認識されます。除算の結果には、20 のスケールが使用されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+ - / * % ^\fR\fR
+.ad
+.RS 15n
+.rt  
+スタックの先頭の 2 つの値が、加算 (\fB+\fR)、減算 (\fB\(mi\fR)、乗算 (\fB*\fR)、除算 (\fB/\fR)、剰余計算 (\fB%\fR)、または累乗 (\fB^\fR) されます。2 つの値は、スタックからポップされます。結果は、スタックのその場所にプッシュされます。指数の小数部分は無視されます。
+.sp
+除算の前に設定されたスケールが結果のスケールになります。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRn! の最初の 10 個の値を出力
+.sp
+.LP
+この例では、n! の最初の 10 個の値を出力します。
+
+.sp
+.in +2
+.nf
+[la1+dsa*pla10>y]sy
+0sa1
+lyx
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBbc\fR(1), \fBattributes\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fIx\fR \fBis unimplemented\fR\fR
+.ad
+.RS 29n
+.rt  
+\fIx\fR は 8 進数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBout of space\fR\fR
+.ad
+.RS 29n
+.rt  
+空きリストを使い果たしました (桁数が多すぎます)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBout of stack space\fR\fR
+.ad
+.RS 29n
+.rt  
+スタックへのプッシュが多すぎます (スタックのオーバーフロー)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty stack\fR\fR
+.ad
+.RS 29n
+.rt  
+スタックからのポップが多すぎます (スタックのアンダーフロー)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnesting depth\fR\fR
+.ad
+.RS 29n
+.rt  
+ネストが深すぎます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdivide by 0\fR\fR
+.ad
+.RS 29n
+.rt  
+0 による除算です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsqrt of neg number\fR\fR
+.ad
+.RS 29n
+.rt  
+負の数の平方根は定義されていません (虚数は扱えません)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexp not an integer\fR\fR
+.ad
+.RS 29n
+.rt  
+\fBdc\fR は整数の累乗だけを処理します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexp too big\fR\fR
+.ad
+.RS 29n
+.rt  
+最大許容指数は 999 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinput base is too large\fR\fR
+.ad
+.RS 29n
+.rt  
+入力の基数 x:  2<= x <= 16。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinput base is too small\fR\fR
+.ad
+.RS 29n
+.rt  
+入力の基数 x:  2<= x <= 16。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutput base is too large\fR\fR
+.ad
+.RS 29n
+.rt  
+出力の基数は、\fBBC_BASE_MAX\fR 以下でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinvalid scale factor\fR\fR
+.ad
+.RS 29n
+.rt  
+スケールファクタは 1 以上でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscale factor is too large\fR\fR
+.ad
+.RS 29n
+.rt  
+スケールファクタは \fBBC_SCALE_MAX\fR 以下でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsymbol table overflow\fR\fR
+.ad
+.RS 29n
+.rt  
+指定された変数が多すぎます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinvalid index\fR\fR
+.ad
+.RS 29n
+.rt  
+インデックスは 1 以上でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBindex is too large\fR\fR
+.ad
+.RS 29n
+.rt  
+インデックスは、\fBBC_DIM_MAX\fR 以下でなければなりません。
+.RE
+

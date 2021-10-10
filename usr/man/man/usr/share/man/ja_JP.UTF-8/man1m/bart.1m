@@ -1,0 +1,640 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH bart 1M "2011 年 6 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+bart \- 基本監査報告機能
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/bart\fR create [ \fB-n\fR] [\fB-R\fR \fIroot_directory\fR] 
+     [\fB-r\fR \fIrules_file\fR | -]\fB\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/bart\fR create [\fB-n\fR] [\fB-R\fR \fIroot_directory\fR] \fB-I\fR 
+     [\fB\fR\fIfile_name\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/bart\fR compare [\fB-i\fR \fIattribute\fR ] [\fB-p\fR] 
+     [\fB-r\fR \fIrules_file\fR | -] \fIcontrol-manifest\fR test-\fImanifest\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBbart\fR(1M) は、システムのソフトウェアの内容をファイルレベルでチェックするツールです。
+.sp
+.LP
+\fBbart_rules\fR という規則ファイルを使って、追跡するファイルやフラグを付ける相違の種類を指定することもできます。\fBbart_rules\fR(4) を参照してください。
+.sp
+.LP
+\fBbart\fR ユーティリティーは、次の 2 つの基本機能を実行します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbart create\fR\fR
+.ad
+.RS 16n
+.rt  
+これは目録生成ツールで、システムのファイルレベルのスナップショットを取得します。\fB\fR出力は、「\fBマニフェスト\fR」と呼ばれるファイル属性のカタログです。\fBbart_manifest\fR(4) を参照してください。
+.sp
+カタログ化するファイルのリストを指定するには、3 つの方法があります。1 つ目はオプションなしの \fBbart create\fR を使用する方法、2 つ目はコマンド行にファイル名を指定する方法、3 つ目は監視対象のファイルを指定する指示語を含む規則ファイルを作成する方法です。\fBbart_rules\fR(4) を参照してください。
+.sp
+デフォルトでは、目録生成ツールはルート (\fB/\fR) ファイルシステムに含まれるすべてのファイルのすべての属性をカタログ化します。ルートファイルシステムにマウントされたファイルシステムは、ルートファイルシステムと同じ種類である場合にのみカタログ化されます。
+.sp
+たとえば、\fB/\fR、\fB/usr\fR、および \fB/opt\fR は別個の UFS ファイルシステムです。\fB/usr\fR と \fB/opt\fR は \fB/\fR にマウントされています。したがって、これら 3 つのファイルシステムはすべてカタログ化されます。しかし、\fB/tmp\fR は \fB/\fR にマウントされていますが、TMPFS ファイルシステムであるためカタログ化されません。マウントされた CD-ROM は、HSFS ファイルシステムであるためカタログ化されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbart compare\fR\fR
+.ad
+.RS 16n
+.rt  
+これはレポートツールで、2 つの目録を比較します。出力は、ファイルごとに属性の相違を示したリストです。これらの相違は、制御目録とテスト目録という 2 つの目録の相違です。 
+.sp
+「相違」とは、両方の目録でカタログ化されている特定のファイルの属性に対する変更です。目録に追加されたファイルや目録から削除されたファイルは、相違として報告されます。
+.sp
+レポーティングメカニズムとして、詳細出力と、プログラム的な出力の 2 種類を利用できます。詳細出力は、ローカライズされ、複数の行にわたって表示されます。プログラム的な出力は、ほかのプログラムで解析しやすい形式です。「出力」を参照してください。\fB\fR
+.sp
+デフォルトでは、レポートツールは詳細出力を生成し、変更されたディレクトリのタイムスタンプ (\fBdirmtime\fR 属性) を除くすべての相違を報告します。
+.sp
+一貫性のある正確な比較結果を得るためには、同じ規則ファイルを使って制御目録 (\fIcontrol-manifest\fR) とテスト目録 (\fItest-manifest\fR) を作成する必要があります。
+.RE
+
+.sp
+.LP
+目録を作成したり、2 つの目録を比較したりするときに、指定したファイルまたはサブツリーを無視するには、規則ファイルを使用します。ユーザーは、異なる規則ファイルを指定して \fBbart compare\fR を再実行することにより、異なる観点で目録を比較できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIattribute\fR ...\fR
+.ad
+.RS 21n
+.rt  
+グローバルに無視するファイル属性を指定します。属性をコンマ区切りリストとして指定します。 
+.sp
+このオプションを使用すると、規則ファイルのグローバルな \fBIGNORE\fR キーワードにファイル属性を指定した場合と同じ動作になります。\fBbart_rules\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR [\fIfile_name\fR...]\fR
+.ad
+.RS 21n
+.rt  
+ファイルの入力リストを指定します。このファイルリストは、コマンド行に指定することも、標準入力から読み取ることもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 21n
+.rt  
+ファイルリストに挙げられたすべての通常ファイルのコンテンツ署名を計算しないようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 21n
+.rt  
+プログラムでの解析に適した「プログラム的なモード」で目録比較出力を表示します。出力はローカライズされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIrules_file\fR\fR
+.ad
+.RS 21n
+.rt  
+\fIrules_file\fR を使って、カタログ化するファイルおよびディレクトリを指定し、フラグを付けるファイル属性の相違を定義します。\fIrules_file\fR が \fB-\fR である場合は、標準入力から規則が読み取られます。構文の定義については、\fBbart_rules\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot_directory\fR\fR
+.ad
+.RS 21n
+.rt  
+目録のルートディレクトリを指定します。規則に指定するパスも、目録で報告されるパスも、すべて \fIroot_directory\fR からの相対パスです。
+.LP
+注 - 
+.sp
+.RS 2
+いかなる非大域ゾーンのルートファイルシステムも \fB-R\fR で参照しないでください。この操作によって、大域ゾーンのファイルシステムを損傷したり、大域ゾーンのセキュリティーを損ねたり、非大域ゾーンのファイルシステムを損傷する可能性があります。\fBzones\fR(5) を参照してください。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR [ \fIhash\fR ]\fR
+.ad
+.RS 21n
+.rt  
+ファイル内容のハッシュに使用する暗号化ダイジェストアルゴリズムを指定します。現在サポートされている値は、\fBmd5\fR、\fBsha1\fR、\fBsha256\fR、\fBsha512\fR です。\fB-a\fR を指定しない場合は、\fBsha256\fR が使用され、どのハッシュアルゴリズムが使用されるかを示す Version 1.1 マニフェストが作成されます。\fBmd5\fR を指定した場合は、Version 1.0 マニフェストが作成されます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+bart では、オペランドを引用符で囲むことができます。これは、指定するサブツリーやサブツリー修飾子にスペースが含まれる場合に特に重要です。
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcontrol-manifest\fR\fR
+.ad
+.RS 20n
+.rt  
+制御システム上で \fBbart create\fR によって作成された目録を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItest-manifest\fR\fR
+.ad
+.RS 20n
+.rt  
+テストシステム上で \fBbart create\fR によって作成された目録を指定します。
+.RE
+
+.SH 出力
+.sp
+.LP
+\fBbart create\fR および \fBbart compare\fR コマンドは、出力を標準出力に書き出し、エラーを標準エラーに書き出します。
+.sp
+.LP
+\fBbart create\fR コマンドは、システム目録を生成します。\fBbart_manifest\fR(4) を参照してください。
+.sp
+.LP
+\fBbart compare\fR コマンドは、2 つのシステム目録を比較するときに、ファイル間の相違を示すリストを生成します。デフォルトでは、比較出力はローカライズされます。ただし、\fB-p\fR オプションを指定すると、プログラムで操作するのに適した形式で出力が生成されます。
+.SS "デフォルトの形式"
+.sp
+.in +2
+.nf
+\fIfilename\fR
+\fIattribute\fR control:\fIxxxx\fR test:\fIyyyy\fR
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR\fR
+.ad
+.RS 13n
+.rt  
+\fIcontrol-manifest\fR と \fItest-manifest\fR で異なるファイルの名前。スペース文字や改行文字が含まれているファイル名については、\fBbart_manifest\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIattribute\fR\fR
+.ad
+.RS 13n
+.rt  
+比較された目録間で相違があるファイル属性の名前。\fIxxxx\fR は \fIcontrol-manifest\fR の属性値であり、\fIyyyy\fR は \fItest-manifest\fR の属性値です。同じファイルの複数の属性に相違が見つかった場合、別々の行にそれぞれの相違が示されます。
+.sp
+サポートされている属性は次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fBacl\fR
+.ad
+.RS 13n
+.rt  
+ファイルの ACL 属性。ACL 属性を持つファイルの場合、このフィールドには \fBacltotext()\fR の出力が入ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBall\fR
+.ad
+.RS 13n
+.rt  
+すべての属性。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcontents\fR
+.ad
+.RS 13n
+.rt  
+ファイルのチェックサム値。この属性が指定されるのは通常ファイルのみです。コンテキストのチェックを無効にした場合と、チェックサムが計算できない場合は、このフィールドの値は \fB-\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdest\fR
+.ad
+.RS 13n
+.rt  
+シンボリックリンクのリンク先。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdevnode\fR
+.ad
+.RS 13n
+.rt  
+デバイスノードの値。この属性が使用されるのは、キャラクタデバイスファイルとブロックデバイスファイルのみです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdirmtime\fR
+.ad
+.RS 13n
+.rt  
+ディレクトリに変化が起きた時点。1970 年 1 月 1 日の 00:00:00 UTC から数えた秒数で示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBgid\fR
+.ad
+.RS 13n
+.rt  
+このエントリの所有者の、数値で示したグループ ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlnmtime\fR
+.ad
+.RS 13n
+.rt  
+リンクが作成された時点。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBモード\fR
+.ad
+.RS 13n
+.rt  
+ファイルのアクセス権を示す 8 進の数値。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmtime\fR
+.ad
+.RS 13n
+.rt  
+ファイルに変化が起きた時点。1970 年 1 月 1 日の 00:00:00 UTC から数えた秒数で示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsize\fR
+.ad
+.RS 13n
+.rt  
+ファイルサイズ (バイト)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtype\fR
+.ad
+.RS 13n
+.rt  
+ファイルの種類。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBuid\fR
+.ad
+.RS 13n
+.rt  
+このエントリの所有者の、数値で示したユーザー ID。
+.RE
+
+.RE
+
+.sp
+.LP
+次のデフォルト出力は、\fB/etc/passwd\fR ファイルの属性の相違を示しています。この出力から、\fBsize\fR、\fBmtime\fR、および \fBcontents\fR 属性に変化があったことがわかります。
+.sp
+.in +2
+.nf
+/etc/passwd:
+  size  control:74  test:81
+  mtime  control:3c165879  test:3c165979
+  contents  control:daca28ae0de97afd7a6b91fde8d57afa
+test:84b2b32c4165887355317207b48a6ec7
+.fi
+.in -2
+.sp
+
+.SS "プログラム的な形式"
+.sp
+.in +2
+.nf
+\fIfilename\fR \fIattribute\fR \fIcontrol-val\fR \fItest-val\fR [\fIattribute\fR \fIcontrol-val\fR \fItest-val\fR]*
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルト形式の \fIfilename\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIattribute\fR \fIcontrol-val\fR \fItest-val\fR\fR
+.ad
+.sp .6
+.RS 4n
+各ファイルの制御目録とテスト目録間で異なるファイル属性の説明。各エントリには、各目録の属性値が含まれます。属性の定義については、\fBbart_manifest\fR(4) を参照してください。
+.RE
+
+.sp
+.LP
+プログラム的な出力の各行には、1 つのファイルに含まれるすべての属性の相違が示されます。
+.sp
+.LP
+プログラム的な次の出力は、\fB/etc/passwd\fR ファイルの属性の相違を示しています。この出力から、\fBsize\fR、\fBmtime\fR、および \fBcontents\fR 属性に変化があったことがわかります。
+.sp
+.in +2
+.nf
+/etc/passwd size 74 81 mtime 3c165879 3c165979
+contents daca28ae0de97afd7a6b91fde8d57afa 84b2b32c4165887355317207b48a6ec7
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.SS "目録生成ツール"
+.sp
+.LP
+目録生成ツールは、次の終了値を返します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイル処理時の致命的でないエラー (アクセス権の問題など)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>1\fR\fR
+.ad
+.RS 6n
+.rt  
+致命的エラー (無効なコマンド行オプションなど)
+.RE
+
+.SS "レポートツール"
+.sp
+.LP
+レポートツールは、次の終了値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+相違は報告されませんでした
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 6n
+.rt  
+相違が見つかりました
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>1\fR\fR
+.ad
+.RS 6n
+.rt  
+比較実行中の致命的エラー
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRチェックサムを計算せずにデフォルトの目録を作成する
+.sp
+.LP
+次のコマンド行は、\fB/\fR ファイルシステムに含まれるすべてのファイルで構成されるデフォルトの目録を作成します。\fB-n\fR オプションを指定すると、チェックサムが計算されないため、目録がより速く生成されます。
+
+.sp
+.in +2
+.nf
+bart create -n
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR指定したサブツリーの目録を作成する
+.sp
+.LP
+次のコマンド行は、\fB/home/nickiso\fR サブツリーに含まれるすべてのファイルで構成される目録を作成します。
+
+.sp
+.in +2
+.nf
+bart create -R /home/nickiso
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR標準入力を使って目録を作成する
+.sp
+.LP
+次のコマンド行は、\fBfind\fR(1) コマンドの出力を使って、カタログ化するファイルのリストを生成します。\fB-I\fR オプションを指定した \fBbart create\fR コマンドの入力として、\fBfind\fR の出力が使用されています。
+
+.sp
+.in +2
+.nf
+find /home/nickiso -print | bart create -I
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR規則ファイルを使って目録を作成する
+.sp
+.LP
+次のコマンド行は、\fBrules\fR という規則ファイルを使って、カタログ化するファイルを指定します。
+
+.sp
+.in +2
+.nf
+bart create -r rules
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR2 つの目録を比較し、プログラム的な出力を生成する
+.sp
+.LP
+次のコマンド行は、2 つの目録を比較し、プログラムで解析するのに適した出力を生成します。
+
+.sp
+.in +2
+.nf
+bart compare -p manifest1 manifest2
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR2 つの目録を比較し、無視する属性を指定する
+.sp
+.LP
+次のコマンド行は、2 つの目録を比較します。\fBdirmtime\fR、\fBlnmtime\fR、および \fBmtime\fR 属性は比較されません。
+
+.sp
+.in +2
+.nf
+bart compare -i dirmtime,lnmtime,mtime manifest1 manifest2
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR規則ファイルを使って 2 つの目録を比較する
+.sp
+.LP
+次のコマンド行は、\fBrules\fR という規則ファイルを使って 2 つの目録を比較します。
+
+.sp
+.in +2
+.nf
+bart compare -r rules manifest1 manifest2
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件security/bart
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcksum\fR(1), \fBdigest\fR(1), \fBfind\fR(1), \fBbart_manifest\fR(4), \fBbart_rules\fR(4), \fBattributes\fR(5)
+.SH 注意事項
+.sp
+.LP
+特定のシステムライブラリのファイル属性は、システムのブート時に一時的に変更されることがあります。誤った警告が発生しないようにするには、2 つの目録が作成されたときのシステムの状態が同じ場合、つまり、どちらもシングルユーザーモードで作成された場合か、どちらもマルチユーザーモードで作成された場合にのみ、目録を比較するようにしてください。

@@ -1,0 +1,547 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH appcert 1 "2011 年 5 月 20 日" "SunOS 5.11" "用户命令"
+.SH 名称
+appcert \-  用于检查应用程序级产品对 Solaris 接口的不稳定使用。
+.SH 用法概要
+.LP
+.nf
+\fBappcert\fR [\fB-h\fR] [\fB-n\fR] [\fB-f\fR \fIinfile\fR] [\fB-w\fR \fIworking_dir\fR] [\fB-B\fR] [\fB-L\fR] 
+     [\fB-S\fR] {\fIobj\fR | \fIdir\fR}...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBappcert\fR 实用程序用于检查应用程序是否与 Solaris 应用程序二进制接口 (Application Binary Interface, \fBABI\fR) 兼容。Solaris \fBABI\fR 定义了 Solaris 中可以供应用程序安全稳定地使用的运行时库接口。更准确地说，\fBappcert\fR 实用程序能够识别依赖于不稳定运行时接口的依赖项以及可能导致产品在 Solaris 的未来发行版中运行失败的其他特定风险。
+.sp
+.LP
+\fBappcert\fR 可检查：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fISolaris 库中的专用符号的使用。\fR专用符号是指不打算供开发者使用的函数或数据。它们是 Solaris 库之间用来互相调用的接口。这些符号可能会改变其语义行为或者甚至完全消失（也称为\fB降级的\fR符号）。因此，确保应用程序不依赖于任何专用接口是一个很好的做法。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fI静态链接。\fR具体而言，就是检查是否存在归档文件 \fBlibc.a\fR、\fBlibsocket.a\fR 和 \fBlibnsl.a\fR 的静态链接而没有动态链接到对应的共享对象 \fB\&.so\fR。Solaris 库之间的专用符号调用的语义在不同的发行版之间可能会发生更改。因此，将库代码硬连接到二进制对象的做法是不可取的。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fI未绑定的符号。\fR未绑定的符号指在运行 \fBappcert\fR 时动态链接程序无法解析的库符号（即函数或数据）。未绑定的符号表明可能存在环境问题（如 \fBLD_LIBRARY_PATH\fR）或构建问题（如在编译时未指定 \fB-l\fR\fIlib\fR 和/或 \fB-z\fR \fBdefs\fR）。将未绑定的符号标记出来是为了指出这些问题，防止出现更严重的问题。
+.RE
+.sp
+.LP
+如果产品是很多程序和支持共享对象的集合，通过让 \fBappcert\fR 引用应用程序的安装目录，可以很容易地利用 \fBappcert\fR 检查整个应用程序。
+.sp
+.LP
+为执行该任务，\fBappcert\fR 将为产品内的每个目标文件（不管是可执行对象还是共享对象）构建一个接口依赖项配置文件，以确定该产品依赖的所有 Solaris 系统接口。（注：\fBappcert\fR 使用 Solaris 运行时链接程序来执行该确定操作。）然后，这些依赖项配置文件将与 Solaris \fBABI\fR 的定义进行比较以确定是否存在专用接口（这些专用接口在应用程序级使用时不安全且不稳定）。
+.sp
+.LP
+\fBappcert\fR 会生成一个简单的汇总报告，其中指出产品的哪些组件有缺陷（如果有）以及它们的缺陷是什么。该报告对正在检查其产品的发行版间稳定性的开发人员很有帮助。
+.sp
+.LP
+注意，\fBappcert\fR 生成的是完整的接口依赖项信息，包括公用的 Solaris 接口（安全稳定）和专用（非 ABI）接口。如有需要，还可以为每个产品组件检查该信息。
+.sp
+.LP
+重要说明：\fBappcert\fR 必须与被检查的应用程序在同一环境中运行。请参见"注释"。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR\fR
+.ad
+.RS 18n
+.rt  
+如果 \fBappcert\fR 在批处理模式下运行，则输出报告中将为每个二进制对象包含一行，以 \fBPASS\fR 开头表示没有检测到该二进制对象的问题，以 \fBFAIL\fR 开头表示发现问题，以 \fBINC\fR 开头表示无法完整检查该二进制对象。解析这些标签时不要太拘泥于字面意义。例如，\fBPASS\fR 只是意味着未触发任何 \fBappcert\fR 警告。这些字符串是左对齐的，因此可以使用 \fBgrep\fR\fB^FAIL\fR\fB ...\fR 等进行选定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIinfile\fR\fR
+.ad
+.RS 18n
+.rt  
+指定包含要检查的文件（每个文件一行）的列表的 \fIinfile\fR。该文件列表将附加到到由命令行操作数确定的列表中（请参见下面的"操作数"部分）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 18n
+.rt  
+输出 appcert 的用法信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBappcert\fR 检查产品中是否存在共享对象。如果找到一些共享对象，appcert 会将共享对象所驻留的目录附加到 \fBLD_LIBRARY_PATH\fR。使用 -L 标志可以阻止 \fBappcert\fR 的这一行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 18n
+.rt  
+当在目录中搜索要检查的二进制对象时，该选项不跟踪符号链接。请参见 \fBfind\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.RS 18n
+.rt  
+将 Solaris 库目录（即 \fB/usr/openwin/lib:/usr/dt/lib\fR）附加到 \fBLD_LIBRARY_PATH\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIworking_dir\fR\fR
+.ad
+.RS 18n
+.rt  
+指定要在其中运行库组件并创建临时文件的目录（缺省目录为 \fB/tmp\fR）。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB{\fIobj\fR | \fIdir\fR} ...\fR
+.ad
+.RS 19n
+.rt  
+要检查的对象的完整列表和/或包含构成要检查的产品的对象的目录完整列表。\fBappcert\fR 以递归方式搜索目录来查找目标文件；非目标文件将被忽略。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBappcert\fR 运行成功，未发现潜在的二进制稳定性问题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBappcert\fR 未能成功运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+某些已检查的对象存在潜在的二进制稳定性问题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+未找到任何可检查的二进制对象。
+.RE
+
+.SH 限制
+.sp
+.LP
+如果要检查的目标文件依赖于库，必须在目标文件中记录这些依赖项（使用编译器的 \fB-l\fR 开关）。
+.sp
+.LP
+如果要检查的目标文件依赖于其他共享库，则在运行 \fBappcert\fR 时必须能够通过 \fBLD_LIBRARY_PATH\fR 或 \fBRUNPATH\fR 访问这些库。
+.sp
+.LP
+要检查 64 位应用程序，计算机必须运行 64 位 Solaris 内核。请参见 \fBisalist\fR(1)。另外，当前不能对 64 位应用程序执行静态链接检查。 
+.sp
+.LP
+\fBappcert\fR 不能检查以下内容：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+完全或部分静态链接的目标文件。
+.br
+.in +2
+完全静态链接的目标文件将被报告为不稳定的。 
+.in -2
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+没有设置执行权限的可执行文件。
+.br
+.in +2
+将跳过这些文件。没有执行权限的共享对象不会跳过。 
+.in -2
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+充当 setuid root 的目标文件。  
+.br
+.in +2
+由于 \fBldd\fR(1) 中的限制，将跳过这些文件。要检查这些文件，请复制并/或更改权限。
+.in -2
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+非 \fBELF\fR 可执行文件，如 shell 脚本。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+针对 Solaris，并非 C 语言接口，如 C++ 接口和 Java 接口。
+.br
+.in +2
+代码本身无需为 C 语言，但是对 Solaris 库的调用必须使用 C 语言。
+.in -2
+.RE
+.SH 输出文件
+.sp
+.LP
+\fBappcert\fR 会将结果记录到工作目录（缺省为 \fB/tmp/appcert.\fI?????\fR\fR）中的下列文件。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIndex\fR\fR
+.ad
+.RS 11n
+.rt  
+所检查的二进制对象与工作目录中此二进制对象的特定输出所在子目录之间的映射。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBReport\fR\fR
+.ad
+.RS 11n
+.rt  
+运行 \fBappcert\fR 时在 stdout 上显示的汇总报告的副本。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSkipped\fR\fR
+.ad
+.RS 11n
+.rt  
+包含要求 \fBappcert\fR 检查但强制跳过的二进制对象的列表以及跳过每个二进制对象的简单原因。
+.RE
+
+.sp
+.LP
+此外，在 \fBappcert.\fI?????\fR/objects/\fR 目录下的子目录中还包括针对每个对象的信息，这些信息在以下文件中：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck.demoted_symbols\fR\fR
+.ad
+.RS 25n
+.rt  
+包含怀疑为降级的 Solaris 符号的符号列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck.dynamic.private\fR\fR
+.ad
+.RS 25n
+.rt  
+包含与对象直接绑定的专用 Solaris 符号的列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck.dynamic.public\fR\fR
+.ad
+.RS 25n
+.rt  
+包含与对象直接绑定的公用 Solaris 符号的列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck.dynamic.unbound\fR\fR
+.ad
+.RS 25n
+.rt  
+包含运行 \fBldd\fR \fB-r\fR 时动态链接程序没有绑定的符号的列表。为方便起见，还包括 \fBldd\fR 输出的包含 \fBfile not found\fR 的行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsummary.dynamic\fR\fR
+.ad
+.RS 25n
+.rt  
+所检查对象的动态绑定的格式整齐的摘要，其中包括从每个 Solaris 库使用的公用符号和专用符号的表。
+.RE
+
+.sp
+.LP
+其他文件是 \fBappcert\fR 在内部使用的临时文件。
+.SH 输出消息
+.SS "专用符号的使用"
+.sp
+.LP
+专用符号是 Solaris 库中的一些不打算供开发者或外部使用的函数或数据变量。这些符号是 Solaris 库之间进行互相调用和通信的接口。在 \fBpvs\fR(1) 输出中，这些符号的符号版本名称标记为 \fBSUNWprivate\fR。
+.sp
+.LP
+专用符号可能会改变其语义行为或者甚至完全消失（\fB降级的\fR或者\fB废弃的\fR符号）。因此，您的应用程序不应依赖于任何专用符号。
+.SS "降级的符号"
+.sp
+.LP
+降级符号是某个 Solaris 库中曾经专用于该库，但在后续 Solaris 发行版中已经删除（或其作用域被限制为该库本地）的函数或数据变量。如果应用程序直接调用了某个降级的符号，则该应用程序在删除了该符号的发行版中及后续发行版中将无法运行（重定位错误）。
+.sp
+.LP
+在极少数情况下，在某个后续发行版中会恢复某个降级的符号。尽管如此，应用程序仍不能在某些发行版中运行。
+.sp
+.LP
+Sun Microsystems Inc. 在从 Solaris 2.5.1 转变到 Solaris 2.6 时执行了大部分库的作用域确定。这一措施是为了增强二进制对象的稳定性。通过使这些完全内部的接口不可见（即它们无法被动态链接），开发者无法有意或无意地调用这些接口。有关更多信息，请参见\fI《Linker and Libraries Guide》\fR，特别是介绍版本控制的章节。
+.SS "未绑定的符号"
+.sp
+.LP
+未绑定的符号是指在应用程序引用的库符号中，在运行 \fBappcert\fR 时动态链接程序无法解析的那些库符号。\fB注：\fR\fBappcert\fR 并不真正运行应用程序，因此，影响动态链接的某个环境方面可能没有正确设置。
+.sp
+.LP
+未绑定的符号不是一定表明存在潜在的二进制稳定性问题。它们唯一表明的是在运行 \fBappcert\fR 时，运行时动态链接程序无法解析这些符号。
+.sp
+.LP
+存在未绑定的符号的原因可能是 \fBLD_LIBRARY_PATH\fR 设置得不正确。请确保正确设置该变量，这样您所有的二进制对象才能找到它们依赖的所有库（您的产品自己的库，Solaris 库，或者第三方的库）。然后，重新运行 \fBappcert\fR。
+.sp
+.LP
+您可能会发现编写一个 shell 脚本，使用该脚本来正确设置环境并针对您要检查的二进制对象运行 \fBappcert\fR 比较方便。
+.sp
+.LP
+存在未绑定的符号的另一个常见原因是测试中的共享对象未记录其动态依赖项，也就是说，在构建时\fB没有\fR将 \fB-l\fR 开关提供给编译器和 \fBld\fR(1)。因此，共享对象要求基于它链接的\fB可执行程序\fR记录正确的依赖项。
+.sp
+.LP
+注意，这样的共享对象可以通过标准形式进行链接（即在构建可执行程序时指定）或者动态打开（例如，可执行程序在运行时可能会针对共享对象调用 \fBdlopen\fR(3C)。在以上两种情况下，运行 \fBappcert\fR 时都会存在未绑定的符号。在第一种情况下，可通过在运行 \fBappcert\fR 之前正确设置 \fBLD_LIBRARY_PATH\fR 来解决未绑定的符号问题。在第二种情况 (\fBdlopen\fR) 下，很难解决未绑定的符号问题。在某些情况下，可以正确设置 \fBLD_PRELOAD\fR 来预装入所需的库，但该过程并不是总能奏效。
+.sp
+.LP
+如何了解环境是否已经正确设置并可以避免出现未绑定的符号？如果运行 \fBldd\fR \fB-r\fR 时未出现 "\fBfile not found\fR" 或 "\fBsymbol not found\fR" 错误，表明环境已经正确设置。有关动态链接的更多信息，请参见 \fBld.so.1\fR(1) 和 \fBldd\fR(1)。
+.sp
+.LP
+在任何情况下，\fBappcert\fR 都会将未绑定的符号标记为警告，以防还暗藏着更严重的问题。未绑定的符号可能表明存在依赖于降级的符号（已从库中删除的符号或作用域调整为该库本地的符号）的依赖项。依赖于降级的符号的依赖项会导致严重的二进制稳定性问题。
+.sp
+.LP
+不过，正确地设置环境应该能够消除大多数未绑定的符号。通常，比较好的做法是尽可能地在构建时记录库的依赖项，这样有助于更好地定义二进制对象并使其成为自包含的。另外，建议在构建共享对象时使用 \fB-z\fR \fBdefs\fR 标志来强制在编译时解析所有符号。有关更多信息，请参见 \fBld\fR(1)。
+.SS "找不到绑定"
+.sp
+.LP
+\fBappcert\fR 针对每个要测试的二进制对象运行 \fB/bin/ldd\fR \fB-r\fR。该命令对环境变量进行如下设置：\fBLD_DEBUG\fR="\fBfiles,bindings\fR"。（有关更多信息，请参见 \fBldd\fR(1) 和 \fBld.so.1\fR(1)）。如果该命令由于某种原因而失败，\fBappcert\fR 将不能获得任何动态符号绑定信息并将找不到绑定\fB\fR。
+.sp
+.LP
+存在以下任一情况时，\fBappcert\fR 可能会失败：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+二进制对象没有读权限。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+二进制对象是 SUID 或 SGID，并且用户没有足够的权限。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+二进制对象是一个没有设置执行权限位的可执行程序。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+二进制对象是完全静态链接的。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+二进制对象没有记录库依赖项信息。
+.RE
+.sp
+.LP
+同样，还存在其他一些情况，如内存不足。通常，该标志意味着由于权限或环境问题，\fBappcert\fR 无法完整地检查对象。请尝试修改权限或环境以便能够记录动态绑定。
+.SS "过时的库"
+.sp
+.LP
+过时的库是指已不赞成使用并且可能会在将来的某个发行版中从 Solaris 中完全删除的库。\fBappcert\fR 将这些库标出是因为依赖于此类库的应用程序可能无法在将来的 Solaris 发行版中运行。过时的库中的所有接口（包括专用接口）都被冻结且不会更改。
+.SS "sys_errlist 或 sys_nerr 的使用"
+.sp
+.LP
+直接使用 \fBsys_errlist\fR 或 \fBsys_nerr\fR 符号会存在风险，导致引用可能超出 \fBsys_errlist\fR 数组的结尾。这些符号在 32 位版本的 Solaris 中不赞成使用，而在 64 位版本中完全不存在。请改用 \fBstrerror\fR(3C)。
+.SS "强符号与弱符号的使用"
+.sp
+.LP
+与弱符号（如 \fBsocket\fR）关联的强符号（如 \fB_socket\fR）保留为专用符号（其行为在将来可能会改变）。您的应用程序只应直接引用弱符号（强符号通常以 "\fB_\fR" 开头）。
+.sp
+.LP
+\fB注：\fR在某些构建环境下，尽管源代码看起来没有引用专用符号，也会在您的二进制代码中记录强符号/专用符号依赖性而不是记录弱符号/公用符号依赖性。不过，应采取措施来弄清发生此情况的原因并纠正此依赖性。
+.SH 附注
+.sp
+.LP
+\fBappcert\fR 应该与要检查的应用程序在相同的环境中运行。否则，它将无法将引用正确解析到 Solaris 库中的接口。请采取下列步骤：
+.RS +4
+.TP
+1.
+确保将 \fBLD_LIBRARY_PATH\fR 及环境的任何其他方面设置为应用程序在运行时使用的设置。另外，请确保该设置包含产品中的任何非 Solaris 共享对象所在的目录，以确保在引用这些对象时可以找到它们。
+.RE
+.RS +4
+.TP
+2.
+确保要检查的所有二进制对象满足以下条件：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+是动态链接的 \fBELF\fR 对象
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+设置了对可执行程序的执行权限（共享对象不必满足此条件）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不是 \fBSUID\fR 超级用户（否则，必须是超级用户才能检查；必要时，请创建非 \fBSUID\fR 副本并检查这些副本）。
+.RE
+.RE
+.sp
+.LP
+您可能会发现编写一个 shell 脚本，使用该脚本来正确设置环境并运行 \fBappcert\fR 比较方便。
+.sp
+.LP
+可能会遇到下面一些潜在的问题：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBappcert\fR 将看起来是 Solaris 库的一部分的符号报告为未绑定的符号。
+.sp
+当应用程序使用 \fBdlopen\fR(3C) 访问没有记录其 Solaris 依赖项的共享对象时，可能会发生这种情况。\fBappcert\fR 在这种情况下无法解析符号的使用，因为从不会针对共享对象调用动态链接程序，并且没有任何其他依赖项信息可用来解析 Solaris 符号绑定。对于非 Solaris 符号也会发生这种情况。
+.sp
+为避免该问题，请确保在构建共享对象时，在编译行上使用 \fB-l\fR\fIlib\fR 选项来显式记录共享对象对 Solaris 库的依赖项信息（请参见 \fBcc\fR(1) 和 \fBld\fR(1)）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBappcert\fR 报告指出应用程序使用了应用程序的源代码中没有引用的 Solaris 专用符号。
+.sp
+该问题很有可能是由引用该符号的 Solaris 库的静态链接造成的。由于 \fBappcert\fR 使用动态链接程序来解析符号，因此，在 \fBappcert\fR 看来，静态链接的库是应用程序代码的一部分（从某种意义上来说，它们确实是）。有时，Solaris 头文件中的宏替换也会导致该问题。
+.sp
+为避免该问题，请尽量不要将 Solaris 库归档文件静态链接到您的应用程序中。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBappcert\fR 不能识别作为 Solaris 的一部分的库。
+.sp
+有些过时的 Solaris 库太旧了，以致于还没能够对其符号进行版本化，这些库就已被废弃了。因此，\fBappcert\fR 无法将其识别为 Solaris 的一部分。
+.RE
+.SH 已知问题
+.sp
+.LP
+遗憾的是，将术语"\fB公用\fR"和"\fB专用\fR"分别等同于"\fB稳定\fR"和"\fB不稳定\fR"让人有点困惑。需要特别说明的是，实验性的或者正在改进的接口从某种意义上来说是公用的，因为它们是记录在案的并且鼓励使用它们。但这些接口是不稳定的，因为构建有这些接口的应用程序可能无法在后续发行版中运行。因此，为了方便 \fBappcert\fR 检查，这些接口被归类为专用接口，直到它们不再改进。与此相反，过时的接口最终将会消失，因此是不稳定的，即使它们在过去是公用且稳定的并且 \fBappcert\fR 当前仍将其视为公用接口。幸运的是，这两种情况极少见。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性developer/appcert
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcc\fR(1)、\fBfind\fR(1)、\fBisalist\fR(1)、\fBld\fR(1)、\fBldd\fR(1)、\fBld.so.1\fR(1)、\fBpvs\fR(1)、\fBdlopen\fR(3C)、\fBstrerror\fR(3C)、\fBIntro\fR(4)、\fBattributes\fR(5)

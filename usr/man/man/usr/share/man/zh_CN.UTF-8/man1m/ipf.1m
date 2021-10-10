@@ -1,0 +1,508 @@
+'\" te
+.\" 要查看 IP 过滤器的许可条款、所有权和版权声明，缺省路径为 /usr/lib/ipf/IPFILTER.LICENCE。如果 Solaris 操作环境已安装在缺省安装位置以外的任意位置，应修改该给定路径以访问位于实际安装位置的文件。
+.\" 部分版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利。
+.TH ipf 1M "2009 年 2 月 25 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ipf \- 更改 IP 包输入和输出的包过滤列表
+.SH 用法概要
+.LP
+.nf
+\fBipf\fR [\fB-6AdDEInoPRrsvVyzZ\fR] [\fB-l\fR block | pass | nomatch] 
+     [\fB-T\fR \fIoptionlist\fR] [\fB-F\fR i | o | a | s | S] \fB-f\fR \fIfilename\fR 
+     [\fB-f\fR \fIfilename\fR...]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBipf\fR 实用程序属于与 Solaris IP 过滤器功能关联的一套命令。请参见 \fBipfilter\fR(5)。
+.sp
+.LP
+\fBipf\fR 实用程序打开列出的文件名（将连字符 (\fB-\fR) 视为 stdin）并针对要在包过滤器规则集合中添加或删除的规则集解析该文件。
+.sp
+.LP
+如果没有解析问题，则会将 \fBipf\fR 处理的每个规则添加到内核的内部列表中。规则将被添加到内部列表的末尾，并按提供给 \fBipf\fR 时的先后顺序排列。
+.sp
+.LP
+只能通过 \fB/dev/ipauth\fR、\fB/dev/ipl\fR 和 \fB/dev/ipstate\fR 访问 \fBipf\fR。这些文件的缺省权限要求 \fBipf\fR 以 root 的身份运行才能执行所有操作。
+.SS "启用 Solaris IP 过滤器功能"
+.sp
+.LP
+Solaris IP 过滤器随 Solaris 操作系统一起安装。但是，缺省情况下不启用包过滤。可以使用以下过程激活 Solaris IP 过滤器功能。
+.RS +4
+.TP
+1.
+担任一个具有 "IP Filter Management"（IP 过滤器管理）权限配置文件的角色（请参见 \fBrbac\fR(5)）或成为超级用户。
+.RE
+.RS +4
+.TP
+2.
+配置系统和服务的防火墙策略。请参见 \fBsvc.ipfd\fR(1M) 和 \fBipf\fR(4)。
+.RE
+.RS +4
+.TP
+3.
+（可选）创建网络地址转换 (network address translation, NAT) 配置文件。请参见 \fBipnat.conf\fR(4)。
+.RE
+.RS +4
+.TP
+4.
+（可选）创建地址池配置文件。请参见 \fBippool\fR(4)。
+.sp
+如果要将一组地址作为单个地址池引用，请创建 \fBipool.conf\fR 文件。如果希望在引导时装入地址池配置文件，请创建一个名为 \fB/etc/ipf/ippool.conf \fR 的文件，在其中放置地址池。如果不希望在引导时装入地址池配置文件，请将 \fBippool.conf\fR 文件放置在 \fB/etc/ipf\fR 之外的位置，然后手动激活这些规则。
+.RE
+.RS +4
+.TP
+5.
+启用 Solaris IP 过滤器，如下所述：
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/ipfilter\fR
+.fi
+.in -2
+.sp
+
+.RE
+.sp
+.LP
+要在临时禁用包过滤功能后重新启用，请重新引导计算机或输入以下命令：
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/ipfilter\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...这本质上是执行以下 \fBipf\fR 命令：
+.RS +4
+.TP
+1.
+启用 Solaris IP 过滤器:
+.sp
+.in +2
+.nf
+# \fBipf -E\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+装入 \fBippools\fR：
+.sp
+.in +2
+.nf
+\fB# ippool -f\fR \fI<ippool configuration file>\fR
+.fi
+.in -2
+.sp
+
+请参见 \fBippool\fR(1M)。
+.RE
+.RS +4
+.TP
+3.
+（可选的）激活包过滤：
+.sp
+.in +2
+.nf
+\fBipf -f\fR \fI<ipf configuration file>\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+4.
+（可选的）激活 NAT：
+.sp
+.in +2
+.nf
+\fBipnat -f\fR \fI<IPNAT configuration file>\fR
+.fi
+.in -2
+.sp
+
+请参见 \fBipnat\fR(1M)。
+.RE
+.LP
+注 - 
+.sp
+.RS 2
+如果重新引导系统，IPfilter 配置会自动激活。
+.RE
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-6\fR\fR
+.ad
+.sp .6
+.RS 4n
+要解析并装入 IPv6 规则，此选项是必需的。IPv6 规则的装入将来可能会有更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置列表以更改活动列表（缺省）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+打开调试模式。使得它在处理每个过滤器规则时生成过滤器规则的十六进制转储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用过滤器（如果已启用）。对可装入的内核版本无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用过滤器（如果已禁用）。对可装入的内核版本无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fBi\fR | \fBo\fR | \fBa\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要刷新的过滤器列表。参数应该为 \fBi\fR（输入）、\fBo\fR（输出）或 \fBa\fR（删除所有过滤器规则）。可以使用单个字母或以相应字母开头的整个单词。此选项可以放在任何其他选项之前或之后，选项在命令行上的顺序确定了用来执行选项的顺序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fBs\fR | \fBS\fR\fR
+.ad
+.sp .6
+.RS 4n
+要刷新状态表中的条目，可将 \fB-F\fR 选项与 \fBs\fR（删除关于任何非完全建立的连接的状态信息）或 \fBS\fR（删除整个状态表）一起使用。只能指定这两个选项中的一个。完全建立的连接将会在 \fBipfstat\fR \fB-s\fR 输出中显示为 \fB4/4\fR，这两个方面中任何一个有偏差都表示连接不是完全建立的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBipf\fR 应当从哪些文件获取输入来修改包过滤器规则列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置列表以更改非活动的列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fBpass\fR | \fBblock\fR | \fBnomatch\fR\fR
+.ad
+.sp .6
+.RS 4n
+切换包的缺省日志记录。此选项的有效参数为 \fBpass\fR、\fBblock\fR 和 \fBnomatch\fR。如果设置了某个选项，则会记录退出了过滤并且与所设置的类别匹配的任何包。这最适用于记录与所装入的任何规则都不匹配的所有包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+防止 \fBipf\fR 进行任何 ioctl 调用或执行会更改当前运行的内核的任何操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制在缺省情况下将规则添加到输出列表（或从中删除规则），而不是在（缺省）输入列表中执行这些操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+将规则添加为验证规则表中的临时条目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+同时禁用"IP 地址到主机名"解析和"端口号到服务名称"解析。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除匹配的过滤器规则，而不是将它们添加到内核列表中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+使当前活动的过滤器列表成为备用列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIoptionlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许 IPFilter 内核变量的运行时更改。要允许更改，某些变量要求 IPFilter 处于禁用状态 (\fB-D\fR)，另一些变量则不要求。\fIoptionlist\fR 参数是以逗号分隔的调优命令列表。调优命令是以下项之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+检索内核中所有变量的列表、它们的最大值、最小值和当前值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB单个变量名称\fR
+.ad
+.sp .6
+.RS 4n
+检索它的当前值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB后跟一个赋值的变量名称\fR
+.ad
+.sp .6
+.RS 4n
+设置一个新值。
+.RE
+
+示例如下：
+.sp
+.in +2
+.nf
+# Print out all IPFilter kernel tunable parameters
+ipf -T list
+
+# Display the current TCP idle timeout and then set it to 3600
+ipf -D -T fr_tcpidletimeout,fr_tcpidletimeout=3600 -E
+
+# Display current values for fr_pass and fr_chksrc, then set
+# fr_chksrc to 1.
+ipf -T fr_pass,fr_chksrc,fr_chksrc=1
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+打开详细模式。显示与规则处理相关的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示版本信息。这将显示编译为 \fBipf\fR 二进制代码的版本信息并从内核代码中检索该信息（如果正在运行或存在）。如果它存在于内核中，将会显示有关它的当前状态的信息；例如，日志记录是否活动、缺省过滤等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+手动将由 IP 过滤器维护的内核中接口列表与当前接口状态列表重新同步。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于输入文件中的每个规则，将它的统计信息重置为零并显示在它们归零前的统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR\fR
+.ad
+.sp .6
+.RS 4n
+使内核中保留的仅用于过滤的全局统计信息归零。这不会影响片段或状态统计信息。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/ipauth\fR\fR
+.ad
+.br
+.na
+\fB\fB/dev/ipl\fR\fR
+.ad
+.br
+.na
+\fB\fB/dev/ipstate\fR\fR
+.ad
+.sp .6
+.RS 4n
+指向 IP 过滤器伪设备的链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ipf/ipf.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBipf\fR 启动配置文件的位置。请参见 \fBipf\fR(4)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/share/ipfilter/examples/\fR\fR
+.ad
+.sp .6
+.RS 4n
+包含大量的 IP 过滤器示例。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性network/ipfilter
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBipfstat\fR(1M)、\fBipmon\fR(1M)、\fBipnat\fR(1M)、\fBippool\fR(1M)、\fBsvcadm\fR(1M)、\fBsvc.ipfd\fR(1M)、\fBipf\fR(4)、\fBipnat.conf\fR(4)、\fBippool\fR(4)、\fBattributes\fR(5)、\fBipfilter\fR(5)
+.sp
+.LP
+\fI\fR
+.SH 诊断
+.sp
+.LP
+需要以 root 的身份运行才能实际在内核中影响包过滤列表。

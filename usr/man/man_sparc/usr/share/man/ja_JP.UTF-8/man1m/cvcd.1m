@@ -1,0 +1,147 @@
+'\" te
+.\"  Copyright (c) 2006, Sun Microsystems, Inc. All Rights Reserved
+.TH cvcd 1M "2006 年 3 月 9 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cvcd \- 仮想コンソールデーモン
+.SH 形式
+.LP
+.nf
+\fB/platform\fI\fR/\fIplatform_name\fR/cvcd\fR [\fB-a\fR \fIauth\fR] [\fB-e\fR \fIencr\fR] 
+     [\fB-u\fR \fIesp_auth\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+仮想コンソールデーモン \fBcvcd\fR は、一部のプラットフォームで提供されているネットワークコンソールをサポートするサーバープロセスです。\fBcvcd\fR デーモンは、遠隔ホストからのネットワークコンソールの接続を受け入れます (一回につき 1 つのホストのみ)。コンソールの入力はこの接続から読み取られ、\fBcvcredir\fR(7D) を経由して \fBcvc\fR(7D) へ転送されます。
+.sp
+.LP
+同様に、コンソールの出力は \fBcvcredir\fR(7D) から読み取られ、ネットワークコンソールの接続を介して転送されます。\fBcvcd\fR が終了した場合は、コンソールトラフィックは自動的に内部ハードウェアインタフェースによってルート変更されます。
+.sp
+.LP
+通常、\fBcvcd\fR デーモンはシステムブート時にブートされます。各ドメインで同時に実行することができる \fBcvcd\fR プロセスは、1 つだけです。
+.LP
+注意 - 
+.sp
+.RS 2
+Sun Enterprise 10000 ドメインでは、\fBcvcd\fR は 構成ファイル (\fB/etc/ssphostname\fR) を使用して、ネットワークコンソールの接続が許可されるホストの名前を決定します。遠隔コンソールホストの名前が変更された場合は、構成ファイルを編集し、その変更点を反映させる必要があります。
+.RE
+.sp
+.LP
+\fBcvcd\fR デーモンは、次に説明する各オプションを通じてソケット単位の IP セキュリティーアーキテクチャー (IPsec) をサポートします。\fBipsec\fR(7P) を参照してください。
+.SH オプション
+.sp
+.LP
+\fBcvcd\fR デーモンがサポートするオプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIauth\fR\fR
+.ad
+.RS 15n
+.rt  
+IPsec 認証ヘッダー (AH) アルゴリズムを制御します。\fIauth\fR に指定できるのは、\fBnone\fR、\fBmd5\fR、\fBsha1\fR のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIencr\fR\fR
+.ad
+.RS 15n
+.rt  
+IPsec ESP (Encapsulating Security Payload) 暗号化アルゴリズムを制御します。\fIencr\fR に指定できるのは、\fBnone\fR、\fBdes\fR、\fB3des\fR のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIesp_auth\fR\fR
+.ad
+.RS 15n
+.rt  
+IPsec ESP (Encapsulating Security Payload) 認証アルゴリズムを制御します。\fIesp_auth\fR に指定できるのは、\fBnone\fR、\fBmd5\fR、\fBsha1\fR のいずれかです。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIplatform_name\fR\fR
+.ad
+.RS 17n
+.rt  
+パッケージおよびコードで使用されている、Sun の正式なプラットフォーム名。たとえば、Sun Fire 15000 サーバーの場合は \fIplatform_name\fR は \fBSUNW,Sun-Fire-15000\fR になります。 
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRIPSec オプションの設定
+.sp
+.LP
+次のコマンドは、IPsec 認証ヘッダーアルゴリズムの値を \fBmd5\fR に設定します。このコマンドの結果として、\fBcvcd\fR は HMAC-MD5 認証アルゴリズムを使用するようになります。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/system/cvc setprop cvc/ah_auth = "md5"\fR
+# \fBsvccfg -s svc:/system/cvc setprop cvc/esp_encr = "none"\fR
+# \fBsvccfg -s svc:/system/cvc setprop cvc/esp_auth = "none"\fR
+# \fBsvcadm refresh svc:/system/cvc\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+アーキテクチャT{
+Sun Enterprise 10000 サーバー、Sun Fire High-End Systems
+T}
+_
+使用条件system/network-console
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBservices\fR(4), \fBattributes\fR(5), \fBsmf\fR(5), \fB cvc\fR(7D), \fBcvcredir\fR(7D), \fB ipsec\fR(7P)
+.sp
+.LP
+『\fISun Enterprise 10000 SSP リファレンスマニュアル\fR』
+.sp
+.LP
+『\fISystem Management Services (SMS) リファレンスマニュアル\fR』
+.SH 注意事項
+.sp
+.LP
+\fBcvcd\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次の障害管理リソース識別子 (FMRI) の下で管理されます。
+.sp
+.in +2
+.nf
+svc:/system/cvc
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) または \fBsvccfg\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。

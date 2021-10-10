@@ -1,0 +1,186 @@
+'\" te
+.\"  Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nscd.conf 4 "15 Aug 2011" "SunOS 5.11" "File Formats"
+.SH NAME
+nscd.conf \- name service cache daemon configuration
+.SH SYNOPSIS
+.LP
+.nf
+\fBsvc:/system/name-service/cache\fR
+.fi
+
+.LP
+.nf
+\fB/etc/nscd.conf\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The SMF service \fBsvc:/system/name-service-cache\fR contains the configuration information for \fBnscd\fR(1M). The \fBnscd.conf\fR file is considered obsolete.
+.sp
+.LP
+The following \fBnscd\fR properties are supported:
+.sp
+.in +2
+.nf
+config                                 Property Group
+config/enable_per_user_lookup          Enable per-user lookups
+config/per_user_nscd_time_to_live      Per-user Nscd time to live
+config/logfile	                        Log file location
+config/debug_level	                   Debugging/Log level flags
+config/debug_components	              subsystem debugging
+config/global_check_smf_state_interval  SMF status check interval
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable_per_user_lookup\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables or disables the ability of \fBnscd\fR to create a per-user \fBnscd\fR. A per-user \fBnscd\fR performs per-user lookups and manages the per-user cache. The per-user lookups might not be possible if the corresponding name service switch backends do not support it or are not configured to do so. The \fIvalue\fR of this attribute can be \fBtrue\fR or \fBfalse\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBper_user_nscd_time_to_live\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the time-to-live value for a per-user \fBnscd\fR based on the last time the per-user \fBnscd\fR was active. \fIvalue\fR is an integer that specifies a number of seconds. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies name of the file to which debug info should be written. Use \fB/dev/tty\fR for standard output. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug_level\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the debug level desired. Note the configuration values and output of the debugging command is not likely to remain the same from release-to-release. Use the \fBsvccfg describe\fR command to see the available levels. Debugging output formats should not be depended upon in scripts. Use the \fBsvccfg describe\fR command to see release specific values.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug_components\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the \fBnscd\fR components to generate debugs messages. The configuration values and output of the debugging command is not likely to remain the same from release-to-release. Use the \fBsvccfg describe\fR command to see the available levels. Debugging output formats should not be depended upon in scripts. Use the \fBsvccfg destribe\fR command to see release specific values.
+.RE
+
+.sp
+.LP
+Additionally the following set of property groups share the same set of properties and manage the individual caches for each of the name service switch databases. The \fBdefault\fR property group contains any common configuration values for all caches. Additionally the following property groups can contain cache specific configuration: 
+.sp
+.in +2
+.nf
+host, password, group, network, protocol, rpc, ether, netmask,
+bootparam, publickey, netgroup, service, printer, project,
+auth_attr, prof_attr, tnrhtp, tnrhdb
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following properties are common to all the above property groups: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck_files\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables or disables checking the file belonging to the specified cachename for changes. If enabled (which is the default), changes in the corresponding file cause the cache to be invalidated within 10 seconds. Can be disabled if files are never modified for a slight performance boost, particularly over NFS. \fIvalue\fR can be either \fBtrue\fR or \fBfalse\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable_cache\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables or disables the specified cache. \fIvalue\fR can be either \fItrue\fR or \fIfalse\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeep_hot_count\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+This attribute allows the administrator to set the number of entries \fBnscd\fR(1M) is to keep current in the specified cache. \fIvalue\fR is an integer number which should approximate the number of entries frequently used during the day.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnegative_time_to_live\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the time-to-live for negative entries (unsuccessful queries) in the specified cache. \fIvalue\fR is in integer seconds. Can result in significant performance improvements if there are several files owned by uids (user IDs) not in system databases. Should be kept small to reduce cache coherency problems. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpositive_time_to_live\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the time-to-live for positive entries (successful queries) in the specified cache. \fIvalue\fR is in integer seconds. Larger values increase cache hit rates and reduce mean response times, but increase problems with cache coherence. Sites that push (update) NIS maps nightly can set \fIvalue\fR to be the equivalent of 12 hours or more with very good performance implications.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availibilitysystem/core-os
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBnscd\fR(1M), \fBauth_attr\fR(4), \fBbootparams\fR(4), \fBethers\fR(4), \fBexec_attr\fR(4), \fBgroup\fR(4), \fBhosts\fR(4), \fBnetmasks\fR(4), \fBnetworks\fR(4), \fBpasswd\fR(4), \fBprof_attr\fR(4), \fBproject\fR(4), \fBprotocols\fR(4), \fBrpc\fR(4), \fBservices\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5)

@@ -1,0 +1,805 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH cfgadm_sata 1M "2011 年 2 月 2 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_sata \- cfgadm の SATA ハードウェア固有のコマンド
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR] 
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR | \fIap_type\fR]...]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIharware_options\fR] \fB-t\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBSATA\fR ハードウェア固有のライブラリ \fB/usr/lib/cfgadm/sata.so.1\fR は、\fBcfgadm\fR コマンドによる \fBSATA\fR ホットプラグ操作のための機能を提供します。\fBcfgadm\fR は、接続点で実行されます。接続点とは、ハードウェアリソースを動的に再構成できるシステム上の場所です。接続点については、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+各 \fBSATA\fR コントローラおよびポートマルチプライヤのデバイスポートは、デバイスツリー上で接続点によって表されます。システム上で接続および構成されている \fBSATA\fR デバイスは、接続点の名前の拡張として表されます。次の説明では、「接続点」および「\fBSATA\fR ポート」という用語は同じ意味で使用されます。
+.sp
+.LP
+接続点は \fBap_id\fR を使用して指定されます。すべての \fBSATA\fR 接続点 \fBap_id\fR は、次の形式の文字列で構成されます。
+.sp
+.in +2
+.nf
+sataX/P[.M][::dsk/cXtYd0]
+.fi
+.in -2
+
+.sp
+.LP
+各情報の意味は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBX\fR
+.ad
+.RS 14n
+.rt  
+\fBSATA\fR コントローラ番号です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBP\fR
+.ad
+.RS 14n
+.rt  
+\fBSATA\fR コントローラのデバイスポート番号 (0 ～ 31) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM\fR
+.ad
+.RS 14n
+.rt  
+ポートマルチプライヤのデバイスポート番号 (0 ～ 14)、ポートマルチプライヤのホストポート番号 (15) です。ポートマルチプライヤが \fBSATA\fR コントローラのデバイスポートに接続されている場合にのみ使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdev/cXtYd0\fR
+.ad
+.RS 14n
+.rt  
+接続された \fBSATA\fR デバイスを識別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBY\fR
+.ad
+.RS 14n
+.rt  
+ターゲット番号です。 
+.RE
+
+.sp
+.LP
+一般的に、デバイスの識別子は、/\fIdev\fR 内のデバイスの対応する論理リンクから生成されます。\fBSATA\fR デバイスでは 1 つの \fBLUN\fR (\fBLUN\fR 0) しかサポートされないため、デバイス文字列の「d」コンポーネントは常に数値 0 (ゼロ) になります。
+.sp
+.LP
+たとえば、\fBSATA\fR コントローラ 2 のデバイスポート 5 に接続されたポートマルチプライヤのデバイスポート 4 の論理 \fBap_id\fR は次のとおりです。
+.sp
+.in +2
+.nf
+sata2/5.4
+.fi
+.in -2
+
+.sp
+.LP
+この接続点に \fBSATA\fR ディスクまたは \fBCD\fR/\fBDVD\fR デバイスが接続されていて、デバイスが構成されている場合、\fIap_id\fR は次のようになります。
+.sp
+.in +2
+.nf
+sata2/5.4::dsk/c2t645d0
+.fi
+.in -2
+
+.sp
+.LP
+デバイスを識別する \fIcXtYd0\fR 文字列は、デバイスの接続点と 1 対 1 で対応します。
+.sp
+.LP
+システム上の接続点の単純な一覧には、すべての \fBSATA\fR デバイスポートおよび接続されているデバイスが含まれます。例: 
+.sp
+.in +2
+.nf
+#\fBcfgadm -l\fR
+Ap_Id                     Type        Receptacle   Occupant     Condition
+  sata0/0::dev/c0t0d0     disk        connected    configured   ok
+  sata0/1::dev/c0t1d0     disk        connected    configured   ok
+  sata0/2::dev/c0t2d0     cd-dvd      connected    configured   ok
+  sata0/3                 sata-port   empty        unconfigured ok
+  sata1/0                 sata-port   disconnected unconfigured unknown
+  sata1/1                 sata port   disconnected unconfigured unknown
+  sata1/2                 sata port   empty        unconfigured ok
+  sata1/3.15              sata-pmult  connected    configured   ok
+  sata1/3.0::dev/c0t512d0 disk        connected    configured   ok
+  sata1/3.1               sata-port   empty        unconfigured ok
+  sata1/3.2               sata-port   empty        unconfigured ok
+  sata1/3.3               sata-port   empty        unconfigured ok
+  usb0/1                  unknown     empty        unconfigured ok
+  usb0/2                  unknown     empty        unconfigured ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+接続点の一覧表示については、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+\fBSATA\fR ポートにおける接続点の受容体の状態は、次のような意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBempty\fR
+.ad
+.RS 16n
+.rt  
+\fBSATA\fR ポートが電源投入され、有効になっています。このポートでは、デバイスの存在が検出されませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected\fR
+.ad
+.RS 16n
+.rt  
+\fBSATA\fR ポートが有効になっていない、\fBSATA\fR デバイスの存在は検出されたがデバイスとの通信が確立されてない、またはポートで障害が発生している、のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected\fR
+.ad
+.RS 16n
+.rt  
+ポートで \fBSATA\fR デバイスが検出され、デバイスとの通信が確立されています。
+.RE
+
+.sp
+.LP
+占有装置 (\fBSATA\fR ポートに接続されたデバイス)の状態は、次のような意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured\fR
+.ad
+.RS 16n
+.rt  
+接続されている \fBSATA\fR デバイスは構成されており、オペレーティングシステムが使用できる状態です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured\fR
+.ad
+.RS 16n
+.rt  
+デバイスが接続されていないか、\fBSATA\fR ポートに接続されている \fBSATA\fR デバイスがまだ構成されていません。構成するには、コマンド「\fBcfgadm -c configure ap_id\fR」を実行します。
+.RE
+
+.sp
+.LP
+接続点 (\fBSATA\fR ポート) の状況は、次の意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBok\fR
+.ad
+.RS 11n
+.rt  
+\fBSATA\fR ポートが電源投入され、有効になっていて、使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfailed\fR
+.ad
+.RS 11n
+.rt  
+\fBSATA\fR ポートに障害が発生しました。システムにより無効になっているか電源が切断されている可能性があります。使用不可能であり、その状況は不明です。差し込まれているデバイスが原因である可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunknown\fR
+.ad
+.RS 11n
+.rt  
+\fBSATA\fR ポートが無効になっており、その状況は不明です。
+.RE
+
+.sp
+.LP
+「状態テーブル」は、接続点の受容体の状態、占有装置の状態、および接続点 (\fBSATA\fR ポート) の状況を組み合わせたものです。有効な状態は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBempty/unconfigured/ok\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR ポートが有効になっており、アクティブです。デバイスの存在が検出されませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected/unconfigured/ok\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR ポートが有効になっていて、デバイスの存在が検出されましたが、デバイスとの通信は確立されませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected/unconfigured/unknown\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR ポートが無効になっており、その状況は不明です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected/unconfigured/failed\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR ポートが無効になっており、使用不可です。システムで検出された障害が原因で、ポートはシステムで無効になりました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected/unconfigured/ok\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR ポートが有効になっており、アクティブです。デバイスの存在が検出され、デバイスとの通信が確立されました。デバイスは \fBOS\fR で使用されるように構成されていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected/configured/ok\fR
+.ad
+.sp .6
+.RS 4n
+デバイスは存在し、構成されており、\fBOS\fR が使用できる状態です。
+.RE
+
+.SH オプション
+.sp
+.LP
+\fBcfgadm\fR では、一覧表示 (\fB-l\fR) のほかに数種類の操作が定義されています。これらの操作には、テスト (\fB-t\fR)、構成状態の変更の開始 (\fB-c\fR)、ハードウェア固有の関数の実行 (\fB-x\fR)、および構成管理のヘルプメッセージの表示 (\fB-h\fR) が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+次の汎用の\fI関数\fRは、\fBSATA\fR ハードウェア固有のライブラリに定義されています。\fBSATA\fR ポート接続点では、次の構成状態の変更操作がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBconnect\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR ポートを有効 (アクティブ) にして、接続されたデバイスとの通信を確立します。この操作により、必要に応じてポートの電源が投入されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnect\fR
+.ad
+.sp .6
+.RS 4n
+接続されたデバイスがまだ構成解除されていない場合は構成解除し、\fBSATA\fR ポートを無効化 (非アクティブ化) します。その後に「\fBconnect\fR」コマンドを使用した場合、\fBSATA\fR ポート操作は有効になりますが、デバイスは「configured」状態にはなりません。
+.RE
+
+\fBSATA\fR ポートに接続された \fBSATA\fR デバイスでは、次の状態の変更操作がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure\fR
+.ad
+.RS 15n
+.rt  
+新しいデバイスがまだ構成されていない場合に、オペレーティングシステムが使用できるように構成します。このコマンドは、必要に応じて接続操作も実行することを意味しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure\fR
+.ad
+.RS 15n
+.rt  
+\fBSATA\fR ポートに接続されたデバイスがまだ構成解除されていない場合は、構成解除します。
+.RE
+
+\fBconfigure\fR および \fBunconfigure\fR 操作は、ポートパルチプライヤが接続された接続点では使用できません。ポートパルチプライヤは、システムで自動的に構成および構成解除されません。ただし、configure および unconfigure 操作は、ポートパルチプライヤのデバイスポートに接続されたすべての \fBSATA\fR デバイスに適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプオプションと任意の \fBSATA\fR 接続点を組み合わせて使用すると、\fBSATA\fR 固有のヘルプを取得できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fB-l\fR オプションは、\fBcfgadm\fR(1M) で説明されているように機能します。\fB-v\fR オプションと組み合わせて使用すると、「Information」フィールドに次の \fBSATA\fR 固有の情報が表示されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Mfg: 製造元文字列
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Product: 製品文字列
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+No: 製品シリアル番号
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在定義されているハードウェア固有のオプションはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+select サブオプションを使用すると、クラス \fBSATA\fR の接続点を一覧表示できます。\fBcfgadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR コントローラでサポートされている場合、\fBSATA\fR ポートのセルフテストを実行します。セルフテスト操作が \fBSATA\fR コントローラでサポートされていない場合は、エラーメッセージが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェア固有の関数を実行します。
+.sp
+前述のとおりに、\fBSATA\fR ポートまたは \fBSATA\fR コントローラの次のコマンドの一部では、接続されている \fBSATA\fR デバイスが影響を受ける可能性があります。前述のとおりに、\fBap_id\fR は \fBSATA\fR ポートまたは \fBSATA\fR コントローラ全体を指します。操作にデバイスの構成解除が含まれていても構成解除できない場合 (つまり、デバイスにマウント済みのファイルシステムが含まれる場合)、エラーメッセージが表示され、操作は実行されません。\fBSATA\fR コントローラで指定された操作がサポートされていない場合も、エラーメッセージが表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fBsata_reset_device ap_id\fR
+.ad
+.sp .6
+.RS 4n
+\fBap_id\fR \fBSATA\fR ポートに接続された \fBSATA\fR デバイスをリセットします。\fBSATA\fR ポートの状態は変更されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_reset_port ap_id\fR
+.ad
+.sp .6
+.RS 4n
+\fBap_id\fR で指定された \fBSATA\fR ポートをリセットします。ポートに \fBSATA\fR デバイスが接続されている場合は、そのデバイスもリセットされます。この操作は、ポートマルチプライヤが接続されているポートでも実行される場合があります。ポートマルチプライヤが \fBSATA\fR コントローラポートに接続されている場合、ポートマルチプライヤに接続された \fBSATA\fR デバイスがリセットされない可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_reset_all ap_id\fR
+.ad
+.sp .6
+.RS 4n
+\fBap_id\fR のコントローラ番号部分で指定された \fBSATA\fR コントローラおよび接続されたすべてのデバイスをリセットし、接続されたすべてのデバイス (ポートマルチプライヤやポートマルチプライヤのデバイスポートに接続されたデバイスなど) を再列挙します。 
+.sp
+この操作により、操作前に接続されたすべてのデバイスが接続解除されます。新しく列挙されたデバイスは構成解除されたままです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_port_deactivate ap_id\fR
+.ad
+.sp .6
+.RS 4n
+ほかのすべてに失敗した場合に、ポートを強制的に無効にします。これは、緊急時の手順として使用します。注意して使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_port_activate ap_id\fR
+.ad
+.sp .6
+.RS 4n
+ポートを強制的に有効にします。これは、エラーから回復するために無効にされたポート上で緊急状況時に使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_port_self_test ap_id\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR コントローラでセルフテスト操作を実行します。この操作により、すべてのデバイスが構成解除され、\fBSATA\fR コントローラがリセットされます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細モードで実行します。
+.sp
+次の「遷移」テーブルは、\fB-c\fR 操作およびホットプラグ処理の結果生じた状態遷移を報告します。
+.sp
+.in +2
+.nf
+current state     operation       possible new state
+-------------     ---------       ------------------
+empty/
+unconfigured/ok   device plug-in  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+empty/
+unconfigured/ok   -c unconfigure  error message, no state change
+
+empty/
+unconfigured/ok   -c configure    error message, no state change
+
+empty/
+unconfigured/ok   -c connect      error message, no state change
+
+empty/
+unconfigured/ok   -c disconnect   disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+
+disconnected/
+unconfigured/ok   device unplug   no state change
+
+disconnected/
+unconfigured/ok   -c unconfigure  error message, no state change
+
+disconnected/
+unconfigured/ok   -c configure    error message, no state change
+
+disconnected/
+unconfigured/ok   -c connect      error message, no state change
+
+disconnected/
+unconfigured/ok   -c disconnect   error message, no state change
+
+disconnected/
+unconfigured/
+unknown 
+(no disk plugged) -c configure    error message, state change to
+                                  empty/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+       
+disconnected/
+unconfigured/
+unknown           -c configure    state change to 
+(disk plugged)                    connected/configured/ok or,
+                                  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed and
+                                  possible error message
+       
+disconnected/
+unconfigured/
+unknown           -c connect      empty/unconfigured/ok, or
+                                  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+
+disconnected/
+unconfigured/
+unknown           -c disconnect   error message, no state change
+
+disconnected/
+unconfigured/
+failed            any command     error message, no state change
+                  other than
+                  -x commands
+
+connected/
+unconfigured/ok   disk unplug     error message and state:
+                                  empty/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+unconfigured/ok   -c configure    connected/unconfigured/ok, or
+                                  connected/configured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+unconfigured/ok   -c unconfigure  error message, no state change
+
+connected/
+unconfigured/ok   -c connect      error message, no state change
+       
+connected/
+unconfigured/ok   -c disconnect   disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+
+connected/
+configured/ok     disk unplug     error message and state:
+                                  empty/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+configured/ok     -c configure    error message, no state change
+
+connected/
+configured/ok     -c unconfigure  error message, if device cannot be
+                                  unconfigured, no state change, or
+                                  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+configured/ok     -c connect      error message, no state change
+
+connected/
+configured/ok     -c disconnect   error message, if device cannot be
+                                  unconfigured, no state change, or
+                                  disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRディスクの構成
+.sp
+.LP
+次のコマンドは、\fBSATA\fR コントローラ 0、ポート 0 に接続されているディスクを構成します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c configure sata0/0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドは、\fBSATA\fR ポートにデバイスが接続されている場合にのみ発行してください。
+
+.LP
+\fB例 2 \fRディスクの構成解除
+.sp
+.LP
+次のコマンドは、\fBSATA\fR コントローラ 0、ポート 3 に接続されたディスクを構成解除します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c unconfigure sata0/3\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+デバイスを識別する文字列は、接続点の受容体の状態が「connected」、占有装置の状態が「configured」のときに表示されます。
+
+.LP
+\fB例 3 \fRマウントされたファイルシステムがディスクの構成解除中に検出された場合
+.sp
+.LP
+次のコマンドは、マウントされたファイルシステムがディスクの構成解除中に検出された場合を示しています。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c unconfigure sata1/5\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。
+
+.sp
+.in +2
+.nf
+cfgadm: Component system is busy, try again: failed to offline:
+/devices/pci@0,0/pci8086,244e@1e/pci1095,3124@1/sd@5,0
+     Resource              Information
+------------------  --------------------------
+/dev/dsk/c1t5d0s0   mounted filesystem "/mnt"
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/lib/cfgadm/sata.so.1\fR
+.ad
+.RS 29n
+.rt  
+汎用的な \fBSATA\fR ホットプラグ操作のためのハードウェア固有ライブラリ
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBlibcfgadm\fR(3LIB), \fBattributes\fR(5)
+.SH 注意事項
+.sp
+.LP
+緊急時の「sata_port_deactivate」操作は、ルート (/)、/usr、swap、/var などの重要なパーティションを含むディスクが接続されたポートではサポートされていません。このようなポートでは、無効化操作を実行しないでください。使用法を誤ると、システムがハングアップし、リブートが必要になる場合があります。
+.sp
+.LP
+ホットプラグ操作は、すべての \fBSATA\fR コントローラでサポートされているわけではありません。
+.sp
+.LP
+\fBSATA\fR コネクタがホットプラグ対応のタイプであり、\fBSATA\fR コントローラでホットプラグがサポートされている場合は、いつでも \fBSATA\fR デバイスのホットプラグ操作が可能です。システムはイベントを検出して、デバイスとの通信を確立します。デバイスは、明示的に「\fBcfgadm -c configure ap_id\fR」コマンドで構成する必要があります。
+.sp
+.LP
+\fBSATA\fR コネクタがホットプラグ対応のタイプであり、\fBSATA\fR コントローラでホットプラグがサポートされている場合、構成解除せずにデバイスを取り外すと、システムがハングアップしたり、データが損失したりする可能性があります。デバイスが構成解除されたが、受容体の状態が disconnected 状態ではない場合は、\fBSATA\fR ポートからデバイスを取り外すと、エラーメッセージが表示されます。
+.SH 警告
+.sp
+.LP
+一部の \fBSATA\fR デバイスのコネクタは、\fBSATA\fR ホットプラグの仕様に準拠していません。このようなデバイスでホットプラグ操作を実行すると、\fBSATA\fR コントローラまたは \fBSATA\fR デバイス (あるいはその両方) に障害を与える可能性があります。

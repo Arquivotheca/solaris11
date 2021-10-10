@@ -1,0 +1,1254 @@
+\
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License (the "License").
+\ You may not use this file except in compliance with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+
+\
+\ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+\
+
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/user.h>
+#include <sys/cred_impl.h>
+#include <sys/proc.h>
+#include <sys/session.h>
+#include <sys/cpuvar.h>
+#include <sys/thread.h>
+#include <sys/sysinfo.h>
+#include <sys/vfs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/stat.h>
+#include <sys/disp.h>
+#include <sys/var.h>
+#include <sys/ts.h>
+#include <sys/kstat.h>
+#include <sys/stream.h>
+#include <sys/strsubr.h>
+#if defined(sun4u)
+#include <vm/hat_sfmmu.h>
+#endif
+#include <sys/ivintr.h>
+#include <sys/intr.h>
+#include <sys/machcpuvar.h>
+#include <vm/anon.h>
+#include <vm/as.h>
+#include <vm/hat.h>
+#include <vm/page.h>
+#include <vm/pvn.h>
+#include <vm/seg.h>
+#include <vm/seg_dev.h>
+#include <vm/seg_enum.h>
+#include <vm/seg_kp.h>
+#include <vm/seg_map.h>
+#include <vm/seg_vn.h>
+#include <sys/mutex_impl.h>
+#include <sys/rwlock_impl.h>
+#include <sys/callo.h>
+#include <sys/ddi_impldefs.h>
+#include <sys/kmem_impl.h>
+#include <sys/siginfo.h>
+#include <sys/memlist.h>
+#include <sys/kobj.h>
+#include <sys/privregs.h>
+#include <sys/machpcb.h>
+#include <sys/traptrace.h>
+#include <sys/ipc_impl.h>
+#include <sys/shm_impl.h>
+#include <sys/sem_impl.h>
+#include <sys/msg_impl.h>
+#include <sys/list_impl.h>
+#include <sys/fs/snode.h>
+#include <sys/dirent.h>
+#include <sys/fs/ufs_inode.h>
+#include <sys/fs/autofs.h>
+#include <rpc/rpc_sztypes.h>
+#include <nfs/nfs.h>
+#include <nfs/nfs_clnt.h>
+#include <sys/utsname.h>
+#include <sys/vtrace.h>
+#include <sys/cyclic.h>
+#include <sys/cyclic_impl.h>
+#include <sys/epm.h>
+#include <sys/vmem_impl.h>
+
+\
+\ Basic types
+\
+
+forth_start
+
+: .dev_t ( dev -- ) dup nbitsminor >> .d maxmin and .d ;
+
+: .phys ( pa -- ) dup .x  d >>  ." pfn:"  .x ;
+
+forth_end
+
+list
+
+list_node
+
+\
+\ lock information
+\
+
+adaptive_mutex
+
+spin_mutex
+
+rwlock_impl
+
+forth_start
+
+alias .mutex .adaptive_mutex
+alias .rwlock .rwlock_impl
+
+forth_end
+
+
+\
+\ vm information
+\
+
+avl_tree
+	avl_root	x
+	avl_compar	x
+	avl_offset	x
+	avl_numnodes	d
+	avl_size	x
+
+avl_node
+	avl_child	x
+model_start ilp32
+	avl_parent	x
+	avl_child_index	d
+	avl_balance	d
+model_end
+model_start lp64
+	avl_pcb		x
+model_end
+
+as_callback
+	ascb_next	x
+	ascb_events	x
+	ascb_func	x
+	ascb_arg	x
+	ascb_saddr	x
+	ascb_len	x
+
+as
+	a_contents	.mutex
+	a_vbits		x
+	a_cv		x
+	a_hat		x
+	a_userlimit	x
+	a_lock		.rwlock
+	a_size		x
+	a_seglast	x
+	a_lastgap	x
+	a_segtree	.avl_tree
+	a_callbacks	x	
+
+seg
+	s_base		x
+	s_size		x
+	s_szc		d
+	s_as		x
+	s_tree		.avl_node
+	s_ops		.addr>sym
+	s_data		x
+
+page
+
+memlist
+	ml_address	.phys
+	ml_size		.phys
+	ml_next		x
+
+segvn_data
+
+segvn_crargs
+
+anon
+
+anon_hdr
+
+anon_map
+
+forth_start
+
+\
+\ seg-visit dump all segs in range below the given seg
+\
+: .seg-visit ( seg -- ) recursive
+   [ also seg-words ]
+   [ also avl_node-words ]
+
+   dup s_tree avl_child p@		( seg leftnode )
+   ?dup if
+      0 s_tree -			( seg seg' )
+      .seg-visit			( seg )
+   then
+
+   dup .seg cr				( seg )
+
+   s_tree avl_child ptrsize + p@	( rightnode )
+   ?dup if
+      0 s_tree -			( seg' )
+      .seg-visit
+   then
+   [ previous ]
+   [ previous ]
+;
+
+
+
+\
+\ seg-list dump all segs starting from seg
+\
+\ The approach (pseudo code)
+\   print seg
+\   .seg-visit(seg->avl_child[1])
+\   if seg is a left child
+\      .seg-list(seg->avl_parent)
+\
+: .seg-list ( seg -- ) recursive
+   [ also seg-words ]
+   [ also avl_node-words ]
+   dup .seg cr				( seg )
+
+   dup s_tree avl_child ptrsize + p@	( seg rightnode )
+   ?dup if
+      0 s_tree -			( seg seg' )
+      .seg-visit
+   then
+
+model_start ilp32
+   s_tree dup avl_child_index
+   0= if
+      avl_parent			( parentnode )
+model_end
+model_start lp64
+   s_tree avl_pcb dup			( avl_pcb avl_pcb)
+   4 and 0= if
+      7 not and				( parentnode )
+model_end
+      ?dup if
+         0 s_tree - .seg-list		( parentseg )
+      then
+   else
+      drop
+   then
+   [ previous ]
+   [ previous ]
+;
+
+
+
+\
+\ find the segment in the address space containg the given virtual address
+\ this does a binary search through AVL tree of segment nodes
+\
+: .seg-addr ( as addr -- )
+   [ also as-words ]
+   [ also seg-words ]
+   [ also avl_tree-words ]
+   [ also avl_node-words ]
+   swap a_segtree dup avl_offset negate swap avl_root  ( addr offset root )
+
+   begin ?dup while				( addr off node )
+      3dup +					( addr off node addr seg )
+      dup s_base swap s_size			( addr off node addr base size )
+      over +					( addr off node addr base end )
+      within  if				( addr off node )
+         + .seg drop exit			( )
+      then					( addr off node )
+
+      3dup + s_base				( addr off node addr base )
+      < if					( addr off node )
+      avl_child p@				( addr off leftnode )
+      else
+      avl_child ptrsize + p@			( addr off rightnode)
+      then					
+
+   repeat					( addr off node )
+   drop						( addr )
+   . ." not found"                              ( )
+   [ previous ]
+   [ previous ]
+   [ previous ]
+   [ previous ]
+;
+
+forth_end
+
+
+\
+\ thread information
+\
+
+_label_t
+
+timeval
+
+itimerval
+	it_interval	.timeval
+	it_value	.timeval
+
+k_sigset_t
+
+k_siginfo
+	si_signo	x
+	si_code		x
+	si_errno	d
+
+lwpchan_t
+
+_kthread
+	t_link		x
+	t_stk		x
+	t_bound_cpu	x
+	t_affinitycnt	d
+	t_bind_cpu	d
+	t_flag		x
+	t_proc_flag	x
+	t_schedflag	x
+	t_pre_sys	x
+	t_preempt	d
+	t_state		x
+	t_pri		d
+	t_epri		d
+	t_pcb		._label_t
+	t_lwpchan	.lwpchan_t
+	t_sobj_ops	.addr>sym
+	t_cid		x
+	t_clfuncs	x
+	t_cldata	x
+	t_ctx		x
+	t_lofault	x
+	t_onfault	x
+	t_ontrap	x
+	t_swap		x
+	t_lock		x
+	t_pil		d
+	t_cpu		x
+	t_intr		x
+	t_did		d
+	t_tid		d
+	t_sigqueue	x
+	t_sig		.k_sigset_t
+	t_hold		.k_sigset_t
+	t_forw		x
+	t_back		x
+	t_lwp		x
+	t_procp		x
+	t_next		x
+	t_prev		x
+	t_whystop	d
+	t_whatstop	d
+	t_sysnum	d
+	t_delay_cv	x
+	t_pollstate	x
+	t_cred		x
+	t_pctcpu	x
+	t_lockp		x
+	t_oldspl	x
+	t_disp_time	d
+	t_kpri_req	d
+	_tu		x
+	t_waitrq	x
+	t_mstate	d
+	t_rprof		x
+	t_prioinv	x
+	t_ts		x
+	t_priforw	x
+	t_priback	x
+	t_sleepq	x
+	t_lgrp_aff	x
+
+mstate
+	ms_prev		x
+	ms_start	x
+	ms_term		x
+	ms_state_start	x
+
+_klwp
+	lwp_oldcontext	x
+	lwp_ap		x
+	lwp_errno	d
+	lwp_error	x
+	lwp_eosys	x
+	lwp_arg		x
+	lwp_regs	x
+	lwp_fpu		x
+	lwp_qsav	._label_t
+	lwp_cursig	x
+	lwp_curflt	x
+	lwp_sysabort	x
+	lwp_asleep	x
+	lwp_curinfo	x
+	lwp_sigoldmask	.k_sigset_t
+	lwp_mstate	.mstate
+	lwp_lastfault	d
+	lwp_lastfaddr	x
+	lwp_oweupc	x
+	lwp_state	x
+	lwp_nostop	x
+	lwp_thread	x
+	lwp_procp	x
+
+timespec
+
+forth_start
+
+alias .timestruc .timespec
+
+forth_end
+
+user
+	u_execsw	x
+	u_auxv		x
+	u_start		.timestruc
+	u_ticks		x
+	u_comm		x
+	u_psargs	x
+	u_argc		d
+	u_argv		x
+	u_envp		x
+	u_cdir		x
+	u_rdir		x
+	u_mem		x
+	u_cmask		x
+	u_acflag	x
+	u_systrap	x
+	u_signal	x
+
+proc
+	p_exec		x
+	p_as		x
+	p_crlock	.mutex
+	p_cred		x
+	p_swapcnt	d
+	p_stat		d
+	p_ppid		d
+	p_link		x
+	p_parent	x
+	p_child		x
+	p_sibling	x
+	p_psibling	x
+	p_next		x
+	p_prev		x
+	p_nextofkin	x
+	p_orphan	x
+	p_nextorph	x
+	p_pglink	x
+	p_sessp		x
+	p_pidp		x
+	p_pgidp		x
+	p_cv		x
+	p_flag_cv	x
+	p_lwpexit	x
+	p_holdlwps	x
+	p_proc_flag	x
+	p_flag		x
+	p_utime		x
+	p_stime		x
+	p_cutime	x
+	p_cstime	x
+	p_segacct	x
+	p_semacct	x
+	p_bssbase	x
+	p_brkbase	x
+	p_brksize	x
+	p_brkpageszc	d
+	p_sig		.k_sigset_t
+	p_ignore	.k_sigset_t
+	p_siginfo	.k_sigset_t
+	p_sigqueue	x
+	p_stopsig	d
+	p_lwpcnt	d
+	p_lwprcnt	d
+	p_zombcnt	d
+	p_tlist		x
+	p_sigmask	.k_sigset_t
+	p_trace		x
+	p_plist		x
+	p_rlink		x
+	p_srwchan_cv	x
+	p_stksize	x
+	p_stkpageszc	d
+	p_user		x
+	p_usrstack	x
+	p_model		x
+	p_zone		x
+	p_ct_held	.avl_tree
+	p_ct_equeue	x
+	p_ct_process	x
+	p_ct_member	.list_node
+
+
+pid
+	pid_prinactive	x
+	pid_pgorphaned	x
+	pid_prslot	x
+	pid_id		d
+	pid_pglink	x
+	pid_link	x
+	pid_ref		x
+
+forth_start
+
+alias .thread ._kthread
+alias .lwp ._klwp
+
+: l0x ( sp -- sp l0 ) dup v9bias + d# 0 + x@ ;
+: l1x ( sp -- sp l1 ) dup v9bias + d# 8 + x@ ;
+: l2x ( sp -- sp l2 ) dup v9bias + d# 16 + x@ ;
+: l3x ( sp -- sp l3 ) dup v9bias + d# 24 + x@ ;
+: l4x ( sp -- sp l4 ) dup v9bias + d# 32 + x@ ;
+: l5x ( sp -- sp l5 ) dup v9bias + d# 40 + x@ ;
+: l6x ( sp -- sp l6 ) dup v9bias + d# 48 + x@ ;
+: l7x ( sp -- sp l7 ) dup v9bias + d# 56 + x@ ;
+: i0x ( sp -- sp i0 ) dup v9bias + d# 64 + x@ ;
+: i1x ( sp -- sp i1 ) dup v9bias + d# 72 + x@ ;
+: i2x ( sp -- sp i2 ) dup v9bias + d# 80 + x@ ;
+: i3x ( sp -- sp i3 ) dup v9bias + d# 88 + x@ ;
+: i4x ( sp -- sp i4 ) dup v9bias + d# 96 + x@ ;
+: i5x ( sp -- sp i5 ) dup v9bias + d# 104 + x@ ;
+: i6x ( sp -- sp i6 ) dup v9bias + d# 112 + x@ ;
+: i7x ( sp -- sp i7 ) dup v9bias + d# 120 + x@ ;
+
+: l0 ( sp -- sp l0 ) dup d# 0 + l@ ;
+: l1 ( sp -- sp l1 ) dup d# 4 + l@ ;
+: l2 ( sp -- sp l2 ) dup d# 8 + l@ ;
+: l3 ( sp -- sp l3 ) dup d# 12 + l@ ;
+: l4 ( sp -- sp l4 ) dup d# 16 + l@ ;
+: l5 ( sp -- sp l5 ) dup d# 20 + l@ ;
+: l6 ( sp -- sp l6 ) dup d# 24 + l@ ;
+: l7 ( sp -- sp l7 ) dup d# 28 + l@ ;
+: i0 ( sp -- sp i0 ) dup d# 32 + l@ ;
+: i1 ( sp -- sp i1 ) dup d# 36 + l@ ;
+: i2 ( sp -- sp i2 ) dup d# 40 + l@ ;
+: i3 ( sp -- sp i3 ) dup d# 44 + l@ ;
+: i4 ( sp -- sp i4 ) dup d# 48 + l@ ;
+: i5 ( sp -- sp i5 ) dup d# 52 + l@ ;
+: i6 ( sp -- sp i6 ) dup d# 56 + l@ ;
+: i7 ( sp -- sp i7 ) dup d# 60 + l@ ;
+
+: client-pointer-bad?		( addr -- flag )
+   dup 1 and if			( addr )
+      v9bias + dup 7 and 0<>	( addr' non-aligned-flag )
+   else				( addr )
+      n->l dup 3 and 0<>	( addr' non-aligned-flag )
+   then				( addr' non-aligned-flag )
+   if				( addr' )
+      drop true exit		( not-good-flag )
+   then				( addr' )
+   dup f000.0000 ffff.ffff between if	( addr' )
+      drop true		( not-good-flag )
+   else				( addr' )
+      0 unix-tte if
+				( tte )
+         drop false		( good-flag )
+      else
+				( )
+         true			( not-good-flag) 
+      then			( flag )
+   then				( flag )
+;
+
+: .stacktrace ( sp -- )
+   begin  dup client-pointer-bad?
+      0= over and  while
+      dup 1 and  if
+         i7x dup client-pointer-bad? 0<>
+	 if drop ." XXXXXXXX " else
+	 dup 1 and if v9bias + then .subroutine
+	 then
+	 ." from " i7x .subname cr
+         ."  ( " i0x .h i1x .h i2x .h i3x .h i4x .h i5x .h ." )" cr
+         i6x
+      else
+         i7 dup client-pointer-bad? 0<> if drop ." XXXXXXXX " else
+	 .subroutine then ."  from " i7 .subname cr
+         ."  ( " i0 .h i1 .h i2 .h i3 .h i4 .h i5 .h ." )" cr
+         i6
+      then
+      exit? throw nip
+   repeat
+   drop
+;
+
+: .threadtrace ( t -- )
+   [ also _kthread-words ]
+   [ also _label_t-words ]
+   t_pcb                              ( pcb )
+   ."  pc: " dup 0 ['] val index .x   ( pcb )
+   ."  sp: " 1 ['] val index dup .x   ( sp )
+   cr .stacktrace cr                  ( )
+   [ previous ]
+   [ previous ]
+;
+
+: .proctlist ( p -- )
+   [ also proc-words ]
+   [ also _kthread-words ]
+   p_tlist dup                     ( t0 t0 )
+   begin                           ( t0 t )
+      ."    thread " dup .x        ( t0 t )
+      dup t_forw swap              ( t0 t' t )
+      .threadtrace                 ( t0 t' )
+   2dup =  until                   ( t0 t )
+   2drop                           ( )
+   [ previous ]
+   [ previous ]
+;
+
+: .threadstate ( t -- )
+   [ also _kthread-words ]
+   t_state dup 10 u<= if
+      " FSR?O???Z???????T" drop + c@ emit
+   else
+      drop ." ?" 
+   then
+   [ previous ]
+;
+
+d# 80 constant PSARGSZ
+
+: .ttrace ( t -- )
+   [ also user-words ]
+   [ also proc-words ]
+   [ also _kthread-words ]
+   ?dup  if  ( t )
+      dup t_state  if                        ( t )
+         space dup t_state ." t_state: " .x  ( t )
+         dup t_procp                         ( t p )
+         dup p_pidp 4 + l@ ."  pid: " .d     ( t p )
+         dup p_ppid ."  ppid: " .d cr        ( t p )
+         space dup ." proc: " .x             ( t p )
+         space dup p_as ." as: " .x          ( t p )
+         space p_user dup ."  user: " .x cr  ( t u )
+         space ." CMD: " u_psargs PSARGSZ .nstr cr ( t )
+         .threadtrace
+      else                                   ( t )
+         ." free" cr drop
+      then
+   then
+   [ previous ]
+   [ previous ]
+   [ previous ]
+;
+
+: .tlist ( -- )
+   [ also user-words ]
+   [ also proc-words ]
+   [ also pid-words ]
+   [ also _kthread-words ]
+   d#  2 to-column ." THREAD"
+   d# 16 to-column ." S"
+   d# 18 to-column ." PID"
+   d# 26 to-column ." PPID"
+   d# 34 to-column ." COMMAND" cr
+   symbol genunix:allthreads p@ ?dup  if     ( t )
+      dup                                    ( t t )
+      begin                                  ( t0 t )
+         dup t_next swap                     ( t0 t' t )
+         dup t_state  if                     ( t0 t' t )
+            d# 2 to-column dup .x            ( t0 t' t )
+            d# 16 to-column dup .threadstate ( t0 t' t )
+            d# 18 to-column t_procp          ( t0 t' p )
+            dup p_pidp pid_id .d             ( t0 t' p )
+            d# 26 to-column dup p_ppid .d    ( t0 t' p )
+            d# 34 to-column                  ( tp t' p )
+            p_user u_psargs PSARGSZ .nstr cr ( to t' )
+         else                                ( t0 t' t )
+            drop                             ( t0 t' )
+         then                                ( t0 t' done? )
+         exit?
+      dup 2over = or nip  until              ( t0 t )
+      2drop                                  ( )
+   then                                      ( )
+   [ previous ]
+   [ previous ]
+   [ previous ]
+   [ previous ]
+;
+
+: .threadlist ( -- )
+   [ also _kthread-words ]
+   symbol genunix:allthreads p@ ?dup  if  ( t )
+      dup                                 ( t t )
+      begin                               ( t0 t )
+         ."    thread " dup .x            ( t0 t )
+         dup t_next swap                  ( t0 t' t )
+	 dup t_state  if                  ( t0 t' t )
+            .ttrace false                 ( t0 t false )
+         else                             ( t0 t' t )
+            ."  free" cr cr drop exit?    ( t0 t' done? )
+         then                             ( t0 t' done? )
+      dup 2over = or nip  until           ( t0 t )
+      2drop                               ( )
+   then                                   ( )
+   [ previous ]
+;
+
+forth_end
+
+
+\
+\ cpu information
+\
+
+cpupart
+
+cpu_stats
+
+_disp
+	disp_lock	x
+	disp_npri	d
+	disp_q		x
+	disp_q_limit	x
+	disp_qactmap	x
+	disp_maxrunpri	d
+	disp_max_unbound_pri d
+	disp_nrunnable	d
+
+cpu
+	cpu_id		d
+	cpu_seqid	d
+	cpu_flags	x
+	cpu_thread	x
+	cpu_idle_thread	x
+	cpu_pause_thread x
+	cpu_lwp		x
+	cpu_fpowner	x
+	cpu_part	x
+	cpu_lpl		x
+	cpu_cache_offset x
+	cpu_next	x
+	cpu_prev	x
+	cpu_next_onln	x
+	cpu_prev_onln	x
+	cpu_next_part	x
+	cpu_prev_part	x
+	cpu_disp	._disp
+	cpu_runrun	x
+	cpu_kprunrun	x
+	cpu_dispthread	x
+	cpu_thread_lock	x
+	cpu_dispatch_pri d
+	cpu_intr_stack	x
+	cpu_intr_thread	x
+	cpu_intr_actv	x
+	cpu_base_spl	d
+	cpu_cyclic	x
+	cpu_m		x
+
+forth_start
+
+alias .disp ._disp
+
+: .cpu-n ( n -- )
+   dup ptrsize * symbol cpu + p@        ( n cpu )
+   ?dup  if                       ( n cpu )
+      .cpu drop                   ( )
+   else                           ( n )
+      ." cpu[ " .d ." ] is NULL"  ( )
+   then                           ( )
+;
+
+: .cpu-list ( -- )
+   [ also cpu-words ]
+   symbol cpu_list p@ ?dup  if   ( cpu0 )
+      dup                        ( cpu0 cpu0 )
+      begin                      ( cpu0 cpu )
+         dup .cpu cpu_next cr    ( cpu0 cpu' )
+      2dup =  until              ( cpu0 cpu )
+      2drop                      ( )
+   then                          ( )
+   [ previous ]
+;
+
+forth_end
+
+\
+\ pm information
+\
+
+pm_scan
+
+pm_comp
+
+pm_component
+
+pm_info
+
+pm_request_type
+
+power_req
+
+pm_thresh_entry
+
+pm_thresh_rec
+	ptr_entries	x
+	ptr_next	x
+	ptr_physpath	.str
+	ptr_numcomps	x
+
+forth_start
+: pm_info ( adr-struct -- )
+  [ also pm_info-words ]
+  dup pmi_dev_pm_state ." state " .x cr
+  [ previous ]
+;
+
+: pm_component ( adr-pm_component-struct -- )
+   [ also pm_component-words ]
+   dup pmc_flags ." pmc_flags: " .x cr
+   dup pmc_busycount ." pmc_busycount: 0x" .x cr
+   dup pmc_timestamp ." pmc_timestamp: 0x" .x cr
+   pmc_norm_pwr ." pmc_norm_pwr (index): 0x" .x cr
+  [ previous ]
+;
+
+forth_end
+
+\
+\ io information
+\
+
+dev_info
+
+lldaddr_t
+	_f		x
+
+buf.b_un
+	b_addr		x
+
+buf
+	b_flags		x
+	b_forw		x
+	b_back		x
+	av_forw		x
+	av_back		x
+	b_bcount	d
+	b_un		.buf.b_un
+	_b_blkno	.lldaddr_t
+	b_resid		d
+	b_proc		.addr>sym
+	b_pages		x
+	b_bufsize	d
+	b_iodone	x
+	b_vp		x
+	b_error		d
+	b_edev		.dev_t
+
+uio
+
+iovec
+
+
+forth_start
+
+: .devinfo-tree ( dip -- ) recursive
+   [ also dev_info-words ]
+   dup .dev_info cr           ( dip )
+   dup devi_child ?dup  if    ( dip child )
+      .devinfo-tree cr        ( dip )
+   then                       ( dip )
+   dup devi_sibling ?dup  if  ( dip sibling )
+      .devinfo-tree cr        ( dip )
+   then                       ( dip )
+   drop                       ( )
+   [ previous ]
+;
+
+: .devinfo-inst ( dip -- )
+   [ also dev_info-words ]
+   begin  ?dup  while         ( dip )
+      dup .dev_info cr        ( dip )
+      devi_next               ( nextdip )
+   repeat                     ( )
+   [ previous ]
+;
+
+: .devinfo-level ( dip -- )
+   [ also dev_info-words ]
+   begin  ?dup  while         ( dip )
+      dup .dev_info cr        ( dip)
+      devi_sibling            ( siblingdip )
+   repeat                     ( )
+   [ previous ]
+;
+
+: pm_devinfo ( adr-struct-dev_info -- )
+   [ also dev_info-words ]
+   [ also pm_info-words ]
+   [ also pm_component-words ]
+   dup devi_binding_name ." name: " .str
+   dup devi_addr ." @" .str cr
+   dup devi_pm_info ." devi_pm_info: " .x space
+   dup 0 <> if dup devi_pm_info  pm_info then cr
+   dup devi_pm_components ." devi_pm_components: " .x space
+   devi_pm_components pm_component
+   [ previous ]
+;
+
+forth_end
+
+
+\
+\ kmem information
+\
+
+kmem_bufctl
+
+kmem_bufctl_audit
+
+kmem_buftag
+
+kmem_slab
+
+kmem_cpu_cache
+
+kmem_cache
+
+forth_start
+
+h# feed.face constant buftag-marker
+
+: >kmem_buftag  ( addr -- buftag )
+   symbol kmem_flags l@  h# f and
+   0=  if  ." no buftags in kmem flags" drop exit  then
+   /l round-up
+   begin  dup l@ buftag-marker <>  while  la1+  repeat
+   2 la+
+;
+
+: bufaudit-trace  ( bufaudit -- ) 
+   [ also kmem_bufctl_audit-words ]
+   dup bc_depth 0  do
+      dup i ['] bc_stack index  .addr>sym cr
+   loop  drop
+   [ previous ]
+;
+
+forth_end
+
+\
+\ vmem information
+\
+
+vmem_seg
+
+vmem_freelist
+
+vmem
+	vm_name		emit
+	vm_lock		.mutex
+	vm_cv		x
+	vm_qshift 	d
+	vm_quantum 	d
+	vm_qcache_max 	d
+	vm_source_alloc	.addr>sym
+	vm_source_free	.addr>sym
+	vm_source	x
+	vm_next		x
+	vm_ksp		x
+	vm_nsegfree	d
+	vm_segfree	x
+	vm_hash_table	x
+	vm_hash_mask	x
+	vm_hash_shift	x
+	vm_freemap	x
+
+
+\
+\ fs information
+\
+
+vtype
+
+vattr
+	va_mask		x
+	va_type		d
+	va_mode		x
+	va_uid		d
+	va_gid		d
+	va_fsid		x
+	va_rdev		.dev_t
+	va_nodeid	x
+	va_nlink	d
+	va_size		d
+	va_atime	.timespec
+	va_mtime	.timespec
+	va_ctime	.timespec
+	va_blksize	d
+	va_nblocks	d
+
+vnode
+	v_flag		x
+	v_count		d
+	v_vfsmountedhere x
+	v_op		.addr>sym
+	v_vfsp		x
+	v_stream	x
+	v_pages		x
+	v_type		.vtype
+	v_rdev		.dev_t
+	v_data		x
+	v_filocks	x
+
+vfs
+	vfs_next	x
+	vfs_prev	x
+	vfs_op		.addr>sym
+	vfs_vnodecovered x
+	vfs_flag	x
+	vfs_fstype	d
+	vfs_data	x
+	vfs_dev		.dev_t
+	vfs_list	x
+	vfs_hash	x
+	vfs_zone	x
+	vfs_zone_next	x
+	vfs_zone_prev	x
+
+\
+\ misc information
+\
+
+callout
+
+callout_table
+
+cred
+	cr_ref		d
+	cr_uid		d
+	cr_gid		d
+	cr_ruid		d
+	cr_rgid		d
+	cr_suid		d
+	cr_sgid		d
+	cr_zone		x
+
+kstat_named.value
+	ul		x
+
+kstat_named
+	name		emit
+	value		.kstat_named.value
+
+kstat
+
+\
+\ cyclic subsystem
+\
+
+cyc_cpu
+
+cyclic
+
+cyc_pcbuffer
+
+cyc_softbuf
+
+cyc_id
+
+cyc_tracerec
+	cyt_arg1	x
+	cyt_arg0	x
+	cyt_why		.str
+	cyt_tstamp	x
+
+cyc_tracebuf
+
+\
+\ Streams
+\
+
+streamtab
+
+stroptions
+
+struiod
+
+infod
+
+queue
+
+module_info
+	mi_lowat	d
+	mi_hiwat	d
+	mi_maxpsz	d
+	mi_minpsz	d
+	mi_idname	.str
+	mi_idnum	d
+
+qinit
+	qi_qadmin	.addr>sym
+	qi_qclose	.addr>sym
+	qi_qopen	.addr>sym
+	qi_srvp		.addr>sym
+	qi_putp		.addr>sym
+	qi_infop	.addr>sym
+	qi_minfo	.module_info
+	qi_struiot	x
+
+linkblk
+
+free_rtn
+
+stdata
+
+syncq
+
+msgb
+
+datab
+
+qband
+
+iocblk
+
+copyreq
+
+copyresp
+
+ioctypes
+
+forth_start
+
+: .stream-list ( stream -- )
+   [ also stdata-words ]
+   [ also queue-words ]
+   [ also qinit-words ]
+   sd_wrq		       ( queue )
+   begin  ?dup  while          ( queue )
+      dup .queue cr	       ( queue )
+      dup q_qinfo .qinit cr    ( queue )
+      cr
+      q_next		       ( queue' )
+   repeat                      ( )
+   [ previous ]
+   [ previous ]
+   [ previous ]
+;
+
+: .msgbuf
+   [ also queue-words ]
+   log_recentq p@ q_first        ( msgb0 )      \ msgb0 = log_recentq->q_first
+   [ previous ]
+   [ also msgb-words ]
+   begin
+      dup                       ( msgb msgb )
+   while                        ( msgb )
+      dup b_cont                ( msgb msgb->b_cont )
+      dup b_rptr swap b_wptr    ( msgb b_cont->b_rptr b_cont->b_wptr )
+      over - lf-type            ( msgb )
+      b_next                    ( msgb' )     \ msgb' = msgb->b_next
+   repeat                       ( msgb' )
+   [ previous ]
+   drop cr                      ( )
+;
+
+forth_end
+
+\
+\ System V IPC
+\
+
+ipc_service
+
+kipc_perm
+
+kshmid
+
+ksemid
+
+kmsqid
+
+
+\
+\ Directories & UFS
+\
+
+dirent64
+
+dirent32
+
+dirent
+
+ufid
+
+\
+\ NFS client
+\
+
+mntinfo
+
+failinfo
+
+servinfo
+
+nfs_fid
+
+svcfh
+
+
+\
+\ Misc
+\
+
+sess
+
+snode
+
+fnnode
+	fn_name		.str
+	fn_next		x
+	fn_parent	x
+	fn_linkcnt	d
+	fn_size		d
+	fn_vnode	x
+	fn_dirents	x
+	fn_trigger	x
+
+utsname
+
+forth_start
+: utsname
+   [ also utsname-words ]
+   symbol utsname
+   dup sysname .str space
+   dup nodename .str space
+   dup release .str space
+   dup version .str space
+   machine .str cr
+   [ previous ]
+;
+forth_end
+
+rlimit64
+
+rlimit32
+
+zone

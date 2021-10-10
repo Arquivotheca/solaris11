@@ -1,0 +1,271 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH sharectl 1M "2011 年 4 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+sharectl \- 配置和管理文件共享服务
+.SH 用法概要
+.LP
+.nf
+\fBsharectl\fR [\fB-h\fR]
+.fi
+
+.LP
+.nf
+\fBsharectl\fR status [\fB-h\fR] [\fIprotocol\fR]
+.fi
+
+.LP
+.nf
+\fBsharectl\fR get [\fB-h\fR] [\fB-p\fR \fIproperty\fR]... \fIprotocol\fR
+.fi
+
+.LP
+.nf
+\fBsharectl\fR set [\fB-h\fR] [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIprotocol\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsharectl\fR 命令对文件共享协议（例如 NFS 和 SMB）执行操作。此命令可设置客户机和服务器操作属性，获取和恢复配置快照，以及获取协议服务的状态。
+.sp
+.LP
+\fBget\fR 和 \fBset\fR 子命令（请参见下文）要求使用 root 特权或者要求您承担主管理员角色。授权的用户可以使用 \fBsharectl\fR 设置 Solaris 服务器管理工具中的 NFS 和 SMB 属性的全局值。请参见 \fBnfs\fR(4) 和 \fBsmb\fR(4)。
+.SH 选项
+.sp
+.LP
+支持以下选项： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR[=\fI value\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定一个属性。请参见下文的"子命令"部分。
+.RE
+
+.SS "子命令"
+.sp
+.LP
+\fBsharectl\fR 支持下面描述的子命令。\fBsharectl\fR 命令的格式是：
+.sp
+.in +2
+.nf
+# \fBsharectl \fIsubcommand\fR [\fIoption\fR]\fR
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [\fB-p\fR\ \fI property\fR] \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取指定协议的属性值。如果未提供 \fB-p\fR 选项，则将获取指定协议的所有属性。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR [\fB-p\fR\ \fI property\fR=\fIvalue\fR]... \fIprotocol \fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定的文件共享协议的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR [\fIprotocol\fR] \fR
+.ad
+.sp .6
+.RS 4n
+显示指定协议的状态，如果未指定协议，则显示所有文件共享协议的状态。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR获取属性
+.sp
+.LP
+以下命令获取 NFS 协议的属性。
+
+.sp
+.in +2
+.nf
+% \fBsharectl get nfs\fR
+lockd_listen_backlog=32
+lockd_servers=20
+lockd_retransmit_timeout=5
+grace_period=90
+nfsmapid_domain=sun.com
+servers=16
+server_versmin=2
+server_versmax=4
+max_connections=-1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令获取 NFS 协议的 grace_period 属性的值。
+
+.sp
+.in +2
+.nf
+% \fBsharectl get -p grace_period nfs\fR
+grace_period=90
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR设置属性
+.sp
+.LP
+请注意，在前面的示例中，服务器 NFS 协议的最低版本 (\fBserver_versmin\fR) 设置为 \fB2\fR。以下命令将最低版本号设置为版本 3。
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p server_versmin=3 nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR获取状态
+.sp
+.LP
+以下命令获取系统上所有文件共享协议的状态。
+
+.sp
+.in +2
+.nf
+% \fBsharectl status\fR
+nfs      enabled
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR设置 SMB 服务器的属性
+.sp
+.LP
+以下命令为 SMB 协议设置 \fBserver_signing_required\fR 属性的值。
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p server_signing_required=true smb\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR设置 SMB 客户机的属性
+.sp
+.LP
+以下命令为 SMB 协议设置 \fBclient_signing_required\fR 属性的值。
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p client_signing_required=true smb\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR设置对 \fBautofs\fR 的 RPC（Remote Procedure Call，远程过程调用）调用的跟踪
+.sp
+.LP
+以下命令扩展了对 \fBautofs\fR 的每个 RPC 调用，并将其记录到在 \fBautomountd\fR(1M) 中为该服务指定的位置。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set trace=1 autofs\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fI非零值\fR\fR
+.ad
+.RS 13n
+.rt  
+命令失败。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/libshare.h\fR\fR
+.ad
+.RS 27n
+.rt  
+用于退出状态的错误代码。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBautomount\fR(1M)、\fBautomountd\fR(1M)、\fBlockd\fR(1M)、\fBmountd\fR(1M)、\fBnfsd\fR(1M)、\fBnfsmapid\fR(1M)、\fBnfs\fR(4)、\fBsmb\fR(4)、\fBuser_attr\fR(4)、\fBattributes\fR(5)、\fBrbac\fR(5)、\fBsmf\fR(5)、\fBstandards\fR(5)UN_MAPPED_ENT:middot:
+

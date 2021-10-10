@@ -1,0 +1,201 @@
+'\" te
+.\" Copyright (c)  2008, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH tnd 1M "2011 年 4 月 9 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+tnd \- トラステッドネットワークデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/tnd\fR [\fB-p\fR \fIpoll-interval\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtnd\fR (トラステッドネットワークデーモン) は、トラステッドネットワークデータベースを使ってカーネルを初期化し、また要求に従って LDAP サーバーおよびローカルファイルからデータベースの再読み込みを行います。\fBtnd\fR は、構成データベースを読み込む際、nsswitch.conf で指定された順序に従います。
+.sp
+.LP
+\fBtnd\fR が大域ゾーンのブート処理中に \fBsvc:/network/tnd\fR \fBsmf\fR(5) サービスから起動されるように意図されているのは、システムが LDAP クライアントとして構成されている場合だけです。トラステッドネットワークデータベースとしてローカルファイルのみを使用するシステムは、\fBtnd\fR の代わりに \fBtnctl\fR(1M) を使用します。
+.sp
+.LP
+\fBtnd\fR は次のデータベースをカーネルに読み込みます。遠隔ホストデータベース \fBtnrhdb\fR と遠隔ホストテンプレートデータベース \fBtnrhtp\fR です。\fBtnd\fR はさらに、関連する LDAP データベースやローカルデータベースに変更がないか定期的にスキャンし、その結果に応じてカーネルキャッシュを更新します。
+.sp
+.LP
+ローカルのトラステッドネットワークデータベースファイルが変更された場合、管理者は \fBtnchkdb\fR(1M) を実行して構文を検査するとともに、\fBsvcadm refresh svc:/network/tnd\fR を実行して \fBtnd\fR によるデータベーススキャンをすぐに開始するようにしてください。
+.sp
+.LP
+\fBtnd\fR は \fBsmf\fR(5) スクリプトから起動され、大域ゾーンで実行されることを前提としています。次の \fBsvcadm\fR コマンドは、特定のアクションを実行するように \fBtnd\fR に指示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvcadm refresh svc:/network/tnd\fR\fR
+.ad
+.sp .6
+.RS 4n
+ローカルおよび LDAP \fBtnrhdb\fR と \fBtnrhtp\fR データベースの再スキャンが開始されます。\fBtnd\fR は、検出された変更点を使ってカーネルデータベースを更新します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvcadm disable svc:/network/tnd\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtnd\fR デーモンを停止します。カーネルデータベースは変更されません。
+.RE
+
+.sp
+.LP
+\fBtnd\fR がデバッグモードで実行されるかどうかは、次のサービス管理機能 (SMF) プロパティーの値で決まります。
+.sp
+.in +2
+.nf
+tnd/debug_level = 0
+.fi
+.in -2
+
+.sp
+.LP
+前述のように値が \fB0\fR の場合、デバッグ情報は収集されません。\fB1\fR の場合はデバッグが有効になります。デフォルト値は \fB0\fR です。デバッグ出力は \fB/var/tsol/tndlog\fR ログファイルに送信されます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpoll-interval\fR\fR
+.ad
+.RS 20n
+.rt  
+ポーリング間隔を \fIpoll-interval\fR 秒に設定します。デフォルトの \fIpoll-interval\fR は 1800 秒 (30 分) です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRポーリング間隔の変更
+.sp
+.LP
+次のコマンドは、ポーリング間隔を 1 時間に変更して、この間隔を SMF リポジトリに格納します。次回のブート時に、\fBtnd\fR のポーリング間隔は 1 時間になります。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s network/tnd setprop tnd/poll_interval=3600\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、ポーリング間隔を変更しますが、リポジトリの更新は行いません。次回のブート時、\fBtnd\fR のポーリング間隔はデフォルトの 30 分のままです。
+
+.sp
+.in +2
+.nf
+# tnd -p 3600
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラステッドネットワーク遠隔ホストデータベース
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhtp\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラステッドネットワーク遠隔ホストテンプレート
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnzonecfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラステッドゾーン構成データベース
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nsswitch.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネームサービススイッチの構成ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/trusted
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンドの呼び出しは「確実」です。サービスは「非公開」です。
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBtninfo\fR(1M), \fBtnctl\fR(1M), \fBtnchkdb\fR(1M), \fBnsswitch.conf\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fISolaris Trusted Extensions Administrator\&'s Procedures \fR
+.SH 注意事項
+.sp
+.LP
+このマニュアルページに記載されている機能を利用できるのは、システムが Trusted Extensions を使用して構成されている場合だけです。
+.sp
+.LP
+\fBtnd\fR サービスは、サービス管理機能 \fBsmf\fR(5) により、サービス識別子の下で管理されます。
+.sp
+.in +2
+.nf
+svc:/network/tnd
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+サービスのステータスは、\fBsvcs\fR(1) を使って問い合わせることができます。このサービスに対する管理操作 (デーモンの再起動要求など) は、\fBsvcadm\fR(1M) を使って実行できます。次に例を示します。
+.sp
+.in +2
+.nf
+svcadm restart svc:/network/tnd
+.fi
+.in -2
+.sp
+

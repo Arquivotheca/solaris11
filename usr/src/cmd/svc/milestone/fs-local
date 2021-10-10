@@ -1,0 +1,76 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 1988, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+
+result=$SMF_EXIT_OK
+
+# Mount all local filesystems.
+
+TMPFILE_ZFSMOUNT=$SMF_SYSVOL_FS/fs-local.zfsmount
+
+#
+# ignore first set of errors from mountall.  If it fails
+# we will retry it at the end of fs-local
+# it most likely will fail due to syntax error in 
+# /etc/vfstab or you are trying to mount something on top
+# of a file system that isn't mounted yet.
+#
+cd /; /usr/sbin/mountall -l >/dev/null 2>&1
+mountall_rc=$?
+
+
+# Mount all ZFS filesystems.  Mount any shadowed file systems standby,
+# their source file systems are likely not available yet.
+
+if [ -x /usr/sbin/zfs ]; then
+	/usr/sbin/zfs mount -vaS >$TMPFILE_ZFSMOUNT 2>&1
+	rc=$?
+	cat $TMPFILE_ZFSMOUNT | tee /dev/msglog 2>&1
+	rm -f $TMPFILE_ZFSMOUNT
+	if [ $rc -ne 0 ]; then
+		msg="WARNING: /usr/sbin/zfs mount -a failed: one or more "
+		msg="$msg file systems failed to mount"
+		echo $msg
+		echo "$SMF_FMRI:" $msg >/dev/msglog
+		result=$SMF_EXIT_ERR_FATAL
+	fi
+fi
+
+if [ $mountall_rc -ne 0 ]; then
+	cd /; /usr/sbin/mountall -l >/dev/msglog
+	rc=$?
+	if [ $rc -ne 0 ]; then
+		msg="WARNING: /usr/sbin/mountall -l failed: exit status $rc"
+		echo $msg
+		echo "$SMF_FMRI:" $msg >/dev/msglog
+		result=$SMF_EXIT_ERR_FATAL
+	fi
+fi
+
+# Add swap filesystems
+/usr/sbin/swapadd >/dev/null 2>&1
+
+exit $result

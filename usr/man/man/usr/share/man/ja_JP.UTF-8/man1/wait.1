@@ -1,0 +1,313 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1992 X/Open Company Limited
+.\" Copyright 1989 AT&T 
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH wait 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+wait \- 他のプロセスの終了を待つ
+.SH 形式
+.LP
+.nf
+ 
+.fi
+
+.SS "/bin/sh"
+.LP
+.nf
+\fBwait\fR [\fIpid\fR]...
+.fi
+
+.SS "/bin/jsh /bin/ksh88 /usr/xpg4/bin/sh"
+.LP
+.nf
+\fBwait\fR [\fIpid\fR]...
+.fi
+
+.LP
+.nf
+\fBwait\fR [% \fIjobid\fR...]
+.fi
+
+.SS "/bin/csh"
+.LP
+.nf
+\fBwait\fR
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fBwait\fR [\fIjob...\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+シェルは、新しいプロセスを作成せずに、シェル自身で \fBwait\fR を実行します。エラーメッセージ \fBcannot fork, too many processes\fR が表示された場合、\fBwait\fR コマンドを使用して、バックグラウンドプロセスをすべてクリアしてください。これを行なっても問題が解決しない場合には、システムのプロセステーブルが一杯になっていること、または実行中のフォアグラウンドプロセスの数が多すぎることが考えられます。ユーザーのログインに対するプロセス \fBID\fR の数、およびシステムが把握できるプロセスの数には制限があります。
+.sp
+.LP
+段階以上のパイプラインのプロセスは、必ずしもすべてがシェルの子プロセスであるわけではなく、そのようなプロセスは待つことができません。
+.SS "/bin/sh, /bin/jsh"
+.sp
+.LP
+プロセス \fBID\fR が \fIpid\fR であるバックグラウンドプロセスを待ち、そのプロセスの終了ステータスを報告します。\fIpid\fR を省略すると、ユーザーのシェルで現在実行中のバックグラウンドプロセスをすべて待ち、戻り値は \fB0\fR になります。ジョブ制御が有効 (jsh) なとき、\fBwait\fR はジョブ識別子の指定を受け入れます。引数の \fIjobid\fR は、先頭にパーセント記号 (\fB%\fR) を付加して指定します。
+.sp
+.LP
+\fIpid\fR が実行中のプロセス \fBID\fR でない場合には、\fBwait\fR ユーティリティーはすぐに戻り、戻り値は \fB0\fR になります。
+.SS "csh"
+.sp
+.LP
+バックグラウンドプロセスを待ちます。
+.SS "ksh88"
+.sp
+.LP
+シェルが非同期リストを開始したとき、非同期リストの各要素内の最後のコマンドのプロセス \fBID\fR が、現在のシェル実行環境に知らされます。
+.sp
+.LP
+\fBwait\fR ユーティリティーがオペランドなしで呼び出されると、呼び出し側シェルが認識しているすべてのプロセス \fBID\fR が終了するまで待ち、終了ステータス \fB0\fR で終了します。
+.sp
+.LP
+認識しているプロセス \fBID\fR (またはジョブ ID) を示すいくつかの \fIpid\fR または \fIjobid\fR オペランドが指定された場合、\fBwait\fR はすべてのプロセス ID が終了するまで待ちます。認識していないプロセス \fIID\fR (またはジョブ ID) を示すいくつかの \fIpid\fR または \fBjobid\fR オペランドが指定された場合、\fBwait\fR ユーティリティーはプロセス \fBID\fR (またはジョブ ID) が終了ステータス \fB127\fR で終了した場合と同様に扱います。\fBwait\fR ユーティリティーが戻した終了ステータスは、最後の \fIpid\fR または \fIjobid\fR オペランドで要求したプロセスの終了ステータスです。
+.sp
+.LP
+認識されたプロセス \fBID\fR は、現在のシェル実行環境内の \fBwait\fR 呼び出しに対してだけ適用可能です。
+.SS "ksh"
+.sp
+.LP
+オペランドなしの wait は、呼び出し側シェルが認識しているすべてのジョブが終了するまで待ちます。job オペランドが 1 つ以上指定された場合、wait はそれらすべてが終了するまで待ちます。各 job は、次のいずれかの形式で指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fInumber\fR\fR
+.ad
+.RS 12n
+.rt  
+\fInumber\fR はプロセス ID を意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fInumber\fR\fR
+.ad
+.RS 12n
+.rt  
+\fInumber\fR はプロセスグループ ID を意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fInumber\fR\fR
+.ad
+.RS 12n
+.rt  
+\fInumber\fR はジョブ番号を意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fIstring\fR\fR
+.ad
+.RS 12n
+.rt  
+名前が \fIstring\fR で始まるジョブを意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%?\fR\fIstring\fR\fR
+.ad
+.RS 12n
+.rt  
+名前に \fIstring\fR が含まれているジョブを意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%+\fR\fR
+.ad
+.br
+.na
+\fB\fB%%\fR\fR
+.ad
+.RS 12n
+.rt  
+現在のジョブを意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%-\fR\fR
+.ad
+.RS 12n
+.rt  
+前回のジョブを意味します。
+.RE
+
+.sp
+.LP
+1 つ以上の job オペランドに現在のシェル環境で認識されないプロセス ID またはプロセスグループ ID が指定されている場合、\fBwait\fR はそれらを終了ステータス 127 で終了したプロセスと同様に扱います。 
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.RS 9n
+.rt  
+ユーティリティーが停止を待つ対象であるコマンドの符号なし 10 進整数プロセス \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIjobid\fR\fR
+.ad
+.RS 9n
+.rt  
+待つ対象のバックグラウンドプロセスグループを識別するジョブ制御ジョブ \fBID\fR。ジョブ制御ジョブ \fBID\fR 表記は、現在のシェル実行環境内の \fBwait\fR 呼び出しに対してだけ適用可能です。なお pid のジョブ制御ジョブ ID の形式は、ジョブ制御オプションをサポートしているシステム上でだけ使用可能です。
+.RE
+
+.SH 使用法
+.sp
+.LP
+ほとんどのシステムでは、\fBwait\fR はシェルに組み込まれています。サブシェルや別のユーティリティー実行環境で、次のように wait が呼び出されたとします。
+.sp
+.in +2
+.nf
+(wait)
+nohup wait ...
+find . -exec wait ... \e;
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これらの環境では待つ対象の認識されたプロセス \fBID\fR がないため、ただちに戻ります。
+.SH 使用例
+.LP
+\fB例 1 \fR終端シグナルを識別するスクリプトを使用する
+.sp
+.LP
+プロセスがシグナルによって停止されたときに使用する正確な値は不定ですが、シグナルがプロセスを停止したことがわかっていれば、以下のようにすると、どのシグナルが \fBkill\fR を使用しているかをかなり正確に特定できます (\fB/bin/ksh88\fR および \fB/usr/xpg4/bin/sh\fR)。
+
+.sp
+.in +2
+.nf
+sleep 1000&
+pid=$!
+kill -kill $pid
+wait $pid
+echo $pid was terminated by a SIG$(kill -l $(($?\(mi128))) signal.
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRプロセスの終了ステータスを戻す
+.sp
+.LP
+以下のコマンドが 31 秒未満で実行されたとします (\fB/bin/ksh88\fR および \fB/usr/xpg4/bin/sh\fR)。
+
+.sp
+.in +2
+.nf
+sleep 257 | sleep 31 &
+
+jobs -l %%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+その場合、次のコマンドのどちらかが 2 番目の \fBsleep\fR の終了ステータスを戻します。
+
+.sp
+.in +2
+.nf
+wait <\fIpid of sleep 31\fR>
+wait %% 
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBwait\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR に組み込まれた \fBwait\fR により、次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 7n
+.rt  
+\fBwait\fR がオペランドなしで呼び出されました。呼び出し側プロセスが認識しているすべてのプロセスが終了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB127\fR\fR
+.ad
+.RS 7n
+.rt  
+\fIjob\fR は、現在のシェル環境が認識できないプロセス ID またはプロセスグループ ID である。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBjobs\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBpwait\fR(1), \fBsh\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)

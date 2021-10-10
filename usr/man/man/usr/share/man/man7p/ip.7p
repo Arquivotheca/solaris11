@@ -1,0 +1,803 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 2008 AT&T
+.TH ip 7P "9 Jul 2011" "SunOS 5.11" "Protocols"
+.SH NAME
+ip, IP \- Internet Protocol
+.SH SYNOPSIS
+.LP
+.nf
+\fB#include <sys/socket.h>\fR
+.fi
+
+.LP
+.nf
+\fB#include <netinet/in.h>\fR
+.fi
+
+.LP
+.nf
+\fBs = socket(AF_INET, SOCK_RAW, proto);\fR
+.fi
+
+.LP
+.nf
+\fBt = t_open ("/dev/rawip", O_RDWR);\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+IP is the internetwork datagram delivery protocol that is central to the Internet protocol family. Programs can use \fBIP\fR through higher-level protocols such as the Transmission Control Protocol (TCP) or the User Datagram Protocol (UDP), or can interface directly to IP. See \fBtcp\fR(7P) and \fBudp\fR(7P). Direct access can be by means of the socket interface, using a "raw socket," or by means of the Transport Level Interface (TLI). The protocol options defined in the IP specification can be set in outgoing datagrams.
+.sp
+.LP
+Packets sent to or from this system can be subject to IPsec policy. See \fBipsec\fR(7P) for more information.
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The STREAMS driver \fB/dev/rawip\fR is the TLI transport provider that provides raw access to IP.
+.sp
+.LP
+Raw IP sockets are connectionless and are normally used with the \fBsendto()\fR and \fBrecvfrom()\fR calls (see \fBsend\fR(3SOCKET) and \fBrecv\fR(3SOCKET)), although the \fBconnect\fR(3SOCKET) call can also be used to fix the destination for future datagram. In this case, the \fBread\fR(2) or \fBrecv\fR(3SOCKET) and \fBwrite\fR(2) or \fBsend\fR(3SOCKET) calls can be used. If \fIproto\fR is \fBIPPROTO_RAW\fR or \fBIPPROTO_IGMP\fR, the application is expected to include a complete IP header when sending. Otherwise, that protocol number is set in outgoing datagrams and used to filter incoming datagrams and an IP header will be generated and prepended to each outgoing datagram. In either case, received datagrams are returned with the IP header and options intact.
+.sp
+.LP
+If an application uses \fBIP_HDRINCL\fR and provides the IP header contents, the IP stack does not modify the following supplied fields under any conditions: Type of Service, DF Flag, Protocol, and Destination Address. The \fBIP Options\fR and \fBIHL\fR fields are set by use of \fBIP_OPTIONS\fR, and \fBTotal Length\fR is updated to include any options. Version is set to the default. Identification is chosen by the normal IP ID selection logic. The source address is updated if none was specified and the TTL is changed if the packet has a broadcast destination address. Since an application cannot send down fragments (as IP assigns the IP ID), \fBFragment Offset\fR is always \fB0\fR. The \fBIP Checksum\fR field is computed by \fBIP\fR. None of the data beyond the IP header are changed, including the application-provided transport header.
+.sp
+.LP
+The socket options supported at the IP level are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_OPTIONS\fR\fR
+.ad
+.RS 22n
+.rt  
+IP options for outgoing datagrams. This socket option can be used to set IP options to be included in each outgoing datagram. IP options to be sent are set with \fBsetsockopt()\fR (see \fBgetsockopt\fR(3SOCKET)). The \fBgetsockopt\fR(3SOCKET) call returns the IP options set in the last \fBsetsockopt()\fR call. IP options on received datagrams are visible to user programs only using raw IP sockets. The format of IP options given in \fBsetsockopt()\fR matches those defined in the IP specification with one exception: the list of addresses for the source routing options must include the first-hop gateway at the beginning of the list of gateways. The first-hop gateway address will be extracted from the option list and the size adjusted accordingly before use. IP options can be used with any socket type in the Internet family.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_SEC_OPT\fR\fR
+.ad
+.RS 22n
+.rt  
+Enable or obtain IPsec security settings for this socket. For more details on the protection services of IPsec, see \fBipsec\fR(7P).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_ADD_MEMBERSHIP\fR\fR
+.ad
+.RS 22n
+.rt  
+Join a multicast group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_DROP_MEMBERSHIP\fR\fR
+.ad
+.RS 22n
+.rt  
+Leave a multicast group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_BOUND_IF\fR\fR
+.ad
+.RS 22n
+.rt  
+Limit reception and transmission of packets to this interface. Takes an integer as an argument. The integer is the selected interface index.
+.RE
+
+.sp
+.LP
+The following options take \fBin_pktinfo_t\fR as the parameter:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_PKTINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set the source address and/or transmit interface of the packet(s). The \fBIP_BOUND_IF\fR socket option takes precedence over the interface index passed in \fBIP_PKTINFO\fR.
+.sp
+.in +2
+.nf
+struct in_pktinfo {
+   unsigned int ipi_ifindex;/* send/recv interface index */
+   struct in_addr ipi_spec_dst;/* matched source addr. */
+   struct in_addr ipi_addr;/* src/dst addr. in IP hdr */
+} in_pktinfo_t;
+.fi
+.in -2
+
+When passed in (on transmit) via ancillary data with \fBIP_PKTINFO\fR, \fBipi_spec_dst\fR is used as the source address and \fBipi_ifindex\fR is used as the interface index to send the packet out.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_RECVPKTINFO\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enable/disable receipt of the index of the interface the packet arrived on, the local address that was matched for reception, and the inbound packet's actual destination address. Takes boolean as the parameter. Returns \fBstruct in_pktinfo_t\fR as ancillary data.
+.RE
+
+.sp
+.LP
+The following options take a \fBstruct ip_mreq\fR as the parameter. The structure contains a multicast address which must be set to the \fBCLASS-D\fR \fBIP\fR multicast address and an interface address. Normally the interface address is set to \fBINADDR_ANY\fR which causes the kernel to choose the interface on which to join.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_BLOCK_SOURCE\fR\fR
+.ad
+.RS 29n
+.rt  
+Block multicast packets whose source address matches the given source address. The specified group must be joined previously using \fBIP_ADD_MEMBERSHIP\fR or \fBMCAST_JOIN_GROUP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_UNBLOCK_SOURCE\fR\fR
+.ad
+.RS 29n
+.rt  
+Unblock (begin receiving) multicast packets which were previously blocked using \fBIP_BLOCK_SOURCE\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_ADD_SOURCE_MEMBERSHIP\fR\fR
+.ad
+.RS 29n
+.rt  
+Begin receiving packets for the given multicast group whose source address matches the specified address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_DROP_SOURCE_MEMBERSHIP\fR\fR
+.ad
+.RS 29n
+.rt  
+Stop receiving packets for the given multicast group whose source address matches the specified address.
+.RE
+
+.sp
+.LP
+The following options take a \fBstruct ip_mreq_source\fR as the parameter. The structure contains a multicast address (which must be set to the CLASS-D IP multicast address), an interface address, and a source address.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMCAST_JOIN_GROUP\fR\fR
+.ad
+.RS 28n
+.rt  
+Join a multicast group. Functionally equivalent to \fBIP_ADD_MEMBERSHIP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMCAST_BLOCK_SOURCE\fR\fR
+.ad
+.RS 28n
+.rt  
+Block multicast packets whose source address matches the given source address. The specified group must be joined previously using \fBIP_ADD_MEMBERSHIP\fR or \fBMCAST_JOIN_GROUP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMCAST_UNBLOCK_SOURCE\fR\fR
+.ad
+.RS 28n
+.rt  
+Unblock (begin receiving) multicast packets which were previously blocked using \fBMCAST_BLOCK_SOURCE\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMCAST_LEAVE_GROUP\fR\fR
+.ad
+.RS 28n
+.rt  
+Leave a multicast group. Functionally equivalent to \fBIP_DROP_MEMBERSHIP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMCAST_JOIN_SOURCE_GROUP\fR\fR
+.ad
+.RS 28n
+.rt  
+Begin receiving packets for the given multicast group whose source address matches the specified address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMCAST_LEAVE_SOURCE_GROUP\fR\fR
+.ad
+.RS 28n
+.rt  
+Stop receiving packets for the given multicast group whose source address matches the specified address.
+.RE
+
+.sp
+.LP
+The following options take a struct \fBgroup_req\fR or struct \fBgroup_source_req\fR as the parameter. The `\fBgroup_req\fR structure contains an interface index and a multicast address which must be set to the CLASS-D multicast address. The \fBgroup_source_req\fR structure is used for those options which include a source address. It contains an interface index, multicast address, and source address.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_MULTICAST_IF\fR\fR
+.ad
+.RS 21n
+.rt  
+The outgoing interface for multicast packets. This option takes a \fBstruct\fR \fBin_addr\fR as an argument, and it selects that interface for outgoing IP multicast packets. If the address specified is \fBINADDR_ANY\fR, it uses the unicast routing table to select the outgoing interface (which is the default behavior).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_MULTICAST_TTL\fR\fR
+.ad
+.RS 21n
+.rt  
+Time to live for multicast datagrams. This option takes an unsigned character as an argument. Its value is the TTL that IP uses on outgoing multicast datagrams. The default is \fB1\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_MULTICAST_LOOP\fR\fR
+.ad
+.RS 21n
+.rt  
+Loopback for multicast datagrams. Normally multicast datagrams are delivered to members on the sending host (or sending zone). Setting the unsigned character argument to 0 causes the opposite behavior, meaning that when multiple zones are present, the datagrams are delivered to all zones except the sending zone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_RECVIF\fR\fR
+.ad
+.RS 21n
+.rt  
+Receive the inbound interface index.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_TOS\fR\fR
+.ad
+.RS 21n
+.rt  
+This option takes an integer argument as its input value. The least significant 8 bits of the value are used to set the Type Of Service field in the IP header of the outgoing packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_DONTFRAG\fR\fR
+.ad
+.RS 21n
+.rt  
+This option controls whether IP allows fragmentation both locally (fragmenting the packets before sending them out on the wire), and in the network (whether or not the \fBDon't Fragment\fR flag is set in the IPv4 header). Setting the option to any \fBnon-zero\fR value disables fragmentation. Setting the option to zero enables fragmentation. When fragmentation is disabled then IP does not create any Path MTU state on behalf of this socket.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP_NEXTHOP\fR\fR
+.ad
+.RS 21n
+.rt  
+This option specifies the address of the onlink nexthop for traffic originating from that socket. It causes the routing table to be bypassed and outgoing traffic is sent directly to the specified nexthop. This option takes an ipaddr_t argument representing the IPv4 address of the nexthop as the input value. The IP_NEXTHOP option takes precedence over IPOPT_LSRR. IP_BOUND_IF and SO_DONTROUTE take precedence over IP_NEXTHOP. This option has no meaning for broadcast and multicast packets. The application must ensure that the specified nexthop is alive. An application can want to specify the IP_NEXTHOP option on a TCP listener socket only for incoming requests to a particular IP address. In this case, it must avoid binding the socket to INADDR_ANY and instead must bind the listener socket to the specific IP address. In addition, typically the application can want the incoming and outgoing interface to be the same. In this case, the application must select a suitable nexthop that is onlink and reachable via the desired interface and do a setsockopt (IP_NEXTHOP) on it. Then it must bind to the IP address of the desired interface. Setting the IP_NEXTHOP option requires the PRIV_SYS_NET_CONFIG privilege.
+.RE
+
+.sp
+.LP
+The multicast socket options (IP_MULTICAST_IF, IP_MULTICAST_TTL, IP_MULTICAST_LOOP and IP_RECVIF) can be used with any datagram socket type in the Internet family.
+.sp
+.LP
+At the socket level, the socket option \fBSO_DONTROUTE\fR can be applied. This option forces datagrams being sent to bypass routing and forwarding by forcing the IP Time To Live field to \fB1\fR, meaning that the packet is not be forwarded by routers.
+.sp
+.LP
+Raw IP datagrams can also be sent and received using the TLI connectionless primitives.
+.sp
+.LP
+Datagrams flow through the IP layer in two directions: from the network \fIup\fR to user processes and from user processes \fIdown\fR to the network. Using this orientation, IP is layered \fIabove\fR the network interface drivers and \fIbelow\fR the transport protocols such as UDP and TCP. The Internet Control Message Protocol (ICMP) is logically a part of IP. See \fBicmp\fR(7P).
+.sp
+.LP
+IP provides for a checksum of the header part, but not the data part, of the datagram. The checksum value is computed and set in the process of sending datagrams and checked when receiving datagrams.
+.sp
+.LP
+IP options in received datagrams are processed in the IP layer according to the protocol specification. Currently recognized IP options include: security, loose source and record route (LSRR), strict source and record route (SSRR), record route, and internet timestamp.
+.sp
+.LP
+By default, the IP layer does not forward IPv4 packets that are not addressed to it. This behavior can be overridden by using \fBrouteadm\fR(1M) to enable the \fBipv4-forwarding\fR option. IPv4 forwarding is configured at boot time based on the setting of \fBrouteadm\fR(1M)'s \fBipv4-forwarding\fR option. IPv4 forwarding is configured at boot time based on the setting of \fBrouteadm\fR's \fBipv4-forwarding\fR option. \fBipadm\fR(1M) can also be used to enable ipv4 forwarding on a global basis. The \fBipadm\fR \fBset-prop\fR subcommand along with forwarding property is used to enable system-wide forwarding of packets. The protocol for which forwarding needs to be enabled is specified using the -m option. See \fBipadm\fR(1M).
+.sp
+.LP
+Additionally, finer-grained forwarding can be configured in IP. Each interface can be configured to forward IP packets by setting the \fBIFF_ROUTER\fR interface flag. This flag can be set and cleared using \fBifconfig\fR(1M)'s \fBrouter\fR and \fBrouter\fR options. Also, the \fBipadm\fR(1M) \fBset-ifprop\fR subcommand can be used to enable/disable per-interface ipv4 forwarding. The \fBipadm\fR \fBset-ifprop\fR interfaces are preferred. If an interface's \fBIFF_ROUTER\fR flag is set, packets can be forwarded to or from the interface. If it is clear, packets are not forwarded from this interface to others, nor forwarded to this interface. Setting the global forwarding variable for ipv4, sets all of the IPv4 interfaces \fBIFF_ROUTER\fR flags.
+.sp
+.LP
+The IP layer sends an ICMP message back to the source host in many cases when it receives a datagram that can not be handled. A "time exceeded" ICMP message is sent if the "time to live" field in the IP header drops to zero in the process of forwarding a datagram. A "destination unreachable" message is sent if a datagram can not be forwarded because there is no route to the final destination, or if it can not be fragmented. If the datagram is addressed to the local host but is destined for a protocol that is not supported or a port that is not in use, a destination unreachable message is also sent. The IP layer can send an ICMP "source quench" message if it is receiving datagrams too quickly. ICMP messages are only sent for the first fragment of a fragmented datagram and are never returned in response to errors in other ICMP messages.
+.sp
+.LP
+The IP layer supports fragmentation and reassembly. Datagrams are fragmented on output if the datagram is larger than the maximum transmission unit (MTU) of the network interface. Fragments of received datagrams are dropped from the reassembly queues if the complete datagram is not reconstructed within a short time period.
+.sp
+.LP
+Errors in sending discovered at the network interface driver layer are passed by IP back up to the user process.
+.SH PACKET EVENTS
+.sp
+.LP
+Through the \fBnetinfo\fR framework, this driver provides the following packet events:
+.sp
+.ne 2
+.mk
+.na
+\fBPhysical in\fR
+.ad
+.RS 16n
+.rt  
+Packets received on a network interface from an external source.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBPhysical out\fR
+.ad
+.RS 16n
+.rt  
+Packets to be sent out a network interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBForwarding\fR
+.ad
+.RS 16n
+.rt  
+Packets being forwarded through this host to another network.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBloopback in\fR
+.ad
+.RS 16n
+.rt  
+Packets that have been sent by a local application to another.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBloopback out\fR
+.ad
+.RS 16n
+.rt  
+Packets about to be received by a local application from another.
+.RE
+
+.sp
+.LP
+Currently, only a single function can be registered for each event. As a result, if the slot for an event is already occupied by someone else, a second attempt to register a callback fails.
+.sp
+.LP
+To receive packet events in a kernel module, it is first necessary to obtain a handle for either IPv4 or IPv6 traffic. This is achieved by passing \fBNHF_INET\fR or \fBNHF_INET6\fR through to a \fBnet_protocol_lookup()\fR call. The value returned from this call must then be passed into a call to \fBnet_register_hook()\fR, along with a description of the hook to add. For a description of the structure passed through to the callback, see \fBhook_pkt_event\fR(9S). For IP packets, this structure is filled out as follows:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhpe_ifp\fR\fR
+.ad
+.RS 11n
+.rt  
+Identifier indicating the inbound interface for packets received with the \fBphysical in\fR event.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhpe_ofp\fR\fR
+.ad
+.RS 11n
+.rt  
+Identifier indicating the outbound interface for packets received with the \fBphysical out\fR event.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhpe_hdr\fR\fR
+.ad
+.RS 11n
+.rt  
+Pointer to the start of the IP header (not the ethernet header).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhpe_mp\fR\fR
+.ad
+.RS 11n
+.rt  
+Pointer to the start of the \fBmblk_t\fR chain containing the IP packet.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhpe_mb\fR\fR
+.ad
+.RS 11n
+.rt  
+Pointer to the \fBmblk_t\fR with the IP header in it.
+.RE
+
+.SH NETWORK INTERFACE EVENTS
+.sp
+.LP
+In addition to events describing packets as they move through the system, it is also possible to receive notification of events relating to network interfaces. These events are all reported back through the same callback. The list of events is as follows:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBplumb\fR\fR
+.ad
+.RS 18n
+.rt  
+A new network interface has been instantiated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunplumb\fR\fR
+.ad
+.RS 18n
+.rt  
+A network interface is no longer associated with this protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBup\fR\fR
+.ad
+.RS 18n
+.rt  
+At least one logical interface is now ready to receive packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown\fR\fR
+.ad
+.RS 18n
+.rt  
+There are no logical interfaces expecting to receive packets.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddress change\fR\fR
+.ad
+.RS 18n
+.rt  
+An address has changed on a logical interface.
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBifconfig\fR(1M), \fBrouteadm\fR(1M), \fBndd\fR(1M), \fBipadm\fR(1M), \fBread\fR(2), \fBwrite\fR(2), \fBbind\fR(3SOCKET), \fBconnect\fR(3SOCKET), \fBgetsockopt\fR(3SOCKET), \fBrecv\fR(3SOCKET), \fBsend\fR(3SOCKET), \fBdefaultrouter\fR(4), \fBicmp\fR(7P), \fBif_tcp\fR(7P), \fBinet\fR(7P), \fBip6\fR(7P), \fBipsec\fR(7P), \fBrouting\fR(7P), \fBtcp\fR(7P), \fBudp\fR(7P), \fBnet_hook_register\fR(9F), \fBhook_pkt_event\fR(9S)
+.sp
+.LP
+Braden, R., \fIRFC 1122, Requirements for Internet Hosts \(mi Communication Layers\fR, Information Sciences Institute, University of Southern California, October 1989.
+.sp
+.LP
+Postel, J., \fIRFC 791, Internet Protocol \(mi DARPA Internet Program Protocol Specification\fR, Information Sciences Institute, University of Southern California, September 1981.
+.SH DIAGNOSTICS
+.sp
+.LP
+A socket operation can fail with one of the following errors returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBbind()\fR operation was attempted with a "reserved" port number and the effective user ID of the process was not the privileged user.
+.sp
+Setting the \fBIP_NEXTHOP\fR was attempted by a process lacking the \fBPRIV_SYS_NET_CONFIG\fR privilege.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEADDRINUSE\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBbind()\fR operation was attempted on a socket with a network address/port pair that has already been bound to another socket.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEADDRNOTAVAIL\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBbind()\fR operation was attempted for an address that is not configured on this machine.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBsendmsg()\fR operation with a non-NULL \fBmsg_accrights\fR was attempted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBgetsockopt()\fR or \fBsetsockopt()\fR operation with an unknown socket option name was given.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBgetsockopt()\fR or \fBsetsockopt()\fR operation was attempted with the \fBIP\fR option field improperly formed; an option field was shorter than the minimum value or longer than the option buffer provided.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEISCONN\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBconnect()\fR operation was attempted on a socket on which a \fBconnect()\fR operation had already been performed, and the socket could not be successfully disconnected before making the new connection.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEISCONN\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBsendto()\fR or \fBsendmsg()\fR operation specifying an address to which the message should be sent was attempted on a socket on which a \fBconnect()\fR operation had already been performed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEMSGSIZE\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBsend()\fR, \fBsendto()\fR, or \fBsendmsg()\fR operation was attempted to send a datagram that was too large for an interface, but was not allowed to be fragmented (such as broadcasts).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENETUNREACH\fR\fR
+.ad
+.RS 17n
+.rt  
+An attempt was made to establish a connection by means of \fBconnect()\fR, or to send a datagram by means of \fBsendto()\fR or \fBsendmsg()\fR, where there was no matching entry in the routing table; or if an ICMP destination unreachable message was received.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOTCONN\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fBsend()\fR or \fBwrite()\fR operation, or a \fBsendto()\fR or \fBsendmsg()\fR operation not specifying an address to which the message should be sent, was attempted on a socket on which a \fBconnect()\fR operation had not already been performed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOBUFS\fR\fR
+.ad
+.RS 17n
+.rt  
+The system ran out of memory for fragmentation buffers or other internal data structures.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOBUFS\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBSO_SNDBUF\fR or \fBSO_RCVBUF\fR exceeds a system limit.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 17n
+.rt  
+Invalid length for \fBIP_OPTIONS\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEHOSTUNREACH\fR\fR
+.ad
+.RS 17n
+.rt  
+Invalid address for \fBIP_MULTICAST_IF\fR.
+.sp
+Invalid (offlink) nexthop address for \fBIP_NEXTHOP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 17n
+.rt  
+Not a multicast address for \fBIP_ADD_MEMBERSHIP\fR and \fBIP_DROP_MEMBERSHIP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEADDRNOTAVAIL\fR\fR
+.ad
+.RS 17n
+.rt  
+Bad interface address for \fBIP_ADD_MEMBERSHIP\fR and \fBIP_DROP_MEMBERSHIP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEADDRINUSE\fR\fR
+.ad
+.RS 17n
+.rt  
+Address already joined for \fBIP_ADD_MEMBERSHIP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOENT\fR\fR
+.ad
+.RS 17n
+.rt  
+Address not joined for \fBIP_DROP_MEMBERSHIP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOPROTOOPT\fR\fR
+.ad
+.RS 17n
+.rt  
+Invalid socket type.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEPERM\fR\fR
+.ad
+.RS 17n
+.rt  
+No permissions.
+.RE
+
+.SH NOTES
+.sp
+.LP
+Raw sockets should receive \fBICMP\fR error packets relating to the protocol; currently such packets are simply discarded.
+.sp
+.LP
+Users of higher-level protocols such as \fBTCP\fR and \fBUDP\fR should be able to see received IP options.

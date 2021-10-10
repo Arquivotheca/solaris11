@@ -1,0 +1,159 @@
+'\" te
+.\"  版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.TH audioplay 1 "2009 年 12 月 1 日" "SunOS 5.11" "用户命令"
+.SH 名称
+audioplay \- 播放音频文件
+.SH 用法概要
+.LP
+.nf
+\fBaudioplay\fR [\fB-iV\fR] [\fB-v\fR \fIvol\fR] [\fB-d\fR \fIdev\fR] [\fIfile\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBaudioplay\fR 实用程序将指定的音频文件复制到音频设备（如果未提供文件名，则将标准输入复制到音频设备）。如果未指定输入文件且标准输入为 tty，该程序将退出并显示一条错误消息。
+.sp
+.LP
+输入文件必须包含有效的音频文件头。此文件头中的编码信息与音频设备的功能相匹配，如果数据格式不兼容，则会显示一条错误消息且跳过此文件。压缩的 \fBADPCM\fR (G.721) 单声道音频数据在播放之前会自动进行解压缩。
+.sp
+.LP
+通常会忽略抽样频率中的微小偏差（即，小于 1%）。例如，允许抽样频率为 8012 Hz 的数据在仅支持 8000 Hz 的音频设备上播放。如果存在 \fB-V\fR 选项，则会以警告消息标记此类偏差。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdev\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIDevice\fR：\fIdev\fR 参数指定输出应定向到的备用音频设备。如果未指定 \fB-d\fR 选项，则参考 \fBAUDIODEV\fR 环境变量（请见下文）。否则，\fB/dev/audio\fR 会用作缺省音频设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIImmediate\fR：如果音频设备不可用（即，另一个进程当前已进行写访问），\fBaudioplay\fR 通常会等待，直到其可以访问设备为止。当存在 \fB-i\fR 选项时，若设备处于忙碌状态，\fBaudioplay\fR 会显示一条错误消息并立即退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIvol\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIVolume\fR：在开始播放之前将输出音量设置为指定的值，在 \fBaudioplay\fR 退出后将输出音量重置为先前的级别。\fIvol\fR 参数是 0 到 100（包含 0 和 100）之间的一个整数值。如果未指定此参数，输出音量会保持最近由任何进程设置的级别。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIVerbose\fR：显示在等待访问音频设备或检测到抽样率偏差时出现的标准错误的相关消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\e?\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIHelp\fR：输出命令行用法消息。
+.RE
+
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+\fIFile Specification\fR：按顺序播放命令行上指定的音频文件。如果未提供文件名，则播放标准输入流（如果不是 tty），输入流也必须包含音频文件头。特殊文件名 \fB\(mi\fR 可用于读取标准输入流而不是文件。如果提供的是相对路径名，则参考 \fBAUDIOPATH\fR 环境变量（请见下文）。
+.RE
+
+.SH 用法
+.sp
+.LP
+当遇到的文件大于或等于 2 GB（2^ 31 字节）时，有关 \fBaudioplay\fR 行为的说明，请参见 \fBlargefile\fR(5)。
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIODEV\fR\fR
+.ad
+.RS 13n
+.rt  
+要写入的音频设备的全路径名（如果未提供 \fB-d\fR 参数）。如果未设置 \fBAUDIODEV\fR 变量，将使用 \fB/dev/audio\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIOPATH\fR\fR
+.ad
+.RS 13n
+.rt  
+以冒号分隔的目录列表，要在这些目录中搜索使用相对路径名提供名称的音频文件。可在搜索路径中显式指定当前目录 (\fB\&.\fR)。如果未设置 \fBAUDIOPATH\fR 变量，将仅在当前目录中进行搜索。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+体系结构SPARC、x86
+_
+可用性audio/audio-utilities
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBaudioconvert\fR(1)、\fBaudioctl\fR(1)、\fBaudiorecord\fR(1)、\fBattributes\fR(5)、\fBlargefile\fR(5)、\fBaudio\fR(7I)
+.SH 已知问题
+.sp
+.LP
+\fBaudioplay\fR 当前支持一组限定的音频格式转换。如果音频文件的格式不受音频设备支持，则必须先对其进行转换。例如，要转换成动态语音格式，请使用以下命令：
+.sp
+.in +2
+.nf
+example% \fBaudioconvert -f voice myfile | audioplay\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+格式转换无法始终与音频输出保持同步。在这种情况下，您应该在播放数据之前转换成临时文件。

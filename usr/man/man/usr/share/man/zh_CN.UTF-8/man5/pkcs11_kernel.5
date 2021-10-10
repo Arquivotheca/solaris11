@@ -1,0 +1,93 @@
+'\" te
+.\" 版权所有 (c) 2005，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH pkcs11_kernel 5 "2010 年 10 月 22 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+pkcs11_kernel \- 内核加密框架的 PKCS#11 接口
+.SH 用法概要
+.LP
+.nf
+/usr/lib/security/pkcs11_kernel.so
+/usr/lib/security/64/pkcs11_kernel.so
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpkcs11_kernel.so\fR 对象使用专用接口与内核加密框架进行通信，从而实现 RSA Security Inc. PKCS#11 加密令牌接口 (Cryptoki) v2.20 规范。
+.sp
+.LP
+每个唯一的硬件提供者均由一个 PKCS#11 插槽表示。在没有硬件内核加密框架提供者的系统中，此 PKCS#11 库不提供插槽。
+.sp
+.LP
+此库所提供的 PKCS#11 机制由可用硬件提供者确定。
+.sp
+.LP
+应用程序开发者应链接到 \fBlibpkcs11.so\fR，而不是直接链接到 \fBpkcs11_kernel.so\fR。请参见 \fBlibpkcs11\fR(3LIB)。
+.sp
+.LP
+除以下函数之外，列在 \fBlibpkcs11\fR(3LIB) 中的所有标准 PKCS#11 函数都将实现：
+.sp
+.in +2
+.nf
+C_DecryptDigestUpdate
+C_DecryptVerifyUpdate
+C_DigestEncryptUpdate
+C_GetOperationState
+C_InitToken
+C_InitPIN
+C_SetOperationState
+C_SignEncryptUpdate
+C_WaitForSlotEvent
+.fi
+.in -2
+
+.sp
+.LP
+对这些函数的调用将返回 \fBCKR_FUNCTION_NOT_SUPPORTED\fR。
+.sp
+.LP
+缓冲区不能大于 2 兆字节。例如，可以使用 2 兆字节的纯文本缓冲区和 2 兆字节的密文缓冲区调用 \fBC_Encrypt()\fR。
+.sp
+.LP
+对 \fBC_FindObjects()\fR 的调用可返回的最大对象句柄数为 512。
+.sp
+.LP
+可用于加密操作的最大内核内存量受 \fBproject.max-crypto-memory\fR 资源控制限制。内核中对缓冲区的分配以及与会话相关的结构分配都按照此资源控制执行。
+.SH 返回值
+.sp
+.LP
+在 RSA PKCS#11 v2.20 规范中定义并列出了其中每个已实现函数的返回值。请参见 http://www.rsasecurity.com。
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+接口稳定性Committed（已确定）
+_
+MT 级别T{
+MT-Safe with exceptions（多线程安全，但存在异常）。请参见 RSA PKCS#11 v2.20 的第 6.6.2 节
+T}
+_
+标准PKCS#11 v2.20
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcryptoadm\fR(1M)、\fBrctladm\fR(1M)、\fBlibpkcs11\fR(3LIB)、\fBattributes\fR(5)、\fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+RSA PKCS#11 v2.20 http://www.rsasecurity.com 
+.SH 附注
+.sp
+.LP
+如果应用程序具有 PKCS#11 插槽的打开会话，则会导致相应硬件提供者不能将驱动程序设为无法装入。管理员必须关闭具有打开 PKCS#11 会话的应用程序后，硬件提供者才能将驱动程序设为无法装入。

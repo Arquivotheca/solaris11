@@ -1,0 +1,494 @@
+'\" te
+.\" 版权所有 (c) 1998，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH filesync 1 "2010 年 10 月 26 日" "SunOS 5.11" "用户命令"
+.SH 名称
+filesync \- 用于同步普通文件、目录或特殊文件
+.SH 用法概要
+.LP
+.nf
+\fBfilesync\fR [\fB-aehmnqvy\fR] [\fB-o\fR src | dst] 
+     [\fB-f\fR src | dst | old | new] [\fB-r\fR \fIdirectory\fR]...
+.fi
+
+.LP
+.nf
+\fBfilesync\fR [\fB-aehmnqvy\fR] \fB-s\fR \fIsource-dir\fR \fB-d\fR \fIdest-dir\fR \fIfilename\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBfilesync\fR 实用程序在多个计算机系统之间（通常是服务器与便携式计算机之间）\fI同步\fR文件。\fBfilesync\fR 可同步普通文件、目录或特殊文件。尽管是为在游牧式系统上使用而设计的，但\fB filesync\fR 也非常适用于在数量更多的永久连接系统上执行备份和文件复制。
+.sp
+.LP
+如果在两个系统之间同步了文件，则每个系统上的对应文件是\fI完全相同的\fR。 在一个或两个系统上更改某个文件将导致这些文件变得不一致（不同步）。为重新使文件完全相同，必须对文件之间的差异进行\fI协调\fR。有关 \fBfilesync\fR 如何协调和同步文件的详细信息，请参见\fB协调和同步文件\fR。
+.sp
+.LP
+有两种形式的 \fBfilesync\fR 命令。第一种形式的 \fBfilesync\fR 在调用时不使用文件参数。这种形式的 \fBfilesync\fR 协调在 \fB$HOME/.packingrules\fR 文件中指定的文件和系统之间的差异。\fB $HOME/.packingrules\fR 是 \fBfilesync\fR 的打包规则列表，其中包含了要保持同步的文件列表。请参见 \fBpackingrules\fR(4)。
+.sp
+.LP
+第二种形式的 \fBfilesync\fR 将特定文件从源系统上的目录复制到目标系统上的目录。此外，这种形式的 \fBfilesync\fR 会将指定为参数 (\fIfilename\fR) 的一个或多个文件添加到 \fB $HOME/.packingrules\fR。有关指定源系统和目标系统上的目录的信息，请参见 \fB-s\fR 和 \fB-d\fR。有关指定文件 (\fIfilename\fR) 参数的详细信息，请参见 \fBOPERANDS\fR（操作数）。
+.sp
+.LP
+多个 \fBfilesync\fR 命令是累积的（也就是说，指定的文件将添加到已经存在的打包规则文件列表）。请参见\fB多个 filesync 命令\fR。
+.SS "协调和同步文件"
+.sp
+.LP
+\fBfilesync\fR 通过执行以下两个任务在计算机系统之间同步文件：
+.RS +4
+.TP
+1.
+\fBfilesync\fR 在两个系统上检查打包规则文件中指定的目录和文件，然后确定其是否完全相同。存在不同之处的任何文件都需要进行协调。
+.sp
+\fBfilesync\fR 还在 \fB$HOME/.filesync-base\fR 文件中为所有被监视的文件维护一个基准线摘要。该文件将列出截至上次协调时所有文件的名称、类型和大小。
+.RE
+.RS +4
+.TP
+2.
+根据基准线文件中包含的信息和指定选项（请参见\fB解决 filesync 冲突\fR），\fBfilesync\fR 确定各个副本中哪一个是正确的，并对其他系统做出相应更改。在此任务完成后，两个副本将重新成为完全相同的（同步的）。
+.sp
+如果源文件已更改，而目标文件未更改，则源系统上的更改将传播至目标系统。如果目标文件已更改，而对应的源文件未更改，则目标文件上的更改将传播至源系统。如果两个系统都发生了更改（而且文件还不是完全相同的），则会显示一条警告消息，要求用户手动解决冲突。请参见\fB解决 filesync 冲突\fR。
+.RE
+.SS "解决 filesync 冲突"
+.sp
+.LP
+如果两端的文件都发生了更改，\fBfilesync\fR 将尝试确定应选择哪个版本。如果 \fBfilesync\fR 无法自动确定应选择的版本，它将显示一条警告消息，并且将文件的两个冲突版本保留为不协调状态。
+.sp
+.LP
+在此类情况下，必须手动解决差异，或告知 \fBfilesync\fR 如何选择正确的版本。请使用 \fB-o\fR 和 \fB-f\fR 选项告知 \fBfilesync\fR 如何解决冲突（请参见\fB选项\fR）。
+.sp
+.LP
+另外，对于每个冲突的文件，您可以检查两个版本，确定应保留哪个，并手动使两个版本一致（通过复制、删除或更改所有权或保护以使之正确）。然后，可以重新运行 \fBfilesync\fR 以查看是否还存在任何其他冲突。
+.SS "打包规则文件"
+.sp
+.LP
+打包规则文件 \fB$HOME/.packingrules\fR 包含要保持同步的文件的列表。\fBpackingrules\fR(4) 中描述了该文件的语法。
+.sp
+.LP
+如果用户使用 filename 参数调用 \fBfilesync\fR，则会自动创建 \fB$HOME/.packingrules\fR 文件。通过使用 \fBfilesync\fR 选项，用户可以在 \fB$HOME/.packingrules\fR 中增加打包规则。
+.sp
+.LP
+许多用户选择手动创建打包规则文件并手动进行编辑。用户可以编辑 \fB$HOME/.packingrules\fR（使用任何编辑器）以永久更改 \fB$HOME/.packingrules\fR 文件，或利用无法从命令行使用的更强大的选项（如 \fBIGNORE\fR 命令）。可以通过编辑 \fB$HOME/.packingrules\fR 来更方便地输入复杂的通配符表达式。
+.SS "基准线文件"
+.sp
+.LP
+\fB$HOME/.filesync-base\fR 是 \fBfilesync\fR 基准线摘要文件。在协调和同步过程中，\fBfilesync\fR 使用 \fB$HOME/.filesync-base\fR 中的信息来识别文件之间的差异。用户不能创建或编辑基准线文件。它是由 \fBfilesync\fR 自动创建的，并记录正在维护的所有文件之间上一次的已知一致状态。
+.SS "多个 filesync 命令"
+.sp
+.LP
+经过一段时间后，您希望保持同步的文件集可能发生了更改。例如，在您的笔记本上，您通常希望文件仅与几个活动项目保持相关。如果继续使与您曾处理过的每个项目相关的文件保持同步，笔记本的磁盘将会充满旧文件。每个 \fBfilesync\fR 命令将浪费的大量时间来更新您不再关注的文件。
+.sp
+.LP
+如果从笔记本删除这些文件，\fBfilesync\fR 将希望在服务器上执行对应的删除，而这可能不是您想要的结果。相反，您可能希望通过一种方法告知 \fBfilesync\fR 停止同步某些文件。有两种方法可用于实现此目的：
+.RS +4
+.TP
+1.
+编辑 \fB$HOME/.packingrules\fR。删除用于您希望删除的文件的规则。
+.RE
+.RS +4
+.TP
+2.
+删除 \fB$HOME/.packingrules\fR。使用 \fBfilesync\fR 命令指定希望同步的文件。
+.RE
+.sp
+.LP
+两种方法都可以，您可以选择一种自己容易上手的方法。对于微小的更改，只是编辑 \fB$HOME/.packingrules\fR 可能会更为简单。 对于大的更改，从头开始可能更为简单。
+.sp
+.LP
+如果 \fBfilesync\fR 不再同步某个文件集，您可以将这些文件从笔记本中删除，而不会影响到服务器。
+.SS "游牧式计算机"
+.sp
+.LP
+当使用 \fBfilesync\fR 在游牧式计算机与服务器之间保持文件同步时，请将打包规则和基准线文件存储在游牧式计算机上而不是存储在服务器上。登录到笔记本时，如果 \fBHOME\fR 环境变量没有像通常情况下那样指向笔记本上的目录，可使用 \fBFILESYNC\fR 环境变量为打包规则和基准线文件指定替代位置。
+.sp
+.LP
+每台游牧式计算机都应带有其自己的打包规则和基线文件。如果服务器具有基准线文件并且多个游牧式计算机尝试根据该服务器的基准线文件进行协调，则可能会导致文件同步不正确。在此情况下，游牧式计算机使用的可能是未准确描述其文件的状态的基准线文件。这可能会导致不正确的协调。
+.sp
+.LP
+为了防止与单个基准线文件被两台以上计算机共享相关的危险，\fBfilesync\fR 向每个新的打包规则文件添加了一个缺省规则。该缺省规则阻止打包规则和基准线文件被复制。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对所有新的和已更改的文件，强制检查访问控制列表 (Access Control List, \fBACL\fR) 并尝试使其一致。如果不可以为某个特定文件设置 \fBACL\fR，\fBfilesync\fR 将停止对该文件进行 \fBACL\fR 同步。
+.sp
+某些文件系统不支持 \fBACL\fR。 不可以在支持 \fBACL\fR 的文件系统与不支持 ACL 的文件系统之间同步 \fBACL\fR，尝试同步将会生成许多错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdest-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定目标系统上要将 \fIfilename\fR 复制到其中的目录。与 \fB-s\fR \fIsource-dir\fR 选项和 \fIfilename\fR 操作数一起使用。请参见 \fB-s\fR 和\fB操作数\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+标记出所有差异。涉及模式和所有权的冲突可能无法全部解决（除非是以 root 用户的特权运行 \fBfilesync\fR）。如果您无法更改文件上的所有权或保护，\fBfilesync\fR 通常会忽略所有权和保护方面的冲突。不过，如果您指定了 \fB-e\fR（所有内容必须一致）标志，则 \fBfilesync\fR 将标记出这些差异。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-f\fR \fBsrc\fR | \fBdst\fR | \fBold\fR | \fBnew\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-f\fR 选项告知 \fBfilesync\fR 如何解决冲突的更改。如果文件在两个系统上均发生了更改，并且指定了 \fB-f\fR 选项，则 \fBfilesync\fR 将保留首选系统上所做的更改，并丢弃非首选系统上所做的更改。
+.sp
+指定 \fB-f\fR \fBsrc\fR 可使源系统文件成为首选的。指定 \fB-f\fR \fBdst\fR 可使目标系统文件成为首选的。指定 \fB-f\fR \fBold\fR 可使文件的较旧版本成为首选的。指定 \fB-f\fR \fB new\fR 可使文件的较新版本成为首选的。
+.sp
+可以组合指定 \fB-f\fR 和 \fB-o\fR 选项，前提是它们指定了相同的首选项（\fBsrc\fR 和 \fBdst\fR）。如果 \fB-f\fR 和 \fB-o\fR 冲突，则会忽略 \fB-f\fR 选项。请参见 \fB-o\fR 选项说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误时停止。通常，如果 \fBfilesync\fR 在复制文件时遇到读取或写入错误，它将记录该错误，程序将继续尝试协调其他文件。如果指定了 \fB-h\fR 选项，\fBfilesync\fR 将在出现这些错误之一时立即停止，并且不会再尝试处理更多的文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+确保文件的两个副本都具有相同的修改时间。缺省情况下，新复制的文件的修改时间将设置为进行协调时的时间。文件更改按递增的修改时间排序，以便传播的文件具有与原始更改相同的相对修改时间排序。用户应注意，任何两个系统之间通常都会存在一些时间偏差，从一个系统向另一个系统传输修改时间偶尔可能会产生奇怪的结果。
+.sp
+例如，在某些情况下，使用 \fBfilesync\fR 更新目录中的一些（并不是所有）文件将使 \fBmake\fR 程序产生混乱。例如，如果 \fBfilesync\fR 保持 \fB\&.c\fR 文件同步，但忽略 \fB\&.o\fR 文件，则更改的 \fB\&.c\fR 文件显示的修改时间可能会早于从之前版本的 \fB\&.c\fR 文件构建的 \fB\&.o\fR 文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+不实际执行更改。如果指定了 \fB-n\fR 选项，\fBfilesync\fR 将确定已对文件做了哪些更改，以及需要进行哪些协调并在标准输出上显示该信息。不对文件进行任何更改，包括打包规则文件。
+.sp
+同时指定 \fB-n\fR 和 \fB-o\fR 选项将会使 \fBfilesync\fR 分析占主导地位的系统并报告在该系统上已做出的更改。在计算机断开了连接（无法访问服务器），但您希望知道本地计算机上做出了哪些更改时，组合使用 \fB-n\fR 和 \fB-o\fR 非常有用。请参见 \fB-o\fR 选项说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-o\fR \fBsrc | dst\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-o\fR 选项将强制执行单向协调，无论首选系统是源系统 (\fBsrc\fR) 还是目标系统 (\fBdst\fR)。
+.sp
+指定 \fB-o\fR \fBsrc\fR 可仅将更改从源系统传播至目标系统。目标系统上所做的更改会被忽略。如果 \fBfilesync\fR 无法访问源目录或目标目录，则会异常中止。
+.sp
+指定 \fB-o\fR \fBdst\fR 可仅将更改从目标系统传播至源系统。源系统上所做的更改会被忽略。如果 \fBfilesync\fR 无法访问源目录或目标目录，则会异常中止。
+.sp
+组合指定 \fB-n\fR 和 \fB-o\fR 选项将会使 \fBfilesync\fR 分析占主导地位的系统并报告在该系统上已做出的更改。在计算机断开了连接（无法访问服务器），但您希望知道本地计算机上做出了哪些更改时，组合使用 \fB-n\fR 和 \fB-o\fR 非常有用。请参见 \fB-n\fR 选项说明。
+.sp
+可以组合指定 \fB-o\fR 和 \fB-f\fR 选项，前提是它们指定了相同的首选项（\fBsrc\fR 和 \fBdst\fR）。如果 \fB-o\fR 和 \fB-f\fR 选项冲突，则会忽略 \fB-f\fR 选项。请参见 \fB-f\fR 选项说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+抑制对各个协调操作的执行情况进行描述的标准 \fBfilesync\fR 消息。
+.sp
+标准 \fBfilesync\fR 消息以 UNIX shell 命令形式描述各个协调操作（例如，\fBmv\fR、\fBln\fR、 \fBcp\fR、\fBrm\fR、\fBchmod\fR、\fBchown\fR、\fBchgrp\fR、\fB setfacl\fR，等等）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIdirectory\fR\fR
+.ad
+.sp .6
+.RS 4n
+将协调限制到 \fIdirectory\fR。通过使用多个 \fB-r\fR 可指定多个目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsource-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定源系统上要复制的 \fIfilename\fR 所在的目录。与 \fB-d\fR \fIdest-dir\fR 选项和 \fIfilename\fR 操作数一起使用。请参见 \fB-d\fR 选项说明和\fB操作数\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+在标准输出中显示有关各个文件比较的执行情况的更多信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+绕过安全检查提示。游牧式计算机偶尔会在两个域之间移动，并且 \fBfilesync\fR 所操作的许多文件期望可以通过 NFS 进行访问。这存在一定的风险，某天 \fBfilesync\fR 可能会被要求根据错误的文件系统或服务器来协调本地更改。这可能会导致大量不恰当的复制和删除。为了防止出现这样的意外，\fBfilesync\fR 会在协调之前执行一些安全检查。如果可能要删除大量文件，或高等级目录已更改其 I 节点数量，\fBfilesync\fR 在进行协调之前会提示进行确认。如果您知道此可能性，并且不希望看到提示，可使用 \fB-y\fR (yes) 选项自动确认这些提示。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR\fR
+.ad
+.RS 12n
+.rt  
+指定源目录 (\fIsource-dir\fR) 中要同步的普通文件、目录、符号链接或特殊文件的名称。可通过使用空格分隔各个文件名来指定多个文件。请将 \fIfilename\fR 操作数与 \fB-s\fR 和 \fB-d\fR 选项一起使用。请参见 \fBOPERANDS\fR（操作数）。
+.sp
+如果 \fIfilename\fR 是一个普通文件，则会将该普通文件（以相同的 \fIfilename\fR）复制到指定的目标目录 (\fIdest-dir\fR) 中。
+.sp
+如果 \fIfilename\fR 是一个目录，则会将该目录和其下的所有文件和子目录（以递归方式）复制到指定的目标目录 (\fIdest-dir\fR) 中。
+.sp
+如果 \fIfilename\fR 是一个符号链接，则会将该符号链接的副本复制到指定的目标目录 (\fIdest-dir\fR) 中。
+.sp
+如果 \fIfilename\fR 是一个特殊文件，则会将一个具有相同的主要或次要设备编号的特殊文件复制到指定的目标目录。(\fIdest-dir)。\fR 只有超级用户可以使用 \fBfilesync\fR 创建特殊文件。
+.sp
+在目标目录 (\fIdest-dir\fR) 中创建的文件将具有与源目录中的文件相同的所有者、组以及其他权限。
+.sp
+如果 \fIfilename\fR 包含转义的 shell 通配符，则这些通配符存储在 \fB$HOME/.packingrules\fR 中并在每次运行 \fBfilesync\fR 时进行评估。
+.sp
+例如，以下示例将确保两个指定的文件（当前在 \fB$RHOME\fR 中）被复制到 \fB$HOME\fR 中： 
+.sp
+.in +2
+.nf
+\fBfilesync\fR \fB-s\fR \fB$RHOME\fR \fB-d\fR \fB$HOME a.c \|b.c\fR
+.fi
+.in -2
+.sp
+
+以下示例将确保 \fB$RHOME\fR 中的所有 \fB*.c\fR 文件被复制到 \fB$HOME\fR 中，即使这些文件稍后才会创建。
+.sp
+.in +2
+.nf
+\fBfilesync\fR \fB-s\fR \fB$RHOME\fR \fB-d\fR \fB$HOME '*.c'\fR
+.fi
+.in -2
+.sp
+
+如果任一目标文件已经存在，\fBfilesync\fR 将确保它们是完全相同的，如果不是，它将发出警告。
+.sp
+在复制了文件之后，源文件和目标文件之间的区分将是相对任意的（除非是在 \fB-o\fR 和 \fB-f\fR 开关中使用）。
+.RE
+
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFILESYNC\fR\fR
+.ad
+.RS 15n
+.rt  
+指定 \fBfilesync\fR 打包规则和基准线文件的缺省位置。该变量的缺省值是 \fB$HOME\fR。将通过附加 \fB\&.packingrules\fR 和 \fB\&.filesync-base\fR 后缀来形成打包规则和基准线文件的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.RS 15n
+.rt  
+确定如何显示诊断和信息性消息。在 \fBC\fR 语言环境中，消息以程序自身中的缺省形式显示（大多数情况下，为美式英文）。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+通常，如果所有文件已经是最新的，或所有文件已成功进行了协调，则 \fBfilesync\fR 将以状态 \fB0\fR 退出。 然而，如果指定了 \fB-n\fR 选项或出现了任何错误，退出状态将是以下项的逻辑"或"：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 7n
+.rt  
+无冲突，所有文件都是最新的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 7n
+.rt  
+有一些可解决的冲突。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 7n
+.rt  
+有一些需要手动解决的冲突。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 7n
+.rt  
+某些指定的文件不存在。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB8\fR\fR
+.ad
+.RS 7n
+.rt  
+针对某些文件的权限不足。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB16\fR\fR
+.ad
+.RS 7n
+.rt  
+访问打包规则或基准线文件时出错。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB32\fR\fR
+.ad
+.RS 7n
+.rt  
+无效参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB64\fR\fR
+.ad
+.RS 7n
+.rt  
+无法访问指定的 \fBsrc\fR 和/或 \fBdst\fR 目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB128\fR\fR
+.ad
+.RS 7n
+.rt  
+其他故障。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.packingrules\fR\fR
+.ad
+.RS 24n
+.rt  
+要保持同步的文件的列表
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.filesync-base\fR\fR
+.ad
+.RS 24n
+.rt  
+基准线摘要文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/network/network-clients
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpackingrules\fR(4)、\fBattributes\fR(5)

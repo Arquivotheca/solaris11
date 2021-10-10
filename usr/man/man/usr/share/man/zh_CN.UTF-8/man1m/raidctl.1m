@@ -1,0 +1,1007 @@
+'\" te
+.\" 版权所有 (c) 2007，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH raidctl 1M "2009 年 2 月 5 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+raidctl \- RAID 硬件实用程序
+.SH 用法概要
+.LP
+.nf
+\fBraidctl\fR \fB-C\fR \fI"disks"\fR [\fB-r\fR \fIraid_level\fR] [\fB-z\fR \fIcapacity\fR] [\fB-s\fR \fIstripe_size\fR] [\fB-f\fR]
+     controller
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-d\fR [\fB-f\fR] \fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-F\fR \fIfilename\fR [\fB-f\fR] \fIcontroller\fR\&.\|.\|.
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-a\fR {\fBset\fR | \fBunset\fR} \fB-g\fR \fIdisk\fR {\fBvolume\fR | \fBcontroller\fR}
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-p\fR \fI"param=value"\fR [\fB-f\fR] \fIvolume\fR 
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-c\fR [\fB-f\fR] [\fB-r\fR \fIraid_level\fR] \fIdisk1\fR \fIdisk2\fR [\fIdisk3\fR...]
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-l\fR -g \fIdisk controller\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-l\fR \fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-l\fR \fIcontroller\fR\&.\|.\|.
+.fi
+
+.LP
+.nf
+\fBraidctl\fR [\fB-l\fR]
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-S\fR [\fBvolume\fR | \fBcontroller\fR]
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-S\fR -g \fIdisk controller\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-h\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBraidctl\fR 实用程序是支持各种 RAID 控制器的硬件 RAID 配置工具，为最终用户提供了用于创建、删除或显示 RAID 卷的 CLI（Command Line Interface，命令行接口）。此实用程序还可用于设置卷的属性、将热备用 (hot-spare, HSP) 磁盘分配到卷或控制器，以及为 RAID 控制器更新固件/fcode/BIOS。
+.sp
+.LP
+\fBraidctl\fR 实用程序要求具有受基础文件系统权限控制的特权。只有特权用户才能操控 RAID 系统配置。如果非特权用户尝试运行 \fBraidctl\fR，则此命令会失败，并返回退出状态 1。
+.sp
+.LP
+如本手册页所述，\fBraidctl\fR 实用程序定义了一系列用于管理功能完备的 RAID 控制器的命令行选项。不过，对给定选项的支持依赖于以下两个元素：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+存在软件驱动程序
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+RAID 设备的固件级别
+.RE
+.sp
+.LP
+之所以依赖于软件驱动程序，是 \fBraidctl\fR 的设计使然。此实用程序基于支持为各种驱动程序插入插件模块的公共库而构建。目前，Solaris 操作系统附带了用于 \fBmpt\fR 驱动程序的一个插件。该插件并不是支持所有 \fBraidctl\fR 选项。在给定的存储设备上，这些选项可能会进一步受设备的固件级别限制。
+.sp
+.LP
+对各个 \fBraidctl\fR 选项的支持级别不能由 \fBraidctl\fR 来确定。用户必须依据 RAID 控制器或硬件平台的文档来确定。
+.sp
+.LP
+当前，\fBraidctl\fR Currently, \fBraidctl\fR 对下列 RAID 控制器提供一定级别的支持：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1020 SCSI HBA
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1030 SCSI HBA
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1064 SAS HBA
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1068 SAS HBA
+.RE
+.sp
+.LP
+在 X86-32/64 和 SPARC 平台上，上述所有 HBA 都是由 \fBmpt\fR 驱动程序维护的。
+.SH 选项
+.sp
+.LP
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fI"disks"\fR [\fB-r\fR \fIraid_level\fR] [\fB-z\fR \fIcapacity\fR] [\fB-s\fR \fIstripe_size\fR] [\fB-f\fR] controller\fR
+.ad
+.sp .6
+.RS 4n
+使用指定的磁盘创建 RAID 卷。
+.sp
+使用此选项创建 RAID 卷时，会自动为新创建的卷生成标识，并且 raidctl 会将其报告给用户。
+.sp
+此选项指定的参数包含用来组成要创建的卷的元素。这些元素既可以是磁盘，也可以是子卷，其中磁盘用空格分隔，子卷是用括号分组的一组磁盘。所有磁盘都应该采用 \fBC.ID.L\fR 表示形式（例如，\fB0.1.2\fR 表示通道为 0，目标 ID 为 1，逻辑单元号为 2 的物理磁盘）。该参数必须与 \fB-r\fR 选项指定的 RAID 级别相匹配，即使会被忽略也应该匹配。这意味着该参数只能是：
+.sp
+.ne 2
+.mk
+.na
+\fB对于 RAID 0\fR
+.ad
+.sp .6
+.RS 4n
+至少有 2 个磁盘
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB对于 RAID 1\fR
+.ad
+.sp .6
+.RS 4n
+只能有 2 个磁盘
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB对于 RAID 1E\fR
+.ad
+.sp .6
+.RS 4n
+至少有 3 个磁盘
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB对于 RAID 5\fR
+.ad
+.sp .6
+.RS 4n
+至少有 3 个磁盘
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB对于 RAID 10\fR
+.ad
+.sp .6
+.RS 4n
+至少有 2 个子卷，每个子卷必须由 2 个磁盘组成
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB对于 RAID 50\fR
+.ad
+.sp .6
+.RS 4n
+至少有 2 个子卷，每个子卷必须由至少 3 个磁盘组成，且每个子卷中的磁盘数量必须相同
+.RE
+
+例如，表达式 "0.0.0 0.1.0" 表示 2 个指定磁盘组成了一个 RAID 卷，该卷可以是 RAID 0 或 RAID 1 卷。"(0.0.0 0.1.0)(0.2.0 0.3.0)" 表示前 2 个磁盘和后 2 个磁盘分别组成了 2 个子卷，这 2 个子卷组成了 RAID 10 卷。有关更多样例，请参见\fB示例\fR部分。
+.sp
+\fB-r\fR 选项指定了要创建的卷的 RAID 级别。可能的级别包括 0、1、1E、5、10、50。如果省略了此选项，\fBraidctl\fR 在缺省情况下会创建 RAID 1 卷。
+.sp
+\fB-z\fR 选项指定了要创建的卷的容量。单位可以是兆兆字节、千兆字节或兆字节（例如 2t、10g、20m 等）。如果省略了此选项，\fBraidctl\fR 会计算指定的磁盘可以创建的最大卷容量，并使用该值来创建卷。 
+.sp
+\fB-s\fR 选项指定要创建的卷的条带大小。可能的值包括 512、1k、2k、4k、8k、16k、32k、64k 或 128k。如果省略了此选项，\fBraidctl\fR 会为此卷选择合适的值（例如 64k）。
+.sp
+在某些情况下，创建 RAID 卷会导致指定磁盘上的数据丢失（例如，在 LSI1020、LSI1030、SAS1064 或 SAS1068 HBA 上就会出现这种情况），\fBraidctl\fR 会提示用户确认卷的创建。使用 \fB-f\fR 选项可在不提示用户确认的情况下强制创建卷。
+.sp
+controller（控制器）参数用于标识指定磁盘所属的 RAID 控制器。可使用 \fB-l\fR 选项列出控制器的 ID 号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR [\fB-f\fR] \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除指定为 volume（卷）的 RAID 卷。该卷是采用规范的格式（例如 \fBc0t0d0\fR）指定的。
+.sp
+卷被删除后，所有数据都会丢失。因此，除非指定了 \fB-f\fR 选项，否则 \fBraidctl\fR 会在删除卷之前提示用户确认。 
+.sp
+从 LSI1020、LSI1030、SAS1064 或 SAS1068 HBA 中删除 RAID 1 卷时，主磁盘和辅助磁盘会"分裂"。如果卷原来处于 \fBSYNCING\fR（正在同步）状态，主磁盘会包含数据，辅助磁盘不会包含数据。如果卷状态原来为 \fBOPTIMAL\fR（最佳），则两种磁盘都会包含数据的完整映像。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIfilename\fR [\fB-f\fR] \fIcontroller\fR\&.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+更新在指定控制器上运行的固件。除非提供了 \fB-f\fR 选项，否则 \fBraidctl\fR 实用程序会提示用户确认此操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR {\fBset\fR | \fBunset\fR} \fB-g\fR \fIdisk\fR {\fBvolume\fR | \fBcontroller\fR}\fR
+.ad
+.sp .6
+.RS 4n
+如果指定了卷，\fBraidctl\fR 会根据 \fB-a\fR 选项指定的值将磁盘设置为该卷专用的本地热备用磁盘，或取消将其设置为本地热备用磁盘。如果指定了控制器，\fBraidctl\fR 会将磁盘设置为全局热备用磁盘或取消将其设置为全局热备用磁盘。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fI"param=value"\fR [\fB-f\fR] \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改给定 RAID 卷的属性值。可使用此选项来更改高速缓存写入策略或激活卷。当更改高速缓存写入策略时，\fIparam\fR 应该为字符串 \fBwp\fR (\fBSET_WR_POLICY\fR)，\fIvalue\fR 可以是 \fBon\fR 或 \fBoff\fR。当用来激活卷时，\fIparam\fR 应该为 \fBstate\fR，\fIvalue\fR 应该为 \fBactivate\fR。
+.sp
+更改 RAID 卷的属性会影响 RAID 控制器的内部行为，因此，除非指定了 \fB-f\fR 选项，否则 \fBraidctl\fR 会在应用更改之前提示用户确认。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR [\fB-f\fR] [\fB-r\fR \fIraid_level\fR] \fIdisk1\fR \fIdisk2\fR [\fIdisk3\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+使用指定的磁盘创建卷。这是具有类似功能的 \fB-C\fR 选项的替代选项。此选项是为实现兼容性而保留的，但只能用于在 LSI1020、LSI1030、SAS1064 和 SAS1068 HBA 上创建 RAID 0、RAID 1 或 RAID 1E 卷。对于其他 HBA，用户只能使用 \fB-C\fR 选项。
+.sp
+可使用 \fB-r\fR 选项指定目标卷的 RAID 级别。如果省略了 \fB-r\fR 选项，\fBraidctl\fR 会创建 RAID 1 卷。
+.sp
+磁盘必须采用 Solaris 规范格式指定（例如 c0t0d0）。
+.sp
+使用此选项创建 RAID 1 卷会用磁盘 1 中的内容替换磁盘 2 中的内容。
+.sp
+当用户使用此选项创建 RAID 卷时，RAID 卷将采用磁盘 1 的标识。其他磁盘将成为不可见的，RAID 卷将显示为一个磁盘。 
+.sp
+使用此选项创建卷在缺省情况下是交互式的。用户必须肯定的回答提示问题，才能创建卷。使用 \fB-f\fR 选项可在不提示用户确认的情况下强制创建卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR -g \fIdisk controller\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示给定控制器的指定磁盘的相关信息。输出包括以下信息：
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+以 \fBC.ID.L\fR 表示形式显示磁盘。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVendor\fR
+.ad
+.sp .6
+.RS 4n
+显示供应商 ID 字符串。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBProduct\fR
+.ad
+.sp .6
+.RS 4n
+显示产品 ID 字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBCapacity\fR
+.ad
+.sp .6
+.RS 4n
+显示磁盘的总容量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStatus\fR
+.ad
+.sp .6
+.RS 4n
+显示磁盘的当前状态。状态可能为 "\fBGOOD\fR"（良好）（正在正常运行）、"\fBFAILED\fR"（故障）（不能正常使用）或 "\fBMISSING\fR"（缺少）（磁盘不存在）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBHSP\fR
+.ad
+.sp .6
+.RS 4n
+指示磁盘已设置为全局热备用磁盘、本地热备用磁盘还是标准磁盘。如果是本地热备用磁盘，则会显示此磁盘被分配到的所有卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBGUID\fR
+.ad
+.sp .6
+.RS 4n
+指定的磁盘的 GUID 字符串。这是附加的数据，在某些情况下可能不可用。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示指定卷的相关信息。输出包括以下信息：
+.sp
+.ne 2
+.mk
+.na
+\fB卷号\fR
+.ad
+.sp .6
+.RS 4n
+以规范格式显示卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSub\fR
+.ad
+.sp .6
+.RS 4n
+显示子卷，如果指定的卷为 RAID 10 或 RAID 50 卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+显示组成指定卷的所有磁盘。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStripe Size\fR
+.ad
+.sp .6
+.RS 4n
+显示卷的条带大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStatus\fR
+.ad
+.sp .6
+.RS 4n
+显示指定卷或者组成指定卷的子卷或磁盘的状态。对于非活动卷，状态应当为 \fBINACTIVE\fR（非活动），其他情况下可能为 \fBOPTIMAL\fR（最佳）（正在以最佳状态运行）、\fBDEGRADED\fR（降级）（正在以降级的功能运行）、\fBFAILED\fR（故障）（不能正常使用）或 \fBSYNC\fR（同步）（磁盘正在同步）。对于磁盘，状态可能为 \fBGOOD\fR（良好）、\fBFAILED（故障）\fR或 \fBMISSING\fR（缺少）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBCache\fR
+.ad
+.sp .6
+.RS 4n
+指示是否向 \fBI/O\fR 写入活动应用了高速缓存。高速缓存可能为 "\fBON\fR" 或 "\fBOFF\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID level\fR
+.ad
+.sp .6
+.RS 4n
+显示 RAID 级别。RAID 级别可能为 0、1、1E、5、10 或 50。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIcontroller ...\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示指定控制器的相关信息。输出包括以下信息：
+.sp
+.ne 2
+.mk
+.na
+\fB控制器\fR
+.ad
+.sp .6
+.RS 4n
+显示 RAID 控制器的 ID 号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBType\fR
+.ad
+.sp .6
+.RS 4n
+显示 RAID 控制器的产品类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfw_version\fR
+.ad
+.sp .6
+.RS 4n
+显示控制器的固件版本。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-l\fR]\fR
+.ad
+.sp .6
+.RS 4n
+列出 \fBraidctl\fR 实用程序可以操控的所有 RAID 相关对象，包括所有可用的 RAID 控制器、RAID 卷和物理磁盘。可以省略 \fB-l\fR 选项。 
+.sp
+输出包括以下信息：
+.sp
+.ne 2
+.mk
+.na
+\fB控制器\fR
+.ad
+.sp .6
+.RS 4n
+显示 RAID 控制器的 ID 号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVolume\fR
+.ad
+.sp .6
+.RS 4n
+显示逻辑 RAID 卷名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+以 \fBC.ID.L\fR 表示形式显示 RAID 磁盘。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR [\fBvolume\fR | \fBcontroller\fR]\fR
+.ad
+.sp .6
+.RS 4n
+拍摄 RAID 配置信息（包括所有可用的 RAID 设备、RAID 控制器、卷和磁盘）的快照。
+.sp
+输出的每一行都指定了 RAID 设备及其相关信息，相互之间以空格分隔。所有卷和磁盘都属于最后指定的控制器。
+.sp
+输出列出以下信息：
+.sp
+.ne 2
+.mk
+.na
+\fBController\fR
+.ad
+.sp .6
+.RS 4n
+显示控制器 ID 号以及用双引号引起来的控制器类型字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVolume\fR
+.ad
+.sp .6
+.RS 4n
+显示 RAID 卷名、组件磁盘的数目、组件磁盘的 \fBC.ID.L\fR 表示形式、RAID 级别，以及状态。状态可能为 \fBOPTIMAL\fR（最佳）、\fBDEGRADED\fR（降级）、\fBFAILED\fR（故障）或 \fBSYNCING\fR（正在同步）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+显示磁盘的 \fBC.ID.L\fR 表示形式和状态。状态可能为 \fBGOOD\fR（良好）、\fBFAILED\fR（故障）或 \fBHSP\fR（磁盘已设置为备用磁盘）。 
+.RE
+
+如果指定了卷或控制器，则只会拍摄指定的卷或控制器的信息快照。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR -g \fIdisk controller\fR\fR
+.ad
+.sp .6
+.RS 4n
+拍摄指定的磁盘的信息快照。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出用法字符串。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建 RAID 配置
+.sp
+.LP
+以下命令在控制器 0 上创建 10G 的 RAID 0 卷，条带大小设置为 64k：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "0.0.0 0.2.0" -r 0 -z 10g -s 64k 0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令在控制器 2 上创建 RAID 1 卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "0.0.0 1.1.0" -r 1 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令在控制器 2 上创建 RAID 5 卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "0.0.0 0.1.0 0.2.0" -r 5 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令在控制器 0 上创建 RAID 10 卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "(0.0.0 0.1.0)(0.2.0 0.3.0)" -r 10 0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令在控制器 0 上创建 RAID 50 卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "(0.0.0 0.1.0 0.2.0)(0.3.0 0.4.0 0.5.0)" -r 50 0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR显示 RAID 配置
+.sp
+.LP
+以下命令显示所有可用的控制器、卷和磁盘：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -l\fR
+
+Controller: 0
+Controller: 2
+         Volume:c2t0d0
+         Disk: 0.0.0
+         Disk: 0.1.0
+         Disk: 0.2.0
+         Disk: 0.3.0(HSP)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令显示控制器 2 的相关信息：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -l 2\fR
+
+Controller      Type            Fw_version
+--------------------------------------------------------------
+c2              LSI 1030        1.03.39.00
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令显示指定卷的相关信息：
+.sp
+.in +2
+.nf
+# \fBraidctl -l c2t0d0\fR
+
+Volume                  Size    Stripe  Status  Cache   RAID
+         Sub                     Size                    Level
+                Disk
+--------------------------------------------------------------
+c2t0d0                 10240M  64K     OPTIMAL ON      RAID5
+                0.0.0   5120M           GOOD
+                0.1.0   5120M           GOOD
+                0.2.0   5120M           GOOD
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令显示控制器 0 上的磁盘 0.0.0 的相关信息：
+.sp
+.in +2
+.nf
+# \fBraidctl -l -g 0.0.0  0\fR
+
+Disk    Vendor  Product         Firmware Capacity        Status  HSP
+--------------------------------------------------------------------
+0.0.0   HITACHI H101473SCSUN72G SQ02     68.3G           GOOD    N/A
+GUID:2000000cca02536c
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR删除 RAID 配置
+.sp
+.LP
+以下命令将删除卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -d c0t0d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR更新控制器上的闪存映像
+.sp
+.LP
+以下命令更新控制器 0 上的闪存映像：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -F lsi_image.fw 0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR设置或取消设置热备用磁盘
+.sp
+.LP
+以下命令将控制器 2 上的磁盘 0.3.0 设置为全局热备用磁盘：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a set -g 0.3.0 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令将控制器 2 上的磁盘 0.3.0 设置为卷 c2t0d0 的本地热备用磁盘：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a set -g 0.3.0 c2t0d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令将控制器 2 上的磁盘 0.3.0 从全局热备用磁盘转换为标准磁盘：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a unset -g 0.3.0 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令取消将磁盘 0.3.0 用作卷 c2t0d0 的本地热备用磁盘：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a unset -g 0.3.0 c2t0d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR设置卷的属性
+.sp
+.LP
+以下命令将卷的写入策略设置为 "\fBoff\fR"： 
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a set -p "wp=off" c0t0d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR使用 \fB-c\fR 选项创建卷
+.sp
+.LP
+以下命令创建 RAID 1 卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -c c0t0d0 c0t1d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令创建 RAID 0 卷：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -c -r 0 c0t1d0 c0t2d0 c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR拍摄 RAID 配置的快照
+.sp
+.LP
+以下命令拍摄所有 RAID 设备的快照：
+
+.sp
+.in +2
+.nf
+# \fB# raidctl -S\fR
+
+1 "LSI 1030"
+c1t1d0 2 0.2.0 0.3.0 1 DEGRADED
+0.2.0 GOOD
+0.3.0 FAILED
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令拍摄关于卷 c1t0d0 的快照：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -S c1t0d0\fR
+
+c1t0d0 2 0.0.0 0.1.0 1 OPTIMAL
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令拍摄关于控制器 1 上的磁盘 0.1.0 的快照：
+
+.sp
+.in +2
+.nf
+# \fBraidctl -S -g 0.1.0 1\fR
+
+0.1.0 GOOD
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+命令行输入无效或权限被拒绝。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+请求操作失败。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性 Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBattributes\fR(5)、\fBmpt\fR(7D)
+.sp
+.LP
+\fI《System Administration Guide: Common System Management Tasks》\fR
+.SH 警告
+.sp
+.LP
+如果计划使用 Solaris 多路径 I/O 功能（也称为 MPxIO），请不要在内部 \fBSAS\fR 磁盘上创建 RAID 卷。在 Solaris 多路径下创建新的 RAID 卷会为根设备指定一个新的 \fBGUID\fR，这个新的 GUID 与现有设备的 \fBGUID\fR 不匹配。这会导致引导失败，因为 \fB/etc/vfstab\fR 中的根设备条目不匹配。
+.SH 附注
+.sp
+.LP
+在使用 \fBmpt\fR 驱动程序和 LSI RAID 控制器的系统上，\fB-z\fR 选项不受支持。

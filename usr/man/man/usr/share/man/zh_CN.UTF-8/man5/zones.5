@@ -1,0 +1,185 @@
+'\" te
+.\" 版权所有 (c) 2009 2011，Oracle 和/或其附属公司。保留所有权利。
+.TH zones 5 "2011 年 2 月 14 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+zones \- Solaris 应用程序容器
+.SH 描述
+.sp
+.LP
+Solaris 中的区域工具提供了用于运行应用程序的隔离环境。在区域中运行的进程可以免受系统中其他活动的监视或干扰。对其他进程、网络接口、文件系统、设备和进程间通信设备的访问受到限制，防止不同区域中的进程之间相互交互。 
+.sp
+.LP
+在区域中可用的权限受到限制，以防止操作造成系统范围的影响。请参见 \fBprivileges\fR(5)。 
+.sp
+.LP
+可以使用 \fBzoneadm\fR(1M) 和 \fBzonecfg\fR(1M) 实用程序配置和管理区域。可以为区域指定配置详细信息，在区域中安装文件系统内容（包括软件包）以及管理区域的运行时状态。可以使用 \fBzlogin\fR(1) 在活动区域中运行命令。您不需要通过基于网络的登录服务器（例如 \fBin.rlogind\fR(1M) 或 \fBsshd\fR(1M)）进行登录，即可执行此操作。
+.sp
+.LP
+区域的自动引导可以通过 FMRI 标识的区域服务来启用和禁用：
+.sp
+.LP
+svc:/system/zones:default
+.sp
+.LP
+请参见 \fBzoneadm\fR(1M)。请注意，区域有一个 \fBautoboot\fR 属性，该属性可以设置为 \fBtrue\fR（始终自动引导）。不过，如果禁用了区域服务，将不发生自动引导，而无论指定区域的 autoboot 属性设置如何。请参见 \fBzonecfg\fR(1M)。
+.sp
+.LP
+每个活动区域使用一个字母数字名称和一个数字 ID 来标识。字母数字名称是使用 \fBzonecfg\fR(1M) 实用程序配置的。数字 ID 是在引导区域时自动分配的。\fBzonename\fR(1) 实用程序可以报告当前区域名称，而 \fBzoneadm\fR(1M) 实用程序可用于报告已配置区域的名称和 ID。
+.sp
+.LP
+区域可以处于多种状态之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCONFIGURED\fR\fR
+.ad
+.RS 17n
+.rt  
+指示区域配置已完全指定并且已提交到稳定的存储设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINCOMPLETE\fR\fR
+.ad
+.RS 17n
+.rt  
+指示区域正在安装或卸载过程中，或者已在此类转换期间中断。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINSTALLED\fR\fR
+.ad
+.RS 17n
+.rt  
+指示区域配置已在系统上实例化：软件包已安装在区域的根路径下。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBREADY\fR\fR
+.ad
+.RS 17n
+.rt  
+指示区域的"虚拟平台"已建立。例如，文件系统已挂载，设备已配置，但尚未启动任何与区域关联的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRUNNING\fR\fR
+.ad
+.RS 17n
+.rt  
+指示正在运行与区域应用程序环境关联的用户进程。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHUTTING_DOWN\fR\fR
+.ad
+.br
+.na
+\fB\fBDOWN\fR\fR
+.ad
+.RS 17n
+.rt  
+指示正在停止区域。如果区域无法退出应用程序环境状态（例如已挂载的文件系统），或者无法销毁虚拟平台的某个部分，则区域会在其中一个状态中挂起。在这些情况下，需要操作者进行干预。 
+.RE
+
+.SS "进程访问限制"
+.sp
+.LP
+在区域（不包括全局区域）中运行的进程对其他进程拥有受限的访问权限。只有相同区域中的进程才能通过 \fB/proc\fR（请参见 \fBproc\fR(4)）或者通过接受进程 ID 的系统调用接口（例如 \fBkill\fR(2) 和 \fBpriocntl\fR(2)）来查看。尝试访问存在于其他区域（包括全局区域）中的进程时将失败，并且出现与当指定进程不存在时发布的错误代码相同的错误代码。
+.SS "权限限制"
+.sp
+.LP
+在非全局区域中运行的进程被限制为拥有一部分权限，从而防止某个区域能够执行可能会影响其他区域的操作。这组权限限制了区域中的特权用户（例如超级用户或 root 用户）的能力。可以使用 \fBppriv\fR(1) 实用程序显示某个区域中可用的权限列表。有关权限的详细信息，请参见 \fBprivileges\fR(5)。
+.SS "设备限制"
+.sp
+.LP
+对区域中可用的一组设备进行了限制，以防止某个区域中的进程干扰在其他区域中运行的进程。例如，某个区域中的进程应该无法使用 \fB/dev/kmem\fR 修改内核内存或修改根磁盘的内容。因此，缺省情况下，只有一些被认为可安全在区域中使用的 pseudo 设备可用。在特定区域内，可使用 \fBzonecfg\fR(1M) 实用程序使其他设备变得可用。
+.sp
+.LP
+设备和权限限制对于可在非全局区域中运行的实用程序产生重大影响。例如，\fBeeprom\fR(1M)、\fBprtdiag\fR(1M) 和 \fBprtconf\fR(1M) 实用程序无法在区域中使用，因为它们依赖于通常不可用的设备。
+.SS "标记"
+.sp
+.LP
+在最初创建区域时，会向该区域分配一个标记。标记区域中的软件与在全局区域中发现的软件不匹配。软件可以包含按照不同的方式配置或布局的 Solaris 软件，也可以包含非 Solaris 软件。这种特定的软件集合称为"标记"（请参见 \fBbrands\fR(5)）。在安装后，除非首先卸载区域，否则无法更改区域的标记。
+.SS "文件系统"
+.sp
+.LP
+每个区域都有自己的文件系统分层结构部分，根目录称为区域 root。区域中的进程只能访问分层结构的该部分中的文件，即位于区域根路径下的文件。这样可以防止一个区域中的进程损坏或检查与另一个区域关联的文件系统数据。\fBchroot\fR(1M) 实用程序可以在区域中使用，但只能将进程限制为区域中可访问的根路径。
+.sp
+.LP
+为了保留文件系统空间，可以使用 \fBlofs\fR(7FS) 文件系统的只读选项，将文件系统部分挂载到一个或多个区域中。这样可以在多个区域中共享相同的文件系统数据，同时保留区域提供的安全保证。
+.sp
+.LP
+在区域中建立的 NFS 和 autofs 挂载是该区域的本地挂载；它们不能从其他区域（包括全局区域）中访问。在停止或重新引导区域时，将删除挂载。
+.sp
+.LP
+委托给某个区域的 ZFS 数据集可以在该区域中进行管理。在委托数据集中可以创建子数据集。在委托数据集中创建的数据集是自我委托的。可以销毁除顶级委托数据集之外的委托数据集。大多数属性都可以在委托数据集上设置，但并不是所有属性都可以。有关详细信息，请参见 \fBzfs\fR(1M)。 
+.sp
+.LP
+每个区域都有一个顶级委托数据集，该数据集又包含 \fBROOT\fR，并且可能包含其他数据集，例如 \fB\&.../export\fR 和 \fB\&.../export/home\fR。存在于 \fBROOT\fR 数据集下方的数据集构成了区域的引导环境。只应使用 \fBzoneadm\fR(1M) 或 \fBbeadm\fR(1M) 命令来创建或销毁引导环境数据集。
+.SS "联网"
+.sp
+.LP
+区域对于 \fBTCP\fR、\fBUDP\fR 和 \fBSCTP\fR 应用程序使用自己的端口号范围，通常有一个或多个单独的 \fBIP\fR 地址（不过，某些 Trusted Extensions 配置在区域之间共享 IP 地址）。
+.sp
+.LP
+对于 \fBIP\fR 层（\fBIP\fR 路由、\fBARP\fR、\fBIPsec\fR、\fBIP\fR 过滤器等），区域可以与全局区域共享配置和状态（共享 \fBIP\fR 区域），也可以具有独特的 \fBIP\fR 层配置和状态（独占 \fBIP\fR 区域）。
+.sp
+.LP
+如果区域将连接到相同的数据链接，即与全局区域相同的 \fBIP\fR 子网，该区域适合使用共享 \fBIP\fR 实例。
+.sp
+.LP
+如果区域必须在网络上的 \fBIP\fR 层中隔离（例如连接到与全局区域和其他非全局区域不同的 \fBVLAN\fR 或不同的 \fBLAN\fR），出于隔离原因，区域应该具有其专用的 \fBIP\fR。
+.sp
+.LP
+共享 \fBIP\fR 区域无法在网络中执行某些操作（例如更改 \fBIP\fR 地址或者发送欺骗性 \fBIP\fR 或 Ethernet 包），而与连接到相同网络接口的单独主机在网络中执行的功能相比，专用 \fBIP\fR 区域具有或多或少的相同功能。特别是，这种区域中的超级用户可以更改 \fBIP\fR 地址和发送欺骗性 \fBARP\fR 包。
+.sp
+.LP
+在 \fBzonecfg\fR(1M) 中，会向共享 \fBIP\fR 的区域分配一个或多个网络接口名称和 \fBIP\fR 地址。网络接口名称还必须在全局区域中配置。
+.sp
+.LP
+在 \fBzonecfg\fR(1M) 中，会向专用 \fBIP\fR 的区域分配一个或多个网络接口名称。网络接口名称必须专门分配给该区域，即名称不能分配给其他某个正在运行的区域，也无法由全局区域使用。
+.sp
+.LP
+以 \fBDHCP\fR 客户机、\fBIPsec\fR 和 \fBIP\fR 过滤器形式提供的完整 \fBIP\fR 级别功能在专用 \fBIP\fR 的区域中可用，而在共享 \fBIP\fR 的区域中不可用。
+.SS "主机标识符"
+.sp
+.LP
+区域能够模拟 32 位主机标识符，该标识符可以通过 \fBzonecfg\fR(1M) 针对系统整合目的进行配置。如果区域模拟主机标识符，在区域上下文中执行的 \fBhostid\fR(1) 和 \fBsysdef\fR(1M) 等命令以及 \fBsysinfo\fR(2) 和 \fBgethostid\fR(3C) 等 C 接口将显示或返回区域的模拟主机标识符，而不是主机计算机的标识符。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见  \fBattributes\fR(5)。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBhostid\fR(1)、\fBzlogin\fR(1)、\fBzonename\fR(1)、\fBbeadm\fR(1M)、\fBin.rlogind\fR(1M)、\fBsshd\fR(1M)、\fBsysdef\fR(1M)、\fBzfs\fR(1M)、\fBzoneadm\fR(1M)、\fBzonecfg\fR(1M)、\fBkill\fR(2)、\fBpriocntl\fR(2)、\fBsysinfo\fR(2)、\fBgethostid\fR(3C)、\fBgetzoneid\fR(3C)、\fBucred_get\fR(3C)、\fBproc\fR(4)、\fBattributes\fR(5)、\fBbrands\fR(5)、\fBprivileges\fR(5)、\fBcrgetzoneid\fR(9F)

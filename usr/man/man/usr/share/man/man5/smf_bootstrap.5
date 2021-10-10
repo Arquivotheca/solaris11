@@ -1,0 +1,98 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH smf_bootstrap 5 "9 Jul 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+smf_bootstrap \- service management facility boot, packaging, and compatibility behavior
+.SH DESCRIPTION
+.sp
+.LP
+The service management facility establishes conventions for delivering service manifests, incorporating service manifest changes, describing service configuration stability, using service configuration overrides, and the use of service profiles.
+.SS "Manifest Loading at Boot"
+.sp
+.LP
+Manifests from the standard directory trees \fB/lib/svc/manifest\fR and \fB/var/svc/manifest\fR are processed during system boot and anytime an administrator or program runs:
+.sp
+.in +2
+.nf
+$ svcadm restart manifest-import
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Manifests that have not been imported previously or have changed since the last time they were imported are processed. A hash is used to determine whether a manifest has changed.
+.sp
+.LP
+When a manifest in a standard location is imported for the first time, its properties, instances, and services are added to the repository as part of the \fBmanifest\fR layer.
+.sp
+.LP
+Manifests in standard locations are automatically imported when they are updated. New services and instances are added, properties are upgraded if they are changed, and services, instances, and properties are deleted if they are removed.
+.sp
+.LP
+Manifests are processed in two different phases during boot. 
+.sp
+.LP
+The service \fBsvc:/system/early-manifest-import:default\fR, a pseudo service, is responsible for the first manifest processing. This service processes only manifests from the \fB/lib/svc/manifest\fR directory tree before \fBsvc.startd\fR(1M) initializes any services thus enabling services delivered in \fB/lib/svc/manifest\fR to always start with their most updated definition. Since this is a pseudo service, \fBsvcadm\fR(1M) commands are ignored though \fBsvcs\fR(1) can be used to observe status and get log file information.
+.sp
+.LP
+The \fBsvc:/system/manifest-import:default\fR service handles the second manifest processing and imports manifest files from both \fB/lib/svc/manifest\fR and \fB/var/svc/manifest\fR directory trees, in that respective order.
+.sp
+.LP
+Support for \fB/var/svc/manifest\fR is compatibility support for manifests delivered in that directory tree prior to the introduction of \fBsystem/early-manifest-import:default\fR. Services delivered in \fB/var/svc/manifest\fR can run into upgrade-related issues where a service might be started with an old repository configuration because its updated manifest is not yet imported. Similarly, a newly added service might not be available or a deleted service is still started during boot because its manifest file has not been processed. Developers are strongly encouraged to move a manifest to \fB/lib/svc/manifest\fR to avoid these issues.
+.SS "Profile Application"
+.sp
+.LP
+Profiles are also applied by the early-manifest-import and manifest-import services.
+.sp
+.LP
+The system-delivered profiles in \fB/etc/svc/profile/generic.xml\fR and \fB/etc/svc/profile/platform.xml\fR are imported into the \fBsystem-profile\fR layer.
+.sp
+.LP
+Site-specific profiles in the \fB/etc/svc/profile/site\fR directory and legacy site files \fB/etc/svc/profile/site.xml\fR and \fB/var/svc/profile/site.xml\fR are imported into the \fBsite-profile\fR layer.
+.sp
+.LP
+Administrators can request that these profiles are reapplied by running:
+.sp
+.in +2
+.nf
+$ svcadm restart manifest-import
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The behavior of properties, instances, and services defined by profiles is identical to those defined by manifests. 
+.SS "Manifest Handling During Packaging Operations"
+.sp
+.LP
+Service manifests within packages should be identified with the class \fBmanifest\fR. Class action scripts that install and remove service manifests are included in the packaging subsystem. When \fBpkg install\fR is invoked, the service manifest is imported.
+.sp
+.LP
+When \fBpkg uninstall\fR is invoked, instances in the manifest that are disabled are deleted. Instances in the manifest that are online or degraded are disabled first and then deleted. Any services in the manifest with no remaining instances are also deleted.
+.SS "Stability Declarations"
+.sp
+.LP
+Each service group and each property group delivered in a manifest should declare a stability level based on \fBattributes\fR(5) definitions. With knowledge of the stability level, an application developer can determine the likelihood that feature development based on the existence or components of a service or object is likely to remain functional across a release boundary.
+.sp
+.LP
+In an \fBsmf\fR(5) context, the stability value also identifies the expected scope of the changes to properties within the property group across a release boundary for the service, which can include patches for that service. The following two sections discuss this in more detail.
+.SS "Property Group Deletion"
+.sp
+.LP
+The \fBservice_bundle\fR(4) document type definition includes a delete attribute, applicable to each property group in a service manifest. If set to \fBtrue\fR, the delete attribute instructs \fBsvccfg\fR(1M) and other manifest import tools to delete this property group from the repository. If the delete attribute is absent or present but set to \fBfalse\fR, the property group in the repository is preserved.
+.sp
+.LP
+Property groups declared as Stable or Evolving are not deleted. Property groups declared as Unstable can be deleted across any release boundary.
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsvc.startd\fR(1M), \fBlibscf\fR(3LIB), \fBservice_bundle\fR(4), \fBattributes\fR(5), \fBsmf\fR(5), \fBsmf_security\fR(5)
+.sp
+.LP
+\fBpkg\fR(1)
+.SH NOTES
+.sp
+.LP
+The present version of \fBsmf\fR(5) does not support multiple repositories.

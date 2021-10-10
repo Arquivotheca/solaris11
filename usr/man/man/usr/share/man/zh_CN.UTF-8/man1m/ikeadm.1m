@@ -1,0 +1,766 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates.保留所有权利。
+.TH ikeadm 1M "2010 年 2 月 22 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ikeadm \- 处理 Internet 密钥交换 (Internet Key Exchange, IKE) 参数和状态
+.SH 用法概要
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] get [debug | priv | stats | defaults]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] set [debug | priv] [level] [file]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] [get | del] [p1 | rule | preshared] [id]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] add [rule | preshared] { \fIdescription\fR }
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] token [login | logout] \fIPKCS#11_Token_Object\fR
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] [read | write] [rule | preshared | certcache] \fIfile\fR
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] dump [p1 | rule | preshared | certcache | groups
+     | encralgs | authalgs]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] flush [p1 | certcache]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR help
+     [get | set | add | del | read | write | dump | flush | token]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBikeadm\fR 实用程序从 Internet 密钥交换 (Internet Key Exchange, \fBIKE\fR) 协议守护进程 \fBin.iked\fR(1M) 检索信息，并处理此守护进程的配置。
+.sp
+.LP
+\fBikeadm\fR 支持一系列操作，可对支持的一个或多个对象类型执行这些操作。当在不带任何参数的情况下调用时，\fBikeadm\fR 将进入交互模式，这会在标准输出中输出一个提示，并接受来自标准输入的命令，直到到达文件结尾为止。
+.sp
+.LP
+由于 \fBikeadm\fR 处理敏感加密信息，因此您必须是超级用户才能使用此命令。此外，某些可用命令还要求在特权模式下运行此守护进程，此模式在启动守护进程时建立。
+.sp
+.LP
+有关如何安全地使用此命令的详细信息，请参见。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+防止在报告操作时尝试以符号方式输出主机和网络名称。此选项非常有用，例如，当关闭或无法访问所有名称服务器时。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+偏执。不输出任何加密材料，即使在保存安全关联时。启用此标志时输出 \fBX\fR，而非实际的十六进制数字。 
+.RE
+
+.SH 用法
+.SS "命令"
+.sp
+.LP
+所支持的命令如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR\fR
+.ad
+.sp .6
+.RS 4n
+添加指定对象。此选项可用于向当前（正在运行的）in.iked 配置添加新的策略规则或新的预先共享的密钥。 当添加新的预先共享的密钥时，由于此命令将包含加密材料，因此无法从命令行调用此命令。添加的规则或密钥使用相应的 ID-值对指定，如 \fBID 格式\fR部分中所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdel\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 \fBin.iked\fR 的当前配置中删除一个或多个特定对象。此操作适用于 \fBIKE\fR（阶段 1）\fBSA\fR、策略规则和预先共享的密钥。按照 \fBId 格式\fR中的说明指定要删除的对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdump\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBin.iked\fR 已知的指定类型的所有对象。此选项可用于显示所有阶段 1 \fBSA\fR、策略规则、预先共享的密钥、实现的 Diffie-Helman 组、可用于阶段 1 的加密和验证算法或证书高速缓存。此命令可能会生成大量输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflush\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 \fBin.iked\fR 中删除所有 \fBIKE\fR（阶段 1）\fBSA\fR 或缓存证书。
+.sp
+请注意，刷新\fB证书高速缓存\fR还将使用添加或删除的任何新证书更新 IKE（作为负面影响）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR\fR
+.ad
+.sp .6
+.RS 4n
+查找并显示指定对象。可用于查看当前调试或特权级别、守护进程的全局统计信息和缺省值、特定 \fBIKE\fR（阶段 1）\fBSA\fR、策略规则或预先共享的密钥。后面三种对象类型要求传入标识信息；下面介绍了每种对象类型的相应规范。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出简要的命令摘要，或者当后跟有命令时，输出有关此命令的信息。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBread\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过从缺省位置或指定文件读取策略规则或预先共享的密钥，更新当前 \fBin.iked\fR 配置。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR\fR
+.ad
+.sp .6
+.RS 4n
+调整当前调试或特权级别。如果要修改调试级别，可以选择性地指定输出文件；如果守护进程正在后台运行，并且当前未输出到文件，\fB必须\fR指定输出文件。更改特权级别时，调整只能是降低访问级别；不能使用 ikeadm 提高访问级别。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwrite\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前 \fBin.iked\fR 策略规则集或预先共享的密钥集写入到指定文件。必须指定目标文件。此命令不能用于覆盖现有配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken\fR\fR
+.ad
+.sp .6
+.RS 4n
+登录 PKCS#11 令牌对象并授予对加密材料的访问，或者注销并使对加密材料的访问无效。
+.sp
+\fBtoken\fR 可作为具有下列授权的普通用户运行：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB令牌\fR登录：\fBsolaris.network.ipsec.ike.token.login\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB令牌\fR注销：\fBsolaris.network.ipsec.ike.token.logout\fR
+.RE
+.RE
+
+.SS "对象类型"
+.sp
+.ne 2
+.mk
+.na
+\fBdebug\fR
+.ad
+.sp .6
+.RS 4n
+指定守护进程的调试级别。此选项确定守护进程提供的有关其操作的输出的数量和类型。调试级别实际为位掩码，并且各个位支持不同类型的信息。
+.sp
+
+.sp
+.TS
+tab();
+cw(1.83i) cw(1.83i) cw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+说明标志昵称
+_
+凭证签发管理0x0001cert
+密钥管理0x0002key（用户密钥）
+可操作的0x0004op
+创建阶段 1 SA0x0008phase1
+创建阶段 2 SA0x0010phase2
+PF_KEY 接口0x0020pfkey
+策略管理0x0040策略
+提议的建构0x0080prop
+门接口0x0100door
+配置文件处理0x0200配置
+标签处理0x0400label
+所有调试标志0x07ffall
+.TE
+
+当指定调试级别时，可指定编号（十进制或十六进制）或昵称字符串。例如，\fB88\fR、\fB0x58\fR 和 \fBphase1\fR+\fBphase2\fR+\fBpolicy\fR 均等效，并且将启用调试以便创建 \fBphase 1\fR \fBsa\fR、\fBphase 2 sa\fR 和策略管理。此外，还可以使用昵称字符串删除特定类型的信息；\fBall-op\fR 的作用是启用\fB除\fR操作消息以外的所有调试；它等效于编号 \fB1019\fR 或 \fB0x3fb\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpriv\fR
+.ad
+.sp .6
+.RS 4n
+指定守护进程的访问特权级别。可能值有：
+.sp
+.in +2
+.nf
+Description                  Level   Nickname
+Base level                   0       base
+Access to preshared key info 1       modkeys
+Access to keying material    2       keymat
+.fi
+.in -2
+.sp
+
+缺省情况下，在基本级别启动 \fBin.iked\fR。命令行选项可用于在更高级别启动守护进程。\fBikeadm\fR 可用于降低级别，但不能用于提升级别。
+.sp
+数字级别或昵称可用于指定目标特权级别。
+.sp
+为了获取、添加、删除、转储、读取或写入预先共享的密钥，特权级别必须至少能够授予对预先共享的密钥信息的访问。但是，当查看预先共享的密钥（使用获取或转储命令）时，仅当特权级别能够授予对加密材料的访问时，才能使用密钥本身。当查看阶段 1 \fBSA\fR 时，也会出现此种情况。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstats\fR
+.ad
+.sp .6
+.RS 4n
+守护进程的全局统计信息，涵盖成功和失败的阶段 1 \fBSA\fR 创建。 
+.sp
+报告的统计信息包括：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+本地实体启动的当前 P1 \fBSA\fR 的计数 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+本地实体作为响应器的当前 P1 \fBSA\fR 的计数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+本地实体自引导以来启动的所有 P1 \fBSA\fR 的计数。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+本地实体自引导以来作为响应器的所有 P1 \fBSA\fR 的计数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+自引导以来尝试的所有 \fBP1\fR \fBSA\fR 的计数（其中本地实体是启动器）；包括失败的尝试
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+自引导以来尝试的所有 P1 \fBSA\fR 的计数（其中本地实体是响应器）；包括失败的尝试
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+启动 \fBP1\fR \fBSA\fR 的所有失败尝试的计数，出现失败的原因是因为同级设备未响应
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+启动 P1 \fBSA\fR 的所有失败尝试的计数，其中统计设备已响应
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+同级设备作为启动器的所有失败 \fBP1\fR \fBSA\fR 的计数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+是否使用了 PKCS#11 库以及装载的 PKCS#11 库（如果适用）。请参见。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdefaults\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBin.iked\fR 守护进程使用的缺省值。某些值可在守护进程配置文件中覆盖（请参见 \fBike.config\fR(4)）；对于这些值，令牌名称显示在 \fBget defaults\fR 输出中。此输出将反映配置令牌已更改缺省值的位置。
+.sp
+如果同级系统提出有效的备用提案，或者可根据 \fBike.config\fR 中建立的基于规则的值覆盖缺省值，则可以忽略缺省值。此种情况下，\fBget defaults\fR 命令继续显示缺省值，而不是用于覆盖缺省值的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBp1\fR
+.ad
+.sp .6
+.RS 4n
+\fBIKE\fR 阶段 1 \fBSA\fR。\fBp1\fR 对象通过 \fBIP\fR 地址对或 cookie 对标识；标识格式如下所述。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrule\fR
+.ad
+.sp .6
+.RS 4n
+\fBIKE\fR 策略规则，定义位于指定的本地标识和远程标识之间的阶段 1 \fBSA\fR 的可接受安全特征。规则通过其标签标识；标识格式如下所述。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpreshared\fR
+.ad
+.sp .6
+.RS 4n
+预先共享的密钥，包括本地和远程标识以及适用的 \fBIKE\fR 模式。预先共享的密钥通过 \fBIP\fR 地址对或标识对标识；标识格式如下所述。
+.RE
+
+.SS "Id 格式"
+.sp
+.LP
+\fBadd\fR、\fBdel\fR 和 \fBget\fR 等命令要求在命令行中指定其他信息。对于删除和获取命令，所有所需操作仅为以最简单的方式标识给定对象；对于添加命令，必须指定完整对象。
+.sp
+.LP
+在大多数情况下，使用一对值可以实现最简单的标识。对于 \fBIP\fR 地址，以点记法（适用于 IPv4 地址）、冒号分隔的十六进制格式（适用于 IPv6 地址）或主机名称数据库中存在的主机名的形式先后指定本地地址和远程地址。如果指定扩展为多个地址的主机名，则将多次执行请求的操作（对每个可能的地址组合各执行一次）。
+.sp
+.LP
+标识对由后跟有远程类型-值对的本地类型-值对组成。有效类型包括：
+.sp
+.ne 2
+.mk
+.na
+\fBprefix\fR
+.ad
+.sp .6
+.RS 4n
+地址前缀。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfqdn\fR
+.ad
+.sp .6
+.RS 4n
+全限定域名。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdomain\fR
+.ad
+.sp .6
+.RS 4n
+域名，fqdn 的同义词。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBuser_fqdn\fR
+.ad
+.sp .6
+.RS 4n
+\fIuser\fR@fqdn 格式的用户标识。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmailbox\fR
+.ad
+.sp .6
+.RS 4n
+\fBuser_fqdn\fR 的同义词。 
+.RE
+
+.sp
+.LP
+cookie 对由两个 cookie 组成，在创建阶段 1 安全关联 (Security Association, \fBSA\fR) 时会将这两个 cookie 分配给此关联；第一个是启动器的 cookie，然后是响应器的 cookie。cookie 是一个 64 位数字。
+.sp
+.LP
+最后，标签（用于标识策略规则）是在创建规则时分配给规则的字符串。
+.sp
+.LP
+为添加命令格式化规则或预先共享的密钥时应遵循 in.iked 配置文件的格式规则。两种规则都由一系列包含在花括号（\fB{\fR 和 \fB}\fR）中的 ID-值对组成。有关格式化规则和预先共享的密钥的详细信息，请参见 \fBike.config\fR(4) 和 \fBike.preshared\fR(4)。
+.SH 安全
+.sp
+.LP
+\fBikeadm\fR 命令允许特权用户输入加密密钥信息。如果对手获取了对此类信息的访问，则会影响 IPsec 通信的安全。使用 \fBikeadm\fR 命令时，应考虑下列问题。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBTTY\fR 是否会通过网络（交互模式）？ 
+.sp
+如果是，加密材料的安全即为此 \fBTTY\fR 的通信的网络路径的安全。使用 \fBikeadm\fR（而非明文 telnet 或 rlogin 会话）具有一定的风险。甚至本地窗口也可能受到读取存在的窗口事件的隐藏程序的攻击。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+文件是否能通过网络访问，或者是否可供用户读取（读/写命令）？ 
+.sp
+挂载在网络中的文件可在读取时被对手发现。网络中带有加密材料的用户可读文件同样具有一定的风险。
+.RE
+.sp
+.LP
+如果您的源地址是可通过网络查找的主机，并且您的命名系统本身已泄密，使用的所有名称都将不再值得信任。
+.sp
+.LP
+安全漏洞通常在工具的不当应用中产生，而不存在于工具自身中。建议管理员在使用 \fBikeadm\fR 命令时应小心谨慎。最安全的运行模式可能是在控制台或其他硬连接 \fBTTY\fR 中运行。
+.sp
+.LP
+有关此主题的其他信息，请参见 Matt Blaze 在 Bruce Schneier 编著的《\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C.\fR》中撰写的后记。 
+.SH 示例
+.LP
+\fB示例 1 \fR清空所有阶段 1 安全关联
+.sp
+.LP
+下面的命令清空所有阶段 1 安全关联：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm flush p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR显示所有阶段 1 安全关联
+.sp
+.LP
+下面的命令显示所有阶段 1 安全关联：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm dump p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR删除特定阶段 1 安全关联
+.sp
+.LP
+下面的命令删除指定阶段 1 安全关联：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm del p1 local_ip remote_ip\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR从文件中添加规则
+.sp
+.LP
+下面的命令用于从文件中添加规则：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm add rule rule_file\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR添加预先共享的密钥
+.sp
+.LP
+下面的命令添加预先共享的密钥：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm\fR
+     ikeadm> \fBadd preshared { localidtype ip localid local_ip
+             remoteidtype ip remoteid remote_ip ike_mode main
+             key 1234567890abcdef1234567890abcdef }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR将所有预先共享的密钥保存到文件
+.sp
+.LP
+下面的命令将所有预先共享的密钥保存到文件：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm write preshared target_file\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR查看特定规则
+.sp
+.LP
+下面的命令用于查看特定规则：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm get rule rule_label\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR从 \fBike.config\fR 读入新规则
+.sp
+.LP
+下面的命令从 ike.config 文件读入新规则：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm read rules\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR降低特权级别
+.sp
+.LP
+下面的命令降低特权级别：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm set priv base\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR查看调试级别
+.sp
+.LP
+下面的命令显示当前调试级别：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm get debug\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR使用统计信息检验硬件加速器
+.sp
+.LP
+下面的示例显示统计信息如何在末尾包含可选行，以便指示 IKE 是否使用 PKCS#11 库来加快公钥操作的速度（如果适用）。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm get stats\fR
+Phase 1 SA counts:
+Current:  initiator:     0    responder:      0
+Total:    initiator:    21   responder:      27
+Attempted:initiator:    21   responder:      27
+Failed:   initiator:     0   responder:       0
+	         initiator fails include 0 time-out(s)
+PKCS#11 library linked in from /opt/system/core-osonn/lib/libpkcs11.so
+example# 
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR显示证书高速缓存
+.sp
+.LP
+下面的命令显示证书高速缓存以及关联私钥的状态（如果适用）：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm dump certcache\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 13 \fR登录 PKCS#11 令牌
+.sp
+.LP
+下面的命令显示如何登录 PKCS#11 令牌对象以及如何解除锁定私钥：
+
+.sp
+.in +2
+.nf
+example# \fBikeadm token login "Sun Metaslot"\fR
+Enter PIN for PKCS#11 token:
+ikeadm: PKCS#11 operation successful
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 10n
+.rt  
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB非零\fR\fR
+.ad
+.RS 10n
+.rt  
+出现错误。在标准错误中写入相应错误消息。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Not an Interface（不是接口）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBin.iked\fR(1M)、\fBike.config\fR(4)、\fBike.preshared\fR(4)、\fBattributes\fR(5)、\fBipsec\fR(7P)
+.sp
+.LP
+Bruce Schneier 编著的《\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR》第 2 版，John Wiley & Sons 出版，纽约，1996 年。
+.SH 附注
+.sp
+.LP
+由于 \fBin.iked\fR 只能在全局区域和专用 IP 区域中运行，因此此命令在共享 IP 区域中不起作用。

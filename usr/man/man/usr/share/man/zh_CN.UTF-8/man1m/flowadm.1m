@@ -1,0 +1,783 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH flowadm 1M "2011 年 7 月 8 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+flowadm \- 为协议、服务、容器以及虚拟机管理带宽资源控制
+.SH 用法概要
+.LP
+.nf
+\fBflowadm show-flow\fR [\fB-P\fR] [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-l\fR \fIlink\fR] [\fIflow\fR]
+.fi
+
+.LP
+.nf
+\fBflowadm add-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-l\fR \fIlink\fR \fB-a\fR \fIattr\fR=\fIvalue\fR[,...]
+     [\fB-p\fR \fIprop\fR=\fIvalue\fR[,...]] \fIflow\fR
+\fBflowadm remove-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] {\fB-l\fR \fIlink\fR | \fIflow\fR}
+.fi
+
+.LP
+.nf
+\fBflowadm set-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-p\fR \fIprop\fR=\fIvalue\fR[,...] \fIflow\fR
+\fBflowadm reset-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] [\fB-p\fR \fIprop\fR[,...]] \fIflow\fR
+\fBflowadm show-flowprop\fR [\fB-P\fR] [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-l\fR \fIlink\fR]
+     [\fB-p\fR \fIprop\fR[,...]] [\fIflow\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBflowadm\fR 命令用于为特定链接上的某类通信流量创建、修改、删除和显示网络带宽以及关联资源。
+.sp
+.LP
+\fBflowadm\fR 命令允许用户针对传输、服务或子网管理网络带宽资源。将此服务指定为传输和本地端口的组合。子网由其 IP 地址和子网掩码指定。该命令可在任何类型的数据链接上使用，包括物理链接、虚拟 NIC 以及链路聚合。
+.sp
+.LP
+流定义为基于层 3 和层 4 头的属性集合，可用于标识协议、服务或虚拟机。当基于流属性标识流时，请分隔内核资源（包括层 2、3 和 4 队列）、其处理线程以及其他针对其唯一创建的资源，以便其他通信流量不会或尽可能小地影响到它。
+.sp
+.LP
+传入和外发包以非常快速的可伸缩方式与流匹配，因此，可以在性能影响最小的情况下执行限制。
+.sp
+.LP
+\fBflowadm\fR 命令可用于标识流，而无需强加任何带宽资源控制。这将导致通信流量类型获取其自己的资源和队列，以便其和其余网络通信流量隔离，获得更易监测和更具确定性的行为。
+.sp
+.LP
+流可以在全局区域和非全局区域中创建、修改和删除。区域管理员仅可以在其区域（全局或非全局）中创建流。然而，在全局区域中创建的流可以迁移至非全局区域，以下段落中有述。管理员可以仅从其中创建流的区域（全局或非全局）内修改或删除流。从全局区域，用户可以查看系统上全局区域和任何非全局区域内的所有流。从非全局区域，用户仅可以查看此区域内的那些流。
+.sp
+.LP
+管理员在全局区域中创建了流之后，与该流关联的数据链接可以分配至非全局区域。在此情况下，关联流也分配至同一非全局区域。当该非全局区域停止后，数据链接及其关联流将返回至全局区域。
+.sp
+.LP
+不同的区域名区分同一名称的流。例如，用户可以拥有三个名为 \fBfastpak\fR 的流，如果每个 \fBfastpak\fR 位于不同的区域。例如，\fBzone1\fR/\fBfastpak\fR、\fBzone2\fR/\fBfastpak\fR 和 \fBzone3\fR/\fBfastpak\fR 都是有效的区域名。
+.sp
+.LP
+\fBflowadm\fR 将作为具有相应选项的子命令集合进行实现。选项在每个子命令的上下文中进行了说明。
+.SH 子命令
+.sp
+.LP
+支持以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm show-flow\fR [\fB-pP\fR] [\fB-o\fR \fIfield\fR[,...]] [\fB-l\fR \fIlink\fR] [\fIflow\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示所有流、某个链接上的所有流或指定的 \fIflow\fR 的流配置信息（缺省值）或统计信息。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。字段名必须是以下所列字段之一，或为特殊值 \fBall\fR，以显示所有字段。对于找到的每个流，可显示以下字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+流的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+流所在的链接名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipaddr\fR\fR
+.ad
+.sp .6
+.RS 4n
+流的 IP 地址。此地址可以是本地的，也可以是远程的，具体取决于流的定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransport\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对要使用协议的层名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR\fR
+.ad
+.sp .6
+.RS 4n
+流的本地服务端口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdsfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+流和掩码的区分服务值，与 \fBDSFIELD\fR 值结合使用，以指定 IP 数据包头的区分服务字段中受关注的位。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR, \fB--persistent\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示持久流属性信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR, \fB--link\fR=\fIlink\fR | \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示命名链接上所有流的信息或命名流的信息。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm add-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-l\fR \fIlink\fR \fB-a\fR \fIattr\fR=\fIvalue\fR[,...] \fB-p\fR \fI prop\fR=\fIvalue\fR[,...] \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+将流添加到系统。流由其流属性标识。
+.sp
+作为标识特定流的一部分，可以限制它的带宽资源。如果未指定带宽限制，通信流量仍将获取其唯一的层 2、3 和 4 队列和处理线程，包括 NIC 硬件资源（受支持时），以便选定的通信流量可与其他流量分隔开来，并在流动过程中受到来自其他通信流量的影响最小。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改是临时的，在重新引导期间不会持续存在。持续存在是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR、\fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定备用根目录，其中 \fBflowadm\fR 应应用持久创建。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR、\fB--link\fR=\fIlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定将向其添加流的链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIattr\fR=\fIvalue\fR[,...], \fB--attr\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的以逗号分隔的属性列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR=\fIvalue\fR[,...], \fB--prop\fR=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的以逗号分隔的属性列表。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm remove-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-l\fR {\fIlink\fR | \fIflow\fR}\fR
+.ad
+.sp .6
+.RS 4n
+删除由其链接或名称标识的现有流。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改是临时的，在重新引导期间不会持续存在。持续存在是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR、\fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定备用根目录，其中 \fBflowadm\fR 应应用持久删除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR | \fIflow\fR, \fB--link\fR=\fIlink\fR | \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果指定一个链接，则从该链接删除所有流。如果指定单个流，则仅删除该流。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm set-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-p\fR \fIprop\fR=\fIvalue\fR[,...] \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置按名称指定的流上的一个或多个属性的值。使用 \fBshow-flow\fR 子命令可以检索完整的属性列表。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改是临时的，在重新引导期间不会持续存在。持续存在是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR、\fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定备用根目录，其中 \fBflowadm\fR 应应用持久属性设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR=\fIvalue\fR[,...], \fB--prop\fR=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的以逗号分隔的属性列表。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm reset-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-p\fR [\fIprop\fR=\fIvalue\fR[,...]] \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定流上的一个或多个属性重置为其缺省值。如果未指定属性，则重置所有属性。请参见 \fBshow-flowprop\fR 子命令了解属性说明，其中包含它们的缺省值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定重置为临时重置。临时重置将持续到下一次重新引导。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR、\fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定备用根目录，其中 \fBflowadm\fR 应应用持久属性设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR=\fIvalue\fR[,...], \fB--prop\fR=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要重置的以逗号分隔的属性列表。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm show-flowprop\fR [\fB-cP\fR] [\fB-l\fR \fIlink\fR] [\fB-p\fR \fIprop\fR[,...]] [\fIflow\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示所有流、指定链接上的流或指定流的一个或多个属性的当前值或持久值。
+.sp
+缺省情况下，将显示当前值。如果未指定属性，所有可用流属性都将显示。对于每个属性，将显示下列字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFLOW（流）\fR\fR
+.ad
+.sp .6
+.RS 4n
+流的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY（属性）\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVALUE（值）\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前（或持久性）属性值。如果该值未设置，则显示为 \fB--\fR（双连字符），如果该值未知，则显示为 \fB?\fR（问号）。尚未设置或尚未重置的持久性值将显示为 \fB--\fR，并且将使用系统的 \fBDEFAULT\fR 值（如果有）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT（缺省）\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的缺省值。如果属性无缺省值，则显示 \fB--\fR（双连字符）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE（可能）\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性可具有的值的逗号分隔列表。如果这些值跨越一定的数字范围，最小值和最大值可能会显示为缩写。如果可能值未知或无限制，则显示 \fB--\fR（双连字符）。
+.RE
+
+流属性在以下"流属性"部分中有述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR, \fB--persistent\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示持久流属性信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR=\fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的属性的逗号分隔列表。
+.RE
+
+.RE
+
+.SS "流属性"
+.sp
+.LP
+在 \fBflowadm\fR 命令中标识流的流操作数是一个来自以下列表的以逗号分隔的一个或多个关键字、值对列表。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocal_ip\fR[\fB/\fR\fIprefix_len\fR]\fR
+.ad
+.sp .6
+.RS 4n
+按本地 IP 地址标识网络流。\fIvalue\fR 必须是采用点分十进制记法的 IPv4 地址或采用冒号分隔记法的 IPv6 地址。\fIprefix_len\fR 是可选项。
+.sp
+如果指定了 \fIprefix_len\fR，它将描述子网地址的网络掩码，并与 \fBifconfig\fR(1M) 和 \fBroute\fR(1M) 地址遵循相同的表示法约定。如果未指定，给定的 IP 地址将被视为主机地址，其 IPv4 地址的缺省前缀长度是 \fB/32\fR，对于 IPv6，为 \fB/128\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremote_ip\fR[\fB/\fR\fIprefix_len\fR]\fR
+.ad
+.sp .6
+.RS 4n
+按远程 IP 地址标识网络流。语法与 \fBlocal_ip\fR 属性相同
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransport\fR={\fBtcp\fR|\fBudp\fR|\fBsctp\fR|\fBicmp\fR|\fBicmpv6\fR}\fR
+.ad
+.sp .6
+.RS 4n
+标识要使用的层 4 协议。通常结合 \fBlocal_port\fR 或 \fBremote_port\fR 使用，以标识需要特别关注的本地或远程服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocal_port\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识由本地端口指定的服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremote_port\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识由远程端口指定的服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdsfield\fR[\fB:\fR\fIdsfield_mask\fR]\fR
+.ad
+.sp .6
+.RS 4n
+标识 8 位区分服务字段（如 RFC 2474 中所定义）。
+.sp
+可选的 \fIdsfield_mask\fR 用于在与 \fBdsfield\fR 值比较时，指定区分服务字段中受关注的位。位位置中的 \fB0\fR 表示该位值需要忽略，\fB1\fR 则表示不要忽略。掩码范围可以是从 \fB0x01\fR 到 \fB0xff\fR。 如果未指定 \fIdsfield_mask\fR，将使用缺省掩码 \fB0xff\fR。\fBdsfield\fR 值和掩码必须为十六进制。
+.RE
+
+.sp
+.LP
+以下类型的属性组合受支持：
+.sp
+.in +2
+.nf
+local_ip[/\fIprefixlen\fR]=\fIaddress\fR
+remote_ip[/\fIprefixlen\fR]=\fIaddress\fR
+transport={tcp|udp|sctp|icmp|icmpv6}
+transport={tcp|udp|sctp},local_port=\fIport\fR
+transport={tcp|udp|sctp},remote_port=\fIport\fR
+dsfield=\fIval\fR[:\fIdsfield_mask\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在给定链接上，上述组合是互斥的。尝试创建不同组合的流将失败。
+.SS "限制"
+.sp
+.LP
+此处存在个别流限制与各区域流限制。
+.SS "个别流限制"
+.sp
+.LP
+个别流上的限制无需了解其他已添加至链接的流。
+.sp
+.LP
+针对每个流，属性只能列一次。例如，以下命令无效：
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l vnic1 -a local_port=80,local_port=8080 httpflow\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBtransport\fR 和 \fBlocal_port\fR 或者 \fBtransport\fR 和 \fBremote_port\fR：
+.sp
+.LP
+TCP、UDP 或 SCTP 流可通过本地端口或远程端口进行指定。不允许指定端口的 ICMP 或 ICMPv6 流。
+.sp
+.LP
+如果指定了 \fBlocal_port\fR 或 \fBremote_port\fR，传输必须是 TCP、UDP 或 SCTP。
+.sp
+.LP
+以下命令有效：
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l e1000g0 -a transport=udp udpflow\fR
+# \fBflowadm add-flow -l e1000g0 -a transport=tcp,local_port=80 \e
+udp80flow\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令无效：
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l e1000g0 -a remote_port=25 flow25\fR
+# \fBflowadm add-flow -l e1000g0 -a transport=icmpv6,remote_port=16 \e
+flow16\fR
+.fi
+.in -2
+.sp
+
+.SS "各区域流限制"
+.sp
+.LP
+在一个区域内，两个流不能具有相同的名称。添加具有指定链接的流后，显示、修改或删除该流时无需此链接。
+.SS "流属性"
+.sp
+.LP
+以下流属性均受支持。请注意，将给定属性设置为给定值的功能取决于驱动程序和硬件。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxbw\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置流的全双工带宽。此带宽指定为一个带有某个容量级后缀（分别表示 Kbps、Mbps 和 Gbps 的 \fBK\fR、\fBM\fR 或 \fBG\fR）的整数。如果未指定单位，输入值将以 Mbps 为单位进行读取。缺省值是无带宽限制。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR围绕重点端口创建策略
+.sp
+.LP
+以下命令将围绕 HTTPS 服务器上的传入 HTTPS 通信流量创建策略，以便 HTTPS 获取专用 NIC 硬件和内核 TCP/IP 资源。稍后可使用指定的名称 \fBhttps-1\fR 修改或删除该策略。
+
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l bge0 -a transport=TCP,local_port=443 https-1\fR
+# \fBflowadm show-flow -l bge0\fR
+FLOW         LINK         IP ADDR            PROTO  PORT  RPORT   DSFLD
+https1       bge0         --                 tcp    443   --      --
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR修改现有策略以添加带宽资源控制
+.sp
+.LP
+以下命令将修改之前示例中的 \fBhttps-1\fR 策略。该命令可以添加带宽控制。
+
+.sp
+.in +2
+.nf
+# \fBflowadm set-flowprop -p maxbw=500M https-1\fR
+# \fBflowadm show-flow https-1\fR
+FLOW         LINK         IP ADDR            PROTO  PORT  RPORT   DSFLD
+https1       bge0         --                 tcp    443   --      --
+
+# \fBflowadm show-flowprop https-1\fR
+FLOW        PROPERTY    VALUE     DEFAULT      POSSIBLE
+https-1     maxbw       500       --           --
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR限制 UDP 带宽使用
+.sp
+.LP
+以下命令将针对 UDP 协议创建策略，以便其无法使用超过 100Mbps 的可用带宽。将流命名为 \fBlimit-udp-1\fR。
+
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l bge0 -a transport=UDP -p maxbw=100M, \e
+limit-udp-1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR设置策略，利用 \fBdsfield\fR 属性
+.sp
+.LP
+以下命令将针对具有 500 Mbps 的带宽的 EF PHB（101110 的 DSCP 值来自 RFC 2598）设置策略。该流的 \fBdsfield\fR 值将是 \fB0x2e\fR (101110) ，而 \fBdsfield_mask\fR 为 \fB0xfc\fR（因为我们希望忽略两个最低有效位）。
+
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l bge0 -a dsfield=0x2e:0xfc \e
+-p maxbw=500M efphb-flow\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR查看多个区域中的流
+.sp
+.LP
+以下命令将显示具有相同名称的两个流。第一个流位于全局区域中，第二个位于区域 \fBzone1\fR 中。 该命令从全局区域调用，使用户能够查看系统上的所有流
+
+.sp
+.in +2
+.nf
+# \fBflowadm show-flow\fR
+FLOW        LINK        IPADDR            PROTO  LPORT   RPORT   DSFLD
+tcpflow     e1000g2     --                tcp    --      --      --
+zone1/tcpflow e1000g1   --                tcp    --      --      --
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+所有操作都成功执行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/network
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBacctadm\fR(1M)、\fBdladm\fR(1M)、\fBflowstat\fR(1M)、\fBifconfig\fR(1M)、\fBprstat\fR(1M)、\fBroute\fR(1M)、\fBattributes\fR(5)、\fBdlpi\fR(7P)
+.SH 附注
+.sp
+.LP
+\fBshow-usage\fR 子命令（在以前版本的 \fBflowadm\fR 中存在）已替换为 \fBflowstat\fR(1M) \fB-h\fR 命令。

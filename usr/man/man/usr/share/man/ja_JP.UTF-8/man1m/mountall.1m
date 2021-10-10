@@ -1,0 +1,194 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH mountall 1M "2008 年 12 月 17 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+mountall, umountall \- 複数のファイルシステムのマウントおよびマウント解除
+.SH 形式
+.LP
+.nf
+\fBmountall\fR [\fB-F\fR \fIFSType\fR] [\fB-l\fR | \fB-r\fR] [\fIfile_system_table\fR]
+.fi
+
+.LP
+.nf
+\fBumountall\fR [\fB-k\fR] [\fB-s\fR] [\fB-F\fR \fIFSType\fR] [\fB-l\fR | \fB-r\fR] [\fB-n\fR]  [\fB-Z\fR]
+.fi
+
+.LP
+.nf
+\fBumountall\fR [\fB-k\fR] [\fB-s\fR] [\fB-h\fR \fIhost\fR] [\fB-n\fR] [\fB-Z\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmountall\fR は、ファイルシステムテーブルに指定されているファイルシステムをマウントするときに使用します。ファイルシステムテーブルは \fBvfstab\fR(4) 形式である必要があります。\fIfile_system_table\fR を指定しない場合は、\fB/etc/vfstab\fR が使用されます。\fIfile_system_table\fR として \(mi を指定すると、\fBmountall\fR は標準入力からファイルシステムテーブルを読み取ります。\fBmountall\fR は、\fIfile_system_table\fR において \fBmount at boot\fR フィールドが \fByes\fR に設定されているファイルシステムだけをマウントします。
+.sp
+.LP
+ファイルシステムテーブル内のファイルシステムごとに、次のロジックが実行されます。 つまり、\fB/usr/lib/fs/\fIFSType\fR/fsckall\fR というファイル (\fIFSType\fR はファイルシステムのタイプ) が存在する場合、当該ファイルシステムをリストに保存しておき、後でまとめて \fB/usr/lib/fs/\fIFSType\fR/fsckall\fR スクリプトに引数として渡します。\fB/usr/lib/fs/\fIFSType\fR/fsckall\fR スクリプトは、引数リスト内にあるファイルシステムをすべて検査して、安全にマウントできるかどうかを決定します。\fIFSType\fR のファイルシステム用の \fB/usr/lib/fs/\fIFSType\fR/fsckall\fR スクリプトが存在しない場合、そのファイルシステムは \fBfsck\fR(1M) を使用して個々に検査されます。検査の結果、ファイルシステムがマウントできない状態であることが判明した場合、マウントを試行する前に \fBfsck\fR で修復されます。\fBfsckdev\fR フィールドのエントリが \(mi であるファイルシステムは事前の検査なしにマウントされます。
+.sp
+.LP
+\fBumountall\fR によって、\fBroot\fR、\fB/usr\fR、\fB/var\fR、\fB/var/adm\fR、\fB/var/run\fR、\fB/proc\fR、および \fB/dev/fd\fR を除き、現在のゾーンにマウントされているすべてのファイルシステムがマウント解除されます。\fIFSType\fR を指定すると、\fBmountall\fR と \fBumountall\fR のアクションは指定された \fIFSType\fR に制限されます。\fB-k\fR を指定した場合でも、\fBumountall\fR が\fIビジー\fR状態のファイルシステムをマウント解除するかどうかは保証されません。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 11n
+.rt  
+マウントまたはマウント解除するファイルシステムの \fIFSType\fR を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBhost\fR からリモートでマウントされている、/etc/mnttab 内のファイルシステムをすべてマウント解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBfuser \fR\fB-k\fR\fI mount-point\fR コマンドを使用します。詳細については、\fBfuser\fR(1M) を参照してください。\fB-k\fR オプションは \fBSIGKILL\fR シグナルをファイルを使用している各プロセスに送信します。このオプションはプロセスごとに終了シグナルを生成するので、終了メッセージがすぐに出力されないことがあります。\fB-k\fR を指定した場合でも、\fBumountall\fR が\fIビジー\fR状態のファイルシステムをマウント解除するかどうかは保証されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 11n
+.rt  
+アクションをローカルのファイルシステムに制限します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 11n
+.rt  
+指定したオプションで実行されるアクションをリスト表示します。ただし、実際にはアクションを実行しません。\fB-n\fR オプションを指定せずにコマンドを繰り返すと、コマンドを繰り返す間に \fB/etc/mnttab\fR ファイルは変更されなかったと仮定して、リストされたアクションが実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 11n
+.rt  
+アクションをリモートのファイルシステムタイプに制限します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 11n
+.rt  
+複数の \fBumount\fR 操作を同時に実行しないようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR\fR
+.ad
+.RS 11n
+.rt  
+非大域ゾーンにマウントされているファイルシステムにのみ操作を適用します。デフォルトでは、\fBumountall\fR は、現在のゾーンにマウントされているファイルシステムのみをマウント解除します。非大域ゾーンで使用する場合、オプション \fB-Z\fR は無視されます。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mnttab\fR\fR
+.ad
+.sp .6
+.RS 4n
+マウント済みファイルシステムテーブル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのファイルシステムテーブル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/fs/\fIFSType\fR/fsckall\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIFSType\fR タイプのファイルシステムをすべて検査するときに \fBmountall\fR が呼び出すスクリプト
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+出力の安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBfsck\fR(1M), \fBfuser\fR(1M), \fBmount\fR(1M), \fBmnttab\fR(4), \fBvfstab\fR(4), \fBattributes\fR(5)
+.SH 診断
+.sp
+.LP
+ファイルシステムがマウント可能であり、クリーンな状態であれば、メッセージは出力されません。
+.sp
+.LP
+エラーメッセージと警告メッセージは、\fBfsck\fR(1M) と \fBmount\fR(1M) の両方から送られます。
+.SH 注意事項
+.sp
+.LP
+この時点では、\fB-l\fR、\fB-r\fR、および \fB-h\fR オプションでサポートされるリモートファイルシステムは NFS のみです。

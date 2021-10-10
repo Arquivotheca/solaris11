@@ -1,0 +1,182 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nscd 1M "15 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+nscd \- name service cache daemon
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/sbin/nscd\fR [\fB-f\fR \fIconfiguration-file\fR] [\fB-g\fR] [\fB-e\fR \fIcachename\fR, yes
+ | no] [\fB-i\fR \fIcachename\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnscd\fR daemon is a process that provides a cache for most name service requests. The service properties of the \fBsvc:/system/name-service/cache\fR SMF service determine the behavior of the cache daemon. See \fBnscd.conf\fR(4).
+.sp
+.LP
+\fBnscd\fR provides caching for the \fBpasswd\fR(4), \fBgroup\fR(4), \fBhosts\fR(4), \fBipnodes\fR(4), \fBexec_attr\fR(4), \fBprof_attr\fR(4), \fBuser_attr\fR(4), \fBethers\fR(4), \fBrpc\fR(4), \fBprotocols\fR(4), \fBnetworks\fR(4), \fBbootparams\fR(4), \fBauth_attr\fR(4), \fBservices\fR(4), \fBnetmasks\fR(4), \fBproject\fR(4) databases through standard \fBlibc\fR interfaces, such as \fBgethostbyname\fR(3NSL), \fBgetipnodebyname\fR(3SOCKET), \fBgethostbyaddr\fR(3NSL), and others. The shadow file is specifically not cached. \fBgetspnam\fR(3C) calls remain uncached as a result.
+.sp
+.LP
+Each cache has a separate time-to-live for its data. By default, modifying the local database (\fB/etc/hosts\fR, \fB/etc/passwd\fR, and so forth) causes that cache to become invalidated upon the next call to \fBnscd\fR.
+.sp
+.LP
+The updating and refreshing of any of the services that \fBsvc:/system/name-service/cache\fR is optionally dependent upon (listed below) causes \fBnscd\fR to restart, which effectively clears all caches.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/dns/client\fR, see \fBresolv.conf\fR(4)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/nis/client\fR, see \fBypbind\fR(1M) and \fBypfiles\fR(4)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/ldap/client\fR, see \fBldapclient\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/system/name-service/switch\fR, see \fBnsswitch.conf\fR(4)
+.RE
+.sp
+.LP
+See \fBnscd.conf\fR(4).
+.sp
+.LP
+\fBnscd\fR also acts as its own administration tool. If an instance of \fBnscd\fR is already running, commands are passed to the running version transparently.
+.sp
+.LP
+When running with per-user lookups enabled (see \fBnscd.conf\fR(4)), \fBnscd\fR forks one and only one child process (that is, a per-user \fBnscd\fR) on behalf of the user making the request. The per-user \fBnscd\fR will use the credentials of the user to open a per-user connection to the name repository configured for the per-user style of lookups. The lookup will be performed in the child process. The results are cached in the process and are available only to the same user. The caches are managed exactly the same as the main \fBnscd\fR daemon manages its own caches. Subsequent requests from the user will be handled by that per-user \fBnscd\fR until it terminates. The per-user \fBnscd\fR uses a configurable inactivity time-to-live (TTL) value and terminates itself after the inactivity TTL expires.
+.sp
+.LP
+The maximum number of per-user \fBnscd\fRs that can be created by the main \fBnscd\fR is configurable (see \fBnscd.conf\fR(4)). After the maximum number of them are created, the main \fBnscd\fR will use an LRU algorithm to terminate less active child \fBnscd\fRs as needed.
+.sp
+.LP
+The main \fBnscd\fR daemon creates, monitors, and manages all the child \fBnscd\fRs. It creates a user's own \fBnscd\fR upon receiving the user's first per-user lookup. When the \fBnscd\fR daemon is started, if per-user lookups are enabled, it checks to ensure all conditions are met before getting ready to create a per-user \fBnscd\fR. When the daemon is stopped, it terminates all the per-user \fBnscd\fRs under its control.
+.sp
+.LP
+Per-user \fBnscd\fRs use the same configuration as the main \fBnscd\fR. They read and use the same default configuration file or the one specified with the \fB-f\fR command line option. Once the configuration is read, the per-user \fBnscd\fR will use it for its entire lifetime.
+.SH OPTIONS
+.sp
+.LP
+Several of the options described below require a \fIcachename\fR specification. Supported values for \fIcachename\fR are: \fBpasswd\fR, \fBgroup\fR, \fBhosts\fR, \fBipnodes\fR, \fBexec_attr\fR, \fBprof_attr\fR, \fBuser_attr\fR, \fBethers\fR, \fBrpc\fR, \fBprotocols\fR, \fBnetworks\fR, \fBbootparams\fR, \fBauth_attr\fR, \fBservices\fR, \fBnetmasks\fR, \fBprinters\fR, and \fBproject\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIconfiguration-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+Causes \fBnscd\fR to read its configuration data from the specified file. This option is obsolete and will be removed in a future release.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+Prints current configuration and statistics to standard output. This is the only option executable by non-root users.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIcachename\fR\fB, yes\fR|\fBno\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables or disables the specified cache.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIcachename\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalidate the specified cache.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRStopping and Restarting the \fBnscd\fR Daemon.
+.sp
+.in +2
+.nf
+example# \fBsvcadm disable system/name-service/cache\fR
+
+example# \fBsvcadm enable system/name-service/cache\fR
+.fi
+.in -2
+.sp
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nscd.conf\fR\fR
+.ad
+.RS 18n
+.rt  
+Obsolete. Formerly determined the behavior of the cache daemon
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBypbind\fR(1M), \fBgetspnam\fR(3C), \fBgethostbyname\fR(3NSL), \fBgetipnodebyname\fR(3SOCKET), \fBauth_attr\fR(4), \fBbootparams\fR(4), \fBethers\fR(4), \fBexec_attr\fR(4), \fBgroup\fR(4), \fBhosts\fR(4), \fBnetmasks\fR(4), \fBnetworks\fR(4), \fBnscd.conf\fR(4), \fBnsswitch.conf\fR(4), \fBpasswd\fR(4), \fBprof_attr\fR(4), \fBproject\fR(4), \fBprotocols\fR(4), \fBresolv.conf\fR(4), \fBrpc\fR(4), \fBservices\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5)
+.SH NOTES
+.sp
+.LP
+The output from the \fB-g\fR option to \fBnscd\fR is subject to change. Do not rely upon it as a programming interface.
+.sp
+.LP
+The \fBnscd\fR service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/system/name-service/cache
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.
+.sp
+.LP
+The obsolete service \fBsvc:/system/name-service-cache\fR has been retained for backwards compatibility with scripts that might reference it. Its only purpose is to serve as an \fBoptional_all\fR dependency on the service \fBsvc:/system/name-service/cache\fR. The obsolete service name will be removed in a future release.

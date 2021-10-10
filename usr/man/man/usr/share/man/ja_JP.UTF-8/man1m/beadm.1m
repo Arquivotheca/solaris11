@@ -1,0 +1,813 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH beadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+beadm \- ZFS ブート環境の管理
+.SH 形式
+.LP
+.nf
+\fBbeadm\fR \fBcreate\fR [\fB-a\fR] [\fB-d\fR \fIdescription\fR]
+     [\fB-e\fR \fInon-activeBeName\fR | \fIbeName\fR@\fIsnapshot\fR]
+     [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... [\fB-p\fR \fIzpool\fR] \fIbeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBcreate\fR \fIbeName\fR@\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBdestroy\fR [\fB-fF\fR] \fIbeName\fR | \fIbeName\fR@\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBlist\fR [\fB-a\fR | \fB-ds\fR] [\fB-H\fR] [\fIbeName\fR]
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBmount\fR \fIbeName\fR \fImountpoint\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBunmount\fR [\fB-f\fR] \fIbeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBrename\fR \fIbeName\fR \fInewBeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBactivate\fR \fIbeName\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBbeadm\fR コマンドは、ZFS ブート環境 (BE) を管理するためのユーザーインタフェースです。このユーティリティーは、単一のシステムで複数の Oracle Solaris インスタンスを管理するシステム管理者によって使用されます。
+.sp
+.LP
+\fBbeadm\fR を使用すると、次の操作を行うことができます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+アクティブな BE に基づいた、新しい BE の作成
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+アクティブでない BE に基づいた、新しい BE の作成
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+既存の BE のスナップショットの作成
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+既存のスナップショットに基づいた、新しい BE の作成
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+新しい BE の作成と別の zpool へのコピー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+既存のアクティブでない BE のアクティブ化
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+BE のマウント
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+BE のマウント解除
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+BE の破棄
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+BE のスナップショットの破棄
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+既存のアクティブでない BE の名前変更
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+スナップショットとデータセットに関する情報の表示
+.RE
+.SH サブコマンド
+.sp
+.LP
+\fBbeadm\fR コマンドには、下記のようなサブコマンドおよびオプションがあります。これらのサブコマンドおよびオプションの多くの使用法については、次の「使用例」で説明しています。\fB\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fI(引数なし)\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの使用法を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBcreate\fR [\fB-a\fR] [\fB-d\fR \fIdescription\fR] [\fB-e\fR \fInon-activeBeName\fR | \fIbeName\fR@\fIsnapshot\fR] [\fB-o\fR \fI property\fR=\fIvalue\fR] ... [\fB-p\fR \fIzpool\fR] \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR という新しいブート環境を作成します。\fB-e\fR オプションを指定しない場合、新しいブート環境は現在実行中のブート環境のクローンとして作成されます。\fB-d\fR オプションを指定する場合、記述が x86 システムの GRUB メニューまたは SPARC システムのブートメニューにある BE エントリのタイトルとしても使用されます。\fB-d\fR オプションを指定しない場合、\fIbeName\fR がタイトルとして使用されます。入れ子の BE では、\fB-p\fR オプションの使用はサポートされません。また、ブート不可能な入れ子の BE と、ブート不可能な入れ子の BE のスナップショットは、\fB-e\fR オプションとともに使用できません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+作成と同時に、新しく作成された BE をアクティブにします。デフォルトでは、新しく作成された BE をアクティブにしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+関連付けられた記述を含む新しい BE を作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fInon-activeBeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存のアクティブでない BE から新しい BE を作成します。入れ子の BE では、ブート可能な BE のみがこのオプションとともに使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR という BE の既存のスナップショットから新しい BE を作成します。入れ子の BE では、ブート可能な BE のスナップショットのみがこのオプションとともに使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定の ZFS プロパティーを使って新しい BE のデータセットを作成します。複数の \fB-o\fR オプションを指定できます。\fB-o\fR オプションの詳細は、\fBzfs\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIzpool\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIzpool\fR に新しい BE を作成します。このオプションを指定しない場合、デフォルトの動作では、元の BE と同じプールに新しい BE を作成します。このオプションは、入れ子の BE の内側ではサポートされません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBcreate\fR \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR という既存の BE のスナップショットを作成します。入れ子の BE の内側では、ブート可能な BE のスナップショットのみを作成できます。入れ子の BE の内側にいるときは、ブート可能な BE またはブート可能ではないがリブート時にアクティブとしてマークされない BE のみ破棄できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBdestroy\fR [\fB-fF\fR] \fIbeName\fR | \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR というブート環境を破棄するか、\fIbeName\fR@\fIsnapshot\fR というブート環境の既存のスナップショットを破棄します。ブート環境を破棄すると、そのブート環境のスナップショットもすべて破棄されます。このコマンドを使用するときは、注意が必要です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート環境が現在マウントされている場合、強制的にマウント解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート環境を破棄するための確認を求めずに操作を強制的に実行します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBlist\fR [\fB-a\fR | \fB-ds\fR] [\fB-H\fR] [\fIbeName\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR という既存のブート環境に関する情報を一覧表示します。\fIbeName\fR を指定しない場合は、すべてのブート環境に関する情報を一覧表示します。\fBActive\fR フィールドは、ブート環境が現在アクティブであるか (\fBN\fR で表現)、リブート時にアクティブになるか (\fBR\fR で表現)、またはその両方であるか (\fBNR\fR で表現) を示します。入れ子の BE の内側にあるブート不可能な BE は、感嘆符 (\fB!\fR) で表現されます。
+.sp
+機械解析可能な出力の各行には、1 番目のフィールドとしてブート環境名が含まれます。\fBSpace\fR フィールドはバイト単位で表示され、\fBCreated\fR フィールドは UTC 形式で表示されます。その他のオプションを付けないで \fB-H\fR オプションを使用すると、2 番目のフィールドにブート環境の UUID が表示されます。ブート環境に UUID がない場合、このフィールドは空白になります。「\fB使用例\fR」の節を参照してください。入れ子の BE の内側では、UUID フィールドは実際には入れ子の BE に関連付けられている親 ID を表します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート環境に関する利用可能なすべての情報を一覧表示します。この情報には、従属ファイルシステムおよびスナップショットが含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート環境に属しているすべての従属ファイルシステムに関する情報を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート環境のスナップショットに関する情報を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘッダー情報を一覧表示しません。一覧情報の各フィールドは、セミコロンで区切られます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBmount\fR \fIbeName\fR \fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIマウントポイント\fRで \fIbeName\fR というブート環境をマウントします。\fIマウントポイント\fRは、既存の空ディレクトリである必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBunmount\fR [\fB-f\fR] \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR というブート環境をマウント解除します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート環境が現在ビジー状態であっても強制的にマウント解除します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBrename\fR \fIbeName\fR \fInewBeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIbeName\fR というブート環境の名前を \fInewBeName\fR に変更します。入れ子の BE では、ブート可能な BE の名前変更のみを行えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBactivate\fR \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+次回のリブート時に \fIbeName\fR をアクティブな BE にします。入れ子の BE では、ブート可能な BE のみをアクティブ化できます。
+.RE
+
+.SS "入れ子の BE のサポート"
+.sp
+.LP
+\fBbeadm\fR は、入れ子の BE の概念を、厳密にはそれが非大域ゾーンの BE に属している場合にサポートします。現時点では、\fBbeadm\fR は非大域ゾーンの内側からのみ入れ子の BE を管理できます。
+.sp
+.LP
+\fBbeadm\fR は、いくつかの例外を除き、大域ゾーンから行うのとほとんど同様に非大域ゾーンの内側で機能します。まず、\fBbeadm\fR \fBcreate\fR の \fB-p\fR (代替プール) オプションは非大域ゾーン内ではサポートされていません。次に、指定された入れ子の BE (または BE のスナップショット) に対し、ブート可能かブート可能でないかを判断するための区別がつけられます。入れ子の BE がブート可能であるのは、それが現在アクティブになっている大域ゾーンの BE に関連付けられている (つまり、アクティブな大域ゾーンの BE の UUID と同じ親 ID を共有する) 場合です。それ以外の場合、それはブート可能ではなく、\fBbeadm list\fR のアクティブ列に「\fB!\fR」のマークが付きます。注: 非大域ゾーンの管理者は \fBbeadm activate\fR を使ってそのような BE をアクティブとしてマークできますが、非大域ゾーンをリブートしても BE はロードされません。これは、その BE が非アクティブな大域ゾーンの BE に関連付けられているからです。そのため、これらの条件に基づいて、\fBbeadm\fR はブート不可能な BE でいくつかの動作を制限します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ブート不可能でかつ、リブート時にアクティブとしてマークされる入れ子の BE を破棄できません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ブート不可能な BE をアクティブ化することはできません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ブート不可能な BE のスナップショットを作成することはできません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBbeadm create\fR の \fB-e\fR オプションでブート不可能な BE または BE のスナップショットを使用することはできません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ブート不可能な BE の名前変更を行うことはできません。
+.RE
+.SH 使用例
+.LP
+\fB例 1 \fRアクティブな BE を使用した新しい BE の作成
+.sp
+.LP
+次のコマンドは、現在の BE のクローンを作成して、\fBBE1\fR という新しい BE を作成します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create BE1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRアクティブでない BE を使用した新しい BE の作成
+.sp
+.LP
+次のコマンドは、\fBBE1\fR という既存のアクティブでない BE のクローンを作成して、\fBBE2\fR という新しい BE を作成します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm beadm create -e BE1 BE2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR既存の BE のスナップショットの作成
+.sp
+.LP
+次のコマンドは、\fBBE1\fR という既存の BE の now というスナップショットを作成します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create BE1@now\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRスナップショットのクローンの作成による、新しい BE の作成
+.sp
+.LP
+次のコマンドは、\fBBE1\fR の既存のスナップショットのクローンを作成して、\fBBE3\fR という新しい BE を作成します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -e BE1@now BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR指定された zpool の新しい BE の作成
+.sp
+.LP
+次のコマンドは、現在実行中の BE に基づいて、\fBBE4\fR という新しい BE を作成します。このコマンドは、\fBrpool2\fR という zpool に新しい BE を作成します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -p rpool2 BE4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR圧縮を有効にした状態で指定された zpool の新しい BE の作成
+.sp
+.LP
+次のコマンドは、現在実行中の BE に基づいて、\fBBE5\fR という新しい BE を作成します。このコマンドは、\fBrpool2\fR という zpool に新しい BE を作成して、圧縮を有効にした状態でそのデータセットを作成します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -p rpool2 -o compression=on BE5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR新しい BE の作成と説明の提供
+.sp
+.LP
+次のコマンドは、現在実行中の BE に基づいて \fBBE6\fR という新しい BE を作成し、その説明を提供します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -d "BE6 used as test environment" BE6\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRBE の有効化
+.sp
+.LP
+次のコマンドは、\fBBE3\fR という既存の有効でない BE を有効にします。
+
+.sp
+.in +2
+.nf
+# \fBbeadm activate BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRBE のマウント
+.sp
+.LP
+次のコマンドは、\fBBE3\fR という BE を \fB/mnt\fR にマウントします。
+
+.sp
+.in +2
+.nf
+# \fBbeadm mount BE3 /mnt\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fRBE のマウント解除
+.sp
+.LP
+次のコマンドは、\fBBE3\fR という BE をマウント解除します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm unmount BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRBE の破棄
+.sp
+.LP
+次のコマンドは、確認を求めずに \fBBE3\fR という BE を破棄します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm destroy -F BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRスナップショットの破棄
+.sp
+.LP
+次のコマンドは、\fBBE1\fR の \fBnow\fR というスナップショットを破棄します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm destroy BE1@now\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 13 \fRBE の名前の変更
+.sp
+.LP
+次のコマンドは、\fBBE1\fR という既存の有効でない BE の名前を \fBBE3\fR に変更します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm rename BE1 BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 14 \fRすべての BE の一覧表示
+.sp
+.LP
+次のコマンドは、既存の BE をすべて一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list\fR
+BE  Active Mountpoint Space  Policy Created
+--  ------ ---------- -----  ------ -------
+BE2 -      -          72.0K  static 2008-05-21 12:26
+BE3 -      -          332.0K static 2008-08-26 10:28
+BE4 -      -          15.78M static 2008-09-05 18:20
+BE5 NR     /          7.25G  static 2008-09-09 16:53
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 15 \fRデータセットおよびスナップショット情報を含むすべての BE の一覧表示
+.sp
+.LP
+次のコマンドは、既存の BE をすべて一覧表示し、それらのブート環境に関するデータセットおよびスナップショット情報をすべて一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -d -s\fR
+BE/Dataset/Snapshot     Active Mountpoint Space   Policy Created
+-------------------     ------ ---------- -----   ------ -------
+BE2
+   p/ROOT/BE2           -      -          36.0K   static 2008-05-21 12:26
+   p/ROOT/BE2/opt       -      -          18.0K   static 2008-05-21 16:26
+   p/ROOT/BE2/opt@now   -      -          0       static 2008-09-08 22:43
+   p/ROOT/BE2@now       -      -          0       static 2008-09-08 22:43
+BE3
+   p/ROOT/BE3           -      -          192.0K  static 2008-08-26 10:28
+   p/ROOT/BE3/opt       -      -          86.0K   static 2008-08-26 10:28
+   p/ROOT/BE3/opt/local -      -          36.0K   static 2008-08-28 10:58
+BE4
+   p/ROOT/BE4           -      -          15.78M  static 2008-09-05 18:20
+BE5
+   p/ROOT/BE5           NR     /          6.10G   static 2008-09-09 16:53
+   p/ROOT/BE5/opt       -      /opt       24.55M  static 2008-09-09 16:53
+   p/ROOT/BE5/opt@bar   -      -          18.38M  static 2008-09-10 00:59
+   p/ROOT/BE5/opt@foo   -      -          18.38M  static 2008-06-10 16:37
+   p/ROOT/BE5@bar       -      -          139.44M static 2008-09-10 00:59
+   p/ROOT/BE5@foo       -      -          912.85M static 2008-06-10 16:37
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 16 \fRBE に関するデータセットおよびスナップショット情報の一覧表示
+.sp
+.LP
+次のコマンドは、\fBBE5\fR に関するデータセットおよびスナップショット情報をすべて一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -a BE5\fR
+BE/Dataset/Snapshot   Active Mountpoint Space   Policy Created
+-------------------   ------ ---------- -----   ------ -------
+BE5
+   p/ROOT/BE5         NR     /          6.10G   static 2008-09-09 16:53
+   p/ROOT/BE5/opt     -      /opt       24.55M  static 2008-09-09 16:53
+   p/ROOT/BE5/opt@bar -      -          18.38M  static 2008-09-10 00:59
+   p/ROOT/BE5/opt@foo -      -          18.38M  static 2008-06-10 16:37
+   p/ROOT/BE5@bar     -      -          139.44M static 2008-09-10 00:59
+   p/ROOT/BE5@foo     -      -          912.85M static 2008-06-10 16:37
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 17 \fR機械解析可能な形式での一覧表示
+.sp
+.LP
+次のコマンドは、すべての BE に関する情報を機械解析可能な形式で一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -H\fR
+BE2;;;;55296;static;1211397974
+BE3;;;;339968;static;1219771706
+BE4;;;;16541696;static;1220664051
+BE5;215b8387-4968-627c-d2d0-f4a011414bab;NR;/;7786206208;static;1221004384
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 18 \fRブート不可能な BE の表示
+.sp
+.LP
+次のコマンドは、すべての BE を一覧表示します。非大域ゾーンの内側で実行している場合、ブート可能な BE とブート不可能な BE の両方が表示されます。ブート可能でない BE は、アクティブ列の感嘆符 (\fB!\fR) で示されます。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list\fR
+BE    Active Mountpoint Space   Policy Created
+--    ------ ---------- -----   ------ -------
+zbe-0 -      -          29.22M  static 2011-03-04 09:14
+zbe-1 NR     /          815.10M static 2011-03-04 09:28
+zbe-2 -      -          35.0K   static 2011-03-04 09:28
+zbe-3 -      -          35.0K   static 2011-03-04 09:28
+zbe-4 -      -          35.0K   static 2011-03-04 09:28
+zbe-5 !      -          35.0K   static 2011-03-04 11:47
+zbe-6 !      -          54.0K   static 2011-03-07 14:37
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+失敗。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/log/beadm/\fIbeName\fR/create.log.\fIyyyymmdd_hhmmss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBbeadm create\fR 出力を取得するために使用されるログ。ファイル名の時刻指定部分については、次に説明します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIyyyymmdd_hhmmss\fR (例: \fB20071130_140558\fR)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIyyyy\fR (\fB2007\fR 年)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fImm\fR (\fB11\fR 月)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIdd\fR (\fB30\fR 日)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIhh\fR (\fB14\fR 時)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fImm\fR (\fB05\fR 分)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIss\fR (\fB58\fR 秒)
+.RE
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/boot-environment-utilities
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBzfs\fR(1M), \fBattributes\fR(5)

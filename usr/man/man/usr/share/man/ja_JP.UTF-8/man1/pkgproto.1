@@ -1,0 +1,169 @@
+'\" te
+.\"  Copyright 1989 AT&T Copyright (c) 2007, Sun Microsystems, Inc. All Rights Reserved
+.TH pkgproto 1 "2007 年 10 月 30 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+pkgproto \- pkgmk コマンドに入力する prototype ファイルエントリの生成
+.SH 形式
+.LP
+.nf
+\fBpkgproto\fR [\fB-i\fR] [\fB-c\fR \fIclass\fR] [\fIpath1\fR]
+.fi
+
+.LP
+.nf
+\fBpkgproto\fR [\fB-i\fR] [\fB-c\fR \fIclass\fR] [\fIpath1=path2\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpkgproto\fR は、指定されたパスを調べ、\fBpkgmk\fR(1) コマンドへの入力として使用できる \fBprototype\fR(4) ファイルのエントリを生成します。
+.sp
+.LP
+コマンド行にパスを指定しなかった場合、標準入力がパスの一覧とみなされます。コマンド行に指定したパス名がディレクトリである場合は、ディレクトリの内容が検索されます。ただし、\fBstdin\fR から入力を読み取る場合は、パス名として指定したディレクトリは検索されません。
+.sp
+.LP
+\fBpkgproto\fR などのパッケージコマンドは \fBlargefile\fR(5) を認識します。これらのコマンドは、2G バイトより大きなファイルを、より小さなファイルと同様に処理します。現在の実装では、\fBpkgadd\fR(1M)、\fBpkgtrans\fR(1)、およびその他のパッケージコマンドは最大 4G バイトのデータストリームを処理できます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 12n
+.rt  
+シンボリックリンクを無視し、そのパスを \fBftype\fR=\fBs\fR (シンボリックリンク) ではなく \fBftype\fR=\fBf\fR (ファイル) として記録します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass\fR\fR
+.ad
+.RS 12n
+.rt  
+すべてのパスのクラスを \fIclass\fR にマップします。
+.RE
+
+.SH オペランド
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpath1\fR\fR
+.ad
+.RS 9n
+.rt  
+オブジェクトが配置されているパス名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpath2\fR\fR
+.ad
+.RS 9n
+.rt  
+出力時に \fIpath1\fR から置き換えられるパス名。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR基本的な使用方法
+.sp
+.LP
+次の例は、\fBpkgproto\fR の一般的な使用方法と生成される出力の一覧の一部を示しています。
+
+.sp
+.in +2
+.nf
+\fBexample%\fR \fBpkgproto\fR /bin=bin /usr/bin=usrbin /etc=etc
+f none bin/sed=/bin/sed 0775 bin bin
+f none bin/sh=/bin/sh 0755 bin daemon
+f none bin/sort=/bin/sort 0755 bin bin
+f none usrbin/sdb=/usr/bin/sdb 0775 bin bin
+f none usrbin/shl=/usr/bin/shl 4755 bin bin
+d none etc/master.d 0755 root daemon
+f none etc/master.d/kernel=/etc/master.d/kernel 0644 root daemon
+f none etc/rc=/etc/rc 0744 root daemon 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRパイプラインで \fBpkgproto\fR を使用する
+.sp
+.LP
+次のコマンドは、\fBfind\fR コマンドの出力を受け入れる \fBpkgproto\fR を示します。
+
+.sp
+.in +2
+.nf
+\fBexample% find /\fR \fB-type\fR d \fB-print\fR | pkgproto
+d none / 755 root root
+d none /bin 755 bin bin
+d none /usr 755 root root
+d none /usr/bin 775 bin bin
+d none /etc 755 root root
+d none /tmp 777 root root
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpkgmk\fR(1), \fBpkgparam\fR(1), \fBpkgtrans\fR(1), \fBpkgadd\fR(1M), \fBprototype\fR(4), \fBattributes\fR(5), \fBlargefile\fR(5)
+.sp
+.LP
+\fI『Application Packaging Developer\&'s Guide』\fR
+.SH 注意事項
+.sp
+.LP
+デフォルトでは、\fBpkgproto\fR は、検出されたあらゆるシンボリックリンクに対してシンボリックリンクエントリ (\fBftype\fR=\fBs\fR) を作成します。\fB-i\fR オプションを使用すると、\fBpkgproto\fR は、シンボリックリンクに対してファイルエントリ (\fBftype\fR=\fBf\fR) を作成します。\fBv\fR (揮発性)、\fBe\fR (編集可能)、\fBx\fR (排他的ディレクトリ) などのファイルタイプを割り当てるには、\fBprototype\fR(4) ファイルを編集する必要があります。\fBpkgproto\fR は、リンクされたファイルを検出します。複数のファイルが同時にリンクされている場合は、最初に検出されたパスがそのリンクのソースとみなされます。
+.sp
+.LP
+デフォルトでは、\fBpkgproto\fR は prototype のエントリを標準出力に出力します。ただし、出力を \fBpkgmk\fR(1) コマンドへの入力として使用するには、その出力をファイルに保存するようにしてください (ファイル名を \fBPrototype\fR または \fBprototype\fR にすると便利です)。

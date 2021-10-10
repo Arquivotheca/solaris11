@@ -1,0 +1,123 @@
+'\" te
+.\" 版权所有 1989 AT&T
+.\" 版权所有 2000，Oracle 和/或其附属公司。保留所有权利。
+.TH getopt 1 "2000 年 1 月 7 日" "SunOS 5.11" "用户命令"
+.SH 名称
+getopt \- 解析命令选项
+.SH 用法概要
+.LP
+.nf
+\fBset\fR \fB--\fR ` getopt \fIoptstring\fR $ * `
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBgetopts\fR 命令取代了 \fBgetopt\fR。有关更多信息，请参见下面的"注意"。
+.sp
+.LP
+\fBgetopt\fR 可用于打断命令行中的选项以便于 shell 过程进行简单解析，还可用于检查合法选项。\fIoptstring\fR 是一串可识别的选项字母；请参见 \fBgetopt\fR(3C)。如果某个字母后面跟有冒号 (\fB:\fR)，则该选项需要有一个参数，可以使用空格将其与该参数隔开，也可以不使用。特殊选项 \fB-\fR 用来限定选项的结尾。如果显式使用了该选项，则 \fBgetopt\fR 会识别出该选项；否则，\fBgetopt\fR 将生成该特殊选项；在任一情况下，\fBgetopt\fR 都会将其放置在选项的结尾。shell 的位置参数 (\fB$1 $2\fR .\|.\|.\|) 已重置，以便每个选项以 \fB\(mi\fR 开头并位于自己的位置参数中；还会将每个选项参数解析到其自己的位置参数中。
+.SH 示例
+.LP
+\fB示例 1 \fR为命令处理参数
+.sp
+.LP
+以下代码片段显示了如何为可以接受选项 \fB-a\fR 或 \fB-b\fR，以及选项 \fB-o\fR(该选项需要一个参数）的命令处理参数：
+
+.sp
+.in +2
+.nf
+\fBset -- `getopt abo: $*`
+if [ $? != 0 ]
+then
+           echo $USAGE
+           exit 2
+fi
+for i in $*
+do
+           case $i in
+           -a | -b)     FLAG=$i; shift;;
+           -o)           OARG=$2; shift 2;;
+           --)           shift; break;;
+           esac
+done\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此代码将下列各个输入视为等效的：
+
+.sp
+.in +2
+.nf
+\fBcmd -aoarg filename1 filename2
+cmd -a -o arg filename1 filename2
+cmd -oarg -a filename1 filename2
+cmd -a -oarg -- filename1 filename2\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+CSIenabled（已启用）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBIntro\fR(1)、\fBgetopts\fR(1)、\fBgetoptcvt\fR(1)、\fBsh\fR(1)、\fBshell_builtins\fR(1)、\fBgetopt\fR(3C)、\fBattributes\fR(5) 
+.SH 诊断
+.sp
+.LP
+如果 \fBgetopt\fR 遇到不包括在 \fIoptstring\fR 中的选项字母，将会在标准错误上输出一条错误消息。
+.SH 附注
+.sp
+.LP
+在下一个主要发行版中将不支持 \fBgetopt\fR。对于本发行版，提供了一个转换工具，即 \fBgetoptcvt\fR。有关更多信息，请参见 \fBgetopts\fR(1) 和 \fBgetoptcvt\fR(1)。
+.sp
+.LP
+重新扫描选项时，请将 \fBoptind\fR 重置为 \fB1\fR。
+.sp
+.LP
+\fBgetopt\fR 不支持命令语法标准的规则 8 的部分内容（请参见 \fBIntro\fR(1)） - 允许一个选项之后的选项参数组以空格分隔并以引号括起来。例如，
+.sp
+.in +2
+.nf
+\fBcmd -a -b -o "xxx z yy" filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+不能正确处理。要更正此缺陷，应使用 \fBgetopts\fR 命令，而不是 \fBgetopt\fR。
+.sp
+.LP
+如果接受选项参数的选项后面跟有一个值，该值与 \fIoptstring\fR 中列出的其中一个选项相同（请参阅前面的"示例"部分）但使用以下命令行： 
+.sp
+.in +2
+.nf
+\fBcmd -o -a filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+则 \fBgetopt\fR 会始终将其视为 \fB-o\fR 的选项参数；但不能将 \fB-a\fR 识别为选项。对于这种情况，此示例的中 \fBfor\fR 循环将跳过 \fIfilename\fR 参数。

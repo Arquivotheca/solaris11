@@ -1,0 +1,109 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH llc2_loop 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+llc2_loop \- loopback diagnostics to test the driver, adapter and network.
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/llc2/llc2_loop2\fR [\fB-v\fR] \fIppa\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/llc2/llc2_loop3\fR \fIppa\fR \fIsap\fR \fIframes\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/llc2/llc2_loop3\fR \fIppa\fR \fItype\fR \fIframes\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/llc2/llc2_loop4\fR [\fB-v\fR] \fIppa\fR
+.fi
+
+.SH DESCRIPTION
+.SS "Loop 2"
+.sp
+.LP
+The \fBloop2\fR test sends a NULL XID frame to the broadcast (all 1's) destination MAC address. The source \fBSAP\fR (Service Access Point) value used is 0x04 (SNA's \fBSAP\fR).  Therefore, if SNA is running on the system, the \fBloop2\fR test will fail. The destination \fBSAP\fR value is the  NULL \fBSAP\fR (0x00). This test finds out who is listening and can receive frames sent out from a node. The verbose (\fB-v\fR) option displays the \fBMAC\fR address of responding nodes. All possible responders may not be displayed, since the \fBloop2\fR test only waits for responses for 2 seconds, but during this time 50-200 nodes may be displayed. The most likely error is:
+.sp
+.in +2
+.nf
+	Unexpected DLPI primitive \fIx\fR, expected \fIy\fR.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+where \fIx\fR = 5 and \fIy\fR = 6. From  \fB/usr/include/sys/dlpi.h\fR, the expected return value from one of the DLPI primitives is 6 (\fBDL_OK_ACK\fR), but instead a 5 (\fBDL_ERROR_ACK\fR) was received. This can occur for two reasons:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBloop2\fR command was issued to a non-existent PPA (Physical Point of Attachment).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBSAP\fR (0x04) is already in use (for example, the SNA subsystem is up).
+.RE
+.SS "Loop 3"
+.sp
+.LP
+The \fBloop3\fR test sends 1,495 byte Unnumbered Information (UI) frames to the NULL (all 0's) destination \fBMAC\fR address. This should be used along with data capture either on the local node or another node on the same \fBLAN\fR to verify the transmission of data. The \fIppa\fR argument specifies the adapter on which to run the test. The  \fIppa\fR is the relative physical position of the adapter and may  be ascertained by viewing the adapter configuration (see \fBllc2_config\fR(1)). For Token Ring or Ethernet, specify an even \fIsap\fR value from 2 through 254, or, for Ethernet only, any \fItype\fR value from 1519 (0x05ef) through 65535 (0xffff). It is advised to pick a value that is easily recognized when the data capture output is viewed. \fIframes\fR is the decimal number of 1,495 bytes packets to transmit. The test will only display a message if a failure occurs.
+.SS "Loop 4"
+.sp
+.LP
+The  \fBloop4\fR test sends a TEST frame (no information field) to the broadcast (all 1's) destination \fBMAC\fR address. The source \fBSAP\fR value used is 0x04 (SNA's \fBSAP\fR). Therefore, if SNA is running on the system, the  \fBloop4\fR test will fail. The destination \fBSAP\fR value is the NULL \fBSAP\fR (0x00).  This test finds out who is listening and can receive frames sent out from a node. The verbose (\fB-v\fR) option displays the \fBMAC\fR address of responding nodes. All possible responders may not be displayed since the \fBloop4\fR test only waits for responses for 2 seconds, but during this time 50-200 nodes may be displayed. The  \fBloop4\fR test displays information similar to the following example if other nodes are listening and respond (verbose mode):
+.sp
+.in +2
+.nf
+-Attaching
+    -Binding
+    -Sending TEST
+    -Responders
+       1-0000c0c12449
+       2-08000e142990
+       3-08000e142a51
+       4-0000c0450044
+       5-0000c0199e46
+    -Unbinding
+-Detaching
+5 nodes responding
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The errors displayed are the same as for \fBloop2\fR. 
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/network/llc2
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBllc2_config\fR(1), \fBllc2\fR(4), \fBattributes\fR(5), \fBllc2\fR(7D)
+.SH NOTES
+.sp
+.LP
+For information about how to start the service, see \fBllc2\fR(7D)

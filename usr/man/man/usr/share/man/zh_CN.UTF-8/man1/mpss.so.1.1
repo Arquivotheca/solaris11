@@ -1,0 +1,218 @@
+'\" te
+.\"  版权所有 (c) 2002，Oracle 和/或其附属公司。保留所有权利。
+.TH mpss.so.1 1 "2002 年 2 月 20 日" "SunOS 5.11" "用户命令"
+.SH 名称
+mpss.so.1 \- 用于设置首选页面大小的共享对象
+.SH 用法概要
+.LP
+.nf
+\fBmpss.so.1\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBmpss.so.1\fR 是一个共享对象，可以通过它来选择性地为已启动的进程及其后代配置首选栈和/或堆页面大小。要启用 \fBmpss.so.1\fR，需要在环境中提供以下字符串（请参见 \fBld.so.1\fR(1)）以及一个或多个 \fBMPSS\fR（Multiple Page Size Support，多页面大小支持）环境变量：
+.sp
+.in +2
+.nf
+\fBLD_PRELOAD=$LD_PRELOAD:mpss.so.1\fR
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+在预装入后，\fBmpss.so.1\fR 共享对象会读取以下环境变量，以确定任何首选页面大小要求以及这些页面大小可能特定于的任何进程。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMPSSHEAP\fR=\fIsize\fR \fR
+.ad
+.br
+.na
+\fB\fBMPSSSTACK\fR=\fIsize\fR\fR
+.ad
+.RS 27n
+.rt  
+\fBMPSSHEAP\fR 和 \fBMPSSSTACK\fR 分别指定了堆和栈的首选页面大小。指定的页面大小将应用于所创建的所有进程。
+.sp
+\fIsize\fR 必须是一个受支持的页面大小（请参见 \fBpagesize\fR(1)）或 \fB0\fR，当为 0 时，系统将选择合适的页面大小（请参见 \fBmemcntl\fR(2)）。
+.sp
+\fIsize\fR 可使用 \fBK\fR、\fBM\fR、\fBG\fR 或 \fBT\fR 加以限定，以分别指定千字节、兆字节、千兆字节或兆兆字节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMPSSCFGFILE\fR=\fIconfig-file\fR\fR
+.ad
+.RS 27n
+.rt  
+\fIconfig-file\fR 是一个文本文件，其中包含一个或多个 \fBmpss\fR 配置条目，配置条目的格式如下：
+.sp
+.in +2
+.nf
+\fIexec-name\fR \fIexec-args\fR:\fIheap-size\fR:\fIstack-size\fR
+.fi
+.in -2
+.sp
+
+\fIexec-name\fR 指定应用程序或可执行文件的名称。相应的首选页面大小是为与在文件中找到的第一个 \fIexec-name\fR 匹配的新创建进程（请参见 \fBgetexecname\fR(3C)）设置的。
+.sp
+\fIexec-name\fR 可以是完整的路径名、根基名称或模式字符串。有关模式匹配的讨论，请参见 \fBsh\fR(1) 中的"\fB生成文件名\fR"。
+.sp
+\fIexec-args\fR 是与参数相匹配的选择性指定模式字符串。只有未指定 \fIexec-args\fR 时或者 exec-args 出现在 \fIexec-name\fR 的参数内时，才会设置首选页面大小。
+.sp
+如果未指定 \fIheap-size\fR 和/或 \fIstack-size\fR，则不会设置相应的首选页面大小。
+.sp
+\fBMPSSCFGFILE\fR 优先于 \fBMPSSHEAP\fR 和 \fBMPSSSTACK\fR。未设置 \fBMPSSCFGFILE\fR 时，将从文件 \fB/etc/mpss.conf\fR（若存在该文件）中获取首选页面大小设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMPSSERRFILE\fR=\fIpathname\fR\fR
+.ad
+.RS 27n
+.rt  
+缺省情况下，使用级别 \fBLOG_ERR\fR 和工具 \fBLOG_USER\fR 通过\fBsyslog\fR(3C) 记录错误消息。如果 \fBMPSSERRFILE\fR 包含有效的 \fIpathname\fR（例如 \fB/dev/stderr\fR），则错误消息将记录到该文件中。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 MPSSCFGFILE 配置首选页面大小
+.sp
+.LP
+以下 Bourne shell 命令（请参见 \fBsh\fR(1)）使用 \fBMPSSCFGFILE\fR 环境变量为其 exec 名称以 \fBfoo\fR 开头的一组选定应用程序配置首选页面大小。假设之前已使用某个文本编辑器（如\fBvi\fR(1)）创建了 \fBMPSS\fR 配置文件 \fBmpsscfg\fR。\fBcat\fR(1) 命令仅转储内容。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:mpss.so.1\fR
+example$ \fBMPSSCFGFILE=mpsscfg\fR
+example$ \fBexport LD_PRELOAD MPSSCFGFILE\fR
+example$ \fBcat $MPSSCFGFILE\fR
+foo*:512K:64K
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在应用程序启动后，可使用 \fBpmap\fR（请参见 \fBproc\fR(1)）来查看已配置的实际页面大小。
+
+.sp
+.in +2
+.nf
+example$ \fBfoobar &\fR
+example$ \fBpmap -s `pgrep foobar`\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果没有配置所需的页面大小（显示在 \fBpmap\fR 输出中），可能是因为 \fBMPSS\fR 配置文件或环境变量存在错误。请检查错误日志（缺省为：\fB/var/adm/messages\fR）中的错误。
+
+.sp
+.LP
+如果未发现任何错误，则可能归因于资源限制或对齐限制。请参见"注意"部分。
+
+.LP
+\fB示例 2 \fR使用 MPSSHEAP 和 MPSSSTACK 配置首选页面大小
+.sp
+.LP
+以下 Bourne shell 命令使用 \fBMPSSHEAP\fR 和 \fBMPSSSTACK\fR 环境变量为所有应用程序配置 \fB512K\fR 的堆首选页面大小和 \fB64K\fR 的栈首选页面大小。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:mpss.so.1\fR
+example$ \fBMPSSHEAP=512K\fR
+example$ \fBMPSSSTACK=64K\fR
+example$ \fBexport LD_PRELOAD MPSSHEAP MPSSSTACK\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR优先级规则（从"示例 2"继续）
+.sp
+.LP
+\fBMPSSCFGFILE\fR 中的首选页面大小配置优先于 \fBMPSSHEAP\fR 和 \fBMPSSTACK\fR。将以下命令附加到\fB示例 2\fR 的命令后，这表示将在配置文件中为所有应用程序配置 \fB512K\fR 的堆首选页面大小和 \fB64K\fR 的栈首选页面大小，除了那些应用程序、\fBls\fR 命令以及所有以 \fBora1\fR 作为参数并以 \fBora\fR 开头的应用程序。
+
+.sp
+.in +2
+.nf
+example$ \fBMPSSCFGFILE=mpsscfg2\fR
+example$ \fBexport MPSSCFGFILE\fR
+example$ \fBcat $MPSSCFGFILE\fR
+ls::
+ora* ora1:4m:4m
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ld/map.bssalign\fR \fR
+.ad
+.RS 29n
+.rt  
+用于对齐 bss 的模板链接编辑器 \fBmapfile\fR（请参见"注意"部分）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mpss.conf\fR\fR
+.ad
+.RS 29n
+.rt  
+配置文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/extended-system-utilities
+_
+SUNWesxu（64 位）
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcat\fR(1)、\fBld\fR(1)、\fBld.so.1\fR(1)、\fBpagesize\fR(1)、\fBppgsz\fR(1)、\fBproc\fR(1)、\fBsh\fR(1)、\fBvi\fR(1)、\fBexec\fR(2)、\fBfork\fR(2)、\fBmemcntl\fR(2)、\fBgetexecname\fR(3C)、\fBgetpagesize\fR(3C)、\fBsyslog\fR(3C)、\fBproc\fR(4)、\fBattributes\fR(5) 
+.SH 附注
+.sp
+.LP
+堆和栈首选页面大小是继承的。子进程的首选页面大小与其父进程的相同。在执行 \fBexec\fR(2) 时，除非已通过 \fBmpss\fR 共享对象配置了首选页面大小，否则首选页面大小将重新设置为缺省的系统页面大小。
+.sp
+.LP
+也可使用 \fBppgsz\fR(1)（一个 proc 工具）来设置首选栈和/或堆页面大小。它不能基于名称匹配选择性地为后代配置页面大小。
+.sp
+.LP
+另请参见 \fBppgsz\fR(1) 中的"注意"部分。

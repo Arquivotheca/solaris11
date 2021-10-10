@@ -1,0 +1,197 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH ippool 4 "28 Jul 2005" "SunOS 5.11" "File Formats"
+.SH NAME
+ippool, ippool.conf \- IP pool file format
+.SH SYNOPSIS
+.LP
+.nf
+\fBippool.conf\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The format for files accepted by \fBippool\fR(1M) is described by the following grammar:
+.sp
+.in +2
+.nf
+line ::= table | groupmap .
+table ::= "table" role tabletype .
+groupmap ::= "group-map" inout role number ipfgroup
+tabletype ::= ipftree | ipfhash .
+
+role ::= "role" "=" "ipf" .
+inout ::= "in" | "out" .
+
+ipftree ::= "type" "=" "tree" number "{" addrlist "}" .
+ipfhash ::= "type" "=" "hash" number hashopts "{" hashlist "}" .
+
+ipfgroup ::= setgroup hashopts "{" grouplist "}" |
+    hashopts "{" setgrouplist "}" .
+setgroup ::= "group" "=" groupname .
+
+hashopts ::= size [ seed ] | seed .
+
+size ::= "size" "=" number .
+seed ::= "seed" "=" number .
+
+addrlist ::= range [ "," addrlist ] .
+grouplist ::= groupentry [ ";" grouplist ] | groupentry ";" |
+              addrmask ";" | addrmask ";" [ grouplist ] .
+
+setgrouplist ::= groupentry ";" [ setgrouplist ] .
+
+groupentry ::= addrmask "," setgroup .
+
+range ::= addrmask | "!" addrmask .
+
+hashlist ::= hashentry ";" [ hashlist ] .
+hashentry ::= addrmask .
+
+addrmask ::= ipaddr | ipaddr "/" mask .
+
+mask ::= number | ipaddr .
+
+groupname ::= number | name .
+
+number ::= digit { digit } .
+
+ipaddr  = host-num "." host-num "." host-num "." host-num | ipv6addr .
+
+host-num = digit [ digit [ digit ] ] .
+
+digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" .
+
+name ::= letter { letter | digit } .
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The IP pool configuration file is used for defining a single object that contains a reference to multiple IP address/netmask pairs. A pool can consist of a mixture of netmask sizes, from 0 to 32.
+.sp
+.LP
+In the current release, only IPv4 addressing is supported in IP pools.
+.sp
+.LP
+The IP pool configuration file provides for defining two different mechanisms for improving speed in matching IP addresses with rules. The first, \fBtable\fR, defines a lookup table to provide a single reference in a filter rule to multiple targets. The second mechanism, \fBgroup-map\fR, provides a mechanism to target multiple groups from a single filter line.
+.sp
+.LP
+The \fBgroup-map\fR command can be used only with filter rules that use the \fBcall\fR command to invoke either \fBfr_srcgrpmap\fR or \fBfr_dstgrpmap\fR, to use the source or destination address, respectively, for determining which filter group to jump to next for continuation of filter packet processing.
+.SS "Pool Types"
+.sp
+.LP
+Two storage formats are provided: hash tables and tree structure. The hash table is intended for use with objects that all contain the same netmask or a few, different sized-netmasks of non-overlapping address space. The tree is designed for supporting exceptions to a covering mask, in addition to normal searching as you would do with a table. It is not possible to use the tree data storage type with \fBgroup-map\fR configuration entries.
+.SS "Pool Roles"
+.sp
+.LP
+When a pool is defined in the configuration file, it must have an associated role. At present the only supported role is \fBipf\fR. Future development might see further expansion of the use of roles by other sections of IPFilter code.
+.SH EXAMPLES
+.sp
+.LP
+The following examples show how the pool configuration file is used with the \fBipf\fR configuration file to enhance the succinctness of the latter file's entries.
+.LP
+\fBExample 1 \fRReferencing Specific Pool
+.sp
+.LP
+The following example shows how a filter rule makes reference to a specific pool for matching of the source address.
+
+.sp
+.in +2
+.nf
+pass in from pool/100 to any
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following pool configuration matches IP addresses 1.1.1.1 and \fBany\fR in 2.2.0.0/16, except for those in 2.2.2.0/24.
+
+.sp
+.in +2
+.nf
+table role = ipf type = tree number = 100
+        { 1.1.1.1/32, 2.2.0.0/16, !2.2.2.0/24 };
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fR\fBipf\fR Configuration Entry
+.sp
+.LP
+The following \fBipf.conf\fR excerpt uses the \fBfr_srcgrpmap/fr_dstgrpmap\fR lookups to use the \fBgroup-map\fR facility to look up the next group to use for filter processing, providing the call filter rule is matched.
+
+.sp
+.in +2
+.nf
+call now fr_srcgrpmap/1010 in all
+call now fr_dstgrpmap/2010 out all
+pass in all group 1020
+block in all group 1030
+pass out all group 2020
+block out all group 2040
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+An \fBippool\fR configuration to work with the preceding \fBipf.conf\fR segment might look like the following:
+
+.sp
+.in +2
+.nf
+group-map in role = ipf number = 1010
+     { 1.1.1.1/32, group = 1020; 3.3.0.0/16, group = 1030; };
+group-map out role = ipf number = 2010 group = 2020
+     { 2.2.2.2/32; 4.4.0.0/16; 5.0.0.0/8, group = 2040; };
+.fi
+.in -2
+.sp
+
+.SH FILES
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/dev/ippool\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/ipf/ippool.conf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/hosts\fR
+.RE
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitynetwork/ipfilter
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBipf\fR(1M), \fBipnat\fR(1M), \fBippool\fR(1M), \fBipf\fR(4), \fBattributes\fR(5), \fBhosts\fR(4)

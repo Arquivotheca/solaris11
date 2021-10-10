@@ -1,0 +1,1007 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH raidctl 1M "2009 年 2 月 5 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+raidctl \- RAID ハードウェアユーティリティー
+.SH 形式
+.LP
+.nf
+\fBraidctl\fR \fB-C\fR \fI"disks"\fR [\fB-r\fR \fIraid_level\fR] [\fB-z\fR \fIcapacity\fR] [\fB-s\fR \fIstripe_size\fR] [\fB-f\fR]
+     controller
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-d\fR [\fB-f\fR] \fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-F\fR \fIfilename\fR [\fB-f\fR] \fIcontroller\fR\&.\|.\|.
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-a\fR {\fBset\fR | \fBunset\fR} \fB-g\fR \fIdisk\fR {\fBvolume\fR | \fBcontroller\fR}
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-p\fR \fI"param=value"\fR [\fB-f\fR] \fIvolume\fR 
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-c\fR [\fB-f\fR] [\fB-r\fR \fIraid_level\fR] \fIdisk1\fR \fIdisk2\fR [\fIdisk3\fR...]
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-l\fR -g \fIdisk controller\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-l\fR \fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-l\fR \fIcontroller\fR\&.\|.\|.
+.fi
+
+.LP
+.nf
+\fBraidctl\fR [\fB-l\fR]
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-S\fR [\fBvolume\fR | \fBcontroller\fR]
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-S\fR -g \fIdisk controller\fR
+.fi
+
+.LP
+.nf
+\fBraidctl\fR \fB-h\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBraidctl\fR ユーティリティーはハードウェア RAID 構成ツールであり、RAID ボリュームを作成、削除、または表示する CLI (コマンド行インタフェース) をエンドユーザーに提供することで、さまざまな RAID コントローラをサポートしています。このユーティリティーはまた、ボリュームのプロパティーの設定、ボリュームやコントローラへのホットスペア (HSP) ディスクの割り当て、および RAID コントローラのファームウェア/fcode/BIOS の更新にも使用できます。
+.sp
+.LP
+\fBraidctl\fR ユーティリティーには、基礎となるファイルシステムのアクセス権で制御される特権が必要です。特権を持つユーザーだけが RAID システム構成を操作できます。特権を持たないユーザーが \fBraidctl\fR を実行しようとすると、終了ステータス 1 が返されてコマンドは失敗します。
+.sp
+.LP
+\fBraidctl\fR ユーティリティーは、このマニュアルページで説明しているように、完全な機能を備えた RAID コントローラを管理するための広範にわたるコマンド行オプションのセットを定義しています。ただし、特定のオプションのサポートは次の 2 つの要素に依存しています。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ソフトウェアドライバの存在
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+RAID デバイスのファームウェアレベル
+.RE
+.sp
+.LP
+ソフトウェアドライバへの依存は、\fBraidctl\fR の設計によるものです。このユーティリティーは、各種ドライバ向けのプラグインモジュールの挿入を可能にする共通ライブラリに基づいて構築されます。現時点では、Solaris オペレーティングシステムには \fBmpt\fR ドライバ向けのプラグインが付属しています。このプラグインは、すべての \fBraidctl\fR オプションをサポートしているわけではありません。特定のストレージデバイスでは、オプションはそのデバイスのファームウェアレベルによってさらに制限される場合があります。
+.sp
+.LP
+さまざまな \fBraidctl\fR オプションのサポートレベルを \fBraidctl\fR によって決めることはできません。ユーザーは、RAID コントローラやハードウェアプラットフォームのドキュメントに頼る必要があります。
+.sp
+.LP
+現時点では、\fBraidctl\fR は次の RAID コントローラに対してある程度のサポートを提供しています。\fB\fR
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1020 SCSI HBA
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1030 SCSI HBA
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1064 SAS HBA
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI1068 SAS HBA
+.RE
+.sp
+.LP
+X86-32/64 および SPARC プラットフォームでは、上記のすべての HBA は \fBmpt\fR ドライバによって維持されます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fI"disks"\fR [\fB-r\fR \fIraid_level\fR] [\fB-z\fR \fIcapacity\fR] [\fB-s\fR \fIstripe_size\fR] [\fB-f\fR] controller\fR
+.ad
+.sp .6
+.RS 4n
+指定したディスクを使用して RAID ボリュームを作成します。
+.sp
+このオプションを使用して RAID ボリュームを作成すると、新しく作成されたボリュームの識別情報が自動的に生成され、raidctl はそれをユーザーに報告します。
+.sp
+このオプションによって指定される引数には、作成されるボリュームの構成に使われる要素が含まれます。要素にはディスクまたはサブボリュームのいずれかを設定できます。ディスクはスペースで区切り、サブボリュームはディスクのセットを丸括弧でグループ化します。すべてのディスクは「\fBC.ID.L\fR」の形式にしてください (たとえば「\fB0.1.2\fR」は、チャネル 0 の物理ディスクであり、ターゲット ID は 1、論理ユニット番号は 2 であることを表す)。この引数は、(\fB-r\fR オプションを省略した場合でも) -r オプションで指定した RAID レベルと一致している必要があります。つまり、指定できる引数は次のように限定されます。
+.sp
+.ne 2
+.mk
+.na
+\fBRAID 0 の場合\fR
+.ad
+.sp .6
+.RS 4n
+少なくとも 2 つのディスク
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID 1 の場合\fR
+.ad
+.sp .6
+.RS 4n
+2 つのディスクのみ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID 1E の場合\fR
+.ad
+.sp .6
+.RS 4n
+少なくとも 3 つのディスク
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID 5 の場合\fR
+.ad
+.sp .6
+.RS 4n
+少なくとも 3 つのディスク
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID 10 の場合\fR
+.ad
+.sp .6
+.RS 4n
+少なくとも 2 つのサブボリューム。各サブボリュームは 2 つのディスクで構成されている必要があります
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID 50 の場合\fR
+.ad
+.sp .6
+.RS 4n
+少なくとも 2 つのサブボリューム。各サブボリュームは 3 つ以上のディスクで構成されている必要があり、各サブボリューム内のディスク容量は同じであるべきです
+.RE
+
+たとえば、「0.0.0 0.1.0」の形式は、指定された 2 つのディスクが RAID ボリューム (RAID 0 または RAID 1 ボリュームのいずれか) を構成することを意味します。「(0.0.0 0.1.0)(0.2.0 0.3.0)」は、最初の 2 つのディスクと最後の 2 つのディスクが 2 つのサブボリュームを構成し、これら 2 つのサブボリュームが RAID 10 ボリュームを構成することを意味します。その他の例については、「使用例」の節を参照してください。\fB\fR
+.sp
+\fB-r\fR オプションは、作成されるボリュームの RAID レベルを指定します。指定できるレベルは 0、1、1E、5、10、50 です。このオプションを省略すると、\fBraidctl\fR はデフォルトで RAID 1 ボリュームを作成します。
+.sp
+\fB-z\fR オプションは、作成されるボリュームの容量を指定します。単位として、テラバイト、ギガバイト、またはメガバイト (たとえば 2t、10g、20m など) を使用できます。このオプションを省略すると、\fBraidctl\fR は指定されたディスクで作成できるボリュームの最大容量を計算し、この値を使用してボリュームを作成します。 
+.sp
+\fB-s\fR オプションは、作成されるボリュームのストライプサイズを指定します。指定できる値は 512、1k、2k、4k、8k、16k、32k、64k、または 128k です。このオプションを省略すると、\fBraidctl\fR はボリュームに適した値 (たとえば 64k) を選択します。
+.sp
+たとえば LSI1020、LSI1030、SAS1064、または SAS1068 HBA において、場合によっては RAID ボリュームの作成が特定のディスク上のデータ消失を引き起こすことがあり、\fBraidctl\fR はユーザーに対してボリューム作成の確認を要求します。ユーザーへの確認要求なしでボリューム作成を強制させるには、\fB-f\fR オプションを使用します。
+.sp
+controller 引数は、指定したディスクがどの RAID コントローラに属するかを特定するために使用します。\fB-l\fR オプションを使用すれば、コントローラの ID 番号を一覧表示できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR [\fB-f\fR] \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+volume として指定された RAID ボリュームを削除します。ボリュームは標準的な形式 (たとえば \fBc0t0d0\fR) で指定します。
+.sp
+ボリュームを削除すると、すべてのデータが失われます。このため、\fB-f\fR オプションを指定しないかぎり、\fBraidctl\fR はボリュームを削除する前にユーザーに対して確認を要求します。 
+.sp
+LSI1020、LSI1030、SAS1064、または SAS1068 HBA から RAID 1 ボリュームを削除すると、主ディスクと二次ディスクが「分離」します。ボリュームが \fBSYNCING\fR 状態にあった場合、一次側にはデータが含まれていますが、二次側には含まれていません。ボリュームの状態が \fBOPTIMAL\fR であった場合、両方のディスクにデータの完全なイメージが含まれています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIfilename\fR [\fB-f\fR] \fIcontroller\fR\&.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+指定したコントローラで動作しているファームウェアを更新します。\fB-f\fR オプションを指定しないかぎり、\fBraidctl\fR ユーティリティーはユーザーに対してこのアクションの確認を要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR {\fBset\fR | \fBunset\fR} \fB-g\fR \fIdisk\fR {\fBvolume\fR | \fBcontroller\fR}\fR
+.ad
+.sp .6
+.RS 4n
+ボリュームを指定した場合、\fB-a\fR で指定した値によって、\fBraidctl\fR はディスクをボリューム専用のローカルホットスペアディスクとして設定するか、その設定を解除します。コントローラを指定した場合、\fBraidctl\fR はディスクをグローバルなホットスペアディスクとして設定するか、その設定を解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fI"param=value"\fR [\fB-f\fR] \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した RAID ボリュームのプロパティー値を変更します。このオプションは、キャッシュ書き込みポリシーの変更やボリュームのアクティブ化に使用できます。キャッシュ書き込みポリシーの変更時は、\fIparam\fR を文字列 \fBwp\fR (\fBSET_WR_POLICY\fR) にするようにしてください。\fIvalue\fR には \fBon\fR または \fBoff\fR を設定できます。ボリュームのアクティブ化に使用するときは、\fIparam\fR を \fBstate\fR にし、\fIvalue\fR を \fBactivate\fR にするようにしてください。
+.sp
+RAID ボリュームのプロパティーを変更すると RAID コントローラの内部動作に影響する可能性があるため、\fB-f\fR オプションを指定しないかぎり、\fBraidctl\fR は変更を適用する前にユーザーに対して確認を要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR [\fB-f\fR] [\fB-r\fR \fIraid_level\fR] \fIdisk1\fR \fIdisk2\fR [\fIdisk3\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+指定したディスクを使用してボリュームを作成します。これは、似た機能を持つ \fB-C\fR オプションの代替手段です。このオプションは互換性のために残されていますが、LSI1020、LSI1030、SAS1064、および SAS1068 HBA で RAID 0、RAID 1、または RAID 1E ボリュームを作成することしかできません。ほかの HBA では、ユーザーは \fB-C\fR オプションのみを使用できます。
+.sp
+\fB-r\fR オプションは、ターゲットボリュームの RAID レベルを指定するために使用できます。\fB-r\fR オプションを省略すると、\fBraidctl\fR は RAID 1 ボリュームを作成します。
+.sp
+ディスクは Solaris の標準的な形式 (たとえば c0t0d0) で指定する必要があります。
+.sp
+このオプションで RAID 1 ボリュームを作成すると、disk2 の内容が disk1 の内容に置き換わります。
+.sp
+ユーザーがこのオプションで RAID ボリュームを作成すると、RAID ボリュームは disk1 の識別情報を引き受けます。ほかのディスクは見えなくなり、RAID ボリュームは 1 つのディスクとして表示されます。 
+.sp
+このオプションによるボリュームの作成は、デフォルトで対話形式で進められます。ボリュームを作成するには、ユーザーはプロンプトに明示的に答える必要があります。ユーザーへの確認要求なしでボリューム作成を強制させるには、\fB-f\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR -g \fIdisk controller\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したコントローラの、指定したディスクに関する情報を表示します。出力には次の情報が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+ディスクを \fBC.ID.L\fR の形式で表示します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVendor\fR
+.ad
+.sp .6
+.RS 4n
+ベンダー ID の文字列を表示します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBProduct\fR
+.ad
+.sp .6
+.RS 4n
+製品 ID の文字列を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBCapacity\fR
+.ad
+.sp .6
+.RS 4n
+ディスクの合計容量を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStatus\fR
+.ad
+.sp .6
+.RS 4n
+ディスクの現在のステータスを表示します。ステータスは、「\fBGOOD\fR」(正常動作中)、「\fBFAILED\fR」(機能していない)、または「\fBMISSING\fR」(ディスクが存在しない) のいずれかになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBHSP\fR
+.ad
+.sp .6
+.RS 4n
+ディスクがグローバルホットスペアディスク、ローカルホットスペアディスク、または通常のものとして設定されているかを示します。ローカルホットスペアディスクの場合、このディスクが割り当てられているすべてのボリュームが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBGUID\fR
+.ad
+.sp .6
+.RS 4n
+指定されたディスクの GUID 文字列。これは追加のデータであり、場合によっては利用できないことがあります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したボリュームに関する情報を表示します。出力には次の情報が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fBVolume\fR
+.ad
+.sp .6
+.RS 4n
+ボリュームを標準的な形式で表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSub\fR
+.ad
+.sp .6
+.RS 4n
+指定したボリュームが RAID 10 または RAID 50 ボリュームの場合、サブボリュームを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+指定したボリュームを構成するディスクをすべて表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStripe Size\fR
+.ad
+.sp .6
+.RS 4n
+ボリュームのストライプサイズを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStatus\fR
+.ad
+.sp .6
+.RS 4n
+指定したボリューム、または指定したボリュームを構成するサブボリュームやディスクのステータスを表示します。アクティブでないボリュームの場合、ステータスは \fBINACTIVE\fR になるはずです。それ以外の場合、ステータスは \fBOPTIMAL\fR (正常動作中)、\fBDEGRADED\fR (機能制限付きで動作中)、\fBFAILED\fR (機能していない)、または \fBSYNC\fR (ディスクが同期中) のいずれかになります。ディスクの場合、ステータスは \fBGOOD\fR、\fBFAILED\fR、または \fBMISSING\fR のいずれかになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBCache\fR
+.ad
+.sp .6
+.RS 4n
+キャッシュの入出力書き込み動作が有効になっているかどうかを示します。\fB\fRキャッシュは「\fBON\fR」または「\fBOFF\fR」のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRAID level\fR
+.ad
+.sp .6
+.RS 4n
+RAID レベルを表示します。RAID レベルは 0、1、1E、5、10、または 50 のいずれかです。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIcontroller ...\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したコントローラに関する情報を表示します。出力には次の情報が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fBController\fR
+.ad
+.sp .6
+.RS 4n
+RAID コントローラの ID 番号を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBType\fR
+.ad
+.sp .6
+.RS 4n
+RAID コントローラの製品タイプを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfw_version\fR
+.ad
+.sp .6
+.RS 4n
+コントローラのファームウェアのバージョンを表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-l\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBraidctl\fR ユーティリティーが操作できる、RAID に関連するすべてのオブジェクトを一覧表示します。これには、使用可能なすべての RAID コントローラ、RAID ボリューム、および物理ディスクが含まれます。\fB-l\fR オプションは省略できます。 
+.sp
+出力には次の情報が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fBController\fR
+.ad
+.sp .6
+.RS 4n
+RAID コントローラの ID 番号を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVolume\fR
+.ad
+.sp .6
+.RS 4n
+論理 RAID ボリューム名を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+RAID ディスクを \fBC.ID.L\fR の形式で表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR [\fBvolume\fR | \fBcontroller\fR]\fR
+.ad
+.sp .6
+.RS 4n
+使用可能なすべての RAID デバイス、RAID コントローラ、ボリューム、およびディスクを含む、RAID 構成情報のスナップショットを取得します。
+.sp
+出力の各行には、RAID デバイスとその関連情報がスペースで区切られて表示されます。すべてのボリュームとディスクは、最後に指定したコントローラに属します。
+.sp
+出力には次の情報が一覧表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fBController\fR
+.ad
+.sp .6
+.RS 4n
+コントローラの ID 番号と、コントローラのタイプを表す文字列 (二重引用符に囲まれている) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBVolume\fR
+.ad
+.sp .6
+.RS 4n
+RAID ボリューム名、コンポーネントのディスクの数、コンポーネントのディスクの \fBC.ID.L\fR 形式、RAID レベル、およびステータスを表示します。ステータスは「\fBOPTIMAL\fR」、「\fBDEGRADED\fR」、「\fBFAILED\fR」、または「\fBSYNCING\fR」のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisk\fR
+.ad
+.sp .6
+.RS 4n
+ディスクの \fBC.ID.L\fR 形式とステータスを表示します。ステータスは「\fBGOOD\fR」、「\fBFAILED\fR」、または「\fBHSP\fR」(ディスクが予備用ディスクとして設定されている) のいずれかです。 
+.RE
+
+ボリュームまたはコントローラを指定すると、指定したボリュームまたはコントローラの情報のスナップショットしか取得されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR -g \fIdisk controller\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したディスクの情報のスナップショットを取得します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用法についての文字列を出力します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRRAID 構成の作成
+.sp
+.LP
+次のコマンドは、コントローラ 0 に 10G の RAID 0 ボリュームを作成し、ストライプサイズは 64k に設定されます。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "0.0.0 0.2.0" -r 0 -z 10g -s 64k 0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 2 に RAID 1 ボリュームを作成します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "0.0.0 1.1.0" -r 1 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 2 に RAID 5 ボリュームを作成します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "0.0.0 0.1.0 0.2.0" -r 5 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 0 に RAID 10 ボリュームを作成します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "(0.0.0 0.1.0)(0.2.0 0.3.0)" -r 10 0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 0 に RAID 50 ボリュームを作成します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -C "(0.0.0 0.1.0 0.2.0)(0.3.0 0.4.0 0.5.0)" -r 50 0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRRAID 構成の表示
+.sp
+.LP
+次のコマンドは、使用可能なすべてのコントローラ、ボリューム、およびディスクを表示します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -l\fR
+
+Controller: 0
+Controller: 2
+         Volume:c2t0d0
+         Disk: 0.0.0
+         Disk: 0.1.0
+         Disk: 0.2.0
+         Disk: 0.3.0(HSP)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 2 に関する情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -l 2\fR
+
+Controller      Type            Fw_version
+--------------------------------------------------------------
+c2              LSI 1030        1.03.39.00
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、指定したボリュームに関する情報を表示します。
+.sp
+.in +2
+.nf
+# \fBraidctl -l c2t0d0\fR
+
+Volume                  Size    Stripe  Status  Cache   RAID
+         Sub                     Size                    Level
+                Disk
+--------------------------------------------------------------
+c2t0d0                 10240M  64K     OPTIMAL ON      RAID5
+                0.0.0   5120M           GOOD
+                0.1.0   5120M           GOOD
+                0.2.0   5120M           GOOD
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 0 のディスク 0.0.0 に関する情報を表示します。
+.sp
+.in +2
+.nf
+# \fBraidctl -l -g 0.0.0  0\fR
+
+Disk    Vendor  Product         Firmware Capacity        Status  HSP
+--------------------------------------------------------------------
+0.0.0   HITACHI H101473SCSUN72G SQ02     68.3G           GOOD    N/A
+GUID:2000000cca02536c
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRRAID 構成の削除
+.sp
+.LP
+次のコマンドは、ボリュームを削除します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -d c0t0d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRコントローラのフラッシュイメージの更新
+.sp
+.LP
+次のコマンドは、コントローラ 0 のフラッシュイメージを更新します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -F lsi_image.fw 0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRホットスペアディスクの設定または設定解除
+.sp
+.LP
+次のコマンドは、コントローラ 2 のディスク 0.3.0 をグローバルホットスペアディスクとして設定します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a set -g 0.3.0 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 2 のディスク 0.3.0 を、ボリューム c2t0d0 に対するローカルホットスペアディスクとして設定します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a set -g 0.3.0 c2t0d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 2 のディスク 0.3.0 を、グローバルホットスペアディスクから通常のディスクへ変換します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a unset -g 0.3.0 2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、ディスク 0.3.0 のボリューム c2t0d0 に対するローカルホットスペアディスクの設定を解除します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a unset -g 0.3.0 c2t0d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRボリュームプロパティーの設定
+.sp
+.LP
+次のコマンドは、ボリュームの書き込みポリシーを「\fBoff\fR」に設定します。 
+
+.sp
+.in +2
+.nf
+# \fBraidctl -a set -p "wp=off" c0t0d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR\fB-c\fR オプションによるボリュームの作成
+.sp
+.LP
+次のコマンドは、RAID 1 ボリュームを作成します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -c c0t0d0 c0t1d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、RAID 0 ボリュームを作成します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -c -r 0 c0t1d0 c0t2d0 c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRRAID 構成のスナップショットの取得
+.sp
+.LP
+次のコマンドは、すべての RAID デバイスのスナップショットを取得します。
+
+.sp
+.in +2
+.nf
+# \fB# raidctl -S\fR
+
+1 "LSI 1030"
+c1t1d0 2 0.2.0 0.3.0 1 DEGRADED
+0.2.0 GOOD
+0.3.0 FAILED
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、ボリューム c1t0d0 についてのスナップショットを取得します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -S c1t0d0\fR
+
+c1t0d0 2 0.0.0 0.1.0 1 OPTIMAL
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、コントローラ 1 のディスク 0.1.0 についてのスナップショットを取得します。
+
+.sp
+.in +2
+.nf
+# \fBraidctl -S -g 0.1.0 1\fR
+
+0.1.0 GOOD
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド行入力が不正、またはアクセスが拒否されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+要求操作は失敗しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性 確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBattributes\fR(5), \fBmpt\fR(7D)
+.sp
+.LP
+『\fI『System Administration Guide: Common System Management Tasks』\fR』
+.SH 警告
+.sp
+.LP
+Solaris マルチパス入出力機能 (MPxIO としても知られる) を使用する場合は、内部 \fBSAS\fR ディスク上に RAID ボリュームを作成しないでください。Solaris マルチパス環境で新しい RAID ボリュームを作成すると、既存デバイスの \fBGUID\fR と一致しない新しい \fBGUID\fR が root デバイスに与えられます。これによって \fB/etc/vfstab\fR 内の root デバイスのエントリが一致しなくなり、ブート障害を引き起こします。
+.SH 注意事項
+.sp
+.LP
+\fB-z\fR オプションは、\fBmpt\fR ドライバおよび LSI RAID コントローラを使用するシステムではサポートされません。

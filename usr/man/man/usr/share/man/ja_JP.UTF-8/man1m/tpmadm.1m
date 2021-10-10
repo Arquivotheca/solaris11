@@ -1,0 +1,254 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH tpmadm 1M "2011 年 6 月 8 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+tpmadm \- トラステッドプラットフォームモジュールの管理
+.SH 形式
+.LP
+.nf
+\fBtpmadm status\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm init\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm clear\fR [\fBowner\fR | \fBlock\fR]
+.fi
+
+.LP
+.nf
+\fBtpmadm auth\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm keyinfo\fR [\fIuuid\fR]
+.fi
+
+.LP
+.nf
+\fBtpmadm deletekey\fR \fIuuid\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm pcrextend\fR \fIpcr\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fBtpmadm pcrreset\fR \fIpcr\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+トラステッドプラットフォームモジュール (TPM) は、鍵の保護と格納、およびオペレーティングシステムの起動に使用されるソフトウェアの信頼性の測定に対応したハードウェアコンポーネントです。\fBtpmadm\fR ユーティリティーは、オペレーティングシステムやその他のプログラムから TPM を使用できるように、TPM の初期化や管理を行うために使用します。
+.sp
+.LP
+TPM サブシステムは、オペレーティングシステムやユーザーによって使用される鍵を、任意の数だけ格納して管理できます。各鍵は汎用一意識別子 (UUID) によって識別されます。
+.sp
+.LP
+TPM は一度に限られた数の鍵しか保持できませんが、サポートソフトウェアによって、必要に応じて鍵の読み込みや読み込み解除が自動的に行われます。TPM の外部に格納される鍵は必ずその親鍵によって暗号化つまり「ラップ」されるため、その鍵が TPM の外部で読み取り可能な形式で公開されることは決してありません。
+.sp
+.LP
+TPM を使用するには、プラットフォームの所有者が TPM を事前に初期化しておく必要があります。この処理では、特権操作の承認時に使用される、所有者のパスワードを設定します。
+.sp
+.LP
+TPM 所有者は従来のスーパーユーザーに似ていますが、両者の間には 2 つの重要な違いがあります。まず、プロセス特権は、TPM 機能にアクセスする際は重要ではありません。呼び出し元プロセスの特権レベルにかかわらず、すべての特権操作で所有者のパスワードを把握しておくことが必要になります。第 2 に、TPM 所有者は、TPM 鍵で保護されたデータのアクセス制御を無効にすることはできません。所有者は、TPM を初期化し直すことで結果的にデータを破棄することはできますが、ほかのユーザーが所有する TPM 鍵で暗号化されたデータにアクセスすることはできません。
+.SH サブコマンド
+.sp
+.LP
+後述の各サブコマンドは、次の形式で使用されます。
+.sp
+.in +2
+.nf
+# tpamadm \fI<subcommand>\fR \fI[operand]\fR
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+TPM に関するステータス情報を報告します。出力には、TPM の所有権が確立されたかどうか、PCR の現在の内容、および TPM リソース (通信セッションや読み込まれた鍵など) の使用状況に関する基本情報が含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinit\fR \fR
+.ad
+.sp .6
+.RS 4n
+TPM を初期化して使用可能な状態にします。その際、所有者の承認パスワードを設定することで TPM の所有権が取得されます。TPM の所有権を取得すると、この TPM によって作成されるすべての鍵の祖先となる新しいストレージルート鍵が作成されます。このコマンドの発行後に再度初期化を行うには、まず BIOS 操作を使用して TPM をリセットする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauth\fR\fR
+.ad
+.sp .6
+.RS 4n
+TPM の所有者の承認パスワードを変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fBlock\fR\fR
+.ad
+.sp .6
+.RS 4n
+失敗した認証試行の回数をクリアします。失敗した認証試行の回数が多くなると、その後の試行に対する TPM の応答速度が遅くなりますが、これは、総当たり検索で所有者のパスワードを発見しようとする行為の邪魔をするためです。このコマンドは、所有者の正しいパスワードを要求してから、失敗試行の回数をリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fBowner\fR\fR
+.ad
+.sp .6
+.RS 4n
+TPM を無効にし、TPM を所有されていない状態に戻します。この処理は、現在の TPM 所有者の正しいパスワードを要求してから、TPM に関連付けられたすべての鍵とデータを無効にします。TPM を再度使用するには、システムを再起動し、BIOS または ILOM ブート前環境から TPM を再度有効化し、\fBtpmadm init\fR コマンドを使用して TPM を再度初期化する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyinfo\fR [\fIuuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+TPM サブシステムに格納された鍵に関する情報を報告します。追加の引数が指定されなかった場合、このサブコマンドはすべての鍵の簡易一覧を生成します。特定の鍵の UUID が指定された場合は、その鍵の詳細情報が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeletekey\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された UUID の鍵を、TPM サブシステムの永続ストレージから削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcrextend\fR \fIpcr\fR [\fIfilename\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIfilename\fR の内容の SHA-1 ハッシュを作成し、そのハッシュ値を拡張対象データとして使用して、指定された PCR で PCR 拡張操作を実行します。ファイル名が指定されていない場合、データは標準入力から読み込まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcrreset\fR \fIpcr\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された PCR を初期状態 (すべてゼロ) にリセットします。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+要求された処理の完了後に、\fBtpmadm\fR は次のいずれかのステータス値を返して終了します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+失敗。要求された操作を完了できませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用方法のエラー。\fBtpmadm\fR コマンドの呼び出し時に無効な引数が指定されました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBprof_attr\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fBSUNWtss\fR パッケージで使用可能な \fBtcsd(8)\fR のマニュアルページも参照してください。
+.sp
+.LP
+TCG ソフトウェアスタック (TSS) 仕様: \fBhttps://www.trustedcomputinggroup.org/specs/TSS\fR (公開時点のアドレス)
+.SH 注意事項
+.sp
+.LP
+\fBtpmadm\fR は、\fBtcsd\fR サービス経由で TPM デバイスと通信します。\fBtpmadm\fR コマンドを使用する前に \fBtcsd\fR が動作している必要があります。\fBtcsd\fR が動作していない場合、\fBtpmadm\fR から次のエラーが生成されます。
+.sp
+.in +2
+.nf
+Connect context: Communication failure (0x3011)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+詳細は、\fBtcsd(8)\fR を参照してください。

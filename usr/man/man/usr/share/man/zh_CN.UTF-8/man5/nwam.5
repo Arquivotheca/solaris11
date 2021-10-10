@@ -1,0 +1,169 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH nwam 5 "2011 年 6 月 30 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+nwam \- 网络自动配置管理
+.SH 描述
+.sp
+.LP
+可以根据系统定义的缺省策略规则或用户定义的策略规则自动管理网络配置。此管理由 \fBnwamd\fR 守护进程执行。
+.sp
+.LP
+NWAM 工具由 \fBnetwork/physical:default\fR SMF 服务提供。如果 \fBnetcfg/active_ncp\fR 属性设置为 NWAM NCP 名称，则会启用 NWAM 配置管理。或者，如果 \fBnetcfg/active_ncp\fR 属性设置为 \fBDefaultFixed\fR，则会执行传统的网络配置。
+.SS "操作"
+.sp
+.LP
+在自动 NCP 中实施的缺省配置策略用于让所有以物理方式连接的以太网链路处于活动状态；如果未提供以太网链路，则使单个无线链路处于活动状态。DHCP 用于获取所有活动链路的 IP 地址。可以通过创建备用网络配置文件 (Network Configuration Profiles, NCP) 更改该缺省策略。nwam-manager GUI 工具或 \fBnwamd\fR(1M) 命令可用于创建和修改 NCP。
+.sp
+.LP
+如果使用的是早期版本的 NWAM 服务（这会创建 \fB/etc/nwam/llp\fR 配置文件），则在升级到当前版本的 NWAM 服务后会自动将该文件中的配置包含到用户 NCP 中。
+.sp
+.LP
+由 NWAM 工具提供的自动行为要求通过 NWAM 服务传送网络配置管理。当条件发生更改以致激活了新配置文件或者当 NWAM 服务重新启动时，对网络配置所做的任何手动更改都可能会丢失。如果需要进行持久性更改，则建议方法是创建外部网络修饰符 (ENM)，可根据需要通过 NWAM 服务将其激活和取消激活。
+.SS "服务属性"
+.sp
+.LP
+以下列表的格式为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIproperty_group/property_name\fR \fIproperty_type\fR \fIdefault_value\fR\fR
+.ad
+.sp .6
+.RS 4n
+说明
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/debug\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fBdaemon.debug\fR 启用调试日志。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/autoconf\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示在没有更好（更优）选择的情况下是否应自动连接打开的 WLAN。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/ncu_wait_time\fR count \fB60\fR\fR
+.ad
+.sp .6
+.RS 4n
+在尝试下一个可用 NCU 之前等待 NCU（或链路/接口 NCU 对，视需要而定）启动的秒数。初启活动不会被取消，并且最终可能会成功，此时会根据指定的配置条件激活更优的 NCU 并可能会禁用备用 NCU。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/condition_check_interval\fR count \fB120\fR\fR
+.ad
+.sp .6
+.RS 4n
+对有条件激活对象执行定期条件检查的间隔秒数。最小值为 30 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/scan_interval\fR count \fB120\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行定期无线扫描的间隔秒数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/scan_level\fR astring \fBweak\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个信号强度阈值；如果当前连接的 AP 低于此信号级别并以更高的信号强度提供了对等 AP（属于同一 ESSID），则将断开现有连接以便于连接到信号更强的 AP。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/strict_bssid\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，则必须同时匹配 ESSID 和 BSSID 才能连接到以前连接的 WLAN。如果为 false，则只需匹配 ESSID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetcfg/active_ncp\fR astring \fBAutomatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前活动的 NCP。此属性不应由用户设置；它由 NWAM 服务在内部使用以在多次重新启动之间保持持久性。更改当前活动 NCP 的正确用户界面是使用 \fBnwam-manager\fR GUI 或 \fBnetadm \fR 命令的 \fBenable\fR 子命令。
+.RE
+
+.sp
+.LP
+如果启用保留的 NCP 名称 \fBDefaultFixed\fR，将禁用 NWAM 自动配置管理，并启用传统的固定网络配置。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBnetcfgd\fR(1M)、\fBnwamd\fR(1M)、\fBsvadm\fR(1M)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+另请参见 JDS/GNOME 手册页集合中的 \fBnwam-manager(1M)\fR。
+.SH 附注
+.sp
+.LP
+联网服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/network/physical:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。

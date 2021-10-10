@@ -1,0 +1,360 @@
+'\" te
+.\" Copyright (c) 1996, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH acctcom 1 "2011 年 8 月 15 日" "SunOS 5.11" "用户命令"
+.SH 名称
+acctcom \-  搜索并输出进程记帐文件
+.SH 用法概要
+.LP
+.nf
+\fBacctcom\fR [\fB-abfhikmqrtv\fR] [\fB-C\fR \fIsec\fR] [\fB-e\fR \fItime\fR] [\fB-E\fR \fItime\fR] 
+     [\fB-g\fR \fIgroup\fR] [\fB-H\fR \fIfactor\fR] [\fB-I\fR \fIchars\fR] [\fB-l\fR \fIline\fR] 
+     [\fB-n\fR \fIpattern\fR] [\fB-o\fR \fIoutput-file\fR] [\fB-O\fR \fIsec\fR] [\fB-s\fR \fItime\fR] 
+     [\fB-S\fR \fItime\fR] [\fB-u\fR \fIuser\fR] [\fIfilename\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBacctcom\fR 实用程序读取 \fBacct.h\fR(3HEAD) 描述的格式的 \fIfilename\fR、标准输入或者 \fB/var/adm/pacct\fR，并将选定的记录写入到标准输出。每个记录代表一个进程的执行。输出中显示 \fBCOMMAND NAME\fR、\fBUSER\fR、\fBTTYNAME\fR、\fBSTART TIME\fR、\fBEND TIME\fR、\fBREAL (SEC)\fR、\fBCPU (SEC)\fR 以及 \fBMEAN SIZE (K)\fR，还可能会显示 \fBF\fR （\fBfork()\fR/\fBexec()\fR 标志：\fB1\fR 表示不带 \fBexec()\fR 的\fBfork()\fR）、\fBSTAT\fR （系统退出状态）、\fBHOG FACTOR\fR、\fBKCORE MIN\fR、\fBCPU FACTOR\fR、\fBCHARS TRNSFD\fR 以及 \fBBLOCKS\fR \fBREAD\fR（读取和写入的总块数）。
+.sp
+.LP
+如果命令是以超级用户特权执行的，则命令名称前会附加一个 '\fB#\fR'。如果某个进程没有与一个已知终端关联，则在 \fBTTYNAME\fR 字段中会输出 '\fB？\fR'。
+.sp
+.LP
+如果未指定 \fIfilename\fR 并且标准输入与某个终端或者 \fB/dev/null\fR 关联（就像在 shell 中使用 '\fB&\fR\&' 时一样），则将读取 \fB/var/adm/pacct\fR；否则，读取标准输入。
+.sp
+.LP
+如果指定了任何 \fIfilename\fR 参数，则会按照文件的各自顺序读取这些文件。每个文件通常是正向读取的，也就是说，按照进程完成时间的先后顺序读取。文件 \fB/var/adm/pacct\fR 通常是要检查的当前文件；一个较忙的系统可能需要若干个这样的文件，除当前文件外，这些文件均位于 \fB/var/adm/pacct\fIincr\fR\fR 中
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 18n
+.rt  
+显示有关选定进程的某些平均统计信息。这些统计信息将显示在输出记录之后。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 18n
+.rt  
+反向读取，先显示最后的命令。在读取标准输入时，此选项不起作用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 18n
+.rt  
+在输出中列出 \fBfork()\fR/\fBexec()\fR 标志列和系统退出状态列。此选项的数字输出是八进制的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 18n
+.rt  
+显示进程在执行过程中使用的总可用 \fBCPU\fR 时间的比率，而不是平均内存大小。该"扰乱因子"=(总 \fBCPU\fR 时间)/(已用时间)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 18n
+.rt  
+在输出中列出包含 \fBI/O\fR 计数的列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 18n
+.rt  
+显示总 kcore-minutes 而不是内存大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 18n
+.rt  
+显示平均核心大小（缺省值）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 18n
+.rt  
+不列出任何输出记录，只是像使用 \fB-a\fR 选项时一样列出平均统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 18n
+.rt  
+显示 \fBCPU\fR 因子 (用户时间/(系统时间+用户时间))。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 18n
+.rt  
+为系统和用户显示单独的 \fBCPU\fR 时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 18n
+.rt  
+从输出中排除列标题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIsec\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示总 \fBCPU\fR 时间 (系统时间 + 用户时间) 超过 \fIsec\fR 秒的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fItime\fR\fR
+.ad
+.RS 18n
+.rt  
+选择在 \fItime\fR 时间或其之前存在的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fItime\fR\fR
+.ad
+.RS 18n
+.rt  
+选择在 \fItime\fR 时间或其之前结束的进程。为 \fB-S\fR 和 \fB-E\fR 使用相同的 \fItime\fR 将显示在 \fItime\fR 时间存在的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgroup\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示属于 \fIgroup\fR 的进程。\fIgroup\fR 可由组 \fBID\fR 或组名指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fIfactor\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示超过 \fBfactor\fR 的进程，其中，factor 是上文中在介绍 \fB-h\fR 选项时解释的"扰乱因子"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIchars\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示传送的字符数大于 \fIchars\fR 指定的限定数的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIline\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示属于终端 \fB/dev/term/line\fR 的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIpattern\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示与 \fIpattern\fR 匹配的命令，其中，pattern 可以是一个正则表达式，除了 \fB+\fR 表示出现一次或多次，这与在 \fBregcmp\fR(3C) 中时一样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput-file\fR\fR
+.ad
+.RS 18n
+.rt  
+将选定的进程记录以输入数据格式复制到 \fIoutput-file\fR；禁止输出到标准输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR \fIsec\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示 \fBCPU\fR 系统时间超出 \fIsec\fR 秒的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fItime\fR\fR
+.ad
+.RS 18n
+.rt  
+显示在 \fItime\fR 时间或其之后存在的进程，该时间以 \fIhr\fR\|[\|:\fImin\fR\|[\|:\fIsec\fR\|]\|] 格式指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fItime\fR\fR
+.ad
+.RS 18n
+.rt  
+选择在 \fItime\fR 时间或其之后开始的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuser\fR\fR
+.ad
+.RS 18n
+.rt  
+只显示属于 \fIuser\fR 的进程。该用户可以通过用户 \fBID\fR、稍后会被转换为用户 \fBID\fR 的登录名、'\fB#\fR' （这指定仅显示以超级用户特权执行的那些进程）或者 '\fB？\fR' （这指定仅显示与未知用户 \fBID\fR 关联的那些进程）指定。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/group\fR\fR
+.ad
+.RS 22n
+.rt  
+系统组文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 22n
+.rt  
+系统口令文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/pacct\fIincr\fR\fR\fR
+.ad
+.RS 22n
+.rt  
+活动进程记帐文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/accounting/legacy-accounting
+_
+CSIEnabled（已启用）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBps\fR(1)、\fBacct\fR(1M)、\fBacctcms\fR(1M)、\fBacctcon\fR(1M)、\fBacctmerg\fR(1M)、\fBacctprc\fR(1M)、\fBacctsh\fR(1M)、\fBfwtmp\fR(1M)、\fBrunacct\fR(1M)、\fBsu\fR(1M)、\fBacct\fR(2)、\fBregcmp\fR(3C)、\fBacct.h\fR(3HEAD)、\fButmp\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Common Tasks》\fR
+.SH 附注
+.sp
+.LP
+\fBacctcom\fR 只报告已终止的进程；对于活动进程，请使用 \fBps\fR(1)。

@@ -1,0 +1,2280 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH zonecfg 1M "2011 年 7 月 1 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+zonecfg \- 设置区域配置
+.SH 用法概要
+.LP
+.nf
+\fBzonecfg\fR \fB-z\fR \fIzonename\fR
+.fi
+
+.LP
+.nf
+\fBzonecfg\fR \fB-z\fR \fIzonename\fR \fIsubcommand\fR
+.fi
+
+.LP
+.nf
+\fBzonecfg\fR \fB-z\fR \fIzonename\fR \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBzonecfg\fR help
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzonecfg\fR 实用程序可以创建、修改和列出区域的配置。创建和修改功能只可供授权的用户使用，并且要求使用 root 的有效用户 ID 来执行该进程。否则，它将以只读模式运行。
+.sp
+.LP
+区域的配置由若干个资源和属性组成。
+.sp
+.LP
+为了简化用户界面，\fBzonecfg\fR 采用了范围的概念。缺省范围为全局。
+.sp
+.LP
+\fBzonecfg\fR 命令的以下用法概要适用于交互式使用模式： 
+.sp
+.in +2
+.nf
+zonecfg \fB-z\fR \fIzonename subcommand\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过 \fBzonecfg\fR 更改的参数不会影响正在运行的区域。必须重新引导区域才能使更改生效。
+.sp
+.LP
+除了创建和修改区域，\fBzonecfg\fR 实用程序还可以用来持久性地指定全局区域的资源管理设置。
+.sp
+.LP
+在下面的文本中，rctl 表示 resource control（资源控制）的缩写。请参见 \fBresource_controls\fR(5)。
+.sp
+.LP
+每个区域都配有一个关联标记。该标记决定了在区域中使用的用户级环境，以及在安装、引导或关闭区域时区域的各种行为。在安装区域后，无法更改该标记。缺省标记由全局区域中安装的分发软件决定。有些标记不能支持某些 \fBzonecfg\fR 属性和资源。有关每个标记的更多详细信息，请参见特定于标记的手册页。有关标记的概述，请参见 \fBbrands\fR(5) 手册页。
+.SS "资源"
+.sp
+.LP
+支持下列资源类型：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+通用属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+CPU 的使用限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-memory\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理内存、交换内存和锁定内存的限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBZFS\fR 数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedicated-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+当此区域运行时，专用于此区域的系统处理器的子集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+设备.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+网络接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR\fR
+.ad
+.sp .6
+.RS 4n
+自动网络接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+受委托的管理员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR\fR
+.ad
+.sp .6
+.RS 4n
+资源控制。
+.RE
+
+.SS "稀疏根和完全根非全局区域"
+.sp
+.LP
+以前版本的 Solaris 提供了\fB稀疏根区域\fR概念。该功能与 SVr4 包管理系统密切相关，旨在节省磁盘空间并减少管理工作。
+.sp
+.LP
+在选择要在区域中安装哪些包方面，新的包管理系统 IPS 提供了更大的灵活性。这种灵活性以及文件系统技术方面的优势（其中值得一提的是 ZFS \fB重复数据删除\fR）意味着删除稀疏根区域最为明智。通过组合利用 IPS 包管理和文件系统的优点，可以使所有区域都具备稀疏根区域的优点。
+.SS "属性"
+.sp
+.LP
+每种资源类型有一个或多个属性。另外还有一些全局属性，即整个配置的属性，而不是某个特定资源的属性。
+.sp
+.LP
+支持下列属性：
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBzonename\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBzonepath\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBautoboot\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBbootargs\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBpool\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBlimitpriv\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBbrand\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBcpu-shares\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBhostid\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-lwps\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-msg-ids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fR
+.ad
+.br
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-processes\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-sem-ids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-shm-ids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-shm-memory\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBscheduling-class\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+\fBfs-allowed\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB（全局）\fR
+.ad
+.sp .6
+.RS 4n
+file-mac-profile
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdir\fR、\fBspecial\fR、\fBraw\fR、\fBtype\fR、\fBoptions\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBaddress\fR、\fBallowed-address\fR、\fBconfigure-allowed-address\fR、\fBphysical\fR、\fBdefrouter\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlinkname\fR、\fBlower-link\fR、\fBallowed-address\fR、\fBconfigure-allowed-address\fR、\fBdefrouter\fR、\fBmac-address\fR、\fBmac-slot\fR、\fBmac-prefix\fR、\fBmtu\fR、\fBmaxbw\fR、\fBpriority\fR、\fBvlan-id\fR、\fBrxfanout\fR、\fBrxrings\fR、\fBtxrings\fR、\fBlink-protection\fR、\fBallowed-dhcp-cids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmatch\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBname\fR、\fBvalue\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBname\fR、\fBtype\fR、\fBvalue\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBname\fR、\fBalias\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedicated-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBncpus\fR、\fBimportance\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-memory\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBphysical\fR、\fBswap\fR、\fBlocked\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBncpus\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+user、auths
+.RE
+
+.sp
+.LP
+对于与这些名称配对的属性值，它们可能是简单值、复杂值，也可能是列表。允许的类型是特定于属性的。简单值是字符串，可根据需要用引号引起来。复杂值具有语法：
+.sp
+.in +2
+.nf
+(<\fIname\fR>=<\fIvalue\fR>,<\fIname\fR>=<\fIvalue\fR>,...)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中每个 <\fIvalue\fR> 都是简单值，<\fIname\fR> 字符串在给定的属性中是唯一的。列表具有语法：
+.sp
+.in +2
+.nf
+[<\fIvalue\fR>,...]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中每个 <\fIvalue\fR> 可以是简单值或复杂值。只包含单个值（简单值或复杂值）的列表等效于在不使用列表语法的情况下指定该值。例如，"foo" 等效于 "[foo]"。列表可以为空（用 "[]" 表示）。
+.sp
+.LP
+在解释属性值时，\fBzonecfg\fR 接受如 \fBfnmatch\fR(5) 中所指定的正则表达式。请参见\fB\fR"示例"部分。
+.sp
+.LP
+属性类型如下所述：
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBzonepath\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的文件系统的路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBautoboot\fR\fR
+.ad
+.sp .6
+.RS 4n
+布尔值，指示在系统引导时是否应自动引导某个区域。请注意，如果禁用了区域服务，则无论此属性的设置如何，都不会自动引导区域。可以使用 \fBsvcadm\fR 命令启用区域服务，例如：
+.sp
+.in +2
+.nf
+# \fBsvcadm enable svc:/system/zones:default\fR
+.fi
+.in -2
+.sp
+
+将 \fBenable\fR（启用）替换为 \fBdisable\fR（禁用）可禁用区域服务。请参见 \fBsvcadm\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBbootargs\fR\fR
+.ad
+.sp .6
+.RS 4n
+要传递到区域引导的参数（选项）；但如果向 "\fBzoneadm boot\fR" 命令提供了选项，则将优先采用提供给该命令的选项。有效的参数在 \fBzoneadm\fR(1M) 中进行了描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBpool\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域在引导时必须绑定到的资源池的名称。此属性与 \fBdedicated-cpu\fR 资源不兼容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBlimitpriv\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域中的任何进程可以获取的最大特权集。此属性应包含以逗号分隔的特权集指定，如 \fBpriv_str_to_set\fR(3C) 中所述。可以从结果集中排除特权集，方法是在其名称前加上连字符 (-) 或叹号 (!)。在此上下文中，不支持特殊特权字符串 "zone"。如果特殊字符串 "default" 作为第一个标记出现在该属性中，它将扩展为一个安全的特权集，其中保留了 \fBzones\fR(5) 中所述的资源和安全隔离。缺少该属性或该属性为空等效于该安全特权集。
+.sp
+系统管理员在为区域配置特权时必须特别注意。无法通过此机制排除某些特权，因为它们是引导区域时所必需的。此外，不能将某些特权授予给区域，因为如果授予这些特权可能会导致一个区域中的进程不当地影响其他区域中的进程。在尝试"引导"或"准备"区域时，\fBzoneadm\fR(1M) 指示何时已在区域的特权集中添加或删除了某个无效的特权。
+.sp
+有关特权的描述，请参见 \fBprivileges\fR(5)。命令 \fBppriv -l\fR（请参见 \fBppriv\fR(1)）可以生成所有 Solaris 特权的列表。您可以按 \fBppriv\fR 显示的格式指定特权。在 \fBprivileges\fR(5) 中，特权以 PRIV_\fIprivilege_name\fR 格式列出。例如，在此属性中指定的特权 \fIsys_time\fR 在 \fBprivileges\fR(5) 中将显示为 \fBPRIV_SYS_TIME\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBbrand\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的标记类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBip-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域既可以拥有自己的独占 IP 实例（缺省），也可以与全局区域共享 IP 实例。在缺省区域模板 \fBSYSdefault\fR 中，\fBip-type\fR 设置为 \fBexclusive\fR。在提供的另外一个 \fBSYSdefault-shared-ip \fR 模板中，\fBip-type\fR 设置为 shared。
+.sp
+此属性可以接受的值为 \fBexclusive\fR 和 \fBshared\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBhostid\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域可以模仿 32 位主机标识符以简化系统整合。缺省情况下，区域的 \fBhostid\fR 属性是空的，这意味着区域不模拟主机标识符。区域主机标识符必须是 0 到 FFFFFFFE 之间的十六进制值。\fB0x\fR 或 \fB0X\fR 前缀是可选的。大写和小写十六进制数字都可以接受。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBfs-allowed\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以在区域中挂载的其他文件系统的逗号分隔列表；例如，\fBufs,pcfs\fR。缺省情况下，只能挂载 \fBhsfs\fR(7FS) 和网络文件系统。
+.sp
+此属性不适用于通过 \fBadd fs\fR 或 \fBadd dataset\fR 挂载到区域中的文件系统。
+.LP
+注意 - 
+.sp
+.RS 2
+如果允许挂载非缺省文件系统，将使得区域管理员能够使用伪造的文件系统映像来危害系统安全，因此不支持此类挂载。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBfile-mac-profile\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义文件系统的哪些部分不使用只读策略，即，允许区域写入文件系统的哪些部分。
+.sp
+该属性当前支持 4 个值：\fBnone\fR、\fBstrict\fR、\fBfixed-configuration\fR 和 \fBflexible-configuration\fR。
+.sp
+\fBnone\fR 使该区域与常规读取/写入区域完全相同。\fBstrict\fR 禁止使用只读策略以外的策略。\fBfixed-configuration\fR 允许区域写入 \fB/var\fR 中及其子目录下的文件，但包含配置文件的目录除外：
+.sp
+.in +2
+.nf
+/var/ld
+/var/lib/postrun
+/var/pkg
+/var/spool/cron,
+/var/spool/postrun
+/var/svc/manifest
+/var/svc/profiles
+.fi
+.in -2
+.sp
+
+\fBflexible-configuration\fR 与 \fBfixed-configuration\fR 相当，但还允许写入 \fB/etc\fR 中的文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR：dir、special、raw、type、options\fR
+.ad
+.sp .6
+.RS 4n
+确定文件系统的挂载方式、挂载位置等信息时所需的值。请参见 \fBmount\fR(1M)、\fBmount\fR(2)、\fBfsck\fR(1M) 和 \fBvfstab\fR(4)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR：address、allowed-address、configure-allowed-address、physical、defrouter\fR
+.ad
+.sp .6
+.RS 4n
+\fBnet\fR 资源表示为一个区域分配的物理网络资源。在分配之前，该资源必须在全局区域中存在。
+.sp
+网络接口的网络地址和物理接口名称。网络地址为以下地址之一：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有效的 IPv4 地址，后面可以跟有可选的 \fB/\fR 和前缀长度；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有效的 IPv6 地址，必须后接 \fB/\fR 和前缀长度；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+可解析为 IPv4 地址的主机名。
+.RE
+请注意，不支持解析为 IPv6 地址的主机名称。
+.sp
+物理接口名称即网络接口名称。
+.sp
+用来指定可选的缺省路由器值的方式与指定网络地址的方式类似，但它不能后跟 \fB/\fR（斜杠）和网络前缀长度。要正确地使用 \fBdefrouter\fR 功能，使用该属性的区域所在的子网必须不同于全局区域所在的子网。此外，使用不同的 \fBdefrouter\fR 设置的每个区域（或区域集）必须位于不同的子网上。
+.sp
+可将区域配置为专用 IP 区域或共享 IP 区域。对于共享 IP 区域，必须同时设置 physical 和 address 属性；是否设置缺省路由器是可选的。在引导非全局区域之前，必须在全局区域中激活在 physical 属性中指定的接口。不过，如果全局区域不使用该接口，应在全局区域中将其配置为 \fBdown\fR，并应在此处为该接口指定缺省路由器。不能为共享 IP 区域设置 \fBallowed-address\fR 属性。
+.sp
+对于独占 IP 区域，必须设置 \fBphysical\fR 属性，不能设置\fBaddress\fR 属性。此外，还可以通过指定 \fBallowed-address\fR 属性来限制独占 IP 区域可以使用的 IP 地址集。如果未指定 \fBallowed-address\fR，则独占 IP 区域可以使用 net 资源的关联 \fBphysical\fR 接口上的任何 IP 地址。而当指定了 \fBallowed-address\fR 时，独占 IP 区域将无法使用不在 \fBphysical\fR 地址的 \fBallowed-address\fR 列表中的 IP 地址。如果 \fBconfigure-allowed-address\fR 设置为 \fBtrue\fR，在安装后初始引导时总是对接口配置 \fBallowed-address\fR。如果它设置为 \fBfalse\fR，在区域引导时将不会配置 \fBallowed-address\fR。缺省情况下，当指定 \fBallowed-address\fR 时，\fBconfigure-allowed-address\fR 将设置为 \fBtrue\fR。此外，如果填充了 \fBallowed-address \fR 列表，还可以选择指定 \fBdefrouter\fR 属性。但是，如果指定了 \fBdefrouter\fR 值且 \fBconfigure-allowed-address\fR 设置为 \fBfalse\fR，则将忽略 \fBdefrouter\fR 值，并显示相应的警告消息。为 \fBphysical\fR 属性指定的接口必须没有在全局区域中使用。如果通过 \fBzonecfg\fR 指定了 \fBallowed-address\fR 和缺省路由器，则这些属性将在通过 \fBipadm\fR(1M) 在非全局独占 IP 区域中启用接口时（通常是在区域引导期间）应用于接口。非全局独占 IP 区域将无法向该接口应用任何其他地址，也无法传输具有指定 IP 版本的不同源地址的数据包。通过 \fBzonecfg\fR 设置的缺省路由器无法使用 \fB-p\fR 标志与 \fBroute\fR(1M) 从非全局独占 IP 区域内永久删除。
+.sp
+请注意，不能在多个独占 IP 区域间共享单个数据链路。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR：linkname、lower-link、allowed-address、configure-allowed-address、defrouter、mac-address、mac-slot、mac-prefix、mtu、maxbw、priority、vlan-id、rxfanout、rxrings、txrings、link-protection、allowed-dhcp-cids\fR
+.ad
+.sp .6
+.RS 4n
+\fBanet\fR 资源表示为独占 IP 区域自动创建的网络资源。\fBzonecfg\fR 使用缺省 \fBSYSdefault\fR 模板创建区域时，将在区域配置中自动包括具有以下属性的 \fBanet\fR 资源：
+.sp
+.in +2
+.nf
+linkname=net0
+lower-link=auto
+mac-address=random
+link-protection=mac-nospoof
+.fi
+.in -2
+.sp
+
+当此类区域引导时，将自动确定 \fBlower-link\fR（请参见下文）并通过该链路为区域自动创建临时 VNIC。当区域停止时，将删除 \fBlower-link\fR 和 VNIC。
+.sp
+下面介绍了支持的属性。所有这些属性都是可选的。只允许全局区域修改自动创建的 VNIC 或其属性。如果 \fBzonecfg\fR 中设置的属性不能在创建 VNIC 时分配给 VNIC，则该区域将无法引导。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+为自动创建的 VNIC 指定名称。缺省情况下，该属性将自动设置为 \fBnet\fR\fIN\fR 格式（其中 \fIN\fR 为非负整数）的第一个可用名称（对于区域）。例如：\fBnet0\fR、\fBnet1\fR 等。\fBinfo\fR 子命令会显示自动选择的 \fBlinkname\fR。
+.sp
+多个区域（包括全局区域）可同时使用同名链路。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlower-link\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用来创建 VNIC 的链路。该属性的缺省值为 \fBauto\fR。在添加 \fBanet\fR 资源时，管理员可以显式指定一个值。链路可以是接受为 \fBdladm create-vnic\fR\fB-l\fR 选项的参数的任何链路（请参见 \fBdladm\fR(1M)）。如果该属性设置为 \fBlinkname\fR（而非 \fBauto\fR）且该链路不存在，则区域将无法引导。如果设置为 \fBauto\fR，每次区域引导时，\fBzoneadmd\fR(1M) 守护进程都会自动选择用来创建 VNIC 的链路。将会使用以下试探性操作选择链路：
+.RS +4
+.TP
+1.
+第一个物理数据链路的链路状态是否为 \fBup\fR。
+.RE
+.RS +4
+.TP
+2.
+如果不存在 \fBup\fR 状态，则使用名为 \fBnet0\fR 的数据链路。
+.RE
+如果以上两点都不满足，区域将无法引导。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallowed-address\fR\fR
+.ad
+.sp .6
+.RS 4n
+请参见 \fBnet\fR 资源中对独占 IP 区域 \fBallowed-address\fR 属性的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure-allowed-address\fR\fR
+.ad
+.sp .6
+.RS 4n
+请参见 \fBnet\fR 资源中对独占 IP 区域 \fBconfigure-allowed-address\fR 属性的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefrouter\fR\fR
+.ad
+.sp .6
+.RS 4n
+请参见 \fBnet\fR 资源中对独占 IP 区域 \fBdefrouter\fR 属性的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmac-address\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据指定值或关键字设置 VNIC 的 MAC 地址。如果该值不是关键字，则将其解释为单点传送 MAC 地址。支持的关键字包括：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfactory\fR：为 VNIC 分配出厂 MAC 地址。当请求出厂 MAC 地址时，可以使用 \fBmac-slot\fR 属性指定 MAC 地址插槽标识符。否则，将使用下一个可用的出厂 MAC 地址。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBrandom\fR：为 VNIC 分配随机 MAC 地址。使用 \fBmac-prefix\fR 属性指定一个前缀。否则，将使用缺省前缀，该前缀包含有效 IEEE OUI，并设置了本地位。这是缺省值。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBauto\fR：首先尝试使用出厂 MAC 地址。如果该地址不可用，则分配随机 MAC 地址。
+.RE
+如果选择了随机 MAC 地址，则将在区域引导和区域分离/连接后保留生成的地址。这将允许区域通过维护稳定的客户机 ID 来保留它们的 DHCP 租用，还会充分利用具有稳定 MAC 地址的其他优势。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmac-prefix\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 MAC 地址前缀（如果请求随机 MAC 地址）。否则，将忽略该属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmac-slot\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 MAC 地址插槽标识符（如果请求出厂 MAC 地址）。否则，将忽略该属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC 的最大传输单元（以字节为单位）。请参见 \fBdladm\fR(1M) 中的 \fBmtu\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxbw\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 VNIC 的全双工带宽。请参见 \fBdladm\fR(1M) 中的 \fBmaxbw\fR 属性。缺省情况下，VNIC 将使用在 \fBlower-link\fR 上设置的 \fBmaxbw\fR，如果未进行设置，则不存在任何带宽限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 VNIC 的相对优先级。有关支持的值和缺省值，请参见 \fBdladm\fR(1M) 中的 \fBpriority\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlan-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+对该 VNIC 启用 VLAN 标记并指定 VLAN 标记的 id。没有指定缺省值，这意味着如果未设置该属性，VNIC 将不会参与任何 VLAN。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrxfanout\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定接收端扇出线程数。请参见 \fBdladm\fR(1M) 中的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrxrings\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 VNIC 的接收环。有关支持的值和缺省值，请参见 \fBdladm\fR(1M) 中的 \fBrxrings\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtxrings\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 VNIC 的传送环。有关支持的值和缺省值，请参见 \fBdladm\fR(1M) 中的 \fBtxrings\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-protection\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用一个或多个链路保护类型（使用逗号分隔值）。有关支持的值，请参见 \fBdladm\fR(1M) 中的 \fBprotection\fR 属性。它的缺省值为 \fBmac-nospoof\fR。
+.sp
+请注意，向该属性添加 \fBip-nospoof\fR 不会有任何效果，除非同时设置了 \fBallowed-address\fR。设置 \fBallowed-address\fR 会将 \fBip-nospoof\fR 隐式添加到 \fBlink-protection\fR 集，而清除 \fBallowed-address\fR 会将其删除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallowed-dhcp-cids\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置该属性将对 VNIC 启用 \fBdhcp-nospoof\fR。有关详细信息，请参见 \fBdladm\fR(1M)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR：match\fR
+.ad
+.sp .6
+.RS 4n
+要匹配的设备名称。这可以是要匹配的模式，也可以是绝对路径名。请注意，设备资源和别名数据集可能会在 \fB/dev/zvol\fR 中存在名称空间冲突。请参见 \fBdev\fR(7FS)。
+.LP
+注 - 
+.sp
+.RS 2
+一般情况下，向区域中添加设备可能会危害系统的安全性；请参见\fB\fR"附注"部分。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR：name、value\fR
+.ad
+.sp .6
+.RS 4n
+资源控制的名称和 \fIpriv\fR/\fIlimit\fR/\fIaction\fR 三要素。请参见 \fBprctl\fR(1) 和 \fBrctladm\fR(1M)。设置 rctl 值的首选方式是使用与特定 rctl 关联的全局属性名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattr\fR：name、type、value\fR
+.ad
+.sp .6
+.RS 4n
+通用属性的名称、类型和值。\fBtype\fR 必须是 \fBint\fR、\fBuint\fR、\fBboolean\fR 或 \fBstring\fR 中的一个，value 必须属于该类型。\fBuint\fR 的意思是不带符号的整数，即非负整数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataset\fR：name、alias\fR
+.ad
+.sp .6
+.RS 4n
+要从区域内访问的 \fBZFS\fR 数据集的名称。请参见 \fBzfs\fR(1M)。为每个数据集设置了别名，以便它在区域中显示为虚拟 ZFS 池。alias 是该虚拟池的名称。有关应用于 ZFS 池名称，并进而还应用于数据集别名值的名称限制，请参见 \fBzpool\fR(1M)。别名 \fBrpool\fR 是从区域的 rpool 数据集中保留的。请注意，别名数据集和设备资源可能会在 \fB/dev/zvol\fR 中存在名称空间冲突。请参见 \fBdev \fR(7FS)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBcpu-shares\fR\fR
+.ad
+.sp .6
+.RS 4n
+要分配给此区域的公平份额调度器 (Fair Share Scheduler, FSS) 份额的数量。此属性与 \fBdedicated-cpu\fR 资源不兼容。此属性是设置 \fBzone.cpu-shares\fR rctl 的首选方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBmax-lwps\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域可同时使用的最大 LWP 数。此属性是设置 \fBzone.max-lwps\fR rctl 的首选方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBmax-msg-ids\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域允许的最大消息队列 ID 数。此属性是设置 \fBzone.max-msg-ids\fR rctl 的首选方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBmax-processes\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域可同时使用的最大进程表槽数。此属性是设置 \fBzone.max-processes\fR rctl 的首选方式。除非已显式设置了 \fBmax-lwps\fR 属性，否则设置此属性会隐式地将 \fBmax-lwps\fR 属性的值设置为进程槽数的 10 倍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBmax-sem-ids\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域允许的最大信号量 ID 数。此属性是设置 \fBzone.max-sem-ids\fR rctl 的首选方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBmax-shm-ids\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域允许的最大共享内存 ID 数。此属性是设置 \fBzone.max-shm-ids\fR rctl 的首选方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBmax-shm-memory\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域允许的最大共享内存数量。此属性是设置 \fBzone.max-shm-memory\fR rctl 的首选方式。可以向此数量值应用一个比例（K、M、G、T），例如，1M 代表 100 万字节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB全局：\fBscheduling-class\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用于在某个区域中运行的进程的调度类。未指定此属性时，将按如下方式建立调度类：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果设置了 \fBcpu-shares\fR 属性或等效的 rctl，将使用调度类 FSS。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果既未设置 \fBcpu-shares\fR 也未设置等效的 rctl，且区域的 pool 属性引用了一个具有缺省调度类的池，则将使用该类。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在任何其他情况下，将使用系统缺省调度类。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedicated-cpu\fR：ncpus、importance\fR
+.ad
+.sp .6
+.RS 4n
+应分配给该区域供其独占使用的 CPU 数量。该区域在引导时将创建一个池和处理器集。有关资源池的更多信息，请参见 \fBpooladm\fR(1M) 和 \fBpoolcfg\fR(1M)。\fBncpu\fR 属性可以指定单个值，也可以指定一个处理器数量范围（例如 1-4）。\fBimportance\fR 属性是可选的；如果设置了该属性，则它指定 \fBpset.importance\fR 值供 \fBpoold\fR(1M) 使用。如果使用了此资源，则在该区域引导时必须有足够的空闲处理器分配给该区域，否则该区域将不会引导。分配给该区域的处理器将不可供全局区域或其他区域使用。此资源与 \fBpool\fR 和 \fBcpu-shares\fR 属性都不兼容。只能将此资源的单个实例添加到区域中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-memory\fR：physical、swap、locked\fR
+.ad
+.sp .6
+.RS 4n
+该区域可以使用的内存量上限。可以向其中的每个数量值应用一个比例（K、M、G、T），例如，1M 代表 100 万字节。其中每个属性都是可选的，但在添加此资源时必须至少设置一个属性。只能将此资源的单个实例添加到区域中。\fBphysical\fR 属性设置该区域的 \fBmax-rss\fR。这将由在全局区域中运行的 \fBrcapd\fR(1M) 强制实施。\fBswap\fR 属性是设置 \fBzone.max-swap\fR rctl 的首选方式。\fBlocked\fR 属性是设置 \fBzone.max-locked-memory\fR rctl 的首选方式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-cpu\fR：ncpus\fR
+.ad
+.sp .6
+.RS 4n
+设置可供某个区域使用的 CPU 时间量的限制。使用的单元将换算为可供区域中的所有用户线程使用的对单个 CPU 的百分比，以小数表示（例如，\fB\&.75\fR），或以混合数字表示（整数和小数，例如，\fB1.25\fR）。\fBncpu\fR 值为 \fB1\fR 表示一个 CPU 的 100%，值为 \fB1.25\fR 表示 125%，\fB\&.75\fR 表示 75%，依此类推。当设置有上限的区域中的项目有其自己的上限时，优先采用最小值。
+.sp
+\fBcapped-cpu\fR 属性是 \fBzone.cpu-cap\fR 资源控制的别名，与 \fBzone.cpu-cap\fR 资源控制相关。请参见 \fBresource_controls\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadmin\fR：user、auths\fR
+.ad
+.sp .6
+.RS 4n
+将区域管理授权委托给指定的用户或角色。该用户必须对应于一个有效的本地帐户。auths 的允许值包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogin\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许在经过验证的情况下 \fBzlogin\fR(1) 到该区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmanage\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许对所配置的区域进行正常管理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcopyfrom\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许将指定的区域作为用来克隆新区域的来源。
+.RE
+
+.RE
+
+.sp
+.LP
+下表汇总了资源、属性名称和类型：
+.sp
+.in +2
+.nf
+resource          property-name   type
+(global)          zonename        simple
+(global)          zonepath        simple
+(global)          autoboot        simple
+(global)          bootargs        simple
+(global)          pool            simple
+(global)          limitpriv       simple
+(global)          brand           simple
+(global)          ip-type         simple
+(global)          hostid          simple
+(global)          cpu-shares      simple
+(global)          max-lwps        simple
+(global)          max-msg-ids     simple
+(global)          max-sem-ids     simple
+(global)          max-shm-ids     simple
+(global)          max-shm-memory  simple
+(global)          scheduling-class simple
+(global)          fs-allowed      list of simple
+fs                dir             simple
+                  special         simple
+                  raw             simple
+                  type            simple
+                  options         list of simple
+net               address         simple
+                  allowed-address list of simple
+                  configure-allowed-address simple
+                  defrouter       list of simple
+                  physical        simple
+anet              linkname        simple
+                  lower-link      simple
+                  allowed-address list of simple
+                  configure-allowed-address simple
+                  defrouter       list of simple
+                  mac-address     simple
+                  mac-slot        simple
+                  mac-prefix      simple
+                  mtu             simple
+                  maxbw           simple
+                  priority        simple
+                  vlan-id         simple
+                  rxfanout        simple
+                  rxrings         simple
+                  txrings         simple
+                  link-protection list of simple
+                  allowed-dhcp-cids list of simple
+device            match           simple
+rctl              name            simple
+                  value           list of complex
+attr              name            simple
+                  type            simple
+                  value           simple
+dataset           name            simple
+                  alias           simple
+dedicated-cpu     ncpus           simple or range
+                  importance      simple
+
+capped-memory     physical        simple with scale
+                  swap            simple with scale
+                  locked          simple with scale
+
+capped-cpu        ncpus           simple
+
+admin             user            simple
+                  auths           list of simple
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+为进一步指定各个事项（"rctl" 资源类型的复杂属性 ""value" 的细目），它包含了三个名称/值对，名称为 priv、limit 和 action，其中每个名称都接受一个简单值。"attr" 资源的 "name" 属性在语法方面的限制类似于区域名称，但不完全相同：它必须以字母数字开头，可以包含字母数字以及连字符 (\fB-\fR)、下划线 (\fB_\fR) 和点 (\fB\&.\fR) 字符。以 "zone" 开头的属性名称保留供系统使用。最后，"autoboot" 全局属性的值必须为 true 或 false。
+.SS "使用内核统计信息来监视 CPU 上限"
+.sp
+.LP
+系统使用内核统计信息 (\fBkstat\fR(3KSTAT)) 模块 \fBcaps\fR 为所有设有上限的项目和区域维护该信息。您可以通过读取内核统计信息 (\fBkstat\fR(3KSTAT))（指定 \fBcaps\fR 作为 \fBkstat\fR 模块名称）来访问该信息。以下命令显示所有活动 CPU 上限的内核统计信息：
+.sp
+.in +2
+.nf
+# \fBkstat caps::'/cpucaps/'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在某个区域中运行的 \fBkstat\fR(1M) 命令只显示与该区域以及该区域中的项目相关的 CUP 上限。请参见\fB\fR"示例"。
+.sp
+.LP
+下面是可与 \fBkstat\fR(1M) 一起使用的与上限相关的参数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcaps\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR 模块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproject_caps\fR 或 \fBzone_caps\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR 类，可与 \fBkstat\fR \fB-c\fR 选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcpucaps_project_\fR\fIid\fR 或 \fBcpucaps_zone_\fR\fIid\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR 名称，可与 \fBkstat\fR \fB-n\fR 选项一起使用。\fIid\fR 是项目或区域的标识符。
+.RE
+
+.sp
+.LP
+响应请求所有 CPU 上限统计信息的 \fBkstat\fR(1M) 命令时将显示以下字段。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodule\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBkstat\fR 的此使用情况中，此字段的值将是 \fBcaps\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上所述，\fBcpucaps_project_\fR\fIid\fR 或 \fBcpucaps_zone_\fR\fIid\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBabove_sec\fR\fR
+.ad
+.sp .6
+.RS 4n
+在上限之上度过的总时间（以秒为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbelow_sec\fR\fR
+.ad
+.sp .6
+.RS 4n
+在上限之下度过的总时间（以秒为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxusage\fR\fR
+.ad
+.sp .6
+.RS 4n
+观察到的最大 CPU 使用量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwait\fR\fR
+.ad
+.sp .6
+.RS 4n
+在上限等待队列中的线程数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusage\fR\fR
+.ad
+.sp .6
+.RS 4n
+属于某个设有上限的项目或区域的所有线程当前使用的 CPU 总量，换算为对单个 CPU 的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+上限值，换算为对单个 CPU 的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+为其显示统计信息的区域的名称。
+.RE
+
+.sp
+.LP
+有 \fBkstat\fR 命令的输出的样例，请参见\fB\fR"示例"部分。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBzonecfg\fR 命令文件的名称。\fIcommand_file\fR 是包含 \fBzonecfg\fR 子命令的文本文件，每个子命令占一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定区域的名称。区域名称区分大小写。区域名称必须以字母数字字符开头，并可包含字母数字字符、下划线 (\fB_\fR)、连字符 (\fB-\fR) 和点 (\fB\&.\fR)。名称 \fBglobal\fR 和所有以 \fBSYS\fR 开头的名称均保留，不能使用。
+.RE
+
+.SH 子命令
+.sp
+.LP
+可以使用 \fBadd\fR 和 \fBselect\fR 子命令来选择特定的资源，此时作用域将更改为该资源。\fBend\fR 和 \fBcancel\fR 子命令用于结束资源指定，此时作用域将恢复为全局。某些子命令（例如 \fBadd\fR、\fBremove\fR 和 \fBset\fR）在每个作用域中有不同的语义。
+.sp
+.LP
+\fBzonecfg\fR 支持以分号分隔的子命令列表。例如：
+.sp
+.in +2
+.nf
+# \fBzonecfg -z myzone "add net; set physical=myvnic; end"\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可导致破坏性操作或导致工作丢失的子命令具有一个强制执行操作的 \fB-F\fR 选项。当输入来自终端设备时，如果在给定此类命令时未指定 \fB-F\fR 选项，系统会在适当的时候提示用户；其他情况下，如果在给定此类命令时未指定 \fB-F\fR 选项，将不允许操作，并会向标准错误写入一条诊断消息。 
+.sp
+.LP
+支持以下子命令： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR \fIresource-type\fR（全局范围）\fR
+.ad
+.br
+.na
+\fB\fBadd\fR \fIproperty-name property-value\fR（资源范围）\fR
+.ad
+.sp .6
+.RS 4n
+在全局范围中，开始给定资源类型的指定。将范围更改为此资源类型。 
+.sp
+在资源范围中，添加具有给定名称和给定值的属性。用于属性值的语法随属性类型不同而不同。一般情况下，它是一个简单值或者是用方括号括起来并以逗号分隔的简单值列表 (\fB[foo,bar,baz]\fR)。请参见\fB\fR"属性"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+结束资源指定并将作用域重置为全局。放弃任何部分指定的资源。\fBcancel\fR 仅在资源范围内适用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIproperty-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+清除属性的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前配置从内存提交到稳定存储器。必须提交配置以供 \fBzoneadm\fR 使用。在提交内存中的配置之前，可以使用 \fBrevert\fR 子命令删除更改。在 \fBzonecfg\fR 会话完成时，会自动尝试 \fBcommit\fR 操作。因为配置必须是正确的才能提交，因此该操作将自动执行验证。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate [\fR\fB-F\fR\fB] [\fR \fB-a\fR \fIpath\fR |\fB-b\fR \fB|\fR \fB-t\fR \fItemplate\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+为指定的区域创建内存中配置。可以使用 \fBcreate\fR 开始配置一个新区域。有关将此保存到稳定存储器的信息，请参见 \fBcommit\fR。 
+.sp
+如果要覆盖现有的配置，请指定 \fB-F\fR 选项以强制执行操作。指定 \fB-t\fR \fItemplate\fR 选项可创建一个与 \fItemplate\fR 完全相同的配置，其中 \fItemplate\fR 是所配置的某个区域的名称。
+.sp
+\fBcreate\fR 使用缺省模板 \fBSYSdefault\fR。可以使用 \fBsvc:/system/zones:default\fR 服务的 \fBdefault_template\fR SMF 属性在系统范围内更改缺省模板。管理员可以使用 \fB-t\fR（使用特定模板）或 \fB-b\fR（使用空白模板）覆盖该区域的缺省值。
+.sp
+使用 \fB-a\fR \fIpath\fR 选项可方便地在新主机上匹配一个分离区域。\fIpath\fR 参数是已经移动到此新主机上的分离区域的 \fBzonepath\fR 位置。配置了分离区域后，应使用 \fBzoneadm attach\fR 命令安装它（请参见 \fBzoneadm\fR(1M)）。对新区域的所有验证都发生在 \fBattach\fR 进程期间，而不是在区域配置期间。
+.sp
+使用 \fB-b\fR 选项可以创建一个空白配置。如果未指定参数，\fBcreate\fR 将应用 Oracle Sun 缺省设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete [\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+从内存和稳定存储器中删除指定的配置。此操作是即时的，不需要提交。删除的配置无法恢复。 
+.sp
+使用 \fB-F\fR 选项强制执行操作：
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+结束资源指定。此子命令仅在资源范围内适用。\fBzonecfg\fR 进行检查以确保完整地指定了当前资源。如果完整地指定了当前资源，则会将其添加到内存中配置（有关将此配置保存到稳定存储器的信息，请参见 \fBcommit\fR），作用域将恢复为全局。如果指定不完整，它将发出相应的错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport [\fR\fB-f\fR \fIoutput-file\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+将配置输出至标准输出。使用 \fB-f\fR 选项可将配置输出到 \fIoutput-file\fR。此选项以适合在命令文件中使用的格式生成输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp [usage] [\fIsubcommand\fR] [syntax] [\fR\fIcommand-name\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出常规帮助或有关给定主题的帮助。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfo zonename | zonepath | autoboot | brand | pool | limitpriv\fR\fR
+.ad
+.br
+.na
+\fB\fBinfo [\fR\fIresource-type\fR \fB[\fR\fIproperty-name\fR\fB=\fR\fIproperty-value\fR\fB ]*]\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示有关当前配置的信息。如果指定了 \fIresource-type\fR，将仅显示关于相关类型的资源的信息。如果指定了任何 \fIproperty-name\fR 值对，将仅显示符合指定条件的资源的相关信息。在资源范围中，所有参数都将被忽略，\fBinfo\fR 将仅显示当前正在添加或修改的资源的相关信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fIresource-type\fR\fB{\fR\fIproperty-name\fR\fB=\fR\fIproperty-value\fR\fB}\fR（全局范围）\fR
+.ad
+.sp .6
+.RS 4n
+在全局范围中，删除指定的资源。\fB[]\fR 语法表示在方括号内有 0 项或多项内容。如果您希望仅删除资源的单个实例，必须为要唯一标识的资源指定足够的属性名称-值对。如果没有指定属性名称-值对，则会删除所有实例。如果指定了多个名称-值对，除非使用了 \fB-F\fR 选项，否则将需要确认。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR \fIresource-type\fR \fB{\fR\fIproperty-name\fR\fB=\fR\fIproperty-value\fR\fB}\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择与给定的 \fIproperty-name\fR \fIproperty-value\fR 名称/值对条件匹配的给定类型的资源进行修改。此子命令仅在全局范围内适用。将范围更改为此资源类型。\fB{}\fR 语法表示在花括号内有 1 项或多项内容。必须为要唯一标识的资源指定足够的 \fIproperty-name property-value\fR 对。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIproperty-name\fR\fB=\fR\fIproperty\fR\fB-\fR\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+将给定属性名称设置为给定值。某些属性（例如，\fBzonename\fR 和 \fBzonepath\fR）是全局的，另外一些属性是特定于资源的。此子命令同时适用于全局范围和资源范围。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+检验当前配置是否正确：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+所有资源都指定了其所有必需属性。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+指定了 \fBzonepath\fR。
+.RE
+如果指定了 \fB-v\fR 选项，当设备资源中指定的设备可能存在冲突并隐藏别名数据集内创建的 ZFS 卷时，将会发出警告。请参见 \fBdev\fR(7FS)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR \fB[\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+将配置恢复到上次提交时的状态。可使用 \fB-F\fR 选项强制执行操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit [\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+退出 \fBzonecfg\fR 会话。如果需要，会自动尝试 commit。还可以使用 \fBEOF\fR 字符来退出 \fBzonecfg\fR。可使用 \fB-F\fR 选项强制执行操作。 
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建新区域的环境
+.sp
+.LP
+在下面的示例中，\fBzonecfg\fR 创建新区域的环境。\fB/usr/local\fR 从全局区域回送挂载到 \fB/opt/local\fR。\fB/opt/sfw\fR 从全局区域回送挂载，\fBnxge0\fR 上的 VNIC 添加到具有三个 IP 地址的区域，使用 \fBrctl\fR 资源类型设置对区域的公平份额调度程序 (fair-share scheduler, FSS) CPU 份额数的限制。该示例还说明了如何选择用于进行修改的给定资源，本例中的方法是选择由 \fBzonecfg\fR 自动创建的 \fBanet\fR 资源。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone3\fR
+my-zone3: No such zone configured
+Use 'create' to begin configuring a new zone.
+zonecfg:myzone3> \fBcreate\fR
+zonecfg:myzone3> \fBset zonepath=/export/home/my-zone3\fR
+zonecfg:myzone3> \fBset autoboot=true\fR
+zonecfg:myzone3> \fBadd fs\fR
+zonecfg:myzone3:fs> \fBset dir=/usr/local\fR
+zonecfg:myzone3:fs> \fBset special=/opt/local\fR
+zonecfg:myzone3:fs> \fBset type=lofs\fR
+zonecfg:myzone3:fs> \fBadd options [ro,nodevices]\fR
+zonecfg:myzone3:fs> \fBend\fR
+zonecfg:myzone3> \fBadd fs\fR
+zonecfg:myzone3:fs> \fBset dir=/mnt\fR
+zonecfg:myzone3:fs> \fBset special=/dev/dsk/c0t0d0s7\fR
+zonecfg:myzone3:fs> \fBset raw=/dev/rdsk/c0t0d0s7\fR
+zonecfg:myzone3:fs> \fBset type=ufs\fR
+zonecfg:myzone3:fs> \fBend\fR
+zonecfg:myzone3> \fBadd fs\fR
+zonecfg:myzone3:fs> \fBset dir=/opt/sfw\fR
+zonecfg:myzone3:fs> \fBset special=/opt/sfw\fR
+zonecfg:myzone3:fs> \fBset type=lofs\fR
+zonecfg:myzone3:fs> \fBadd options [ro,nodevices]\fR
+zonecfg:myzone3:fs> \fBend\fR
+zonecfg:myzone3> \fBselect anet linkname=net0\fR
+zonecfg:myzone3:anet> \fBset lower-link=nxge0\fR
+zonecfg:myzone3:anet> \fBset allowed-address="192.168.0.1/24,192.168.1.2/\e\fR
+           \fB24,192.168.2.3/24"\fR
+zonecfg:myzone3:anet> \fBend\fR
+zonecfg:my-zone3> \fBset cpu-shares=5\fR
+zonecfg:my-zone3> \fBadd capped-memory\fR
+zonecfg:my-zone3:capped-memory> \fBset physical=50m\fR
+zonecfg:my-zone3:capped-memory> \fBset swap=100m\fR
+zonecfg:my-zone3:capped-memory> \fBend\fR
+zonecfg:myzone3> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR创建独占 IP 区域
+.sp
+.LP
+以下示例将创建一个分配了名为 \fBnet0\fR 的 VNIC 的区域。用来创建 VNIC 的链路是自动确定的。IP 地址和路由是在新区域内部使用 \fBipadm\fR(1M) 配置的。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z excl\fR
+zonecfg:excl> \fBcreate\fR
+zonecfg:excl> \fBset zonepath=/export/zones/excl\fR
+zonecfg:excl> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR创建共享 IP 区域
+.sp
+.LP
+以下示例创建的区域将与全局区域共享 IP 栈，并被分配一个 IP 地址和缺省路由器。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -b -z shared\fR
+zonecfg:shared> \fBcreate\fR
+zonecfg:shared> \fBset zonepath=/export/zones/shared\fR
+zonecfg:shared> \fBset ip-type=shared\fR
+zonecfg:shared> \fBadd net\fR
+zonecfg:shared:net> \fBset physical=nge0\fR
+zonecfg:shared:net> \fBset address=192.168.0.3/24\fR
+zonecfg:shared:net> \fBset defrouter=192.168.0.1\fR
+zonecfg:shared:net> \fBend\fR
+zonecfg:shared> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR将区域与资源池相关联
+.sp
+.LP
+以下示例展示了如何将现有区域与现有的资源池相关联：
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBset pool=mypool\fR
+zonecfg:myzone> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关资源池的更多信息，请参见 \fBpooladm\fR(1M) 和 \fBpoolcfg\fR(1M)。
+
+.LP
+\fB示例 5 \fR更改区域的名称
+.sp
+.LP
+以下示例展示了如何更改现有区域的名称：
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBset zonename=myzone2\fR
+zonecfg:myzone2> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR更改区域的特权集
+.sp
+.LP
+以下示例展示了如何更改现有区域的特权集，该区域的进程在区域下次引导时将受限于该特权集。在这个特定的案例中，特权集将是区域正常情况下拥有的标准安全特权集，加上更改系统日期和时间的特权。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBset limitpriv="default,sys_time"\fR
+zonecfg:myzone2> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR设置全局区域的 \fBzone.cpu-shares\fR 属性
+.sp
+.LP
+以下命令可设置全局区域的 \fBzone.cpu-shares\fR 属性：
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z global\fR
+zonecfg:global> \fBset cpu-shares=5\fR
+zonecfg:global> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR使用模式匹配
+.sp
+.LP
+以下命令展示了 \fBzonecfg\fR 对模式匹配的支持。在区域 \fBflexlm\fR 中，输入：
+
+.sp
+.in +2
+.nf
+zonecfg:flexlm> \fBadd device\fR
+zonecfg:flexlm:device> \fBset match="/dev/cua/a00[2-5]"\fR
+zonecfg:flexlm:device> \fBend\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在全局区域中，输入：
+
+.sp
+.in +2
+.nf
+global# \fBls /dev/cua\fR
+a     a000  a001  a002  a003  a004  a005  a006  a007  b
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在区域 \fBflexlm\fR 中，输入：
+
+.sp
+.in +2
+.nf
+flexlm# \fBls /dev/cua\fR
+a002  a003  a004  a005
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR将区域的上限设置为三个 CPU
+.sp
+.LP
+以下序列使用 \fBzonecfg\fR 命令将区域的 CPU 上限设置为三个 CPU。
+
+.sp
+.in +2
+.nf
+zonecfg:myzone> \fBadd capped-cpu\fR
+zonecfg:myzone>capped-cpu> \fBset ncpus=3\fR
+zonecfg:myzone>capped-cpu>capped-cpu> \fBend\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上面的序列使用了 capped-cpu 属性，它等效于使用了 \fBzone.cpu-cap\fR 资源控制的以下序列。
+
+.sp
+.in +2
+.nf
+zonecfg:myzone> \fBadd rctl\fR
+zonecfg:myzone:rctl> \fBset name=zone.cpu-cap\fR
+zonecfg:myzone:rctl> \fBadd value (priv=privileged,limit=300,action=none)\fR
+zonecfg:myzone:rctl> \fBend\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR使用 \fBkstat\fR 监视 CPU 上限
+.sp
+.LP
+以下命令显示有关所有 CPU 上限的信息。
+
+.sp
+.in +2
+.nf
+# \fBkstat -n /cpucaps/\fR
+module: caps                            instance: 0     
+name:   cpucaps_project_0               class:    project_caps
+        above_sec                       0
+        below_sec                       2157
+        crtime                          821.048183159
+        maxusage                        2
+        nwait                           0
+        snaptime                        235885.637253027
+        usage                           0
+        value                           18446743151372347932
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_1               class:    project_caps
+        above_sec                       0
+        below_sec                       0
+        crtime                          225339.192787265
+        maxusage                        5
+        nwait                           0
+        snaptime                        235885.637591677
+        usage                           5
+        value                           18446743151372347932
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_201             class:    project_caps
+        above_sec                       0
+        below_sec                       235105
+        crtime                          780.37961782
+        maxusage                        100
+        nwait                           0
+        snaptime                        235885.637789687
+        usage                           43
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_202             class:    project_caps
+        above_sec                       0
+        below_sec                       235094
+        crtime                          791.72983782
+        maxusage                        100
+        nwait                           0
+        snaptime                        235885.637967512
+        usage                           48
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_203             class:    project_caps
+        above_sec                       0
+        below_sec                       235034
+        crtime                          852.104401481
+        maxusage                        75
+        nwait                           0
+        snaptime                        235885.638144304
+        usage                           47
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_86710           class:    project_caps
+        above_sec                       22
+        below_sec                       235166
+        crtime                          698.441717859
+        maxusage                        101
+        nwait                           0
+        snaptime                        235885.638319871
+        usage                           54
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_zone_0                  class:    zone_caps
+        above_sec                       100733
+        below_sec                       134332
+        crtime                          821.048177123
+        maxusage                        207
+        nwait                           2
+        snaptime                        235885.638497731
+        usage                           199
+        value                           200
+        zonename                        global
+
+module: caps                            instance: 1     
+name:   cpucaps_project_0               class:    project_caps
+        above_sec                       0
+        below_sec                       0
+        crtime                          225360.256448422
+        maxusage                        7
+        nwait                           0
+        snaptime                        235885.638714404
+        usage                           7
+        value                           18446743151372347932
+        zonename                        test_001
+
+module: caps                            instance: 1     
+name:   cpucaps_zone_1                  class:    zone_caps
+        above_sec                       2
+        below_sec                       10524
+        crtime                          225360.256440278
+        maxusage                        106
+        nwait                           0
+        snaptime                        235885.638896443
+        usage                           7
+        value                           100
+        zonename                        test_001
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR显示特定区域或项目的 CPU 上限
+.sp
+.LP
+使用 \fBkstat\fR \fB-c\fR 和 \fB-i\fR 选项，可以显示特定区域或项目的 CPU 上限，如下所示。第一个命令生成针对某个特定项目的显示，第二个命令生成针对区域 1 中同一个项目的显示。
+
+.sp
+.in +2
+.nf
+# \fBkstat -c project_caps\fR
+
+# \fBkstat -c project_caps -i 1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR委托区域管理权限
+.sp
+.LP
+以下示例展示了如何将当前区域的管理权限分配给某个角色。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBadd admin\fR
+zonecfg:myzone:admin> \fBset user=zadmin\fR
+zonecfg:myzone:admin> \fBset auths=login,manage\fR
+zonecfg:myzone:admin> \fBend\fR
+zonecfg:myzone> \fBcommit\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+这些命令的执行结果将是 RBAC \fBuser_attr\fR(4) 数据库中的更新条目，类似于以下条目：
+
+.sp
+.in +2
+.nf
+zadmin::::type=role;\e
+auths=solaris.zone.login/myzone,solaris.zone.manage/myzone;profiles=\e
+Zone Management
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 13 \fR创建具有非缺省属性的独占 IP 区域
+.sp
+.LP
+以下示例创建的区域具有通过 \fBmylink0\fR 自动创建的 VNIC，并指定了给定的 MAC 地址、100 Mbps 的最大带宽、高优先级、RX 端的专用硬件环、TX 端的非专用硬件环（即，基于软件）以及 VLAN id 2。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -b -z excl\fR
+excl: No such zone configured
+Use 'create' to begin configuring a new zone
+zonecfg:excl> \fBcreate\fR
+zonecfg:excl> \fBset zonepath=/export/zones/excl\fR
+zonecfg:excl> \fBadd anet\fR
+zonecfg:excl:anet> \fBset linkname=mynic0\fR
+zonecfg:excl:anet> \fBset lower-link=mylink0\fR
+zonecfg:excl:anet> \fBset mac-address=8:0:20:fe:4e:b8\fR
+zonecfg:excl:anet> \fBset maxbw=100M\fR
+zonecfg:excl:anet> \fBset priority=high\fR
+zonecfg:excl:anet> \fBset vlan-id=2\fR
+zonecfg:excl:anet> \fBset rxrings=hw\fR
+zonecfg:excl:anet> \fBset txrings=sw\fR
+zonecfg:excl:anet> \fBend\fR
+zonecfg:excl> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 14 \fR创建只读区域
+.sp
+.LP
+以下示例将创建一个可防止区域对其根文件系统进行修改的新区域。由于应用了 \fBfixed-configuration\fR 配置文件，\fB/var\fR 中的文件是可写的。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z rozone\fR
+rozone: No such zone configured
+Use 'create' to begin configuring a new zone
+zonecfg:rozone> \fBcreate\fR
+zonecfg:rozone> \fBset brand=solaris\fR
+zonecfg:rozone> \fBset zonepath=/export/zones/rozone\fR
+zonecfg:rozone> \fBset autoboot=true\fR
+zonecfg:rozone> \fBset file-mac-profile=fixed-configuration\fR
+zonecfg:rozone> \fBset ip-type=exclusive\fR
+zonecfg:rozone> \fBadd net\fR
+zonecfg:rozone:net> \fBset physical=vnic0\fR
+zonecfg:rozone:net> \fBend\fR
+zonecfg:rozone> exit
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+用法无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/zones
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBppriv\fR(1)、\fBprctl\fR(1)、\fBzlogin\fR(1)、\fBdladm\fR(1M)、\fBipadm\fR(1M)、\fBkstat\fR(1M)、\fBmount\fR(1M)、\fBpooladm\fR(1M)、\fBpoolcfg\fR(1M)、\fBpoold\fR(1M)、\fBrcapd\fR(1M)、\fBrctladm\fR(1M)、\fBroute\fR(1M)、\fBsvcadm\fR(1M)、\fBzfs\fR(1M)、\fBzoneadm\fR(1M)、\fBzpool\fR(1M)、\fBpriv_str_to_set\fR(3C)、\fBkstat\fR(3KSTAT)、\fBuser_attr\fR(4)、\fBvfstab\fR(4)、\fBattributes\fR(5)、\fBbrands\fR(5)、\fBfnmatch\fR(5)、\fBMWAC\fR(5)、\fBprivileges\fR(5)、\fBrbac\fR(5)、\fBresource_controls\fR(5)、\fBzones\fR(5)、\fBdev\fR(7FS)、\fBhsfs\fR(7FS)、\fBuscsi\fR(7I)
+.sp
+.LP
+\fISystem Administration Guide: Solaris Containers-Resource Management, and Solaris Zones\fR
+.SH 附注
+.sp
+.LP
+\fBzonecfg\fR 使用的所有字符都必须采用 US-ASCII 编码。
+.sp
+.LP
+一般情况下，向区域中添加设备可能会使区域对系统的安全性和稳定性产生不利影响，因为不是所有设备都已经过审核并确认可以在区域内安全地使用。
+.sp
+.LP
+可以将使用 \fBsd\fR 或 \fBssd\fR 目标驱动程序的存储设备（例如，这可以使用 \fBprtconf -D /dev/dsk/c2t40d3\fR 来检查）安全地委托给区域。这将使得区域管理员可以为此类设备设置标签和分区。
+.sp
+.LP
+只委托一个分片（例如，\fBmatch=/dev/dsk/c2t40d3s0\fR）也将使得区域管理员能够为包含该分片的整个磁盘设置标签和分区。要阻止这种情况发生，请通过以下方式取消从区域运行 \fBformat\fR 的功能：
+.sp
+.in +2
+.nf
+set limitpriv=default,-storage_config
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过将 \fBraw_storage\fR 特权添加到区域的 \fBlimitpriv\fR 中，可以启用对存储设备的原始访问。这是不安全的，因为它会允许区域进程执行原始 SCSI 命令（请参见 \fBuscsi\fR(7I)）。

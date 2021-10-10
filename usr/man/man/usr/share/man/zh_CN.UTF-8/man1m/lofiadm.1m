@@ -1,0 +1,698 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH lofiadm 1M "2011 年 7 月 6 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+lofiadm \- 通过 lofi 管理作为块设备提供的文件
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-k\fR \fIraw_key_file\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-T\fR \fItoken_key\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-T\fR \fItoken_key\fR
+     \fB-k\fR \fIwrapped_key_file\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-e\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-C\fR \fIalgorithm\fR [\fB-s\fR \fIsegment_size\fR] \fIfile\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-d\fR \fIfile\fR | \fIdevice\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-U\fR \fIfile\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR [ \fIfile\fR | \fIdevice\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBlofiadm\fR 管理回送文件驱动程序 \fBlofi\fR。\fBlofi\fR 可用于将文件与块设备关联，然后可通过块设备访问此文件。当文件包含某些文件系统的映像（例如 \fBCD-ROM\fR 映像）时，这会很有用，因为块设备随后可与常规系统实用程序一起用于挂载、检查或修复文件系统。请参见 \fBfsck\fR(1M) 和 \fBmount\fR(1M)。
+.sp
+.LP
+可以使用 \fBlofiadm\fR 将文件添加为回送设备、删除这样的关联或显示有关当前关联的信息。 
+.sp
+.LP
+潜在 \fBlofi\fR 设备的数量受 \fBzone.max-lofi\fR rctl 的限制，后者可通过 \fBzonecfg\fR(1M) 在全局区域 (global zone) 中进行设置。有关 \fBzone.max-lofi\fR 的说明，请参见 \fBresource_controls\fR(5)。
+.sp
+.LP
+不能在命令行上同时使用加密和压缩选项。此外，加密文件无法再进行压缩，而压缩文件也无法再进行加密。
+.sp
+.LP
+在全局区域中，全局区域设备以及系统中其他非全局区域所拥有的所有设备都可以使用 \fBlofiadm\fR。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIfile\fR [\fIdevice\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIfile\fR 添加为块设备。 
+.sp
+如果没有指定 \fIdevice\fR，则会选择一个可用设备。
+.sp
+如果指定了 \fIdevice\fR，\fBlofiadm\fR 会尝试将其分配给 \fIfile\fR。\fIdevice\fR 必须可用，否则 \fBlofiadm\fR 将失败。指定设备的功能可用于在脚本中重新建立一组特定的关联。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR {\fIgzip\fR | \fIgzip-N\fR | \fIlzma\fR}\fR
+.ad
+.sp .6
+.RS 4n
+使用指定压缩算法压缩文件。
+.sp
+\fBgzip\fR 压缩算法使用与开源 \fBgzip\fR 命令相同的压缩。要指定 \fBgzip\fR 级别，可使用值 \fBgzip-\fR\fIN\fR，其中 \fIN\fR 为 6（快速）或 9（最佳压缩比）。当前，不含数字的 \fBgzip\fR 相当于 \fBgzip-6\fR（这也是 \fBgzip\fR 命令的缺省值）。
+.sp
+\fIlzma\fR 表示 LZMA (Lempel-Ziv-Markov) 压缩算法。
+.sp
+请注意，不能对压缩文件进行写入，也不能以读/写方式挂载压缩文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIfile\fR | \fIdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据 \fIfile\fR 或 \fIdevice\fR 名称删除关联（如果关联的块设备未处于忙碌状态），并解除块设备的分配。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsegment_size\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于划分所压缩文件的段大小。\fIsegment_size\fR 可以是 512 的整数倍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+解压缩某个压缩文件。
+.RE
+
+.sp
+.LP
+加密文件时可以使用下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcrypto_algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择加密算法。启用加密时必须指定算法，因为磁盘映像中并未存储算法。
+.sp
+如果 \fB-e\fR、\fB-k\fR 或 \fB-T\fR 均未指定，则 \fBlofiadm\fR 会提示输入最短八个字符长的口令短语。口令短语用于使用 PKCS#5 PBKD2 派生出一个对称加密密钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIraw_key_file\fR | \fIwrapped_key_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+原始或包装的对称加密密钥的路径。如果还使用 \fB-T\fR 选项指定了 PKCS#11 对象，则密钥将由该对象包装。如果未指定 \fB-T\fR，则以原始状态使用密钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItoken_key\fR\fR
+.ad
+.sp .6
+.RS 4n
+PKCS#11 标记中的密钥，用于加密或用于解开密钥文件的包装。
+.sp
+如果同时指定了 \fB-k\fR，则 \fB-T\fR 表示解开包装的密钥，该密钥必须为 RSA 私钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成临时对称加密密钥。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcrypto_algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBaes-128-cbc\fR、\fBaes-192-cbc\fR、\fBaes-256-cbc\fR、\fBdes3-cbc\fR、\fBblowfish-cbc\fR 之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示与块设备 \fIdevice\fR 关联的文件名。
+.sp
+如果不指定参数，则会显示当前关联的列表。文件名必须为有效的绝对路径名。
+.sp
+添加文件时，文件会打开，供 root 读取或写入。任何限制均适用（例如通过 \fBNFS\fR 的受限 root 访问）。文件将保持打开状态，直至删除关联。在使用块设备之前无法实际访问文件，因此如果仅以只读方式打开块设备，将永远无法对文件进行写入。
+.sp
+请注意，如果无法在当前上下文中解析路径（例如，如果它是非全局区域中的一个 NFS 路径），则文件名可能显示为问号 (\fB?\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示与 \fIfile\fR 关联的块设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIraw_key_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+要用作原始对称加密密钥的适当长度（以位为单位）的文件的路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItoken_key\fR\fR
+.ad
+.sp .6
+.RS 4n
+以下格式的 PKCS#11 标记对象：
+.sp
+.in +2
+.nf
+\fItoken_name\fR:\fImanufacturer_id\fR:\fIserial_number\fR:\fIkey_label\fR
+.fi
+.in -2
+.sp
+
+除密钥标签外的其他各项均为可选项且可以为空。例如，要只使用其密钥标签 \fBMylofiKey\fR 指定标记对象，请使用：
+.sp
+.in +2
+.nf
+-T :::MylofiKey
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIwrapped_key_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+包含由 \fB-T\fR 指定的 RSA 私钥包装的对称加密密钥的文件的路径。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR挂载现有 CD-ROM 映像
+.sp
+.LP
+在创建 \fBCD\fR 之前应确保 Solaris 了解此映像。\fBlofi\fR 允许您挂载映像并查看其是否有效。
+
+.sp
+.LP
+此示例将挂载一个从 Internet 下载的 \fBRed Hat 6.0 CD\fR 的现有 \fBCD-ROM\fR 映像 (\fBsparc.iso\fR)。它是使用来自 Internet 的 \fBmkisofs\fR 实用程序创建的。
+
+.sp
+.LP
+使用 \fBlofiadm\fR 为其关联一个块设备：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /home/mike_s/RH6.0/sparc.iso\fR
+/dev/lofi/1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBlofiadm\fR 将选择设备并将设备名称打印到标准输出中。您可以通过发出以下命令再次运行 \fBlofiadm\fR： 
+
+.sp
+.in +2
+.nf
+# \fBlofiadm\fR
+Block Device     File                           Options
+/dev/lofi/1      /home/mike_s/RH6.0/sparc.iso   -
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+或者，您可以通过发出以下命令为其提供一个名称并查询另一个名称： 
+
+.sp
+.in +2
+.nf
+# \fBlofiadm /dev/lofi/1\fR
+/home/mike_s/RH6.0/sparc.iso
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用 \fBmount\fR 命令挂载映像： 
+
+.sp
+.in +2
+.nf
+# \fBmount -F hsfs -o ro /dev/lofi/1 /mnt\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+检查以确保 Solaris 了解该映像：
+
+.sp
+.in +2
+.nf
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/lofi/1           512418  512418       0   100%    /mnt 
+# \fBls /mnt\fR
+\&./            RedHat/       doc/          ls-lR         rr_moved/ 
+\&../           TRANS.TBL     dosutils/     ls-lR.gz      sbin@ 
+\&.buildlog     bin@          etc@          misc/         tmp/ 
+COPYING       boot/         images/       mnt/          usr@ 
+README        boot.cat*     kernels/      modules/ 
+RPM-PGP-KEY   dev@          lib@          proc/
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Solaris 可挂载 CD-ROM 映像并可识别文件名。映像创建正确，现在您可以放心地创建 \fBCD-ROM\fR。
+
+.sp
+.LP
+最后一步，取消挂载并分离映像：
+
+.sp
+.in +2
+.nf
+# \fBumount /mnt\fR
+# \fBlofiadm -d /dev/lofi/1\fR
+# \fBlofiadm\fR
+Block Device             File             Options
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR在文件上创建 \fBUFS\fR 文件系统
+.sp
+.LP
+在文件上创建 \fBUFS\fR 文件系统可能很有用，尤其是在测试套件需要临时文件系统时。单纯为了测试套件而被迫对磁盘进行重新分区会令人感到痛苦（或烦恼），但您不必如此。您可以通过 \fBlofi\fR 对文件进行 \fBnewfs\fR。 
+
+.sp
+.LP
+创建文件： 
+
+.sp
+.in +2
+.nf
+# \fBmkfile 35m /export/home/test\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+将其关联到块设备。您还会获得 \fBnewfs\fR 所需的字符设备，因此 \fBnewfs\fR 将如下所示：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /export/home/test\fR
+/dev/lofi/1
+# \fBnewfs /dev/rlofi/1\fR
+newfs: construct a new file system /dev/rlofi/1: (y/n)? \fBy\fR
+/dev/rlofi/1:   71638 sectors in 119 cylinders of 1 tracks, 602 sectors
+        35.0MB in 8 cyl groups (16 c/g, 4.70MB/g, 2240 i/g)
+super-block backups (for fsck -F ufs -o b=#) at:
+ 32, 9664, 19296, 28928, 38560, 48192, 57824, 67456,
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，\fBufs\fR 可能无法使用整个文件。挂载并使用文件系统： 
+
+.sp
+.in +2
+.nf
+# \fBmount /dev/lofi/1 /mnt\fR
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/lofi/1            33455       9   30101     1%    /mnt
+# \fBls /mnt\fR
+\&./           ../          lost+found/
+# \fBumount /mnt\fR
+# \fBlofiadm -d /dev/lofi/1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR在 Unix 文件上创建 PC (FAT) 文件系统
+.sp
+.LP
+下列命令将在 Unix 文件上创建 \fBFAT\fR 文件系统。此文件与由 \fBlofiadm\fR 创建的块设备关联。
+
+.sp
+.in +2
+.nf
+# \fBmkfile 10M /export/test/testfs\fR
+# \fBlofiadm -a /export/test/testfs\fR
+/dev/lofi/1
+\fBNote use of\fR rlofi\fB, not\fR lofi\fB, in following command.\fR
+# \fBmkfs -F pcfs -o nofdisk,size=20480 /dev/rlofi/1\fR
+\fBConstruct a new FAT file system on /dev/rlofi/1: (y/n)?\fR y
+# \fBmount -F pcfs /dev/lofi/1 /mnt\fR
+# \fBcd /mnt\fR
+# \fBdf -k .\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/lofi/1            10142       0   10142     0%    /mnt
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR压缩现有 CD-ROM 映像
+.sp
+.LP
+以下示例将揭示如何压缩一个现有 CD-ROM 映像 (\fBsolaris.iso\fR)，验证映像是否已压缩，然后将其解压缩。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -C gzip /export/home/solaris.iso\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用 \fBlofiadm\fR 为其关联一个块设备：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /export/home/solaris.iso\fR
+  /dev/lofi/1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+检查映射的映像是否已压缩：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm\fR
+Block Device      File                            Options
+/dev/lofi/1       /export/home/solaris.iso        Compressed(gzip)
+/dev/lofi/2       /export/home/regular.iso        -
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+取消映射压缩的映像并将其解压缩：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -d /dev/lofi/1\fR
+# \fBlofiadm -U /export/home/solaris.iso\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR在文件上创建加密的 UFS 文件系统
+.sp
+.LP
+本例与上述在文件上创建 UFS 文件系统的示例类似。
+
+.sp
+.LP
+创建文件：
+
+.sp
+.in +2
+.nf
+# \fBmkfile 35m /export/home/test\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+将文件关联到块设备并指定文件映像已加密。作为此命令的结果，您将获得字符设备，该设备随后由 \fBnewfs\fR 使用：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -c aes-256-cbc -a /export/home/secrets\fR
+Enter passphrase: \fBMy-M0th3r;l0v3s_m3+4lw4ys!\fR           (\fBnot echoed\fR)
+Re-enter passphrase: \fBMy-M0th3r;l0v3s_m3+4lw4ys!\fR        (\fBnot echoed\fR)
+/dev/lofi/1
+
+# \fBnewfs /dev/rlofi/1\fR
+newfs: construct a new file system /dev/rlofi/1: (y/n)? \fBy\fR
+/dev/rlofi/1:   71638 sectors in 119 cylinders of 1 tracks, 602 sectors
+       35.0MB in 8 cyl groups (16 c/g, 4.70MB/g, 2240 i/g)
+super-block backups (for fsck -F ufs -o b=#) at:
+32, 9664, 19296, 28928, 38560, 48192, 57824, 67456,
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+映射的文件系统显示已启用加密：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm\fR
+Block Device    File                     Options
+/dev/lofi/1     /export/home/secrets     Encrypted
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+挂载并使用文件系统：
+
+.sp
+.in +2
+.nf
+# \fBmount /dev/lofi/1 /mnt\fR
+# \fBcp moms_secret_*_recipe /mnt\fR
+# \fBls /mnt\fR
+\&./           moms_secret_cookie_recipe    moms_secret_soup_recipe
+\&../          moms_secret_fudge_recipe     moms_secret_stuffing_recipe
+lost+found/  moms_secret_meatloaf_recipe  moms_secret_waffle_recipe
+# \fBumount /mnt\fR
+# \fBlofiadm -d /dev/lofi/1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用错误密钥或错误加密算法映射文件系统的后续尝试将失败：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -c blowfish-cbc -a /export/home/secrets\fR
+Enter passphrase: \fBmommy\fR                                (\fInot echoed\fR)
+Re-enter passphrase: \fBmommy\fR                             (\fInot echoed\fR)
+lofiadm: could not map file /root/lofi: Invalid argument
+# \fBlofiadm\fR
+Block Device    File                    Options
+#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在不使用加密的情况下映射文件系统的尝试将成功，但是挂载和使用文件系统的尝试将失败：
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /export/home/secrets\fR
+/dev/lofi/1
+# \fBlofiadm\fR
+Block Device    File                     Options
+/dev/lofi/1     /export/home/secrets     -
+# \fBmount /dev/lofi/1 /mnt\fR
+mount: /dev/lofi/1 is not this fstype
+#
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+有关下列影响 \fBlofiadm\fR 的执行的环境变量的说明，请参见 \fBenviron\fR(5)：\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR 和 \fBNLSPATH\fR。
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBfsck\fR(1M)、\fBmount\fR(1M)、\fBmount_ufs\fR(1M)、\fBnewfs\fR(1M)、\fBzonecfg\fR(1M)、\fBattributes\fR(5)、\fBresource_controls\fR(5)、\fBlofi\fR(7D)、\fBlofs\fR(7FS)
+.SH 附注
+.sp
+.LP
+就像您不会直接访问挂载了文件系统的磁盘设备一样，您也不能访问与块设备关联的文件，除非通过 \fBlofi\fR 文件驱动程序。除此之外，最好再确保文件设有适当权限以禁止这类访问。
+.sp
+.LP
+\fBlofiadm\fR 的功能以及可以使用它们的用户是由 \fB/dev/lofictl\fR 的权限控制的。读取访问权限允许执行查询操作，例如列出所有关联。执行任何状态更改操作都需要写入访问权限，例如添加关联。出厂时 \fB/dev/lofictl\fR 归 \fBroot\fR 所有，位于组 \fBsys\fR 中且模式为 \fB0644\fR，因此所有用户均可执行查询操作，但只有 root 能够进行任何更改。管理员可赋予用户写入访问权限，允许他们添加或删除关联，但这很有可能成为安全漏洞，因此可能只应赋予受信任的组。
+.sp
+.LP
+挂载文件系统映像时，请注意使用适当挂载选项。尤其是，\fBnosuid\fR 挂载选项可能适合于来源未知的 \fBUFS\fR 映像。此外，某些选项可能没有用或者不适合，例如 \fBlogging\fR 或 \fBforcedirectio\fR 对于 \fBUFS\fR。出于兼容性目的，原始设备也会随块设备一起导出。例如，\fBnewfs\fR(1M) 就需要一个原始设备。
+.sp
+.LP
+\fBlofiadm\fR（不含参数）的输出在将来的发行版中可能会有所变化。

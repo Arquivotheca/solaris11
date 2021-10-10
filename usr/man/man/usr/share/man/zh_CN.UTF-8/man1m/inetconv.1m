@@ -1,0 +1,246 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates.保留所有权利。
+.TH inetconv 1M "2010 年 3 月 17 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+inetconv \- 将 \fBinetd.conf\fR 项转换为 smf 服务清单，将其导入 smf 系统信息库
+.SH 用法概要
+.LP
+.nf
+\fBinetconv\fR \fB-?\fR
+.fi
+
+.LP
+.nf
+\fBinetconv\fR [\fB-f\fR] [\fB-n\fR] [\fB-i\fR \fIsrcfile\fR] [\fB-o\fR \fIdestdir\fR]
+.fi
+
+.LP
+.nf
+\fBinetconv\fR \fB-e\fR [\fB-n\fR] [\fB-i\fR \fIsrcfile\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBinetconv\fR 实用程序将包含 \fBinetd.conf\fR(4) 记录的文件转换成 \fBsmf\fR(5) 服务清单，然后将这些清单导入到 \fBsmf\fR 系统信息库。\fBinetd.conf\fR 文件转换完成后，更改 inet 服务某些方面的唯一方法就是使用 \fBinetadm\fR(1M) 实用程序。
+.sp
+.LP
+输入文件中的服务行与生成的清单具有一对一的关系。缺省情况下，清单使用以下模板命名：
+.sp
+.in +2
+.nf
+\fI<svcname>\fR-\fI<proto>\fR\fB\&.xml\fR
+.fi
+.in -2
+
+.sp
+.LP
+\fI<svcname>\fR 标记替换为服务的名称，\fI<proto>\fR 标记替换为服务的协议。资源行的服务名称或协议中的斜杠 (\fB/\fR) 替换为下划线 (\fB_\fR)。
+.sp
+.LP
+服务行记录为已转换服务的属性。
+.sp
+.LP
+转换过程中，如果发现服务行格式不对或是用于内部 \fBinetd\fR 服务，则不会生成清单，并跳过该服务行。
+.sp
+.LP
+转换过程不会改动输入文件。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.RS 14n
+.rt  
+显示用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 14n
+.rt  
+启用输入文件中所列的 \fBsmf\fR 服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 14n
+.rt  
+如果指定该选项，则目标目录中发现与要生成的服务清单具有相同名称的服务清单时，\fBinetconv\fR 将会覆盖该清单。否则会生成一则错误消息，且不会执行此服务的转换。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIsrcfile\fR\fR
+.ad
+.RS 14n
+.rt  
+允许指定一个备用输入文件 \fIsrcfile\fR。如果未指定此选项，\fBinetd.conf\fR(4) 文件会用作输入。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 14n
+.rt  
+转换过程中禁用生成清单的自动导入。然后，如果希望将生成的清单导入 \fBsmf\fR(5) 系统信息库，可以通过 \fBsvccfg\fR(1M) 实用程序进行此操作。
+.sp
+如果指定 \fB-e\fR 选项，\fB-n\fR 选项仅显示将要启用的 \fBsmf\fR 服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 14n
+.rt  
+允许为生成的清单指定备用目标目录 \fIdestdir\fR。如果未指定此选项，清单将会放在 \fB/lib/svc/manifest/network/rpc\fR 中，如果服务是 RPC 服务，则会放在 \fB/lib/svc/manifest/network\fR 中。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR从 \fBinetd.conf\fR 生成 \fBsmf\fR 清单
+.sp
+.LP
+以下命令从 \fBinetd.conf\fR(4) 生成 \fBsmf\fR(5) 清单，并将它们放在 \fB/var/tmp\fR 中，覆盖任何之前存在的相同名称的清单，然后将它们导入 \fBsmf\fR 系统信息库。
+
+.sp
+.in +2
+.nf
+# inetconv -f -o /var/tmp
+100232/10 -> /var/tmp/100232_10-rpc_udp.xml
+Importing 100232_10-rpc_udp.xml ...Done
+telnet -> /var/tmp/telnet-tcp6.xml
+Importing telnet-tcp6.xml ...Done
+.fi
+.in -2
+
+.LP
+\fB示例 2 \fR从备用输入文件生成清单
+.sp
+.LP
+以下命令指定一个不同的输入文件，不会将得到的清单装入 \fBsmf\fR 系统信息库。
+
+.sp
+.in +2
+.nf
+# inetconv -n -i /export/test/inet.svcs -o /var/tmp
+100232/10 -> /var/tmp/100232_10-rpc_udp.xml
+telnet -> /var/tmp/telnet-tcp6.xml
+.fi
+.in -2
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+操作成功完成（没有错误）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+指定选项无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+一个或多个服务行格式不对，因此未为其生成清单。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+导入一个或多个生成的清单时发生错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+发生了系统错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/svc/manifest/network/{rpc}/\fI<svcname>\fR-\fI<proto>\fR\&.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省输出清单文件名。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBinetadm\fR(1M)、\fBinetd\fR(1M)、\fBsvccfg\fR(1M)、\fBinetd.conf\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)

@@ -1,0 +1,83 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH devchassis 7FS "7 May 2011" "SunOS 5.11" "File Systems"
+.SH NAME
+devchassis \- device name file system
+.SH DESCRIPTION
+.sp
+.LP
+The chassis subdirectory of the \fB/dev\fR \fBdevfs\fR(7FS) file system provides a location-oriented name space. The \fB/dev/chassis\fR name space is maintained by the \fBdevchassisd\fR(1M) \fBsmf\fR service. The \fB/dev/chassis\fR name space is structured by \fIchassis\fR, \fIreceptacle\fR, and current \fIoccupant\fR. Within the \fIchassis/receptacle\fR name space, the current occupant is maintained as a dynamic symlink into the \fB/devices\fR file system.
+.sp
+.in +2
+.nf
+/dev/chassis/
+  <product-id>.<chassis-id>[[/receptable-name]*
+     [/<occupant-type> -> /devices/...]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+An empty receptacle is represented as an empty directory.
+.sp
+.LP
+If an \fBfmadm\fR(1M)\(emmanaged \fI<alias-id>\fR exists, then the \fI<product-id>\fR\&.\fI<chassis-id>\fR is replaced by a managed \fI<alias-id>\fR\&. A managed \fI<alias-id>\fR can establish the physical location of chassis, like a building, lab, rack, and chassis U-number range inside the rack.
+.sp
+.LP
+There is always one well-known \fI<alias-id>\fR associated with internal locations: \fBSYS\fR. This \fI<alias-id>\fR cannot be modified. 
+.sp
+.LP
+A \fI<receptable-name>\fR is associated with chassis silk-screen labeling of receptacles (like disk bays). Multiple \fI<receptacle-name>\fR directories can be used before coming to an occupant symlink.
+.sp
+.LP
+The \fB/dev/chassis\fR name space allows you to administer the machine based on physical location.
+.sp
+.in +2
+.nf
+# format /dev/chassis/SYS/HD0/disk
+
+# zpool create tank mirror \
+        /dev/chassis/RACK29.U01-04/DISK_00/disk \
+        /dev/chassis/RACK29.U05-08/DISK_00/disk
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBfmd\fR(1M) machine topology understanding is required to drive the creation and maintenance of the \fB/dev/chassis\fR name space. If this understanding is lacking, the \fB/dev/chassis\fR name space will be lacking. \fBfmd\fR(1M) and \fBdevchassisd\fR(1M)operation is coordinated using the contents of \fB/etc/dev/cro_db\fR. This same data file is also used by the \fBcroinfo\fR(1M) utility.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/chassis\fR\fR
+.ad
+.RS 19n
+.rt  
+Directory under the \fB/dev\fR file system mount point that provides, when possible, a location-oriented device name space.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dev/cro_db\fR\fR
+.ad
+.RS 19n
+.rt  
+Data file created by \fBfmd\fR(1M) used to obtain information about chassis, receptacles, and occupants.
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBcroinfo\fR(1M), \fBdevchassisd\fR(1M), \fBfmadm\fR(1M), \fBfmd\fR(1M), \fBdevices\fR(4), \fBdevfs\fR(7FS)
+.SH NOTES
+.sp
+.LP
+To prevent stale links, the entire \fB/dev/chassis\fR name space is removed during each boot and reestablished when both \fBfmd\fR(1M) and \fBdevchassisd\fR(1M) are running. If \fBdevchassisd\fR(1M) is not running, the \fB/dev/chassis\fR name space does not exist.
+.sp
+.LP
+Gaps in \fBfmd\fR(1M) topology representation result in gaps in the \fB/dev/chassis\fR name space.

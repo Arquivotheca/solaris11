@@ -1,0 +1,105 @@
+'\" te
+.\" Copyright (c) 2008, IEEE and The Open Group. All Rights Reserved.
+.\" Portions Copyright (c) 2008, Sun Microsystems, Inc. All Rights Reserved.
+.TH pthread_mutexattr_getrobust 3C "11 Nov 2008" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+pthread_mutexattr_getrobust, pthread_mutexattr_setrobust \- get and set the mutex robust attribute
+.SH SYNOPSIS
+.LP
+.nf
+cc -mt [ \fIflag\fR... ] \fIfile\fR... [ \fIlibrary\fR... ]
+#include <pthread.h>
+
+\fBint\fR \fBpthread_mutexattr_getrobust\fR(\fBconst pthread_mutexattr_t *\fR\fIattr\fR,
+     \fBint *\fR\fIrobust\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBpthread_mutexattr_setrobust\fR(\fBpthread_mutexattr_t *\fR\fIattr\fR,
+     \fBint\fR \fIrobust\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpthread_mutexattr_getrobust()\fR and \fBpthread_mutexattr_setrobust()\fR functions, respectively,  get and set the mutex robust attribute. This attribute is set in the \fIrobust\fR parameter. Valid values for \fIrobust\fR include:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPTHREAD_MUTEX_STALLED\fR\fR
+.ad
+.sp .6
+.RS 4n
+No special actions are taken if the owner of the mutex is terminated while holding the mutex lock. This can lead to deadlocks because no other thread can unlock the mutex. This is the default value.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPTHREAD_MUTEX_ROBUST\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the owning thread of a robust mutex terminates while holding the mutex lock, or if the process containing the owning thread of a robust mutex terminates, either normally or abnormally, or if the process containing the owner of the mutex unmaps the memory containing the mutex or performs one of the \fBexec\fR(2) functions, the next thread that acquires the mutex will be notified by the return value \fBEOWNERDEAD\fR from the locking function.
+.sp
+The notified thread can then attempt to recover the state protected by the mutex and, if successful, mark the state as consistent again by a call to \fBpthread_mutex_consistent()\fR.  After a subsequent successful call to \fBpthread_mutex_unlock\fR(3C), the mutex lock will be released and can be used normally by other threads.  If the mutex is unlocked without a call to \fBpthread_mutex_consistent()\fR, it will be in a permanently unusable state and all attempts to lock the mutex will fail with the error \fBENOTRECOVERABLE\fR.  The only permissible operation on such a mutex is \fBpthread_mutex_destroy\fR(3C).
+.sp
+The actions required to make the state protected by the mutex consistent are solely dependent on the application.  Calling \fBpthread_mutex_consistent\fR(3C) does not, by itself, make the state protected by the mutex consistent.
+.sp
+The behavior is undefined if the value specified by the \fIattr\fR argument to \fBpthread_mutexattr_getrobust()\fR or \fBpthread_mutexattr_setrobust()\fR does not refer to an initialized mutex attributes object.
+.RE
+
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, the \fBpthread_mutexattr_getrobust()\fR function returns 0 and stores the value of the robust attribute of \fIattr\fR into the object referenced by the robust parameter.  Otherwise, an error value is returned to indicate the error.
+.sp
+.LP
+Upon successful completion, the \fBpthread_mutexattr_setrobust()\fR function returns 0. Otherwise, an error value is returned to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBpthread_mutexattr_setrobust()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+The value of \fIrobust\fR is invalid.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5)  for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-Level MT-Safe
+_
+StandardSee \fBstandards\fR(5).
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBexec\fR(2), \fBpthread_mutex_consistent\fR(3C), \fBpthread_mutex_destroy\fR(3C), \fBpthread_mutex_init\fR(3C), \fBpthread_mutex_lock\fR(3C), \fBpthread_mutex_unlock\fR(3C), \fBpthread_mutexattr_getpshared\fR(3C), \fBpthread_mutexattr_init\fR(3C), \fBattributes\fR(5), \fBmutex\fR(5), \fBstandards\fR(5)
+.SH NOTES
+.sp
+.LP
+The mutex memory must be zeroed before first initialization of a mutex with the \fBPTHREAD_MUTEX_ROBUST\fR attribute. Any thread in any process interested in the robust lock can call \fBpthread_mutex_init()\fR to potentially initialize it, provided that all such callers of \fBpthread_mutex_init()\fR specify the same set of attributes in their attribute structures. In this situation, if \fBpthread_mutex_init()\fR is called on a previously initialized robust mutex, it will not reinitialize the mutex and will return the error value \fBEBUSY\fR. If \fBpthread_mutex_init()\fR is called on a previously initialized robust mutex, and if the caller specifies a different set of attributes from those already in effect for the mutex, it will not reinitialize the mutex and will return the error value \fBEINVAL\fR.

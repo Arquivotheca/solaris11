@@ -1,0 +1,208 @@
+'\" te
+.\"  Copyright 1989 AT&T
+.\" Copyright (c) 2000, Sun Microsystems, Inc. All Rights Reserved
+.TH getoptcvt 1 "2000 年 1 月 7 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+getoptcvt \- コマンドオプションを解析するために getopts に変換
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/getoptcvt\fR [\fB-b\fR] \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/getoptcvt\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fB/usr/lib/getoptcvt\fR は \fIfilename\fR 内のシェルスクリプトを読み取り、 \fBgetopt\fR の代わりに \fBgetopts\fR を使用できるように それを変換し、 その結果を標準出力に出力します。
+.sp
+.LP
+\fBgetopts\fR は、Bourne シェル組み込みコマンドの1 つであり、定位置パラメータの解析およびオプションの妥当性チェックに使用されます。\fBsh\fR(1) を参照してください。このコマンドは、コマンド構文標準規格 (\fBIntro\fR(1) のルール 3 ～ 10を参照) のうち、該当するルールすべてをサポートします。このコマンドは、\fBgetopt\fR コマンドの代わりに使用してください。(「注意事項」の項を参照してください。)シェルの \fBgetopts\fR 組み込みコマンドの構文を 次に示します。
+.sp
+.LP
+\fBgetopts\fR \fIoptstring\fR \fI name\fR [ \fIargument\fR\|.\|.\|.\|]
+.sp
+.LP
+\fIoptstring\fR には、\fBgetopts\fR を使用するコマンドが認識できる オプション文字を入れなければなりません。 オプション文字の後にコロン (\fB:\fR) が付いている場合は、 そのオプションには 1 つまたは複数の引数があるとみなされます。オプションと引数の間は、 スペースによって区切られていなければなりません。
+.sp
+.LP
+\fBgetopts\fR は、呼び出されるたびに、次のオプションをシェル変数 \fIname\fR に入れ、処理すべき次の引数へのインデックスをシェル変数 \fBOPTIND\fR に入れます。シェルまたはシェル手続きが呼び出されるたびに、\fBOPTIND\fR の値は \fB1\fR に初期設定されます。
+.sp
+.LP
+オプションにオプション引数が必要な場合、\fBgetopts\fR はその引数をシェル変数 \fBOPTARG\fR に入れます。
+.sp
+.LP
+不正なオプションが検出されると、\fB?\fR が \fIname\fR に入ります。
+.sp
+.LP
+オプションの終わりが検出されると、\fBgetopts\fR はゼロ以外の終了ステータスで終了します。特殊オプション \fB \(mi\(mi \fR を使用して、オプションの終わりを表すことができます。
+.sp
+.LP
+デフォルトでは、\fBgetopts\fR は定位置パラメータを解析します。getopts コマンド行に追加の引数 (\fIargument\fR .\|.\|.) が指定されると、\fBgetopts\fR は定位置パラメータの代わりにその引数を解析します。\fB\fR
+.sp
+.LP
+新しいコマンドはすべて、 \fBIntro\fR(1) で説明している コマンド構文標準規格に 従うようにするために、 定位置パラメータの解析、 および オプションが そのコマンドの有効なオプションであるかどうかの チェックに、 \fBgetopts\fR または \fBgetopt\fR を使用しなければなりません ( 以下の「注意事項」の項を 参照してください ) 。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB- b\fR\fR
+.ad
+.RS 7n
+.rt  
+変換されたスクリプトを、 UNIX システムの旧リリースへ 移植可能にします。\fB/usr/lib/getoptcvt\fR は、\fIfilename\fR 内のシェルスクリプトを変更し、変更後のシェルスクリプトを実行すると、 実行時に \fBgetopts\fR と \fBgetopt\fR のどちらを呼び出すか判別できるようにします。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRコマンド引数の処理
+.sp
+.LP
+次に示すシェルプログラムの一部分では、オプション \fB-a\fR または \fB-b\fR 、およびオプション引数の必要なオプション \fB-o\fR を使用するコマンドについて、引数の使用例を示します。
+
+.sp
+.in +2
+.nf
+while getopts abo: c
+do
+      case $c in
+      a | b)     FLAG=$c;;
+      o)         OARG=$OPTARG;;
+      \e?)        echo $USAGE
+                 exit 2;;
+      esac
+done
+shift `expr $OPTIND \(mi 1`
+.fi
+.in -2
+
+.LP
+\fB例 2 \fR同一内容のコード式
+.sp
+.LP
+このコードは、 次のコマンドすべてを同一内容として受け入れます。
+
+.sp
+.in +2
+.nf
+\fBcmd -a -b -o "xxx z yy" filename
+cmd -a -b -o "xxx z yy" -filename
+cmd -ab -o xxx,z,yy filename
+cmd -ab -o "xxx z yy" filename
+cmd -o xxx,z,yy b a filename\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBgetopts\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB OPTIND\fR \fR
+.ad
+.RS 12n
+.rt  
+この変数は、次に処理すべき引数の索引として \fBgetoptcvt\fR によって使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOPTARG\fR \fR
+.ad
+.RS 12n
+.rt  
+この変数は、オプションが引数を使用している場合に、引数を格納するために \fBgetoptcvt\fR  によって使用されます。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB 0\fR \fR
+.ad
+.RS 7n
+.rt  
+\fIoptstring\fR で指定した、または指定しなかったオプションが見つかりました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+オプションの並びの終わりを検出した、またはエラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBIntro\fR(1), \fBgetopts\fR(1), \fBsh\fR(1), \fBshell_builtins\fR(1), \fBgetopt\fR(3C), \fBattributes\fR(5)
+.SH 診断
+.sp
+.LP
+\fBgetopts\fR は、 \fIoptstring\fR に含まれていないオプション文字を検出すると、 標準エラー出力にエラーメッセージを表示します。
+.SH 注意事項
+.sp
+.LP
+現在の実装においては、次のようにコマンド構文規格 （\fBIntro\fR(1) を参照） に従わない使用方法が認められていますが、このような使用方法は、将来、システムのリリースではサポートされないので、使用しないでください。前述の 「使用例」と同様に、\fB-a\fR および \fB-b\fR がオプションであり、\fB-o\fR はオプション引数を持つオプションとします。次の例では、ルール 5   (オプション引数を持つオプションは別のオプションと一緒にまとめることはできない) に違反しています。
+.sp
+.in +2
+.nf
+example% \fBcmd -aboxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例では、ルール 6  (オプション引数を持つオプションの後には、スペースがなければならない) に違反しています。
+.sp
+.in +2
+.nf
+example% \fBcmd -ab oxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+シェル変数 \fBOPTIND\fR の値を変更したり、 異なる引数の集まりを解析したりした場合の 結果は不確定です。

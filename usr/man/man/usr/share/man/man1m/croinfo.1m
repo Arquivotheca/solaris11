@@ -1,0 +1,617 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH croinfo 1M "12 May 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+croinfo, diskinfo \- query and display information about 1) chassis, receptacle, and occupants or 2) disk occupants of bay receptacles
+.SH SYNOPSIS
+.LP
+.nf
+\fBcroinfo\fR [\fB-h\fR] [\fB-v\fR] [\fB-I\fR \fIcro_db\fR] [\fB-o\fR \fIfields\fR] [\fB-O\fR \fIfields\fR]
+        [\fB-P\fR \fIproduct-id\fR] [\fB-C\fR \fIchassis-id\fR] [\fB-A\fR \fIalias-id\fR]
+        [\fB-R\fR \fIreceptacle-name\fR] [\fB-T\fR \fIreceptacle-type\fR] [\fB-t\fR \fIoccupant-type\fR]
+        [\fB-D\fR \fIdevchassis-path\fR] [\fB-d\fR \fIoccupant-devices\fR] [\fB-p\fR \fIoccupant-paths\fR]
+        [\fB-c\fR \fIoccupant-compdev\fR] [\fB-i\fR \fIoccupant-devid\fR] [\fB-m\fR \fIoccupant-mfg\fR]
+        [\fB-e\fR \fIoccupant-model\fR] [\fB-n\fR \fIoccupant-part\fR] [\fB-s\fR \fIoccupant-serial\fR]
+        [\fB-f\fR \fIoccupant-firm\fR] [\fB-1\fR \fIoccupant-misc-1\fR] [\fB-2\fR \fIoccupant-misc-2\fR]
+        [\fB-3\fR \fIoccupant-misc-3\fR]
+.fi
+
+.LP
+.nf
+\fBdiskinfo\fR [\fB-h\fR] [\fB-v\fR] [\fB-I\fR \fIcro_db\fR] [\fB-o\fR \fIfields\fR] [\fB-O\fR \fIfields\fR]
+        [\fB-P\fR \fIproduct-id\fR] [\fB-C\fR \fIchassis-id\fR] [\fB-A\fR \fIalias-id\fR]
+        [\fB-R\fR \fIreceptacle-name\fR] [\fB-T\fR \fIreceptacle-type\fR] [\fB-t\fR \fIoccupant-type\fR]
+        [\fB-D\fR \fIdevchassis-path\fR] [\fB-d\fR \fIoccupant-devices\fR] [\fB-p\fR \fIoccupant-paths\fR]
+        [\fB-c\fR \fIoccupant-compdev\fR] [\fB-i\fR \fIoccupant-devid\fR] [\fB-m\fR \fIoccupant-mfg\fR]
+        [\fB-e\fR \fIoccupant-model\fR] [\fB-n\fR \fIoccupant-part\fR] [\fB-s\fR \fIoccupant-serial\fR]
+        [\fB-f\fR \fIoccupant-firm\fR] [\fB-1\fR \fIoccupant-misc-1\fR] [\fB-2\fR \fIoccupant-misc-2\fR]
+        [\fB-3\fR \fIoccupant-misc-3\fR]
+.fi
+
+.LP
+.nf
+\fBcroinfo\fR \fB-?\fR
+.fi
+
+.LP
+.nf
+\fBdiskinfo\fR \fB-?\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBdiskinfo\fR and \fBcroinfo\fR utility share the same binary executable. At runtime, the utility checks to see how it was invoked, and adjusts defaults.
+.sp
+.LP
+The \fBcroinfo\fR utility allows users to query and display specific aspects of a system's configuration. Queries are performed against a record-oriented dataset that captures the relationship between physical location and various aspects of the device currently at that physical location. This relationship is expressed in terms of Chassis, Receptacle, and Occupant (thus the \fBcro\fR prefix).
+.sp
+.LP
+Records in a CRO dataset are composed of multiple, named fields with each record having a potentially unique field value. An angle-bracket reference, such as \fIproduct-id\fR, is referring to a specific \fIfield-name\fR. For a given record, a field value is either undefined (empty) or defined with a set of indexed string values. Some defined field values have just one string value, while others can have multiple string values.
+.sp
+.LP
+Each \fIfield-name\fR defined is associated with a separate \fIfield-char\fR character. By convention, uppercase \fIfield-char\fR characters are associated for chassis and receptacle information fields, and lowercase \fIfield-char\fR characters are associated with occupant information fields. For each \fIfield-char\fR character, a separate \fB-field-char field-name-RE\fR flag regular expression filter option is provided. This allows the user to customize queries to display information about specific aspects of the configuration. Records that match all regular expressions are selected, in dataset order, for display. For multiple string values, only one index value needs to match for the field to match.
+.sp
+.LP
+By default, only a minimal number of default output fields are displayed. You can override the default with either \fB-o\fR \fIfields\fR for human-readable output or with \fB-O\fR \fIfields\fR for parseable output. In both cases, output fields can be specified using either the short-hand \fIfield-char\fR[...] notation or in the more descriptive \fIfield-name\fR[,...] notation.
+.sp
+.LP
+For human-readable use, by using the \fB-o\fR \fIfields\fR option, the user can override the default fields, and output any fields, in the specified order, in a column-aligned whitespace separated format. In general, output will be one line of output per matching record with undefined (empty) \fIfield-name\fR values displayed as a hyphen (\fB\(em\fR). If, however, a displayed record has a multiple string \fIvalue\fR field, then multiple lines of output are produced with any secondary non-multiple string values fields showing a colon (\fB:\fR).
+.sp
+.LP
+For scripting, by using the \fB-O\fR \fIfields\fR option, the user can override the default output fields and output any fields, in the specified order, in a parseable colon-separated format with whitespace removed and column headers suppressed. Output will be one line of output per matching record with undefined (empty) field-name values displayed with no value. If a displayed record \fIfield-name\fR has a multiple string \fIvalue\fR field, then all the values are concatenated, separated by a comma. Any occurrence of a colon or a comma in a value is escaped with a leading backslash (\fB\\fR).  To make scripts more legible, use of the \fB-O\fR \fIfield-name\fR[,...]' notation is encouraged.
+.sp
+.LP
+The \fB-o\fR and \fB-O\fR options are mutually exclusive.
+.sp
+.LP
+If the \fB-h\fR option is used, or scripting output format is requested by using \fB-o\fR, the column headers for output fields are suppressed.
+.sp
+.LP
+A Chassis is identified by a specific \fIproduct-id\fR and \fIchassis-id\fR. The \fIproduct-id\fR relates to a specific chassis-level product, like a system chassis Sun-Fire-X4200-M2 or a storage chassis SUN-Storage-J4410. For a given \fIproduct-id\fR value, the \fIchassis-id\fR defines a unique serial number.
+.sp
+.LP
+A specific \fIproduct-id\fR.\fIchassis-id\fR combination can have an "managed" location-oriented \fIalias-id\fR defined by the administrator, using \fBfmadm\fR(1M) that provides installation-specific location information about where a chassis is physically located. This might include such information as building, room, rack, and U-number range within a rack.
+.sp
+.LP
+In addition to the managed location-oriented \fIalias-id\fR defined using \fBfmadm\fR(1M), system chassis always have one well-known alias called \fBSYS\fR that can be used to identify receptacles that are internal to the system chassis.
+.sp
+.LP
+Within a chassis, each receptacle has a unique \fIreceptacle-name\fR that should match the physical silk-screen label designation for the receptacle. Each receptacle also has a \fIreceptacle-type\fR, which helps define acceptable \fIoccupant-types\fR.
+.sp
+.LP
+When a receptacle is occupied, use the \fB-f\fR flag definitions for available \fIoccupant-information\fR. Of particular interest is the \fB-c\fR \fIoccupant-compdev\fR occupant information: it describes the common component of the public \fB/dev\fR name associated with the occupant device. For disks, this is the whole-disk \fBc\fR\fI#\fR\fBt\fR\fI#\fR\fBd\fR\fI#\fR name.
+.sp
+.LP
+The CRO dataset order is associated with the \fIdevchassis-path\fR of the record, which corresponds to the \fB/dev/chassis\fR name space maintained by \fBdevchassisd\fR(1M). That ordering places records associated with the well-known \fBSYS\fR internal alias first, and records with \fBBOOT\fR receptacle-name first in \fBSYS\fR. This is done to ensure that, when applicable, information about the typical boot device is provided first.
+.sp
+.LP
+For \fBcroinfo\fR, the default output is in \fB-o\fR \fIDtc\fR format, and all CRO records are shown.
+.sp
+.LP
+For \fBdiskinfo\fR, the default output is in \fB-o\fR \fIDc\fR format, and a \fB-T\fR \fIbay\fR \fIreceptacle-type\fR filter is applied. The meanings of the \fIoccupant-misc-#\fR fields also take on a disk-specific interpretation:  \fImisc-1\fR is capacity, and \fImisc-2\fR is target-port information. These defaults allow the \fBdiskinfo\fR command to query the relationship between chassis, \fIbay\fR receptacles, and their \fIdisk\fR occupants, while ignoring other CRO information.
+.SH OPTIONS
+.sp
+.LP
+For each record \fIfield-name\fR defined, a separate \fI-field-char field-name-RE\fR flag regular expression filter can be specified. For a given \fIfield-name\fR, if no specific \fI-field-char field-name-RE\fR filter is defined, all CRO records match.
+.sp
+.LP
+This allows the user to customize queries to display information about specific aspects of the configuration. CRO records that match all of the specified \fIfield-name\fR regular expressions (as in \fBregex\fR(3C)) will be selected for display, with specific fields output controlled by means of \fB-o\fR, \fB-O\fR, or the default.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIproduct-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fIproduct-id\fR specifies the product identifier of an enumerated chassis. The \fIproduct-id\fR might be exposed in the \fB/dev/chassis\fR name space. For storage products that do not have an established \fBfmadm\fR(1M) managed \fIalias-id\fR, the \fIproduct-id\fR is visible in the \fBdevchassis\fR(7FS) \fB/dev/chassis\fR name space.
+.sp
+Example system \fIproduct-id\fR value: \fBSun-Fire-X4200-M2\fR
+.sp
+Example storage \fIproduct-id\fR value: \fBSUN-Storage-J4410\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIchassis-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fIchassis-id\fR specifies the serial number of a product chassis. The \fIchassis-id\fR might be exposed in the \fB/dev/chassis\fR name space. For storage products that do not have an established \fBfmadm\fR(1M) managed \fIalias-id\fR, the \fIproduct-id\fR is visible in the \fBdevchassis\fR(7FS) \fB/dev/chassis\fR name space.
+.sp
+Example \fIchassis-id\fR value: \fB0818QAJ002\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIalias-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+An \fIalias-id\fR value can be the well-known alias value of \fBSYS\fR, for system internal devices. In addition, an \fIalias-id\fR value can be a managed alias, defined by the administrator using \fBfmadm\fR(1M). The intended use of a managed alias is to define the physical location of the \fIproduct-id\fR.\fIchassis-id\fR. The \fIalias-id\fR is exposed in the \fB/dev/chassis\fR name space.
+.sp
+Example well-known \fIalias-id\fR value: \fBSYS\fR
+.sp
+Example managed \fIalias-id\fR value: \fBRACK29.U01-04\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIreceptacle-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+For a specific \fIproduct-id\fR, the unique \fIreceptacle-name\fR defines location of a specific receptacle in a chassis. The \fIreceptacle-name\fR should be identical to a silk-screen label on the physical chassis, and should also match product documentation. The \fIreceptacle-name\fR can have multiple path components, such as \fBSYS/HD0\fR. The receptacle-name is exposed in the \fB/dev/chassis\fR name space.
+.sp
+Example \fIreceptacle-name\fR value: \fBSYS/HD0\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIreceptacle-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+Example \fIreceptacle-type\fR value: \fBbay\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIoccupant-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-type\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-type\fR value: \fBdisk\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIdevchassis-path\fR\fR
+.ad
+.sp .6
+.RS 4n
+Example \fIdevchassis-path\fR value: \fB/dev/chassis/SYS/HD0/disk\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIoccupant-devices\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-devices\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-devices\fR value:
+.sp
+.in +2
+.nf
+/devices/scsi_vhci/disk@g5000c500101ba0a3
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIoccupant-paths\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-paths\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example occupant-paths value:
+.sp
+.in +2
+.nf
+devices/pci@0,0/pci10de,5d@d/pci11f8,8001@0/iport@f/disk@w5000c500101ba0a1,0
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIoccupant-compdev\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-compdev\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-compdev\fR value: \fBc0t5000C500101BA0A3d0\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIoccupant-devid\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-devid\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-devid\fR value: \fBid1,sd@n5000c500101ba0a3\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIoccupant-mfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-mfg\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-mfg\fR value: \fBSEAGATE\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIoccupant-model\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-model\fR, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-model\fR value: \fBST32000SSSUN2.0T\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIoccupant-part\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-part\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-part\fR value: \fBSEAGATE-ST32000SSSUN2.0T\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIoccupant-serial\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-serial\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-serial\fR value: \fB000949L09C8L________9WM09C8L\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIoccupant-firm\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-firm\fR value, shown as a hyphen (\fB\(em\fR).
+.sp
+Example \fIoccupant-firm\fR value: \fB0313\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-1\fR \fIoccupant-misc-1\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-misc-1\fR value, shown as a hyphen (\fB\(em\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-2\fR \fIoccupant-misc-2\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-misc-2\fR value, shown as a hyphen (\fB\(em\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-3\fR \fIoccupant-misc-3\fR\fR
+.ad
+.sp .6
+.RS 4n
+A receptacle without an occupant has an undefined (empty) \fIoccupant-misc-3\fR value, shown as a hyphen (\fB\(em\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display usage information.
+.RE
+
+.SS "Output \fIfield-name\fR Control Options"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfields\fR\fR
+.ad
+.sp .6
+.RS 4n
+Output specified fields, in order, in human-readable format.
+.sp
+For \fBcroinfo\fR, default output is in \fB-o\fR \fIDtc\fR format. For \fBdiskinfo\fR, default output is in \fB-O\fR \fIDc\fR format.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR \fIfields\fR\fR
+.ad
+.sp .6
+.RS 4n
+Output specified fields, in order, in parseable format.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+Do not output \fIfield-name\fR column headers
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display verbose header that includes various information about when the CRO dataset was created. This option is of particular use with \fB-I\fR and is used to specify a non-standard source for the CRO dataset.
+.RE
+
+.SS "Dataset Selection Option"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIcro_db\fR\fR
+.ad
+.sp .6
+.RS 4n
+Data file from which to obtain CRO dataset information.
+.RE
+
+.SH EXAMPLES
+.sp
+.LP
+In some of the following examples, example output wraps in an 80-character-wide display.
+.LP
+\fBExample 1 \fRDetermining Where a Disk is Located
+.sp
+.LP
+The following command determines where a disk is located:
+
+.sp
+.in +2
+.nf
+# \fBcroinfo -c c0t5000C500101BA0A3d0\fR
+D:devchassis-path                        t:occupant-type
+---------------------------------------  ---------------
+/dev/chassis/RACK29.U01-04/DISK_00/disk  disk
+
+c:occupant-compdev
+------------------
+c0t5000C500101BA0A3d0
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRReporting Internal Disks
+.sp
+.LP
+The following command reports the \fIreceptacle-name\fR and the \fIoccupant-compdev\fR of internal disks, that is, disks that are associated with the well-known \fBSYS\fR alias.
+
+.sp
+.in +2
+.nf
+# \fBdiskinfo -A SYS -o Rc\fR
+R:receptacle-name  c:occupant-compdev
+-----------------  ------------------
+SYS/HD0            c8t0d0
+SYS/HD1            c8t1d0
+SYS/HD2            -
+SYS/HD3            -
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Note that the \fBSYS/HD2\fR and \fBSYS/HD3\fR receptacles are empty.
+
+.sp
+.LP
+The same command, in scripting output mode, would produce:
+
+.sp
+.in +2
+.nf
+# \fBdiskinfo -A SYS -O receptacle-name,occupant-compdev\fR
+SYS/HD0:c8t0d0
+SYS/HD1:c8t1d0
+SYS/HD2:
+SYS/HD3:
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRReporting Disks in a Specific Enclosure
+.sp
+.LP
+The following command reports all the disks within a chassis with a specific \fIproduct-id\fR and \fIchassis-id\fR value.
+
+.sp
+.in +2
+.nf
+# \fBdiskinfo -P SUN-Storage-J4410 -C SUN-Storage-J4410 -o Rc\fR
+R:receptacle-name  c:occupant-compdev
+-----------------  ---------------------
+DISK_00            c0t5000C500101BA0A3d0
+DISK_01            c0t5000C500101B95BBd0
+DISK_02            -
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRReporting Physical Path Information
+.sp
+.LP
+The following command reports physical path information for a specific disk.
+
+.sp
+.in +2
+.nf
+# \fBcroinfo -c c0t5000C500101BA0A3d0 -o cp\fR
+c:occupant-compdev
+------------------
+c0t5000C500101BA0A3d0
+
+p:occupant-paths
+--------------------------------------------------
+/devices/pci@0,0/pci10de,5d@d/pci11f8,8001@0/iport@f/disk@w5000c500101ba0a1,0
+/devices/pci@7b,0/pci10de,5d@d/pci11f8,8001@0/iport@f/disk@w5000c500101ba0a2,0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Note that \fIoccupant-paths\fR has multiple string values.
+
+.LP
+\fBExample 5 \fRMaking Inventory of Disks
+.sp
+.LP
+The following example reports how many of a specific type of disk are available using \fIoccupant-part\fR.
+
+.sp
+.in +2
+.nf
+# \fBfor i in `croinfo -h -o n  | sort -u`\fR
+> \fBdo\fR
+> \fBecho $i "\t\c";croinfo -h -n $i | wc -l\fR
+> \fBdone\fR
+SEAGATE-ST330055SSUN300G               3
+SEAGATE-ST330056SSUN300G              19
+SEAGATE-ST345056SSUN450G               5
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRLocating a Specific Type of Disk
+.sp
+.LP
+The following command reports where disks of a specific type are located, what their \fBctd\fR name is (by means of \fIoccupant-compdev\fR), and what firmware level they are at.
+
+.sp
+.in +2
+.nf
+# \fBcroinfo -n SEAGATE-ST330055SSUN300G -o Dcf\fR
+D:Devchassis                                     c:component
+-----------------------------------------------  ---------------------
+/dev/chassis/RACK29.U29-32/SCSI_Device__11/disk  c0t5000C50007DD49F7d0
+/dev/chassis/RACK29.U33-36/SCSI_Device__18/disk  c0t5000C50008F7FB4Fd0
+/dev/chassis/RACK29.U33-36/SCSI_Device__19/disk  c0t5000C50007DD412Fd0
+
+f:firm
+------
+0892
+0892
+0892
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilitySee below
+.TE
+
+.sp
+.LP
+The interface stability of \fBcroinfo\fR and \fBdiskinfo\fR is Committed. The interface stability of command output is Not-an-Interface.
+.SH SEE ALSO
+.sp
+.LP
+\fBdevchassisd\fR(1M), \fBfmadm\fR(1M), \fBfmd\fR(1M), \fBattributes\fR(5), \fBdevchassis\fR(7FS)
+.sp
+.LP
+The SCSI Storage Interfaces committee website, \fBhttp://www.t10.org\fR
+.sp
+.LP
+\fISCSI Primary Commands-4, SPC4\fR; \fISCSI Enclosure Services-2\fR; \fISES2, Serial Attached SCSI-2, SAS2\fR
+.SH NOTES
+.sp
+.LP
+\fBcroinfo\fR representation depends on the ability of \fBfmd\fR(1M) to enumerate system topology and accurately represent associated chassis, receptacles, and occupants. These dependencies might extend through \fBfmd\fR(1M) and require that connected hardware, and its associated firmware, comply with specific standards. For disk bays, this requires that storage chassis behave in a T10 standards-compliant (SPC4 and SES2) fashion. Storage chassis that do not respond appropriately might not report chassis, bays, or disk nodes correctly. Specifically, \fBdiskinfo\fR requires that chassis support SES diagnostic page \fB0xa\fR (Additional Element Status) and set the Element Index Present (EIP) bit to \fB1\fR. Enclosures that do not meet this criterion will not be fully enumerated, and thus will not be properly represented.

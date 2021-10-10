@@ -1,0 +1,390 @@
+'\" te
+.\" Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Copyright 1989 AT&T
+.\" Portions Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH read 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+read \- 標準入力から 1 行を入力
+.SH 形式
+.SS "/usr/bin/read"
+.LP
+.nf
+\fB/usr/bin/read\fR [\fB-r\fR] \fIvar\fR...
+.fi
+
+.SS "sh"
+.LP
+.nf
+\fBread\fR \fIname\fR...
+.fi
+
+.SS "csh"
+.LP
+.nf
+\fBset\fR \fIvariable\fR = $<
+.fi
+
+.SS "ksh88"
+.LP
+.nf
+\fBread\fR [\fB-prsu\fR [\fIn\fR]] [\fIname\fR ? \fIprompt\fR] [\fIname\fR]...
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fBread\fR [\fB-ACprs\fR] [\fB-d\fR \fIdelim\fR] [\fB-n\fR \fInsize\fR] [\fB-N\fR \fInsize\fR] [\fB-t\fR \fItimeout\fR]
+     [\fB-u\fR \fIunit\fR] [\fIvname\fR\fB?\fR\fIprompt\fR] [\fIvname\fR... ]
+.fi
+
+.SH 機能説明
+.SS "/usr/bin/read"
+.sp
+.LP
+\fBread\fR ユーティリティーは、標準入力から 1 行を読み込みます。
+.sp
+.LP
+デフォルトでは、 \fB-r\fR オプションが指定されない限り、バックスラッシュ文字 (\fB\e\fR) をエスケープ文字と見なします。標準入力が端末装置で、呼び出し側のシェルが対話型のとき、\fBread\fR は次の条件が存在していればプロンプトを表示し、継続行の入力を要求します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-r\fR オプションが指定されておらず、バックスラッシュで終わる行をシェルが読み込んだとき。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+復帰改行文字の入力後、here-document (各種シェルで << を使用する機能) が終了しないとき。\fB\fR
+.RE
+.sp
+.LP
+シェル内と同じように、入力行はいくつかのフィールドに分割されます。先頭のフィールドは最初に指定された変数 \fIvar\fR に、次のフィールドは 2 番目の変数 \fIvar\fR に、というように割り当てられます。フィールドの総数より \fIvar\fR オペランドの数が少ない場合、余ったフィールドおよびそれらの区切り文字はすべて最後に指定された \fIvar\fR に割り当てられます。フィールドより \fIvar\fR の方が多い場合には、余った \fIvar\fR には空の文字列が設定されます。
+.sp
+.LP
+\fIvar\fR オペランドで指定された変数の設定は、現在のシェルの実行環境に影響を及ぼします。次のように、サブシェルや別のユーティリティー実行環境で呼び出された場合は、
+.sp
+.in +2
+.nf
+\fB(read foo)
+nohup read ...
+find . -exec read ... \e;\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは呼び出し側の環境のシェル変数には影響しません。
+.sp
+.LP
+標準入力はテキストファイルでなければなりません。
+.SS "sh"
+.sp
+.LP
+標準入力から 1 行を読み取り、内部フィールド区切り文字の \fBIFS\fR (通常はスペースまたはタブ) を用いてワード境界を区切り、最初のワードを最初の \fIname\fR に、2 番目のワードを 2 番目の \fIname\fR に、というように 順次割り当てます。 残ったワードは最後の \fIname\fR に割り当てます。\fB\e \fR に続いて復帰改行を入力すれば、行を継続できます。復帰改行以外の文字の前にバックスラッシュを付加すれば、その文字を引用できます。\fB\fRこのバックスラッシュは、ワードが \fIname\fR に割り当てられる前に削除され、バックスラッシュの後に位置する文字は解釈されません。ファイルの終わりに到達した場合を除き、戻り値は \fB0\fR となります。
+.SS "csh"
+.sp
+.LP
+次の表記を見てください。
+.sp
+.in +2
+.nf
+set \fIvariable\fR \fB= $<\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この記述は、標準入力の 1 行を \fIvariable\fR 値としてロードします (\fBcsh\fR(1) 参照)。
+.SS "ksh88"
+.sp
+.LP
+シェルの入力メカニズムです。 1 つの行を読み取り、 \fBIFS\fR が示す文字を、区切り文字として使用して 行の内容をいくつかのフィールドに分割します。エスケープ文字 \fB(\e)\fR は、次の文字の特別な意味または行の継続に関する意味を取り除くために使用します。\fB-r\fR で指定する raw モードでは、\fB,\fR および \fB\e\fR 文字が持つこの特殊な意味は無視されます。第 1 フィールドを 1 番目の \fIname\fR に、 第 2 フィールドを 2 番目の \fIname\fR に、 という順番で割り当てていき、 余ったフィールドがあれば最後の \fIname\fR に割り当てます。\fB-p\fR オプションは、シェルが \fB|&\fR を使用して生成したプロセスの入力パイプから入力行を取り出します。\fB-s\fR フラグは、入力をコマンドとして履歴ファイルに保存します。\fB-u\fR フラグは、 読み取り元となるファイル記述子番号を 1 桁の数値 \fIn\fR で指定します。ファイル記述子は、\fBexec\fR という特殊コマンドで開くことができます。\fIn\fR のデフォルト値は \fB0\fR です。\fIname\fR を省略すると、\fBREPLY\fR の値をデフォルトとして使用します。\fI\fR入力ファイルが読み込み用にオープンされていない場合とEOF に到達した場合を除き、終了ステータスは \fB0\fR です。\fB-p\fR オプションが指定されていてファイルの終わりを検出すると、 このプロセスをクリアし別のプロセスを作成可能にします。最初の引数が \fB?\fR を含んでいると、シェルが対話型のとき、このワードの残りを標準エラーに対するプロンプトとして使用します。\fI\fRファイルの終わりに到達しないかぎり、 終了ステータスは \fB0\fR です。
+.SS "ksh"
+.sp
+.LP
+\fBread\fR は、標準入力から行を読み取り、\fBIFS\fR 変数値の文字を区切り文字として使用して複数のフィールドに分割します。\fB-r\fR オプションを指定しないかぎり、エスケープ文字 \fB(\e)\fR は、次の文字の特別な意味または行の継続に関する意味を取り除くために使用します。
+.sp
+.LP
+フィールドより変数の方が多い場合は、残りの変数には空の文字列が設定されます。フィールドより変数の数が少ない場合、余ったフィールドおよびそれらの区切り文字は最後に指定された変数に割り当てられます。\fIvar\fR が指定されていない場合、変数 \fBREPLY\fR が使用されます。 
+.sp
+.LP
+\fIvar\fR にバイナリ属性があり、\fB-n\fR または \fB-N\fR が指定されている場合、読み取られたバイト数は直接 \fIvar\fR に格納されます。
+.sp
+.LP
+1 番目の \fIvar\fR の後ろに \fB?\fR\fIprompt\fR を指定した場合、標準入力が端末またはパイプのときに、\fBread\fR は標準エラーにプロンプトを表示します。
+.SH オプション
+.SS "/usr/bin/read, ksh88"
+.sp
+.LP
+\fB/usr/bin/read\fR および \fBksh88\fR では次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+バックスラッシュ文字を特別な文字としません。単なる入力行の一部として扱います。
+.RE
+
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR では次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fR
+.ad
+.RS 13n
+.rt  
+\fIvar\fR の設定を解除して、インデックス \fB0\fR で始まる行に各フィールドを含むインデックス付き配列を作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 13n
+.rt  
+\fIvar\fR の設定を解除して、\fIvar\fR を複合変数として読み取ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdelim\fR\fR
+.ad
+.RS 13n
+.rt  
+行の終わりではなく、区切り記号 \fIdelim\fR まで読み取ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fInsize\fR\fR
+.ad
+.RS 13n
+.rt  
+最大で \fInsize\fR バイトを読み取ります。バイナリフィールドのサイズはバイト単位です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fInsize\fR\fR
+.ad
+.RS 13n
+.rt  
+正確に \fInsize\fR バイトを読み取ります。バイナリフィールドのサイズはバイト単位です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 13n
+.rt  
+標準入力の代わりに、現在の並行プロセスから読み取ります。ファイルの終わりに達すると、\fBread\fR は別の並行プロセスを作成できるように並行プロセスを切断します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 13n
+.rt  
+特に入力行を処理するときに、\fB\e\fR を処理しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 13n
+.rt  
+入力のコピーをシェル履歴ファイルのエントリとして保存します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fItimeout\fR\fR
+.ad
+.RS 13n
+.rt  
+端末またはパイプから読み取るときに、\fItimeout\fR を秒単位で指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIfd\fR\fR
+.ad
+.RS 13n
+.rt  
+標準入力の代わりに、ファイル記述子番号 \fIfd\fR から読み取ります。デフォルト値は \fB0\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 13n
+.rt  
+端末から読み取るときに、1 番目の変数値を表示して、それをデフォルト値として使用します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvar\fR \fR
+.ad
+.RS 8n
+.rt  
+存在している、あるいはしていないシェル変数の名前。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBread\fR コマンドを使用する方法
+.sp
+.LP
+次に示す \fB/usr/bin/read\fR の例は、入力ファイルの内容を、各行の先頭フィールドを最後尾に移動して出力するものです。
+
+.sp
+.in +2
+.nf
+example% \fBwhile read -r xx yy
+do
+        printf "%s %s\en" "$yy" "$xx"
+done < input_file\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBread\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFS\fR\fR
+.ad
+.RS 7n
+.rt  
+フィールドを区切るのに使われている、 内部フィールド区切り文字を定義します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPS2\fR\fR
+.ad
+.RS 7n
+.rt  
+対話型シェルが標準エラー出力に出力するプロンプトの文字列を定義します。プロンプトが出力されるのは、\fB-r\fR オプションが指定されておらずバックスラッシュで終わる行を読み込んだとき、または復帰改行文字の入力後に here-document が終了しないときです。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+ファイルの終わりを検出した、またはエラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/read, csh, ksh88, sh"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SS "ksh"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBline\fR(1), \fBset\fR(1), \fBsh\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)

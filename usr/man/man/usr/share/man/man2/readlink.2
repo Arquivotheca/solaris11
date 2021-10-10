@@ -1,0 +1,248 @@
+'\" te
+.\" Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.\" Portions Copyright (c) 1992, X/Open Company Limited.  All Rights Reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at  http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html.  This notice shall appear on any product containing this material.
+.TH readlink 2 "6 Jul 2010" "SunOS 5.11" "System Calls"
+.SH NAME
+readlink, readlinkat \- read the contents of a symbolic link
+.SH SYNOPSIS
+.LP
+.nf
+#include <unistd.h>
+
+\fBssize_t\fR \fBreadlink\fR(\fBconst char *restrict\fR \fIpath\fR, \fBchar *restrict\fR \fIbuf\fR, 
+     \fBsize_t\fR \fIbufsiz\fR);
+.fi
+
+.LP
+.nf
+ssize_t readlinkat(int \fIfd\fR, const char *restrict \fIpath\fR,
+char *restrict \fIbuf\fR, size_t \fIbufsize\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBreadlink()\fR function places the contents of the symbolic link referred to by \fIpath\fR in the buffer \fIbuf\fR which has size \fIbufsiz\fR.  If the number of bytes in the symbolic link is less than \fIbufsiz\fR, the contents of the remainder of \fIbuf\fR are left unchanged. If the \fIbuf\fR argument is not large enough to contain the link content, the first \fIbufsize\fR bytes are placed in \fIbuf\fR.
+.sp
+.LP
+Upon successful completion, \fBreadlink()\fR marks for update the last data access timestamp of the symbolic link.
+.sp
+.LP
+The \fBreadlinkat()\fR function is equivalent to the \fBreadlink()\fR function except in the case where \fIpath\fR specifies a relative path. In this case the symbolic link whose content is read is relative to the directory associated with the file descriptor \fIfd\fR instead of the current working directory. If the file descriptor was opened without \fBO_SEARCH\fR, the function checks whether directory searches are permitted using the current permissions of the directory underlying the file descriptor. If the file descriptor was opened with \fBO_SEARCH\fR, the function does not perform the check.
+.sp
+.LP
+If \fBreadlinkat()\fR is passed the special value \fBAT_FDCWD\fR in the \fIfd\fR parameter, the current working directory is used and the behavior is identical to a call to \fBreadlink()\fR.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, \fBreadlink()\fR and \fBreadlinkat()\fR return the count of bytes placed in the buffer.  Otherwise, it returns  \fB\(mi1\fR, leaves the buffer unchanged, and sets \fBerrno\fR to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBreadlink()\fR and \fBreadlinkat()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 16n
+.rt  
+Search permission is denied for a component of the path prefix of \fIpath\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEFAULT\fR\fR
+.ad
+.RS 16n
+.rt  
+\fIpath\fR or \fIbuf\fR points to an illegal address.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 16n
+.rt  
+The \fIpath\fR argument names a file that is not a symbolic link.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEIO\fR\fR
+.ad
+.RS 16n
+.rt  
+An I/O error occurred while reading from the file system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOENT\fR\fR
+.ad
+.RS 16n
+.rt  
+A component of \fIpath\fR does not name an existing file or \fIpath\fR is an empty string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBELOOP\fR\fR
+.ad
+.RS 16n
+.rt  
+A loop exists in symbolic links encountered during resolution of the \fIpath\fR argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENAMETOOLONG\fR\fR
+.ad
+.RS 16n
+.rt  
+The length of \fIpath\fR exceeds {\fBPATH_MAX\fR}, or a pathname component is longer than {\fBNAME_MAX\fR} while \fB_POSIX_NO_TRUNC\fR is in effect.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOTDIR\fR\fR
+.ad
+.RS 16n
+.rt  
+A component of the path prefix is not a directory.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOSYS\fR\fR
+.ad
+.RS 16n
+.rt  
+The file system does not support symbolic links.
+.RE
+
+.sp
+.LP
+The \fBreadlinkat()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 10n
+.rt  
+\fIfd\fR was not opened with \fBO_SEARCH\fR and the permissions of the directory underlying \fIfd\fR do not permit directory searches.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 10n
+.rt  
+The \fIpath\fR argument does not specify an absolute path and the \fIfd\fR argument is neither \fBAT_FDCWD\fR nor a valid file descriptor open for reading or searching.
+.RE
+
+.sp
+.LP
+The \fBreadlink()\fR and \fBreadlinkat()\fR functions may fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 16n
+.rt  
+Read permission is denied for the directory.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBELOOP\fR\fR
+.ad
+.RS 16n
+.rt  
+More than {\fBSYMLOOP_MAX\fR} symbolic links were encountered in resolving \fIpath\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENAMETOOLONG\fR\fR
+.ad
+.RS 16n
+.rt  
+As a result of encountering a symbolic link in resolution of the path argument, the length of the substituted pathname string exceeded {\fBPATH_MAX\fR}.
+.RE
+
+.sp
+.LP
+The \fBreadlinkat()\fR function may fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOTDIR\fR\fR
+.ad
+.RS 11n
+.rt  
+The \fIpath\fR argument is not an absolute path and \fIfd\fR is neither \fBAT_FDCWD\fR nor a file descriptor associated with a directory.
+.RE
+
+.SH USAGE
+.sp
+.LP
+Portable applications should not assume that the returned contents of the symbolic link are null-terminated.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelAsync-Signal-Safe
+_
+StandardSee \fBstandards\fR(5).
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBstat\fR(2), \fBsymlink\fR(2), \fBattributes\fR(5), \fBstandards\fR(5)

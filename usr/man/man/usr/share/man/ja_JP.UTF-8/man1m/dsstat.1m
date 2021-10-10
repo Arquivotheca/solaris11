@@ -1,0 +1,1265 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH dsstat 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+dsstat \- Sun StorageTek Availability Suite の入出力統計の報告
+.SH 形式
+.LP
+.nf
+\fBdsstat\fR \fB-m\fR \fImode\fR [\fB-r\fR \fIreport-options\fR] [\fB-d\fR \fIdisplay-options\fR]
+ [\fB-s\fR \fIvolume-sets\fR] [\fB-f\fR | \fB-F\fR] [\fB-z\fR] [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBdsstat\fR コマンドは、Sun StorageTek Availability Suite 製品の入出力統計を収集して報告します。
+.SH オプション
+.sp
+.LP
+\fBdsstat\fR は、次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fB\fImode\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作のモードを指定します。有効なモードは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcache\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャッシュの統計情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBii\fR\fR
+.ad
+.sp .6
+.RS 4n
+ポイントインタイムコピーの統計情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsndr\fR\fR
+.ad
+.sp .6
+.RS 4n
+遠隔ミラーの統計情報
+.RE
+
+複数のサービスの統計情報を同時に表示するには、\fB-m\fR スイッチを使用して、必要な各モードを指定します。例: 
+.sp
+.in +2
+.nf
+% \fBdsstat -m ii -m sndr\fR
+% \fBdsstat -m ii -m sndr -m cache\fR
+.fi
+.in -2
+.sp
+
+どのサービスからどの統計情報が報告されているかを判定するには、後述の \fIrole\fR フィールドを使用します。複数のサービスの 1 つとしてキャッシュの統計情報が要求された場合は、\fBrkps\fR と \fBwkps\fR の統計情報が、\fBcrkps\fR、\fBdrkps\fR、\fBcwkps\fR、および \fBdwkps\fR にさらに分けられます。\fB-m\fR スイッチが指定されていない場合、\fBdsstat\fR は、前述したすべての有効なモードのデフォルトの統計情報を表示します。これらのフィールドの説明については、後述の「フィールドの説明」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fB\fIreport-options\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示されるボリュームコンポーネントを指定します。各項目が 1 文字で表され、複数の項目を選択できます。\fIreport-options\fR は、上で指定されたモードによって変わります。このオプションは、\fBcache\fR モードでは使用されません。
+.sp
+\fBii\fR モードで有効な \fIreport-options\fR は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 13n
+.rt  
+マスターボリュームの統計情報。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「ii モードの report-options」の場合: \fBm\fR、\fBs\fR、\fBb\fR、\fBo\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「sndr モードの report-options」の場合: \fBb\fR、\fBn\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「cache モードの display-options」の場合: \fBr\fR、\fBw\fR、\fBd\fR、\fBc\fR、\fBs\fR、\fBf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「ii モードの display-options」の場合: \fBr\fR、\fBw\fR、\fBt\fR、\fBs\fR、\fBp\fR、\fBf\fR
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+シャドウボリュームの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.RS 13n
+.rt  
+ビットマップボリュームの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 13n
+.rt  
+オーバーフローボリュームの統計情報 (接続されている場合)。
+.RE
+
+\fBsndr\fR モードで有効な \fIreport-options\fR は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.RS 13n
+.rt  
+ビットマップボリュームの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBn\fR\fR
+.ad
+.RS 13n
+.rt  
+ネットワークボリュームの統計情報。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdisplay-options\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示される統計情報を指定します。統計情報のタイプが 1 文字で表され、複数のタイプを指定できます。
+.sp
+\fBcache\fR モードで有効な \fIdisplay-options\fR は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 13n
+.rt  
+詳細な読み取りの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.RS 13n
+.rt  
+詳細な書き込みの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+要約の統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュの動作フラグ。
+.RE
+
+次の \fIdisplay-options\fR は cache モードでのみ使用可能で、モードのオプション (\fB-m\fR) と組み合わせる必要があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 13n
+.rt  
+デステージされたデータの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 13n
+.rt  
+書き込み取り消しの統計情報。
+.RE
+
+\fBcache\fR のデフォルトの \fIdisplay-options\fR は \fBsf\fR です。
+.sp
+\fBii\fR モードで有効な \fIdisplay-options\fR は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細な読み取りの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細な書き込みの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイミングの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+要約の統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+同期が必要なボリュームの割合 (パーセント)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.sp .6
+.RS 4n
+ボリュームタイプ/ステータスフラグ。
+.RE
+
+\fBii\fR のデフォルトの \fIdisplay-options\fR は \fBspf\fR です。\fBsndr\fR モードで有効な \fIdisplay-options\fR は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 13n
+.rt  
+詳細な読み取りの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.RS 13n
+.rt  
+詳細な書き込みの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 13n
+.rt  
+タイミングの統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+要約の統計情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 13n
+.rt  
+同期が必要なボリュームの割合 (パーセント)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.RS 13n
+.rt  
+ボリュームタイプ/ステータスフラグ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 13n
+.rt  
+非同期待ち行列の統計情報。
+.RE
+
+次の \fIdisplay-option\fR は \fBsndr\fR モードでのみ使用可能で、モードのオプション (\fB-m\fR) と組み合わせる必要があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 13n
+.rt  
+非同期待ち行列の統計情報。
+.RE
+
+\fBsndr\fR のデフォルトの \fIdisplay-options\fR は \fBspf\fR です。
+.sp
+要約の \fIdisplay-option\fR を指定すると、\fBr\fR \fBw\fR \fBt\fR の \fIdisplay?options\fR が無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fB\fIvolume-sets\fR\fR\fR
+.ad
+.RS 20n
+.rt  
+指定された \fIvolume-sets\fR のみを含むように出力をフィルタ処理します。ここで、\fIvolume-sets\fR はボリューム名のコンマ区切りリストです。遠隔ミラーの統計情報を表示する場合は、指定された名前を遠隔ミラーの一次ボリュームと比較して、一致するかどうかを判定します。さらに、遠隔ミラーボリュームを \fI<host>\fR:\fI<volume>\fR として指定する必要があります。ここで、\fI<host>\fR は一次ホストまたは二次ホストで、\fI<volume>\fR はそのホストがボリュームセットを認識するために使用するボリューム名です。複数の遠隔ミラーボリュームセットを指定する場合は、指定した各ボリュームセットが、上の規則に基づいて個別に評価されることに注意してください。ポイントインタイムコピーの統計情報を表示する場合は、指定されたボリューム名をポイントインタイムコピーのシャドウボリュームと比較して、一致するかどうかを判定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 20n
+.rt  
+すべての報告サイクルでフィールドヘッダーを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 20n
+.rt  
+報告が開始されるときに 1 回だけフィールドヘッダーを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.RS 20n
+.rt  
+ゼロ値が含まれているか、またはアクティビティーが存在しないレポート行を抑制します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+\fBdsstat\fR コマンド行は、次のオペランドをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+各レポートの \fIinterval\fR を指定します (秒)。\fIinterval\fR が指定されていない場合、\fIinterval\fR が 1 秒のレポートが 1 つ出力されます。
+.sp
+特定のセット内のエントリの数は変動し、セットの数も変動するために、セットが報告されている最中にヘッダー情報が表示されることがあります。これを回避するには、\fB-f\fR または \fB-F\fR オプションを使用して、ヘッダー情報を希望する時間に表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成するレポートの数を指定します。\fIcount\fR が指定されていない場合は、中断されるまで出力が続行されます。
+.RE
+
+.SS "フィールドの説明"
+.sp
+.LP
+特に指定されていないかぎり、すべてのフィールドが、指定された \fIinterval\fR 中に収集されたデータに基づく 1 秒あたりの平均になります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 13n
+.rt  
+報告されているエンティティーの名前
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 13n
+.rt  
+ボリュームタイプ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 13n
+.rt  
+ボリュームステータス
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュの読み取り動作
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュの書き込み動作
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpct\fR\fR
+.ad
+.RS 13n
+.rt  
+同期が必要なボリュームの割合 (パーセント)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrole\fR\fR
+.ad
+.RS 13n
+.rt  
+報告されている項目の役割
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtps\fR\fR
+.ad
+.RS 13n
+.rt  
+読み取り + 書き込みの合計数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrtps\fR\fR
+.ad
+.RS 13n
+.rt  
+読み取りの数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwtps\fR\fR
+.ad
+.RS 13n
+.rt  
+書き込みの数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkps\fR\fR
+.ad
+.RS 13n
+.rt  
+読み取り + 書き込みが行われた合計の K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrkps\fR\fR
+.ad
+.RS 13n
+.rt  
+読み取られた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwkps\fR\fR
+.ad
+.RS 13n
+.rt  
+書き込まれた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrkps\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュから読み取られた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdrkps\fR\fR
+.ad
+.RS 13n
+.rt  
+ディスクから読み取られた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcwkps\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュに書き込まれた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdwkps\fR\fR
+.ad
+.RS 13n
+.rt  
+ディスクに書き込まれた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBckps\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュとの間で転送された K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdkps\fR\fR
+.ad
+.RS 13n
+.rt  
+ディスクとの間で転送された K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvt\fR\fR
+.ad
+.RS 13n
+.rt  
+操作ごとのサービス時間
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhit\fR\fR
+.ad
+.RS 13n
+.rt  
+\fIinterval\fR 中の読み取りヒット数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBds/s\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュからデステージされた K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcn/s\fR\fR
+.ad
+.RS 13n
+.rt  
+書き込み取り消しの数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 13n
+.rt  
+使用されている非同期待ち行列のタイプ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqi\fR\fR
+.ad
+.RS 13n
+.rt  
+現在待ち行列に入っている項目の数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqk\fR\fR
+.ad
+.RS 13n
+.rt  
+現在待ち行列に入っている K バイト数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqhwi\fR\fR
+.ad
+.RS 13n
+.rt  
+待ち行列に入っている項目の高位境界値
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBqhwk\fR\fR
+.ad
+.RS 13n
+.rt  
+待ち行列に入っている K バイト数の高位境界値
+.RE
+
+.sp
+.LP
+\fBname\fR フィールドには、名前の最後の 16 文字のみが表示されます。
+.sp
+.LP
+\fBcache\fR で有効なキャッシュ動作は、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBC\fR\fR
+.ad
+.RS 13n
+.rt  
+キャッシュの読み取り/書き込み
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+ディスクの読み取り/書き込み
+.RE
+
+.sp
+.LP
+\fBii\fR で有効なボリュームタイプは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBI\fR\fR
+.ad
+.RS 13n
+.rt  
+独立シャドウボリューム
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+依存シャドウボリューム
+.RE
+
+.sp
+.LP
+\fBii\fR で有効なボリュームステータスは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBC\fR\fR
+.ad
+.RS 13n
+.rt  
+コピーが進行中
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.RS 13n
+.rt  
+コピーが進行中ではない
+.RE
+
+.sp
+.LP
+\fBsndr\fR で有効なボリュームタイプは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 13n
+.rt  
+これは、このボリュームセットの一次ホストです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR\fR
+.ad
+.RS 13n
+.rt  
+これは、このボリュームセットのニ次ホストです。
+.RE
+
+.sp
+.LP
+\fBsndr\fR で有効なボリュームステータスは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBL\fR\fR
+.ad
+.RS 13n
+.rt  
+このボリュームへの変更がログに記録されています
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQ\fR\fR
+.ad
+.RS 13n
+.rt  
+ボリュームが待ち行列モードにあります
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBR\fR\fR
+.ad
+.RS 13n
+.rt  
+変更を二次に複製しています
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSY\fR\fR
+.ad
+.RS 13n
+.rt  
+同期が進行中です。データを送信しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRS\fR\fR
+.ad
+.RS 13n
+.rt  
+逆同期が進行中です。データを受信しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSN\fR\fR
+.ad
+.RS 13n
+.rt  
+同期が必要です
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRN\fR\fR
+.ad
+.RS 13n
+.rt  
+逆同期が必要です
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVF\fR\fR
+.ad
+.RS 13n
+.rt  
+ボリュームが失敗しました
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBF\fR\fR
+.ad
+.RS 13n
+.rt  
+ビットマップが失敗しました
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQF\fR\fR
+.ad
+.RS 13n
+.rt  
+待ち行列が失敗しました
+.RE
+
+.sp
+.LP
+\fBsndr\fR で有効な待ち行列タイプは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+ディスクベースの待ち行列が有効になっています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBM\fR\fR
+.ad
+.RS 13n
+.rt  
+メモリーベースの待ち行列が有効になっています。
+.RE
+
+.sp
+.LP
+\fBsndr\fR のボリュームの役割は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.RS 13n
+.rt  
+ネットワークボリュームの統計情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbmp\fR\fR
+.ad
+.RS 13n
+.rt  
+ビットマップボリュームの統計情報
+.RE
+
+.sp
+.LP
+\fBii\fR のボリュームの役割は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmst\fR\fR
+.ad
+.RS 13n
+.rt  
+マスターボリュームの統計情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshd\fR\fR
+.ad
+.RS 13n
+.rt  
+シャドウボリュームの統計情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbmp\fR\fR
+.ad
+.RS 13n
+.rt  
+ビットマップボリュームの統計情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBovr\fR\fR
+.ad
+.RS 13n
+.rt  
+オーバーフローボリュームの統計情報
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRキャッシュの統計情報の報告
+.sp
+.LP
+次の例では、キャッシュの統計情報の報告を、キャッシュ/ディスクへの読み取りと書き込みの詳細な内訳を含めて表示しています。レポートは 5 秒間隔で生成されます。報告される内容はセット \fB/dev/rdsk/c1t1d0s0\fR に制限されています。
+
+.sp
+.in +2
+.nf
+ # dsstat -m cache -d rw -s /dev/rdsk/c1t1d0s0 5
+- read -             - write -      
+name                ckps   dkps    hit   ckps   dkps    hit 
+dev/rdsk/c1t1d0s0      0      0   0.00      0      0   0.00 
+dev/rdsk/c1t1d0s0      3   2396   0.13    983    763 100.00 
+dev/rdsk/c1t1d0s0   2399    799  75.00   2815   2686 100.00 
+dev/rdsk/c1t1d0s0   3200    800  80.00   2755   2908 100.00 
+dev/rdsk/c1t1d0s0   3999    799  83.33   2809   2868 100.00 
+dev/rdsk/c1t1d0s0   4800    800  85.71   2867   2931 100.00
+.fi
+.in -2
+
+.LP
+\fB例 2 \fRマスター、シャドウ、およびビットマップの統計情報の報告
+.sp
+.LP
+デフォルトの出力を使用して、ポイントインタイムコピーのマスター、シャドウ、およびビットマップの統計情報を報告します。レポートは 2 秒間隔で生成されます。
+
+.sp
+.in +2
+.nf
+# dsstat -m ii -r msb 2 
+name               t  s    pct role    kps   tps  svt 
+dev/rdsk/c0t1d0s5  I  C  96.15  mst  19921    38   22 
+dev/rdsk/c0t1d0s6               shd   9960    19   20 
+dev/rdsk/c0t1d0s7               bmp     39    77    2 
+dev/rdsk/c0t1d0s5  I  C  94.24  mst  19623    38   22 
+dev/rdsk/c0t1d0s6               shd   9939    19   20 
+dev/rdsk/c0t1d0s7               bmp     39    77    2 
+dev/rdsk/c0t1d0s5  I  C  92.34  mst  19969    39   22 
+dev/rdsk/c0t1d0s6               shd   9984    19   20 
+dev/rdsk/c0t1d0s7               bmp     39    78    2
+.fi
+.in -2
+
+.LP
+\fB例 3 \fR遠隔ミラーのネットワークの統計情報の報告
+.sp
+.LP
+詳細な読み取りと書き込みの統計情報を使用して、遠隔ミラーのネットワークの統計情報を報告します。レポートには、ボリュームタイプ/ステータスフラグと割合 (パーセント) が含まれます。レポートは 2 秒間隔で生成されます。報告される内容はセット \fB/dev/rdsk/c0t1d0s0\fR に制限されています。
+
+.sp
+.in +2
+.nf
+# dsstat -m sndr -r n -d rwpf -s /dev/rdsk/c0t1d0s0 2 
+name               t  s    pct role   rkps  rtps   wkps  wtps 
+dev/rdsk/c0t1d0s0  P  L 100.00  sec      0     0      0     0 
+dev/rdsk/c0t1d0s0  P SY  99.90  sec      0     0    288     9 
+dev/rdsk/c0t1d0s0  P SY  97.90  sec      0     0   5296   165 
+dev/rdsk/c0t1d0s0  P SY  95.81  sec      0     0   5184   161 
+dev/rdsk/c0t1d0s0  P SY  93.81  sec      0     0   5280   164 
+dev/rdsk/c0t1d0s0  P SY  91.71  sec      0     0   5198   162
+.fi
+.in -2
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 13n
+.rt  
+正常終了。報告する統計情報がありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 13n
+.rt  
+無効な引数が検出されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBkstat\fR の統計情報を作成するために使用できるメモリーがありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 13n
+.rt  
+原因不明のエラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件storage/avs/avs-cache-management
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdscfg\fR(1M), \fBsvadm\fR(1M), \fBds.log\fR(4), \fBrdc.cf\fR(4), \fBattributes\fR(5)

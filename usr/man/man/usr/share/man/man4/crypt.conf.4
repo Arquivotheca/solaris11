@@ -1,0 +1,89 @@
+'\" te
+.\" Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH crypt.conf 4 "8 Jul 2011" "SunOS 5.11" "File Formats"
+.SH NAME
+crypt.conf \- configuration file for pluggable crypt modules
+.SH SYNOPSIS
+.LP
+.nf
+/etc/security/crypt.conf
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBcrypt.conf\fR is the configuration file for the pluggable crypt architecture. Each crypt module must provide a function to generate a password hash, \fBcrypt_genhash_impl\fR(3C), and a function to generate the salt, \fBcrypt_gensalt_impl\fR(3C).
+.sp
+.LP
+The \fBmodule_path\fR field specifies the pathname to a shared library object that implements \fBcrypt_genhash_impl()\fR and \fBcrypt_gensalt_impl()\fR. If the pathname is not absolute, it is assumed to be relative to \fB/usr/lib/security/$ISA\fR. If the pathname contains the \fB$ISA\fR token, the token is replaced by an implementation-defined directory name that defines the path relative to the calling program's instruction set architecture.
+.sp
+.LP
+The third field is used to pass module-specific options to the shared objects. See \fBcrypt_genhash_impl\fR(3C) and \fBcrypt_gensalt\fR(3C). It is the responsibility of the module to parse and interpret the options. The params field can be used by the modules to turn on debugging or to pass any module-specific parameters that control the output of the hashing algorithm
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRIncreasing the Work Factor
+.sp
+.LP
+The following example increases the work factor to 12 for the \fBcrypt_bsdbf\fR(5) module.
+
+.sp
+.in +2
+.nf
+2a /usr/lib/security/$ISA/crypt_bsdbf.so 12
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRSetting the Rounds
+.sp
+.LP
+The following example sets the rounds for the \fBcrypt_sunmd5\fR(5) module:
+
+.sp
+.in +2
+.nf
+md5 /usr/lib/security/$ISA/crypt_sunmd5.so rounds=2000
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRUsing the Default \fB/etc/security/crypt.conf\fR
+.sp
+.LP
+The following default \fB/etc/security/crypt.conf\fR supports five plugins: 
+
+.sp
+.in +2
+.nf
+1      crypt_bsdmd5.so.1
+2a     crypt_bsdbf.so.1
+md5    crypt_sunmd5.so.1
+5      crypt_sha256.so.1
+6      crypt_sha512.so.1
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBpasswd\fR(1), \fBcrypt\fR(3C), \fBcrypt_genhash_impl\fR(3C), \fBcrypt_gensalt\fR(3C), \fBcrypt_gensalt_impl\fR(3C), \fBgetpassphrase\fR(3C), \fBpasswd\fR(4), \fBattributes\fR(5), \fBcrypt_bsdbf\fR(5), \fBcrypt_bsdmd5\fR(5), \fBcrypt_sha256\fR(5), \fBcrypt_sha512\fR(5), \fBcrypt_sunmd5\fR(5), \fBcrypt_unix\fR(5)

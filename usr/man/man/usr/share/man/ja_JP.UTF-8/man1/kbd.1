@@ -1,0 +1,617 @@
+'\" te
+.\" Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH kbd 1 "2010 年 10 月 8 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+kbd \- キーボード状態の操作、キーボードの種類の表示、またはデフォルトのキーボードアボートシーケンス効果の変更
+.SH 形式
+.LP
+.nf
+\fBkbd\fR [\fB-r\fR] [\fB-t\fR ] [\fB-l\fR] [\fB-a\fR enable | disable | alternate] 
+     [\fB-c\fR on | off] [\fB-d\fR \fIkeyboard device\fR] 
+     [\fB-D\fR \fIautorepeat delay\fR] [\fB-R\fR \fIautorepeat rate\fR]
+.fi
+
+.LP
+.nf
+\fBkbd\fR [\fB-i\fR] [\fB-d\fR \fIkeyboard device\fR]
+.fi
+
+.LP
+.nf
+\fBkbd\fR \fB-s\fR [\fIlanguage\fR]
+.fi
+
+.LP
+.nf
+\fBkbd\fR \fB-b\fR [\fBkeyboard\fR | \fBconsole\fR] \fIfrequency\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBkbd\fR ユーティリティーは、キーボード状態の操作、キーボードの種類の表示、またはデフォルトのキーボードアボートシーケンス効果の変更を行います。アボートシーケンスは、シリアルコンソールデバイスにも適用されます。\fBkbd\fR ユーティリティーは、\fB/dev/kbd\fR デフォルトキーボードデバイスを設定します。
+.SH 拡張機能説明
+.sp
+.LP
+\fB-i\fR オプションは、\fBkeyclick\fR および \fBkeyboard\fR アボート設定のデフォルト値をキーボード構成サービス \fBsvc:/system/keymap:default\fR から読み取って処理します。クリックをサポートするキーボードだけが、\fB-c\fR オプションに応答します。クリックをデフォルトで有効にするには、次のようにして \fBkeymap\fR サービスの \fBkeymap/keyclick \fR プロパティーの値を追加または変更します。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyclick=true
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、コマンド \fBkbd\fR \fB-i\fR を実行して設定を変更します。\fBkeymap/keyclick\fR プロパティーの有効な設定は、\fBtrue\fR または \fBfalse\fR です。その他の値はすべて無視されます。\fBkeymap\fR サービス内で \fBkeymap/keyclick\fR プロパティーが指定されていない場合、この設定は変更されません。
+.sp
+.LP
+キーボードのアボートシーケンス効果を変更できるのは、スーパーユーザーが \fB-a\fR オプションを使用した場合だけです。通常このシーケンスは、キーボードの Stop-A、 L1-A、および Shift-Pause (\fBSPARC\fR システム)、F1-A および Shift-Pause (x86 システム)、BREAK (大半のシステムのシリアルコンソール入力デバイス) です。
+.sp
+.LP
+電気信号エラーに由来する \fBBREAK\fR 状態と、リモートの \fB DCE\fR により意図的に送信されたものとを区別することはできません。対処方法として、代替ブレークで \fB-a\fR オプションを使用してブレークの解釈を切り替えます。シーケンスが不正確に解釈されることを避けるため、代替ブレークシーケンスが有効な場合は、\fBSLIP\fR などのバイナリプロトコルをシリアルコンソールポート経由では実行しないようにしてください。 
+.sp
+.LP
+PPP はバイナリプロトコルではありますが、シリアル操作の妨げになる文字の使用を回避する機能を備えています。デフォルトの代替ブレークシーケンスは CTRL-m \fB から \fR CTRL-b、または 16 進数の \fB0D 7E 02\fR です。PPP の場合、ACCM で \fB0x00000004\fR または \fB0x00002000\fR を設定することによりこれを回避できます。これにより、CTRL-b または CTRL-m  文字のエスケープがそれぞれ強制されます。
+.sp
+.LP
+Solaris PPP 4.0 でこれを実行するには、
+.sp
+.in +2
+.nf
+asyncmap 0x00002000
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+を \fB/etc/ppp/options\fR ファイルまたは接続で使用するほかの構成ファイルのいずれかに追加します。\fBpppd\fR(1M) を参照してください。
+.sp
+.LP
+SLIP には同等の機能はないため、代替ブレークシーケンスの使用中には決して使用しないでください。 
+.sp
+.LP
+代替ブレークシーケンスは、キーボードアボートには影響を及ぼしません。代替ブレークシーケンスの詳細については、\fBzs\fR(7D)、\fBse\fR(7D)、および \fBasy\fR(7D) を参照してください。 
+.sp
+.LP
+多くのシステムで、キーボードアボートシーケンスのデフォルト効果は、オペレーティングシステムを中断し、デバッガまたはモニターに入ることです。一部のシステムには、\fBsecure\fR の位置を備えたキースイッチがあります。これらのシステムでは、キースイッチを \fBsecure\fR の位置に設定すると、このコマンドを使用したソフトウェアのデフォルトセットがすべて上書きされます。
+.sp
+.LP
+キーボードアボートシーケンスのソフトウェアのデフォルト効果を恒久的に変更するには、最初に、次に示すように \fBkeymap\fR サービスの \fBkeymap/keyboard_abort\fR プロパティーの値を追加または変更します。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyboard_abort=disable
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、コマンド \fBkbd\fR \fB-i\fR を実行して設定を変更します。有効な設定は \fBenable\fR、\fBdisable\fR、および \fBalternate\fR です。その他の値はすべて無視されます。\fBkeymap\fR サービスに変数が指定されていない場合、設定は変更されません。
+.sp
+.LP
+アボートシーケンスをハードウェア \fBBREAK\fR に設定するには、次に示すように、\fBkeymap\fR サービスの \fBkeymap/keyboard_abort\fR の値を設定します。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyboard_abort=enable
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+現在の設定を変更するには、コマンド \fBkbd\fR \fB- i\fR を実行します。アボートシーケンスを代替ブレーク文字シーケンスに設定するには、最初に \fBkeymap\fR サービスの \fBkeyboard_abort\fR プロパティーの現在値を次のように設定します。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/keyboard_abort=alternate
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、コマンド \fBkbd\fR \fB-i\fR を実行して設定を変更します。代替ブレークシーケンスが有効な場合は、シリアルコンソールデバイスだけが影響を受けます。
+.sp
+.LP
+デフォルトの自動リピート遅延を設定するには、\fBkeymap\fR サービスの \fBrepeat_delay\fR プロパティーを目的の値に設定します (単位はミリ秒 (\fBms\fR))。入力ミスのためにキーボードが使用不可になることを避けるため、\fBKIOCRPTDELAY_MIN\fR (\fB/usr/include/sys/kbio.h\fR で定義) よりも小さい遅延値は \fBEINVAL \fR で拒否されます。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/repeate_delay=500
+$ svcadm refresh keymap
+ 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+デフォルトの自動リピートレートを設定するには、\fBkeymap\fR サービスの \fBrepeat_rate\fR プロパティーを目的の値に設定します (単位はミリ秒)。負およびゼロのリピートレートは、\fBEINVAL\fR で拒否されます。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/repeate_rate=40
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIdelay\fR および \fI rate\fR の現在の設定を変更するには、コマンド \fBkbd\fR \fB-i\fR を実行します。自動リピート遅延や自動リピートレートが有効な場合、コマンド行モードだけが影響を受けます。
+.sp
+.LP
+デフォルトの言語を設定するには、\fBkeymap\fR サービスの \fBkeymap/layout\fR プロパティーを目的の言語に設定します。カーネルでサポートされている言語は、\fBkbd -s\fR を実行して確認できます。その他の値は無視されます。次の例では、キーボードをスペイン語配列に設定します。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/layout=Spanish
+$ svcadm refresh keymap
+ 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に、\fBkbd\fR \fB-i\fR を実行して設定を変更します。Solaris のリブート時に、スペイン語鍵テーブルがカーネルに読み込まれます。これらの配列は、\fBusb\fR および \fBps/2\fR キーボードで有効です。 
+.sp
+.LP
+キーボードビープ音のデフォルトの周波数を設定するには、\fBkeymap\fR サービスの \fBkeymap/kbd_beeper_freq\fR プロパティーを目的の値に設定します (単位は HZ)。これは、\fB0\fR 以上 \fB 32767\fR 以下の値にしてください。それ以外の値は \fBEINVAL\fR で拒否されます。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/kbd_beeper_freq=2000
+$ svcadm refresh keymap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+コンソールビープ音のデフォルトの周波数を設定するには、\fBkeymap\fR サービスの \fBkeymap/console_beeper_freq\fR プロパティーを目的の値に設定します (単位は HZ)。これは、\fB0\fR 以上 \fB 32767\fR 以下の値にしてください。それ以外の値は \fBEINVAL\fR で拒否されます。
+.sp
+.in +2
+.nf
+$ svccfg -s keymap:default setprop keymap/console_beeper_freq=900
+$ svcadm refresh keymap
+ 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+キーボードビープ音およびコンソールビープ音の周波数の現在設定を変更するには、\fBkbd\fR \fB-i\fR を実行します。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fBenable\fR | \fBdisable \fR | \fBalternate\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーボードアボートシーケンスの効果を有効または無効にするか、切り替えます。デフォルトでは、キーボードアボートシーケンスにより、大半のシステムのオペレーティングシステムが中断されます。通常このシーケンスは、キーボードの Stop-A、L1-A 、Shift-Pause (\fBSPARC\fR システム)、 F1-A、Shift-Pause (x86 システム)、および BREAK (シリアルコンソールデバイス) です。 
+.sp
+このオプションを使って、デフォルトのキーボード動作を変更できます。\fB- a\fR オプションを使用できるのはスーパーユーザーだけです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR\fR
+.ad
+.RS 13n
+.rt  
+キーボードアボートシーケンスのデフォルト効果を有効にします (オペレーティングシステムを中断し、デバッガまたはモニターに入ります)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR\fR
+.ad
+.RS 13n
+.rt  
+デフォルトや代替の効果を無効にして、キーボードアボートシーケンスを無視します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalternate\fR\fR
+.ad
+.RS 13n
+.rt  
+コンソールで代替ブレーク文字シーケンスを受け取ると、キーボードアボートシーケンスの代替効果を有効にします (オペレーティングシステムを中断し、デバッガまたはモニターに入ります)。代替ブレークシーケンスは、ドライバ \fBzs\fR(7D)、\fBse\fR(7D)、\fBasy\fR(7D) により定義されます。シーケンスが不正確に解釈される危険があるため、この値の使用時にバイナリプロトコルをシリアルコンソールポート経由で実行することはできません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fBkeyboard\fR | \fBconsole \fR\fR
+.ad
+.sp .6
+.RS 4n
+キーボードまたはコンソールのビープ音の周波数を設定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyboard\fR\fR
+.ad
+.RS 12n
+.rt  
+キーボードビープ音の周波数をオペランドに設定します (単位は HZ)。\fBオペランド\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconsole\fR\fR
+.ad
+.RS 12n
+.rt  
+コンソールビープ音の周波数をオペランドに設定します (単位は HZ)。\fBオペランド\fR を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーボードのクリック音を有効または無効にします。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBon\fR\fR
+.ad
+.RS 7n
+.rt  
+クリック音を有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoff\fR\fR
+.ad
+.RS 7n
+.rt  
+クリック音を無効にします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIkeyboard device\fR\fR
+.ad
+.sp .6
+.RS 4n
+設定するキーボードデバイスを指定します。デフォルトの設定は、\fB/dev/kbd\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIautorepeat delay\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動リピートの遅延を設定します (単位はミリ秒)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーボードのプロパティーを keymap サービスから取得して設定します。このオプションを -d keyboard device 以外のオプションとともに使用することはできません。-i オプションを指定すると、キーボードコマンドは \fBkeymap\fR サービスのキーボードプロパティーから \fBkeyclick\fR および \fBkeyboard\fR のアボートデフォルト値を読み取って処理します。\fB-i\fR オプションを使用できるのは、Device Security 権利プロファイルを持つユーザーまたは役割だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用中のキーボードの配列コード、および使用中の自動リピート遅延と自動リピートレートを返します。
+.sp
+このオプションを \fB-R\fR または \fB-D\fR オプションとともに使用すると、変更前の値が返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+キーボードを電源投入時の状態にリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIautorepeat rate\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動リピートレートを設定します (単位はミリ秒)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-s\fR \fB[\fR\fI language\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+キー配列をカーネル内に設定します。
+.sp
+\fIlanguage\fR が指定されている場合、配列は \fIlanguage\fR に設定されます。\fIlanguage\fR が指定されていない場合、使用可能な配列のリストを表示し、ユーザーに \fIlanguage\fR の指定を求めます。\fBオペランド\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用中のキーボードの種類を返します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBfrequency\fR
+.ad
+.RS 13n
+.rt  
+カーネルに設定する周波数の値。この値の受信側の指定には、\fB-b\fR オプションを使用します。これは 0 から 32767 の間の値にしてください。それ以外の値を指定すると、\fBEINVAL\fR で拒否されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlanguage\fR
+.ad
+.RS 13n
+.rt  
+カーネルに設定する言語。言語が見つからない場合は、サポートされる言語を一覧表示して選択を求めます。これは、\fB-s\fR オプションにのみ当てはまります。 
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRキーボードの種類を表示する
+.sp
+.LP
+次の例では、キーボードの種類を表示します。
+
+.sp
+.in +2
+.nf
+example% kbd -t
+Type 4 Sun keyboard
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRキーボードのデフォルトを設定する
+.sp
+.LP
+次の例では、keymap サービスの設定に従ってキーボードのデフォルトを設定します。
+
+.sp
+.in +2
+.nf
+example# kbd -i
+example#
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR情報を表示する
+.sp
+.LP
+次の例では、キーボードの種類と配列コードを表示します。また、自動リピートの遅延およびレートの設定も表示します。
+
+.sp
+.in +2
+.nf
+example% kbd -l
+type=4
+layout=43 (0x2b)
+delay(ms)=500
+rate(ms)=33
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRキーボードの自動リピート遅延を設定する
+.sp
+.LP
+次の例では、キーボードの自動リピート遅延を設定します。
+
+.sp
+.in +2
+.nf
+example% kbd -D 300
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRキーボードの自動リピートレートを設定する
+.sp
+.LP
+次の例では、キーボードの自動リピートレートを設定します。
+
+.sp
+.in +2
+.nf
+example% kbd -R 50
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRキーボードの言語を選択および設定する
+.sp
+.LP
+次の例では、指定された言語の一覧からキーボードの言語を選択および設定します。 
+
+.sp
+.in +2
+.nf
+example% kbd -s
+1. Albanian                      16. Malta_UK
+2. Belarusian                    17. Malta_US
+3. Belgian                       18. Norwegian
+4. Bulgarian                     19. Portuguese
+5. Croatian                      20. Russian
+6. Danish                        21. Serbia-And-Montenegro
+7. Dutch                         22. Slove
+\&......
+
+To select the keyboard layout, enter a number [default n]: 
+
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例では、指定されたキーボード言語を設定します。 
+
+.sp
+.in +2
+.nf
+example% kbd -s Dutch
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRキーボードビープ音の周波数を設定する
+.sp
+.LP
+次の例では、キーボードビープ音の周波数を設定します。
+
+.sp
+.in +2
+.nf
+example% kbd -b keyboard 1000
+example%
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/kbd\fR\fR
+.ad
+.RS 12n
+.rt  
+キーボードデバイスファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBkmdb\fR(1), \fBloadkeys\fR(1), \fBsvcs\fR(1), \fBinetd\fR(1M), \fBinetadm\fR(1M), \fBsvcadm\fR(1M), \fBpppd\fR(1M), \fBkeytables\fR(4), \fBattributes\fR(5), \fBsmf\fR(5), \fBkb\fR(7M), \fBzs\fR(7D), \fBse\fR(7D), \fBasy\fR(7D), \fBvirtualkm\fR(7D)
+.SH 注意事項
+.sp
+.LP
+一部のサーバーシステムのキースイッチには \fBsecure\fR のキー位置があり、システムソフトウェアからこのキー位置を読み取ることが可能です。このキー位置は、キーボードアボートシーケンス効果の通常のデフォルトよりも優先され、デフォルトを変更してこの効果を無効にします。これらのシステムでキースイッチが \fBsecure\fR の位置にある場合は、\fBkbd\fR ユーティリティーで設定可能なソフトウェアデフォルトで、キーボードアボートシーケンス効果を無効にすることはできません。
+.sp
+.LP
+現在のところ、キーボードクリック設定の状態を判別する方法はありません。
+.sp
+.LP
+\fBkdb\fR サービスは、サービス管理機能 \fBsmf\fR(5) により、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/system/keymap:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。このサービスを開始または再開始する責任は \fBinetd\fR(1M) に委託されています。このサービスの構成を変更したり、構成情報を表示したりするには、\fBinetadm\fR(1M) を使用します。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。

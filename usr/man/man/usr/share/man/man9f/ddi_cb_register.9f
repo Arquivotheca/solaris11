@@ -1,0 +1,1073 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ddi_cb_register 9F "19 May 2011" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+ddi_cb_register, ddi_cb_unregister \- register and unregister a device driver callback handler
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/sunddi.h> 
+
+\fBint\fR \fBddi_cb_register\fR(\fBdev_info_t *\fR\fIdip\fR, \fBddi_cb_flags_t\fR \fIflags\fR,
+      \fBddi_cb_func_t\fR \fIcbfunc\fR, \fBvoid *\fR\fIarg1\fR, \fBvoid *\fR\fIarg2\fR,
+      \fBddi_cb_handle_t *\fR \fIret_hdlp\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBddi_cb_unregister\fR(\fBddi_cb_handle_t\fR \fIhdl\fR);
+.fi
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris DDI specific (Solaris DDI).
+.SH PARAMETERS
+.sp
+.LP
+\fBddi_cb_register()\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdip\fR\fR
+.ad
+.RS 12n
+.rt  
+Pointer to the \fBdev_info\fR structure.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflags\fR\fR
+.ad
+.RS 12n
+.rt  
+Flags to determine which callback events can be handled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcbfunc\fR\fR
+.ad
+.RS 12n
+.rt  
+Callback handler function. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIarg1\fR\fR
+.ad
+.RS 12n
+.rt  
+First argument to the callback handler.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIarg2\fR\fR
+.ad
+.RS 12n
+.rt  
+Second (optional) argument to the callback handler.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIret_hdlp\fR\fR
+.ad
+.RS 12n
+.rt  
+Pointer to return a handle to the registered callback.
+.RE
+
+.sp
+.LP
+\fBddi_cb_unregister()\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhdl\fR\fR
+.ad
+.RS 7n
+.rt  
+Handle to the registered callback handler that is to be unregistered.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBddi_cb_register()\fR function installs a callback handler which processes various actions that require the driver's attention while it is attached. The driver specifies which callback actions it can handle through the flags parameter. With each relevant action, the specified callback function passes the \fIarg1\fR and \fIarg2\fR arguments along with the description of each callback event to the driver.
+.sp
+.LP
+The \fBddi_cb_unregister()\fR function removes a previously installed callback handler and prevents future processing of actions.
+.sp
+.LP
+The \fIflags\fR parameter consists of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_FLAG_INTR\fR\fR
+.ad
+.sp .6
+.RS 4n
+The device driver participates in interrupt resource management. The device driver may receive additional interrupt resources from the system, but only because it can accept callback notices informing it when it has more or less resources available. Callback notices can occur at anytime after the driver is attached. Interrupt availability varies based on the overall needs of the system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_FLAG_SRIOV\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates to the DDI framework that the device driver is IOV capable. Normally IOV device drivers are expected to call \fBpciv_vf_config\fR(9F)) to configure the VFs during attach and register callbacks with this flag set so that they can be informed through callback notices when VFs are unconfigured by the DDI framework.
+.sp
+If the driver does not explicitly configure the VFs using \fBpciv_vf_config()\fR during attach then the PCIE framework will configure the VFs as part of the post-attach processing if this flag is set.
+.sp
+The callback notices while configuring/unconfiguring is performed with two separate callbacks to the driver PRE and POST. This helps the drivers to prepare for the event during PRE and do the necessary initializations/cleanup during POST notices.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_FLAG_COMM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The device driver uses \fBpciv_send\fR(9F) interfaces to communicate across different domains or within the same domain. The driver may receive callback notices that incoming data has been received.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_FLAG_LSR\fR\fR
+.ad
+.sp .6
+.RS 4n
+The device driver supports Live Suspend and Resume (LSR) operations. When LSR operation (Live Suspend or Live Resume) happens, the device driver will be asked to suspend/resume various I/O activities of the device. The LSR operations may also impose various impacts (such as device reset, losing power, etc.) to the device, the driver needs to handle these impacts too. For more information about the activities and impacts, refer to the data type ddi_cb_lsr_t described below. Callback can occur at anytime after the driver is attached. Currently, LSR is only supported for PCI and PCIe devices.
+.RE
+
+.sp
+.LP
+The cdfunc is a callback handler with the following prototype:
+.sp
+.in +2
+.nf
+typedef int (*ddi_cb_func_t)(dev_info_t *dip, 
+              ddi_cb_action_t action, void *cbarg, 
+              void *arg1, void *arg2);
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fIcbfunc\fR routine with the arguments \fIdip\fR, \fIaction\fR, \fIcbarg\fR, \fIarg1\fR and \fIarg2\fR is called upon receipt of any callbacks for which the driver is registered.  The callback handler returns \fBDDI_SUCCESS\fR if the callback was handled successfully, \fBDDI_ENOTSUP\fR if it received a callback action that it did not know how to process, or \fBDDI_FAILURE\fR if it has an internal failure while processing an action.
+.sp
+.LP
+For interrupt resource management, the \fIaction\fR parameter can be one of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_INTR_ADD\fR\fR
+.ad
+.sp .6
+.RS 4n
+For interrupt resource management, the driver has more available interrupts. The driver can allocate more interrupt vectors and then set up more interrupt handling functions by using \fBddi_intr_alloc\fR(9F).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_INTR_REMOVE\fR\fR
+.ad
+.sp .6
+.RS 4n
+For interrupt resource management, the driver has fewer available interrupts. The driver must release any previously allocated interrupts in excess of what is now available by using \fBddi_intr_free\fR(9F).
+.RE
+
+.sp
+.LP
+The \fIcbarg\fR parameter points to an action-specific argument. Each class of registered actions specifies its own data structure that a callback handler should dereference when it receives those actions. 
+.sp
+.LP
+The \fIcbarg\fR parameter is defined as an integer in the case of \fBDDI_CB_INTR_ADD\fR and \fBDDI_CB_INTR_REMOVE\fR actions. The callback handler should cast the \fIcbarg\fR parameter to an integer. The integer represents how many interrupts have been added or removed from the total number available to the device driver.
+.sp
+.LP
+If a driver participates in interrupt resource management, it must register a callback with the \fBDDI_CB_FLAG_INTR\fR flag. The driver then receives the actions \fBDDI_CB_INTR_ADD\fR and \fBDDI_CB_INTR_REMOVE\fR whenever its interrupt availability has changed. The callback handler should use the interrupt functions \fBddi_intr_alloc\fR(9F) and \fBddi_intr_free\fR(9F) functions to respond accordingly. A driver is not required to allocate all interrupts that are available to it, but it is required to manage its allocations so that it never uses more interrupts than are currently available.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_PCIV_CONFIG_VF\fR\fR
+.ad
+.sp .6
+.RS 4n
+The PF driver is being notified of its VF configuration request. The \fBpciv_config_vf_t\fR structure is being passed as \fIcbarg\fR to describe the configuration. The \fIcmd\fR field in \fBpciv_config_vf_t\fR indicates if the VFs are about to or have just been enabled or disabled.
+.RE
+
+.sp
+.in +2
+.nf
+cbarg (when action is set to DDI_CB_PCIV_CONFIG_VF)
+   pciv_config_vf_t
+
+typedef enum {
+   PCIV_VFCFG_PARAM,       /* Retrieve VF configuration parameters */
+   PCIV_VF_ENABLE,         /* Request to enable VFs synchronously */
+   PCIV_VF_DISABLE,        /* Request to disable VFs synchronously */
+   PCIV_EVT_VFENABLE_PRE,  /* VFs are just about to be enabled */
+   PCIV_EVT_VFENABLE_POST, /* VFs have just been enabled */
+   PCIV_EVT_VFDISABLE_PRE, /* VFs are just about to be disabled */
+   PCIV_EVT_VFDISABLE_POST /* VFs have just been disabled */
+} pciv_vf_config_cmd_t;
+
+typedef struct pciv_config_vf {
+   int                     version;
+   pciv_vf_config_cmd_t    cmd; /* pre/post VF enable/disable */
+   uint16_t                num_vf; /* number of VFs to be used */
+   uint16_t                first_vf_offset; /* offset between 1st VF & PF */
+   uint16_t                vf_stride; /* distance between VFs */
+   boolean_t               ari_cap; /* ARI capable hierarchy */
+   uint32_t                page_size; /* system page size */
+} pciv_config_vf_t;
+.fi
+.in -2
+
+.sp
+.LP
+The \fIcmd\fR field in the \fBpciv_config_vf_t\fR informs the driver the reason for the callback execution. The driver can return one of the following codes back to the caller.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_SUCCESS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The request was accepted and resources are properly configured.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_NOTAPPLICABLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The requested configuration is not applicable.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_REQRESET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The requested configuration cannot be applied until device is reset (for (example, the PF hardware cannot dynamically adjust its internal resources to satisfy the request.)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_REQREATTACH\fR\fR
+.ad
+.sp .6
+.RS 4n
+The requested configuration cannot be applied unless the driver itself is reattached.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_COMM_RECV\fR\fR
+.ad
+.sp .6
+.RS 4n
+Drivers are notified of incoming data described by \fBpciv_recv_event_t\fR, which is passed as the \fIcbarg\fR argument to the callback handler.
+.RE
+
+.sp
+.in +2
+.nf
+cbarg (when action is set to DDI_CB_COMM_RECV)
+   pciv_recv_event_t
+
+typedef enum {
+   PCIV_EVT_READY = 0x1,   /* peer side has registered the recv cb */
+   PCIV_EVT_NOT_READY,     /* peer side has unregistered the recv cb */
+   PCIV_EVT_DRV_DATA,      /* private driver data event */
+   PCIV_EVT_FABRIC         /* PCIv framework and fabric admin event */
+} pciv_event_type_t;
+
+typedef struct pciv_recv_event {
+   pciv_event_type_t event;          /* event type */
+   caddr_t           buf;            /* buffer address */
+   size_t            nbyte;          /* size of buffer */
+   uint32_t          src_func;       /* source function */
+   dom_id_t          src_domain;     /* source domain */
+} pciv_recv_event_t;
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCIV_EVT_READY\fR\fR
+.ad
+.sp .6
+.RS 4n
+Both local and remote end has registered its event handler. The \fIbuf\fR and \fInbyte\fR fields should be ignored
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCIV_EVT_NOT_READY\fR\fR
+.ad
+.sp .6
+.RS 4n
+Remote end has not registered its event handler. The \fIbuf\fR and \fInbyte\fR fields should be ignored
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCIV_EVT_DRV_DATA\fR\fR
+.ad
+.sp .6
+.RS 4n
+Data in \fIbuf\fR with \fInbyte\fR size has been received or sent. Data can only be interpreted by the transmitter and receiver.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCIV_EVT_FABRIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+Framework VF administration event, used between framework and PF drivers for VF administration purposes. Administration data is stored in \fIbuf\fR with \fInbyte\fR size.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbuf\fR, \fInbyte\fR\fR
+.ad
+.sp .6
+.RS 4n
+Incoming data is stored in a buffer of address \fIbuf\fR with length of \fInbyte\fR. Not used for certain event types.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsrc_func\fR\fR
+.ad
+.sp .6
+.RS 4n
+The source function number of the transmission. It is used by the PF driver to identify the transmission source virtual function number. Besides source VF number, it can also be:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCIV_PF\fR\fR
+.ad
+.RS 12n
+.rt  
+Transmitter is the PF of the receiver.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCIV_FRM\fR\fR
+.ad
+.RS 12n
+.rt  
+Transmitter is the PCI Express framework rather than a driver.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsrc_domain\fR\fR
+.ad
+.sp .6
+.RS 4n
+The source domain of the transmission. It is used by PF driver to identify the domain the transmission is from.
+.RE
+
+.sp
+.LP
+For Live Suspend & Resume,  the action parameter can be  one of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_SUSPEND\fR\fR
+.ad
+.sp .6
+.RS 4n
+Live suspend the device. The detailed I/O activities that will be suspended and impacts that the operation will impose to the device are specified by the argument pointed to by \fIcbarg\fR. It is of type \fBddi_cb_lsr_t\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_RESUME\fR\fR
+.ad
+.sp .6
+.RS 4n
+Live resume the device. The detailed activities and impacts are specified in the argument pointed to by \fIcbarg\fR. It will be the same as the previous suspend operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_QUERY_CAPABILITY\fR\fR
+.ad
+.sp .6
+.RS 4n
+Query the device's LSR capabilities. The detailed activities and impacts that the device driver supports are returned in the argument pointed to by \fIcbarg\fR. The type of the argument is \fBddi_cb_lsr_t\fR.
+.RE
+
+.sp
+.LP
+For all the LSR actions, the \fIcbarg\fR parameter points to the argument of the same type, \fBddi_cb_lsr_t\fR, which is defined as:
+.sp
+.in +2
+.nf
+typedef struct ddi_cb_lsr {
+    uint64_t    activities;
+    uint64_t    impacts;
+    char        *reason;
+} ddi_cb_lsr_t;
+.fi
+.in -2
+
+.sp
+.LP
+The \fIactivities\fR member specifies what I/O activities of the device will be live suspended/resumed (\fBDDI_CB_LSR_SUSPEND\fR and \fBDDI_CB_LSR_RESUME\fR), or the I/O activities that the device driver supports (\fBDDI_CB_LSR_QUERY_CAPABILITY\fR).
+.sp
+.LP
+For PCI/PCIe devices, the \fIactivities\fR member in \fBddi_cb_lsr_t\fR can be a value bit-ORed from the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_ACT_DMA\fR\fR
+.ad
+.RS 23n
+.rt  
+DMA activities
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_ACT_PIO\fR\fR
+.ad
+.RS 23n
+.rt  
+Programmed I/O activities
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_ACT_INTR\fR\fR
+.ad
+.RS 23n
+.rt  
+Interrupt activities
+.RE
+
+.sp
+.LP
+The \fIimpacts\fR member specifies the side effects the LSR operation will impose on the device. For PCI/PCIe devices, it can be bit-ORed value of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_IMP_DMA_ADDR_CHANGE\fR\fR
+.ad
+.sp .6
+.RS 4n
+During the LSR operation, the device will undergo DMA address changes. The device driver should unbind and rebind the DMA buffers.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_IMP_DMA_PROP_CHANGE\fR\fR
+.ad
+.sp .6
+.RS 4n
+During the LSR operation, the platform hardware changes may cause the driver's DMA transaction properties to be invalid, such as the lowest and highest DMA address range, DMA address alignment, DMA segment boundary, etc. The driver needs to destroy and reallocate DMA handles.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_IMP_DEVICE_RESET\fR\fR
+.ad
+.sp .6
+.RS 4n
+During the LSR operation, the device will undergo device reset. The device driver must restore the hardware context during live resume.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_IMP_DEVICE_REPLACE\fR\fR
+.ad
+.sp .6
+.RS 4n
+During the LSR operation, the device will be replaced. The device driver needs to check the device identity.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_CB_LSR_IMP_LOSE_POWER\fR\fR
+.ad
+.sp .6
+.RS 4n
+During the LSR operation, the device will lose power. The device driver needs to restore device hardware context during live resume. If necessary, the driver should reload firmware.
+.RE
+
+.sp
+.LP
+The \fIreason\fR member is a predefined string to specify the cause of the LSR operation. It is used for printing purposes. There is no predefined string and it may be \fINULL\fR for \fBDDI_CB_LSR_SUSPEND\fR and \fBDDI_CB_LSR_RESUME\fR. For \fBDDI_CB_LSR_QUERY_CAPABILITY\fR, the driver must set it to \fINULL\fR.
+.sp
+.LP
+The driver's implementation should make the LSR operation transparent to user applications, such that when the driver is suspended, it can block user I/O requests (read/write/ioctl) but should not return failure.
+.sp
+.LP
+The driver may have grouped activities, such as when one is suspended, the other has to be suspended as well. When the driver is asked to suspend one of the grouped activities, it can choose to suspend all the activities in the group.
+.sp
+.LP
+The driver's callback function will only be asked to suspend after the former suspension has already been resumed.
+.sp
+.LP
+The callback function should return as soon as possible. In normal cases, returning in milliseconds should be acceptable while returning in seconds is not.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBddi_cb_register()\fR and \fBddi_cb_unregister()\fR functions return:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_SUCCESS\fR\fR
+.ad
+.RS 16n
+.rt  
+on success
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_EINVAL\fR\fR
+.ad
+.RS 16n
+.rt  
+An invalid parameter was given when registering a callback handler, or an invalid handle was given when unregistering.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_EALREADY\fR\fR
+.ad
+.RS 16n
+.rt  
+An attempt was made to register a callback handler while a previous registration still exists.
+.RE
+
+.sp
+.LP
+The \fIcbfunc\fR routine must return:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_SUCCESS\fR\fR
+.ad
+.RS 15n
+.rt  
+on success
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_ENOTSUP\fR\fR
+.ad
+.RS 15n
+.rt  
+The device does not support the operation
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_FAILURE\fR\fR
+.ad
+.RS 15n
+.rt  
+Implementation specific failure
+.RE
+
+.SH CONTEXT
+.sp
+.LP
+These functions can be called from kernel, non-interrupt context.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRAn example using \fBddi_cb_register()\fR.
+.sp
+.in +2
+.nf
+/*
+    * attach(9F) routine.
+    *
+    * Creates soft state, registers callback handler, initializes
+    * hardware, and sets up interrupt handling for the driver.
+    */
+    xx_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
+    {
+        xx_state_t              *statep = NULL;
+        xx_intr_t               *intrs = NULL;
+        ddi_intr_handle_t       *hdls;
+        ddi_cb_handle_t         cb_hdl;
+        int                     instance;
+        int                     type;
+        int                     types;
+        int                     nintrs;
+        int                     nactual;
+        int                     inum;
+
+        /* Get device instance */
+        instance = ddi_get_instance(dip);
+
+        switch (cmd) {
+        case DDI_ATTACH:
+
+             /* Get soft state */
+             if (ddi_soft_state_zalloc(state_list, instance) != 0)
+                     return (DDI_FAILURE);
+             statep = ddi_get_soft_state(state_list, instance);
+             ddi_set_driver_private(dip, (caddr_t)statep);
+             statep->dip = dip;
+
+             /* Initialize hardware */
+             xx_initialize(statep);
+
+             /* Allocate/bind dma handle, etc. */
+             xx_dma_attach(statep);
+
+             /* Initialize Programmed I/O, map register memory, etc. */
+             xx_pio_attach(statep);
+
+             /* Initialize LSR state */
+             statep->lsr_state = 0;
+
+             /* Register callback handler */
+             if (ddi_cb_register(dip, DDI_CB_FLAG_INTR | DDI_CB_FLAG_LSR,
+                 xx_cbfunc, statep, NULL, &cb_hdl) != 0) {
+                     ddi_soft_state_free(state_list, instance);
+                     return (DDI_FAILURE);
+             }
+             statep->cb_hdl = cb_hdl;
+
+             /* Select interrupt type */
+             ddi_intr_get_supported_types(dip, &types);
+             if (types & DDI_INTR_TYPE_MSIX) {
+                     type = DDI_INTR_TYPE_MSIX;
+             } else if (types & DDI_INTR_TYPE_MSI) {
+                     type = DDI_INTR_TYPE_MSI;
+             } else {
+                     type = DDI_INTR_TYPE_FIXED;
+             }
+             statep->type = type;
+
+             /* Get number of supported interrupts */
+
+             ddi_intr_get_nintrs(dip, type, &nintrs);
+
+             /* Allocate interrupt handle array */
+             statep->hdls_size = nintrs * sizeof (ddi_intr_handle_t);
+             hdls = kmem_zalloc(statep->hdls_size, KMEM_SLEEP);
+
+             /* Allocate interrupt setup array */
+             statep->intrs_size = nintrs * sizeof (xx_intr_t);
+             statep->intrs = kmem_zalloc(statep->intrs_size, KMEM_SLEEP);
+
+             /* Allocate interrupt vectors */
+             ddi_intr_alloc(dip, hdls, type, 0, nintrs, &nactual, 0);
+             statep->nactual = nactual;
+
+             /* Configure interrupt handling */
+             xx_setup_interrupts(statep, nactual, statep->intrs);
+
+             /* Install and enable interrupt handlers */
+             for (inum = 0; inum < nactual; inum++) {
+                     ddi_intr_add_handler(&statep->hdls[inum],
+                         statep->intrs[inum].inthandler,
+                         statep->intrs[inum].arg1,
+                         statep->intrs[inum].arg2);
+                     ddi_intr_enable(statep->hdls[inum]);
+             }
+
+             break;
+
+        case DDI_RESUME:
+
+                /* Get soft state */
+                statep = ddi_get_soft_state(state_list, instance);
+                if (statep == NULL)
+                        return (DDI_FAILURE);
+
+                /* Resume hardware */
+                xx_resume(statep);
+
+                break;
+        }
+
+        return (DDI_SUCESS);
+    }
+
+    /*
+     * detach(9F) routine.
+     *
+     * Stops the hardware, disables interrupt handling, unregisters
+     * a callback handler, and destroys the soft state for the driver.
+     */
+    xx_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
+    {
+        xx_state_t      *statep = NULL;
+        int             instance;
+        int             inum;
+
+
+        /* Get device instance */
+        instance = ddi_get_instance(dip);
+
+        switch (cmd) {
+        case DDI_DETACH:
+
+                /* Get soft state */
+                statep = ddi_get_soft_state(state_list, instance);
+                if (statep == NULL)
+                        return (DDI_FAILURE);
+
+                /* Stop device */
+                xx_uninitialize(statep);
+
+                /* Disable and free interrupts */
+                for (inum = 0; inum < statep->nactual; inum++) {
+                        ddi_intr_disable(statep->hdls[inum]);
+                        ddi_intr_remove_handler(statep->hdls[inum]);
+                        ddi_intr_free(statep->hdls[inum]);
+                }
+
+                /* Clean up DMA, unbind/free dma handle etc. */
+                xx_teardown_dma(statep);
+
+                /* Clean up PIO, unmap register memory etc. */
+                xx_teardown_pio(statep);
+
+                /* Unregister callback handler */
+                ddi_cb_unregister(statep->cb_hdl);
+
+                /* Free interrupt handle array */
+                kmem_free(statep->hdls, statep->hdls_size);
+
+                /* Free interrupt setup array */
+                kmem_free(statep->intrs, statep->intrs_size);
+
+                /* Free soft state */
+                ddi_soft_state_free(state_list, instance);
+
+                break;
+
+        case DDI_SUSPEND:
+
+                /* Get soft state */
+                statep = ddi_get_soft_state(state_list, instance);
+                if (statep == NULL)
+                        return (DDI_FAILURE);
+
+                /* Suspend hardware */
+                xx_quiesce(statep);
+
+                break;
+        }
+
+        return (DDI_SUCCESS);
+    }
+
+    /*
+     * (*ddi_cbfunc)() routine.
+     *
+     * Adapt interrupt usage when availability changes.
+     */
+    int
+    xx_cbfunc(dev_info_t *dip, ddi_cb_action_t cbaction, void *cbarg,
+        void *arg1, void *arg2)
+    {
+        xx_state_t      *statep = (xx_state_t *)arg1;
+        int             count;
+        int             inum;
+        int             nactual;
+
+        switch (cbaction) {
+        case DDI_CB_INTR_ADD:
+        case DDI_CB_INTR_REMOVE:
+
+             /* Get change in availability */
+             count = (int)(uintptr_t)cbarg;
+
+             /* Suspend hardware */
+             xx_quiesce(statep);
+
+             /* Tear down previous interrupt handling */
+             for (inum = 0; inum < statep->nactual; inum++) {
+                     ddi_intr_disable(statep->hdls[inum]);
+                     ddi_intr_remove_handler(statep->hdls[inum]);
+             }
+
+             /* Adjust interrupt vector allocations */
+             if (cbaction == DDI_CB_INTR_ADD) {
+
+                     /* Allocate additional interrupt vectors */
+                     ddi_intr_alloc(dip, statep->hdls, statep->type,
+                         statep->nactual, count, &nactual, 0);
+
+                     /* Update actual count of available interrupts */
+                     statep->nactual += nactual;
+
+             } else {
+
+                     /* Free removed interrupt vectors */
+                     for (inum = statep->nactual - count;
+                         inum < statep->nactual; inum++) {
+                             ddi_intr_free(statep->hdls[inum]);
+                     }
+
+                     /* Update actual count of available interrupts */
+                     statep->nactual -= count;
+             }
+
+             /* Configure interrupt handling */
+             xx_setup_interrupts(statep, statep->nactual, statep->intrs);
+
+             /* Install and enable interrupt handlers */
+             for (inum = 0; inum < statep->nactual; inum++) {
+                     ddi_intr_add_handler(&statep->hdls[inum],
+                         statep->intrs[inum].inthandler,
+                         statep->intrs[inum].arg1,
+                         statep->intrs[inum].arg2);
+                     ddi_intr_enable(statep->hdls[inum]);
+             }
+
+             /* Resume hardware */
+             xx_resume(statep);
+
+             break;
+
+        case DDI_CB_LSR_SUSPEND:
+
+                plsr = (ddi_cb_lsr_t *) cbarg;
+                if (plsr->impacts &
+                    (DDI_CB_LSR_IMP_LOSE_POWER
+                    | DDI_CB_LSR_IMP_DEVICE_REPLACE))
+                        return DDI_NOTSUP;
+
+                if (plsr->activities & DDI_CB_LSR_ACT_DMA) {
+                        xx_stop_dma_engine(statep);
+                        if (plsr->impacts
+                            & DDI_CB_LSR_IMP_DMA_ADDR_CHANGE) {
+                                xx_unbind_dma_buffer(statep);
+                        }
+                        if (plsr->impacts
+                            & DDI_CB_LSR_IMP_DMA_PROP_CHANGE) {
+                                xx_destroy_dma_handle(statep);
+                        }
+                }
+
+                if (plsr->activities & DDI_CB_LSR_ACT_INTR) {
+                        xx_disable_interrupts(statep);
+                }
+
+                if (plsr->activities & DDI_CB_LSR_ACT_PIO) {
+                        xx_stop_pio(statep);
+                }
+
+                if (plsr->impacts & DDI_CB_LSR_IMP_DEVICE_RESET) {
+                        /*
+                         * may save the context to be restored for re-loaded
+                         * firmware on resume
+                         */
+                        xx_save_hardware_context(statep);
+                }
+
+                statep->saved_lsr = *plsr;
+                statep->lsr_state = XX_LSR_SUSPENDED;
+
+                break;
+
+        case DDI_CB_LSR_RESUME:
+
+                if (statep->lsr_state != XX_LSR_SUSPENDED)
+                        return (DDI_EINVAL);
+
+                plsr = (ddi_cb_lsr_t *) cbarg;
+
+                if (plsr->activities != statep->saved_lsr.activities
+                    || plsr->impacts != statep->saved_lsr.impacts)
+                        return (DDI_EINVAL);
+
+                if (plsr->impacts & DDI_CB_LSR_IMP_DEVICE_RESET) {
+                        xx_restore_hardware_context(statep);
+                }
+
+                if (plsr->activities & DDI_CB_LSR_ACT_DMA) {
+                        if (plsr->impacts
+                            & DDI_CB_LSR_IMP_DMA_PROP_CHANGE) {
+                                xx_alloc_dma_handle(statep);
+                        }
+                        if (plsr->impacts
+                            & DDI_CB_LSR_IMP_DMA_ADDR_CHANGE) {
+                                xx_bind_dma_buffer(statep);
+                        }
+                        xx_start_dma_engine(statep);
+                }
+
+                if (plsr->activities & DDI_CB_LSR_ACT_INTR) {
+                        xx_enable_interrupts(statep);
+                }
+
+                if (plsr->activities & DDI_CB_LSR_ACT_PIO) {
+                        xx_enable_pio(statep);
+                }
+
+                statep->lsr_state = 0;
+
+                break;
+
+        case DDI_CB_LSR_QUERY_CAPABILITY:
+                /*
+                 * return the supported activities and impacts
+                 */
+                plsr = (ddi_cb_lsr_t *) cbarg;
+
+                plsr->activities = DDI_CB_LSR_ACT_DMA | DDI_CB_LSR_ACT_PIO
+                    | DDI_CB_LSR_ACT_INTR;
+                plsr->impacts = DDI_CB_LSR_IMP_DEVICE_RESET
+                    | DDI_CB_LSR_IMP_DMA_ADDR_CHANGE
+                    | DDI_CB_LSR_IMP_DMA_PROP_CHANGE;
+
+                    break;
+
+     default:
+             return (DDI_ENOTSUP);
+     }
+
+     return (DDI_SUCCESS);
+ }
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityUncommitted
+_
+MT-LevelUnsafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBddi_intr_alloc\fR(9F), \fBddi_intr_free\fR(9F), \fBddi_intr_set_nreq\fR(9F), \fBpciv_send\fR(9F), \fBpciv_vf_config\fR(9F)
+.SH NOTES
+.sp
+.LP
+Users of these interfaces that register for \fBDDI_CB_FLAG_INTR\fR become participants in interrupt resource management. With that participation comes a responsibility to properly adjust interrupt usage. In the case of a \fBDDI_CB_INTR_ADD\fR action, the system guarantees that a driver can allocate a total number of interrupt resources up to its new number of available interrupts. The total number of interrupt resources is the sum of all resources allocated by the function \fBddi_intr_alloc\fR(9F), minus all previously released by the function \fBddi_intr_free\fR(9F). In the case of a \fBDDI_CB_INTR_REMOVE\fR action, the driver might have more interrupts allocated than are now currently available. It is necessary for the driver to release the excess interrupts, or it will have a negative impact on the interrupt availability for other drivers in the system.
+.sp
+.LP
+A failure to release interrupts in response to a \fBDDI_CB_INTR_REMOVE\fR callback generates the following warning on the system console:
+.sp
+.in +2
+.nf
+WARNING: <driver><instance>: failed to release interrupts for
+        IRM (nintrs = ##, navail=##).
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Participation in interrupt resource management ends when a driver uses the \fBddi_cb_unregister()\fR function to unregister its callback function. The callback function must still operate properly until after the call to the \fBddi_cb_unregister()\fR function completes. If \fBaddinterrupts\fR were given to the driver because of its participation, then a final use of the callback function occurs to release the additional interrupts. The call to the \fBddi_cb_unregister()\fR function blocks until the final  use of the registered callback function is finished.

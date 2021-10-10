@@ -1,0 +1,632 @@
+'\" te
+.\" Copyright (c) 2008, Sun Microsystems, Inc. All Rights Reserved.
+.TH cfgadm_fp 1M "2008 年 1 月 10 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_fp \- cfgadm のドライバ固有のコマンド
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-n\fR | \fB-y\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR] 
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR [\fIap_id\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfp\fR ポートドライバプラグイン \fB/usr/lib/cfgadm/fp.so.1\fR は、\fBcfgadm\fR(1M) によるファイバチャネルファブリックデバイスノードの管理機能を提供します。\fBcfgadm\fR は、接続点で実行されます。接続点とは、ハードウェアリソースを動的に再構成できるシステム上の場所です。接続点についての詳細は、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+ファイバチャネルファブリックデバイスノードの管理では、各 \fBfp\fR ポートノードは、デバイスツリー上で接続点によって表されます。また、各ファイバチャネルデバイスは動的接続点によって表されます。接続点には、\fBap_id\fR を通じて名前が付けられます。論理 ap_id と物理 ap_id の 2 種類の \fBap_id\fR が定義されます。物理 \fBap_id\fR は、物理パス名に基づいています。論理 \fBap_id\fR は、より短く、ユーザーにわかりやすい名前です。\fBfp\fR ポートノードの場合、論理 \fBap_id\fR は、対応するディスクコントローラ番号です。たとえば、\fBc0\fR は一般的な論理 \fBap_id\fR です。
+.sp
+.LP
+ファイバチャネルデバイスは、World Wide Name (WWN) で指定されます。ディスクデバイスがコントローラ \fBc0\fR に接続されている場合、\fBap_id\fR は次のようになります。
+.sp
+.in +2
+.nf
+c0::50020f2300006077
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、\fB50020f2300006077\fR は特定のファイバチャネルデバイスのポート WWN を識別します。
+.sp
+.LP
+ファイバチャネルのプライベートループポート、ファブリックポート、またはパブリックループポート上の各デバイスが検索され、デフォルトで Solaris で使用可能になります。ファイバチャネルのファブリックポートまたはパブリックループポートに接続されたデバイスは、アプリケーションまたはエンドユーザー操作を開始することによって Solaris で使用可能にできます。この操作は、管理ユーザーインタフェースによるデバイスのホットプラグ解除と同様です。アプリケーションまたはユーザーは \fB/usr/lib/cfgadm/fp.so.1\fR ライブラリを使用して、\fBlibcfgadm\fR でこのタスクを実現するインタフェースを提供できます。
+.sp
+.LP
+現在接続されているファブリックデバイスの一覧は、接続点の形式で生成されます。 
+.sp
+.LP
+システム上の接続点の単純な一覧には、\fBfp\fR ポートノード上の接続点は含まれますが、ファイバチャネルデバイス上の接続点は含まれません。次の例では、一覧表示オプション (\fB-l\fR) に \fB-a\fR フラグを使用してファイバチャネルデバイスを一覧表示しています。
+.sp
+.in +2
+.nf
+# \fBcfgadm -l\fR
+     Ap_Id                Type         Receptacle   Occupant     Condition
+     c0                   fc-fabric    connected    configured   unknown
+     c1                   fc-private   connected    configured   unknown
+     c2                   fc-pt_to_pt  connected    configured   unknown
+     c3                   fc           connected    unconfigured unknown
+     sysctrl0:slot0       cpu/mem      connected    configured   ok
+     sysctrl0:slot1       sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例では、\fBfp\fR ポートに接続されたファイバチャネルデバイスを一覧表示しています。 
+.sp
+.in +2
+.nf
+# \fBcfgadm -al\fR
+     Ap_Id                Type         Receptacle   Occupant     Condition
+     c0                   fc-fabric    connected    configured   unknown
+     c0::50020f2300006077 disk         connected    configured   unknown
+     c0::50020f23000063a9 disk         connected    configured   unknown
+     c0::50020f2300005f24 disk         connected    configured   unknown
+     c0::50020f2300006107 disk         connected    configured   unknown
+     c1                   fc-private   connected    configured   unknown
+     c1::220000203708b69c disk         connected    configured   unknown
+     c1::220000203708ba7d disk         connected    configured   unknown
+     c1::220000203708b8d4 disk         connected    configured   unknown
+     c1::220000203708b9b2 disk         connected    configured   unknown
+     c2                   fc-pt_to_pt  connected    configured   unknown
+     c2::500104f000937528 tape         connected    configured   unknown
+     c3                   fc           connected    unconfigured unknown
+     sysctrl0:slot0       cpu/mem      connected    configured   ok
+     sysctrl0:slot1       sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、\fBap_id\fR \fBc0\fR の \fBfc-fabric\fR タイプが \fBfp\fR ポートがファブリックに接続されていることを示します。ファブリック関連タイプ (\fBfc-fabric\fR や \fBfc-public\fR など) の \fBfp \fR ポートでは、デバイスノードの作成はデフォルトでブート時に発生し、\fBcfgadm\fR による構成操作および構成解除操作で管理できます。\fBap_id c1\fR の \fBfc-private\fR タイプは、\fBfp\fR ポートがプライベートループに接続され、デバイスノードの作成も同様にデフォルトで発生することを示します。\fBap_id c2\fR の \fBfc-pt_to_pt\fR タイプは、\fBfp\fR ポートが別の \fBN_port\fR に直接接続され、デバイスノードの作成もデフォルトで発生することを示します。\fBap_id c3\fR の \fBfc\fR タイプは、\fBfp\fR ポート \fBc2\fR には何も接続されていないことを示します。ファイバチャネルデバイス \fBap_id\fR の Type フィールドは、デバイスの LUN 0 の SCSI デバイスタイプを示します。
+.sp
+.LP
+Solaris には複数の FCP SCSI LUN が搭載されたファイバチャネルデバイスが構成され、各 \fBFCP SCSI LUN\fR は Solaris デバイスとして使用可能です。ap_id \fBc0::50020f2300006077\fR および \fBc0::50020f23000063a9\fR は、複数の \fBFCP SCSI LUN\fR が搭載されたファイバチャネルデバイスを表すことを想定します。 
+.sp
+.LP
+次の例では、\fBFCP\fR \fBSCSI\fR \fBLUN\fR 情報を含む ap_id を一覧表示する方法を示します。
+.sp
+.in +2
+.nf
+# \fBcfgadm -al -o show_SCSI_LUN\fR
+     Ap_Id                  Type         Receptacle   Occupant     Condition
+     c0                     fc-fabric    connected    configured   unknown
+     c0::50020f2300006077,0 disk         connected    configured   unknown
+     c0::50020f2300006077,1 disk         connected    configured   unknown
+     c0::50020f2300006077,2 disk         connected    configured   unknown
+     c0::50020f2300006077,3 disk         connected    configured   unknown
+     c0::50020f23000063a9,0 disk         connected    configured   unknown
+     c0::50020f23000063a9,1 disk         connected    configured   unknown
+     c0::50020f23000063a9,2 disk         connected    configured   unknown
+     c0::50020f23000063a9,3 disk         connected    configured   unknown
+     c0::50020f2300005f24,0 disk         connected    unconfigured unknown
+     c0::50020f2300005f24,1 disk         connected    unconfigured unknown
+     c0::50020f2300006107,0 disk         connected    unconfigured unknown
+     c0::50020f2300006107,1 disk         connected    unconfigured unknown
+     c1                     fc-private   connected    configured   unknown
+     c1::220000203708b69c,0 disk         connected    configured   unknown
+     c1::220000203708ba7d,0 disk         connected    configured   unknown
+     c1::220000203708b8d4,0 disk         connected    configured   unknown
+     c1::220000203708b9b2,0 disk         connected    configured   unknown
+     c2                     fc-pt_to_pt  connected    configured   unknown
+     c2::500104f000937528,0 tape         connected    configured   unknown
+     c3                     fc           connected    unconfigured unknown
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、\fBap_id c0::50020f2300006077,0\fR は、ポート \fBWWN 50020f2300006077\fR で表現されるファイバチャンネルデバイスの \fBFCP SCSI LUN 0\fR を識別します。ファイバチャンネルデバイスは 4 つの \fBFCP SCSI LUN\fR が搭載されていると報告され、すべて構成済みです。ポート \fBWWN 50020f2300006077\fR に関連付けられた \fB4 FCP SCSI LUN\fR レベルの ap_id が一覧表示されます。一覧には、未構成のファイバチャネルデバイスの \fBFCP SCSI LUN\fR も表示されます。\fBc0::50020f2300005f24 \fR で表現されるファイバチャネルデバイスは、2 つの \fBFCP SCSI LUN\fR が搭載されていると報告されます。\fBc0::50020f2300005f24\fR での構成操作では、2 つの Solaris デバイスが作成されます。\fBFCP\fR \fBSCSI\fR \fBLUN\fR レベル ap_id の \fBType\fR フィールドには、各 \fBLUN\fR の \fBSCSI\fR デバイスタイプが表示されます。ファイバチャネルデバイスに別のタイプの \fBLUN\fR がある場合は、\fBType\fR フィールドに反映されます。
+.sp
+.LP
+\fBfp\fR ポート上の接続点の受容体と占有装置の状態は、次の意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上のデバイスが \fBfp\fR ポートに構成されている
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR ポートがアクティブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR ポートが休止 (入出力アクティビティーが停止)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBempty\fR
+.ad
+.sp .6
+.RS 4n
+該当しない
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR ポートにデバイスの構成なし
+.RE
+
+.sp
+.LP
+\fBfp\fR ポートでの各ファイバチャネルデバイスの状態は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが Solaris に構成され、使用可能
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが接続される \fBfp\fR ポートがアクティブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが接続される \fBfp\fR ポートが休止
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが構成可能
+.RE
+
+.sp
+.LP
+\fBfp\fR ポートにおける接続点の \fBcondition\fR フィールドは、次のような意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBfailed\fR
+.ad
+.sp .6
+.RS 4n
+エラー状態のため、\fBfp\fR ポートがファイバチャネル接続の存在やタイプを検出できませんでした。
+.RE
+
+.sp
+.LP
+\fBfp\fR ポートにおける各ファイバチャネルデバイスの \fBcondition\fR フィールドは、次のような意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBfailed\fR
+.ad
+.sp .6
+.RS 4n
+ファブリック上のデバイスの検索中にエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfailing\fR
+.ad
+.sp .6
+.RS 4n
+デバイスはホスト上に構成され、その状態は Solaris で認識されているとおり通常 (オンラインなど) であると表示されますが、現在ファブリックに存在しない、または表示されていないか、デバイスが構成されたローカルポートがエラー状況であるために存在を確認できませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunusable\fR
+.ad
+.sp .6
+.RS 4n
+デバイスはホスト上に構成されていますが、現在オフラインであるか、障害が発生しています。
+.RE
+
+.sp
+.LP
+不明な「状況」は、ファブリック上のデバイスの検索がエラーなしで完了し、デバイスが事前に構成された場合の Solaris ホスト内のデバイス状態は通常です。\fB\fRデバイスの内部状況は保証できません。
+.SH オプション
+.sp
+.LP
+\fBcfgadm\fR では、一覧表示 (\fB-l\fR) のほかに数種類の操作が定義されています。これらの操作には、構成状態の変更の開始や構成管理のヘルプメッセージの取得 (\fB-h\fR) が含まれます。
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR トランスポート固有ライブラリでは、次の汎用コマンドが定義されています。
+.sp
+\fBfc-fabric\fR タイプ \fBfp\fR ポート接続点上のファイバチャネルデバイス接続点では、次の構成状態の変更操作がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+接続されたファイバチャネルファブリックデバイスをホストに構成します。ファイバチャネルデバイスが一覧操作の出力に不明なタイプとして一覧表示されている場合は、デバイスが構成できない可能性があります。不明なタイプのデバイスの構成は試みられません。強制オプション (\fB-f\fR) を使用すると、任意のデバイスの構成を試みるように \fBfp\fR ポートドライバプラグインを強制できます。プロセスのエラーが報告されます。デフォルトでは、ファイバチャネルファブリックデバイスで検出された各 FCP SCSI LUN が構成されます。ただし、\fBfp.conf\fR ファイルの「pwwn-lun-blacklist」プロパティーで指定された FCP SCSI LUN は構成解除されたままです。FCP SCSI LUN レベル一覧には、このような FCP SCSI LUN の状態が反映されます。接続されたコントローラでリブートまたは Solaris 動的再構成を実行した後も、「構成解除」の状態が保持されます。「pwwn-lun-blacklist」プロパティーについての詳細は、\fBfp\fR(7D) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイバチャネルファブリックデバイスをホストから構成解除します。デバイスが接続されたコントローラで次のリブートまたは Solaris 動的再構成が実行されるまで、このデバイスは構成解除されたままです。この時点で、すべてのファブリックデバイスが自動的に列挙されます。デフォルト動作は、\fBfp.conf\fR ファイルの「manual_configuration_only」プロパティーを使用することによって変更できます。このプロパティーが設定されている場合、リブート後もデバイスは構成解除されたままです。「manual_configuration_only」プロパティーについての詳細は、\fBfp\fR(7D) を参照してください。
+.RE
+
+ファイバチャネルのプライベートループデバイスおよび \fBN_Port\fR ポイントツーポイントデバイスでは、\fBconfigure\fR コマンドは操作を行うことなく正常終了を返します。プライベートループデバイスおよび \fBN_Port\fR ポイントツーポイントデバイスでは、\fBunconfigure\fR コマンドがサポートされていません。プライベートループデバイスおよび \fBN_Port\fR ポイントツーポイントデバイスは、デフォルトで Solaris ファイバチャネルドライバによって構成され、エンドユーザーまたはアプリケーション主導の操作によって管理されません。\fBfp.conf\fR ファイルの \fBpwwn-lun-blacklist\fR プロパティーは、ファブリックデバイスに適用する場合と同じ方法でプライベートループデバイスおよび \fBN_Port\fR ポイントツーポイントデバイスに適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+状況やタイプに関係なく、\fBconfigure\fR による状態の変更操作を強制的に発生させます。\fB\fR\fB\fR\fBconfigure\fR による状態の変更操作については、上記の説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfp\fR (トランスポート固有のヘルプ) を取得します。任意の \fBfp\fR 接続点を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のハードウェアオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBshow_SCSI_LUN\fR
+.ad
+.sp .6
+.RS 4n
+\fBlist\fR オプション \fB-al\fR を付けて指定した場合、検出されたファイバチャネルデバイスについて各 FCP SCSI LUN に関連付けられた ap_id を一覧表示します。前述の説明および FCP SCSI LUN レベル一覧の例を参照してください。FCP SCSI LUN レベルでは、デバイスノードの作成はサポートされていません。「\fB注意事項\fR」 を参照してください。
+.RE
+
+Solaris では、すべてのファイバチャネルデバイスがデフォルトで使用可能です。\fB/kernel/drv/fp.conf\fR ファイルの「manual_configuration_only」プロパティーを設定すると、Solaris でファブリックデバイスのサブセットのみをデフォルトで使用可能にできます。\fBfp.conf\fR の「manual_configuration_only」を設定すると、アプリケーションまたはエンドユーザーが Solaris にデバイスが構成されるように事前に要求していない限り、Solaris ですべてのファブリックデバイスが使用不可になります。\fBconfigure\fR による状態の変更コマンドは、デバイスを Solaris で使用可能にします。ファブリックデバイスで \fBconfigure\fR 操作が正常に完了すると、関連するリンクが \fB/dev\fR 名前空間に追加されます。\fBunconfigure\fR による状態の変更コマンドは、デバイスを Solaris で使用不可にします。 
+.sp
+\fB-c\fR \fBconfigure\fR 操作を使用してファイバチャネルファブリックデバイスがホストに正常に構成されると、物理 \fBap_id\fR がリポジトリに格納されます。\fB-c\fR \fBunconfigure\fR 操作を使用してファイバチャネルファブリックデバイスが構成解除されると、物理 \fBap_id\fR が同じリポジトリから削除されます。\fBfp.conf\fR の「manual_configuration_only」プロパティーが設定されている場合にのみ、すべてのファブリックデバイスがデフォルトで自動的に列挙され、リポジトリが使用されます。「manual_configuration_only」プロパティーについての詳細は、\fBfp\fR(7D) を参照してください。
+.sp
+次のコマンドを \fB-c\fR オプションを付けて指定すると、リポジトリの更新動作を制御できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforce_update\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBconfigure\fR では、接続点が無条件にリポジトリに追加されます。\fBunconfigure\fR では、接続点が無条件に削除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBno_update\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作に関係なく、リポジトリの更新は実行されません。
+.RE
+
+これらのオプションは、通常の \fBconfigure\fR および \fBunconfigure\fR 操作では使用してはいけません。「警告」を参照してください。\fB\fR
+.sp
+ファイバチャネルデバイスに複数の \fBFCP SCSI LUN\fR が構成され、\fBFCP SCSI LUN\fR に関連付けられている任意の Solaris デバイスが使用不可の状況である場合は、ファイバチャネルデバイス全体が使用不可として報告されます。\fB-c\fR unconfigure コマンドに次のオプションを付けると、ファイバチャネルデバイスが使用不可の状況である Solaris デバイスのみが削除されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunusable_SCSI_LUN\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBunconfigure\fR 操作では、ターゲットデバイスでオフラインのデバイスノードが削除されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用法については、\fBcfgadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+現時点では、使用できるテストコマンドはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+現時点では、ハードウェア固有の関数は使用できません。
+.RE
+
+.sp
+.LP
+その他のすべてのオプションの意味は、\fBcfgadm\fR(1M) のマニュアルページで定義されたものと同じです。
+.SH 使用例
+.LP
+\fB例 1 \fRディスクの構成解除
+.sp
+.LP
+次のコマンドは、ディスクを構成解除します。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR単一の接続点にあるすべての構成済みディスクの構成解除
+.sp
+.LP
+次のコマンドは、接続点 \fBc0\fR にあるすべての構成済みディスクを構成解除します。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure c0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRディスクの構成
+.sp
+.LP
+次のコマンドは、ディスクを構成します。
+
+.sp
+.in +2
+.nf
+# cfgadm -c configure c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR単一の接続点にあるすべての構成解除済みディスクの構成
+.sp
+.LP
+次のコマンドは、接続点 \fBc0\fR にあるすべての構成解除済みディスクを構成します。
+
+.sp
+.in +2
+.nf
+# cfgadm -c configure c0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRリポジトリからのファイバチャネルファブリックデバイスの接続点の削除
+.sp
+.LP
+次のコマンドは、ファブリックデバイスリポジトリからファイバチャネルファブリックデバイスの接続点を無条件に削除します。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure -o force_update c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRターゲットデバイスでオフラインの Solaris デバイスノードの削除
+.sp
+.LP
+次のコマンドは、ターゲットデバイスでオフラインの Solaris デバイスノードを削除します。
+
+.sp
+.in +2
+.nf
+# cfgadm -c unconfigure -o unusable_SCSI_LUN c0::210000203708b606
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/fp.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイバチャネルファブリックのデバイスノード管理用のハードウェア固有ライブラリ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cfg/fp/fabric_WWN_map\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在構成されているファブリックデバイスの物理 \fBap_id\fR のリポジトリ。ブート時にこれらのファブリックデバイスを再構成する場合にのみ使用されます。このリポジトリは、\fB/kernel/drv/fp.conf\fR ファイルの「manual_configuration_only」が設定されている場合にのみ使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rcS.d/fdevattach\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート時に \fB/etc/cfg/fp/fabric_WWN_map\fR に一覧表示される物理 \fBap_id\fR のファブリックデバイスを再構成します。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+service/storage/fibre-channel/fc-fabric, service/storage/fibre-channel/fc-fabricx
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBcfgadm\fR(1M), \fBsvcadm\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBlibcfgadm\fR(3LIB), \fBattributes\fR(5), \fBsmf\fR(5), \fBfp\fR(7D)
+.SH 警告
+.sp
+.LP
+通常の \fBconfigure\fR/\fBunconfigure\fR 操作では、リポジトリ更新用のハードウェア固有オプションを使用しないでください。ブート時にファブリックデバイスのノード作成に失敗して、エラー状態が永続的であると見なされるとき、ハードウェア固有のオプションが使用されると想定されます。\fBunconfigure\fR コマンドに \fBforce_update\fR ハードウェア固有オプションを付けると、障害が発生しているファブリックデバイスの接続点がリポジトリから無条件に削除されます。
+.SH 注意事項
+.sp
+.LP
+不明なデバイスタイプまたは SCSI デバイスタイプ以外のデバイス (ファイバチャネルホストバスアダプタなど) では、\fBconfigure\fR 操作を適用できない場合があります。
+.sp
+.LP
+\fBconfigure\fR および \fBunconfigure\fR コマンドは、ポート WWN ap_id で表現されるファイバチャネルデバイスレベルで動作します。ファイバチャネルデバイスに複数の FCP SCSI LUN が構成されている場合、関連するポート WWN ap_id で \fBconfigure\fR コマンドを実行すると、\fBfp.conf\fR ファイルの「pwwn-lun-blacklist」プロパティーに指定されていない限り、各 \fBFCP SCSI LUN\fR に Solaris デバイスが作成されます。\fBunconfigure\fR コマンドは、ポート WWN ap_id に関連付けられたすべての Solaris デバイスを削除します。\fBconfigure\fR および \fBunconfigure\fR コマンドでは、\fBFCP SCSI LUN\fR レベル ap_id は無効です。
+.sp
+.LP
+非推奨の \fBshow_FCP_dev\fR オプションは新しい \fBshow_SCSI_LUN\fR オプションに置き換えられ、非推奨の \fBunusable_FCP_dev\fR オプションは新しい \fBunusable_SCSI_LUN\fR オプションに置き換えられました。
+.sp
+.LP
+\fBcfgadm_fp\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/system/device/fc-fabric:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+このサービスがブート時に開始されれば、ファブリックデバイスを構成するときに、このサービスに対する管理操作が必要ありません。 

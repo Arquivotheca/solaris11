@@ -1,0 +1,186 @@
+'\" te
+.\" 部分版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.\" 版权所有 (c) 2002-2006 Szabolcs Szakacsits
+.\" 版权所有 (c) 2002-2005 Anton Altaparmakov
+.\" 版权所有 (c) 2002-2003 Richard Russon
+.\" 版权所有 (c) 2007 Yura Pakhuchiy
+.\" 本程序是自由软件，您可以遵照自由软件基金会发布的 GNU 通用公共许可第 2 版或（根据您的选择）任何更高版本的条款重新发布和/或修改本程序。本程序本着为用户提供帮助的目的而发布，但不承担任何担保；即使是对适销性或特定用途适用性的暗示担保也不承担。有关详细信息，请参见 GNU 通用公共许可。您应当已随本程序接收到 GNU 通用公共许可的一份副本（在 Linux-NTFS 分发的主目录下的 COPYING 文件中）；如果没有，请致函：Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfscp 1M "2009 年 5 月 28 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ntfscp \- 将文件复制到 NTFS 卷
+.SH 用法概要
+.LP
+.nf
+\fBntfscp\fR  [\fIoptions\fR] \fIdevice\fR \fIsource_file\fR \fIdestination\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBntfscp\fR 实用程序用于将文件复制到 NTFS 卷。\fIdestination\fR（请参见"说明"）可以是一个文件，也可以是一个目录。如果 \fIdestination\fR 是由名称指定的目录，\fIsource_file\fR 将复制到此目录中。如果 \fIdestination\fR 是由 inode 编号指定的目录，将为此 inode 创建一个未命名的数据属性，并且 \fIsource_file\fR 将复制到此目录中。在通过 inode 编号指定目录之前，请考虑可能的不利后果：目录中包含未命名的数据流是不寻常的。
+.SS "数据流"
+.sp
+.LP
+NTFS 中的所有数据都存储在流中，这些流可以具有名称。一个文件可以有多个数据流，但必须有且只有一个数据流不带名称。文件的大小是其未命名数据流的大小。通常，未指定流名称时，可设法访问未命名的数据流。如果要访问命名的数据流，需要将 \fB:\fR\fIstream_name\fR 添加至文件名。例如，通过打开 \fBsome.mp3:artist\fR，您将打开 \fBsome.mp3\fR 中的 \fBartist\fR。在禁止访问命名数据流的操作系统（如 Windows）中，需要使用一些如 \fBFAR\fR 的程序或 \fBcygwin\fR 中的实用程序访问这些流。
+.SH 选项
+.sp
+.LP
+下面列出了支持的选项。大多数选项都有单字母和全名两种形式。不接受参数的单字母选项可以多个组合到一起。例如，\fB-fv\fR 等效于 \fB-f\fR \fB-v\fR。全名选项可以缩写为其名称的唯一前缀。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR，\fB--attribute\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+写入由 \fInum\fR 指定的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR，\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+覆盖一些明显的缺省值，如不使用挂载的卷。请谨慎使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR，\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示选项的列表及每个选项的简要说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR，\fB--inode\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIdestination\fR（请参见"用法概要"部分）视为 inode 编号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR，\fB--attr-name\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+写入具有此名称的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR，\fB--no-action\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用此选项在执行实际复制操作之前进行测试运行。卷将以只读方式打开，并且不进行任何写入。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR，\fB--quiet\fR\fR
+.ad
+.sp .6
+.RS 4n
+抑制某些调试、警告和错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR，\fB--version\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示版本号、版权和许可信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR，\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示更多调试、警告和错误消息。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR从起始目录复制到根目录
+.sp
+.LP
+以下命令将 \fBnew_boot.ini\fR 作为 \fBboot.ini\fR 从 \fB/home/user\fR 复制到 \fB/dev/dsk/c0d0p1\fR NTFS 卷的根目录中。
+
+.sp
+.in +2
+.nf
+# \fBntfscp /dev/dsk/c0d0p1 /home/user/new_boot.ini boot.ini\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR复制流
+.sp
+.LP
+以下命令将 \fBmyfile\fR 复制到 \fBC:\some\path\myfile:stream\fR 中（假设 \fB/dev/dsk/c0d0p1\fR 驱动器指示符为 \fBC\fR）。
+
+.sp
+.in +2
+.nf
+# \fBntfscp -N stream /dev/dsk/c0d0p1 myfile /some/path\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/ntfsprogs
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBntfsresize\fR(1M)、\fBntfsprogs\fR(1M)、\fBparted\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 作者
+.sp
+.LP
+\fBntfscp\fR 由 Yura Pakhuchiy 编写，并包含 Anton Altaparmakov 和 Hil Liao 所做的贡献。

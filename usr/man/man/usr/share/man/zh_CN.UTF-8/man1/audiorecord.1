@@ -1,0 +1,206 @@
+'\" te
+.\"  版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.TH audiorecord 1 "2009 年 12 月 1 日" "SunOS 5.11" "用户命令"
+.SH 名称
+audiorecord \- 录制音频文件
+.SH 用法概要
+.LP
+.nf
+\fBaudiorecord\fR [\fB-af\fR] [\fB-v\fR \fIvol\fR] [\fB-c\fR \fIchannels\fR] [\fI-s\fR \fIrate\fR]
+     [\fB-e\fR \fIencoding\fR] [\fB-t\fR \fItime\fR] [\fB-i\fR \fIinfo\fR] [\fB-d\fR \fIdev\fR]
+     [\fB-T\fR \fBau\fR | \fBaif\fR[\fBf\fR] | \fBwav\fR] [\fIfile\fR[.\fBau\fR|.\fBaif\fR[\fBf\fR]]|.\fBwav\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBaudiorecord\fR 实用程序将音频数据从音频设备复制到指定的音频文件，或者在未提供文件名的情况下复制到标准输出。如果未指定输出文件且标准输出为 tty，该程序将退出并显示一条错误消息。
+.sp
+.LP
+缺省情况下，单声道音频数据以 8 kHz 的频率进行录制，且以 \fB-law\fR 格式进行编码。如果音频设备支持其他配置，可以使用 \fB-c\fR、\fB-s\fR 和 \fB-e\fR 选项指定数据格式。输出文件前附带音频文件头，该文件头用于识别文件中的编码数据格式。
+.sp
+.LP
+立即开始录制，并一直录制直到收到 \fBSIGINT\fR 信号（例如 Ctrl-C）为止。如果指定了 \fB-t\fR 选项，\fBaudiorecord\fR 会在录制了指定数量的数据后停止。
+.sp
+.LP
+如果音频设备不可用，即，如果另一个进程当前已进行读访问，\fBaudiorecord\fR 会显示一条错误消息并立即退出。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\e?\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIHelp\fR：输出命令行用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIAppend\fR：在指定音频文件的末尾附加数据。音频设备必须支持现有文件的音频数据格式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIchannels\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIChannels\fR：指定音频通道的数量（1 或 2）。可将该值指定为一个整数或字符串 \fBmono\fR 或 \fBstereo\fR。缺省值为 \fBmono\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdev\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIDevice\fR：\fIdev\fR 参数指定应从其获取输入的备用音频设备。如果未指定 \fB-d\fR 选项，则参考 \fBAUDIODEV\fR 环境变量（请见下文）。否则，\fB/dev/audio\fR 会用作缺省音频设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIencoding\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIEncoding\fR：指定音频数据编码。该值可以是 \fBulaw\fR、\fBalaw\fR 或 \fBlinear\fR 之一。缺省编码是 \fBulaw\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIForce\fR：若指定了 \fB-a\fR 标志，则音频设备的抽样率必须与录制原始文件的抽样率匹配。如果还指定了 \fB-f\fR 标志，则忽略抽样率差异，但会显示一条有关标准错误的警告消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinfo\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIInformation\fR：输出文件头的 'information'（信息）字段会设置为 \fIinfo\fR 参数所指定的字符串。不能将此选项指定为与 \fB-a\fR 参数一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIrate\fR\fR
+.ad
+.RS 24n
+.rt  
+\fISample Rate\fR：指定抽样率，以每秒的样例数为单位。如果一个数字后面跟有字母 \fBk\fR，表示乘以 1000（例如 44.1k = 44100）。缺省抽样率为 8 kHz。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItime\fR\fR
+.ad
+.RS 24n
+.rt  
+\fITime\fR：\fItime\fR 参数指定录制的最长时间。可将时间指定为表示秒数的浮点值，或者指定为 \fIhh:mm:ss.dd\fR 形式（其中，小时和分钟规范为可选）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBau\fR | \fBaif\fR[\fBf\fR] | \fBwav\fR\fR
+.ad
+.RS 24n
+.rt  
+指定要创建的音频文件类型。如果使用 \fB-a\fR 选项，文件类型必须与其将附加到的文件匹配。无论文件后缀为何，都要设置为该选项中指定的类型。如果未指定此选项，则由文件后缀确定文件类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIvol\fR\fR
+.ad
+.RS 24n
+.rt  
+\fIVolume\fR：在开始录制之前将录制增益设置为指定的值，在 \fBaudiorecord\fR 退出后将录制增益重置为先前的级别。\fIvol\fR 参数是 0 到 100（包含 0 和 100）之间的一个整数值。如果未指定此参数，输入音量会保持最近由任何进程设置的级别。
+.RE
+
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR[\fB\&.au\fR|\fB\&.aif\fR[\fBf\fR]]|\fB\&.wav\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIFile Specification\fR：重写或附加指定的音频文件。如果未提供文件名且标准输出不是 tty，或者如果指定了特殊文件名 "\fB\(mi\fR"，则输出会定向到标准输出。
+.sp
+如果未指定 \fB-T\fR 选项，则由文件后缀确定文件类型。如果无法识别后缀，则缺省值为 \fB\&.au\fR。如果\fB指定\fR \fB-T\fR 选项，则无论文件后缀为何，都将使用该文件类型。
+.RE
+
+.SH 用法
+.sp
+.LP
+当遇到的文件大于或等于 2 GB（2^ 31 字节）时，有关 \fBaudiorecord\fR 行为的说明，请参见 \fBlargefile\fR(5)。
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIODEV\fR\fR
+.ad
+.RS 12n
+.rt  
+要从其录制的音频设备的全路径名（如果未提供 \fB-d\fR 参数）。如果未设置 \fBAUDIODEV\fR 变量，将使用 \fB/dev/audio\fR。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见\fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+体系结构SPARC、x86
+_
+可用性audio/audio-utilities
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBaudioconvert\fR(1)、\fBaudioctl\fR(1)、\fBaudioplay\fR(1)、\fBattributes\fR(5)、\fBlargefile\fR(5)、\fBaudio\fR(7I)

@@ -1,0 +1,205 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH HBA_GetFcpTargetMapping 3HBAAPI "1 Sep 2003" "SunOS 5.11" "Common Fibre Channel HBA Information Library Functions"
+.SH NAME
+HBA_GetFcpTargetMapping, HBA_GetFcpTargetMappingV2 \- retrieve mapping between FCP-2 discovered devices and operating system SCSI information
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR\&.\|.\|. ] \fIfile\fR\&.\|.\|. \fB-lHBAAPI\fR [ \fIlibrary\fR\&.\|.\|. ]
+#include <hbaapi.h>
+
+\fBHBA_STATUS\fR \fBHBA_GetFcpTargetMapping\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBHBA_FCPTARGETMAPPING *\fR\fImapping\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_GetFcpTargetMappingV2\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBHBA_WWN\fR \fIhbaPortWWN\fR, \fBHBA_FCPTARGETMAPPINGV2 *\fR\fImapping\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhandle\fR\fR
+.ad
+.RS 14n
+.rt  
+an open handle returned from \fBHBA_OpenAdapter\fR(3HBAAPI)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImapping\fR\fR
+.ad
+.RS 14n
+.rt  
+a buffer in which to store the mapping entries. The \fImapping\fR->\fBNumberOfEntries\fR member must indicate the maximum number of entries that will fit within the buffer.  On completion, the \fImapping\fR->\fBNumberOfEntries\fR member indicates the actual number of mapping entries for the HBA.  This value can be greater than the number of entries the buffer can store.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhbaPortWWN\fR\fR
+.ad
+.RS 14n
+.rt  
+the Port Name of the local HBA Port for which the caller is requesting target mappings.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBHBA_GetFcpTargetMapping()\fR function retrieves the current set of mappings between FCP LUNs and SCSI LUNs for a given HBA port.
+.sp
+.LP
+The \fBHBA_GetFcpTargetMappingV2()\fR function retrieves the current set of mappings between FCP LUNs and SCSI LUNs for a given HBA. The mapping also includes a Logical Unit Unique Identifier for each logical unit.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBHBA_GetFcpTargetMappingV2()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_ILLEGAL_WWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The port WWN specified by \fIhbaPortWWN\fR is not a valid port WWN on the specified HBA
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_NOT_SUPPORTED\fR\fR
+.ad
+.sp .6
+.RS 4n
+Target mappings are not supported on the HBA.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.LP
+The \fBHBA_GetFcpTargetMapping()\fR and \fBHBA_GetFcpTargetMappingV2()\fR functions return the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_OK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The HBA was able to retrieve information.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_MORE_DATA\fR\fR
+.ad
+.sp .6
+.RS 4n
+A larger buffer is required.  The value of \fImapping\fR->\fBNumberOfEntries\fR after the call indicates the total number of entries available.  The caller should reallocate the buffer large enough to accomodate the indicated number of entries and reissue the routine.
+.RE
+
+.sp
+.LP
+In the event that other error values are returned, the value of \fImapping\fR->\fBNumberOfEntries\fR after the call should be checked, and if greater than the value before the call, a larger buffer should be allocated for a retry of the routine.
+.SH ERRORS
+.sp
+.LP
+See \fBlibhbaapi\fR(3LIB) for general error status values.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRReturn target mapping data.
+.sp
+.LP
+The following example returns target mapping data. It initially allocates space for one target mapping. If the number of entries returned is greater than the allocated space, a new buffer with sufficient space is allocated and \fBHBA_GetFcpTargetMapping()\fR is called again.
+
+.sp
+.in +2
+.nf
+map = (HBA_FCPTARGETMAPPING *)calloc(1,
+    sizeof (HBA_FCPTARGETMAPPING));
+status = HBA_GetFcpTargetMapping(handle, map);	
+if (map->NumberOfEntries > 0) {
+    HBA_UINT32  noe = map->NumberOfEntries;
+    free(map);
+    map = (HBA_FCPTARGETMAPPING *)calloc (1,
+        sizeof (HBA_FCPTARGETMAPPING) +
+        (sizeof (HBA_FCPSCSIENTRY)*(noe - 1)));
+    map->NumberOfEntries = noe;
+    if ((status = HBA_GetFcpTargetMapping(handle, map)) !=
+            HBA_STATUS_OK) {
+        fprintf(stderr, " Failed to get target "
+            "mappings %d", status);
+        free(map);
+    } else {
+        printf(" FCP Mapping entries: \en");
+        for (cntr = 0;
+            cntr < map->NumberOfEntries;
+            cntr ++) {
+        printf("  Path(%d): \e"%s\e"\en", cntr,
+        map->entry[cntr].ScsiId.OSDeviceName);
+        }
+    }
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+T{
+Standard: FC-HBA Version 4 (API version 2)
+T}
+_
+MT-LevelSafe
+_
+StandardFC-MI 1.92 (API version 1)
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBHBA_OpenAdapter\fR(3HBAAPI), \fBlibhbaapi\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+T11 FC-MI Specification
+.SH BUGS
+.sp
+.LP
+The \fBHBA_GetFcpTargetMapping()\fR routine does not take a \fIportindex\fR to define which port of a multi-ported HBA the command should apply to.  The behavior on multi-ported HBAs is vendor specific, and may result in mappings or bindings for all ports being intermixed in the response buffer.  SNIA version 2 defines a \fBHBA_GetFcpTargetMappingV2()\fR which takes a Port WWN as an argument.  This fixes the bug with multi-ported HBAs in \fBHBA_GetFcpTargetMapping()\fR.

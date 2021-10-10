@@ -1,0 +1,141 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH installboot 1M "2011 年 4 月 6 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+installboot \- ディスクパーティションへのブートブロックのインストール
+.SH 形式
+.LP
+.nf
+\fBinstallboot\fR [\fB-F\fR zfs|ufs|hsfs] \fIbootblk\fR \fIraw-disk-device\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBboot\fR(1M) プログラム \fBufsboot\fR は、ディスクパーティションのブート領域に置かれているブートブロックプログラムによってディスクから読み込まれます。このプログラムはファイルシステムに固有で、ブートするディスク上のファイルシステムのタイプと一致している必要があります。
+.sp
+.LP
+ブートオブジェクトはプラットフォームに依存し、\fB/usr/platform/\fR\fIplatform-name\fR\fB/lib/fs/\fR\fIfile-system\fR ディレクトリに置かれています。プラットフォーム名を調べるには、\fBuname\fR(1) の \fB-i\fR オプションを使用します。ファイルシステムタイプを調べるには、次を使用します。
+.sp
+.in +2
+.nf
+% fstyp \fIraw-disk-device\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBfstyp\fR(1M) を参照してください。
+.sp
+.LP
+\fBinstallboot\fR ユーティリティーは SPARC 専用のプログラムです。x86 アーキテクチャーではサポートされていません。x86 ユーザーは代わりに \fBinstallgrub\fR(1M) を使用してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fBzfs|ufs|hsfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストールするブートブロックのファイルシステムタイプを指定します。\fBzfs\fR または \fBhsfs\fR を指定する場合には必須です。デフォルトは \fBufs\fR です。
+.RE
+
+.SH オペランド
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbootblk\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートブロックコードの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIraw-disk-device\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートブロックコードをインストールするディスクデバイスの名前。これは、読み書き可能な文字デバイスである必要があります。命名規約は、\fBSCSI\fR または \fBIPI\fR ドライブの場合は \fBc\fR\fI?\fR\fBt\fR\fI ?\fR\fBd\fR\fI?\fR\fBs\fR\fI?\fR、\fBIDE\fR ドライブの場合は \fBc\fR\fI?\fR\fBd\fR\fI?\fR\fBs\fR\fI?\fR です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRUFS ブートブロックのインストール
+.sp
+.LP
+コマンドを実行するプラットフォームのコントローラ \fB1\fR のターゲット \fB0\fR のスライス \fB0\fR に \fBufs\fR ブートブロックをインストールするには、次を使用します。
+
+.sp
+.in +2
+.nf
+# \fBinstallboot /usr/platform/`uname -i`/lib/fs/ufs/bootblk \e
+	/dev/rdsk/c1t0d0s0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRZFS ブートブロックのインストール
+.sp
+.LP
+コマンドを実行するプラットフォームのコントローラ 1 のターゲット 0 のスライス 0 に ZFS ブートブロックをインストールするには、次のような構文を使用します。
+
+.sp
+.in +2
+.nf
+# \fBinstallboot -F zfs /usr/platform/`uname -i`/lib/fs/zfs/bootblk \e
+      /dev/rdsk/c1t1d0s0\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/platform/\fR\fIplatform-name\fR\fB/lib/fs/\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブートオブジェクトが置かれているディレクトリ。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBkmdb\fR(1), \fBod\fR(1), \fBuname\fR(1), \fBboot\fR(1M), \fBfstyp\fR(1M), \fBinit\fR(1M), \fBkernel\fR(1M), \fBmonitor\fR(1M), \fBreboot\fR(1M), \fBrpc.bootparamd\fR(1M), \fBinit.d\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fI『Installing Oracle Solaris 11 Systems』\fR
+.SH 警告
+.sp
+.LP
+\fIbootblk\fR ファイルまたは \fIopenfirmware\fR ファイルが存在しない場合、あるいは raw ディスクデバイスが文字デバイスでない場合、\fBinstallboot\fR ユーティリティーは失敗します。

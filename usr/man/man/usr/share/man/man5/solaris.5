@@ -1,0 +1,424 @@
+'\" te
+.\"  Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH solaris 5 "9 Aug 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+solaris, ipkg \- solaris branded zone
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsolaris\fR brand uses the branded zones framework described in \fBbrands\fR(5) to run zones installed with the same software as is installed in the global zone. The system software must always be in sync with the global zone when using a \fBsolaris\fR brand. The system software packages within the zone are managed using the image packaging system. See \fBpkg(5)\fR.
+.SS "Configuration and Administration"
+.sp
+.LP
+The \fBsolaris\fR brand supports the whole root non-global zone model. All of the required system software and any additional packages are installed into the private file systems of the zone. The zone must reside on its own \fBzfs\fR(1M) dataset and only ZFS is supported. The ZFS dataset is created automatically when the zone is installed or attached. If a ZFS dataset cannot be created, the zone is not installed or attached.
+.SH SUB-COMMANDS
+.sp
+.LP
+The following \fBsolaris\fR brand-specific subcommand options are supported by \fBzoneadm\fR(1M).
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattach\fR [\fB-a\fR \fIarchive\fR | \fB-d\fR \fIpath\fR | \fB-z\fR \fIZBE\fR] [\fB-u\fR] [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Attach the specified \fBsolaris\fR branded zone image into the zone. If neither \fB-a\fR or \fB-d\fR is specified, the zone's zonepath is assumed to already be properly installed with the zone's files. \fBzoneadm\fR checks package levels on the machine to which the zone is to be attached. If the packages that the zone depends on from the global zone are different (have different revision numbers) from the dependent packages on the source machine, \fBzoneadm\fR reports these conflicts and does not perform the attach. 
+.sp
+If the destination system has only newer dependent packages (higher revision numbers) than those on the source system, you can use the \fB-u\fR or \fB-U\fR option to update the dependent packages to match the revision of the packages that exist on the new system.
+.sp
+When attaching a zone, multiple zone boot environments (\fBZBE\fRs) can exist and the \fBattach\fR subcommand must determine which one to attach. The selection criteria is as follows, with the first match being used.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If the \fB-z\fR option is used to specify a \fBZBE\fR, it is selected. 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If there is only one \fBZBE\fR, it is selected.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If there is only one \fBZBE\fR associated with this global zone boot environment, it is selected.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If there is only one active \fBZBE\fR associated with this global zone boot environment, it is selected.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If there is only one active \fBZBE\fR, it is selected. 
+.RE
+If the selected \fBZBE\fR is associated with another global zone boot environment the \fBZBE\fR is cloned and the clone of the selected \fBZBE\fR is attached. See \fBbeadm\fR(1M) for more information regarding boot environments.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarchive\fR\fR
+.ad
+.sp .6
+.RS 4n
+The path to a \fBcpio\fR(1) or \fBpax\fR(1) \fBxustar\fR or \fBzfs\fR(1M) archive of an installed Oracle Solaris branded zone.
+.sp
+\fBcpio\fR and \fBpax\fR archives must be of the zonepath or the zoneroot and must not contain absolute paths (paths must not start with \fB/\fR). ZFS archives can be of the \fBzonepath dataset\fR, \fBzone rpool dataset\fR or a single zone boot environment. 
+.sp
+If a ZFS archive contains more than one \fBZBE\fR, the attach can fail with a message indicating that a specific \fBZBE\fR must be attached using the -z option. In such a case, the \fBZBE\fRs from the archive are remain extracted and the -a and -d options are invalid for further use with this zone until the -z option is used to attach one of the extracted \fBZBE\fRs. If, instead of attaching one of the extracted \fBZBE\fRs, it is desired to delete the extracted \fBZBE\fRs, use \fBzoneadm -z <zone> mark incomplete\fR followed by \fBzoneadm -z <zone> uninstall\fR.
+.sp
+\fBcpio\fR and ZFS archives can be compressed using \fBgzip\fR or \fBbzip2\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+Provides a profile or a directory of profiles to apply after installation from the repository.
+.sp
+All profiles must have an \fB\&.xml\fR extension.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+The path to the zonepath directory of an \fBipkg\fR branded zone's zonepath.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+Update the minimal number of packages within the zone to allow the zone's packages to be compatible with the packages installed in the global zone. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+Update all packages within the zone to their latest versions which are compatible with the packages installed in the global zone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIZBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Attach the specified existing zone boot environment. If the specified zone boot environment is associated with a different global zone, the specified \fBZBE\fR is cloned and a clone of the \fBZBE\fR is attached. 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclone\fR [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+Provides a profile or a directory of profiles to apply after installation from the repository.
+.sp
+All profiles must have an \fB\&.xml\fR extension.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall\fR [\fB-m\fR \fImanifest.xml\fR] [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR]\fR
+.ad
+.br
+.na
+\fB\fBinstall\fR [\fB-a\fR \fIarchive\fR | \fB-d\fR \fIpath\fR | \fB-z\fR \fIZBE\fR] [\fB-p\fR] [\fB-s\fR] [\fB-u\fR] [\fB-v\fR] [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR]\fR
+.ad
+.sp .6
+.RS 4n
+The \fBsolaris\fR brand installer supports installing the zone from either the software repository or from an image of an installed system running the same release. This can be a \fBcpio\fR(1), \fBpax\fR(1) \fBxustar\fR, or ZFS archive. The \fBcpio\fR or ZFS archive can be compressed with \fBgzip\fR or \fBbzip2\fR. The image can also be a path to the top-level of a system's root tree, or a pre-existing zone path. 
+.sp
+If none of the \fB-a\fR, \fB-d\fR, or \fB-z\fR options are specified, the zone is installed from the repository. To install additional packages in a zone the default zone manifest, \fB/usr/share/auto_install/manifest/zone_default.xml\fR, can be copied and edited to include the needed packages. This modified manifest should be specified to install with the \fB-m\fR option.
+.sp
+To install the zone from a system image, one of the \fB-a\fR, \fB-d\fR, \fB-z\fR options is required. Either the \fB-u\fR or \fB-p\fR option is also required in this case.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarchive\fR\fR
+.ad
+.sp .6
+.RS 4n
+The path to a \fBcpio\fR(1) or \fBpax\fR(1) \fBxustar\fR or ZFS archive of an installed system.
+.sp
+If a ZFS archive contains multiple boot environments, the active boot environment are installed. If install is unable to determine which boot environment is the active boot environment, install provides a list of boot environments extracted and suggest an attach command that uses the \fB-z\fR option to attach a specific boot environment.
+.sp
+\fBcpio\fR and ZFS archives can be compressed using \fBgzip\fR or \fBbzip2\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+Provides a profile or a directory of profiles to apply after installation from the repository.
+.sp
+All profiles must have an \fB\&.xml\fR extension.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+The path to the zonepath directory of an \fBipkg\fR branded zone's zonepath.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fImanifest.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+Manifest file to be specified to the automated installer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+Preserve the system configuration after installing the zone from an archive or a path.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+Install silently
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unconfigure the system after installing it.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verbose output from the install process.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIZBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Attach the specified existing zone boot environment. If the specified zone boot environment is associated with a different global zone, the specified \fBZBE\fR is cloned and a clone of the \fBZBE\fR is attached. 
+.RE
+
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCreating a ZFS archive for Install
+.sp
+.LP
+The following example shows how to create an archive for a physical to virtual (\fBP2V\fR) migration. This is performed in the global zone of a system that has no non-global zones, configured, installed, or running. It assumes the root pool is named \fBrpool\fR.
+
+.sp
+.LP
+First, create a snapshot of the entire root pool.
+
+.sp
+.in +2
+.nf
+# zfs snapshot -r rpool@p2v
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Next, destroy the snapshots associated swap and dump devices, as there is no need for them on the target system.
+
+.sp
+.in +2
+.nf
+# zfs destroy rpool/swap@p2v
+# zfs destroy rpool/dump@p2v
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Finally, generate a ZFS replication stream archive that is compressed with \fBgzip\fR. In this example, it is stored on a remote NFS server.
+
+.sp
+.in +2
+.nf
+# zfs send -R rpool@p2v | gzip > /net/somehost/p2v/p2v.zfs.gz
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRInstalling a Zone Using a ZFS Archive
+.sp
+.LP
+The following example installs a zone is using the archive from Example 1.
+
+.sp
+.in +2
+.nf
+# zoneadm -z p2vzone install -a /net/somehost/p2v/p2v.zfs.gz -p
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRCreate a ZFS Archive for Attach
+.sp
+.LP
+The following example shows how to create an archive for a virtual to virtual (\fBV2V\fR) migration. It assumes that the \fBzonepath\fR for the zone is \fB/zones/v2vzone\fR.
+
+.sp
+.LP
+First, determine the name of \fBzonepath\fR dataset.
+
+.sp
+.in +2
+.nf
+# dataset=$(zfs list -H -o name /zones/v2vzone)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Next, create a snapshot of the zone's datasets.
+
+.sp
+.in +2
+.nf
+# zfs snapshot -r $dataset@v2v
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Finally, generate a ZFS self-contained recursive stream that is compressed with \fBbzip2\fR.
+
+.sp
+.in +2
+.nf
+# zfs send -rc $dataset@v2v | bzip2 > /net/somehost/v2v/v2v.zfs.bz2
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRAttaching a Zone Using a ZFS Archive
+.sp
+.LP
+The following example attaches a zone using a ZFS archive.
+
+.sp
+.in +2
+.nf
+# zoneadm -z v2vzone attach -a /net/somehost/v2v/v2v.zfs.bz2
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/zones
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBcpio\fR(1), \fBpax\fR(1), \fBbeadm\fR(1M), \fBsysconfig\fR(1M), \fBzfs\fR(1M), \fBzlogin\fR(1), \fBzonename\fR(1), \fBzoneadm\fR(1M), \fBzonecfg\fR(1M), \fBattributes\fR(5), \fBbrands\fR(5), \fBprivileges\fR(5), \fBzones\fR(5)
+.sp
+.LP
+\fBpkg(5)\fR, available in the IPS consolidation

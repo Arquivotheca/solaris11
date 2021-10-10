@@ -1,0 +1,915 @@
+'\" te
+.\" 版权所有 (c) 2004、2011，Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_usb 1M "2011年 3 月 2 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_usb \- USB 硬件特定的 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-f\fR [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-v\fR [\fB-a\fR] [\fB-s\fR \fIlisting_option\fR] 
+     [\fB-l\fR [\fIap_id\fR | \fIap_type\fR...]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-v\fR \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+通用串行总线 (Universal Serial Bus, \fBUSB\fR) 硬件特定库 \fB/usr/lib/cfgadm/usb.so.1\fR 提供了通过 \fBcfgadm\fR(1M) 命令管理 \fBUSB\fR 设备的功能。\fBcfgadm\fR 在挂接点上运行。有关挂接点的详细信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+对于 \fBUSB\fR 管理，支持的挂接点只有连接到 \fBUSB\fR 总线的集线器的端口。 
+.sp
+.LP
+挂接点通过挂接点 ID (\fIap_id\fR) 进行命名。\fBUSB\fR 总线是分层的，因此 \fIap_id\fR 也是分层的。\fBUSB\fR 集线器端口的编号从 \fB1\fR 到 \fIn\fR。所有 \fBUSB\fR \fIap_id\fR 均由以下格式的字符串组成：
+.sp
+.in +2
+.nf
+usb\fIN\fR/\fIA\fR[.\fIB\fR[.\fIC\fR[...]]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中
+.br
+.in +2
+\fIN\fR 是系统上的第 \fIN\fR 个 \fBUSB\fR 主机控制器，
+.in -2
+.br
+.in +2
+\fIA\fR 是根（顶层）集线器的端口 \fIA\fR。
+.in -2
+.br
+.in +2
+\fIB\fR 是插入它上面的集线器端口 \fIA\fR 中的集线器的端口 \fIB\fR。
+.in -2
+.br
+.in +2
+\fIC\fR 是插入它上面的集线器端口 \fIB\fR 中的集线器的端口 \fIC\fR，依此类推。
+.in -2
+.sp
+.LP
+例如，USB 控制器 \fB0\fR（唯一的控制器）的根集线器上的第一个端口具有以下逻辑 \fIap_id\fR：
+.sp
+.in +2
+.nf
+usb0/1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+同样，插入第一个 \fBUSB\fR 控制器的根集线器上第一个端口中的第一个外部集线器上的第二个端口具有以下逻辑 \fIap_id\fR：
+.sp
+.in +2
+.nf
+usb0/1.2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+例如，如果 \fIap_id\fR 为 \fBusb0/1.4.3.4\fR，则表示插入集线器（插入集线器（插入系统上的第一个 \fBUSB\fR 主机控制器的根集线器的端口 \fB1\fR）端口 \fB4\fR）端口 \fB3\fR 的集线器的端口 \fB4\fR。 
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l\fR
+Ap_Id                Type         Receptacle   Occupant     Condition
+usb0/1               USB-hub      connected    configured   ok
+usb0/2               unknown      empty        unconfigured ok
+usb0/1.1             USB-storage  connected    configured   ok
+usb0/1.2             unknown      empty        unconfigured ok
+usb0/1.3             unknown      empty        unconfigured ok
+usb0/1.4             USB-device   connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBUSB2.0\fR 芯片具有一个 \fBEHCI\fR 主机 \fBUSB2.0\fR 主机控制器和多个伴随 \fBUSB 1.\fR\fIx\fR 主机控制器（\fBOHCI\fR 或 \fBUHCI\fR 主机控制器）。
+.sp
+.LP
+插入 \fBUSB2.0\fR 设备后，它将在可能没有一对一映射到系统上外部物理端口号的 \fBEHCI\fR 逻辑端口上显示\fB\fR\fB\fR。插入 \fBUSB1.\fR\fIx\fR 设备后，\fBEHCI\fR 主机控制器将该设备重新路由到伴随主机控制器，并且该设备将在伴随控制器的逻辑端口号上显示。 
+.sp
+.LP
+逻辑端口号到物理端口号的映射可以变得很复杂。例如：
+.sp
+.in +2
+.nf
+% cfgadm
+Ap_Id                Type         Receptacle   Occupant     Condition
+c0                   scsi-bus     connected    configured   unknown
+usb0/1               usb-mouse    connected    configured   ok
+usb0/2               usb-kbd      connected    configured   ok
+usb0/3               unknown      empty        unconfigured ok
+usb0/4               usb-hub      connected    configured   ok
+usb0/4.1             unknown      empty        unconfigured ok
+usb0/4.2             unknown      empty        unconfigured ok
+usb0/4.3             unknown      empty        unconfigured ok
+usb0/4.4             usb-storage  connected    configured   ok
+usb1/1               unknown      empty        unconfigured ok
+usb1/2               unknown      empty        unconfigured ok
+usb1/3               unknown      empty        unconfigured ok
+usb2/1               unknown      empty        unconfigured ok
+usb2/2               usb-device   connected    configured   ok
+usb3/1               unknown      empty        unconfigured ok
+usb3/2               unknown      empty        unconfigured ok
+usb3/3               unknown      empty        unconfigured ok
+usb3/4               unknown      empty        unconfigured ok
+usb3/5               unknown      empty        unconfigured ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本例中，\fBusb0\fR 是板载 USB 1.\fIx\fR 主机控制器。\fBusb1\fR 和 \fBusb2\fR 是伴随 \fBOHCI USB1.\fR\fIx\fR 主机控制器，\fBusb3\fR 是 \fBEHCI USB2.0\fR 主机控制器。
+.sp
+.LP
+下表中显示了此 USB2.0 芯片有些混乱的路由： 
+.sp
+.in +2
+.nf
+logical port number		physical port number
+-------------------		--------------------
+	usb1/1			internal port 1	
+	usb1/2			external port 1
+	usb1/3			external port 3
+	
+	usb2/1			internal port 2
+	usb2/2			external port 2
+	
+	usb3/1			internal port 1
+	usb3/2			internal port 2
+	usb3/3			external port 1
+	usb3/4			external port 2
+	usb3/5			external port 3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+遗憾的是，具体的路由通常只能通过实验确定。
+.sp
+.LP
+\fBUSB\fR 端口上挂接点的插口状态含义如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected（已连接）\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR 端口已通电且启用。USB 设备插入该端口中。该设备在逻辑上连接到 USB 总线。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected（断开）\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR 端口已通电且启用。\fBUSB\fR 设备插入到该端口中。该设备已在逻辑上与 \fBUSB\fR 总线断开连接（使用 \fBcfgadm\fR \fB-c\fR \fBdisconnect\fR 命令）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty（空）\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR 端口已通电，但没有插入任何设备。
+.RE
+
+.sp
+.LP
+\fBUSB\fR 端口上的设备在 \fBUSB\fR 端口挂接点的插卡状态含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigured（已配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR 端口上的 \fBUSB\fR 设备已配置且可供 Solaris 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigured（未配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fBcfgadm\fR \fB-c\fR \fBunconfigure\fR 命令使 \fBUSB\fR 端口上的 \fBUSB\fR 设备显式脱机，或没有成功配置该设备而无法用于 Solaris（例如，没有驱动程序或设备存在问题）。
+.RE
+
+.sp
+.LP
+挂接点的状态含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fB\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常状态\(em可供使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFAILED（失败）\fR\fR
+.ad
+.sp .6
+.RS 4n
+未使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed（失败）\fR\fR
+.ad
+.sp .6
+.RS 4n
+未使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunusable（不可用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+在设备已被应用程序打开的情况下，用户物理移除了该设备（可能有未完成的 \fBI/O\fR）。用户需要重新插入同一物理设备并正确关闭应用程序，然后再次移除该设备。此操作完成之前，端口不能配置其他插入的设备。
+.sp
+如果无法将原始设备重新插入端口，请参见\fI《System Administration Guide: Common Management Tasks》\fR了解清除此挂接点状态的说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown（未知）\fR\fR
+.ad
+.sp .6
+.RS 4n
+未使用。
+.RE
+
+.sp
+.LP
+可以随时对 \fBUSB\fR 设备进行热插拔，系统会检测该事件并采取相应的操作。
+.sp
+.LP
+在从 \fBUSB\fR 移除插口上的设备之前，不必将插口转换为 \fBdisconnected\fR（断开）状态。但是，建议不要热移除当前正在使用的设备（如当前由卷管理器或某些其他应用程序打开的可移除磁盘）。
+.SH 选项
+.sp
+.LP
+\fBcfgadm\fR 可定义多种类型的操作。这些操作包括调用配置状态更改 (\fB-c\fR)、调用硬件特定函数 (\fB-x\fR) 以及获取配置管理帮助消息 (\fB-h\fR)。
+.sp
+.LP
+如果上述任一操作失败，设备和挂接点可能不会处于期望的状态。使用 \fBcfgadm\fR \fB-l\fR 命令可显示设备的当前状态。
+.sp
+.LP
+有关其他所有选项的含义，可参见 \fBcfgadm\fR(1M) 中的定义。
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+以下通用命令是针对 \fBUSB\fR 硬件特定库定义的。支持以下配置状态更改操作：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果已有 \fBUSB\fR 设备插入端口，则此命令将尝试配置该设备并完成所有设置，使其可供 Solaris 使用。如果需要，此命令可执行暗示的 \fBconnect\fR（与 \fBdisconnect\fR 相反）。如果已经配置了该端口上的设备，则此命令不完成任何操作，而是返回错误消息。成功执行此命令后，该设备可供 Solaris 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fIap_id\fR 执行 \fBunconfigure\fR（如果不处于 \fBunconfigured\fR（未配置）），然后将插口转换为 \fBdisconnected\fR（断开）状态，即使设备仍插在端口中。发出 \fBcfgadm\fR \fB-c\fR \fBconfigure\fR 命令或以物理方式热插入设备可使设备的插口状态恢复为 \fBconnected\fR（已连接），并使其插卡状态恢复为 \fBconfigured\fR（已配置），前提是可以找到驱动程序且枚举和配置设备时未出现问题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+使插入端口中的设备不可供 Solaris 使用（使其脱机）。如果成功，\fBcfgadm\fR 会将该 \fIap_id\fR 的插卡状态报告为 \fBunconfigured\fR（未配置）。向 \fIap_id\fR 发出 \fBconfigure\fR 命令（如果成功）可使其插卡状态恢复为 \fBconfigured\fR（已配置，即联机），因为这会以物理方式将设备热插入端口。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+不支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过对任何 \fBUSB\fR 挂接点使用帮助选项可获取 \fBUSB\fR 特定的帮助。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR[\fBv\fR]\fR
+.ad
+.sp .6
+.RS 4n
+按照 \fBcfgadm\fR(1M) 中的描述使用 \fB-l\fR 选项。如果该选项与 \fB-v\fR 选项一起使用，\fBInformation \fR字段将包含以下 \fBUSB\fR 特定信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMfg\fR：生产商字符串 (\fBiManufacturer\fR) 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBProduct\fR：产品字符串 (\fBiProduct\fR) 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBNConfigs\fR：设备支持的配置总数 (\fBbNumConfigurations\fR)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBConfig\fR：十进制形式的当前配置设置（配置索引，非配置值）。 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+当前配置的配置字符串描述符 (\fBiConfiguration\fR)
+.RE
+有关这些字段的描述，请参见通用串行总线规范。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+只有硬件特定的命令 \fB-x\fR \fBusb_config\fR 支持硬件选项。有关可用选项的说明，请参见以下关于该命令的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+可使用 \fBselect\fR 子选项列出 \fBUSB\fR 类的挂接点。请参见 \fBcfgadm\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义了以下硬件特定的函数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusb_config\fR \fB-o\fR \fBconfig=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+此命令要求使用 \fB-o\fR 选项指定必需的 \fBconfig\fR 值。
+.sp
+将 \fIap_id\fR 上的多配置 \fBUSB\fR 设备的 \fBUSB\fR 配置设置为配置索引 \fIn\fR。此后该设备都设置为此配置，而且在设备的重新引导、热移除和取消配置/配置中将一直保持此设置。
+.sp
+\fIn\fR 的有效值范围是 \fB0\fR 到 (\fBNconfigs -1\fR)。可以通过先后执行 \fBdisconnect\fR 和 \fBconfigure\fR 来复位设备。\fBconfigure\fR 操作会将设备配置为新的配置设置。
+.sp
+如果上述任一步骤失败，则配置文件和设备将恢复为之前的状态，并显示错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusb_reset\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行设备的软件复位（重新枚举）。这等效于移除设备然后再次插入。如果集线器支持单个端口的关开机循环，则集线器上的端口将进行关开机循环。 
+.sp
+如果连接的设备是集线器，则此函数将复位该集线器以及其作为根的树中的任何设备。
+.sp
+如果上述任一步骤失败，设备将恢复为之前的状态，并显示错误消息。
+.RE
+
+.RE
+
+.sp
+.LP
+状态表：挂接点状态与命令：
+.sp
+.in +2
+.nf
+Valid states:
+    empty/unconfigured         \(-> no device connected
+
+    disconnected/unconfigured  \(-> logically disconnected,
+                                  unavailable,
+                                  devinfo node removed,
+                                  device physically connected
+
+    connected/unconfigured     \(-> logically connected,
+                                  unavailable,
+                                  devinfo node present
+
+    connected/configured       \(-> connected, available
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下表说明操作或命令导致的状态转换：
+.sp
+.in +2
+.nf
+current state      operation           new state
+-------------      ---------           ---------
+empty/
+unconfigured:
+              device plugged in:     connected/configured or
+                                     connected/unconfigured
+                                     (if enumeration failed)
+              device removed:        n/a
+              cfgadm -c unconfigure: empty/unconfigured
+              cfgadm -c configure:   empty/unconfigured
+              cfgadm -c disconnect:  empty/unconfigured
+                                     (no-op and error)
+
+disconnected/
+unconfigured:
+              device plugged in:     n/a
+              device removed:        empty/unconfigured
+              cfgadm -c unconfigure: disconnected/unconfigured
+              cfgadm -c configure:   connected/configured, or
+                                     connected/unconfigured
+                                     (if reenumeration failed)
+             cfgadm -c disconnect:   disconnected/unconfigured
+
+connected/unconfigured:
+             device plugged in:      n/a
+             device removed:         empty/unconfigured
+             cfgadm -c unconfigure:  connected/unconfigured
+             cfgadm -c configure:    connected/configured, or
+                                     connected/unconfigured
+                                     (if reenumeration failed)
+             cfgadm -c disconnect:   disconnected/unconfigured
+
+connected/configured:
+             device plugged in:      n/a
+             device removed:         empty/unconfigured or
+                                     connected/configured,
+                                     but with ap condition
+                                     'unusable' if device
+                                     was open when removed
+             cfgadm -c unconfigure:  connected/unconfigured
+             cfgadm -c configure:    connected/configured
+             cfgadm -c disconnect:   disconnected/unconfigured
+.fi
+.in -2
+.sp
+
+.SH 示例
+.LP
+\fB示例 1 \fR列出所有 USB 设备的状态
+.sp
+.LP
+以下命令列出系统上所有 \fBUSB\fR 设备的状态：
+
+.sp
+.in +2
+.nf
+# cfgadm
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1          USB-hub      connected    configured   ok
+usb0/2          unknown      empty        unconfigured ok
+usb0/1.1        USB-storage  connected    configured   ok
+usb0/1.2        unknown      empty        unconfigured ok
+usb0/1.3        unknown      empty        unconfigured ok
+usb0/1.4        USB-device connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，\fBcfgadm\fR 将 \fBap_id usb0/1.4\fR 上的 \fBUSB-device\fR 设备视为单个单元，因为它当前不能控制单个接口。
+
+.LP
+\fB示例 2 \fR列出没有插入任何设备的端口的状态
+.sp
+.LP
+以下命令列出没有插入任何设备的端口的状态：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        unknown      empty        unconfigured ok       
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR列出插入设备的同一端口的状态
+.sp
+.LP
+以下命令列出以物理方式插入成功配置的设备后，同一端口的状态：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        USB-hub      connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR取消对现有 USB 设备的配置
+.sp
+.LP
+以下命令取消对连接到 \fBusb0/1.3\fR 的 \fBUSB\fR 设备的配置，然后显示 \fBap_id\fR 的状态：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c unconfigure usb0/1.3\fR
+Unconfigure the device: /devices/pci@0,0/pci8086,7112@7,2/hub@2:2.3
+This operation suspends activity on the USB device
+Continue (yes/no)?
+
+Enter:
+
+\fBy\fR
+
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        unknown      connected    unconfigured ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR取消配置并在逻辑上断开现有 USB 设备
+.sp
+.LP
+以下命令取消连接到 \fBusb0/1.3\fR 的 \fBUSB\fR 设备的配置，并在逻辑上断开其连接：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c disconnect usb0/1.3\fR
+Disconnect the device: /devices/pci@0,0/pci8086,7112@7,2/hub@2:2.3
+This operation suspends activity on the USB device 
+Continue (yes/no)?
+
+Enter:
+
+\fBy\fR
+
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id         Type         Receptacle     Occupant        Condition
+usb0/1.3      unknown      disconnected   unconfigured    ok    
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBdisconnect\fR 暗示 \fBcfgadm\fR 首先执行 \fBunconfigure\fR。现在插口状态显示为 \fBdisconnected\fR，即使设备在物理上仍处于连接状态。在这种情况下，以物理方式热插入或对 \fBap_id\fR 使用 \fBcfgadm\fR \fB-c\fR \fBconfigure\fR 可以使其恢复联机。
+
+.LP
+\fB示例 6 \fR配置之前未配置的 USB 设备
+.sp
+.LP
+以下命令配置之前连接到 \fBusb0/1.3\fR 的 \fBUSB\fR 设备：
+
+.sp
+.in +2
+.nf
+example # \fBcfgadm -yc configure usb0/1.3\fR
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        unknown      connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR复位 USB 设备
+.sp
+.LP
+以下命令复位 \fBUSB\fR 设备：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -x usb_reset usb0/1.3\fR
+Reset the device: /devices/pci@0,0/pci8086,7112@7,2/hub@2:2.3
+This operation suspends activity on the USB device 
+Continue (yes/no)?
+
+Enter:
+
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR显示有关 USB 设备的详细信息
+.sp
+.LP
+以下命令显示有关 \fBUSB\fR 设备的详细信息。该设备在 \fBInformation \fR字段中显示以下 \fBUSB\fR 特定的信息： 
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+生厂商字符串：Iomega
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+产品字符串：\fBUSB Zip 250\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+支持的配置数：1
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+当前活动的配置：0
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+配置 0 的配置字符串描述符：缺省
+.RE
+.sp
+.in +2
+.nf
+example# \fBcfgadm -lv  usb0/1.5\fR
+Ap_Id                 Receptacle   Occupant     Condition  Information
+When         Type         Busy         Phys_Id
+usb0/1.5     connected    configured   ok         Mfg:"Io
+mega"  Product:"USB Zip 250"  NConfigs:1  Config:0 : Default
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "cols=ap_id:info" usb0/1.5\fR
+Ap_Id                         Information
+usb0/1.5                      Mfg:"Iomega"  Product:"USB Zip 250"  
+NConfigs:1  Config:0 : Default
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR显示有关所有 USB 设备的详细信息
+.sp
+.LP
+以下命令显示有关系统上所有 \fBUSB\fR 设备的详细信息：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "select=class(usb),cols=ap_id:info"\fR
+Ap_Id                         Information 
+usb0/1                        Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/2             
+usb0/1.1                      Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.2         
+usb0/1.3         
+usb0/1.4                      Mfg:"Wizard"  Product:"Modem/ISDN"  
+NConfigs:3  Config:1 : V.90 Analog Modem
+usb0/1.5                      Mfg:"Iomega"  Product:"USB Zip 250"  
+NConfigs:1  Config:0 : Default
+usb0/1.6                      Mfg:"SOLID YEAR"  Product:"SOLID YEAR 
+USB"NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.7
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+仅包含 \fBap_id\fR 的行表示空端口。可以过滤出这些端口。以下示例仅列出连接有设备的 \fBUSB\fR \fBap_id\fR 以及有关这些设备的信息。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "select=class(usb),cols=ap_id:info" | grep Mfg\fR
+usb0/1                        Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.1                      Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.4                      Mfg:"Wizard"  Product:"Modem/ISDN"  
+NConfigs:3  Config:1 : V.90 Analog Modem
+usb0/1.5                      Mfg:"Iomega"  Product:"USB Zip 250"  
+NConfigs:1  Config:0 : Default
+usb0/1.6                      Mfg:"SOLID YEAR"  Product:"SOLID YEAR USB" 
+Config:0 <no cfg str descr>
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR列出有关多配置 USB 设备的信息
+.sp
+.LP
+以下示例列出有关多配置 \fBUSB\fR 设备的信息。
+
+.sp
+.LP
+请注意 \fBNConfigs\fR 字段：该设备可用的配置有 \fB0\fR、\fB1\fR 和 \fB2\fR（\fB0\fR 到 (\fIN\fR\fBConfigs-1\fR)）。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "cols=ap_id:info" usb0/1.4\fR
+Ap_Id                         Information
+usb0/1.4                      Mfg:"Wizard"  Product:"Modem/ISDN"  
+NConfigs:3  Config:1 V.90 Analog Modem"
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR设置多配置 USB 设备的当前配置
+.sp
+.LP
+以下示例设置多配置 USB 设备的当前配置：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -o config=2 -x usb_config usb0/1.4\fR
+Setting the device: /devices/pci@1f,2000/usb@1/device@3
+to USB configuration 2
+This operation suspends activity on the USB device
+Continue (yes/no)? 
+
+Enter:
+
+\fBy\fR
+
+USB configuration changed successfully.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+相同类型的多个设备位于同一总线时，应该检查设备路径以确保引用的是正确的设备实例。在 \fBInformation \fR字段提供了该信息。
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/usb.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于管理通用 USB 设备的硬件特定库
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBattributes\fR(5)、\fBscsa2usb\fR(7D)、\fBusba\fR(7D)
+.sp
+.LP
+通用串行总线 1.1 规范 (\fBwww.usb.org\fR)
+.sp
+.LP
+\fI《System Administration Guide: Common Management Tasks》\fR
+.SH 附注
+.sp
+.LP
+\fBcfgadm\fR(1M) 无法取消配置、断开、复位或更改当前由任何应用程序打开的任何 \fBUSB\fR 设备的配置。如果分层结构中有某个设备由应用程序打开，则也无法在集线器上执行这些操作。有关取消对当前正在使用的 \fBUSB\fR 海量存储设备的配置的信息，请参见 \fBscsa2usb\fR(7D)。
+.sp
+.LP
+只有超级用户才能对挂接点执行任何函数。但是，如果只是列出挂接点，那么非超级用户也可完成。

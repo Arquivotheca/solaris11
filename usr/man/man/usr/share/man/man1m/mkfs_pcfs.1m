@@ -1,0 +1,315 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH mkfs_pcfs 1M "6 Jul 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+mkfs_pcfs \- construct a FAT file system
+.SH SYNOPSIS
+.LP
+.nf
+\fBmkfs\fR \fB-F\fR pcfs [\fIgeneric_options\fR] [\fB-o\fR \fIFSType_specific_options\fR]
+     \fIraw_device_file\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpcfs\fR-specific module of \fBmkfs\fR constructs a File Allocation Table (\fBFAT\fR) on removable media (JAZ disk, ZIP disk, PCMCIA card), a hard disk, or a file (see NOTES). \fBFAT\fRs are the standard \fBMS-DOS\fR and Windows file system format.
+.sp
+.LP
+\fBmkfs\fR for \fBpcfs\fR determines an appropriate \fBFAT\fR size for the medium, then it installs an initial boot sector and an empty \fBFAT\fR. A sector size of 512 bytes is used. \fBmkfs\fR for \fBpcfs\fR can also install the initial file in the file system (see the \fBpcfs\fR-specific \fB-o i\fR option). This first file can optionally be marked as read-only, system, and/or hidden.
+.sp
+.LP
+If you want to construct a FAT with \fBmkfs\fR for \fBpcfs\fR on a medium that is not formatted, you must first perform a low-level format on the medium with \fBformat\fR(1M). The media must also be partitioned with the \fBfdisk\fR(1M) utility. Note that all existing data on a disk partition, if any, is destroyed when a new \fBFAT\fR is constructed.
+.sp
+.LP
+\fIgeneric_options\fR are supported by the generic \fBmkfs\fR command. See \fBmkfs\fR(1M) for a description of these options.
+.sp
+.LP
+\fIraw_device_file\fR indicates the device on which to write unless the \fB-o N\fR option has been specified, or if the \fB-V\fR or \fB-m\fR generic options are passed from the generic \fBmkfs\fR module. 
+.SH OPTIONS
+.sp
+.LP
+See \fBmkfs\fR(1M) for the list of supported generic options. 
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIFSType_specific_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify \fBpcfs\fR file system-specific options in a comma-separated list with no intervening spaces. If invalid options are specified, a warning message is printed and the invalid options are ignored. 
+.sp
+.ne 2
+.mk
+.na
+\fBb=\fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+Label the media with volume label. The volume label is restricted to 11 uppercase characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBB=\fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+Install \fIfilename\fR as the boot loader in the file system's boot sector. If you don't specify a boot loader, an \fBMS-DOS\fR boot loader is installed. The \fBMS-DOS\fR boot loader requires specific \fBMS-DOS\fR system files to make a disk bootable. See \fBNOTES\fR for more information.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfat=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+The size of a \fBFAT\fR entry. Currently, 12, 16, and 32 are valid values. The default is 16.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBh\fR
+.ad
+.sp .6
+.RS 4n
+Mark the first file installed as a hidden file. The \fB-i\fR option must also be specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBhidden=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set the number of hidden sectors to \fIn\fR. This is the number of sectors on the physical disk preceding the start of the volume (which is the boot sector itself). This defaults to a computed valued (based on the fdisk table) for disks. This option may be used only in conjunction with the \fBnofdisk\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBi=\fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+Install \fIfilename\fR as the initial file in the new file system. The initial file's contents are guaranteed to occupy consecutive clusters at the start of the files area. When creating bootable media, a boot program should be specified as the initial file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBnofdisk\fR
+.ad
+.sp .6
+.RS 4n
+Do not attempt to find an \fBfdisk\fR table on the medium. Instead rely on the \fBsize\fR option for determining the partition size. By default, the created \fBFAT\fR is 16 bits and begins at the first sector of the device. This origination sector can be modified with the hidden option (\fB-h\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBnsect=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of sectors per track on the disk. If not specified, the value is determined by using a \fBdkio\fR(7I) ioctl to get the disk geometry. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBntrack=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of tracks per cylinder on the disk. If not specified, the value is determined by using a \fBdkio\fR(7I) ioctl to get the disk geometry. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBN\fR
+.ad
+.sp .6
+.RS 4n
+No execution mode. Print normal output, but do not actually write the file system to the medium. This is most useful when used in conjunction with the verbose option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBr\fR
+.ad
+.sp .6
+.RS 4n
+Mark the first file installed as read-only. The \fB-i\fR option must also be specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBreserve=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set the number of reserved sectors to \fIn\fR. This is the number of sectors in the volume, preceding the start of the first \fBFAT\fR, including the boot sector. The value should always be at least 1, and the default value is exactly 1.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBs\fR
+.ad
+.sp .6
+.RS 4n
+Mark the first file installed as a system file. The \fB-i\fR option must also be specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsize=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of sectors in the file system. If not specified, the value is determined from the size of the partition given in the fdisk table.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBspc=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+The size of the allocation unit for space within the file system, expressed as a number of sectors. The default value depends on the \fBFAT\fR entry size and the size of the file system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBv\fR
+.ad
+.sp .6
+.RS 4n
+Verbose output. Describe, in detail, operations being performed.
+.RE
+
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fIraw_device_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+The device on which to build the \fBFAT\fR.
+.sp
+\fBmkfs_pcfs\fR supports MBR (Master Boot Record) partitions and GPT (GUID Partition Table) partitions. GPT is part of the EFI (Extensible Firmware Interface) standard. For both x86 and SPARC, for a GPT-labeled disk, you can specify the partition using the logical device pathname with no suffix, for example, \fB/dev/rdsk/c0t0d0s0\fR. In GPT, this corresponds to the first partition on the disk.
+.sp
+On x86 for MBR partitions, you can specify the proper partition using the logical device pathname corresponding to the partition. For example, \fB/dev/rdsk/c0t0d0p1\fR corresponds to first partition in the MBR, or \fB/dev/rdsk/c0t0d0p5\fR corresponds to first logical partition in the extended partition. Alternatively, using a suffix is also acceptable. For example, in \fB/dev/rdsk/c0t0d0p0:c\fR, \fBmkfs_pcfs\fR recognizes \fB:c\fR as the first partition that can accept a FAT file system.
+.sp
+For removable media with MBR partitions on SPARC, you need to specify a disk device name with a suffix to indicate the proper partition. For example, in the name \fB/dev/rdsk/c0t0d0s2:c\fR, the \fB:c\fR suffix indicates that the partition can accept the new \fBFAT\fR.
+.sp
+For a file, \fIraw_device_file\fR is the block device name returned by \fBlofiadm\fR(1M).
+.RE
+
+.SH EXAMPLES
+.sp
+.LP
+The media in these examples must be formatted before running \fBmkfs\fR for \fBpcfs\fR. See DESCRIPTION for more details.
+.LP
+\fBExample 1 \fRCreating a FAT File System on a Disk
+.sp
+.LP
+The following command creates a \fBFAT\fR file system on the second fdisk partition of a disk attached to an x86 based system:
+
+.sp
+.in +2
+.nf
+mkfs -F pcfs /dev/rdsk/c0d0p0:d
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRCreating a FAT File System on a ZIP Disk
+.sp
+.LP
+The following command creates a \fBFAT\fR file system on a ZIP disk located on a SPARC based system:
+
+.sp
+.in +2
+.nf
+mkfs -F pcfs /dev/rdsk/c0t4d0s2:c
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRCreating a FAT File System on a JAZ Disk
+.sp
+.LP
+The following command creates a \fBFAT\fR file system on a JAZ disk located on a SPARC based system and overrides the sectors/track and tracks/cylinder values obtained from the device's controller:
+
+.sp
+.in +2
+.nf
+mkfs -F pcfs -o nsect=32,ntrack=64 /dev/rdsk/c0t3d0s2:c
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/pcfs
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBfdisk\fR(1M), \fBformat\fR(1M), \fBlofiadm\fR(1M), \fBmkfs\fR(1M), \fBattributes\fR(5), \fBdkio\fR(7I)
+.SH NOTES
+.sp
+.LP
+You can use \fBlofiadm\fR to create a file that appears to a \fBmkfs\fR command (for example, \fBmkfs_pcfs\fR or \fBmkfs_ufs\fR) as a raw device. You can then use a \fBmkfs\fR command to create a file system on that device. See \fBlofiadm\fR(1M) for examples of creating a UFS and a PC (FAT) file system on a device created by \fBlofiadm\fR.

@@ -1,0 +1,1306 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH netcfg 1M "30 Jun 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+netcfg \- create and modify network configuration profiles
+.SH SYNOPSIS
+.LP
+.nf
+\fBnetcfg\fR
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR \fIsubcommand\fR [\fIoptions\fR...]
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR [\fB-d\fR] \fB-f\fR \fIcommand-file\fR
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR help [\fIsubcommand\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnetcfg\fR utility manipulates system network configuration profiles. \fBnetcfg\fR can be invoked interactively, with an individual subcommand, or by specifying a command file that contains a series of subcommands.
+.sp
+.LP
+The \fBnetcfg\fR utility operates on several different types of configuration profiles:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Network Configuration Profiles (NCPs)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Locations
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+External Network Modifiers (ENMs)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Known WLANs
+.RE
+.sp
+.LP
+For more details on these profile types, refer to the "Profiles" section.
+.sp
+.LP
+\fBnetcfg\fR commands are performed within a scope. There are three scopes: global, profile, and NCP. When \fBnetcfg\fR is invoked without any arguments, the editing session begins in the global scope. In the global scope, NCPs, Location and ENM profiles, and Known WLAN entries are available to operate on. Selecting an NCP will move the editing session to the NCP scope; from there, individual NCUs may be created or selected to move into the profile scope. Also, at the global scope, selecting or creating a Location, ENM, or Known WLAN will move the editing session to the profile scope.
+.sp
+.LP
+Within a given profile scope, profile properties may be viewed and modified.
+.sp
+.LP
+In interactive mode, changes are not stored to persistent storage until commit is invoked. Commit is implicitly invoked at "end" or "exit", or can be explicitly invoked by the user. When commit is invoked, the entire profile is committed. In order to maintain the consistency of persistent storage, the commit operation includes a verify step; if verification fails, the commit also fails. If an implicit commit fails, the user will be given the option of ending or exiting without committing the current changes, or remaining in the current scope to make further changes.
+.SH PROFILES
+.sp
+.LP
+The NWAM service manages network configuration by storing desired property values in profiles. It then determines which profile should be active at a given time, depending on current network conditions, and activates that profile. In addition to the Network Configuration Profiles (NCPs) discussed in the previous section, \fBnwamd\fR also manages Location and ENM profiles.
+.SS "Network Configuration Profiles (NCPs)"
+.sp
+.LP
+An NCP specifies the configuration of the local network components, including physical links, IP tunnel links, and IP interfaces. An IP interface must be associated with an underlying link of either type. These components are  collectively referred to as Network Configuration Units, or NCUs.
+.sp
+.LP
+There can be any number of NCPs configured on a system. The Automatic NCP is created and managed by \fBnwamd\fR, and cannot be modified by the user. This NCP consists of one link NCU and one interface NCU for each physical link present in the system. As links are added or removed from the system, their corresponding NCUs are added or removed from the Automatic NCP. The policy implemented in this NCP is to prefer wired links over wireless, and to plumb IP on all connected wired links, or one wireless link if no wired links are connected.
+.sp
+.LP
+The system will also create a User NCP upon upgrade from an earlier version of the NWAM service, based on the configuration  found in the old \fB/etc/nwam/llp\fR file. In most cases, when the NWAM service was active at upgrade, the Automatic NCP is active initially, even if a User NCP is created. However, if explicit changes, such as a static IP address, are detected in the old configuration, the User NCP is active initially.
+.sp
+.LP
+Finally, the user can create any number of additional NCPs. These NCPs are managed entirely by the user; NCUs must be added or removed explicitly, and it is possible to add NCUs that do not map to any link currently installed in the  system, or to remove NCUs that do map to a link present in the system. The user can determine the policy for these NCPs.
+.sp
+.LP
+After making its initial NCP selection, the system does not change the active NCP. The user can do this at any time using the GUI or the \fBnetadm\fR(1M) command.
+.SS "Locations"
+.sp
+.LP
+A Location specifies system-wide network configuration, including name services, domain, IP Filter, and IPsec configuration.
+.SS "External Network Modifiers (ENMs)"
+.sp
+.LP
+External Network Modifiers are, as the name suggests, applications external to the NWAM service that can modify and/or create network configuration. \fBnwamd\fR activates or deactivates an ENM depending on conditions that are specified as part of the ENM profile. Alternatively, the user might choose to manually activate/deactivate ENMs as needed.
+.sp
+.LP
+While Location profiles allow a specific set of network-related services to be configured automatically based on current network conditions, that set of services is limited. ENMs provide additional flexibility, allowing the user to specify changes to SMF service properties and/or state, or any other system settings, to be applied under specific conditions.
+.SH PROPERTIES
+.sp
+.LP
+\fBnetcfg\fR supports the following types of properties:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NCU properties
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+properties of interface NCUs
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+properties common to all link NCUs
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+location properties
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ENM properties
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+known WLAN properties
+.RE
+.sp
+.LP
+These properties are described in the following subsections.
+.SS "NCU Properties"
+.sp
+.LP
+The following properties are common to all NCUs.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR: enumerated value: \fIlink\fR | \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the NCU type, either \fIlink\fR or \fIinterface\fR. The value is implicitly determined based on the specified class.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclass\fR: enumerated value: \fIphys\fR for link NCUs; \fIip\fR for interface NCU\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the NCU class.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparent\fR: string: \fIname of parent NCP\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the NCP of which this NCU is a component.
+.RE
+
+.sp
+.LP
+The \fBtype\fR, \fBclass\fR, and \fBparent\fR properties are set when the NCU is created and cannot be changed later.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR: boolean: \fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the activation-mode is \fBmanual\fR, the enabled property reflects the NCU's current state. This property is read-only; it is changed indirectly by enabling or disabling the NCU using \fBnetadm\fR(1M).
+.sp
+The default value is \fBtrue\fR.
+.RE
+
+.SS "Properties of Interface NCUs"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip-version\fR: list of enumerated values: \fBipv4\fR | \fBipv6\fR\fR
+.ad
+.sp .6
+.RS 4n
+The version(s) of IP that should be used on this NCU.
+.sp
+The default value is \fBipv4,ipv6\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-addrsrc\fR: list of enumerated values: \fBdhcp\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies the source of IPv4 addresses assigned to this NCU; multiple values may be assigned. If one of the values assigned is \fBstatic\fR, the \fBipv4-addr\fR property must include at least one IPv4 address to be assigned to the NCU.
+.sp
+The default value is \fBdhcp\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-addr\fR: list of IPv4 address(es)\fR
+.ad
+.sp .6
+.RS 4n
+One or more IPv4 addresses to be assigned to this NCU.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-default-route\fR:\fIIPv4 address\fR\fR
+.ad
+.sp .6
+.RS 4n
+The IPv4 address of the default router; if this property is set, a default route for IPv4 traffic will be associated with this interface when it is brought up.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-addrsrc\fR: list of enumerated values: \fBdhcp\fR | \fBautoconf\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies the source of IPv6 addresses assigned to this NCU; multiple values can be assigned. If one of the values assigned is \fBstatic\fR, the \fBipv6-addr\fR property must include at least one IPv6 address to be assigned to the NCU.
+.sp
+The default value is \fBdhcp,autoconf\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-addr\fR: list of IPv6 address(es)\fR
+.ad
+.sp .6
+.RS 4n
+One or more IPv6 addresses to be assigned to this NCU.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-default-route\fR: \fIIPv6 address\fR\fR
+.ad
+.sp .6
+.RS 4n
+The IPv6 address of the default router; if this property is set, a default route for IPv6 traffic will be associated with this interface when it is brought up.
+.RE
+
+.SS "Properties Common to All LINK NCUs"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR: enumerated value: \fBmanual\fR | \fBprioritized\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of trigger for automatic activation of this NCU.
+.sp
+The default value is \fBmanual\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority-group\fR: \fBuint64\fR: \fIgroup\fR \fIpriority\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+If \fBactivation-mode\fR is set to \fBprioritized\fR, this property specifies the priority group to which this NCU belongs. A group consists of one or more NCUs; smaller numbers are higher priority. The highest priority group that is determined to be available will be activated by \fBnwamd\fR(1M), and will remain so until it is no longer available, or until a higher priority group becomes available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority-mode\fR: enumerated value: \fBexclusive\fR | \fBshared\fR | \fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+If \fBactivation-mode\fR is set to prioritized, this property specifies the mode used to determine availability and activation behavior for a priority group.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexclusive\fR\fR
+.ad
+.sp .6
+.RS 4n
+At least one NCU must be available to make the group available, and only one NCU will be activated. If more than one member NCU is available, \fBnwamd\fR(1M) will randomly choose one to activate.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshared\fR\fR
+.ad
+.sp .6
+.RS 4n
+At least one NCU must be available to make the group available; all available NCUs will be activated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+All group member NCUs must be available to make the group available; all member NCUs will be activated.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-mac-addr\fR: string: 48-bit MAC address\fR
+.ad
+.sp .6
+.RS 4n
+The MAC address assigned to this link. By default, NWAM will request the factory-assigned or default MAC address for the link; set a different value here to override that selection.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-autopush\fR: list of strings: modules to be pushed over the link\fR
+.ad
+.sp .6
+.RS 4n
+Identifies a list of modules that should be automatically pushed over the link when it is opened.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-mtu\fR: \fBuint64\fR: MTU size for this link\fR
+.ad
+.sp .6
+.RS 4n
+This property will be automatically set to the default MTU for the physical link; that value may be overridden by setting this property to a different value.
+.sp
+Note that the range of allowed MTU values depends on the underlying hardware. Because NCUs may be created before the underlying hardware is present with driver attached, it is not possible to verify the value set at the time the NCU is edited. If an NCU fails to activate because of an invalid MTU size, this will be indicated in the system log, and the NCU will be placed in maintenance state.
+.RE
+
+.SS "Location Properties"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR: enumerated value: \fBmanual\fR | \fBsystem\fR | \fBconditional-all\fR | \fBconditional-any\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of trigger for automatic activation of this location.
+.sp
+The default value is \fBmanual\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR: boolean: \fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the activation-mode is \fBmanual\fR, the enabled property reflects the location's current state. This property is read-only; it is changed indirectly by enabling or disabling the location using \fBnetadm\fR(1M).
+.sp
+The default value is \fBfalse\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconditions\fR: list of strings: \fIconditional expressions\fR\fR
+.ad
+.sp .6
+.RS 4n
+If \fBactivation-mode\fR is set to \fBconditional-all\fR or \fBconditional-any\fR, this property specifies the test to determine whether this location should be activated. The conditional expression is made up of a sequence of conditions that can be assigned a boolean value, such as "advertised-domain is sun.com" or "ip:bge0 is-not active." The format of these expressions is defined in the "Condition Expressions" section, below. If multiple conditions are specified, either all must be true to meet the activation requirements (when \fBactivation-mode\fR is \fBconditional-all\fR) or any one may be true (when \fBactivation-mode\fR is \fBconditional-any\fR).
+.sp
+Note the distinction between \fBadvertised-domain\fR and \fBsystem-domain\fR. The advertised domain is learned by means of external communication, such as the \fBDNSdmain\fR or \fBNISdmain\fR advertised by a DHCP server. This attribute is useful for conditional activation of locations; for example, if the advertised domain is \fBmycompany.com\fR, activate the "work" location. The system domain is the domain which is currently assigned to the system; that is, it is the value returned by the \fBdomainname\fR(1M) command. This attribute is useful for conditional activation of ENMs, as it will only become true after a location has been activated and the system is configured for that particular domain.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-domain\fR: string: \fIsystem domain name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The domain name that should be applied to the system; this domain name will be used by NIS and LDAP.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnameservices\fR: enum value list: \fBfiles\fR | \fBdns\fR | \fBnis\fR | \fBldap\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the name services that should be configured, such as DNS, NIS, and LDAP.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnameservices-config-file\fR: string: \fIpath to\fR \fBnsswitch.conf\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the \fBnsswitch.conf\fR file to be used. This property must always have a value. If the \fBnameservices\fR property specifies a single name service, this property will, by default, contain \fB/etc/nsswitch.\fR\fInameservice\fR for the name service specified in the \fBnameservices\fR property; this value can be changed by the user. If the \fBnameservices\fR property identifies more than one name service, the user must specify an additional value for this property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdns-nameservice-configsrc\fR: enum value list: \fBmanual\fR | \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the source(s) that should be used to obtain configuration information for the DNS name service. If \fBmanual\fR is included, the remaining \fBdns-nameservice-*\fR properties will be used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdns-nameservice-domain\fR: string: \fIdomain name\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-servers\fR: string list: \fIname server address(es)\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-search\fR: string list: \fIdomain search string\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-sortlist\fR: string list: \fIIP address\fR, \fInetmask pair(s)\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-options\fR: string list: \fIresolver variable(s) to be modified\fR\fR
+.ad
+.sp .6
+.RS 4n
+If DNS is one of the configured name services and \fBmanual\fR is one of its configuration sources, these properties specify its configuration parameters. Only the \fBservers\fR property is required; \fBsearch\fR and \fBdomain\fR are mutually exclusive and only one can be specified, which will override the domain provided by the DHCP server if \fBdhcp\fR is also used. The format of these values are the same as the respective options in \fBresolv.conf\fR(4).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnis-nameservice-configsrc\fR: enum value list: \fBmanual\fR | \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the source(s) that should be used to obtain configuration information for the NIS name service. If \fBmanual\fR is included, the remaining \fBnis-nameservice-*\fR properties will be used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnis-nameservice-servers\fR: string list: \fIname server address(es)\fR\fR
+.ad
+.sp .6
+.RS 4n
+If NIS is one of the configured name services and \fBmanual\fR is one of its configuration sources, this property specifies its server address. If this property is not specified, the NIS client will be started in broadcast mode.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap-nameservice-configsrc\fR: enum value list: \fBmanual\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the source that should be used to obtain configuration information for the LDAP name service. \fBmanual\fR is currently the only option for LDAP; thus the \fBldap-nameservice-*\fR properties must be provided to complete LDAP configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap-nameservice-servers\fR: string list: \fIname server address(es)\fR\fR
+.ad
+.sp .6
+.RS 4n
+If LDAP is one of the configured name services, this property specifies its server address. This property is required, and it is expected that the specified server will have a client profile which will be used to complete client configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnfsv4-domain\fR: string: \fIdomain name to be used for NVSv4\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the NVSv4 domain to be used. If this value is unspecified, the name service domain will be used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipfilter-config-file\fR: string: \fIpath to ipfilter IPv4 configuration file\fR\fR
+.ad
+.br
+.na
+\fB\fBipfilter-v6-config-file\fR: string: \fIpath to ipfilter IPv6\fR\fR
+.ad
+.br
+.na
+\fB\fBipnat-config-file\fR: string: \fIpath to\fR \fBipnat\fR \fIconfiguration file\fR\fR
+.ad
+.br
+.na
+\fB\fBippool-config-file\fR: string:\fIpath to\fR \fBippool\fR \fIconfiguration file\fR\fR
+.ad
+.sp .6
+.RS 4n
+These properties each specify the path to the rules file for a component of the \fBipfilter\fR(5) configuration. If a given \fBconfig-file\fR property is set, the corresponding IP filter component will be enabled, reading configuration from the specified file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBike-config-file\fR: string: \fIpath to IKE configuration file\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the IKE configuration file. If a value is specified, the \fBsvc:/network/ipsec/ike\fR service will be enabled, reading configuration from the specified file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipsecpolicy-config-file\fR: string: \fIpath to IPsec policy configuration file\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the IPsec policy configuration file. If a value is specified, the \fBsvc:/network/ipsec/policy\fR service will be enabled, reading configuration from the specified file.
+.RE
+
+.SS "ENM Properties"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR: enumerated value: \fBmanual\fR | \fBconditional-all\fR | \fBconditional-any\fR\fR
+.ad
+.sp .6
+.RS 4n
+The type of trigger for automatic activation of this ENM.
+.sp
+The default value is \fBmanual\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR: boolean: \fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the activation-mode is \fBmanual\fR, the enabled property reflects the ENM's current state. This property is read-only; it is changed indirectly by enabling or disabling the ENM using \fBnetadm\fR(1M).
+.sp
+The default value is \fBfalse\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconditions\fR: list of strings: \fIconditional expressions\fR\fR
+.ad
+.sp .6
+.RS 4n
+If activation-mode is set to \fBconditional-all\fR or \fBconditional-any\fR, this property specifies the test to determine whether or not this ENM should be activated. The conditional expression is made up of a sequence of conditions that can be assigned a boolean value, such as "system-domain is sun.com" or "ip:bge0 is-not active." The format of these expressions is defined in the "Condition Expressions" section below. If multiple conditions are specified, either all must be true to meet the activation requirements (when \fBactivation-mode\fR is \fBconditional-all\fR) or any one may be true (when \fBactivation-mode\fR is \fBconditional-any\fR).
+.sp
+Note the distinction between \fBadvertised-domain\fR and \fBsystem-domain\fR. The advertised domain is learned by means of external communication, such as the \fBDNSdmain\fR or \fBNISdmain\fR advertised by a DHCP server. This attribute is useful for conditional activation of locations; for example, if the advertised domain is \fBmycompany.com\fR, activate the "work" location. The system domain is the domain which is currently assigned to the system; that is, it is the value returned by the |domainname|(1M) command. This attribute is useful for conditional activation of ENMs, as it will only become true after a location has been activated and the system configured for that particular domain.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmri\fR: string: \fIservice FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+If this ENM is implemented as an SMF service, this property identifies that service. If this property is specified, the ENM will be activated by enabling the service and deactivated by disabling the service.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR: string: \fIstart command\fR\fR
+.ad
+.sp .6
+.RS 4n
+If this ENM is not implemented as an SMF service, this property identifies the command that should be exec'ed to start or activate the ENM. This property will be ignored if the FMRI property is set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR: string: \fIstop command\fR\fR
+.ad
+.sp .6
+.RS 4n
+If this ENM is not implemented as an SMF service, this property identifies the command that should be exec'ed to stop/deactivate the ENM. This property will be ignored if the FMRI property is set.
+.RE
+
+.SS "Known WLAN Properties"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbssids\fR: list of strings: WLAN BSSID(s) (AP MAC addresses)\fR
+.ad
+.sp .6
+.RS 4n
+If a specific Access Point should be preferred over others with the same name/ESSID, this property allows the AP's BSSID to be specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority\fR: \fBuint64\fR: a numeric priority value\fR
+.ad
+.sp .6
+.RS 4n
+The relative priority of this WLAN; a smaller number represents higher priority.
+.sp
+Note that this number can be changed if subsequent changes to the set of Known WLAN objects require such a change. For example, consider a system that is configured with two Known WLAN objects, \fBwlanA\fR and \fBwlanB\fR. \fBwlanA\fR has priority 1, and \fBwlanB\fR has priority 2. A new Known WLAN, \fBwlanC\fR, is created and assigned priority 2. In this case, the complete list will be updated such that \fBwlanA\fR has priority 1, \fBwlanC\fR has priority 2, and \fBwlanB\fR has priority 3. No two WLANs can have the same priority value, so the addition of \fBwlanC\fR at priority 2 forces \fBwlanB\fR to be shifted down in priority. If any additional WLANs existed at lower priorities than \fBwlanB\fR, they would be shifted accordingly.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyslot\fR: \fBuint64\fR: the key slot to be used for this WLAN\fR
+.ad
+.sp .6
+.RS 4n
+If the WLAN uses an encryption mode that supports multiple keyslots, the slot to place the key can be specified in this property. If unspecified, slot 1 is used by default.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyname\fR: list of strings: Secure object name(s)\fR
+.ad
+.sp .6
+.RS 4n
+Allows the user to associate secure objects created using \fBdladm\fR(1M) with Known WLANs.
+.RE
+
+.SS "Condition Expressions"
+.sp
+.LP
+Locations and ENMs can be activated based on a set of user-specified conditions. The following table summarizes the syntax of those condition expressions.
+.sp
+
+.sp
+.TS
+tab();
+cw(1.83i) cw(1.83i) cw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+Object TypeObjectCondition
+_
+ncp|ncu|enm|locnameis/is-not active
+.TE
+
+.sp
+.in +2
+.nf
+Object Type       Condition                           Object
+------------------------------------------------------------
+essid             is/is-not/contains/does-not-contain name string
+bssid             is/is-not                           bssid string
+ip-address        is/is-not                           IPv4 or IPv6 
+                                                      address
+ip-address        is-in-range/is-not-in-range         IPv4 or IPv6 
+                                                      address plus
+                                                      netmask/prefixlen
+advertised-domain is/is-not/contains/does-not-contain name string
+system-domain     is/is-not/contains/does-not-contain name string
+.fi
+.in -2
+.sp
+
+.SH OPTIONS
+.sp
+.LP
+The following options are not associated with any particular \fBnetcfg\fR subcommand:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes all configuration before reading subcommands from the command file (see following option).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+Reads and executes \fBnetcfg\fR subcommands from \fIcommand_file\fR.
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+The following subcommands are supported.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+End the current profile specification without committing the current changes to persistent storage, and pop up to the next higher scope.
+.sp
+This subcommand is valid in the NCP and profile scopes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIprop-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Clear the value for the specified property.
+.sp
+This subcommand is valid in the profile scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+Commit the current profile to persistent storage. Because a configuration must be correct to be committed, this operation automatically performs a verify on the object as well. The commit operation is attempted automatically upon leaving the current scope (with either the \fBend\fR or \fBexit\fR subcommand).
+.sp
+This subcommand is valid in the profile scope.
+.sp
+Note that, in non-interactive mode, a commit is not required, as the commit is implicit for any subcommand that changes a value.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate\fR [ \fB-t\fR \fItemplate\fR ] \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create an in-memory profile of the specified type and name. The \fB-t\fR \fItemplate\fR option specifies that the new object should be identical to \fItemplate\fR, where \fItemplate\fR is the name of an existing object of the same type. If the \fB-t\fR option is not used, the new object is created with default values. For NCPs, only a "User" NCP can be created.
+.sp
+This subcommand is valid in the global and NCP scopes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdestroy\fR { \fB-a\fR | \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR }\fR
+.ad
+.sp .6
+.RS 4n
+Remove all or the specified profile from memory and persistent storage. This action is immediate; it does not need to be committed. A destroyed object cannot be reverted.
+.sp
+This subcommand is valid in the global and NCP scopes if a specific object is specified; the \fB-a\fR option is only valid in the global scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+End the current profile specification, and pop up to the next higher scope. The current object is verified and committed before ending; if either the verify or commit fails, an appropriate error message is issued and the user is given the opportunity to end without committing the current changes, or to remain in the current scope and continue editing.
+.sp
+This subcommand is valid in any scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR\fR
+.ad
+.sp .6
+.RS 4n
+Exit the \fBnetcfg\fR session. The current profile is verified and committed before ending; if either fails, an appropriate error message is issued and the user is given the opportunity to exit without committing the current changes, or to remain in the current scope and continue editing.
+.sp
+This subcommand is valid in any scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [ \fB-d\fR ] [ \fB-f\fR \fIoutput-file\fR ] [ \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+Print the current configuration at the current or specified scope to standard out, or to a file specified with the \fB-f\fR option. The \fB-d\fR option generates a \fBdestroy\fR \fB-a\fR as the first line of output. This subcommand produces output in a form suitable for use in a command file. System created objects, including the Automatic NCP and the Automatic, NoNet, and User locations, cannot be exported.
+.sp
+This subcommand is valid in any scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [ \fB-V\fR ] \fIprop-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Get the current (in-memory) value of the specified property. By default, both the property name and value are printed; if the \fB-V\fR option is specified, only the property value is displayed.
+.sp
+This subcommand is valid in the profile scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [ \fIsubcommand\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+Display general help or help about a specific subcommand.
+.sp
+This subcommand is valid in any scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [ \fB-a\fR ] [ \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+List all profiles, property-value pairs and resources that exist at the current or specified scope. When listing properties of an object, the default behavior is to only list properties that apply to the specified configuration. That is, if listing an IP NCU for which \fBipv4-addrsrc\fR is \fBdhcp\fR, the \fBipv4-addr\fR property will not be listed. Including the \fB-a\fR option will result in all properties being listed, whether or not they apply to the current settings.
+.sp
+This subcommand is valid in any scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR\fR
+.ad
+.sp .6
+.RS 4n
+Delete any current changes to the current profile and revert to the values from persistent storage.
+.sp
+This subcommand is valid in the profile scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select one of the profiles available at the current scope level and jump down into that object's scope. The selected object will be loaded into memory from persistent storage.
+.sp
+This subcommand is valid in the global and NCP scopes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIprop-name\fR=\fIvalue1\fR[,\fIvalue2\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+Set the current (in-memory) value of the specified property. If performed in non-interactive mode, the change is also committed to persistent storage.
+.sp
+The delimiter for values of multi-valued properties is "\fB,\fR" (comma). If any of the individual values in such a property contains a comma, it must be escaped (that is, written as \fB\,\fR). Commas within properties that can only have a single value are not interpreted as delimiters and need not be escaped.
+.sp
+This subcommand is valid in the profile scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verify that the current in-memory object has a valid configuration.
+.sp
+This subcommand is valid in the profile scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwalkprop\fR [ \fB-a\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+Walk each property associated with the current profile. For each property, the name and current value are displayed, and a prompt is given to allow the user to change the current value.
+.sp
+The delimiter for values of multi-valued properties is "," (comma). If any of the individual values in such a property contains a comma, it must be escaped (that is, written as \fB\,\fR). Commas within properties that can only have a single value are not interpreted as delimiters and need not be escaped.
+.sp
+By default, only properties that are required based on properties that are already set will be walked; that is, if \fBipv4-addrsrc\fR is set to \fBdhcp\fR, \fBipv4-addr\fR will not be walked. Including the \fB-a\fR option will result in all available properties being walked.
+.sp
+This subcommand is valid in the profile scope.
+.sp
+This subcommand is only meaningful in interactive mode.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSetting an NCU Property
+.sp
+.LP
+The following command sets an NCU property from the command line (that is, in non-interactive mode).
+
+.sp
+.in +2
+.nf
+# \fBnetcfg "select ncp User; select ncu phys net1; set link-mtu=1492"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRListing Top-Level Profiles
+.sp
+.LP
+The following command lists all top-level profiles from the command line.
+
+.sp
+.in +2
+.nf
+# \fBnetcfg list\fR
+NCPs:
+        Automatic
+        User
+Locations:
+        Automatic
+        home
+        NoNet
+        office
+ENMs:
+        enmtest
+        myenm
+WLANs:
+        sunwifi
+        coffeeshop
+        linksys
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRDestoying a Location Profile
+.sp
+.LP
+The following command destroys a Location profile from the command line.
+
+.sp
+.in +2
+.nf
+# \fBnetcfg destroy loc home\fR
+Destroyed loc 'home'
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRCreating an NCU Profile
+.sp
+.LP
+The following command sequence interactively creates an NCU profile.
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg> \fBselect ncp user\fR
+netcfg:ncp:User> \fBcreate ncu ip net1\fR
+Created ncu 'net1'.  Walking properties ...
+ip-version (ipv4,ipv6) [ipv4|ipv6]> \fBipv4\fR
+ipv4-addrsrc (dhcp) [dhcp|static]> \fBstatic\fR
+ipv4-addr> \fB168.1.2.3\fR
+netcfg:ncp:User:ncu:net1> \fBlist\fR
+ncu:net1
+        type:             interface
+        class:            ip
+        parent:           "User"
+        enabled           true
+        ip version:       ipv4
+        ipv4-addrsrc:     static
+        ipv4-addr:        "168.1.2.3"
+        ipv6-addrsrc      dhcp,autoconf
+netcfg:ncp:User:ncu:net1> \fBcommit\fR
+Committed changes
+netcfg:ncp:User:ncu:net1> \fBend\fR
+netcfg:ncp:User> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRManipulating an ENM
+.sp
+.LP
+The following command sequence selects an existing ENM, display its contents, and changes a property value.
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg>\fBselect enm myenm\fR
+netcfg:enm:myenm>\fBlist\fR
+ENM:myenm
+        activation-mode manual
+        enabled         true
+        start           "/usr/local/bin/myenm start"
+        stop            "/usr/local/bin/myenm stop"
+netcfg:enm:myenm>\fBset stop="/bin/alt_stop"\fR
+netcfg:enm:myenm>\fBlist\fR
+ENM:myenm
+        activation-mode manual
+        enabled         true
+        start           "/usr/local/bin/myenm start"
+        stop            "/bin/alt_stop"
+netcfg:enm:myenm>\fBexit\fR
+Committed changes
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRConfiguring a Static Address
+.sp
+.LP
+The following command sequence configures a static address of 192.168.2.12/24 on interface \fBbge0\fR using the Home NCP. This interface is enabled by default when the Home NCP is activated.
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg> \fBcreate ncp Home\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+First configure phys NCU:
+
+.sp
+.in +2
+.nf
+netcfg:ncp:Home> \fBcreate ncu phys bge0\fR
+Created ncu 'bge0'.  Walking properties ...
+activation-mode (manual) [manual|prioritized]>
+link-mac-addr>
+link-autopush>
+link-mtu>
+netcfg:ncp:Home:ncu:bge0> \fBend\fR
+Committed changes
+netcfg:ncp:Home>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Then, configure IP NCU:
+
+.sp
+.in +2
+.nf
+netcfg:ncp:Home> \fBcreate ncu ip bge0\fR
+Created ncu 'bge0'.  Walking properties ...
+ip-version (ipv4,ipv6) [ipv4|ipv6]>
+ipv4-addrsrc (dhcp) [dhcp|static]> \fBstatic\fR
+ipv4-addr> \fB192.168.2.10/24\fR
+ipv4-default-route>
+ipv6-addrsrc (dhcp,autoconf) [dhcp|autoconf|static]>
+ipv6-default-route>
+netcfg:ncp:Home:ncu:bge0> \fBlist\fR
+ncu:bge0
+    type                interface
+    class               ip
+    parent              "Home"
+    enabled             true
+    ip-version          ipv4,ipv6
+    ipv4-addrsrc        static
+    ipv4-addr           "192.168.2.10/24"
+    ipv6-addrsrc        dhcp,autoconf
+netcfg:ncp:Home:ncu:bge0> \fBexit\fR
+Committed changes
+#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Switch to the Home NCP using \fBnetadm\fR(1M).
+
+.LP
+\fBExample 7 \fRConfiguring Location Based on a Condition
+.sp
+.LP
+The following command sequences configures a location based on a condition. The location is activated whenever the IP address is in the 10.0.8.0/24 subnet.  Also, NIS is configured in this location.
+
+.sp
+.in +2
+.nf
+netcfg> \fBselect loc office\fR
+netcfg:loc:office> \fBlist\fR
+loc:office
+       activation-mode                 conditional-any
+       conditions                      "ip-address is 10.0.8.0/24"
+       enabled                         false
+       nameservices                    dns,nis
+       nameservices-config-file        "/etc/nsswitch.nis"
+       dns-nameservice-configsrc       dhcp
+       nis-nameservice-configsrc       manual
+       nis-nameservice-servers         "10.2.18.24"
+       default-domain                  "labs.east.sun.com"
+netcfg:loc:office>
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fRCreating a Known WLAN
+.sp
+.LP
+The following command sequence establishes a known WLAN named \fBcoffeeshop\fR with a WEP key.
+
+.sp
+.in +2
+.nf
+netcfg> \fBselect wlan coffeeshop\fR
+netcfg:wlan:coffeeshop> \fBlist\fR
+known wlan:coffeeshop
+       priority                2
+       keyname                 "foo"
+       security-mode           wep
+netcfg:wlan:coffeeshop> \fBset priority=1\fR
+netcfg:wlan:coffeeshop> \fBend\fR
+Committed changes
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 9 \fRExporting Current Configuration to a File
+.sp
+.LP
+The following command exports the current configuration to a file.
+
+.sp
+.in +2
+.nf
+netcfg> \fBexport -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Or, perform the same task from the Unix command line:
+
+.sp
+.in +2
+.nf
+# \fBnetcfg export -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 10 \fRImporting Current Configuration from a File
+.sp
+.LP
+The following command imports the current configuration from a file.
+
+.sp
+.in +2
+.nf
+# \fBnetcfg -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBdomainname\fR(1M), \fBnetadm\fR(1M), \fBnetcfgd\fR(1M), \fBnwamd\fR(1M), \fBresolv.conf\fR(4), \fBattributes\fR(5), \fBipfilter\fR(5)
+.sp
+.LP
+See also \fBnwam-manager(1M)\fR, available in the JDS/GNOME  man page collection.

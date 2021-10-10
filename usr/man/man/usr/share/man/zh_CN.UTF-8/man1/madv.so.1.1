@@ -1,0 +1,308 @@
+'\" te
+.\"  Copyright (c) 2002, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH madv.so.1 1 "2011 年 4 月 4 日" "SunOS 5.11" "用户命令"
+.SH 名称
+madv.so.1 \- madv 库
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/madv.so.1\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBmadv.so.1\fR 共享对象为已启动的进程及其后代进程提供一种选择性配置 VM 建议的方法。要启用 \fBmadv.so.1\fR，环境中需要存在以下字符串（请参见 \fBld.so.1\fR(1)）以及一个或多个 \fBMADV\fR 环境变量：
+.sp
+.in +2
+.nf
+\fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+如果在 \fBLD_PRELOAD\fR 中指定了 \fBmadv.so.1\fR 共享对象，\fBmadv\fR 共享对象会读取以下环境变量，以确定哪些已创建进程应用指定建议。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMADV\fR=\fIadvice\fR \fR
+.ad
+.RS 27n
+.rt  
+\fBMADV\fR 指定用于进程地址空间中所有堆、共享内存以及 mmap 区域的 VM 建议。此建议将应用于所有已创建进程。
+.sp
+\fIadvice\fR 的值对应于 \fBmadvise\fR(3C) 中使用的 <sys/mman.h> 中的值，以指定内存访问模式：
+.br
+.in +2
+normal
+.in -2
+.br
+.in +2
+random
+.in -2
+.br
+.in +2
+sequential
+.in -2
+.br
+.in +2
+access_lwp
+.in -2
+.br
+.in +2
+access_many
+.in -2
+.br
+.in +2
+access_many_pset
+.in -2
+.br
+.in +2
+access_default
+.in -2
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMADVCFGFILE\fR=\fIconfig-file\fR\fR
+.ad
+.RS 27n
+.rt  
+\fIconfig-file\fR 是包含一个或多个以下形式的 \fBmadv\fR 配置项的文本文件。
+.sp
+.in +2
+.nf
+\fIexec-name\fR \fIexec-args\fR:\fIadvice-opts\fR
+.fi
+.in -2
+.sp
+
+\fIconfig-file\fR 中指定的建议优先于 \fBMADV\fR 环境变量所指定的建议。没有设置 \fBMADVCFGFILE\fR 时，会从文件 \fB/etc/madv.conf\fR 中提取建议（如果存在）。
+.sp
+\fIexec-name\fR 指定应用程序或可执行文件的名称。对应的建议是为与文件中找到的第一个 \fIexec-name\fR 相匹配的新建进程（请参见 \fBgetexecname\fR(3C)）而设置的。
+.sp
+\fIexec-name\fR 可能为全路径名、基名或模式字符串。有关模式匹配的讨论，请参见 \fBsh\fR(1) 中的"\fB生成文件名\fR"。
+.sp
+\fIexec-args\fR 是与参数相匹配的选择性指定模式字符串。仅当未指定 \fIexec-args\fR 或其出现在 \fIexec-name\fR 的参数内时，才会设置建议。
+.sp
+\fIadvice-opts\fR 是逗号分隔的列表，为不同内存区域指定建议：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmadv\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+应用于进程地址空间中的所有堆、共享内存和 mmap 区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheap\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+堆被定义为 brk 区域（请参见 \fBbrk\fR(2)）。应用于现有堆以及将来分配的任何其他堆内存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshm\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBism\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBdism\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+分别使用任何标志、标志 \fBSHM_SHARE_MMU\fR 或标志 \fBSHM_PAGEABLE \fR附加的共享内存区段（请参见 \fBshmat\fR(2)）。选项 \fBism\fR 和 \fBdism\fR 优先于选项 \fBshm\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmap\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBmapshared\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBmapprivate\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBmapanon\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+分别使用任何标志、标志 \fBMAP_SHARED\fR、标志 \fBMAP_PRIVATE\fR 或标志 \fBMAP_ANON\fR 通过 \fBmmap\fR(2) 建立的映射。选项 \fBmapshared\fR、\fBmapprivate\fR 和 \fBmapanon\fR 优先于选项 \fBmap\fR。选项 \fBmapanon\fR 优先于 \fBmapshared\fR 和 \fBmapprivate\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMADVERRFILE\fR=\fIpathname\fR\fR
+.ad
+.RS 27n
+.rt  
+缺省情况下，使用级别 \fBLOG_ERR\fR 和工具 \fBLOG_USER\fR 通过\fBsyslog\fR(3C) 记录错误消息。如果 \fBMADVERRFILE\fR 包含有效的\fI路径名\fR（例如 \fB/dev/stderr\fR），将在其中记录错误消息。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR将建议应用于所有 ISM 段
+.sp
+.LP
+以下配置将建议应用于应用程序 \fB/usr/bin/foo\fR 的所有 ISM 段：
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    /usr/bin/foo:ism=access_lwp
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR为所有应用程序设置建议且具有例外
+.sp
+.LP
+以下配置为所有应用程序设置建议，除 \fBls\fR 外。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADV=access_many\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADV MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    ls:
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR优先级规则（从"示例 2"继续）
+.sp
+.LP
+由于 \fBMADVCFGFILE\fR 优先于 \fBMADV\fR，为最后一个 \fBmadv\fR 配置项的 \fIexec-name\fR 指定 '\fB*\fR'（模式全匹配）相当于设置 \fBMADV\fR。以下等效于示例 2：
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    ls:
+    *:madv=access_many
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR为不同区域应用建议
+.sp
+.LP
+以下配置为 \fBmmap\fR 区域应用一种类型的建议，并为具有执行名称（以 \fBfoo\fR 开头）的一组选定应用程序的堆与共享内存区域应用不同建议。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    foo*:madv=access_many,heap=sequential,shm=access_lwp
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR选择性地应用建议
+.sp
+.LP
+以下配置为具有 \fBora1\fR 作为参数并以 \fBora\fR 开始的应用程序堆应用建议。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    ora* ora1:heap=access_many
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/madv.conf\fR \fR
+.ad
+.RS 19n
+.rt  
+配置文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/extended-system-utilities
+_
+SUNWesxu（64 位）
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcat\fR(1)、\fBld.so.1\fR(1)、\fBproc\fR(1)、\fBsh\fR(1)、\fBbrk\fR(2)、\fBexec\fR(2)、\fBfork\fR(2)、\fBmmap\fR(2)、\fBmemcntl\fR(2)、\fBshmat\fR(2)、\fBgetexecname\fR(3C)、\fBmadvise\fR(3C)、\fBsyslog\fR(3C)、\fBproc\fR(4)、\fBattributes\fR(5) 
+.SH 附注
+.sp
+.LP
+建议将被继承。子进程具有与其父进程相同的建议。有关 \fBexec()\fR（请参见 \fBexec\fR(2)），建议会重新设置为缺省系统建议，除非通过 \fBmadv\fR 共享对象配置了不同建议。
+.sp
+.LP
+建议只应用于由用户程序显式创建的 \fBmmap\fR 区域。由运行时链接程序或由进行直接系统调用（例如用于线程栈的 \fBlibthread\fR 分配）的系统库建立的那些区域不会受到影响。

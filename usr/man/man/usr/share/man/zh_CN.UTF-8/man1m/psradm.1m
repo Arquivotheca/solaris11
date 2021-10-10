@@ -1,0 +1,338 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH psradm 1M "2008 年 2 月 25 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+psradm \- 更改处理器操作状态
+.SH 用法概要
+.LP
+.nf
+\fBpsradm\fR \fB-f\fR | \fB-i\fR | \fB-n\fR | \fB-s\fR [\fB-v\fR] [\fB-F\fR] \fIprocessor_id\fR
+.fi
+
+.LP
+.nf
+\fBpsradm\fR \fB-a\fR \fB-f\fR | \fB-i\fR | \fB-n\fR | \fB-s\fR [\fB-v\fR] [\fB-F\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpsradm\fR 实用程序可更改处理器的操作状态。处理器的合法状态包括 \fBon-line\fR、\fBoff-line\fR、\fBspare\fR、\fBfaulted\fR 和 \fBno-intr\fR。
+.sp
+.LP
+\fBon-line\fR 处理器可处理 \fBLWP\fR（lightweight processes，轻量级进程），并且可被系统中的 I/O 设备中断。
+.sp
+.LP
+\fBoff-line\fR 处理器不处理任何 \fBLWP\fR。通常情况下，系统中的 I/O 设备不能中断 \fBoff-line\fR 处理器。在某些处理器上或在某些情况下，可能无法为 \fBoff-line\fR 处理器禁用中断。因此，\fBoff-line\fR 的实际效果可能会因计算机而异。
+.sp
+.LP
+spare 处理器不处理任何 LWP。系统的特权用户或内核可以使备用处理器处于 \fBon-line\fR、\fBoff-line\fR 或 \fBno-intr\fR 状态，以响应系统状态的更改。 
+.sp
+.LP
+faulted 处理器由内核标识，内核会定时监视处理器的行为。特权用户可以将 faulted 处理器的状态设置为 \fBon-line\fR、\fBoff-line\fR、\fBspare\fR 或 \fBno-intr\fR，但是必须使用强制选项来执行此操作。
+.sp
+.LP
+\fBno-intr\fR 处理器可处理 \fBLWP\fR，但不能被 I/O 设备中断。
+.sp
+.LP
+如果有 LWP 绑定到处理器，则除非使用附加的 \fB-F\fR 选项，否则无法将处理器设为 \fBoff-line\fR 或 \fBspare\fR 状态。\fB-F\fR 选项会在更改处理器的操作状态之前删除这类 LWP 的处理器绑定。在某些体系结构上，例如当系统依赖于处理器提供的某些资源时，可能无法将某些处理器设为 \fBoff-line\fR 或 \fBspare\fR 状态。 
+.sp
+.LP
+系统中必须至少有一个处理器能够处理 \fBLWP\fR。还必须至少有一个处理器是可中断的。因为 \fBoff-line\fR 或 \fBspare\fR 处理器是可中断的，所以可以实现这样一个操作系统，该操作系统中的一个处理器处于 \fBno-intr\fR 状态，所有其他处理器处于 \fBoff-line\fR 或 \fBspare\fR 状态，但是有一个或多个处理器可接受中断。 
+.sp
+.LP
+如果任何指定的处理器被关闭，\fBpsradm\fR 可能会启动一个或多个处理器。
+.sp
+.LP
+只有具有 \fBPRIV_SYS_RES_CONFIG\fR 特权的用户才能使用 \fBpsradm\fR 实用程序。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+在所有处理器或尽可能多的处理器上执行操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 6n
+.rt  
+将指定的处理器设为 \fBoff-line\fR 状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+强制转换到附加指定状态。如果一个或多个指定处理器处于 faulted 状态，则需使用此选项。如果未指定其他转换选项，则将指定的处理器设置为 faulted 状态。只能强制转换到 \fBfaulted\fR、\fBspare\fR 或 \fBoff-line\fR 状态。建议管理员为 \fBpbind\fR(1M) 使用 \fB-Q\fR 选项，以找出强制执行处理器状态转换会影响哪些线程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+将指定处理器设置为 \fBno-intr\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+将指定处理器设为 \fBon-line\fR 状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+将指定处理器设为 spare 状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+输出一条消息，显示每个尝试操作的结果。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+设置为 \fBon-line\fR 或 \fBoff-line\fR、\fBspare\fR 或 \fBno-intr\fR 状态的处理器的处理器 \fBID\fR。
+.sp
+将 \fIprocessor_id\fR 指定为单个处理器编号（例如，\fB3\fR）、由空格分隔的多个处理器编号（例如，\fB1 2 3\fR）或者处理器编号的范围（例如，\fB1-4\fR）。也可以组合使用范围和单个或多个 \fIprocessor_id\fR（例如，\fB1-3 5 7-8 9\fR）。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR将处理器设置为 \fBoff-line\fR
+.sp
+.LP
+以下示例将处理器 2 和 3 设置为 \fBoff-line\fR：
+
+.sp
+.in +2
+.nf
+% psradm \fB-f\fR 2 3
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR将处理器设置为 no-intr
+.sp
+.LP
+以下示例将处理器 1 和 2 设置为 \fBno-intr\fR：
+
+.sp
+.in +2
+.nf
+% psradm \fB-i\fR 1 2
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR将处理器设置为 \fBspare\fR
+.sp
+.LP
+以下示例将处理器 1 和 2 设置为处于 spare 状态（即使处理器 1 或 2 处于 faulted 状态）：
+
+.sp
+.in +2
+.nf
+% psradm -F -s 1 2
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR将所有处理器设置为 \fBon-line\fR
+.sp
+.in +2
+.nf
+% psradm \fB-a\fR \fB-n\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR将处理器强制设置为 \fBoff-line\fR
+.sp
+.LP
+以下示例将处理器 1 和 2 设置为 offline 状态，并且撤销其与所绑定进程之间的绑定：
+
+.sp
+.in +2
+.nf
+% psradm \fB-F\fR \fB-f\fR 1 2
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/wtmpx\fR\fR
+.ad
+.RS 14n
+.rt  
+记录了处理器状态更改的记录
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpbind\fR(1M)、\fBpsrinfo\fR(1M)、\fBpsrset\fR(1M)、\fBp_online\fR(2)、\fBprocessor_bind\fR(2)、\fBattributes\fR(5)
+.SH 诊断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 4: Invalid argument \fR\fR
+.ad
+.sp .6
+.RS 4n
+配置中不存在指定处理器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 3: Device busy\fR\fR
+.ad
+.sp .6
+.RS 4n
+无法将指定处理器设为 \fBoff-line\fR 状态，因为它绑定有 LWP，或者是系统中最后一个 \fBon-line\fR 状态的处理器，或者系统需要该处理器提供某些基本服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 3: Device busy\fR\fR
+.ad
+.sp .6
+.RS 4n
+无法将指定处理器设置为 \fBno-intr\fR 状态，因为它是系统中最后一个可中断的处理器，或者是系统中唯一可以提供系统所需的中断服务的处理器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 3: Device busy\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定处理器已关闭，并且无法启动，因为某些特定于平台的资源不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 0: Not owner\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户不具有更改处理器状态的权限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 2: Operation not supported \fR\fR
+.ad
+.sp .6
+.RS 4n
+指定处理器已关闭，并且平台不支持启动单个处理器。
+.RE
+

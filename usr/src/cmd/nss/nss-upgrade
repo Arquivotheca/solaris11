@@ -1,0 +1,129 @@
+#!/bin/ksh
+#
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+
+RESOLV_CONF=/etc/resolv.conf
+DEFAULTDOMAIN=/etc/defaultdomain
+NSSWITCH_CONF=/etc/nsswitch.conf
+NSCD_CONF=/etc/nscd.conf
+OLD_CACHE=svc:/system/name-service-cache:default
+NEW_CACHE=svc:/system/name-service/cache:default
+NSSWITCH_FMRI=svc:/system/name-service/switch:default
+NISDOM_FMRI=svc:/network/nis/domain:default
+DNS_FMRI=svc:/network/dns/client:default
+
+dom_imported=0
+config=
+
+nss_import()
+{
+	service_exists $1 || return 0
+	/usr/sbin/nscfg import $1
+	result=$?
+	if [[ $result -eq 3 ]] ; then
+		msg="$SMF_FMRI could not find name service configuration."
+		net_record_err "$msg" 0
+		msg="Skipping import of service: $1"
+		net_record_err "$msg" 0
+		# log presumed configuration
+		echo "Configuration detected: $config"
+	elif [[ $result -ne 0 ]] ; then
+		msg="$SMF_FMRI could not import configuration for service $1"
+		net_record_err "$msg" 0
+		msg="Moving $1 into temporary maintenance state."
+		net_record_err "$msg" 0
+		echo "Configuration detected: $config"
+		/usr/sbin/svcadm mark -t maintenance $1
+	fi
+	return 0
+}
+
+# Export is required for name-service FMRIS with configuration in /etc
+# before svc:/milestone/self-assembly-complete can be performed.
+# Otherwise ROZR may have issues.
+nss_export()
+{
+	/usr/sbin/nscfg export $1
+}
+
+# Assumes svc:/system/name-service/switch:default is accurate
+has_nss()
+{
+	echo "$config" | /usr/bin/grep -w "$1" >/dev/null 2>&1
+	return $?
+}
+
+enable_nis_domain()
+{
+	if [[ $dom_imported -eq 1 ]] ; then
+		return 0
+	fi
+	dom_imported=1
+	service_exists ${NISDOM_FMRI} && service_is_enabled ${NISDOM_FMRI} && \
+	    return 0
+	nss_import $NISDOM_FMRI
+	nss_export $NISDOM_FMRI
+	/usr/sbin/svcadm enable $NISDOM_FMRI
+}
+
+# First update the switch configuration or do nothing
+nss_import $NSSWITCH_FMRI
+nss_export $NSSWITCH_FMRI
+# Gather switch configuration from SMF.
+config=`/usr/bin/svcprop -p config $NSSWITCH_FMRI`
+
+has_nss "dns"
+has_dns=$?
+if [[ $has_dns -eq 0 || -f ${RESOLV_CONF} ]] ; then
+	nss_import $DNS_FMRI
+	nss_export $DNS_FMRI
+fi
+
+if has_nss "nis" ; then
+	# all /var/yp/... configuration is part of nis/domain
+	# No need to perform the following.  They are no-ops
+	# nss_import svc:/network/nis/client:default
+	# nss_import svc:/network/nis/server:default
+	enable_nis_domain
+fi
+if has_nss "ldap" ; then
+	nss_import svc:/network/ldap/client:default
+	enable_nis_domain
+fi
+if [[ -f ${DEFAULTDOMAIN} ]] ; then
+	enable_nis_domain
+fi
+
+if service_exists ${OLD_CACHE} ; then
+	/usr/sbin/svcadm disable ${OLD_CACHE}
+fi
+
+nss_import $NEW_CACHE
+nss_export $NEW_CACHE
+
+exit $SMF_EXIT_OK

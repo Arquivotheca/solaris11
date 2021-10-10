@@ -1,0 +1,202 @@
+'\" te
+.\" 部分版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.\" 版权所有 (c) 2002-2006 Szabolcs Szakacsits
+.\" 版权所有 (c) 2002-2005 Anton Altaparmakov
+.\" 版权所有 (c) 2002-2003 Richard Russon
+.\" 版权所有 (c) 2007 Yura Pakhuchiy
+.\" 本程序是自由软件，您可以遵照自由软件基金会发布的 GNU 通用公共许可第 2 版或（根据您的选择）任何更高版本的条款重新发布和/或修改本程序。本程序本着为用户提供帮助的目的而发布，但不承担任何担保；即使是对适销性或特定用途适用性的暗示担保也不承担。有关详细信息，请参见 GNU 通用公共许可。您应当已随本程序接收到 GNU 通用公共许可的一份副本（在 Linux-NTFS 分发的主目录下的 COPYING 文件中）；如果没有，请致函：Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfsresize 1M "2009 年 5 月 21 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ntfsresize \- 在不丢失数据的情况下调整 NTFS 文件系统的大小
+.SH 用法概要
+.LP
+.nf
+\fBntfsresize\fR  [\fIoptions\fR] \fB--info\fR \fIdevice\fR
+.fi
+
+.LP
+.nf
+\fBntfsresize\fR  [\fIoptions\fR] [\fB--size\fR \fIsize\fR[k|M|G]] \fIdevice\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBntfsresize\fR 程序可在不丢失数据的情况下安全调整 Windows XP、Windows Server 2003、Windows 2000、Windows NT4 和 Longhorn NTFS 文件系统的大小。支持 32 位和 64 位 Windows"操作系统"使用的所有 NTFS 版本。在调整大小之前不需要取消分段，因为 \fBntfsresize\fR 可根据需要重新定位任何数据而不会危及数据完整性。
+.sp
+.LP
+\fBntfsresize\fR 可用于缩小或扩大位于未挂载设备（通常为磁盘分区）上的任何 NTFS 文件系统。新文件系统将具有指定的大小。大小参数可具有以下可选修饰符之一：\fBk\fR、\fBM\fR、\fBG\fR，分别表示千字节、兆字节或千兆字节。\fBntfsresize\fR 通过支持 \fBk=10\fR^3、\fBM=10\fR^6 和\fB G=10\fR^9 满足 SI、ATA 和 IEEE 标准以及磁盘制造商的要求。
+.sp
+.LP
+如果同时省略 \fB---info\fR 和 \fB---size\fR 选项，NTFS 文件系统将扩大至底层设备的大小。
+.sp
+.LP
+要调整分区中文件系统的大小，必须通过编辑磁盘上的分区表调整文件系统和分区的大小。与其他命令行文件系统大小调整工具类似，\fBntfsresize\fR 并不处理分区的大小。要处理分区大小，必须使用磁盘分区工具，如 \fBfdisk\fR(1M)。或者，也可以使用一种内部使用 \fBntfsresize\fR 的用户友好的分区工具。这类分区工具有很多，其中包括 Mandriva 的 DiskDrake、QTParted、SUSE/Novell 的 YaST Partitioner、IBM 的 EVMS、GParted 或 Debian/Ubuntu 的 Partman。
+.sp
+.LP
+请在使用任何分区工具之前备份您的数据和分区表。对于 NTFS 文件系统，可使用 \fBntfsclone\fR(1M) 作为一种备份方式。
+.sp
+.LP
+要缩小 NTFS 分区，请首先使用 \fBntfsresize\fR 缩小文件系统的大小。然后使用实用程序（如 \fBfdisk\fR(1M)）通过删除分区并重新创建较小分区来缩小分区大小。分区大小不得小于 NTFS 的新大小；否则，您将不能从该分区进行引导。如果错误地创建了过小的分区，您必须重新创建分区，使其与新的 NTFS 文件系统大小相同。
+.sp
+.LP
+要扩大 NTFS 文件系统，必须首先扩大底层分区的大小。您可以使用 \fBfdisk\fR(1M) 删除分区并重新创建较大的分区。请确保新调整大小的分区不与任何其他分区重叠。然后使用 \fBntfsresize\fR 扩大文件系统。
+.sp
+.LP
+重新创建分区时，请确保使用与所替换分区中相同的起始扇区和分区类型。否则，将无法访问您的文件系统。使用 \fBfdisk u\fR 命令从缺省的柱面单元切换至可靠的扇区单元。此外，如果在旧分区中设置了可引导标志，请确保在重新创建的分区中也设置此标志。否则，可能无法从新分区进行引导。
+.SH 扩展描述
+.sp
+.LP
+使用 \fBntfsresize\fR 时存在一些极为少见的限制。例如，存储在具有未知坏扇区的磁盘上的文件系统就会出现此类限制。不支持重定位第一个 \fBMFT\fR 范围以及将大小调整至\fB $MFTMirr\fR 范围的中间。检测到这些情况后，调整大小操作将限定为安全大小，或显示最接近的安全大小。
+.sp
+.LP
+完成大小的调整后，\fBntfsresize\fR 将安排 NTFS 一致性检查。在 Windows 中，此检查由 \fBchkdsk\fR 执行。随后首次重新引导进入 Windows 时，您会注意到 \fBchkdsk\fR 在蓝色背景下运行。这是正常现象。Windows 可能会在一致性检查之后强制执行快速重新引导。根据您的硬件配置，Windows 可能会警告您系统设置发生更改，并建议或要求进行重新引导。确认此消息并再次进行重新引导。
+.SH 选项
+.sp
+.LP
+下面列出了支持的选项。大多数选项都有单字母和全名两种形式。不接受参数的单字母选项可以多个组合到一起。例如，\fB-fv\fR 等效于 \fB-f\fR \fB-v\fR。全名选项可以缩写为其名称的唯一前缀。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR，\fB--bad-sectors\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省情况下，\fBntfsresize\fR 会在遇到坏扇区时退出。此选项允许实用程序在遇到此类扇区时仍继续运行。
+.sp
+使用此选项之前，强烈建议您使用 \fBntfsclone\fR(1M) 及 \fB--rescue\fR 选项进行备份，然后在 Windows 中从命令行运行 \fBchkdsk /f /r volume\fR:。如果磁盘担保显示为有效，请进行更换，因为磁盘有缺陷。请注意，没有软件可以修复坏扇区错误。唯一能做的就是解决这些缺陷。
+.sp
+如果磁盘没有坏扇区，此选项将不起作用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR，\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsresize\fR 在实际进行（即未使用 \fB--no-action\fR）调整大小操作之前始终将文件系统标记为进行一致性检查，这是为了获得额外的安全性。因此，如果 NTFS 文件系统由 \fBntfsresize\fR 标记，使用此选项会很安全。如果需要多次调整大小，而不想在每个调整大小步骤之间引导至 Windows，则必须使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR，\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示用法信息并退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR，\fB--info\fR\fR
+.ad
+.sp .6
+.RS 4n
+在缩小文件系统时使用。使 \fBntfsresize\fR 确定支持的最小的缩小文件系统大小。多数时候，最小大小是文件系统中已使用的空间大小。\fBntfsresize\fR 缩小文件系统后的大小不会小于此选项返回的大小。由于多种因素，它可能无法缩小至这一理论大小。虽然数据的完整性并不存在风险，但仍强烈建议在实际调整大小之前使用 \fB--no-action\fR 选项进行测试运行。
+.sp
+根据测试，可获得的最小大小约为文件系统中使用的空间外加 20-200 MB。另请注意，Windows 可能另外需要 50-100 MB 进行安全引导。
+.sp
+此选项不会导致文件系统的任何更改；分区将以只读方式打开。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR，\fB--no-action\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用此选项在执行调整大小操作之前进行测试运行。卷将以只读方式打开，\fBntfsresize\fR 将显示在调整文件系统大小时要执行的操作。仅当测试运行通过时，才继续进行实际的调整大小操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR，\fB--no-progress-bar\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBntfsresize\fR 操作期间不显示进度指示条。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR，\fB--size\fR \fIsize\fR[k|M|G]]\fR
+.ad
+.sp .6
+.RS 4n
+将文件系统大小调整至 \fIsize\fR 字节。新文件系统将具有指定的大小。大小参数可具有以下可选修饰符之一：\fBk\fR、\fBM\fR、\fBG\fR，分别表示千字节、兆字节或千兆字节。\fBntfsresize\fR 通过支持 \fBk=10\fR^3、\fBM=10\fR^6 和\fB G=10\fR^9 满足 SI、ATA 和 IEEE 标准以及磁盘制造商的要求。在执行实际的调整大小之前，首先运行 \fBntfsresize\fR 并附带 \fB--no-action\fR 选项和此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR，\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示大量输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR，\fB--version\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBntfsresize\fR 的版本号。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+成功时显示零，否则显示非零值。
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/ntfsprogs
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBfdisk\fR(1M)、\fBntfsclone\fR(1M)、\fBparted\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 附注
+.sp
+.LP
+在 Linux 版本 2.6 中，对于通过 \fBparted\fR(1M) 处理的分区，使用 \fBntfsresize\fR 之后会发生分区表损坏，进而导致 Windows 系统不可引导。即使 NTFS 文件系统是一致的，也会发生这种情况。此问题与 NTFS 无关，因此也与 \fBntfsresize\fR 无关。此外，\fBntfsresize\fR 从不修改分区表。在上述情况下，可以在 BIOS 中将 \fBDisk Access Mode\fR（磁盘访问模式）更改为 \fBLBA\fR 以重新获得引导功能。有关此情况的进一步讨论，请参见位于 \fBhttp://mlf.linux.rulez.org/mlf/ezaz/ntfsresize.html\fR 的 \fBntfsresize\fR 常见问题解答。
+.SH 作者
+.sp
+.LP
+\fBntfsresize\fR 由 Szabolcs Szakacsits 编写，Anton Altaparmakov 和 Richard Russon 也对其做出了贡献。

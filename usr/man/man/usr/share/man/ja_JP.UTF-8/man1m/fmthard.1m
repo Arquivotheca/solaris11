@@ -1,0 +1,172 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1989, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmthard 1M "2010 年 12 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fmthard \- ハードディスクへのラベルの設定
+.SH 形式
+.SS "SPARC"
+.LP
+.nf
+\fBfmthard\fR \fB-d\fR \fIdata\fR | \fB-n\fR \fIvolume_name\fR | \fB-s\fR \fIdatafile\fR [\fB-i\fR] /dev/rdsk/c? 
+     [t?] d?s2
+.fi
+
+.SS "x86"
+.LP
+.nf
+\fBfmthard\fR \fB-d\fR \fIdata\fR | \fB-n\fR \fIvolume_name\fR | \fB-s\fR \fIdatafile\fR [\fB-i\fR] /dev/rdsk/c? 
+     [t?] d?s2
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfmthard\fR コマンドは、ハードディスクの \fBVTOC\fR (ボリューム構成テーブル) を更新し、さらに x86 システムでは Solaris \fBfdisk\fR パーティションにブート情報を追加します。ディスクラベルへの変更を要求するには、\fB-s\fR \fIdatafile\fR、\fB- d\fR \fIdata\fR、または \fB-n\fR \fIvolume_name\fR のうち、1 つ以上のオプションを指定する必要があります。ディスクラベルの内容を出力する場合は、\fBprtvtoc\fR(1M) を参照してください。\fB/dev/rdsk/c\fR\fI?\fR[\fBt\fR\fI?\fR]\fBd\fR\fI?\fR\fBs2\fR ファイルは、新しいラベルをインストールするデバイスの文字型特殊ファイルでなければなりません。x86 システムの場合、\fBfmthard\fR を使用する前に、ドライブに対して \fBfdisk\fR(1M) を実行する必要があります。
+.sp
+.LP
+x86 システムを使用しているユーザーは、このページの「パーティション」という用語が、x86 マシン上の x86 \fBfdisk\fR パーティション内の\fIスライス\fRを指していることに注意してください。\fBfmthard\fR で作成されるパーティションと \fBfdisk\fR で作成されるパーティションを混同しないでください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdata\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションの \fIdata\fR 引数は、現在の VTOC 内の特定のパーティションの情報を表す文字列です。この文字列の形式は \fIpart:tag:flag:start:size\fR になっている必要があります。ここで、\fIpart\fR はパーティション番号、\fItag\fR はパーティションの \fBID\fR タグ、\fIflag\fR は一連のアクセス権フラグ、\fIstart\fR はパーティションの開始セクター番号、\fIsize\fR はパーティション内のセクター数です。これらのフィールドの詳細については、後述の \fIdatafile\fR の説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定した場合、このコマンドは目的の \fBVTOC\fR テーブルを作成するものの、ディスクの \fBVTOC\fR を変更しないで標準出力に情報を出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIvolume_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、8 文字までの長さの \fIvolume_name\fR がディスクに設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdatafile\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションを使用すると、ユーザーが作成した \fIdatafile\fR に従って \fBVTOC\fR に情報が設定されます。\fIdatafile\fR が \fB\(mi\fR (ハイフン) の場合、\fBfmthard\fR は標準入力から情報を読み取ります。\fIdatafile\fR の形式については後述します。このオプションでは、すべてのディスクパーティションのタイムスタンプフィールドがゼロに設定されます。
+.sp
+\fBfmthard\fR が生成するすべての \fBVTOC\fR には規則上、ディスク全体に対応するパーティション 2 も含まれます。\fIdatafile\fR の入力にパーティション 2 のエントリが指定されていなかった場合、パーティション 2 のデフォルトエントリが \fBVTOC\fR 内に自動的に作成され、そのタグは \fBV_BACKUP\fR に、サイズはディスク全体のサイズに等しくなります。
+.sp
+\fIdatafile\fR には、パーティション 0 から順に、パーティションごとに指定行が 1 つずつ含まれます。各行は復帰改行文字 (\fB\en\fR) で区切ります。行の先頭文字がアスタリスク (*) の場合、その行はコメント行とみなされます。各行は位置に依存するエントリからなり、スペースで区切ります。形式は次のとおりです。
+.sp
+\fIpartition tag flag starting_sector size_in_sectors\fR
+.sp
+この場合、エントリには次の値が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpartition\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティション番号。Solaris SPARC では現在のところ、1 つのディスクに \fB0\fR から \fB7\fR までの最大 8 個のパーティションを作成できます。\fIpartition\fR フィールドは 4 ビットですが、現時点では 3 ビットしか使用されていません。x86 の場合は 4 ビットすべてが使用されるため、\fB0\fR から \fB15\fR までのスライスを使用できます。各 Solaris \fBfdisk\fR パーティションには 16 個までのスライスを作成できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItag\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティションタグ: 10 進数。予約済みのコードを次に示します。\fB0\fR (\fBV_UNASSIGNED\fR)、\fB1\fR (\fBV_BOOT\fR)、\fB2\fR (\fBV_ROOT\fR)、\fB3\fR (\fBV_SWAP\fR)、\fB 4\fR (\fBV_USR\fR)、\fB5\fR (\fBV_BACKUP\fR)、\fB6\fR (\fBV_STAND\fR)、\fB7\fR (\fBV_VAR\fR)、\fB8\fR (\fBV_HOME\fR)、\fB12\fR (\fBV_SYSTEM\fR)、および \fB24\fR (\fBV_BIOS_BOOT\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflag\fR\fR
+.ad
+.sp .6
+.RS 4n
+このフラグを使用すると、マウント不可能と読み取り専用のいずれかのフラグをパーティションに付けることができます。なお、マスクは \fBV_UNMNT 0x01\fR と \fBV_RONLY 0x10\fR です。マウント可能なパーティションでは \fB0x00\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstarting_sector\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティションの開始セクター番号 (10 進数)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsize_in_sectors\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティションによって占有されるセクターの数 (10 進数)。
+.RE
+
+\fBprtvtoc\fR コマンドの出力をファイルに保存して編集し、それを \fB-s\fR オプションの \fIdatafile\fR 引数として使用できます。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBuname\fR(1), \fBformat\fR(1M), \fBprtvtoc\fR(1M), \fBattributes\fR(5)
+.SS "x86 のみ"
+.sp
+.LP
+\fBfdisk\fR(1M), \fBinstallgrub\fR(1M)
+.SH 注意事項
+.sp
+.LP
+既存の \fBVTOC\fR を上書きする際には特に注意してください。不正なエントリが設定されると、現在のデータにアクセスできなくなる可能性があります。念のため、古い \fBVTOC\fR を保存してください。
+.sp
+.LP
+ディスクの容量が 2 テラバイト未満の場合、\fBfmthard\fR は、ラベルの付いていないディスクに \fBVTOC\fR を書き込むことができません。そのような目的には \fBformat\fR(1M) を使用してください。

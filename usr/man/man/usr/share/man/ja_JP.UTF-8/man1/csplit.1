@@ -1,0 +1,270 @@
+'\" te
+.\"  Copyright 1989 AT&T
+.\" Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH csplit 1 "2003 年 12 月 4 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+csplit \- 指定した文脈に従ってファイルを分割
+.SH 形式
+.LP
+.nf
+\fBcsplit\fR [\fB-ks\fR] [\fB-f\fR \fIprefix\fR] [\fB-n\fR \fInumber\fR] \fIfile\fR \fIarg1\fR... \fIargn\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcsplit\fR ユーティリティは、\fIfile\fR オペランドが示すファイルを読み込み、その内容のすべてまたは一部を \fIarg\fR オペランドの指示に従って他のいくつかのファイルに書き出し、その出力ファイルのサイズを表示します。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fI prefix\fR\fR
+.ad
+.RS 13n
+.rt  
+生成されるファイルを、順番に \fIprefix\fR\fB00\fR、\fIprefix\fR\fB01\fR、 . . . 、\fIprefix\fR\fIn\fR と名付けます。デフォルトは \fBxx00\fR ... \fBxx\fR\fIn\fR です。\fIprefix\fR 引数が長すぎて、生成されるファイル名の長さが \fB14\fR バイトを超えてしまう場合はエラーとなります。その場合、ファイルは 1 つも生成されず、\fBcsplit\fR は診断メッセージを伴って終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 13n
+.rt  
+作成済みのファイルをそのままにしておきます。エラー発生時、デフォルトでは \fBcsplit\fR は作成したファイルを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fI number\fR\fR
+.ad
+.RS 13n
+.rt  
+生成するファイル名の可変部分の桁数を \fInumber\fR で指定します。デフォルト値は \fB2\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 13n
+.rt  
+生成するファイルのサイズに関する情報を出力しません。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+分割対象ファイルのパス名。\fB-\fR を指定すると標準入力とみなされます。\fI\fR
+.RE
+
+.sp
+.LP
+オペランド \fIarg1\fR ... \fIargn\fR は、以下の組み合わせで指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB/\fIrexp\fR/[\fIoffset\fR]\fR
+.ad
+.RS 18n
+.rt  
+現在の行から、\fIrexp\fR で示す正規表現の評価 (offset 指定があればそれも考慮) により得られる行の直前の行までを 内容とするファイルを生成します。\fIrexp\fR は、基本正規表現の規則に従っていなければなりません。正規表現には '\fB\e/\fR\&' や '\fB\e%\fR\&' を使用できます。バックスラッシュ (\fB\e\fR) はシェルにとって特別な意味を持つため、このような形式は単一引用符で適切に引用する必要があります\fIoffset\fR は行数を表す正または負の整数で、指定は任意です。指定するときは、符号 \fB+\fR または \fB-\fR を先頭に付加しなければなりません。なお、この指定に従って行を選択したとき、生成されるファイルの行数がゼロになってしまう、あるいは 入力ファイル中の行数を超えてしまう場合、結果は不確定です。ファイル生成後、現在の行は、正規表現の評価により得られた行に設定されます。\fIrexp\fR のパターンマッチングは、常に現在の行から ファイルの終わりまでが対象となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%\fIrexp\fR%[\fIoffset\fR]\fR
+.ad
+.RS 18n
+.rt  
+このオペランドは、前述の /\fIrexp\fR/[\fIoffset\fR] 指定と同じ意味ですが、入力ファイルから選択した行によるファイルの 生成は行われません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIline_no\fR\fR
+.ad
+.RS 18n
+.rt  
+現在の行から、行番号 \fIline_no\fR で示す行の直前の行までを内容とするファイルを生成します。生成したファイル中では、各行に 1 から始まる番号が振られます。現在の行は \fIline_no\fR で示す行に移ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB{\fInum\fR}\fR
+.ad
+.RS 18n
+.rt  
+直前のオペランドを繰り返します。この指定は、前述のどのオペランド の後でも指定できます。\fIrexp\fR のタイプのオペランドの後に指定すれば、そのオペランドは \fInum\fR 回繰り返されます。\fIline_no\fR オペランドの後に指定すれば、ファイルはその位置から \fIline_no\fR 行ごとに \fInum\fR 回だけ分割されます。
+.RE
+
+.sp
+.LP
+オペランドが示す行が、現在の位置からファイルの終わりまでの 間に存在していない場合、エラーが報告されます。
+.SH 使用法
+.sp
+.LP
+ファイルが 2 ギガバイト ( 2^31 バイト) 以上ある場合の \fBcsplit\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fRファイルを分割および結合する
+.sp
+.LP
+次の例は、4つのファイル \fBcobol00\fR . . . \fBcobol03\fR を作成します。
+
+.sp
+.in +2
+.nf
+example% \fBcsplit -f cobol filename \e
+   '/procedure division/' /par5./ /par16./\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+分割されたファイルを編集した後、次のようにすると、再度 1 つにまとめることができます。\fB\fR
+
+.sp
+.in +2
+.nf
+example% \fBcat cobol0[0\(mi3] > \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、元のファイルを上書きします。
+
+.LP
+\fB例 2 \fRファイルを等分に分割する
+.sp
+.LP
+次の例では、100 行毎に 10,000 行までファイルを分割します。\fB-k\fR オプションは 10,000 行未満しかなくても、作成されたファイルを保存します。ただし、エラーメッセージはそのまま出力されます。
+
+.sp
+.in +2
+.nf
+example% \fBcsplit -k filename 100 {99}\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR各 C ルーチンごとにファイルを作成する
+.sp
+.LP
+\fBprog.c\fR が通常の C のコード化規則 (ルーチンの最後の行の1文字目が \fB}\fR だけである) に従っていれば、この例では、\fBprog.c\fR 中の C ルーチン (21個まで) に対し、それぞれファイルを作成します。
+
+.sp
+.in +2
+.nf
+example% \fBcsplit -k prog.c '%main(%' '/^}/+1' {20}\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBcsplit\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsed\fR(1), \fBsplit\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.LP
+診断メッセージは、次に示すもの以外は、メッセージテキストを 読めば意味がわかるようになっています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIarg\fR \(mi out of range\fR
+.ad
+.RS 25n
+.rt  
+指定された引数が、現在の位置とファイルの終わりまでの間に存在する行を指してしないことを意味します。
+.RE
+

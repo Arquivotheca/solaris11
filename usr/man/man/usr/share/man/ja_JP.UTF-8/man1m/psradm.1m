@@ -1,0 +1,338 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH psradm 1M "2008 年 2 月 25 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+psradm \- プロセッサの動作ステータスの変更
+.SH 形式
+.LP
+.nf
+\fBpsradm\fR \fB-f\fR | \fB-i\fR | \fB-n\fR | \fB-s\fR [\fB-v\fR] [\fB-F\fR] \fIprocessor_id\fR
+.fi
+
+.LP
+.nf
+\fBpsradm\fR \fB-a\fR \fB-f\fR | \fB-i\fR | \fB-n\fR | \fB-s\fR [\fB-v\fR] [\fB-F\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpsradm\fR ユーティリティーはプロセッサの動作ステータスを変更します。プロセッサの有効な状態は、\fBon-line\fR、\fBoff-line\fR、\fBspare\fR、\fBfaulted\fR、および \fBno-intr\fR です。
+.sp
+.LP
+\fBon-line\fR プロセッサは、\fBLWP\fR (軽量プロセス) を処理し、システム内の I/O デバイスから割り込むことができます。
+.sp
+.LP
+\fBoff-line\fR プロセッサは、どの \fBLWP\fR も処理しません。通常、システム内の I/O デバイスから \fBoff-line\fR プロセッサに割り込むことはできません。一部のプロセッサ、または特定の状況では、\fBoff-line\fR プロセッサに対する割り込みを無効にできない場合があります。したがって、\fBoff-line\fR での実際の影響は、マシンごとに異なる場合があります。
+.sp
+.LP
+スペアプロセッサは LWP を処理しません。スペアプロセッサは、システムの特権ユーザーによって、またはシステム状態の変更に応じてカーネルによって、\fBon-line\fR、\fBoff-line\fR、または \fBno-intr\fR に移行できます。 
+.sp
+.LP
+障害の発生したプロセッサは、カーネルが一定期間プロセッサの動作を監視して識別します。特権ユーザーは、障害の発生したプロセッサの状態を、\fBon-line\fR、\fBoff-line\fR、\fBspare\fR、または \fBno-intr\fR に設定できますが、その場合、強制オプションを使用する必要があります。
+.sp
+.LP
+\fBno-intr\fR プロセッサは、\fBLWP\fR を処理しますが、I/O デバイスから割り込まれません。
+.sp
+.LP
+プロセッサに結合された LWP がある場合、追加の \fB-F\fR オプションを使用しないかぎり、プロセッサを \fBoff-line\fR または \fBspare\fR にすることはできません。\fB-F\fR オプションは、プロセッサの動作ステータスを変更する前に、このような LWP のプロセッサとの結合を削除します。一部のアーキテクチャーでは、特定のプロセッサを \fBoff-line\fR または \fBspare\fR にできない場合があります。たとえば、そのプロセッサが提供するリソースにシステムが依存している場合です。 
+.sp
+.LP
+システム内の少なくとも 1 つのプロセッサが \fBLWP\fR を処理できる必要があります。少なくとも 1 つのプロセッサが割り込み可能であることも必要です。\fBoff-line\fR または \fBspare\fR プロセッサは割り込み可能なので、1 つのプロセッサが \fBno-intr\fR でほかのプロセッサがすべて \fBoff-line\fR または \fBspare\fR であるが 1 つまたは複数の割り込みを受け入れる運用システムを持つことは可能です。 
+.sp
+.LP
+指定したプロセッサのいずれかの電源が切られていた場合、\fBpsradm\fR が 1 つまたは複数のプロセッサの電源を入れる場合があります。
+.sp
+.LP
+\fBPRIV_SYS_RES_CONFIG\fR 特権を持つユーザーだけが、\fBpsradm\fR ユーティリティーを使用できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+すべてのプロセッサ、またはできるだけ多くのプロセッサで処理を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 6n
+.rt  
+指定されたプロセッサを \fBoff-line\fR にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+指定された別の状態に強制的に切り換えます。指定されたプロセッサのうち 1 つまたは複数が障害状態になった場合に必要です。ほかの移行オプションが指定されなかった場合は、指定されたプロセッサを faulted に設定します。移行の強制は、\fBfaulted\fR、\fBspare\fR、または \fBoff-line\fR の状態に対してのみ行えます。プロセッサの状態の移行を強制することによってどのスレッドに影響が及ぶかを調べるために、管理者は \fBpbind\fR(1M) で \fB-Q\fR オプションを使用するようにお勧めします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+指定されたプロセッサを \fBno-intr\fR に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+指定されたプロセッサを \fBon-line\fR にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+指定されたプロセッサを spare にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+操作の各試行の結果を示すメッセージを出力します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBon-line\fR、\fBoff-line\fR、\fBspare\fR、または \fBno-intr\fR に設定するプロセッサのプロセッサ \fBID\fR。
+.sp
+個々のプロセッサ番号 (たとえば \fB3\fR)、スペースで区切った複数のプロセッサ番号 (たとえば \fB1 2 3\fR)、プロセッサ番号の範囲 (たとえば \fB1-4\fR) として \fIprocessor_id\fR を指定します。また、範囲と (個々または複数の) \fIprocessor_id\fR を組み合わせることも可能です (たとえば、\fB1-3 5 7-8 9\fR)。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRプロセッサを \fBoff-line\fR に設定する
+.sp
+.LP
+次の例では、プロセッサ 2 および 3 を \fBoff-line\fR に設定します。
+
+.sp
+.in +2
+.nf
+% psradm \fB-f\fR 2 3
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRプロセッサを no-intr に設定する
+.sp
+.LP
+次の例では、プロセッサ 1 および 2 を \fBno-intr\fR に設定します。
+
+.sp
+.in +2
+.nf
+% psradm \fB-i\fR 1 2
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRプロセッサを \fBspare\fR に設定する
+.sp
+.LP
+次の例では、プロセッサ 1 と 2 のどちらかが faulted の状態になっている場合でも、両方のプロセッサを spare に設定します。
+
+.sp
+.in +2
+.nf
+% psradm -F -s 1 2
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRすべてのプロセッサを \fBon-line\fR に設定する
+.sp
+.in +2
+.nf
+% psradm \fB-a\fR \fB-n\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRプロセッサを \fBoff-line\fR に強制する
+.sp
+.LP
+次の例では、プロセッサ 1 および 2 をオフラインに設定し、それらに結合されたプロセスからプロセッサ結合を削除します。
+
+.sp
+.in +2
+.nf
+% psradm \fB-F\fR \fB-f\fR 1 2
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/wtmpx\fR\fR
+.ad
+.RS 14n
+.rt  
+プロセッサステータスの変更を記録したレコード
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpbind\fR(1M), \fBpsrinfo\fR(1M), \fBpsrset\fR( 1M), \fBp_online\fR(2), \fB processor_bind\fR(2), \fB attributes\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 4: Invalid argument \fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセッサが構成内に存在しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 3: Device busy\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセッサは、LWP が結合されているか、システムで最後の \fBon-line\fR プロセッサであるか、または一部の重要なサービスを提供するためにシステムで必要とされているので、\fBoff-line\fR にすることができませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 3: Device busy\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセッサは、システムで最後の割り込み可能なプロセッサであるか、またはシステムが必要とする割り込みサービスを提供できるシステムで唯一のプロセッサであるために、\fBno-intr\fR に設定できませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 3: Device busy\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセッサの電源が切られており、プラットフォーム固有のリソースの一部が利用できないために電源を入れることができません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 0: Not owner\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーにはプロセッサステータスを変更する権限がありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsradm: processor 2: Operation not supported \fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセッサの電源が切られており、プラットフォームは個々のプロセッサの電源投入をサポートしていません。
+.RE
+

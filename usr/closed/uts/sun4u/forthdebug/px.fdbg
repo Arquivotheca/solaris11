@@ -1,0 +1,470 @@
+\
+\ Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
+\ Use is subject to license terms.
+\
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License (the "License").
+\ You may not use this file except in compliance with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+
+#ident	"%Z%%M%	%I%	%E% SMI"
+
+#include <sys/types.h>
+#include <sys/async.h>
+#include <sys/sunddi.h>
+#include <sys/ddi_impldefs.h>
+#include <io/px/px_obj.h>
+#include <io/px/px_lib4u.h>
+
+px
+
+px_ib
+
+px_pec
+
+px_mmu
+
+px_config_header
+
+px_ino
+
+px_ino_pil
+
+px_ih
+
+px_dvma_rec
+
+px_dma_impl
+
+px_dma_win
+
+pxu
+
+px_msi
+
+px_msi_state
+
+px_msiq
+
+px_msiq_state
+
+msiq_rec
+
+eq_rec
+
+forth_start
+
+: px-print8 ( addr -- )
+  dup (.) 8 swap - spaces drop .
+;
+
+: px-print4 ( addr -- )
+  dup (.) 4 swap - spaces drop .
+;
+
+: .px_dip_name				( dip -- )
+   [ also dev_info-words ]
+   dup . ." (" devi_binding_name .str ." )"
+   [ previous ]
+;
+
+: px-walk-dvma-rec ( f list-head count -- )
+   [ also px_dvma_rec-words ]
+   over 0 = if					( f list-head count )
+      drop 2drop exit				( )
+   then						( f list-head count )
+   0 do						( f rec )
+      I -rot 2dup 2>r -rot execute 2r>		( f rec )
+      next					( f rec' )
+   loop						( f rec' )
+   2drop					( f )
+   [ previous ]
+;
+
+: .px-dvma-rec ( rec I -- )
+   [ also px_dvma_rec-words ]
+   over dvma_addr 0= if 2drop exit then
+   [ also ddi_dma_impl-words ]
+   px-print4		( rec )
+   dup . " : " type	( rec )
+   dup dvma_addr .	( rec )
+   dup len px-print8	( rec )
+   mp dup . dmai_rdip .px_dip_name cr
+   [ previous ]
+   [ previous ]
+;
+
+: px-inst-to-state         ( &statepp inst -- statep )
+   [ also i_ddi_soft_state-words ]
+   ptrsize *		( &statepp offset )
+   swap p@ ?dup if	( offset statepp )
+      array ?dup if	( offset array )
+         + p@		( statep )
+      else drop 0 then
+   else drop 0 then
+   [ previous ]
+;
+
+: inst-to-px_state     ( inst -- statep )
+   symbol px_state_p ( inst &statepp )
+   swap px-inst-to-state   ( statep)
+;
+
+: .px-state            ( inst -- )
+   inst-to-px_state dup 0 = if drop exit then .px
+;
+
+: px-inst-to-mmu		( inst -- iommu_p|0 )
+   inst-to-px_state	( statep )
+   ?dup if		( statep )
+      [ also px-words ]
+      px_mmu_p	( iommu_p )
+      [ previous ]
+   else 0 then		( 0 )
+;
+
+: .px-mmu            ( inst -- )
+   px-inst-to-mmu	( iommu_p )
+   ?dup if .px_mmu then
+;
+
+: px-walk-dvma-inst ( f inst -- )
+   px-inst-to-mmu		( f iommu_p )
+   ?dup if dup			( f iommu_p iommu_p )
+      [ also px_mmu-words ]
+      dvma_active_list swap	( f list-head iommu_p )
+      dvma_active_count		( f list-head count )
+      px-walk-dvma-rec
+      [ previous ]
+   else
+      drop
+   then
+;
+
+: .px-dvma		( inst -- )
+   ['] .px-dvma-rec swap px-walk-dvma-inst
+;
+
+: .px-dvma-array-rec		( base end+1 start -- base )
+   do I px_dvma_rec-sz * over +	( base base+offset )
+   I .px-dvma-rec loop		( base )
+;
+
+: .px-dvma-array		( base index -- )
+   over 0= if 2drop exit then	( base index )
+   symbol px_dvma_debug_rec	( base index &max )
+   l@ 2dup . ."  records, index at " . cr  ( base index max )
+   swap 2dup > if dup		( base max index index )
+      >r .px-dvma-array-rec r>	( base index )
+   else	nip then		( base index )
+   0 .px-dvma-array-rec	( base )
+   drop
+;
+
+: .px-dvma-bind	( inst -- )
+   px-inst-to-mmu dup 0= if drop
+   else			( iommu_p )
+      [ also px_mmu-words ]
+      dup dvma_alloc_rec ( iommu_p base )
+      swap dvma_alloc_rec_index ( base index )
+      [ previous ]
+      .px-dvma-array
+   then
+;
+
+: .px-dvma-unbind	( inst -- )
+   px-inst-to-mmu dup 0= if drop
+   else			( iommu_p )
+      [ also px_mmu-words ]
+      dup dvma_free_rec ( iommu_p base )
+      swap dvma_free_rec_index ( base index )
+      [ previous ]
+      .px-dvma-array
+   then
+;
+
+: .px-node		( state_p -- )
+   ?dup if
+      [ also px-words ]
+      px_pec_p		( pec_p )
+      ?dup if
+         [ also px_pec-words ]
+         pec_nameaddr_str	( nameaddr )
+         [ previous ]
+         ?dup if
+            .str
+         then
+      then
+      [ previous ]
+   then
+;
+   
+: .px-states		( -- )
+   [ also i_ddi_soft_state-words ]
+   ." instance px_t*" cr
+   symbol px_state_p p@ dup	( soft_states soft_states )
+   0= if drop exit then		( soft_states )
+   dup n_items			( soft_states n_items )
+   dup 0= if 2drop exit then	( soft_states n_items )
+   swap array swap		( array n_items )
+   0 do
+      I px-print8
+      dup p@ dup . .px-node cr
+      ptrsize +
+   loop
+   drop
+   ." <instance#> .px-state to view individual instances" cr
+   [ previous ]
+;
+
+: .px_ib_ino_lst ( px_p->ib_p->ib_ino_lst -- )
+[ also px_ino-words ]
+begin ?dup while
+   \ dup .px_ino
+   ." ino_ino="          dup ino_ino            .
+   ." ino_sysino="       dup ino_sysino         .
+   ." ino_ib_p="         dup ino_ib_p           . cr
+   ." ino_unclaimed_intrs="    dup ino_unclaimed_intrs
+   ." ino_spurintr_begin=" dup ino_spurintr_begin	.x cr
+   ." ino_cpuid="        dup ino_cpuid          .
+   ." ino_intr_weight="  dup ino_intr_weight    .
+   ." ino_ipil_size="    dup ino_ipil_size      .
+   ." ino_lopil="        dup ino_lopil          .
+   ." ino_claimed="      dup ino_claimed        .
+   ." ino_msiq_p="       dup ino_msiq_p         . cr
+   ." ino_ipil_p="       dup ino_ipil_p         . cr
+   ." ino_next_p="       dup ino_next_p         . cr
+   cr
+   ino_next_p
+repeat
+[ previous ]
+;
+
+: .px-mmu-tte   ( tte -- )
+   1 << 1 >>                        ( tte-V )
+   dup 1 d# 43 << 1 - 1 d# 13 << 1 - xor and   ( tte pa ) \ pfn: bit 42-13
+   dup ." pa=" .                    ( tte pa )
+   xor                              ( tte-template )
+   dup 1 d# 59 << 1 - 1 d# 47 << 1 - xor and   ( tte-template ctx )
+   dup ." ctx=" d# 47 >> . xor      ( tte-template-ctx )
+   dup 1 d# 60 << and if ." S" 1 d# 60 << xor then ( tte-template-S )
+   dup 10 and if ." C" 10 xor then  ( tte-template-SC ) 
+   dup 2 and if ." W" 2 xor then    ( tte-template-SCW )
+   dup if ." flags=" . else drop then ( )
+;
+
+: px-mmu-tte?   ( tte-va -- tte-va )
+   dup x@ d# 63 >>
+;
+
+\
+\ example: e000.0000 11280000 10000 .iommu-tsb
+\          dvma_base tsb_base iommu-tsb-entries
+: .px-mmu-tsb   ( dma-va tsb-base-va entries -- )
+   0 do
+      px-mmu-tte? if
+         I px-print8 " : " type ( dma-va tsb-base-va )
+         over I d# 13 << +
+         ." va=" .
+         dup x@              ( dma-va tsb-base-va tte )
+         .px-mmu-tte          ( dma-va tsb-base-va )
+         cr
+      then
+      8 +                    ( dma-va tsb-base-va+8 )
+   loop
+   2drop 
+;
+
+: .px_mmu_tsb	( inst )
+   inst-to-px_state	( statep )
+   dup 0= if		( statep )
+      drop exit then	( statep )
+
+   [ also px-words ]
+   dup px_plat_p swap	( pxu_p statep )
+   px_mmu_p
+   dup 0= if
+      2drop exit then 	( pxu_p iommu_p )
+   [ previous ]
+
+   [ also px_mmu-words ]
+   mmu_dvma_base swap	( base pxu_p )
+   [ previous ]
+
+   [ also pxu-words ]
+   dup tsb_vaddr swap	( base vaddr pxu_p )
+   tsb_size 3 >>	( base vaddr entries )
+   [ previous ]
+
+   .px-mmu-tsb
+;
+
+: pxva>tte   ( va instance -- tte )
+   inst-to-px_state	( va statep )
+   dup 0= if		( va statep )
+      drop exit then	( va statep )
+   [ also px-words ]
+   dup px_plat_p	( va statep pxu_p )
+
+   [ also pxu-words ]
+   tsb_vaddr -rot	( tsbva va statep )
+   [ previous ]
+
+   px_mmu_p 		( tsbva va iommup )
+   [ previous ]
+
+   [ also px_mmu-words ]
+   mmu_dvma_base	( tsbva va dvmabase )
+   - d# 13 >> 3 <<	( tsbva tsb-off )
+   dup 0 < if		( tsbva tsb-off )
+      ." dvma address out of range" 2drop exit
+   then			( tsbva tsb-off )
+   + x@			( tte )
+   [ previous ]
+;
+
+: dip>px-inst		( dip -- inst )
+   [ also dev_info-words ]
+   begin
+      dup devi_parent	( dip pdip )
+      devi_parent	( dip gpdip )
+   while
+      devi_parent	( pdip )
+   repeat
+   devi_instance	( inst )
+   [ previous ]
+;
+
+: pxmp>tte   ( mp -- tte )
+   [ also ddi_dma_impl-words ]
+   dup dmai_mapping     	( mp va )
+   over dmai_winsize d# 13 >>	( mp va npages )
+   . ." page(s) from " dup . cr	( mp va )
+   swap dmai_rdip       	( va dip )
+   dip>px-inst         	( va inst )
+   pxva>tte            	( tte )
+   [ previous ]
+;
+
+: .px-mp-ttes	( mp -- )
+   [ also ddi_dma_impl-words ]
+   dup dmai_mapping             ( mp va )
+   over dmai_winsize d# 13 >>	( mp va npages )
+   dup . ." page(s) from "	( mp va npages )
+   over . cr			( mp va npages )
+   swap d# 13 >> d# 13 <<	( mp npages va )
+   rot dmai_rdip		( npages va dip )
+   dip>px-inst			( npages va inst )
+   rot 0 do			( va inst )
+      over ." va=" . ."  "	( va inst )
+      2dup pxva>tte		( va inst tte )
+      .px-mmu-tte cr		( va inst )
+      swap 2000 + swap		( va' inst )
+   loop				( va inst )
+   2drop
+   [ previous ]
+;
+
+0 value px-dip-dvma-cnt
+
+: (px-dip-tte1 ( dip rec I -- dip )
+   [ also px_dvma_rec-words ]
+   [ also ddi_dma_impl-words ]
+   drop 2dup mp dmai_rdip	( dip rec dip dip' )
+   = if				( dip rec )
+      px-dip-dvma-cnt dup . 1+	( dip rec cnt+1 )
+      to px-dip-dvma-cnt		( dip rec )
+      dvma_addr			( dip dvma-addr )
+      dup ." va=" . 0		( dip dvma-addr 0 )
+      pxva>tte .px-mmu-tte	( dip )
+      cr			( dip )
+   else				( dip rec )
+      drop			( dip )
+   then				( dip )
+   [ previous ]
+   [ previous ]
+;
+
+: .px-dip-tte1  ( dip inst -- )
+   0 to px-dip-dvma-cnt
+   ['] (px-dip-tte1 swap px-walk-dvma-inst drop
+;
+
+: px-within-dvma-rec? ( va rec I -- va )
+   [ also px_dvma_rec-words ]
+   to px-dip-dvma-cnt	( va rec )
+   2dup dvma_addr >=	( va rec va>=dvma_addr? )
+   if			( va rec )
+      dup dvma_addr	( va rec dvma_addr )
+      over len +	( va rec addr+size )
+      >r over r>	( va rec va addr+size )
+      <=		( va rec va<=addr+size? )
+      if px-dip-dvma-cnt	( va rec I )
+         .px-dvma-rec	( va )
+      else		( va rec )
+         drop		( va )
+      then		( va )
+   else			( va rec )
+      drop		( va )
+   then			( va )
+   [ previous ]
+;
+
+: px-locate-dvma-rec ( va inst -- )
+   ['] px-within-dvma-rec? swap px-walk-dvma-inst drop
+;
+
+: .px-dma-win1		( win_p -- )
+   [ also px_dma_win-words ]
+   dup win_ncookies . ." cookies "	( win_p )
+   dup ." curseg="	win_curseg .	( win_p )
+   dup ." size="	win_size .	( win_p )
+   dup ." offset="	win_offset . 	( win_p )
+   dup ." next="	win_next . cr	( win_p )
+   dup win_ncookies swap		( ncookies win_p )
+   px_dma_win-sz +			( ncookies &cookie[0] )
+   [ also ddi_dma_cookie_t-words ]
+   swap 0 do				( cookie_p )
+      ."    cookie-" I . ." : "		( cookie_p )
+      dup ." addr=" x?			( cookie_p )
+      dup ." size=" dmac_size .	( cookie_p )
+      dup ." type=" dmac_type . cr	( cookie_p )
+      ddi_dma_cookie_t-sz +		( cookie_p' )
+   loop drop				( )
+   [ previous ]
+   [ previous ]
+;
+
+: .px-dma-winlst	( mp -- )
+   [ also px_dma_impl-words ]
+   [ also px_dma_win-words ]
+   dup dmai_winlst			( mp winlst )
+   dup 0 = if				( mp winlst )
+      2drop exit			( )
+   then					( mp winlst )
+   swap dmai_nwin			( winlst nwin )
+   0 do
+      ." win-" I . ." : "		( winlst )
+      dup .px-dma-win1			( winlst )
+      win_next				( winlst' )
+   loop drop				( )
+   [ previous ]
+   [ previous ]
+;
+
+forth_end

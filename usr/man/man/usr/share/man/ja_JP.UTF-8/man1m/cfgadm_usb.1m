@@ -1,0 +1,915 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH cfgadm_usb 1M "2011 年 3 月 2 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_usb \- cfgadm の USB ハードウェア固有のコマンド
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-f\fR [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-v\fR [\fB-a\fR] [\fB-s\fR \fIlisting_option\fR] 
+     [\fB-l\fR [\fIap_id\fR | \fIap_type\fR...]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-v\fR \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+ユニバーサルシリアルバス (\fBUSB\fR) ハードウェア固有ライブラリ \fB/usr/lib/cfgadm/usb.so.1\fR は、\fBcfgadm\fR(1M) コマンドを介して \fBUSB\fR デバイスを管理するための機能を提供します。\fBcfgadm\fR は、接続点で実行されます。接続点の詳細は、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+\fBUSB\fR の管理では、サポートされる接続点は、\fBUSB\fR バスに接続されたハブのポートのみです。 
+.sp
+.LP
+接続点には、接続点 ID (\fIap_id\fR) を通じて名前が付けられます。\fBUSB\fR バスは階層構造であるため、\fIap_id\fR も同様です。\fBUSB\fR ハブには、\fB1\fR から \fIn\fR までの番号が付けられたポートがあります。すべての \fBUSB\fR の \fIap_id\fR は、次の形式の文字列で構成されます。
+.sp
+.in +2
+.nf
+usb\fIN\fR/\fIA\fR[.\fIB\fR[.\fIC\fR[...]]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+各情報の意味は次のとおりです。
+.br
+.in +2
+\fIN\fR は、システム上の \fIN\fR 番目の \fBUSB\fR ホストコントローラを示し、
+.in -2
+.br
+.in +2
+\fIA\fR は、ルート (最上位) ハブのポート #\fIA\fR を示します。
+.in -2
+.br
+.in +2
+\fIB\fR は、上位のハブのポート #\fIA\fR に接続されたハブのポート #\fIB\fR を示します。
+.in -2
+.br
+.in +2
+\fIC\fR は、上位のハブのポート #\fIB\fR に接続されたハブのポート #\fIC\fR を示します。以降も同様に続きます。
+.in -2
+.sp
+.LP
+たとえば、USB コントローラ \fB0\fR (唯一のコントローラ) のルートハブの 1 番目のポートは、次のような論理 \fIap_id\fR を持ちます。
+.sp
+.in +2
+.nf
+usb0/1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+同様に、1 番目の \fBUSB\fR コントローラのルートハブの 1 番目のポートに接続された 1 番目の外部ハブの 2 番目のポートは、次のような論理 \fIap_id\fR を持ちます。
+.sp
+.in +2
+.nf
+usb0/1.2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+たとえば、\fIap_id\fR が \fBusb0/1.4.3.4\fR である場合は、システム上の 1 番目の \fBUSB\fR ホストコントローラのルートハブのポート \fB1\fR に接続されたハブのポート \fB4\fR に接続されたハブのポート \fB3\fR に接続されたハブのポート \fB4\fR を表しています。 
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l\fR
+Ap_Id                Type         Receptacle   Occupant     Condition
+usb0/1               USB-hub      connected    configured   ok
+usb0/2               unknown      empty        unconfigured ok
+usb0/1.1             USB-storage  connected    configured   ok
+usb0/1.2             unknown      empty        unconfigured ok
+usb0/1.3             unknown      empty        unconfigured ok
+usb0/1.4             USB-device   connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBUSB2.0\fR チップには、\fBEHCI\fR ホスト \fBUSB2.0\fR ホストコントローラが 1 つと、いくつかのコンパニオン \fBUSB 1.\fR\fIx\fR ホストコントローラ (\fBOHCI\fR または \fBUHCI\fR ホストコントローラ) が搭載されています。
+.sp
+.LP
+\fBUSB2.0\fR デバイスは、接続されると、\fBEHCI\fR 論理ポートに接続されます。これらの論理ポートは、システム上の外部の物理ポート番号に対して \fB1\fR 対 \fB1\fR のマッピングになっていない場合があります。\fBUSB1.\fR\fIx\fR デバイスを接続すると、\fBEHCI\fR ホストコントローラは、デバイスにコンパニオンホストコントローラの別の経路を指定し、デバイスはコンパニオンの論理ポート番号に接続されます。 
+.sp
+.LP
+論理ポート番号と物理ポート番号のマッピングは非常に複雑になる場合があります。例: 
+.sp
+.in +2
+.nf
+% cfgadm
+Ap_Id                Type         Receptacle   Occupant     Condition
+c0                   scsi-bus     connected    configured   unknown
+usb0/1               usb-mouse    connected    configured   ok
+usb0/2               usb-kbd      connected    configured   ok
+usb0/3               unknown      empty        unconfigured ok
+usb0/4               usb-hub      connected    configured   ok
+usb0/4.1             unknown      empty        unconfigured ok
+usb0/4.2             unknown      empty        unconfigured ok
+usb0/4.3             unknown      empty        unconfigured ok
+usb0/4.4             usb-storage  connected    configured   ok
+usb1/1               unknown      empty        unconfigured ok
+usb1/2               unknown      empty        unconfigured ok
+usb1/3               unknown      empty        unconfigured ok
+usb2/1               unknown      empty        unconfigured ok
+usb2/2               usb-device   connected    configured   ok
+usb3/1               unknown      empty        unconfigured ok
+usb3/2               unknown      empty        unconfigured ok
+usb3/3               unknown      empty        unconfigured ok
+usb3/4               unknown      empty        unconfigured ok
+usb3/5               unknown      empty        unconfigured ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、\fBusb0\fR はオンボード USB 1.\fIx\fR ホストコントローラです。\fBusb1\fR と \fBusb2\fR は、コンパニオン \fBOHCI USB1.\fR\fIx\fR ホストコントローラであり、\fBusb3\fR は \fBEHCI USB2.0\fR ホストコントローラです。
+.sp
+.LP
+次の表は、この USB2.0 チップのややわかりにくい経路指定を示しています。 
+.sp
+.in +2
+.nf
+logical port number		physical port number
+-------------------		--------------------
+	usb1/1			internal port 1	
+	usb1/2			external port 1
+	usb1/3			external port 3
+	
+	usb2/1			internal port 2
+	usb2/2			external port 2
+	
+	usb3/1			internal port 1
+	usb3/2			internal port 2
+	usb3/3			external port 1
+	usb3/4			external port 2
+	usb3/5			external port 3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+残念ながら、多くの場合、正確な経路指定は実験によってしかわかりません。
+.sp
+.LP
+\fBUSB\fR ポートにおける接続点の受容体の状態は、次の意味を持ちます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR は、電源が投入され、有効になっています。USB デバイスがポートに接続されています。デバイスが USB バスに論理的に接続されています。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR は、電源が投入され、有効になっています。\fBUSB\fR デバイスがポートに接続されています。(\fBcfgadm\fR \fB-c\fR \fBdisconnect\fR コマンドを使用して) デバイスが \fBUSB\fR バスから論理的に切断されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR ポートは電源が投入されていますが、デバイスが接続されていません。
+.RE
+
+.sp
+.LP
+\fBUSB\fR ポートにおける \fBUSB\fR ポートの接続点でのデバイスの占有装置の状態は、次の意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigured\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR ポートの \fBUSB\fR デバイスは構成されており、Solaris で使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigured\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR ポートの \fBUSB\fR デバイスは、\fBcfgadm\fR \fB-c\fR \fBunconfigure\fR を使用して明示的にオフラインにされているか、ドライバがない、またはデバイスに問題があるなど、Solaris で使用できるように正常に構成されていません。
+.RE
+
+.sp
+.LP
+接続点の条件は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok\fR\fB\fR\fR
+.ad
+.sp .6
+.RS 4n
+通常の状態 - 使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailing\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用されていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用されていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunusable\fR\fR
+.ad
+.sp .6
+.RS 4n
+アプリケーションによってデバイスが開かれているときに、ユーザーによりデバイスが物理的に取り外されました (未処理の \fBI/O\fR がある場合があります)。ユーザーは、同じ物理デバイスを再度挿入し、アプリケーションを適切に終了してから、デバイスをあらためて取り外す必要があります。この処理が完了するまで、ほかの挿入されたデバイスをポートで構成することはできません。
+.sp
+元のデバイスをポートに再度挿入できない場合は、\fI『System Administration Guide: Common Management Tasks』\fRに記載されている、この接続点の条件をクリアする手順を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用されていません。
+.RE
+
+.sp
+.LP
+\fBUSB\fR デバイスは、いつでもホットプラグで接続または取り外しでき、システムによってイベントが検出され、適切に処理されます。
+.sp
+.LP
+デバイスを \fBUSB\fR から取り外す前に、受容体を \fBdisconnected\fR 状態に移行する必要はありません。ただし、使用中のデバイス (ボリュームマネージャーまたはその他のアプリケーションによって現在開かれているリムーバブルディスクなど) をホットリムーブすることはお勧めしません。
+.SH オプション
+.sp
+.LP
+\fBcfgadm\fR では、数種類の操作が定義されています。これらの操作には、構成状態の変更の開始 (\fB-c\fR)、ハードウェア固有の機能の実行 (\fB-x\fR)、および構成管理のヘルプ情報の表示 (\fB-h\fR) が含まれます。
+.sp
+.LP
+いずれかの操作が失敗した場合、デバイスおよび接続点が想定した状態にならない場合があります。デバイスの現在のステータスを表示するには、\fBcfgadm\fR \fB-l\fR コマンドを使用します。
+.sp
+.LP
+その他のすべてのオプションは、\fBcfgadm\fR(1M) での定義と同じ意味を持ちます。
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUSB\fR ハードウェア固有ライブラリでは、次の汎用コマンドが定義されています。次の構成状態の変更操作がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+ポートに接続されている \fBUSB\fR デバイスがある場合、このコマンドにより、Solaris で使用できるようにそのデバイスの構成とすべての設定が試みられます。このコマンドでは、必要に応じて暗黙的に、\fBconnect\fR (\fBdisconnect\fR の逆) が実行されます。このポートのデバイスがすでに構成されている場合、このコマンドは何も実行せず、エラーメッセージを返します。このコマンドが正常に実行されると、デバイスを Solaris で使用できるようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIap_id\fR で \fBunconfigure\fR を実行し (まだ \fBunconfigured\fR になっていない場合)、受容体を \fBdisconnected\fR 状態に移行します。これは、デバイスがまだポートに接続されていても実行されます。ドライバを見つけることができ、デバイスの列挙と構成に問題がないと仮定して、\fBcfgadm\fR \fB-c\fR \fBconfigure\fR を発行するか、デバイスを物理的にホットプラグ接続すると、デバイスでは、受容体の状態が \fBconnected\fR に、占有装置の状態が \fBconfigured\fR に戻ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+ポートに接続されているデバイスを Solaris で使用できないようにします (オフラインにします)。成功した場合、\fBcfgadm\fR により、この \fIap_id\fR の占有装置の状態は \fBunconfigured\fR と報告されます。\fBconfigure\fR を \fIap_id\fR に発行すると (成功した場合)、デバイスをポートに物理的にホットプラグ接続した場合と同様に、その占有装置の条件は \fBconfigured\fR (オンライン) に戻ります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプオプションと任意の \fBUSB\fR 接続点を組み合わせて使用して、\fBUSB\fR 固有のヘルプを表示できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR[\fBv\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fB-l\fR オプションは、\fBcfgadm\fR(1M) で説明されているように機能します。\fB-v\fR オプションと組み合わせて使用すると、\fBInformation\fR フィールドに次の \fBUSB\fR 固有の情報が表示されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMfg\fR: 製造元文字列 (\fBiManufacturer\fR) 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBProduct\fR: 製品文字列 (\fBiProduct\fR) 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBNConfigs\fR: デバイスでサポートされる構成の合計数 (\fBbNumConfigurations\fR)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBConfig\fR: 10 進数の現在の構成設定 (構成値ではなく、構成インデックス) 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+現在の構成の構成文字列記述子 (\fBiConfiguration\fR)
+.RE
+これらのフィールドの説明については、USB の仕様を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェアオプションは、ハードウェア固有のコマンド \fB-x\fR \fBusb_config\fR でのみサポートされます。使用できるオプションの説明については、下記のそのコマンドの説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBselect\fR サブオプションを使用すると、クラス \fBUSB\fR の接続点を一覧表示できます。\fBcfgadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のハードウェア固有の機能が定義されています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusb_config\fR \fB-o\fR \fBconfig=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+このコマンドでは、\fB-o\fR オプションを使用して必須の \fBconfig\fR 値を指定する必要があります。
+.sp
+\fIap_id\fR の複数構成 \fBUSB\fR デバイスの \fBUSB\fR 構成を、構成インデックス \fIn\fR に設定します。これ以降、デバイスはこの構成に設定され、この設定は、デバイスのリブート、ホットリムーブ、および構成解除/構成の後も保持されます。
+.sp
+\fIn\fR の有効な値の範囲は、\fB0\fR から (\fBNconfigs -1\fR) までです。\fBdisconnect\fR に続けて \fBconfigure\fR を実行すると、デバイスはリセットされます。\fBconfigure\fR により、デバイスは新しい構成設定に構成されます。
+.sp
+いずれかの手順が失敗した場合、構成ファイルとデバイスが以前の状態に復元され、エラーメッセージが発行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusb_reset\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスのソフトウェアリセット (再列挙) を実行します。これは、デバイスを取り外して再度挿入するのと同等の意味を持ちます。ハブで個々のポートの電源再投入がサポートされている場合、ハブのポートで電源が一度切断され、再度投入されます。 
+.sp
+接続されているデバイスがハブである場合、この機能には、そのハブと、そのハブをルートとするツリーの下位のデバイスをリセットするという効果があります。
+.sp
+いずれかの手順が失敗した場合、デバイスが以前の状態に復元され、エラーメッセージが発行されます。
+.RE
+
+.RE
+
+.sp
+.LP
+状態の表: 接続点の状態とコマンド:
+.sp
+.in +2
+.nf
+Valid states:
+    empty/unconfigured         \(-> no device connected
+
+    disconnected/unconfigured  \(-> logically disconnected,
+                                  unavailable,
+                                  devinfo node removed,
+                                  device physically connected
+
+    connected/unconfigured     \(-> logically connected,
+                                  unavailable,
+                                  devinfo node present
+
+    connected/configured       \(-> connected, available
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の表は、操作またはコマンドの実行による状態の移行を示しています。
+.sp
+.in +2
+.nf
+current state      operation           new state
+-------------      ---------           ---------
+empty/
+unconfigured:
+              device plugged in:     connected/configured or
+                                     connected/unconfigured
+                                     (if enumeration failed)
+              device removed:        n/a
+              cfgadm -c unconfigure: empty/unconfigured
+              cfgadm -c configure:   empty/unconfigured
+              cfgadm -c disconnect:  empty/unconfigured
+                                     (no-op and error)
+
+disconnected/
+unconfigured:
+              device plugged in:     n/a
+              device removed:        empty/unconfigured
+              cfgadm -c unconfigure: disconnected/unconfigured
+              cfgadm -c configure:   connected/configured, or
+                                     connected/unconfigured
+                                     (if reenumeration failed)
+             cfgadm -c disconnect:   disconnected/unconfigured
+
+connected/unconfigured:
+             device plugged in:      n/a
+             device removed:         empty/unconfigured
+             cfgadm -c unconfigure:  connected/unconfigured
+             cfgadm -c configure:    connected/configured, or
+                                     connected/unconfigured
+                                     (if reenumeration failed)
+             cfgadm -c disconnect:   disconnected/unconfigured
+
+connected/configured:
+             device plugged in:      n/a
+             device removed:         empty/unconfigured or
+                                     connected/configured,
+                                     but with ap condition
+                                     'unusable' if device
+                                     was open when removed
+             cfgadm -c unconfigure:  connected/unconfigured
+             cfgadm -c configure:    connected/configured
+             cfgadm -c disconnect:   disconnected/unconfigured
+.fi
+.in -2
+.sp
+
+.SH 使用例
+.LP
+\fB例 1 \fRすべての USB デバイスのステータスの一覧表示
+.sp
+.LP
+次のコマンドは、システム上のすべての \fBUSB\fR デバイスのステータスを一覧表示します。
+
+.sp
+.in +2
+.nf
+# cfgadm
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1          USB-hub      connected    configured   ok
+usb0/2          unknown      empty        unconfigured ok
+usb0/1.1        USB-storage  connected    configured   ok
+usb0/1.2        unknown      empty        unconfigured ok
+usb0/1.3        unknown      empty        unconfigured ok
+usb0/1.4        USB-device connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBcfgadm\fR では、現時点では個々のインタフェースを制御できないため、\fBap_id usb0/1.4\fR の \fBUSB-device\fR デバイスが単一のユニットとして処理されています。
+
+.LP
+\fB例 2 \fRデバイスが接続されていないポートのステータスの一覧表示
+.sp
+.LP
+次のコマンドは、デバイスが接続されていないポートのステータスを一覧表示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        unknown      empty        unconfigured ok       
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRデバイスが接続されている同じポートのステータスの一覧表示
+.sp
+.LP
+次のコマンドは、デバイスが物理的に接続され、問題なく構成されたあとの、同じポートのステータスを一覧表示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        USB-hub      connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR既存の USB デバイスの構成解除
+.sp
+.LP
+次のコマンドは、\fBusb0/1.3\fR に接続された \fBUSB\fR デバイスを構成解除し、\fBap_id\fR のステータスを表示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c unconfigure usb0/1.3\fR
+Unconfigure the device: /devices/pci@0,0/pci8086,7112@7,2/hub@2:2.3
+This operation suspends activity on the USB device
+Continue (yes/no)?
+
+Enter:
+
+\fBy\fR
+
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        unknown      connected    unconfigured ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR既存の USB デバイスの構成解除と論理的な切断
+.sp
+.LP
+次のコマンドは、\fBusb0/1.3\fR に接続された \fBUSB\fR デバイスを構成解除し、論理的に切断します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c disconnect usb0/1.3\fR
+Disconnect the device: /devices/pci@0,0/pci8086,7112@7,2/hub@2:2.3
+This operation suspends activity on the USB device 
+Continue (yes/no)?
+
+Enter:
+
+\fBy\fR
+
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id         Type         Receptacle     Occupant        Condition
+usb0/1.3      unknown      disconnected   unconfigured    ok    
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBdisconnect\fR の実行は、\fBcfgadm\fR によって最初に \fBunconfigure\fR が実行されることを暗黙的に意味します。デバイスがまだ物理的に接続されていても、受容体のステータスは \fBdisconnected\fR と示されています。この場合、物理的なホットプラグ接続を行うか、または \fBap_id\fR で \fBcfgadm\fR \fB-c\fR \fBconfigure\fR を使用すると、オンラインに戻ります。
+
+.LP
+\fB例 6 \fR以前に構成解除した USB デバイスの構成
+.sp
+.LP
+次のコマンドは、以前に \fBusb0/1.3\fR に接続されていた \fBUSB\fR デバイスを構成します。
+
+.sp
+.in +2
+.nf
+example # \fBcfgadm -yc configure usb0/1.3\fR
+example# \fBcfgadm -l usb0/1.3\fR
+Ap_Id           Type         Receptacle   Occupant     Condition
+usb0/1.3        unknown      connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRUSB デバイスのリセット
+.sp
+.LP
+次のコマンドは、\fBUSB\fR デバイスをリセットします。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -x usb_reset usb0/1.3\fR
+Reset the device: /devices/pci@0,0/pci8086,7112@7,2/hub@2:2.3
+This operation suspends activity on the USB device 
+Continue (yes/no)?
+
+Enter:
+
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR単一の USB デバイスに関する詳細情報の表示
+.sp
+.LP
+次のコマンドは、単一の \fBUSB\fR デバイスに関する詳細情報を表示します。このデバイスでは、次の \fBUSB\fR 固有の情報が「\fBInformation\fR」フィールドに示されています。 
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+製造元文字列: Iomega
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+製品文字列: \fBUSB Zip 250\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サポートされる構成数: 1
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+現在アクティブな構成: 0
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+構成 0 の構成文字列記述子: Default
+.RE
+.sp
+.in +2
+.nf
+example# \fBcfgadm -lv  usb0/1.5\fR
+Ap_Id                 Receptacle   Occupant     Condition  Information
+When         Type         Busy         Phys_Id
+usb0/1.5     connected    configured   ok         Mfg:"Io
+mega"  Product:"USB Zip 250"  NConfigs:1  Config:0 : Default
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "cols=ap_id:info" usb0/1.5\fR
+Ap_Id                         Information
+usb0/1.5                      Mfg:"Iomega"  Product:"USB Zip 250"  
+NConfigs:1  Config:0 : Default
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRすべての USB デバイスに関する詳細情報の表示
+.sp
+.LP
+次のコマンドは、システム上のすべての \fBUSB\fR デバイスに関する詳細情報を表示します。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "select=class(usb),cols=ap_id:info"\fR
+Ap_Id                         Information 
+usb0/1                        Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/2             
+usb0/1.1                      Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.2         
+usb0/1.3         
+usb0/1.4                      Mfg:"Wizard"  Product:"Modem/ISDN"  
+NConfigs:3  Config:1 : V.90 Analog Modem
+usb0/1.5                      Mfg:"Iomega"  Product:"USB Zip 250"  
+NConfigs:1  Config:0 : Default
+usb0/1.6                      Mfg:"SOLID YEAR"  Product:"SOLID YEAR 
+USB"NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.7
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBap_id\fR のみが含まれている行は、空のポートです。これらは、フィルタ処理によって除外できます。次の例では、接続されたデバイスがある \fBUSB\fR \fBap_id\fR と、それらのデバイスの情報のみが示されます。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "select=class(usb),cols=ap_id:info" | grep Mfg\fR
+usb0/1                        Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.1                      Mfg:<undefined>  Product:<undefined>  
+NConfigs:1  Config:0 <no cfg str descr>
+usb0/1.4                      Mfg:"Wizard"  Product:"Modem/ISDN"  
+NConfigs:3  Config:1 : V.90 Analog Modem
+usb0/1.5                      Mfg:"Iomega"  Product:"USB Zip 250"  
+NConfigs:1  Config:0 : Default
+usb0/1.6                      Mfg:"SOLID YEAR"  Product:"SOLID YEAR USB" 
+Config:0 <no cfg str descr>
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR複数構成 USB デバイスに関する情報の一覧表示
+.sp
+.LP
+次の例では、複数構成 \fBUSB\fR デバイスに関する情報が一覧表示されます。
+
+.sp
+.LP
+\fBNConfigs\fR フィールドに注目してください。このデバイスで使用できる構成数は、\fB0\fR、\fB1\fR、および \fB2\fR (\fB0\fR - (\fIN\fR\fBConfigs-1\fR)) です。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l -s "cols=ap_id:info" usb0/1.4\fR
+Ap_Id                         Information
+usb0/1.4                      Mfg:"Wizard"  Product:"Modem/ISDN"  
+NConfigs:3  Config:1 V.90 Analog Modem"
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fR複数構成 USB デバイスの現在の構成の設定
+.sp
+.LP
+次の例では、複数構成 USB デバイスの現在の構成が設定されます。
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -o config=2 -x usb_config usb0/1.4\fR
+Setting the device: /devices/pci@1f,2000/usb@1/device@3
+to USB configuration 2
+This operation suspends activity on the USB device
+Continue (yes/no)? 
+
+Enter:
+
+\fBy\fR
+
+USB configuration changed successfully.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+まったく同じタイプの複数のデバイスが同じバス上にある場合は、デバイスのパスを確認して、デバイスの正しいインスタンスが参照されていることを確認するようにしてください。この情報は、「\fBInformation\fR」フィールドに示されています。
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/usb.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+汎用的な USB デバイス管理のためのハードウェア固有ライブラリ
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBattributes\fR(5), \fBscsa2usb\fR(7D), \fBusba\fR(7D)
+.sp
+.LP
+USB 1.1 の仕様 (\fBwww.usb.org\fR)
+.sp
+.LP
+\fI『System Administration Guide: Common Management Tasks』\fR
+.SH 注意事項
+.sp
+.LP
+\fBcfgadm\fR(1M) では、現在アプリケーションによって開かれている \fBUSB\fR デバイスの構成解除、切断、リセット、または構成の変更を行うことはできません。また、ハブの階層内のデバイスがアプリケーションによって開かれている場合、そのハブでこれらの操作を実行すると失敗します。現在使用中の \fBUSB\fR 外部ストレージデバイスの構成解除については、\fBscsa2usb\fR(7D) を参照してください。
+.sp
+.LP
+スーパーユーザーのみが、接続点で機能を実行できます。ただし、接続点の一覧表示については、スーパーユーザーである必要はありません。

@@ -1,0 +1,766 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ikeadm 1M "2010 年 2 月 22 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ikeadm \- インターネット鍵交換 (IKE) のパラメータおよび状態の操作
+.SH 形式
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] get [debug | priv | stats | defaults]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] set [debug | priv] [level] [file]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] [get | del] [p1 | rule | preshared] [id]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] add [rule | preshared] { \fIdescription\fR }
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] token [login | logout] \fIPKCS#11_Token_Object\fR
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] [read | write] [rule | preshared | certcache] \fIfile\fR
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] dump [p1 | rule | preshared | certcache | groups
+     | encralgs | authalgs]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR [\fB-np\fR] flush [p1 | certcache]
+.fi
+
+.LP
+.nf
+\fBikeadm\fR help
+     [get | set | add | del | read | write | dump | flush | token]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBikeadm\fR ユーティリティーは、インターネット鍵交換 (\fBIKE\fR) プロトコルデーモン \fBin.iked\fR(1M) から情報を取得したり、その構成を操作したりします。
+.sp
+.LP
+\fBikeadm\fR は、サポートされる 1 つ以上のオブジェクトタイプに対して実行可能な一連の操作をサポートしています。\fBikeadm\fR は、引数なしで呼び出されると対話型モードに入り、標準出力にプロンプトを出力したあと、ファイルの終わりに達するまで標準入力からコマンドを受け入れます。
+.sp
+.LP
+\fBikeadm\fR は機密性の高いキーイング情報を操作するため、このコマンドを使用するにはスーパーユーザーである必要があります。さらに、使用可能なコマンドの一部では、デーモンが特権モードで動作している必要がありますが、その動作が確立されるのは、デーモンの起動時です。
+.sp
+.LP
+このコマンドを安全に使用する方法の詳細については、を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクションの報告時に、ホスト名やネットワーク名をシンボルで出力できないようにします。これは、すべてのネームサーバーが停止したか、またはその他の理由で到達不能になった場合などに役立ちます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+パラノイド。セキュリティーアソシエーションを保存する場合でもキーイング材料を一切出力しません。このフラグが有効になると、実際の 16 進数値の代わりに \fBX\fR を出力します。 
+.RE
+
+.SH 使用法
+.SS "コマンド"
+.sp
+.LP
+次のコマンドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたオブジェクトを追加します。このオプションを使用すると、現在の (実行中の) in.iked の構成に新しいポリシールールや事前共有鍵を追加できます。新しい事前共有鍵を追加する場合、キーイング材料がコマンドに含まれるため、コマンド行からコマンドを呼び出すことはできません。追加するルールや鍵を指定するには、「ID 形式」節で説明する適切な ID-値ペアを使用します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdel\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.iked\fR の現在の構成から、特定の 1 つまたは複数のオブジェクトを削除します。この操作は、\fBIKE\fR (第 1 段階) \fBSA\fR、ポリシールール、および事前共有鍵で使用できます。削除するオブジェクトの指定方法については、「ID 形式」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdump\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.iked\fR が認識しているタイプのうち、指定されたタイプのオブジェクトをすべて表示します。このオプションを使用すると、第 1 段階 \fBSA\fR、ポリシールール、事前共有鍵、実装された Diffie-Helman グループ、第 1 段階で使用可能な暗号化アルゴリズムと認証アルゴリズム、証明書キャッシュのすべてを表示できます。このコマンドでは大量の出力が生成される可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflush\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.iked\fR から \fBIKE\fR (第 1 段階) \fBSA\fR またはキャッシュ内の証明書をすべて削除します。
+.sp
+\fBcertcache\fR をフラッシュすると、(その副作用として) 追加または削除された新しい証明書がすべて IKE に更新されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたオブジェクトを検索して表示します。現在のデバッグレベルまたは特権レベル、デーモンのグローバル統計やデフォルト値、特定の \fBIKE\fR (第 1 段階) \fBSA\fR、特定のポリシールール、または特定の事前共有鍵を表示するために使用できます。最後の 3 つのオブジェクトタイプでは識別情報を渡す必要があります。各オブジェクトタイプの適切な指定方法については後述します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの簡単な要約を出力します。ただし、特定のコマンドが指定された場合は、そのコマンドに関する情報を出力します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBread\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.iked\fR の現在の構成を更新するために、デフォルトの場所または指定されたファイルのいずれかからポリシールールまたは事前共有鍵を読み取ります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のデバッグレベルまたは特権レベルを調整します。デバッグレベルを変更する場合、出力ファイルを指定することもできます。デーモンがバックグラウンドで動作しており、ファイルへの出力を現在行なっていない場合は、出力ファイルを指定する\fB必要\fRがあります。特権レベルを変更する場合は、アクセスレベルを下げるための調整しか行うことができません。ikeadm を使用してレベルを上げることはできません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwrite\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.iked\fR の現在のポリシールールセットまたは事前共有鍵セットを指定されたファイルに書き込みます。書き込み先のファイルを指定する必要があります。このコマンドは、既存の構成ファイルを上書きするために使用するべきではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken\fR\fR
+.ad
+.sp .6
+.RS 4n
+PKCS#11 トークンオブジェクトにログインしてキーイング材料へのアクセスを許可するか、ログアウトしてキーイング材料へのアクセスを無効にします。
+.sp
+\fBtoken\fR は、次の承認を持つ通常ユーザーとして実行できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBtoken\fR ログイン: \fBsolaris.network.ipsec.ike.token.login\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBtoken\fR ログアウト: \fBsolaris.network.ipsec.ike.token.logout\fR
+.RE
+.RE
+
+.SS "オブジェクトタイプ"
+.sp
+.ne 2
+.mk
+.na
+\fBdebug\fR
+.ad
+.sp .6
+.RS 4n
+デーモンのデバッグレベルを指定します。これにより、デーモンから提供される、操作に関する出力の量や種類が決まります。デバッグレベルは実際にはビットマスクであり、その個々のビットによってそれぞれ異なるタイプの情報が有効化されます。
+.sp
+
+.sp
+.TS
+tab();
+cw(1.83i) cw(1.83i) cw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+機能説明フラグニックネーム
+_
+証明書管理0x0001cert
+鍵管理0x0002key
+操作可能0x0004op
+第 1 段階 SA の作成0x0008phase1
+第 2 段階 SA の作成0x0010phase2
+PF_KEY インタフェース0x0020pfkey
+ポリシー管理0x0040policy
+指定構築0x0080prop
+ドアインタフェース0x0100door
+構成ファイルの処理0x0200config
+ラベルの処理0x0400label
+すべてのデバッグフラグ0x07ffall
+.TE
+
+デバッグレベルを指定する場合、数値 (10 進または 16 進)、ニックネーム文字列のどちらを指定してもかまいません。たとえば、\fB88\fR、\fB0x58\fR、\fBphase1\fR+\fBphase2\fR+\fBpolicy\fR はすべて同等であり、第 1 段階 SA 作成、第 2 段階 SA 作成、およびポリシー管理のデバッグを有効にします。\fB\fR\fB\fR\fB\fRニックネーム文字列を使用して特定タイプの情報を除外することもできます。\fBall-op\fR は、操作メッセージ\fB以外\fRのすべてのデバッグを有効にする効果を持ちますが、これは数値 \fB1019\fR や \fB0x3fb\fR と同等になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpriv\fR
+.ad
+.sp .6
+.RS 4n
+デーモンのアクセス特権レベルを指定します。指定可能な値は次のとおりです。
+.sp
+.in +2
+.nf
+Description                  Level   Nickname
+Base level                   0       base
+Access to preshared key info 1       modkeys
+Access to keying material    2       keymat
+.fi
+.in -2
+.sp
+
+デフォルトでは、\fBin.iked\fR はベースレベルで起動されます。コマンド行オプションを使用すると、より高いレベルでデーモンを起動できます。\fBikeadm\fR では、レベルを下げることはできますが、レベルを上げることはできません。
+.sp
+目的の特権レベルを指定する場合は、数値レベルとニックネームのどちらを使用してもかまいません。
+.sp
+事前共有鍵の取得、追加、削除、ダンプ、読み取り、または書き込みを行うには、少なくとも事前共有鍵情報へのアクセスを許可する特権レベルが必要になります。ただし、(get または dump のいずれかのコマンドを使用して) 事前共有鍵を表示する際に鍵自体が使用可能になるのは、特権レベルがキーイング材料へのアクセスを許可する場合だけです。第 1 段階 \fBSA\fR を表示する場合も、これと同様です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstats\fR
+.ad
+.sp .6
+.RS 4n
+デーモンのグローバル統計であり、第 1 段階 \fBSA\fR 作成の成功と失敗の両方をカバーします。 
+.sp
+報告される統計情報には次が含まれます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ローカルエンティティーが開始した P1 \fBSA\fR の現在の数 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ローカルエンティティーがレスポンダになった P1 \fBSA\fR の現在の数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+起動以降にローカルエンティティーが開始した P1 \fBSA\fR の合計数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+起動以降にローカルエンティティーがレスポンダになった P1 \fBSA\fR の合計数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+起動以降にローカルエンティティーがイニシエータになった試行 \fBP1\fR \fBSA\fR の合計数。失敗した試行も含まれます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+起動以降にローカルエンティティーがレスポンダになった試行 P1 \fBSA\fR の合計数。失敗した試行も含まれます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBP1\fR \fBSA\fR を開始しようとして失敗した合計回数 (ピアが応答しなかったためにエラーが発生した場合)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+P1 \fBSA\fR を開始しようとして失敗した合計回数 (ピアが応答した場合)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ピアがイニシエータになった失敗 \fBP1\fR \fBSA\fR の合計数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+PKCS#11 ライブラリが使用中かどうかと、使用中の場合はその読み込まれた PKCS#11 ライブラリを参照してください。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdefaults\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.iked\fR デーモンで使用されるデフォルト値を表示します。値の中には、デーモンの構成ファイルで上書きできるものもあります (\fBike.config\fR(4) を参照)。それらの値では、\fBget defaults\fR の出力時にトークン名が表示されます。出力には、構成トークンがデフォルトを変更した箇所が反映されます。
+.sp
+デフォルト値は、ピアシステムから有効な代替案が提出された場合は無視される可能性があります。また、\fBike.config\fR で確立されたルール単位の値で上書きされる可能性もあります。そのような場合も、\fBget defaults\fR コマンドは、デフォルトの上書きに使用された値ではなく、デフォルト値を表示し続けます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBp1\fR
+.ad
+.sp .6
+.RS 4n
+\fBIKE\fR 第 1 段階 \fBSA\fR。\fBp1\fR オブジェクトは \fBIP\fR アドレスペアまたは cookie ペアのいずれかで識別されますが、その識別形式については後述します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrule\fR
+.ad
+.sp .6
+.RS 4n
+\fBIKE\fR ポリシールール。指定されたローカルアイデンティティーとリモートアイデンティティーとの間の第 1 段階 \fBSA\fR で使用可能なセキュリティー特性を定義します。ルールはラベルで識別されますが、その識別形式については後述します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpreshared\fR
+.ad
+.sp .6
+.RS 4n
+事前共有鍵。ローカルとリモートの識別、および適用可能な \fBIKE\fR モードも含まれます。事前共有鍵は \fBIP\fR アドレスペア、アイデンティティーペアのいずれかで識別されますが、その識別形式については後述します。
+.RE
+
+.SS "ID 形式"
+.sp
+.LP
+\fBadd\fR、\fBdel\fR、\fBget\fR などのコマンドでは、コマンド行に追加情報を指定する必要があります。削除コマンドと取得コマンドで必要になるのは、特定のオブジェクトを識別する最小限の情報だけです。追加コマンドでは完全なオブジェクトを指定する必要があります。
+.sp
+.LP
+最小限の識別はほとんどの場合、値のペアによって実現されます。\fBIP\fR アドレスの場合、ローカルアドレスのあとにリモートアドレスを指定しますが、その形式は IPv4 アドレス用のドット表記、IPv6 アドレス用のコロン区切り 16 進数形式、またはホスト名データベース内に存在するホスト名のいずれかになります。複数のアドレスに展開されるホスト名を指定した場合、アドレスの可能な各組み合わせについて、要求された操作が1 度に複数回実行されます。
+.sp
+.LP
+アイデンティティーペアは、ローカルのタイプ-値ペアとそれに続くリモートのタイプ-値ペアとで構成されます。有効なタイプは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBprefix\fR
+.ad
+.sp .6
+.RS 4n
+アドレスの接頭辞。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfqdn\fR
+.ad
+.sp .6
+.RS 4n
+完全修飾ドメイン名。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdomain\fR
+.ad
+.sp .6
+.RS 4n
+ドメイン名。fqdn の同義語です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBuser_fqdn\fR
+.ad
+.sp .6
+.RS 4n
+\fIuser\fR@fqdn という形式のユーザーアイデンティティー。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmailbox\fR
+.ad
+.sp .6
+.RS 4n
+\fBuser_fqdn\fR の同義語。 
+.RE
+
+.sp
+.LP
+cookie ペアは、第 1 段階セキュリティーアソシエーション (\fBSA\fR) の作成時にその SA に割り当てられた 2 つの cookie から構成され、最初の cookie はイニシエータ用、そのあとの cookie はレスポンダ用です。cookie は 64 ビットの数値です。
+.sp
+.LP
+最後に、(ポリシールールの識別子として使用される) ラベルは、ルール作成時にルールに割り当てられる文字列です。
+.sp
+.LP
+追加コマンドでのルールや事前共有鍵の記述形式は、in.iked 構成ファイルの形式規則に従います。どちらも、中括弧 (\fB{\fR と \fB}\fR) で囲まれた一連の ID-値ペアから構成されます。ルールや事前共有鍵の形式の詳細については、\fBike.config\fR(4) と \fBike.preshared\fR(4) を参照してください。
+.SH セキュリティ
+.sp
+.LP
+\fBikeadm\fR コマンドを使用すると、特権ユーザーが暗号化キーイング情報を入力できます。そのような情報に悪意のあるユーザーがアクセスできると、IPsec トラフィックのセキュリティーが損なわれます。\fBikeadm\fR コマンドを使用する際には、次の問題を考慮するようにしてください。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBTTY\fR の情報がネットワーク上を流れるか (対話モード) 
+.sp
+そうである場合、キーイング材料のセキュリティーは、この \fBTTY\fR のトラフィックに対するネットワークパスのセキュリティーになります。平文の telnet または rlogin セッション経由で \fBikeadm\fR を使用するのは危険です。ウィンドウイベントを読み取ることのできる隠密プログラムが存在する場合、ローカルウィンドウでもその攻撃には無防備となります。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルがネットワーク経由でアクセスされたり、外部から読み取り可能であったりするか (読み取り/書き込みコマンド) 
+.sp
+ネットワーク上にマウントされたファイルを読み取る際に、悪意のあるユーザーがその情報を盗む可能性があります。外部から読み取り可能なファイルにキーイング材料が格納されている場合も危険です。
+.RE
+.sp
+.LP
+送信元アドレスがネットワーク経由で検索可能なホストである場合に、ネームシステム自体の安全性が損なわれると、使用されているすべての名前が信用できなくなります。
+.sp
+.LP
+セキュリティーの脆弱性はしばしば、ツール自体に原因があるのではなく、ツールの間違った適用方法に原因があります。管理者には、\fBikeadm\fR コマンドの使用時に十分な注意を払うことをお勧めします。もっとも安全な操作モードはおそらく、コンソール上やその他の物理的に接続された \fBTTY\fR 上で作業を行うことです。
+.sp
+.LP
+このテーマの追加情報については、Bruce Schneier 著『\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR』に含まれる Matt Blaze 氏の後書きを参照してください。 
+.SH 使用例
+.LP
+\fB例 1 \fRすべての第 1 段階セキュリティーアソシエーションの削除
+.sp
+.LP
+次のコマンドは、すべての第 1 段階セキュリティーアソシエーションを削除します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm flush p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRすべての第 1 段階セキュリティーアソシエーションの表示
+.sp
+.LP
+次のコマンドは、すべての第 1 段階セキュリティーアソシエーションを表示します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm dump p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR特定の第 1 段階セキュリティーアソシエーションの削除
+.sp
+.LP
+次のコマンドは、指定された第 1 段階セキュリティーアソシエーションを削除します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm del p1 local_ip remote_ip\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRファイルからのルールの追加
+.sp
+.LP
+次のコマンドはファイルからルールを追加します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm add rule rule_file\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR事前共有鍵の追加
+.sp
+.LP
+次のコマンドは事前共有鍵を追加します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm\fR
+     ikeadm> \fBadd preshared { localidtype ip localid local_ip
+             remoteidtype ip remoteid remote_ip ike_mode main
+             key 1234567890abcdef1234567890abcdef }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRすべての事前共有鍵のファイルへの保存
+.sp
+.LP
+次のコマンドは、すべての事前共有鍵をファイルに保存します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm write preshared target_file\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR特定のルールの表示
+.sp
+.LP
+次のコマンドは特定のルールを表示します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm get rule rule_label\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR\fBike.config\fR からの新しいルールの読み込み
+.sp
+.LP
+次のコマンドは、ike.config ファイルから新しいルールを読み込みます。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm read rules\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR特権レベルの引き下げ
+.sp
+.LP
+次のコマンドは特権レベルを引き下げます。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm set priv base\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fRデバッグレベルの表示
+.sp
+.LP
+次のコマンドは現在のデバッグレベルを表示します
+
+.sp
+.in +2
+.nf
+example# \fBikeadm get debug\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRstats を使用したハードウェアアクセラレータの確認
+.sp
+.LP
+次の例は、統計情報の末尾に省略可能な行が含まれる様子を示したものです。この行は該当する場合に、IKE が PKCS#11 ライブラリを使用して公開鍵の処理を高速化しているかどうかを示します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm get stats\fR
+Phase 1 SA counts:
+Current:  initiator:     0    responder:      0
+Total:    initiator:    21   responder:      27
+Attempted:initiator:    21   responder:      27
+Failed:   initiator:     0   responder:       0
+	         initiator fails include 0 time-out(s)
+PKCS#11 library linked in from /opt/system/core-osonn/lib/libpkcs11.so
+example# 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fR証明書キャッシュの表示
+.sp
+.LP
+次のコマンドは証明書キャッシュを表示し、該当する場合は関連する秘密鍵のステータスも表示します。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm dump certcache\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 13 \fRPKCS#11 トークンへのログイン
+.sp
+.LP
+次のコマンドは、PKCS#11 トークンオブジェクトにログインして秘密鍵のロックを解除する方法を示したものです。
+
+.sp
+.in +2
+.nf
+example# \fBikeadm token login "Sun Metaslot"\fR
+Enter PIN for PKCS#11 token:
+ikeadm: PKCS#11 operation successful
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0 以外\fR\fR
+.ad
+.RS 12n
+.rt  
+エラーが発生しました。対応するエラーメッセージが標準エラーに書き込まれます。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性非インタフェース
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBin.iked\fR(1M), \fBike.config\fR(4), \fBike.preshared\fR(4), \fBattributes\fR(5), \fBipsec\fR(7P)
+.sp
+.LP
+Schneier, Bruce 著『\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR』、第 2 版、John Wiley & Sons, New York, NY、1996 年
+.SH 注意事項
+.sp
+.LP
+\fBin.iked\fR は大域ゾーンと排他的 IP ゾーンでのみ実行可能なので、このコマンドは共有 IP ゾーンでは役立ちません。

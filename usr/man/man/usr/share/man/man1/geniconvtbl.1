@@ -1,0 +1,361 @@
+'\" te
+.\" Copyright (c) 2001, Sun Microsystems, Inc.  All Rights Reserved
+.TH geniconvtbl 1 "30 Nov 2001" "SunOS 5.11" "User Commands"
+.SH NAME
+geniconvtbl \- generate iconv code conversion tables
+.SH SYNOPSIS
+.LP
+.nf
+\fBgeniconvtbl\fR [\fB-fnq\fR] [\fB-p\fR \fIpreprocessor\fR] [\fB-W\fR \fIarg\fR] [\fB-D\fR\fIname\fR] 
+     [\fB-D\fR\fIname\fR=\fIdef\fR] [\fB-I\fR\fIdirectory\fR] [\fB-U\fR\fIname\fR] [\fIinfile\fR]...
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBgeniconvtbl\fR utility accepts code conversion rules defined in flat text file(s) and writes code conversion binary table file(s) that can be used to support user-defined \fBiconv\fR code conversions (see \fBiconv\fR(1) and \fBiconv\fR(3C) for more detail on the iconv code conversion).
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 19n
+.rt  
+Overwrites output file if the output file exists.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 19n
+.rt  
+Does not generate an output file. This is useful to check the contents of the input file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpreprocessor\fR\fR
+.ad
+.RS 19n
+.rt  
+Uses specified \fIpreprocessor\fR instead of the default                 preprocessor, \fB/usr/lib/cpp\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 19n
+.rt  
+Quiet option. It suppresses warning and error messages.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-W\fR \fIarg\fR\fR
+.ad
+.RS 19n
+.rt  
+Passes the argument \fIarg\fR to the preprocessor. If this option is specified more than once, all arguments are passed to the preprocessor.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fIname\fR\fR
+.ad
+.br
+.na
+\fB\fB-D\fR\fIname\fR=\fIdef\fR\fR
+.ad
+.br
+.na
+\fB\fB-I\fR\fIdirectory\fR\fR
+.ad
+.br
+.na
+\fB\fB-U\fR\fIname\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBgeniconvtbl\fR recognizes these options and passes them and their arguments to the preprocessor.
+.RE
+
+.SH OPERANDS
+.sp
+.LP
+The following operand is supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinfile\fR\fR
+.ad
+.RS 10n
+.rt  
+A path name of an input file. If no input file is specified, \fBgeniconvtbl\fR reads from the standard input stream. The user can specify more than one input file if necessary.
+.RE
+
+.SH OUTPUT
+.sp
+.LP
+If input is from the standard input stream, \fBgeniconvtbl\fR writes output to the standard output stream. If one or more input files are specified, \fBgeniconvtbl\fR reads from each input file and writes to a corresponding output file. Each of the output file names will be the same as the corresponding input file with \fB\&.bt\fR appended.
+.sp
+.LP
+The generated output files must be moved to the following directory prior to using the code conversions at \fBiconv\fR(1) and \fBiconv\fR(3C):
+.sp
+.LP
+\fB/usr/lib/iconv/geniconvtbl/binarytables/\fR
+.sp
+.LP
+The output file name should start with one or more printable \fBASCII\fR characters as the '\fBfromcode\fR' name followed by a percentage character (\fB%\fR), followed by one or more printable \fBASCII\fR characters as the '\fBtocode\fR' name, followed by the suffix '\fB\&.bt\fR'. The '\fBfromcode\fR' and '\fBtocode\fR' names are used to identify the \fBiconv\fR code conversion at \fBiconv\fR(1) and \fBiconv_open\fR(3C)). The properly named output file should be placed in the directory, \fB/usr/lib/iconv/geniconvtbl/binarytables/\fR.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRGenerating an iconv code conversion binary table
+.sp
+.LP
+The following example generates a code conversion binary table with output file name \fBconvertA2B.bt\fR:
+
+.sp
+.in +2
+.nf
+example% \fBgeniconvtbl convertA2B\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRGenerating multiple iconv code conversion binary tables
+.sp
+.LP
+The following example generates two code conversion binary tables with output files \fBtest1.bt\fR and \fBtest2.bt\fR:
+
+.sp
+.in +2
+.nf
+example% \fBgeniconvtbl test1 test2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRUsing another preprocessor
+.sp
+.LP
+The following example generates a code conversion binary table once the specified preprocessor has processed the input file:
+
+.sp
+.in +2
+.nf
+example% \fBgeniconvtbl -p /opt/SUNWspro/bin/cc -W -E convertB2A\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRPlacing a binary table
+.sp
+.LP
+To use the binary table created in the first example above as the engine of the conversion 'fromcode' \fBABC\fR to 'tocode' \fBDEF\fR, become super-user and then rename it and place it like this:
+
+.sp
+.in +2
+.nf
+example# \fBmv convertA2B.bt \e
+    /usr/lib/iconv/geniconvtbl/binarytables/ABC%DEF.bt\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRProviding modified ISO8859-1 to UTF-8 code conversion
+.sp
+.LP
+Write a \fBgeniconvtbl\fR source file that defines the code conversion. For instance, you can copy over 	\fB/usr/lib/iconv/geniconvtbl/srcs/ISO8859-1_to_UTF-8.src\fR into 	your directory and make necessary changes at the source file. Once the modifications are done, generate the binary table:
+
+.sp
+.in +2
+.nf
+example% \fBgeniconvtbl ISO8859-1_to_UTF-8.src\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+As super-user, place the generated binary table with a unique name at the system directory where \fBiconv_open\fR(3C) can find the binary table:
+
+.sp
+.in +2
+.nf
+example \fBsu\fR
+Password:
+example% \fBcp ISO8859-1_to_UTF-8.bt \e
+    /usr/lib/iconv/geniconvtbl/binarytables/my-iso-8859-1%utf-8.bt\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+After that, you can do the \fBiconv\fR code conversion. For instance:
+
+.sp
+.in +2
+.nf
+example% \fBiconv -f my-iso-8859-1 -t utf-8 testfile.txt\fR
+.fi
+.in -2
+.sp
+
+.SH ENVIRONMENT VARIABLES
+.sp
+.LP
+See \fBenviron\fR(5) for descriptions of the following environment variables that affect the execution of \fBgeniconvtbl\fR: \fBLANG\fR and \fBLC_CTYPE\fR.
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+No errors occurred and the output files were successfully created.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+Command line options are not correctly used or an unknown command line option was specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+Invalid input or output file was specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+Conversion rules in input files are not correctly defined.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+Conversion rule limit of input files has been reached. See NOTES section of \fBgeniconvtbl\fR(4).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB5\fR\fR
+.ad
+.RS 5n
+.rt  
+No more system resource error.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.RS 5n
+.rt  
+Internal error.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/iconv/geniconvtbl/binarytables/*.bt\fR\fR
+.ad
+.sp .6
+.RS 4n
+conversion binary tables 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/iconv/geniconvtbl/srcs/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+conversion source files for user reference
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBcpp\fR(1), \fBiconv\fR(1), \fBiconv\fR(3C), \fBiconv_close\fR(3C), \fBiconv_open\fR(3C), \fBgeniconvtbl\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBiconv\fR(5)
+.sp
+.LP
+\fISolaris Internationalization Guide for Developers\fR
+.SH NOTES
+.sp
+.LP
+The generated and correctly placed output files, \fB/usr/lib/iconv/geniconvtbl/binarytables/*.bt\fR, are used in both 32-bit and 64-bit environments.

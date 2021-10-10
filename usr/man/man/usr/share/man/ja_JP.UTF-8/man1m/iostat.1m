@@ -1,0 +1,666 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH iostat 1M "2009 年 3 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+iostat \- 入出力統計を報告する
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/iostat\fR  [\fB-cCdDeEiImMnpPrstxXYz\fR] [\fB-l\fR \fIn\fR] [\fB-T\fR u | d]
+ [\fIdisk\fR]... [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBiostat\fR ユーティリティーはターミナル、ディスク、テープの \fBI/O\fR 活動、\fBCPU\fR 使用率を繰り返し報告します。出力の最初の行はブートから全時間の統計です; 続く各行はその前の間隔からのみの統計です。
+.sp
+.LP
+この情報を計算するために、カーネルは多数のカウンタを保持しています。各ディスクに対し、カーネルは読み取り、書き込み、読み取りバイト数、書き込みバイト数を数えます。また、カーネルは、キューの入り口と出口で高解像度のタイムスタンプを使用します。これによって、滞留時間や、滞留時間と長さの積の累積をキューごとに記録することができます。これらの値を使って、\fBiostat\fR はスループット、使用率、キュー長、トランザクション率、サービス時間を非常に正確に計測します。端末全般については、カーネルは単純に入出力の文字数をカウントします。
+.sp
+.LP
+カーネルステータスコマンドの実行中、システムの \fBstate\fR は変わる場合があります。もし関連があれば、状態が変わったメッセージは以下の形式のどれかで \fBiostat\fR の出力に含まれます:
+.sp
+.in +2
+.nf
+<<device added: sd0>>
+<<device removed: sd0>>
+<<partition added: sd0,a>>
+<<partition removed: sd0,a>>
+<<NFS mounted: nfs1>>
+<<NFS unmounted: nfs1>>
+<<multi-path added: ssd4>>
+<<multi-path removed: ssd4>>
+<<controller added: c1>>
+<<controller removed: c1>>
+<<processors added: 1, 3>>
+<<processors removed: 1, 3>>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これらの状態変化メッセージに表示される \fBnames\fR は \fB-n\fR や \fB-m\fR オプションによって適切なものに変えられます。 
+.sp
+.LP
+より全般的なシステム統計情報を参照するには、\fBsar\fR(1)、\fBsar\fR(1M)、または \fBvmstat\fR(1M) を使ってください。
+.SS "出力"
+.sp
+.LP
+\fBiostat\fR ユーティリティーの出力は次の情報を含みます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR\fR
+.ad
+.RS 10n
+.rt  
+ディスクの名前
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr/s\fR\fR
+.ad
+.RS 10n
+.rt  
+秒あたり読み込み数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw/s\fR\fR
+.ad
+.RS 10n
+.rt  
+秒あたり書き込み数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkr/s\fR\fR
+.ad
+.RS 10n
+.rt  
+秒あたり読み込みキロバイト数
+.sp
+インターバルの平均 I/O サイズは、\fBkr/s\fR を \fBr/s\fR で割って求めることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkw/s\fR\fR
+.ad
+.RS 10n
+.rt  
+秒あたり書き込みキロバイト数
+.sp
+インターバルの平均 I/O サイズは、\fBkw/s\fR を \fBw/s\fR で割って求めることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwait\fR\fR
+.ad
+.RS 10n
+.rt  
+サービスを待っている平均トランザクション数 (キュー長)
+.sp
+これは、デバイスによる受け入れを待っている、デバイスドライバキューに保持されている I/O 操作の数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactv\fR\fR
+.ad
+.RS 10n
+.rt  
+現在サービスを受けている (キューからは削除されたがまだ完了していない) 平均トランザクション数
+.sp
+これは、デバイスによって受け入れられたがまだサービスが終わっていない I/O 操作の数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc_t\fR\fR
+.ad
+.RS 10n
+.rt  
+トランザクションの平均レスポンス時間 (ミリ秒単位)
+.sp
+\fBsvc_t\fR 出力はデバイスの \fBservice\fR 時間よりはむしろ全体的な \fBresponse\fR 時間を報告します。全体的な時間はトランザクションがキューにいた時間とサービスを受けた時間を含みます。キューで過ごした時間は \fB-x\fR オプションによって \fBwsvc_t\fR 出力列に表示されます。サービストランザクションに費やされた時間は本当の実行時間です。サービス時間もまた \fB-x\fR オプションによって同じレポートの \fBasvc_t\fR 出力列に表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%w\fR\fR
+.ad
+.RS 10n
+.rt  
+サービスを待っていたトランザクションがあった (キューが空でない) 時間の割合
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%b\fR\fR
+.ad
+.RS 10n
+.rt  
+ディスクがビジー状態にある (トランザクションが進行中である) 時間の割合
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwsvc_t\fR\fR
+.ad
+.RS 10n
+.rt  
+待ち行列 (キュー) での平均サービス時間 (ミリ秒単位)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBasvc_t\fR\fR
+.ad
+.RS 10n
+.rt  
+アクティブなトランザクションの平均サービス時間 (ミリ秒単位)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwt\fR\fR
+.ad
+.RS 10n
+.rt  
+I/O 待ち時間は \fBCPU\fR 時間の割合としては計算されず、この統計は常にゼロを返します。
+.RE
+
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 12n
+.rt  
+システムがユーザーモード、システムモード、 \fBI/O\fR 待ち状態、アイドル状態のそれぞれに費やした時間の割合を報告します。詳細な情報については「注意事項」項目をご覧ください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 12n
+.rt  
+\fB-x\fR オプションも指定された場合は、 \fIcontroller id\fR によって集計された拡張ディスク統計を報告します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 12n
+.rt  
+各ディスクに関し、秒あたり転送キロバイト数、秒あたり転送数、ミリ秒あたりサービス時間を報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 12n
+.rt  
+各ディスクに関し、秒あたり転送キロバイト数、秒あたり転送数、およびサービス時間 (ミリ秒単位) を報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 12n
+.rt  
+デバイスエラー要約統計情報を表示します。合計エラー数、ハードエラー数、ソフトエラー数、転送エラー数が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.RS 12n
+.rt  
+全デバイスエラー統計情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 12n
+.rt  
+\fB-E\fR 出力で、 \fBSerial No\fR の代わりに \fBDevice ID\fR を表示します。\fBDevice Id\fR はデバイスドライバーが \fBddi_devid_register\fR(9F) を使用して登録した固有の識別子です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.RS 12n
+.rt  
+各間隔で、(適切な場合は) 率ではなくカウントを報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIn\fR\fR
+.ad
+.RS 12n
+.rt  
+報告の中でディスクの数を \fIn\fR に制限します。デフォルトでは \fB-d\fR と \fB-D\fR のときにはディスク数を 4 に制限し、\fB-x\fR では制限しません。注意: 個別に指定したディスク (以下の \fIdisk\fR 参照) には、このディスク制限は適用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 12n
+.rt  
+ファイルシステムのマウントポイントを報告します。このオプションは \fB-P\fR か \fB-p\fR オプションと共に指定した場合あるいは \fB-Xn\fR か \fB-en\fR と共に使用された場合にもっとも役立ちます。 \fB-m\fR オプションはマウントポイントが実際に出力に現れた場合にのみ役立ちます。このオプションは　\fB-n\fR オプションと一緒にのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.RS 12n
+.rt  
+データスループットを KB/sec の代わりに \fBMB\fR/sec で表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 12n
+.rt  
+名前を説明的な形式で表示します。たとえば、\fBcXtYdZ\fR、\fBrmt/N\fR、\fBserver:/export/path\fR などです。
+.sp
+デフォルトでは、ディスクは \fBssd23\fR や \fBmd301\fR のようなインスタンス名で識別されます。\fB-n\fR オプションを \fB-x\fR オプションと組み合わせることで、ディスク名を \fBcXtYdZsN\fR 形式で表示することができます。こうすることで、ディスク名を物理的ハードウェア特性により関連づけやすくなります。\fBcXtYdZsN\fR 形式は、特にファイバーチャネル (FC) 環境で FC ワールドワイドネームが \fBt\fR フィールドに表示されるため便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 12n
+.rt  
+各ディスクで、デバイスごとの統計に加え、パーティションごとの統計を報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.RS 12n
+.rt  
+各ディスクで、パーティションごとの統計のみを報告し、デバイスごとの統計は報告しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 12n
+.rt  
+コンマ区切り形式でデータを表示します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBstate changes\fR に関するメッセージを抑止します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 12n
+.rt  
+秒あたりの読み取りと端末への書き込み文字数を報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR u | d\fR
+.ad
+.RS 12n
+.rt  
+タイムスタンプを表示します。
+.sp
+時刻の内部表現の出力表現に \fBu\fR  を指定します。\fBtime\fR(2) を参照してください。 標準の日付フォーマットに \fBd\fR を指定します。\fBdate\fR(1) を参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-X\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBscsi_vhci\fR(7D) の管理下にあるディスクについては、ディスクの \fIlun\fR 統計情報に付け加え、\fIlun \fR.\fIcontroller\fR の統計情報も報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 12n
+.rt  
+拡張ディスク統計情報を報告します。デフォルトでは、ディスクは \fBssd23\fR や \fBmd301\fR のようなインスタンス名で識別されます。\fBx\fR オプションを \fB-n\fR オプションと組み合わせることで、ディスク名を \fBcXtYdZsN\fR 形式で表示することができます。こうすることで、ディスク名を物理的ハードウェア特性により関連づけやすくなります。\fBcXtYdZsN\fR 形式は、特にファイバーチャネル (FC) 環境で FC ワールドワイドネームが  \fBt\fR フィールドに表示されるため便利です。
+.sp
+出力表示が要求されない場合は、(\fB-x\fR、\fB-e\fR、\fB-E\fR が指定されない場合は)、\fB-x\fR が適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Y\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBscsi_vhci\fR(7D) の管理下にあるディスクについては、ディスクの \fIlun\fR  統計情報に付け加え、\fIlun\fR.\fItargetport\fR と\fIlun\fR.\fItargetport\fR.\fIcontroller\fR の統計情報も報告します。
+.sp
+\fB-n\fR (説明的) モードではパスの \fItarget-port\fR プロパティーを使用して \fBtargetport\fR が表示されます。\fB-n\fR が指定されない場合は、より短い \fBport-id\fR を使用して \fItargetport\fR が表示されます。同じ \fBtarget-port\fR プロパティー値を持つターゲットポートは、すべて同じ \fBport-id\fR を共有します。\fBtarget-port\fR と \fBport-id\fR の関連付けはリブート後にはなくなります。
+.sp
+出力表示が要求されない場合は、(\fB-x\fR、\fB-e\fR、\fB-E\fR が指定されない場合は)、\fB-x\fR が適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.RS 12n
+.rt  
+その行のデータがすべてゼロの場合には行を出力しません。
+.RE
+
+.sp
+.LP
+\fB-xcnCXTdz\fR \fIinterval\fR オプションセットは特にディスク I/O 問題が存在するかどうかを判断したり、問題を特定したりする場合に役立ちます。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.RS 12n
+.rt  
+\fIcount\fR 回のみ報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdisk\fR\fR
+.ad
+.RS 12n
+.rt  
+報告する対象ディスクを個別に指定します。指定されたディスクに加えて、ディスク数の上限に達するまでは (上記の \fB-l\fR 参照)、アクティブなディスクも報告されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.RS 12n
+.rt  
+各 \fIinterval\fR 秒ごとに報告します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBiostat\fR を使用してユーザーおよびシステムオペレーション統計情報を生成する
+.sp
+.LP
+次のコマンドは \fIcontroller id\fR によって集約された、ユーザー (\fBus\fR) 操作とシステム (\fBsy\fR) 操作に関する 2 つの拡張デバイス統計報告を表示します。\fB-n\fR オプションは \fB-x\fR オプションとともに使用されるため、デバイスはコントローラ名で識別されます。
+
+.sp
+.in +2
+.nf
+example% \fBiostat\fR \fB-xcnCXTdz\fR \fB5\fR
+
+
+Mon Nov 24 14:58:36 2003
+    cpu
+ us sy wt id
+ 14 31  0 20
+                    extended device statistics                
+  r/s    w/s    kr/s      kw wait  actv wsvc_t asvc_t  %w  %b device
+  3.8   29.9   145.8    44.0  0.0   0.2    0.1    6.4   0   5     c0
+666.3  814.8 12577.6 17591.1 91.3  82.3   61.6   55.6   0   2    c12
+180.0  234.6  4401.1  5712.6  0.0 147.7    0.0  356.3   0  98    d10
+
+Mon Nov 24 14:58:41 2003
+    cpu
+ us sy wt id
+ 11 31  0 22
+                    extended device statistics                
+  r/s    w/s    kr/s      kw wait  actv wsvc_t asvc_t  %w  %b device
+  0.8   41.0     5.2    20.5 0.0    0.2    0.2    4.4   0   6     c0
+565.3  581.7  8573.2 10458.9 0.0   26.6    0.0   23.2   0   3    c12
+106.5   81.3  3393.2  1948.6 0.0    5.7    0.0   30.1   0  99    d10
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBiostat\fR を使用して TTY 統計を生成する
+.sp
+.LP
+次のコマンドは、異なるオペレーションモードの 5 つのディスク活動に関して、2 つの報告を表示します。\fB-x\fR オプションが使用されているため、ディスクはインスタンス名で識別されています。
+
+.sp
+.in +2
+.nf
+example% \fBiostat\fR \fB-x\fR \fBtc 5 2\fR
+
+
+                  extended device statistics        tty         cpu
+device r/s  w/s kr/s  kw/s wait actv svc_t %w  %b  tin tout  us sy wt id
+sd0    0.4  0.3 10.4   8.0  0.0  0.0  36.9  0   1    0   10   0  0  0 99
+sd1    0.0  0.0  0.3   0.4  0.0  0.0  35.0  0   0 
+sd6    0.0  0.0  0.0   0.0  0.0  0.0   0.0  0   0 
+nfs1   0.0  0.0  0.0   0.0  0.0  0.0   0.0  0   0 
+nfs2   0.0  0.0  0.0   0.1  0.0  0.0  35.6  0   0 
+            extended device statistics              tty         cpu
+device r/s  w/s  kr/s  kw/s wait actv svc_t %w  %b tin tout  us sy wt id
+sd0    0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0   0  155   0  0  0 100
+sd1    0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+sd6    0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+nfs1   0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+nfs2   0.0  0.0  0.0   0.0  0.0  0.0  0.0   0   0 
+                             
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR\fBiostat\fR を使用してパーティションとデバイスの統計を生成します。
+.sp
+.LP
+次のコマンドは各ディスクのパーティションとデバイス統計を生成します。\fB-n\fR オプションは \fB-x\fR オプションとともに使用されているため、ディスクはコントローラ名で識別されています。
+
+.sp
+.in +2
+.nf
+example% \fBiostat -xnp\fR
+
+                extended device statistics              
+r/s  w/s  kr/s kw/s wait actv wsvc_t asvc_t %w %b device
+0.4  0.3  10.4  7.9  0.0  0.0    0.0   36.9  0  1 c0t0d0
+0.3  0.3   9.0  7.3  0.0  0.0    0.0   37.2  0  1 c0t0d0s0
+0.0  0.0   0.1  0.5  0.0  0.0    0.0   34.0  0  0 c0t0d0s1
+0.0  0.0   0.0  0.1  0.0  0.0    0.6   35.0  0  0 fuji:/export/home/user3
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRインスタンス名から説明的名前へ翻訳する
+.sp
+.LP
+次の例は \fBiostat\fR によって特定のインスタンス名を説明的名前に翻訳します。
+
+.sp
+.in +2
+.nf
+example% \fBiostat -xn sd1\fR
+                        extended device statistics
+r/s    w/s   kr/s   kw/s wait actv wsvc_t asvc_t  %w  %b device
+0.0    0.0    0.0    0.0  0.0  0.0    0.0    0.0   0   0 c8t1d0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR特定のディスクのターゲットポートとコントローラアクティビティーを表示する
+.sp
+.LP
+次の例では、同じターゲットポートに接続された 4 つのコントローラがあります。
+
+.sp
+.in +2
+.nf
+# \fBiostat -Y ssd22\fR
+                    extended device statistics
+device          r/s    w/s   kr/s   kw/s wait actv  svc_t  %w  %b
+ssd22           0.2    0.0    1.5    0.0  0.0  0.0    0.7   0   0
+ssd22.t2        0.2    0.0    1.5    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp0    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp1    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp2    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+ssd22.t2.fp3    0.0    0.0    0.4    0.0  0.0  0.0    0.0   0   0
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照
+.TE
+
+.sp
+.LP
+この呼び出しは開発中です。人間が読める形式の出力は不安定 (Unstable) です。
+.SH 関連項目
+.sp
+.LP
+\fBdate\fR(1), \fBsar\fR(1), \fBsar\fR(1M), \fBmpstat\fR(1M), \fBvmstat\fR(1M), \fBtime\fR(2), \fBattributes\fR(5), \fBscsi_vhci\fR(7D)
+.SH 注意事項
+.sp
+.LP
+\fBCPU\fR 使用率の合計は製品の百分率の数字中の丸め誤差のために 100 と若干異なるかもしれません。
+.sp
+.LP
+\fBsvc_t\fR 応答時間は特に \fBI/0\fR (\fBr/s\fR+\fBw/s\fR) 率が毎秒 0.5 以下の場合はっきりしません。このような場合、問題のない数値の急上昇がよく見られます。
+.sp
+.LP
+\fBmpstat\fR ユーティリティーは同じ \fBwt\fR、\fBusr\fR、\fBsys\fR 統計情報を報告します。詳細については、\fBmpstat\fR(1M) を参照してください。 
+.sp
+.LP
+\fBzone\fR で実行された場合、かつ、プールファシリティーがアクティブだった場合は、\fBiostat\fR(1M) は \fBzone\fR が割り当てられているプールのプロセッサセットの中のプロセッサの情報のみを表示します。

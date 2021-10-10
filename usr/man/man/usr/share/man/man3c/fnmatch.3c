@@ -1,0 +1,207 @@
+'\" te
+.\" Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at  http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html.  This notice shall appear on any product containing this material.
+.TH fnmatch 3C "21 Dec 2010" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+fnmatch \- match filename or path name
+.SH SYNOPSIS
+.LP
+.nf
+#include <fnmatch.h>
+
+\fBint\fR \fBfnmatch\fR(\fBconst char *\fR\fIpattern\fR, \fBconst char *\fR\fIstring\fR, \fBint\fR \fIflags\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBfnmatch()\fR function matches patterns as described on the \fBfnmatch\fR(5) manual page.  It checks the \fIstring\fR argument to see if it matches the \fIpattern\fR argument.
+.sp
+.LP
+The \fIflags\fR argument modifies the interpretation of \fIpattern\fR and \fIstring\fR. It is the bitwise inclusive \fBOR\fR of zero or more of the following flags defined in the header <\fBfnmatch.h\fR>.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_PATHNAME\fR\fR
+.ad
+.RS 19n
+.rt  
+If set, a slash (\fB/\fR) character in \fIstring\fR will be explicitly matched by a slash in \fIpattern\fR; it will not be matched by either the asterisk (\fB*\fR) or question-mark (\fB?\fR) special characters, nor by a bracket (\fB[\|]\fR) expression.
+.sp
+If not set, the slash character is treated as an ordinary character.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_FILE_NAME\fR\fR
+.ad
+.RS 19n
+.rt  
+An alias of \fBFNM_PATHNAME\fR provided for a better compatibility with other operating systems.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_NOESCAPE\fR\fR
+.ad
+.RS 19n
+.rt  
+If not set, a backslash character (\fB\e\fR) in \fIpattern\fR followed by any other character will match that second character in \fIstring\fR. In particular, "\fB\e\e\fR" will match a backslash in \fIstring\fR.
+.sp
+If set, a backslash character will be treated as an ordinary character.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_PERIOD\fR\fR
+.ad
+.RS 19n
+.rt  
+If set, a leading period in \fIstring\fR will match a period in \fIpattern\fR; where the location of "leading" is indicated by the value of \fBFNM_PATHNAME\fR: 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If \fBFNM_PATHNAME\fR is set, a period is "leading" if it is the first character in \fIstring\fR or if it immediately follows a slash.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If \fBFNM_PATHNAME\fR is not set, a period is "leading" only if it is the first character of \fIstring\fR.
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_IGNORECASE\fR\fR
+.ad
+.RS 19n
+.rt  
+If set, during matching, case is ignored yielding case-insensitive matching on characters based on the case folding defined for the current locale or, if that does not exist, tolower case conversions of the current locale.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_CASEFOLD\fR\fR
+.ad
+.RS 19n
+.rt  
+An alias of \fBFNM_IGNORECASE\fR provided for a better compatibility with other operating systems.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNM_LEADING_DIR\fR\fR
+.ad
+.RS 19n
+.rt  
+If set, matching is done with string only until all pattern expressions in pattern argument are consumed. Any remaining characters at string starting with slash character (/) are simply ignored and do not affect the matching result.
+.RE
+
+.sp
+.LP
+If not set, no special restrictions are placed on matching a period.
+.SH RETURN VALUES
+.sp
+.LP
+If \fIstring\fR matches the pattern specified by \fIpattern\fR, then \fBfnmatch()\fR returns \fB0\fR. If there is no match, \fBfnmatch()\fR returns \fBFNM_NOMATCH\fR, which is defined in the header <\fBfnmatch.h\fR>. If an error occurs, \fBfnmatch()\fR returns another non-zero value.
+.SH USAGE
+.sp
+.LP
+The \fBfnmatch()\fR function has two major uses. It could be used by an application or utility that needs to read a directory and apply a pattern against each entry. The \fBfind\fR(1) utility is an example of this. It can also be used by the \fBpax\fR(1) utility to process its \fIpattern\fR operands, or by applications that need to match strings in a similar manner.
+.sp
+.LP
+The name \fBfnmatch()\fR is intended to imply \fIfilename\fR match, rather than \fIpathname\fR match. The default action of this function is to match filenames, rather than path names, since it gives no special significance to the slash character. With the \fBFNM_PATHNAME\fR flag, \fBfnmatch()\fR does match path names, but without tilde expansion, parameter expansion, or special treatment for period at the beginning of a filename.
+.sp
+.LP
+The \fBfnmatch()\fR function can be used safely in multithreaded applications, as long as \fBsetlocale\fR(3C) is not being called to change the locale.
+.sp
+.LP
+While the \fBFNM_CASEFOLD\fR, \fBFNM_FILE_NAME\fR, \fBFNM_IGNORECASE\fR, and \fBFNM_LEADING_DIR\fR flags are provided and supported for a better compatibility with some other operating systems, use of them may make your program source code slightly less portable and portable only to the operating systems that support the mentioned flags.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRA path name matching
+.sp
+.LP
+The following example matches all file names under \fB/opt/MyApp1.0\fR/ that end with \fIdata\fR:
+
+.sp
+.in +2
+.nf
+result = fnmatch("/opt/MyApp1.0/*.data", pname, FNM_PATHNAME);
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRA case-insensitive file name matching
+.sp
+.LP
+The following example matches file names pointed to by \fIfname\fR that has \fImyfile\fR as prefix in any case combination:
+
+.sp
+.in +2
+.nf
+result = fnmatch("myfile*", fname, FNM_IGNORECASE);
+.fi
+.in -2
+
+.LP
+\fBExample 3 \fRMatch all path names with a common set of parent names
+.sp
+.LP
+The following example matches path names pointed to by \fIpname\fR that has a common set of parent path names of \fB/opt/l*/MyApps\fR and, in doing so, also ensures slash characters are explicitly matched:
+
+.sp
+.in +2
+.nf
+result = fnmatch("/opt/l*/MyApps", pname, (FNM_PATHNAME | FNM_LEADING_DIR));
+.fi
+.in -2
+
+.sp
+.LP
+For instance, the above will match \fB/opt/lib/MyApps/test/test.txt\fR and \fB/opt/local/MyApps/config\fR but not \fB/opt/lib/locale/MyApps\fR.
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+CSIEnabled
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe with exceptions
+_
+StandardSee \fBstandards\fR(5).
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBfind\fR(1), \fBpax\fR(1), \fBglob\fR(3C), \fBsetlocale\fR(3C), \fBwordexp\fR(3C), \fBattributes\fR(5), \fBfnmatch\fR(5), \fBstandards\fR(5)

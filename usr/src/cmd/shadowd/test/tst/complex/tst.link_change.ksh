@@ -1,0 +1,90 @@
+#!/bin/ksh -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Tests that we don't incorrectly link to the wrong file.  To do this, we rely
+# on the fact that ZFS inode allocation is deterministic, and create two
+# alternate universes:
+#
+# Universe 1
+#
+#	NAME	CONTENTS	INODE
+#	a	"this is a"	1
+#	b	"this is b"	2
+#	dir/a	<link to a>	1
+#	dir/b	<link to b>	2
+#
+# Universe 2
+#
+#	NAME	CONTENTS	INODE
+#	b	"this is b"	1
+#	a	"this is a"	2
+#	dir/a	<link to a>	2
+#	dir/b	<link to b>	1
+#
+# We migrate 'a' and 'b' from the the first case, and then switch the shadow
+# property to point to the second case.  At this point, the naive algorithm
+# would note that 'dir/b' should link to inode 1, which would (incorrectly)
+# appear to be 'a', going from what's been migrated so far.  We want to make
+# sure that we don't incorrectly form this link, breaking it instead.
+#
+
+. $ST_TOOLS/utility.ksh
+
+ROOT_ONE=$TST_ROOT/one
+ROOT_TWO=$TST_ROOT/two
+
+mkdir -p $ROOT_ONE || fail "failed to make root/one"
+mkdir -p $ROOT_TWO || fail "failed to make root/one"
+
+echo "this is file a" > $ROOT_ONE/a || fail "failed to create $ROOT_ONE/a"
+echo "this is file b" > $ROOT_ONE/b || fail "failed to create $ROOT_ONE/b"
+mkdir $ROOT_ONE/dir || fail "failed to mkdir $ROOT_ONE/dir"
+ln $ROOT_ONE/a $ROOT_ONE/dir/a || fail "failed to link $ROOT_ONE/a"
+ln $ROOT_ONE/b $ROOT_ONE/dir/b || fail "failed to link $ROOT_ONE/b"
+
+echo "THIS IS FILE B" > $ROOT_TWO/b || fail "Failed to create $ROOT_TWO/b"
+echo "THIS IS FILE A" > $ROOT_TWO/a || fail "Failed to create $ROOT_TWO/a"
+mkdir $ROOT_TWO/dir || fail "failed to mkdir $ROOT_TWO/dir"
+ln $ROOT_TWO/a $ROOT_TWO/dir/a || fail "failed to link $ROOT_TWO/a"
+ln $ROOT_TWO/b $ROOT_TWO/dir/b || fail "failed to link $ROOT_TWO/b"
+
+TST_ROOT=$ROOT_ONE
+
+tst_create_dataset
+
+cat $TST_SROOT/a || fail "failed to cat a"
+cat $TST_SROOT/b || fail "failed to cat b"
+
+zfs set shadow=file://$ROOT_TWO $TST_DATASET || \
+    fail "failed to change shadow property"
+
+cat $TST_SROOT/dir/a || fail "failed to cat dir/a"
+cat $TST_SROOT/dir/b || fail "failed to cat dir/b"
+
+tst_destroy_dataset
+
+exit 0

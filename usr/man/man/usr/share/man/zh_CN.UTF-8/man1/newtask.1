@@ -1,0 +1,240 @@
+'\" te
+.\"  版权所有 (c) 2004，Oracle 和/或其附属公司。保留所有权利。
+.TH newtask 1 "2004 年 11 月 17 日" "SunOS 5.11" "用户命令"
+.SH 名称
+newtask \- 创建新任务，还可以更改项目
+.SH 用法概要
+.LP
+.nf
+\fBnewtask\fR [\fB-p\fR \fIproject\fR] [\fB-v\fR] [\fB-c\fR \fIpid\fR | [\fB-Fl\fR] [\fIcommand...\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnewtask\fR 命令执行用户的缺省 shell 或某个指定命令，从而将所执行的命令置于指定项目所拥有的某个新任务中。用户的缺省 shell 是在 \fBpasswd\fR 数据库中指定的，并使用 \fBgetpwnam()\fR 来确定。
+.sp
+.LP
+此外，newtask 可用来使已在运行的进程进入新创建的任务。还可以此命令形式为新任务指定项目。对于任务关键型且不能重新启动的进程，要将它们放置到新项目中，可能需要以上述方式进行指定。
+.sp
+.LP
+在扩展记帐处于活动状态时，\fBnewtask\fR 命令还会创建一条任务记帐记录来标记前面的系统任务的完成。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIpid\fR\fR
+.ad
+.RS 10n
+.rt  
+使某个正在运行的进程进入新创建的任务。还可以使用 \fB-p\fR 选项为新任务指定项目。调用方用户必须拥有进程或者具有超级用户特权。
+.sp
+如果是要更改项目，则进程所有者必须是指定的项目的成员，或者调用方用户必须具有超级用户特权。当为某个正在运行的进程更改项目时，该项目的池绑定以及资源控制都将修改，以便与新项目的配置匹配。没有在项目条目中显式指定的控制将被保留。
+.sp
+此选项与 \fB-F\fR 和 \fB-l\fR 选项不兼容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 10n
+.rt  
+创建一个最终任务，在最终任务中，进一步的 \fBnewtask\fR 或 \fBsettaskid\fR(2) 调用将失败。在某些站点上，最终任务有助于简化查明资源消耗原因的步骤。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 10n
+.rt  
+将环境更改为用户作为新项目的成员实际重新登录时预期使用的环境。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 10n
+.rt  
+更改新任务的项目 \fBID\fR，使其与给定项目名称相关联。调用方用户必须是所请求项目的有效成员或者必须具有超级用户特权，该命令才能成功。如果未指定项目名称，则新任务将在调用方用户的当前项目中启动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 10n
+.rt  
+详细：在新的系统任务开始时显示系统任务 ID。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIproject\fR\fR
+.ad
+.RS 11n
+.rt  
+应当对所创建的任务使用的资源负责的项目。必须已在 \fBnsswitch.conf\fR(4) 中定义的项目数据库中定义了所请求的项目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcommand\fR\fR
+.ad
+.RS 11n
+.rt  
+要作为新任务执行的命令。如果未指定命令，则调用用户的登录 shell。（如果登录 shell 不可用，则调用 \fB/bin/sh\fR）。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建新 Shell
+.sp
+.LP
+以下示例在 \fBcanada\fR 项目中创建一个新 shell，并显示任务 ID：
+
+.sp
+.in +2
+.nf
+example$ \fBid -p\fR
+uid=565(gh) gid=10(staff) projid=10(default)
+example$ \fBnewtask -v -p canada\fR
+38
+example$ \fBid -p\fR
+uid=565(gh) gid=10(staff) projid=82(canada)
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR运行 \fBdate\fR 命令
+.sp
+.LP
+以下示例在 \fBrussia\fR 项目中运行 date 命令：
+
+.sp
+.in +2
+.nf
+example$ \fBnewtask -p russia date\fR
+Tue Aug 31 11:12:10 PDT 1999
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR更改现有进程的项目
+.sp
+.LP
+以下示例将 pid 为 \fB9999\fR 的现有进程的项目更改为 \fBrussia\fR：
+
+.sp
+.in +2
+.nf
+example$ \fBnewtask -c 9999 -p russia\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功执行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+执行过程中发生致命错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/project\fR\fR
+.ad
+.RS 16n
+.rt  
+包含此计算机的有效项目定义的本地数据库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/pid/*\fR\fR
+.ad
+.RS 16n
+.rt  
+进程信息和控制文件。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBproc\fR(1)、\fBid\fR(1M)、\fBpoolbind\fR(1M)、\fBexecvp\fR(2)、\fBsetrctl\fR(2)、\fBsettaskid\fR(2)、\fBsetproject\fR(3PROJECT)、\fBnsswitch.conf\fR(4)、\fBproc\fR(4)、\fBproject\fR(4)、\fBattributes\fR(5)

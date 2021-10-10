@@ -1,0 +1,209 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH psrinfo 1M "2004 年 2 月 21 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+psrinfo \- プロセッサに関する情報の表示
+.SH 形式
+.LP
+.nf
+\fBpsrinfo\fR [\fB-p\fR] [\fB-v\fR] [\fIprocessor_id\fR]...
+.fi
+
+.LP
+.nf
+\fBpsrinfo\fR [\fB-p\fR] \fB-s\fR \fIprocessor_id\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpsrinfo\fR はプロセッサに関する情報を表示します。それぞれの物理プロセッサは、複数の仮想プロセッサをサポートできます。それぞれの仮想プロセッサは、固有の割り込み \fBID\fR を持つエンティティーであり、独立したスレッドを実行できます。
+.sp
+.LP
+\fIprocessor_id\fR オペランドを使用しない場合、\fBpsrinfo\fR は、構成されたプロセッサごとに 1 行を使って、そのステータスがオンライン、割り込み不可 (no-intr で指定)、スペア、オフライン、障害、または電源切断のどれであるか、および最後にそのステータスが変更された時刻を表示します。processor_id オペランドを使用すると、特定のプロセッサに関する情報が表示されます。「オペランド」の項を参照してください。\fB\fR 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fI processor_id\fR\fR
+.ad
+.RS 19n
+.rt  
+サイレントモード。指定したプロセッサが完全にオンラインの場合に \fB1\fR を表示します。指定したプロセッサが割り込み不可、スペア、オフライン、障害、または電源切断の状態である場合に \fB0\fR を表示します。
+.sp
+シェルスクリプトで \fBpsrinfo\fR を使用するときに、サイレントモードを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 19n
+.rt  
+システム内の物理プロセッサの数を表示します。
+.sp
+\fB-v\fR オプションと組み合わせた場合、それぞれの物理プロセッサに関する追加情報を報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 19n
+.rt  
+冗長モード。プロセッサタイプ、浮動小数点ユニットタイプ、およびクロック速度など、指定したプロセッサに関する追加情報を表示します。この情報のいずれかを判定できない場合、\fBpsrinfo\fR は \fBunknown\fR を表示します。
+.sp
+\fB-p\fR オプションと組み合わせた場合、それぞれの物理プロセッサに関する追加情報を報告します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+情報を表示するプロセッサのプロセッサ \fBID\fR。
+.sp
+個々のプロセッサ番号 (たとえば \fB3\fR)、スペースで区切った複数のプロセッサ番号 (たとえば \fB1 2 3\fR)、プロセッサ番号の範囲 (たとえば \fB1-4\fR) として \fIprocessor_id\fR を指定します。また、範囲と (個々または複数の) \fIprocessor_id\fR を組み合わせることも可能です (たとえば、\fB1-3 5 7-8 9\fR)。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR構成されたすべてのプロセッサに関する情報を詳細モードで表示する
+.sp
+.LP
+次の例では、構成されたすべてプロセッサに関する情報を詳細モードで表示します。
+
+.sp
+.in +2
+.nf
+\fBpsrinfo \fR\fB-v\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRプロセッサがオンラインであるかどうかを判定する
+.sp
+.LP
+次の例では、シェルスクリプトで \fBpsrinfo\fR を使用して、プロセッサがオンラインであるかどうかを判定します。
+
+.sp
+.in +2
+.nf
+if [ "`psrinfo \fB-s\fR 3 2> /dev/null`" \(mieq 1 ]
+then
+	echo "processor 3 is up"
+fi
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRシステム内の物理プロセッサに関する情報を表示する
+.sp
+.LP
+追加引数を使用しない場合、\fB-p\fR オプションは、システム内の物理プロセッサの数を示す単一の整数を表示します。 
+
+.sp
+.in +2
+.nf
+> psrinfo -p
+                8
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBpsrinfo\fR は、コマンド行引数 (プロセッサ \fBID\fR) も受け入れます。
+
+.sp
+.in +2
+.nf
+> psrinfo -p 0 512   # IDs 0 and 512 exist on the 
+1                    # same physical processor
+
+> psrinfo -p 0 1     # IDs 0 and 1 exist on different 
+2                    # physical processors
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、仮想プロセッサ \fB0\fR および \fB512\fR が同じ物理プロセッサ上に存在します。仮想プロセッサ \fB0\fR および \fB1\fR は存在しません。これはこの例にかぎったものであり、一般的な規則ではありません。 
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpsradm\fR(1M), \fBp_online\fR(2), \fBprocessor_info\fR(2), \fBattributes\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsrinfo:\fR \fBprocessor\fR \fB9:\fR \fBInvalid\fR \fBargument\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセッサが存在しません。
+.RE
+

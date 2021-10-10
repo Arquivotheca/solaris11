@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Generate OpenSSL hash links to CA certificates stored in /etc/certs/CA.
+#
+
+. /lib/svc/share/smf_include.sh
+
+BASENAME=/bin/basename
+CERTS=/etc/certs/CA
+LINKDIR=/etc/openssl/certs
+LN=/bin/ln
+LS=/bin/ls
+OPENSSL=/bin/openssl
+RM=/bin/rm
+
+# If /etc/openssl/certs is missing there is something wrong about the system.
+if [ ! -d $LINKDIR ]; then
+	exit $SMF_EXIT_ERR_CONFIG
+fi
+
+generate_links ()
+{
+	for i in $CERTS/*.pem; do
+		HASH=`$OPENSSL x509 -noout -hash -in $i`
+		$RM -f $LINKDIR/$HASH.0
+		FILE=`$BASENAME $i`
+		# Make the target relative.
+		$LN -s ../../certs/CA/$FILE $LINKDIR/$HASH.0
+	done
+}
+
+case "$1" in
+'start')
+	# Generate links only if the directory is empty.
+	output=`$LS $LINKDIR`
+	[ -z "$output" ] && generate_links
+	;;
+
+'refresh')
+	# Always regenerate the links. Make sure we do not leave any old hash
+	# links behind.
+	$RM -f $LINKDIR/*.0
+	generate_links
+	;;
+
+'stop')
+	;;
+esac
+
+exit $SMF_EXIT_OK

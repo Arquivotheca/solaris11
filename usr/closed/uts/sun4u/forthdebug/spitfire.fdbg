@@ -1,0 +1,169 @@
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License, Version 1.0 only
+\ (the "License").  You may not use this file except in compliance
+\ with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+\ Copyright 1996-1998 by Sun Microsystems, Inc.
+\ All rights reserved.
+
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
+
+#include <sys/param.h>		/* prevents empty translation unit warning */
+
+forth_start
+
+: >i$adr ( set addr line -- i$addr )
+   3 << swap 5 << or swap d# 13 << or
+;
+
+: i$-instr@ ( set addr line -- instr0 instr1 )
+   >i$adr h# 66 spaced@ drop       ( i$data )
+   xlsplit swap                    ( instr0 instr1 )
+;
+
+: i$-tag@ ( set addr -- tag valid )
+   0 >i$adr h# 67 spaced@ drop     ( i$data )
+   dup d# 8 >> h# fffffff and      ( i$data tag )
+   swap d# 36 >> 1 and             ( tag valid )
+;
+
+: i$-pdec@ ( set addr line -- pdec0 pdec1 )
+   >i$adr h# 6e spaced@ drop       ( i$data )
+   dup 4 >> h# f and               ( i$data pdec0 )
+   swap h# f and                   ( pdec0 pdec1 )
+;
+
+: i$-pnext@ ( set addr line -- lru sp nfa brpd0 brpd1 )
+   1 << >i$adr h# 6f spaced@ drop  ( i$data )
+   dup d# 24 >> 1 and              ( i$data lru )
+   swap dup d# 23 >> 1 and         ( lru i$data sp )
+   swap dup d# 12 >> h# 7ff and    ( lru sp i$data nfa )
+   swap dup d# 10 >> 3 and         ( lru sp nfa i$data brpd0 )
+   swap d# 8 >> 3 and              ( lru sp nfa brpd0 brpd1 )
+;
+
+: .i$-tag ( addr tag valid -- )
+   ." valid: " .h dup ."  tag: " .h
+   d# 13 << swap 5 << or ."  pa: " .h cr
+;
+
+: .i$-pdec ( pdec -- )
+   ." ( " dup .h ." )"
+   dup 2 >>  case
+      0  of  ."  call, fba, fbpa or ba"  endof
+      1  of  ."  not call, jmpl, bpa, fba, fbpa, or ba"  endof
+      2  of  ."  normal jmpl"  endof
+      3  of  ."  return jmpl"  endof
+   endcase
+   dup 1 >> 1 and 0=  if  ."  pc-relative cti"  then
+   1 and 0<>  if  ."  store"  then
+   cr
+;
+
+: .i$-brpd ( brpd -- )
+   dup ." ( " .h ." )"
+   case
+      0  of  ."  likely not taken"  endof
+      1  of  ."  likely taken"  endof
+      2  of  ."  strongly taken"  endof
+      3  of  ."  strongly not taken"  endof
+   endcase
+;
+
+: .i$-pnext ( which lru sp nfa brpd0 brpd1 -- )
+   2>r 2>r
+   over 0=  if
+      ." lru: " .h
+   else
+      drop
+   then
+   2r> rot 0>=  if
+      swap ." sp: " .h
+   else
+      nip
+   then
+   ." nfa: " .h cr
+   2r> swap
+   ." brpd0: " .i$-brpd cr
+   ." brpd1: " .i$-brpd cr
+;
+
+: .i$-set-data ( set addr -- )
+   2dup tuck i$-tag@ .i$-tag
+   ." instructions" cr
+   4 0  do
+      2dup i i$-instr@
+      swap .h .h cr
+   loop
+   ." pre-decode" cr
+   4 0  do
+      2dup i i$-pdec@ swap
+      ." instruction" i 2* .h .i$-pdec
+      ." instruction" i 2* 1+ .h .i$-pdec
+   loop
+   ." misc block 0" cr
+   2dup over -rot 0 i$-pnext@ .i$-pnext
+   ." misc block 1" cr
+   -1 -rot 1 i$-pnext@ .i$-pnext
+;
+
+: .i$data ( addr -- )
+   5 >> h# ff and
+   ." set " dup .h cr
+   ." way 0:" cr
+   dup 0 swap .i$-set-data cr
+   ." way 1:" cr
+   1 swap .i$-set-data cr
+;
+
+: >d$adr ( set addr -- d$addr )
+   3 << swap 5 << or
+;
+
+: d$-data@ ( set addr -- instr0 instr1 )
+   >d$adr h# 46 spacex@        ( d$data )
+;
+
+: d$-tag@ ( set -- tag valid0 valid1 )
+   0 >d$adr h# 47 spacex@      ( d$data )
+   dup 2 >> h# fffffff and     ( d$data tag )
+   swap dup 1 and              ( tag d$data valid0 )
+   swap 2 and                  ( tag valid0 valid1 )
+;
+
+: .d$-tag ( tag valid0 valid1 -- )
+   ." valid1: " .h ." valid0: " .h ." tag: " .h
+;
+
+: .d$-data ( set -- )
+   dup d$-tag@ .d$-tag
+   ." data" cr
+   4 0  do
+      dup i d$-data@
+      .h cr
+   loop
+   drop
+;
+
+: .d$data ( addr -- )
+   5 >> h# 1ff and
+   ." set " dup .h cr
+   .d$-data cr
+;
+
+forth_end

@@ -1,0 +1,360 @@
+'\" te
+.\" Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH acctcom 1 "2011 年 8 月 15 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+acctcom \- プロセスアカウンティングファイルの検索と出力
+.SH 形式
+.LP
+.nf
+\fBacctcom\fR [\fB-abfhikmqrtv\fR] [\fB-C\fR \fIsec\fR] [\fB-e\fR \fItime\fR] [\fB-E\fR \fItime\fR] 
+     [\fB-g\fR \fIgroup\fR] [\fB-H\fR \fIfactor\fR] [\fB-I\fR \fIchars\fR] [\fB-l\fR \fIline\fR] 
+     [\fB-n\fR \fIpattern\fR] [\fB-o\fR \fIoutput-file\fR] [\fB-O\fR \fIsec\fR] [\fB-s\fR \fItime\fR] 
+     [\fB-S\fR \fItime\fR] [\fB-u\fR \fIuser\fR] [\fIfilename\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBacctcom\fR は、\fIfilename\fR 引数で指定されたファイル、標準入力、もしくは \fB/var/adm/pacct\fR の内容を \fBacct.h\fR(3HEAD) で規定した形式で読み込み、条件に従って選択したレコードを標準出力に書き出します。個々のレコードは、1 つのプロセスの実行を表します。必ず出力されるのは、\fBCOMMAND NAME\fR、\fBUSER\fR、\fBTTYNAME\fR、\fBSTART TIME\fR、\fBEND TIME\fR、\fBREAL (SEC)\fR、\fB CPU (SEC)\fR、\fBMEAN SIZE (K)\fR です。また指定された場合にだけ出力されるのは、\fBF\fR (\fBfork()\fR/\fBexec()\fR フラグ: \fB1\fR は \fBexec()\fR なしの \fBfork()\fR)、\fBSTAT\fR (システム終了ステータス)、\fBHOG FACTOR\fR、\fBKCORE MIN\fR、\fBCPU FACTOR\fR、\fBCHARS TRNSFD\fR、および \fBBLOCKS\fR \fBREAD\fR (読み書きされたブロックの合計数) です。
+.sp
+.LP
+スーパーユーザー特権で実行されたコマンドについては、コマンド名の前に `\fB # \fR' が付加されます。また認識されている端末のいずれにも関連していないプロセスについては、\fBTTYNAME\fR フィールドに `\fB?\fR' が出力されます。
+.sp
+.LP
+\fIfilename\fR 引数を指定しないとき、標準入力が端末もしくは \fB/dev/null\fR に結びつけられていれば (シェル中で `\fB&\fR\&' を使う場合と同じ状態)、\fB/var/adm/pacct\fR が読み込まれます。対応していなければ標準入力が読み込まれます。
+.sp
+.LP
+\fIfilename\fR 引数を指定すると、記述した順序でそれらのファイルが読み込まれます。各ファイルは正方向に、すなわちプロセスの終了時刻の昇順に読まれます。通常 \fB/var/adm/pacct\fR は、現在の検査対象ファイルを表します。処理量の多いシステムでは、このようなファイルを複数個用意して、現在のファイル以外のファイルを \fB/var/adm/pacct\fI incr\fR\fR として存在させることが必要となる場合があります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fR
+.ad
+.RS 19n
+.rt  
+選択されたプロセスに関する平均値の統計情報を表示します。この統計情報は、全出力レコードの後に出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fR
+.ad
+.RS 19n
+.rt  
+レコードを逆方向に、すなわち最新のコマンドから順番に読み込みます。入力先が標準入力の場合には、このオプションは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fR
+.ad
+.RS 19n
+.rt  
+出力上に \fBfork()\fR/\fBexec()\fR フラグとシステム終了ステータス情報を書き出します。このオプションによる出力では、数値はいずれも 8 進数表示となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fR
+.ad
+.RS 19n
+.rt  
+平均メモリーサイズの代わりに、プロセスが実行中に使用した合計 \fBCPU\fR 時間の割合を表示します。この値は「ホッグ係数」と呼ばれ、(合計 \fBCPU\fR 時間) / (経過時間) で計算されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fR
+.ad
+.RS 19n
+.rt  
+出力上に、\fB入出力\fR回数を示す欄を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fR
+.ad
+.RS 19n
+.rt  
+メモリサイズの代わりに、実行時に使われたキロバイト/分ごとのコアサイズの合計を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fR
+.ad
+.RS 19n
+.rt  
+平均コアサイズを表示します (デフォルト)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR \fR
+.ad
+.RS 19n
+.rt  
+出力レコードはいっさい表示せずに、\fB-a\fR オプションで指定するような統計情報だけを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fR
+.ad
+.RS 19n
+.rt  
+\fBCPU\fR 係数を出力します。これは (ユーザー時間) / ((システム時間) + (ユーザー時間)) で計算されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fR
+.ad
+.RS 19n
+.rt  
+システム \fBCPU\fR 時間とユーザー CPU 時間を区別して出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fR
+.ad
+.RS 19n
+.rt  
+各欄のヘッダを出力しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIsec\fR\fR
+.ad
+.RS 19n
+.rt  
+(システム時間) + (ユーザー時間) で計算される合計 \fBCPU\fR 時間が \fIsec\fR で示す秒数を超えているプロセスだけを選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fItime\fR\fR
+.ad
+.RS 19n
+.rt  
+\fItime\fR で示す時刻もしくはそれ以前に存在していたプロセスだけを選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fI time\fR \fR
+.ad
+.RS 19n
+.rt  
+\fItime\fR で示す時刻もしくはそれ以前に終了したプロセスだけを選択します。なお \fB-S\fR と \fB-E\fR の両オプションを指定し、\fItime\fR として同じ時刻を指定した場合には、その\fI時刻\fRに存在していたプロセスだけが選択されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fI group\fR \fR
+.ad
+.RS 19n
+.rt  
+\fIgroup\fR で示すグループに属しているプロセスだけを選択します。\fIgroup\fR 引数には、グループ \fBID\fR とグループ名のどちらでも指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fI factor\fR \fR
+.ad
+.RS 19n
+.rt  
+「ホッグ係数」値が \fBfactor\fR で示す値を超えているプロセスだけを選択します。「ホッグ係数」に関しては、前述の \fB-h\fR オプションの項を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fI chars\fR \fR
+.ad
+.RS 19n
+.rt  
+\fIchars\fR で示す値を超える数の文字を転送するプロセスだけを選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fI line\fR \fR
+.ad
+.RS 19n
+.rt  
+\fB/dev/term/line\fR 端末に属するプロセスだけを選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fI pattern\fR \fR
+.ad
+.RS 19n
+.rt  
+\fIpattern\fR で示すパターンに一致するコマンドだけを選択します。pattern 引数として、\fBregcmp\fR(3C) で述べるような正規表現も指定できます。ただし \fB+\fR 記号は「1 回以上の出現」を表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fI output-file\fR \fR
+.ad
+.RS 19n
+.rt  
+選択されたプロセスレコードを、\fIoutput-file\fR で示すファイルに入力データ形式でコピーします。標準出力への書き出しは行いません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fI sec\fR \fR
+.ad
+.RS 19n
+.rt  
+システム \fBCPU\fR 時間が \fIsec\fR で示す秒数を超えているプロセスだけを選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fItime\fR\fR
+.ad
+.RS 19n
+.rt  
+\fItime\fR で示す時刻もしくはそれ以降に存在していたプロセスだけを選択します。\fItime\fR の指定形式は \fIhr\fR\|[\|: \fImin\fR\|[\|: sec\|]\|] です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fItime\fR\fR
+.ad
+.RS 19n
+.rt  
+\fItime\fR で示す時刻もしくはそれ以降に開始されたプロセスだけを選択します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fI user\fR \fR
+.ad
+.RS 19n
+.rt  
+\fIuser\fR で示すユーザーに属しているプロセスだけを選択します。user 引数として指定できるのは、ユーザー \fBID\fR、ログイン名 (これはユーザー \fBID\fR に変換される)、`\fB#\fR' (スーパーユーザー特権で実行されたプロセスを表す)、および `\fB?\fR' (認識されていないユーザー \fBID\fR に対応しているプロセスを表す) です。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/group\fR \fR
+.ad
+.RS 22n
+.rt  
+システムグループファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR \fR
+.ad
+.RS 22n
+.rt  
+システムパスワードファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/pacct\fIincr\fR\fR\fR
+.ad
+.RS 22n
+.rt  
+稼動中のプロセスアカウンティングファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/accounting/legacy-accounting
+_
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBps\fR(1), \fBacct\fR(1M), \fBacctcms\fR(1M), \fBacctcon\fR(1M), \fBacctmerg\fR(1M), \fBacctprc\fR(1M), \fBacctsh\fR(1M), \fBfwtmp\fR(1M), \fBrunacct\fR(1M), \fBsu\fR(1M), \fBacct\fR(2), \fBregcmp\fR(3C), \fBacct.h\fR(3HEAD), \fButmp\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fI『Oracle Solaris Administration: Common Tasks』\fR
+.SH 注意事項
+.sp
+.LP
+\fBacctcom\fR は、すでに終了したプロセスに関する情報を出力するものです。現在稼動中のプロセスについての情報は、\fBps\fR(1) により得ることができます。

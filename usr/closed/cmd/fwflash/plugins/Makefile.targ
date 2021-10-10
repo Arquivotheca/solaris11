@@ -1,0 +1,57 @@
+#
+# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+#
+# 
+# closed/cmd/fwflash/plugins/i386
+#
+include $(SRC)/lib/Makefile.lib
+$(TONICBUILD)include $(CLOSED)/Makefile.tonic
+
+SESSRC=		ses-SUN.c
+SESOBJ=		$(SESSRC:%.c=%.o)
+SESSO=		$(SESSRC:%.c=%.so)
+SESLN=		$(SESSRC:%.c=%.ln)
+
+DYNLIB=		$(SESSO)
+OBJECTS=	$(SESOBJ)
+
+SLINKS=		ses-LSILOGIC.so \
+		sgen-SUN.so \
+		sgen-LSILOGIC.so
+
+
+POFILES=	$(SESSRC:%.c=%.po)
+POFILE=		fwflash_verify_msg.po
+SRCDIR=		../vendor
+
+include $(SRC)/cmd/fwflash/Makefile.com
+
+CLEANFILES=	$(DYNLIB) $(SLINKS) $(SESLN) \
+		$(POFILES) $(POFILE)
+
+CLOBBERFILES= 	$(OBJECTS)
+
+CFLAGS += $(C_PICFLAGS)
+MAPFILES= $(SRC)/cmd/fwflash/plugins/vendor/mapfile-vers
+LDLIBS	+= -lumem -lc
+LIBS=   $(DYNLIB)
+FILEMODE = 0755
+
+$(ROOTUSRLIBFWFLASHVRF)/% : $(SESSO)
+	$(INS.symlink)
+
+.KEEP STATE:
+
+all: $(LIBS)
+
+install: \
+	$(ROOTUSRLIBFWFLASHVRF)/ses-SUN.so \
+	$(ROOTUSRLIBFWFLASHVRF)/ses-LSILOGIC.so \
+	$(ROOTUSRLIBFWFLASHVRF)/sgen-SUN.so \
+	$(ROOTUSRLIBFWFLASHVRF)/sgen-LSILOGIC.so
+ 
+lint: $(SESLN)		
+
+_msg msg:	$(POFILE)
+
+include $(SRC)/lib/Makefile.targ

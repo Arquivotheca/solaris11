@@ -1,0 +1,282 @@
+'\" te
+.\" Copyright (c) 1999 Sun Microsystems, Inc. All Rights Reserved.
+.TH cfgadm_sysctrl 1M "1999 年 3 月 10 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_sysctrl \- EXX00 システムボードの管理
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-c\fR \fIfunction\fR [\fB-f\fR] 
+     [\fB-o\fR disable-at-boot | enable-at-boot] [\fB-n\fR | \fB-y\fR] sysctrl0:slot# ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR quiesce-test sysctrl0:slot# 
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR insert-test | remove-test sysctrl0:slot# ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR set-condition-test=# sysctrl0:slot# ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-l\fR]
+     \fB-o\fR disable-at-boot | enable-at-boot sysctrl0:slot# ...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsysctrl\fR ハードウェア固有ライブラリ、\fB/usr/platform/sun4u/lib/cfgadm/sysctrl.so.1\fR により、\fBE6X00\fR、\fBE5X00\fR、\fBE4X00\fR、\fBE3X00\fR システム上で、動的再構成を用いてシステムボードの構成や構成解除ができるようになります。これによりシステムが稼働中であってもリブートせずに、\fBI/O\fR ボード、および \fBCPU\fR ボードを、Solaris 用に設定されたシステムのスロットに挿入できるようになります。また同様に、いずれのタイプのボードも稼働中のシステムから切断および取り外しが可能になり、リブートの必要はなくなります。 
+.sp
+.LP
+システムスロットはデバイスツリー上で「接続点 (attachment point)」として表現され、システムシャーシ内の各スロットには、この接続点が 1 つづつ設定されます。スロットにボードが設置されていない場合は、受容体の状態は \fBempty\fR と認識されます。ボードの電源が切断されシステムから取り外せる状態の場合は、受容体の状態は \fBdisconnected\fR (接続解除) と認識されます。ボードに電源が投入されシステムバスに接続されている状態であれば、受容体の状態は \fBconnected\fR (接続) と認識されます。
+.sp
+.LP
+ 受容体の状態が \fBempty\fR または \fBdisconnected\fR の場合、その受容体の占有装置は \fBunconfigured\fR の状態にあると認識されます。受容体の状態が \fBconnected\fR の場合は、その受容体の占有装置は \fBconfigured\fR または\fBunconfigured\fR のいずれかの状態を取ります。 
+.sp
+.LP
+Solaris でボード上のデバイスを利用できるのは、この状態が \fBconfigured\fR になっている場合です。\fBunconfigured\fR になっている場合、ボード上のデバイスは利用できません。 
+.sp
+.LP
+ボードを挿入すると、受容体の状態は \fBempty\fR から \fBdisconnected\fR に変わります。ボードを取り外すと、受容体の状態は \fBdisconnected\fR から \fBempty\fR に変わります。\fBconnected\fR になっているボードを取り外してしまうと、オペレーティングシステムのクラッシュを起こし、システムに修復不可能な障害を与える場合があります。 
+.SH オプション
+.sp
+.LP
+オプションについての詳細は、\fBcfgadm\fR(1M) の項目を参照してください。
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+状態の変更に使用します。\fIfunction\fR の部分に \fBconnect\fR 、\fBdisconnect\fR 、\fBconfigure\fR 、\fBunconfigure\fR のいずれかを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure\fR
+.ad
+.RS 15n
+.rt  
+占有装置の状態を \fBconfigure\fR に変更します。 
+.sp
+受容体の状態が \fBdisconnect\fRed になっている場合は、\fBconfigure\fR 機能はまず受容体への接続を試みます。\fBconnect\fR 機能の一部として作成される \fBOBP\fR デバイスツリーを調べて Solaris デバイスノードを作成し、要求のあったデバイスを接続します。\fB\fR\fBCPU\fR/メモリーボードの場合は、\fB電源が切断\fR状態にある \fBCPU\fRのリストに、この \fBCPU\fR を加えます。\fB\fRこの情報は \fBpsrinfo\fR(1M) または \fBpsradm\fR(1M) コマンドを用いて見ることができます。CPU/メモリーボードにはメモリー接続点が 2 つ作成されます。新規に設置したボード上の \fBI/O\fRデバイスを使えるように設定するには、\fBmount\fR(1M) および \fBifconfig\fR(1M) コマンドを利用します。\fBCPU\fR を使用するには、\fBpsradm\fR \fB-n\fR を使用して新たなプロセッサをオンラインに設定します。メモリーバンクのテストおよび設定には \fBcfgadm_ac\fR(1M) を利用します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnect\fR
+.ad
+.RS 15n
+.rt  
+受容体の状態を \fBconnect\fRed に変更します。 
+.sp
+受容体の状態の変更を要求すると、バス信号の接続中はシステムバスを凍結し、その間にボードをテストします。\fB休止処理\fRによってバスは凍結します。この休止処理の間は、すべてのプロセス活動は停止し、すべてのドライバの動作が中断します。この休止処理およびそれに後続する復元処理にはかなりの時間がかかります。またすべてのドライバがこの機能をサポートしているわけではありません。このため、\fB-x\fR \fBquiesce-test\fR というオプションが用意されています。\fB\fRこれを使用してシステムバスを凍結させている間に、接続されているボードをファームウェアからテストできます。\fBI/O\fR ボードの場合はこの処理には短時間しか費やしませんが、\fBCPU\fR/メモリーボードの場合は CPU 外部キャッシュのテストが原因で非常に長時間かかります。ここではメモリーのテストはしません。\fB休止処理\fRを開始する前には、実行の確認を促してきます。オプションに \fB-y\fR または \fB-n\fR を使用すると、この確認作業を省略できます。\fBdisabled-at-boot\fRに指定されているボードは、\fB接続処理\fRを拒否します。ただし、指定された処理を強制実行する \fB-f\fR フラグを利用、または \fB-o\fR \fBenable-at-boot\fR を使って指定を無効化した場合は、接続処理が実行されます。\fB-l\fR の解説を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnect\fR
+.ad
+.RS 15n
+.rt  
+ 受容体の状態を \fBdisconnect\fRed に変更します。 
+.sp
+占有装置の状態が \fBconfigure\fR になっている場合は、まず占有装置を構成解除します。\fB\fRこの \fBdisconnect\fR では\fB休止処理\fRを実行しないので、短時間で終了します。ボードの電源は切断され、取り外しが可能な状態になります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure\fR
+.ad
+.RS 15n
+.rt  
+占有装置の状態を \fBunconfigure\fRed に変更します。 
+.sp
+この処理の間、ボード上のデバイス はSolaris からは見えない状態になります。\fBI/O\fR ボード上の \fBI/O\fR デバイスは、Solaris のデバイスツリーから削除されます。デバイスが使用中の場合、この unconfigure の処理は停止し、使用中であることを報告してきます。この場合はデバイスの使用を停止して、その後で unconfigure 処理を再試行する必要があります。\fBCPU\fR/メモリーボードの場合は、ボードの unconfigure 処理を実行する前に、メモリーの状態を unconfigure に設定しておかなければいけません。ボード上の \fBCPU\fR をオフラインにしてから、電源を切断して Solaris \fBCPU\fR リストから削除します。接続中のプロセスが存在する \fBCPU\fR をオフラインにすることはできません。\fBCPU\fR のオフライン化についての詳細は、\fBpsradm\fR(1M)、\fBpsrinfo\fR(1M)、\fBpbind\fR(1M)、\fBp_online\fR(2) の各項目を参照してください。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 強制的に、ボードに接続されているブロックの非揮発性変数 \fBdisabled-board-list\fR を、\fBdisabled-at-boot\fR に指定します。\fI『特記事項: Sun Enterprise 6x00、5x00、4x00、3x00 システム』\fRのマニュアルも参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+リストを表示させるオプションです。これは\fBcfgadm\fR(1M) で解説しているものと同様の機能です。 
+.sp
+\fItype\fR フィールドには \fBcpu/mem\fR、\fBmem\fR、\fBdual-sbus\fR、\fBsbus-upa\fR、\fBdual-pci\fR、\fBsoc+sbus\fR、\fBsoc+upa\fR、\fBdisk\fR、\fBunknown\fR のいずれかを指定できます。 
+.sp
+ハードウェア固有情報のフィールドは、次のように設定されています。 \fB [disabled at boot] [non-detachable] [100 MHz capable] \fR
+.sp
+ボードのタイプが \fBsbus-upa\fR または \fBsoc+upa\fR の場合は、まず最初に次のような追加情報が表示されます。 [\fBsingle buffered\fR \fBffb|double\fR \fBbuffered\fR \fBffb|no\fR \fBffb installed\fR] ボードのタイプが disk の場合は、次のような追加情報が最初に表示されます。 \fB{target: # | no disk} {target: # | no disk}\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR disable-at-boot | enable-at-boot\fR
+.ad
+.sp .6
+.RS 4n
+非揮発性変数 \fBdisabled-board-list\fR の変更に使用します。この \fB-o\fR オプションを使う時は、\fB-c\fR \fIfunction\fR または \fB-l\fR オプションと併用します。
+.sp
+\fBdisabled-at-boot\fR に設定されているボードに関連するブロックをブート時に有効となるようにするには、\fB-o\fR \fBenable-at-boot\fR と \fB-c\fR \fBconnect\fR を併用します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR insert-test | remove-test\fR
+.ad
+.sp .6
+.RS 4n
+テストを実行します。 
+.sp
+ ここで \fBremove-test\fR を使うと、ボードを物理的に取り外さなくても、テストシーケンスを自動処理している間、指定したスロットのドライバ状態は \fBdisconnected\fR から \fBempty\fR に変更されます。 
+.sp
+また、\fBinsert-test\fR の方を使った場合は、\fBremove-test\fRコマンドで empty に指定したスロットのドライバ状態が \fBisconnected\fR に変更され、ボードはスロットに挿入されているものとして認識されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR quiesce-test sysctrl0:slot1\fR
+.ad
+.sp .6
+.RS 4n
+テストを実行します。
+.sp
+このテストの実行により、ボードの接続処理に必要となる \fBquiesce\fR 処理が実行できる状態になります。現在のソフトウェアおよびハードウェアの構成を保ったままで、システムを確実に休止できるようになります。休止処理できないデバイスやプロセスが存在した場合は、エラーメッセージでその名前を表示します。このコマンドは有効なボード接続点に対してであればどれにでも使用可能ですが、いかなるシステムも必ず slot1 を 1 つ所有しているので、上に示した形式での使用を推奨しておきます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR set-condition-test=# \fR
+.ad
+.sp .6
+.RS 4n
+テストを実行します。
+.sp
+状態変更コマンドのポリシーロジックをテストできるように、システムボードの接続点の条件を設定します。新しい設定の内容は、1 から 4 の数字で表現されます。各数字の意味は、以下のようになります。 
+.sp
+.in +2
+.nf
+0      unknown
+1      ok 
+2      failing
+3      failed
+4      unusable
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBsysctrl0:slot\fI#\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBsysctrl\fR ドライバのインスタンス \fB0\fR (\fBsysctrl0\fR) が、\fBEXX00\fR システム上のボードに接続点を発行します。接続点の名前には、\fBslot0\fR から \fBslot15\fR までの番号を割り当てます。\fI#\fR の部分には \fB0\fR から \fB15\fR までの数字を入れます。この値がスロット番号を示すことになります。この形式は、\fBcfgadm\fR(1M) を用いた論理的な \fBap_id\fR の指定と一致します。これに対応する物理的な \fBap_id\fR は、次項の【\fBファイル\fR】に記載してあります。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/platform/sun4u/lib/cfgadm/sysctrl.so.1\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェア固有ライブラリ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB/devices/central@1f,0/fhc@0,f8800000/clock-board@0,900000:slot*\fR
+.ad
+.sp .6
+.RS 4n
+接続点
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library/platform
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBcfgadm_ac\fR(1M), \fBifconfig\fR(1M), \fBmount\fR(1M),  \fBpbind\fR(1M), \fBpsradm\fR(1M), , \fBpsrinfo\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBattributes\fR(5)
+.sp
+.LP
+\fI『Sun Enterprise 6x00、5x00、4x00、3x00 システム Dynamic Reconfiguration ユーザーマニュアル』\fR
+.sp
+.LP
+\fI『特記事項: Sun Enterprise 6x00、5x00、4x00、3x00 システム』\fR
+.SH 注意事項
+.sp
+.LP
+EXX00 システムの CPU/メモリーボードの動的再構成について、更に詳しい情報が必要な場合は、\fI『Sun Enterprise 6x00、5x00、4x00、3x00 システム Dynamic Reconfiguration ユーザーマニュアル』\fRを参照してください。 

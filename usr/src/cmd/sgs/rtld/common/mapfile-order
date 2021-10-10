@@ -1,0 +1,63 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# Note: This mapfile is used to place r_debug as the
+# very first data item inside of the run-time linker.
+# This is required for the ld.so.1 <--> rtld_db bootstraping
+# for debuggers.
+#
+# The issue with this is that gcc/devpro do not agree on the
+# name of the section this data is placed in.  The devpro
+# compilers call the section .data, while gcc calls it .data.rel.
+# We key off the __GNUC conditional token to handle this difference.
+#
+
+$mapfile_version 2
+
+LOAD_SEGMENT data {
+	FLAGS = READ WRITE EXECUTE;
+
+	# Match the .data (devpro) or .data.rel (gcc) section from
+	# pics/debugdata.o and direct it to the data segment.
+	ASSIGN_SECTION dbg_data {
+$if __GNUC
+		IS_NAME = .data.rel;
+$else
+		IS_NAME = .data;
+$endif
+		FILE_PATH = pics/debugdata.o;
+	};
+
+	# The section matched by the dbg_data entrance criteria should
+	# go before any other input sections with the same name.
+	IS_ORDER = dbg_data;
+
+	# The output section with the same name as the one matched by
+	# dbg_data should go at the top of the data segment.
+$if __GNUC
+	OS_ORDER = .data.rel;
+$else
+	OS_ORDER = .data;
+$endif
+};

@@ -1,0 +1,128 @@
+'\" te
+.\" 版权所有 (c) 2006，Oracle 和/或其附属公司。保留所有权利。
+.TH preap 1 "2006 年 6 月 19 日" "SunOS 5.11" "用户命令"
+.SH 名称
+preap \- 强制僵尸进程的父进程收割僵尸进程
+.SH 用法概要
+.LP
+.nf
+\fBpreap\fR [\fB-F\fR] \fIpid\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+僵尸进程是其退出状态尚未由其父进程收割的进程。退出状态是经由 \fBwait\fR(3C)、\fBwaitid\fR(2) 或 \fBwaitpid\fR(3C) 系统调用收割的。在正常的系统运行过程中，可能会出现僵尸进程，但通常是比较短暂的。如果父进程没有收割其部分或所有子进程的退出状态就退出，则会出现这种情况。在这种情况下，这些子进程将重新认 \fBPID 1\fR 为父。请参见 \fBinit\fR(1M)，它定期收割此类进程。
+.sp
+.LP
+不可靠的父进程无法花很长的时间退出，这样，就将僵尸进程留在了系统上。因为操作系统在进程成为僵尸进程之前几乎已毁坏了其所有组件，所以这些僵尸进程通常不会影响系统运行。不过，它们的确会消耗少量系统内存。
+.sp
+.LP
+\fBpreap\fR 强制 \fIpid\fR 指定的进程的父代 \fBwaitid\fR(3C) \fIpid\fR（如果 \fIpid\fR 表示一个僵尸进程）。
+.sp
+.LP
+在下列情况下，\fBpreap\fR 会尝试阻止管理员轻率地收割即将由其父进程收割的子进程：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+该进程是 \fBinit\fR(1M) 的子进程。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+父进程已停止并且可能会在再次允许它运行时拜访子进程。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+进程的僵死时间少于一分钟。
+.RE
+.SH 选项
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+强制父进程收割子进程，不管安全检查。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.RS 7n
+.rt  
+进程 \fBID\fR 列表。
+.RE
+
+.SH 用法
+.sp
+.LP
+使用 \fB-F\fR 标志时应谨慎。在一个被调试的进程上施加两个控制进程可能会导致混乱。仅当主控制进程（通常是调试器）已停止了被调试的进程，并且在应用 \fBproc\fR 工具的可疑时刻主控制进程未在执行任何操作，才能保证安全。
+.SH 退出状态
+.sp
+.LP
+输出被收割的每个目标进程的退出状态的 \fBpreap\fR 返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB非零值\fR
+.ad
+.RS 13n
+.rt  
+失败，例如没有这样的进程、权限遭拒或选项无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/extended-system-utilities
+SUNWesxu（64 位）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBproc\fR(1)、\fBinit\fR(1M)、\fBwaitid\fR(2)、\fBwait\fR(3C)、\fBwaitpid\fR(3C)、\fBproc\fR(4)、\fBattributes\fR(5)
+.SH 警告
+.sp
+.LP
+应慎用 \fBpreap\fR，只有在管理员或开发人员确认僵尸进程不会由父进程进行收割时，才可使用。否则，应用 \fBpreap\fR 可能会对父进程造成不可预测的损害。

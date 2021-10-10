@@ -1,0 +1,515 @@
+'\" te
+.\" Copyright (c) 2001, Sun Microsystems, Inc.  All Rights Reserved
+.TH glm 7D "15 Nov 2005" "SunOS 5.11" "Devices"
+.SH NAME
+glm \- GLM SCSI Host Bus Adapter Driver
+.SH SYNOPSIS
+.LP
+.nf
+\fBscsi@unit-address\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBglm\fR Host Bus Adapter driver is a \fBSCSA\fR compliant nexus driver that supports the LSI 53c810,  LSI 53c875, LSI 53c876, LSI 53C896 and LSI 53C1010 \fBSCSI\fR chips
+.sp
+.LP
+It supports the standard functions provided by the \fBSCSA\fR interface. That is, it supports tagged and untagged queuing, Narrow/Wide/Fast/Ultra SCSI/Ultra SCSI 2/Ultra SCSI 3, and auto request sense, but it does not support linked commands.
+.SS "Driver Configuration"
+.sp
+.LP
+Configure the \fBglm\fR driver by defining properties in \fBglm.conf\fR. These properties override the global \fBSCSI\fR settings. \fBglm\fR supports these properties which can be modified by the user: \fBscsi-options\fR, \fBtarget<\fIn\fR>-scsi-options\fR, \fBscsi-reset-delay\fR, \fBscsi-tag-age-limit\fR, \fBscsi-watchdog-tick\fR, and \fBscsi-initiator-id\fR.
+.sp
+.LP
+\fBtarget<\fIn\fR>-scsi-options\fR overrides the  \fBscsi-options\fR property value for \fBtarget<\fIn\fR>\fR. <\fIn\fR> can vary from decimal \fB0\fR to \fB15\fR. \fBglm\fR supports these \fBscsi-options\fR: \fBSCSI_OPTIONS_DR\fR, \fBSCSI_OPTIONS_SYNC\fR, \fBSCSI_OPTIONS_TAG\fR, \fBSCSI_OPTIONS_FAST\fR, \fBSCSI_OPTIONS_WIDE\fR, \fBSCSI_OPTIONS_FAST20\fR, \fBSCSI_OPTIONS_FAST40\fR and \fBSCSI_OPTIONS_FAST80\fR.
+.sp
+.LP
+After periodic interval \fBscsi-watchdog-tick\fR, the \fBglm\fR driver searches through all current and disconnected commands for timeouts.
+.sp
+.LP
+\fBscsi-tag-age-limit\fR is the number of times that the \fBglm\fR driver attempts to allocate a particular tag \fBID\fR that is currently in use after going through all tag \fBIDs\fR in a circular fashion. After finding the same tag \fBID\fR in use \fBscsi-tag-age-limit\fR times, no more commands will be submitted to this target until all outstanding commands complete or timeout.
+.sp
+.LP
+Refer to \fBscsi_hba_attach\fR(9F).
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUsing the \fBglm\fR Configuration File
+.sp
+.LP
+Create a file called  \fB/kernel/drv/glm.conf\fR and add the following line:
+
+.sp
+.in +2
+.nf
+scsi-options=0x78;
+.fi
+.in -2
+
+.sp
+.LP
+This disables tagged queuing, Fast/Ultra \fBSCSI\fR and wide mode for all \fBglm\fR instances.
+
+.sp
+.LP
+The following example disables an option for one specific \fBglm\fR (refer to \fBdriver.conf\fR(4) and \fBpci\fR(4) for more details):
+
+.sp
+.in +2
+.nf
+name="glm" parent="/pci@1f,4000"
+	unit-address="3"
+	target1-scsi-options=0x58
+	scsi-options=0x178 scsi-initiator-id=6;
+.fi
+.in -2
+
+.sp
+.LP
+Note that the default initiator \fBID\fR in \fBOBP\fR is 7 and that the change to \fBID\fR 6 will occur at attach time. It may be preferable to change the initiator \fBID\fR in \fBOBP.\fR
+
+.sp
+.LP
+The example above sets \fBscsi-options\fR for target 1 to \fB0x58\fR and all other targets on this \fBSCSI\fR bus to \fB0x178\fR.
+
+.sp
+.LP
+The physical pathname of the parent can be determined using the \fB/devices\fR tree or following the link of the logical device name:
+
+.sp
+.in +2
+.nf
+ # ls -l /dev/rdsk/c0t0d0s0
+ lrwxrwxrwx  1 root   root      45 May 16 10:08 /dev/rdsk/c0t0d0s0 ->
+	.\|.\|/\|.\|.\|/devices/pci@1f,4000/scsi@3/sd@0,0:a,raw
+.fi
+.in -2
+
+.sp
+.LP
+In this case, like the example above, the parent is \fB/pci@1f,4000\fR and the \fBunit-address\fR is the number bound to the \fBscsi@3\fR node.
+
+.sp
+.LP
+To set \fBscsi-options\fR more specifically per target:
+
+.sp
+.in +2
+.nf
+target1-scsi-options=0x78;
+device-type-scsi-options-list =
+	"SEAGATE ST32550W", "seagate-scsi-options" ;
+seagate-scsi-options = 0x58;
+scsi-options=0x3f8;
+.fi
+.in -2
+
+.sp
+.LP
+The above sets \fBscsi-options\fR for target 1 to \fB0x78\fR and for all other targets on this \fBSCSI\fR bus to \fB0x3f8\fR except for one specific disk type which will have   \fBscsi-options\fR set to \fB0x58\fR.
+
+.sp
+.LP
+\fBscsi-options\fR specified per target \fBID\fR have the highest precedence, followed by \fBscsi-options\fR per device type. Global  \fBscsi-options\fR (for all \fBglm\fR instances) per bus have the lowest precedence.
+
+.sp
+.LP
+The system needs to be rebooted before the specified \fBscsi-options\fR take effect.
+
+.SS "Driver Capabilities"
+.sp
+.LP
+The target driver needs to set capabilities in the  \fBglm\fR driver in order to enable some driver features.  The target driver can  query and modify these capabilities:  \fBsynchronous\fR, \fBtagged-qing\fR, \fBwide-xfer\fR, \fBauto-rqsense\fR, \fBqfull-retries\fR, \fBqfull-retry-interval\fR. All other capabilities can only be queried.
+.sp
+.LP
+By default, \fBtagged-qing\fR, \fBauto-rqsense\fR, and \fBwide-xfer\fR capabilities are disabled, while \fBdisconnect\fR, \fBsynchronous\fR, and \fBuntagged-qing\fR are enabled. These capabilities can only have binary values (\fB0\fR or \fB1\fR). The default value for \fBqfull-retries\fR is \fB10\fR and the default value for \fBqfull-retry-interval\fR is \fB100\fR. The \fBqfull-retries\fR capability is a \fBuchar_t\fR (\fB0\fR to \fB255\fR) while \fBqfull-retry-interval\fR is a  \fBushort_t\fR (\fB0\fR to    \fB65535\fR).
+.sp
+.LP
+The target driver needs to enable \fBtagged-qing\fR and \fBwide-xfer\fR explicitly.  The \fBuntagged-qing\fR capability is always enabled and its value cannot be modified.
+.sp
+.LP
+Whenever there is a conflict between the value of \fBscsi-options\fR and a capability, the value set in \fBscsi-options\fR prevails. Only \fBwhom != 0\fR is supported in the \fBscsi_ifsetcap\fR(9F) call.
+.sp
+.LP
+Refer to \fBscsi_ifsetcap\fR(9F) and  \fBscsi_ifgetcap\fR(9F) for details.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/glm\fR\fR
+.ad
+.RS 27n
+.rt  
+32-bit \fBELF\fR kernel module (x86).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/glm\fR\fR
+.ad
+.RS 27n
+.rt  
+64-bit \fBELF\fR kernel module (x86).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/glm\fR\fR
+.ad
+.RS 27n
+.rt  
+64-bit \fBELF\fR kernel module (SPARC).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/glm.conf\fR\fR
+.ad
+.RS 27n
+.rt  
+Optional configuration file
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.22i) |cw(3.28i) 
+lw(2.22i) |lw(3.28i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureT{
+Limited to PCI-based systems with LSI 53c810,  LSI 53c875, LSI 53c876,  LSI 53c896  and  LSI 53c1010   SCSI I/O processors
+T}
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBprtconf\fR(1M), \fBdriver.conf\fR(4), \fBpci\fR(4), \fBattributes\fR(5), \fBscsi_abort\fR(9F), \fBscsi_hba_attach\fR(9F), \fBscsi_ifgetcap\fR(9F), \fBscsi_ifsetcap\fR(9F), \fBscsi_reset\fR(9F), \fBscsi_sync_pkt\fR(9F), \fBscsi_transport\fR(9F), \fBscsi_device\fR(9S), \fBscsi_extended_sense\fR(9S), \fBscsi_inquiry\fR(9S), \fBscsi_pkt\fR(9S)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fIANSI Small Computer System Interface-2 (SCSI-2)\fR,
+.sp
+.LP
+LSI Logi Inc (formerly Symbios Logic Inc.):
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SYM53c810 PCI-SCSI I/O processor with Narrow operation
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SYM53c875 PCI-SCSI  I/O  Processor With Fast-20
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SYM53c876 PCI-SCSI I/O processor Dual channel Fast-20
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SYM53c896 PCI-SCSI I/O processor Dual channel Fast-40
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SYM53c1010 PCI-SCSI I/O processor Dual Channel Fast-80
+.RE
+.SH DIAGNOSTICS
+.sp
+.LP
+The messages described below are some that may appear on the system console, as well as being logged.
+.sp
+.ne 2
+.mk
+.na
+\fBDevice is using a hilevel intr\fR
+.ad
+.sp .6
+.RS 4n
+The device was configured with an interrupt level that cannot be used with this \fBglm\fR driver.  Check the \fBPCI\fR device.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmap setup failed\fR
+.ad
+.sp .6
+.RS 4n
+Driver was unable to map device registers; check for bad hardware. Driver did not attach to device; \fBSCSI\fR devices will be inaccessible.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglm_script_alloc failed\fR
+.ad
+.sp .6
+.RS 4n
+The driver was unable to load the \fBSCRIPTS\fR for the \fBSCSI\fR processor, check for bad hardware. Driver did not attach to device; \fBSCSI\fR devices will be inaccessible.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcannot map configuration space.\fR
+.ad
+.sp .6
+.RS 4n
+The driver was unable to map in the configuration registers. Check for bad hardware. \fBSCSI\fR devices will be inaccessible.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBattach failed\fR
+.ad
+.sp .6
+.RS 4n
+The driver was unable to attach; usually preceded by another warning that indicates why attach failed. These can be considered hardware failures.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSCSI bus DATA IN phase parity error\fR
+.ad
+.sp .6
+.RS 4n
+The driver detected parity errors on the \fBSCSI\fR bus.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSCSI bus MESSAGE IN phase parity error\fR
+.ad
+.sp .6
+.RS 4n
+The driver detected parity errors on the \fBSCSI\fR bus.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSCSI bus STATUS phase parity error\fR
+.ad
+.sp .6
+.RS 4n
+The driver detected parity errors on the \fBSCSI\fR bus.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBUnexpected bus free\fR
+.ad
+.sp .6
+.RS 4n
+Target disconnected from the bus without notice. Check for bad hardware.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisconnected command timeout for Target <id>.<lun>\fR
+.ad
+.sp .6
+.RS 4n
+A timeout occurred while target \fBid\fR/\fIlun\fR was disconnected. This is usually a target firmware problem. For tagged queuing targets, \fB<\fR\fIn\fR\fB>\fR commands were outstanding when the timeout was detected.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDisconnected tagged cmd(s) (<n>) timeout for Target <id>.<lun>\fR
+.ad
+.sp .6
+.RS 4n
+A timeout occurred while target \fBid\fR/\fIlun\fR was disconnected. This is usually a target firmware problem. For tagged queuing targets, \fB<\fR\fIn\fR\fB>\fR commands were outstanding when the timeout was detected.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBConnected command timeout for Target <id>.<lun>\fR
+.ad
+.sp .6
+.RS 4n
+This is usually a \fBSCSI\fR bus problem. Check cables and termination.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTarget <id> reducing sync. transfer rate\fR
+.ad
+.sp .6
+.RS 4n
+A data transfer hang or \fBDATA-IN\fR phase parity error was detected. The driver attempts to eliminate this problem by reducing the data transfer rate.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTarget <id> reverting to async. mode\fR
+.ad
+.sp .6
+.RS 4n
+A second data transfer hang was detected for this target. The driver attempts to eliminate this problem by reducing the data transfer rate.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTarget <id> disabled wide SCSI mode\fR
+.ad
+.sp .6
+.RS 4n
+A second data phase hang was detected for this target. The driver attempts to eliminate this problem by disabling wide \fBSCSI\fR mode.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBauto request sense failed\fR
+.ad
+.sp .6
+.RS 4n
+An attempt to start an auto request packet failed. Another auto request packet may already be in transport.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinvalid reselection (<id>.<lun>)\fR
+.ad
+.sp .6
+.RS 4n
+A reselection failed; target accepted \fBabort\fR or \fBreset\fR, but still tries to reconnect. Check for bad hardware.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinvalid intcode\fR
+.ad
+.sp .6
+.RS 4n
+The \fBSCRIPTS\fR processor generated an invalid \fBSCRIPTS\fR interrupt. Check for bad hardware.
+.RE
+
+.SH NOTES
+.sp
+.LP
+The x4422a card uses an OBP (forth) firmware and is incompatible with x86 BIOS. As a result, the x4422a cannot be used as a boot device on x86.
+.sp
+.LP
+The glm driver supports the following LSI chips:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI 53C810, which supports Narrow, Fast SCSI mode. The maximum SCSI bandwidth is 10 MB/sec.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI 53C875, which supports Wide, Fast, and Ultra SCSI mode. The maximum SCSI bandwidth is 40 MB/sec.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI 53C896, which supports Wide, Fast and Ultra SCSI 2 mode. The maximum LVD SCSI bandwidth is 80 MB/sec.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+LSI 53c1010, which supports wide, Fast and Ultra SCSI 3 mode. The maximum LVD SCSI bandwidth is 160 MB/sec.
+.RE
+.sp
+.LP
+The \fBglm\fR driver exports properties indicating per target the negotiated transfer speed (\fBtarget<\fIn\fR>-sync-speed\fR), whether wide bus is supported (\fBtarget<\fIn\fR>-wide\fR), for that particular target (\fBtarget<\fIn\fR>-scsi-options\fR), and whether tagged queuing has been enabled (\fBtarget<\fIn\fR>-TQ\fR). The \fBsync-speed\fR property value is the data transfer rate in KB/sec. The \fBtarget<\fIn\fR>-TQ\fR and the \fBtarget<\fIn\fR>-wide\fR property have value \fB1\fR to indicate that the corresponding capability is enabled, or \fB0\fR to indicate that the capability is disabled for that target. Refer to \fBprtconf\fR(1M) (verbose option) for viewing the \fBglm\fR properties.
+.sp
+.in +2
+.nf
+scsi, instance #0
+    Driver properties:
+        name <target6-TQ> length <4>
+            value <0x00000000>.
+        name <target6-wide> length <4>
+            value <0x00000000>.
+        name <target6-sync-speed> length <4>
+            value <0x00002710>.
+        name <target1-TQ> length <4>
+            value <0x00000001>.
+        name <target1-wide> length <4>
+            value <0x00000000>.
+        name <target1-sync-speed> length <4>
+            value <0x00002710>.
+        name <target0-TQ> length <4>
+            value <0x00000001>.
+        name <target0-wide> length <4>
+            value <0x00000001>.
+        name <target0-sync-speed> length <4>
+            value <0x00009c40>.
+        name <scsi-options> length <4>
+            value <0x000007f8>.
+        name <scsi-watchdog-tick> length <4>
+            value <0x0000000a>.
+        name <scsi-tag-age-limit> length <4>
+            value <0x00000002>.
+        name <scsi-reset-delay> length <4>
+            value <0x00000bb8>.
+        name <latency-timer> length <4>
+            value <0x00000088>.
+        name <cache-line-size> length <4>
+            value <0x00000010>.
+.fi
+.in -2
+

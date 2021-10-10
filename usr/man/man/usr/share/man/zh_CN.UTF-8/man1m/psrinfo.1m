@@ -1,0 +1,209 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH psrinfo 1M "2004 年 2 月 21 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+psrinfo \- 显示有关处理器的信息
+.SH 用法概要
+.LP
+.nf
+\fBpsrinfo\fR [\fB-p\fR] [\fB-v\fR] [\fIprocessor_id\fR]...
+.fi
+
+.LP
+.nf
+\fBpsrinfo\fR [\fB-p\fR] \fB-s\fR \fIprocessor_id\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpsrinfo\fR 可显示有关处理器的信息。每个物理处理器可支持多个虚拟处理器。每个虚拟处理器都是一个实体，具有各自的中断 \fBID\fR，并能够执行独立线程。
+.sp
+.LP
+如果不带 \fIprocessor_id\fR 操作数，\fBpsrinfo\fR 将为每个配置的处理器显示一行，表明该处理器是处于 on-line（联机）、no-intr（不可中断）、spare（备用）、off-line（脱机）、faulted（故障）状态还是已关闭，以及上一次状态发生变化的时间。使用 processor_id 操作数可显示特定处理器的信息。请参见\fB\fR"操作数"部分。 
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fI processor_id\fR\fR
+.ad
+.RS 19n
+.rt  
+无提示模式。如果指定的处理器完全联机，则显示 \fB1\fR。如果指定的处理器处于不可中断、备用、脱机、故障或关闭状态，则显示 \fB0\fR。
+.sp
+在 shell 脚本中使用 \fBpsrinfo\fR 时，请使用无提示模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 19n
+.rt  
+显示系统中物理处理器的数目。
+.sp
+与 \fB-v\fR 选项结合使用时，报告每个物理处理器的附加信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 19n
+.rt  
+详细模式。显示指定处理器的附加信息，包括处理器类型、浮点单元类型和时钟速度。如果其中的任何信息无法判断，\fBpsrinfo\fR 将显示 \fBunknown\fR（未知）。
+.sp
+与 \fB-p\fR 选项结合使用时，报告每个物理处理器的附加信息。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+要显示其信息的处理器的处理器 \fBID\fR。
+.sp
+将 \fIprocessor_id\fR 指定为单个处理器编号（例如，\fB3\fR）、由空格分隔的多个处理器编号（例如，\fB1 2 3\fR）或者处理器编号的范围（例如，\fB1-4\fR）。也可以组合使用范围和单个或多个 \fIprocessor_id\fR（例如，\fB1-3 5 7-8 9\fR）。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR以详细模式显示所有配置的处理器的信息
+.sp
+.LP
+以下示例以详细模式显示所有配置的处理器的信息。
+
+.sp
+.in +2
+.nf
+\fBpsrinfo \fR\fB-v\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR确定处理器是否联机
+.sp
+.LP
+以下示例在 shell 脚本中使用 \fBpsrinfo\fR 判断处理器是否联机。
+
+.sp
+.in +2
+.nf
+if [ "`psrinfo \fB-s\fR 3 2> /dev/null`" \(mieq 1 ]
+then
+	echo "processor 3 is up"
+fi
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR显示关于系统中物理处理器的信息
+.sp
+.LP
+没有附加参数时，\fB-p\fR 选项将显示一个单个整数，即系统中物理服务器的数目： 
+
+.sp
+.in +2
+.nf
+> psrinfo -p
+                8
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBpsrinfo\fR 也接受命令行参数（处理器 \fBID\fR）：
+
+.sp
+.in +2
+.nf
+> psrinfo -p 0 512   # IDs 0 and 512 exist on the 
+1                    # same physical processor
+
+> psrinfo -p 0 1     # IDs 0 and 1 exist on different 
+2                    # physical processors
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本例中，虚拟处理器 \fB0\fR 和 \fB512\fR 存在于同一个物理处理器中。虚拟处理器 \fB0\fR 和 \fB1\fR 则非如此。这是此示例的特定情况，并非通用的规则。 
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpsradm\fR(1M)、\fBp_online\fR(2)、\fBprocessor_info\fR(2)、\fBattributes\fR(5)
+.SH 诊断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsrinfo:\fR \fBprocessor\fR \fB9:\fR \fBInvalid\fR \fBargument\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的处理器不存在。
+.RE
+

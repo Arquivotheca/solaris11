@@ -1,0 +1,108 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+
+Zones Dataset Conversion
+
+If zones were installed on Oracle Solaris 11 Express 2010.11, a conversion
+process is required to make use of them on this release of Oracle Solaris
+11.  This conversion process is described in this README.
+
+   NOTICE:  The conversion process is a one way operation.  Once a zone is
+            converted to the new dataset layout it will not be bootable
+	    in with Solaris 11 Express 2010.11.
+
+This README applies to solaris branded zones and solaris10 branded zones
+(Oracle Solaris Containers) on Oracle Solaris 11.
+
+Oracle Solaris 11 enhances the layout of ZFS datasets in each zone to more
+closely resemeble the layout found in the global zone.  The key aspects of
+this enhancement include:
+
+  - Each zone has a delegated dataset that is manageable by the zone
+    administrator.  The existence of this dataset does not limit the use of
+    other delegated datasets.
+  - The default layout of this delegated dataset is as follows.  Notice that
+    it has some components that are unique to each boot environment and
+    others that are shared by each boot environment.
+
+     <zonepath dataset>/rpool
+	
+	This is the delegated dataset, referred to as the "zone rpool
+	dataset."  It is mounted within the zone at /rpool.  Aside from the
+	datasets within the "zone ROOT dataset," all filesystem and volume
+	datasets created within the "zone rpool dataset" are shared across
+	all of this zone's boot environments.
+	
+     <zonepath dataset>/rpool/ROOT
+
+	This dataset contains boot environments and is referred to as the
+	"zone ROOT dataset."  Each dataset created directly within the zone
+	ROOT dataset represents the root (/) of a zone boot environment.
+	Zone boot environments should be created and destroyed with the
+	zoneadm(1M) and beadm(1M) commands.
+
+     <zonepath dataset>/rpool/export
+     <zonepath dataset>/rpool/export/home
+
+        These datasets are mounted at /export and /export/home, much as
+	analogous datasets are mounted at /export and /export/home in the
+	global zone.  They are shared among all of a single zone's boot
+	environments.
+
+	These datasets are not created if there exist zonecfg "fs" or
+	"dataset" resources that would cause a mount anywhere under the
+	/export hierarchy.
+
+The conversion process updates the zone dataset layout from the format found
+in Oracle Solaris 11 Express 2010.11 to that used by Oracle Solaris 11.  The
+conversion process includes:
+
+  - Create the zone's <zonepath dataset>/rpool dataset.
+  - Move the zone's boot environments from the <zonepath dataset>/ROOT
+    dataset to the <zonepath dataset>/rpool/ROOT dataset.
+  - Create the zone's <zonepath dataset>/export and <zonepath
+    dataset>/export/home datasets.
+  - Migrate data found in /export and /export/home in the zone's active boot
+    environment to the new /export and /export/home directories.  This step
+    is not performed if the zone's configuration includes "fs" or "dataset"
+    resources.  See zonecfg(1M) for details on those resources.
+
+File systems and datasets that are mounted in the zone via zonecfg resources
+are not affected.  They will continue to be mounted at the same location as
+they had before the conversion.  Data will not be migrated from those file
+systems or datasets.
+
+To convert a zone to the new dataset layout, run dsconvert with the name of
+the zone.  Additional options are available for dry-run and verbose output.
+Run "dsconvert -h" for a complete usage statement.
+
+    /usr/lib/brand/shared/dsconvert <zone>
+
+Depending on whether the zone was previously attached or detached, dsconvert
+will give advice for any steps required to make the zone bootable.
+
+Upon completion of the conversion process, "zoneadm -z <zone> verify" will be
+run.  If it detects configuration that was not able to be automatically
+converted, you will need to manually complete this conversion before the
+zone will boot.

@@ -1,0 +1,247 @@
+'\" te
+.\" 版权所有 (c) 2007，Oracle 和/或其附属公司。保留所有权利。
+.TH isns 1M "2007 年 11 月 8 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+isns \- Internet 存储名称服务
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/isns\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+Internet 存储名称服务 (Internet Storage Name Service, iSNS) 在 IP 网络中提供针对 Internet SCSI (iSCSI) 和 Internet 光纤通道协议 (Internet Fibre Channel Protocol, iFCP) 设备的统一搜索服务。iSNS 使用客户机/服务器机制：服务器存储客户机的配置信息，并根据客户机的请求提供该信息。IETF RFC 4171 描述了服务器和客户机之间的协议。
+.sp
+.LP
+本手册页简要介绍了 Solaris iSNS 服务器实现。当前实现不支持 iFCP 设备。
+.sp
+.LP
+Solaris iSNS 服务器是作为守护进程 \fBisns\fR 实现的，该守护进程绑定到服务客户机请求熟知的端口 3205。该守护进程由服务管理工具 (\fBsmf\fR(5)) 启动，并使用以下故障管理资源标识符 (Fault Management Resource Identifier, FMRI)：
+.sp
+.in +2
+.nf
+svc:/network/isns_server
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用 \fBsvcadm\fR(1M) 启用 \fBisns\fR。启用该服务意味着每次引导系统时它都自动启动和运行。可使用 \fBsvcs\fR(1) 命令显示服务的状态。
+.sp
+.LP
+可使用 \fBsvccfg\fR(1M) 管理下面列出的服务属性。缺省值是根据 RFC 4171 和实现选择分配的。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdata_store_location\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置数据存储位置。缺省位置是 \fB/etc/isns/isnsdata.xml\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBESI_retry_threshold_count\fR\fR
+.ad
+.sp .6
+.RS 4n
+实体状态查询重试阈值计数器。缺省计数为 \fB3\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBManagement_SCNs_Enabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+用以确定是否启用管理状态更改通知的布尔值。缺省值为 \fByes\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAuthorized_Control_Nodes\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制节点名称。
+.RE
+
+.sp
+.LP
+在更改属性值之后，必须使用 \fBsvcadm\fR(1M) \fBrefresh\fR，\fBisns\fR 才能识别新值。如果更改了 \fBdata_store_location\fR 属性，必须输入 \fBsvcadm restart\fR 命令才能使更改生效。
+.sp
+.LP
+为了管理未分配给任何用户定义的搜索域的客户机，RFC 4171 定义了缺省搜索域、缺省域集和"缺省 DD/DDS"设置。服务器采取与缺省搜索域和缺省搜索域集相关的以下操作：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将未分配的客户机添加到缺省搜索域中。新注册的客户机或删除了其最后一个搜索域成员身份的客户机都被视为未分配的客户机。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将客户机分配给用户定义的搜索域时，服务器会从缺省搜索域中删除该客户机。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+为了使管理员能够对缺省搜索域中的客户机进行搜索控制，允许通过管理操作激活或取消激活缺省搜索域集。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不允许通过管理操作将客户机添加到缺省搜索域中，也不允许通过管理操作将用户定义的搜索域添加到缺省搜索域集中。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+缺省搜索域集的缺省状态为非活动状态。
+.RE
+.sp
+.LP
+\fBisns\fR 服务器支持允许您管理 \fBisns\fR 活动的某些 \fBrbac\fR(5) 授权。这些授权包括以下 \fBauth_attr\fR(4) 特权：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.isnsmgr.write\fR\fR
+.ad
+.sp .6
+.RS 4n
+此特权是执行下列操作时所必需的：创建搜索域或搜索域集、启用/禁用搜索域集，以及更改搜索域中 iSNS 客户机的分组或更改搜索域集中搜索域的分组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.manage.isns\fR\fR
+.ad
+.sp .6
+.RS 4n
+此特权是通过 \fBsmf\fR(5) 管理 \fBisns\fR 服务器时所必需的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.value.isns\fR\fR
+.ad
+.sp .6
+.RS 4n
+此特权是更改与 \fBisns\fR 关联的 SMF 服务属性时所必需的。
+.RE
+
+.sp
+.LP
+"iSNS Server Management"（iSNS 服务器管理）配置文件（请参见 \fBprof_attr\fR(4)）中包括了上述所有授权。有关角色和授权的概述，请参见 \fBrbac\fR(5)。
+.SH 选项
+.sp
+.LP
+\fBisns\fR 守护进程不支持任何选项。
+.SH 示例
+.LP
+\fB示例 1 \fR启动 \fBisns\fR 服务器
+.sp
+.LP
+以下命令可启动 \fBisns\fR 服务器。
+
+.sp
+.in +2
+.nf
+# \fBsvcadm enable svc:/network/isns_server\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR停止 \fBisns\fR 服务器
+.sp
+.LP
+以下命令可停止 \fBisns\fR 服务器。
+
+.sp
+.in +2
+.nf
+# \fBsvcadm disable svc:/network/isns_server\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR更改 \fBisns\fR 属性
+.sp
+.LP
+以下命令序列可更改 \fBESI_retry_threshold_count\fR 属性的值。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/network/isns_server setprop \e
+config/ESI_retry_threshold_count = 6\fR
+# \fBsvcadm refresh svc:/network/isns_server\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/sbin/isns\fR\fR
+.ad
+.sp .6
+.RS 4n
+iSNS 守护进程二进制文件。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/storage/isns
+_
+接口稳定性Committed（已确定）
+_
+标准请参见 \fBstandards\fR(5)。
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBisnsadm\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBauth_attr\fR(4)、\fBprof_attr\fR(4)、\fBattributes\fR(5)、\fBrbac\fR(5)、\fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+强烈建议您在更改服务属性之后重新启动服务器 (\fBsvcadm restart\fR)。这使得服务器可以为现有客户机和新客户机应用统一的设置。
+.sp
+.LP
+如 RFC 4171 中所述，控制节点不是管理服务器时所必需的。可以通过本地主机上的 \fBisnsadm\fR(1M) 命令接口来实现控制节点操作。例如，\fBisnsadm\fR 允许您创建搜索域和搜索域集并为其添加成员，以创建搜索域和搜索域集关联。

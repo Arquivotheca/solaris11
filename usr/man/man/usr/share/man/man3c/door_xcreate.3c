@@ -1,0 +1,514 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH door_xcreate 3C "17 Nov 2009" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+door_xcreate \- create a door descriptor for a private door with per-door control over thread creation
+.SH SYNOPSIS
+.LP
+.nf
+#include <door.h>
+
+typedef void door_server_procedure_t(void *, char *, size_t,
+     door_desc_t *, uint_t);
+.fi
+
+.LP
+.nf
+typedef int door_xcreate_server_func_t(door_info_t *,
+     void *(*)(void *), void *, void *);
+.fi
+
+.LP
+.nf
+typedef void door_xcreate_thrsetup_func_t(void *);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBdoor_xcreate\fR(\fBdoor_server_procedure_t *\fR\fIserver_procedure\fR,
+     \fBvoid *\fR\fIcookie\fR, \fBuint_t\fR \fIattributes\fR,
+     \fBdoor_xcreate_server_func_t *\fR\fIthr_create_func\fR,
+     \fBdoor_xcreate_thrsetup_func_t *\fR\fIthr_setup_func\fR, \fBvoid *\fR\fIcrcookie\fR,
+     \fBint\fR \fInthread\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBdoor_xcreate()\fR function creates a private door to the given \fIserver_procedure\fR, with per-door control over the creation of threads that will service invocations of that door. A private door is a door that has a private pool of threads that service calls to that door alone; non-private doors share a pool of service threads (see \fBdoor_create\fR(3C)).
+.SS "Creating private doors using \fBdoor_create()\fR"
+.sp
+.LP
+Prior to the introduction of \fBdoor_xcreate()\fR, a private door was created using \fBdoor_create()\fR specifying attributes including \fBDOOR_PRIVATE\fR after installing a suitable door server thread creation function using \fBdoor_server_create()\fR. During such a call to \fBdoor_create()\fR, the first server thread for that door is created by calling the door server function; you must therefore already have installed a custom door server creation function using \fBdoor_server_create()\fR. The custom server creation function is called at initial creation of a private door, and again whenever a new invocation uses the last available thread for that door. The function must decide whether it wants to increase the level of concurrency by creating an additional thread - if it decides not to then further invocations may have to wait for an existing active invocation to complete before they can proceed. Additional threads may be created using whatever thread attributes are desired in the application, and the application must specify a thread start function (to \fBthr_create\fR(3C) or \fBpthread_create\fR(3C)) which will perform a \fBdoor_bind()\fR to the newly-created door before calling \fBdoor_return\fR(\fINULL\fR, 0, \fINULL\fR, 0) to enter service. See \fBdoor_server_create\fR(3C) and \fBdoor_bind\fR(3C) for more information and for an example.
+.sp
+.LP
+This "legacy" private door API is adequate for many uses, but has some limitations:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The server thread creation function appointed via the \fBdoor_server_create()\fR is shared by all doors in the process. Private doors are distinguished from non-private in that the \fBdoor_info_t\fR pointer argument to the thread creation function is non-null for private doors; from the \fBdoor_info_t\fR the associated door server procedure is available via the \fBdi_proc\fR member.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If a library wishes to create a private door of which the application is essentially unaware it has no option but to inherit any function appointed with \fBdoor_server_create()\fR which may render the library door inoperable.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Newly-created server threads must bind to the door they will service, but the door file descriptor to quote in \fBdoor_bind()\fR is not available in the \fBdoor_info_t\fR structure we receive a pointer to. The door file descriptor is returned as the result of \fBdoor_create()\fR, but the initial service thread is created during the call to \fBdoor_create()\fR. This leads to complexity in the startup of the service thread, and tends to force the use of global variables for the door file descriptors as per the example in \fBdoor_bind()\fR.
+.RE
+.SS "Creating private doors with \fBdoor_xcreate()\fR"
+.sp
+.LP
+The \fBdoor_xcreate()\fR function is purpose-designed for the creation of private doors and simplifies their use by moving responsibility for binding the new server thread and synchronizing with it into a library-provided thread startup function:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The first three arguments to \fBdoor_xcreate()\fR are as you would use in \fBdoor_create()\fR: the door \fIserver_procedure\fR, a private cookie to pass to that procedure whenever it is invoked for this door, and desired door attributes. The \fBDOOR_PRIVATE\fR attribute is implicit, and an additional attribute of \fBDOOR_NO_DEPLETION_CB\fR is available.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Four additional arguments specify a server thread creation function to use for this door (must not be \fINULL\fR), a thread setup function for new server threads (can be \fINULL\fR), a cookie to pass to those functions, and the initial number of threads to create for this door.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBdoor_xcreate_server_func_t()\fR for creating server threads has differing semantics to those of a \fBdoor_server_func_t()\fR used in \fBdoor_server_create()\fR. In addition to a \fBdoor_info_t\fR pointer it also receives as arguments a library-provided thread start function and thread start argument that it must use, and the private cookie registered in the call to \fBdoor_xcreate()\fR. The nominated \fBdoor_xcreate_server_func_t()\fR must:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Return 0 if no additional thread is to be created, for example if it decides the current level of concurrency is sufficient. When the server thread creation function is invoked as part of a depletion callback (as opposed to during initial \fBdoor_xcreate()\fR) the \fBdoor_info_t\fR \fBdi_attributes\fR member includes \fBDOOR_DEPLETION_CB\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Otherwise attempt to create exactly one new thread using \fBthr_create()\fR or \fBpthread_create()\fR, with whatever thread attributes (stack size) are desired and quoting the implementation-provided thread start function and opaque data cookie. If the call to \fBthr_create()\fR or \fBpthread_create()\fR is successful then return 1, otherwise return -1.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Do not call \fBdoor_bind()\fR or request to enter service via \fBdoor_return\fR(\fINULL\fR, 0, \fINULL\fR, 0).
+.RE
+As in \fBdoor_server_create()\fR new server threads must be created \fBPTHREAD_SCOPE_SYSTEM\fR and \fBPTHREAD_CREATE_DETACHED\fR for POSIX threads, and \fBTHR_BOUND\fR and \fBTHR_DETACHED\fR for Solaris threads. The signal disposition and scheduling class of newly-created threads are inherited from the calling thread, initially from the thread calling \fBdoor_xcreate()\fR and subsequently from the current active door server thread.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The library-provided thread start function performs the following operations in the order presented:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Calls the \fBdoor_xcreate_thrsetup_func_t()\fR if it is not \fINULL\fR, passing the \fIcrcookie\fR. You can use this setup function to perform custom service thread configuration that must be done from the context of the new thread. Typically this is to configure cancellation preferences, and possibly to associate application thread-specific-data with the newly-created server thread.
+.sp
+If \fBthr_setup_func()\fR was \fINULL\fR then a default is applied which will configure the new thread with \fBpthread_setcancelstate\fR(\fBPTHREAD_CANCEL_DISABLE\fR, \fINULL\fR) and \fBpthread_setcanceltype\fR(\fBPTHREAD_CANCEL_DEFERRED\fR, \fINULL\fR). If the server code is truly interested in notifications of client aborts during a door invocation then you will need to provide a \fBthr_setup_func()\fR that does not disable cancellations, and use \fBpthread_cleanup_push\fR(3C)and \fBpthread_cleanup_pop\fR(3C)as appropriate.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Binds the new thread to the door file descriptor using \fBdoor_bind()\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Synchronizes with \fBdoor_xcreate()\fR so that the new server thread is known to have successfully completed \fBdoor_bind()\fR before \fBdoor_xcreate()\fR returns.
+.RE
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The number of service threads to create at initial door creation time can be controlled through the \fInthread\fR argument to \fBdoor_xcreate()\fR. The nominated \fBdoor_xcreate_server_func_t()\fR will be called \fInthread\fR times. All \fInthread\fR new server threads must be created successfully (\fBthr_create_func()\fR returns 1 for each) and all must succeed in binding to the new door; if fewer than \fInthread\fR threads are created, or fewer than \fInthread\fR succeed in binding, then \fBdoor_xcreate()\fR fails and any threads that were created are made to exit.
+.sp
+No artificial maximum value is imposed on the \fInthread\fR argument: it may be as high as system resources and available virtual memory permit. There is a small amount of additional stack usage in the \fBdoor_xcreate()\fR stack frame for each thread - up to 16 bytes in a 64-bit application. If there is unsufficient room to extend the stack for this purpose then \fBdoor_xcreate()\fR fails with \fBE2BIG\fR.
+.sp
+The door attributes that can be selected in the call to \fBdoor_xcreate()\fR are the same as in \fBdoor_create()\fR, with \fBDOOR_PRIVATE\fR implied and \fBDOOR_NO_DEPLETION_CB\fR added:
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDOOR_PRIVATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+It is not necessary to include this attribute. The \fBdoor_xcreate()\fR interfaces only creates private doors.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDOOR_NO_DEPLETION_CB\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create the initial pool of \fInthread\fR service threads, but do not perform further callbacks to the \fBthr_create_func()\fR for this door when the thread pool appears to be depleted at the start of a new door invocation. This allows you to select a fixed level of concurrency.
+.sp
+Another \fBdi_attribute\fR is defined during thread depletion callbacks:
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDOOR_DEPLETION_CB\fR\fR
+.ad
+.sp .6
+.RS 4n
+This call to the server thread creation function is the result of a depletion callback. This attribute is not set when the function is called during initial \fBdoor_xcreate()\fR.
+.RE
+
+.RE
+
+.RE
+.sp
+.LP
+The descriptor returned from \fBdoor_xcreate()\fR will be marked as close on \fBexec\fR (\fBFD_CLOEXEC\fR). Information about a door is available for all clients of a door using \fBdoor_info\fR(3C). Applications concerned with security should not place secure information in door data that is accessible by \fBdoor_info()\fR. In particular, secure data should not be stored in the data item cookie.
+.sp
+.LP
+A process can advertise a door in the file system name space using \fBfattach\fR(3C).
+.sp
+.LP
+After creation, \fBdoor_setparam\fR(3C)can be used to set limits on the amount of data and descriptors clients can send over the door.
+.sp
+.LP
+A door created with \fBdoor_xcreate()\fR may be revoked using \fBdoor_revoke\fR(3C). This closes the associated file descriptor, and acts as a barrier to further door invocations, but existing active invocations are not guaranteed to have completed before \fBdoor_revoke()\fR returns. Server threads bound to a revoked door do not wakeup or exit automatically when the door is revoked.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, \fBdoor_xcreate()\fR returns a non-negative value. Otherwise, \fBdoor_xcreate()\fR returns -1 and sets \fBerrno\fR to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBdoor_xcreate()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBE2BIG\fR\fR
+.ad
+.RS 11n
+.rt  
+The requested \fInthread\fR is too large. A small amount of stack space is required for each thread we must start and synchronize with. If extending the \fBdoor_xcreate()\fR stack by the required amount will exceed the stack bounds then \fBE2BIG\fR is returned.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 11n
+.rt  
+The attempt to \fBdoor_bind()\fR within the library-provided thread start function failed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 11n
+.rt  
+Invalid attributes are passed, \fInthread\fR is less than 1, or \fBthr_create_func()\fR is \fINULL\fR. This is also returned if \fBthr_create_func()\fR returns 0 (no thread creation attempted) during \fBdoor_xcreate()\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEMFILE\fR\fR
+.ad
+.RS 11n
+.rt  
+The process has too many open descriptors.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 11n
+.rt  
+Insufficient memory condition while creating the door.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOTSUP\fR\fR
+.ad
+.RS 11n
+.rt  
+A \fBdoor_xcreate()\fR call was attempted from a fork handler.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEPIPE\fR\fR
+.ad
+.RS 11n
+.rt  
+A call to the nominated \fBthr_create_func()\fR returned -1 indicating that \fBpthread_create()\fR or \fBthr_create()\fR failed.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCreate a private door with an initial pool of 10 server threads
+.sp
+.LP
+Create a private door with an initial pool of 10 server threads. Threads are created with the minimum required attributes and there is no thread setup function. Use \fBfattach()\fR to advertise the door in the filesystem namespace.
+
+.sp
+.in +2
+.nf
+static pthread_attr_t tattr;
+
+/*
+ * Simplest possible door_xcreate_server_func_t.  Always attempt to 
+ * create a thread, using the previously initialized attributes for 
+ * all threads. We must use the start function and argument provided,
+ * and make no use of our private mycookie argument.
+ */
+int
+thrcreatefunc(door_info_t *dip, void *(*startf)(void *), 
+    void *startfarg, void *mycookie)
+{
+        if (pthread_create(NULL, &tattr, startf, startfarg) != 0) {
+                perror("thrcreatefunc: pthread_create");
+                return (-1);
+        }
+
+        return (1);
+}
+
+/*
+ * Dummy door server procedure - does no processing.
+ */
+void
+door_proc(void *cookie, char *argp, size_t argsz, door_desc_t *descp,
+    uint_t n)
+{
+    door_return (NULL, 0, NULL, 0);
+}
+
+int
+main(int argc, char *argv[])
+{
+    struct stat buf;
+    int did;
+
+    /*
+     * Setup thread attributes - minimum required.
+     */
+    (void) pthread_attr_init(&tattr);
+    (void) pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+    (void) pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM);
+
+    /*
+     * Create a private door with an initial pool of 10 server threads.
+     */
+    did = door_xcreate(door_proc, NULL, 0, thrcreatefunc, NULL, NULL, 
+                       10);
+
+    if (did == -1) {
+        perror("door_xcreate");
+        exit(1);
+    }
+
+    if (stat(DOORPATH, &buf) < 0) {
+        int newfd;
+
+        if ((newfd = creat(DOORPATH, 0644)) < 0) {
+            perror("creat");
+            exit(1);
+        }
+        (void) close(newfd);
+    }
+
+    (void) fdetach(DOORPATH);
+
+    (void) fdetach(DOORPATH);
+    if (fattach(did, DOORPATH) < 0) {
+        perror("fattach");
+        exit(1);
+    }
+
+    (void) fprintf(stderr, "Pausing in main\n");
+    (void) pause();
+}
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRCreate a private door with exactly one server thread and no callbacks for additional threads
+.sp
+.LP
+Create a private door with exactly one server thread and no callbacks for additional threads.  Use a server thread stacksize of 32K, and specify a thread setup function.
+
+.sp
+.in +2
+.nf
+#define DOORPATH        "/tmp/grmdoor"
+
+static pthread_attr_t tattr;
+
+/*
+ * Thread setup function - configuration that must be performed from
+ * the conext of the new thread.  The mycookie argument is the
+ * second-to-last argument from door_xcreate.
+ */
+void
+thrsetupfunc(void *mycookie)
+{
+    /*
+     * If a thread setup function is specified it must do the
+     * following at minimum.
+     */
+    (void) pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+
+    /*
+     * The default thread setup functions also performs the following
+     * to disable thread cancellation notifications, so that server
+     * threads are not cancelled when a client aborts a door call.
+     * This is not a requirement.
+     */
+    (void) pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+    /*
+     * Now we can go on to perform other thread initialization,
+     * for example to allocate and initialize some thread-specific data
+     * for this thread;  for thread-specific data you can use a
+       destructor function in pthread_key_create if you want to perform
+       any actions if/when a door server thread exits.
+     */
+}
+
+/*
+ * The door_xcreate_server_func_t we will use for server thread 
+ * creation. The mycookie argument is the second-to-last argument
+ * from door_xcreate.
+ */
+int
+thrcreatefunc(door_info_t *dip, void *(*startf)(void *), 
+    void *startfarg, void *mycookie)
+{
+    if (pthread_create(NULL, &tattr, startf, startfarg) != 0) {
+            perror("thrcreatefunc: pthread_create");
+            return (-1);
+    }
+
+    return (1);
+}
+
+/*
+ * Door procedure.  The cookie received here is the second arg to
+ * door_xcreate.
+ */
+void
+door_proc(void *cookie, char *argp, size_t argsz, door_desc_t *descp,
+    uint_t n)
+{
+    (void) door_return(NULL, 0, NULL, 0);
+}
+
+int
+main(int argc, char *argv[])
+{
+    struct stat buf;
+    int did;
+
+    /*
+     * Configure thread attributes we will use in thrcreatefunc.
+     * The PTHREAD_CREATE_DETACHED and PTHREAD_SCOPE_SYSTEM are
+     * required.
+     */
+    (void) pthread_attr_init(&tattr);
+    (void) pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+    (void) pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM);
+    (void) pthread_attr_setstacksize(&tattr, 16 * 1024);
+
+    /*
+     * Create a private door with just one server thread and asking for
+         * no further callbacks on thread pool depletion during an
+         * invocation.
+         */
+    did = door_xcreate(door_proc, NULL, DOOR_NO_DEPLETION_CB,
+        thrcreatefunc, thrsetupfunc, NULL, 1);
+
+    if (did == -1) {
+            perror("door_xcreate");
+            exit(1);
+    }
+
+    if (stat(DOORPATH, &buf) < 0) {
+            int newfd;
+
+            if ((newfd = creat(DOORPATH, 0644)) < 0) {
+                    perror("creat");
+                    exit(1);
+            }
+            (void) close(newfd);
+    }
+
+    (void) fdetach(DOORPATH);
+    if (fattach(did, DOORPATH) < 0) {
+            perror("fattach");
+            exit(1);
+    }
+
+    (void) fprintf(stderr, "Pausing in main\n");
+    (void) pause();
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Architectureall
+_
+Availabilitysystem/core-os
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdoor_bind\fR(3C), \fBdoor_call\fR(3C), \fBdoor_create\fR(3C), \fBdoor_info\fR(3C), \fBdoor_revoke\fR(3C), \fBdoor_server_create\fR(3C), \fBdoor_setparam\fR(3C), \fBfattach\fR(3C), \fBlibdoor\fR(3LIB), \fBpthread_create\fR(3C), \fBpthread_cleanup_pop\fR(3C), \fBpthread_cleanup_push\fR(3C), \fBthr_create\fR(3C), \fBattributes\fR(5), \fBcancellation\fR(5)

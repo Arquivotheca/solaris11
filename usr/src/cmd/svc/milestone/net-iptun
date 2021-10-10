@@ -1,0 +1,224 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# This service configures IP tunnel links and IP interfaces over IP
+# tunnels.
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+. /lib/svc/share/net_upgrade_include.sh
+
+# There's nothing to do in shared-IP zones
+smf_configure_ip || exit $SMF_EXIT_OK
+
+#
+# Configure tunnels which were deferred by /lib/svc/method/net-physical (the
+# svc:/network/physical service) since it depends on the tunnel source
+# addresses being available.
+#
+# WARNING: you may wish to turn OFF forwarding if you haven't already, because
+# of various possible security vulnerabilities when configuring tunnels for
+# Virtual Private Network (VPN) construction.
+#
+# Also, since the /etc/hostname*.* files have been obsoleted, ipadm(1M)
+# should be used to create persistent configuration for IP tunnels.
+# If this is an upgrade and there are /etc/hostname*.* files present in the
+# system, they will be converted to ipadm persistent configuration here to the
+# best possible extent after which they will be renamed.
+# If names are used in the /etc/hostname*.* files or in the ipadm
+# persistent configuration, those names have to be in either DNS (and DNS is
+# used) or in /etc/hosts, because this file is executed before NIS is started.
+#
+
+#
+# get_tunnel_links: print the names of the tunnel links currently configured
+# on the running system.
+#
+get_tunnel_links ()
+{
+	/usr/sbin/dladm show-iptun -p -o link
+}
+
+upgrade_tunnel_ifs ()
+{
+	tunnel_links=`get_tunnel_links`
+	#
+	# Get the list of tunnel interfaces that have a /etc/hostname[6].<tun>
+	# to upgrade. This also includes the implicit tunnels named "ip.*"
+	# that we'll upgrade for backward compatibility.  When we build
+	# the list of implicit tunnels, we have to make sure that they're not
+	# different kinds of links that are simply named "ip.*".
+	#
+	implicit_tunnel_names=`/usr/bin/ls -1 /etc/hostname.ip*.*[0-9] \
+	    /etc/hostname6.ip*.*[0-9] 2> /dev/null | /usr/bin/cut -f2- -d. | \
+	    /usr/bin/sort -u`
+	#
+	# For each implicit tunnel, create a persistent data link before
+	# creating the persistent IP interface on it.
+	#
+	for intf_name in $implicit_tunnel_names; do
+		/usr/sbin/dladm show-link -pP $intf_name > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			if [[ $intf_name = ip.tun+([0-9]) ]]; then
+				/usr/sbin/dladm create-iptun -T ipv4 $intf_name
+			elif [[ $intf_name = ip6.tun+([0-9]) ]]; then
+				/usr/sbin/dladm create-iptun -T ipv6 $intf_name
+			elif [[ $intf_name = ip.6to4tun+([0-9]) ]]; then
+				/usr/sbin/dladm create-iptun -T 6to4 $intf_name
+			else
+				continue
+			fi
+			[ $? -eq 0 ] && \
+	    		    implicit_tunnels="$implicit_tunnels $intf_name"
+		fi
+	done
+	#
+	# Note: Before obsoleting /etc/hostname*.* files, to remove the 
+	# persistence for an implicit tunnel, it was enough to remove the
+	# corresponding /etc/hostname*.* file. But, once the file has been 
+	# upgraded, the admin has to remove the persistence by deleting both
+	# ipadm and dladm configurations for that tunnel.
+	#
+	for intf_name in $tunnel_links; do
+		if [ -f /etc/hostname.$intf_name ] || \
+		    [ -f /etc/hostname6.$intf_name ]; then
+			tunnel_interfaces="$tunnel_interfaces $intf_name"
+		fi
+	done
+
+	#
+	# It is possible that an administrator might have created
+	# both a legacy and ipadm persistent configuration for some
+	# of their tunnels. In that case, the legacy configuration is
+	# the one that should be persisted after upgrade. Delete any
+	# pre-existing ipadm configuration in these cases.
+	#
+	for intf_name in $tunnel_interfaces $implicit_tunnels; do
+		ipadm show-if $intf_name >/dev/null 2>&1
+		if [[ $? -eq 0 ]]; then
+			ipadm delete-ip $intf_name
+			if [[ $? -ne 0 ]]; then
+				if [ -f /etc/hostname.$intf_name ]; then
+					nu_rename_upgraded_file \
+					    hostname.$intf 1 "hostname.<tun>"
+				fi
+				if [ -f /etc/hostname6.$intf_name ]; then
+					nu_rename_upgraded_file \
+					    hostname6.$intf 1 "hostname6.<tun>"
+				fi
+				continue
+			fi
+			echo "Deleted ipadm configuration for $intf_name "\
+			    "during the upgrade" > /dev/msglog
+		fi
+		if [ -f /etc/hostname.$intf_name ]; then
+			nu_upgrade_if $intf_name inet hostname.$intf_name \
+			    "hostname.<tun>"
+		fi
+		if [ -f /etc/hostname6.$intf_name ]; then
+			nu_upgrade_if $intf_name inet6 hostname6.$intf_name \
+			    "hostname6.<tun>"
+		fi
+	done
+
+	nu_finalize_etc_upgrade $SMF_FMRI
+}
+
+case "$1" in
+start)
+	# First, bring up tunnel links
+	/usr/sbin/dladm up-iptun
+
+	# Now, deal with /etc/hostname upgrades.
+	if nu_etc_files_need_upgrading $SMF_FMRI; then
+		upgrade_tunnel_ifs
+	fi
+	#
+	# Get the list of IP tunnel interfaces we'll need to configure.  These
+	# are comprised of IP interfaces over the tunnels we've just brought
+	# up in the above dladm command.
+	#
+	tunnel_interfaces=`get_tunnel_links | /usr/bin/sort -u`
+	for intf_name in $tunnel_interfaces; do
+		#
+		# Configure IP tunnel interfaces set up using ipadm
+		#
+		state=`/usr/sbin/ipadm show-if -p -o state $intf_name 2>/dev/null`
+		if [ $? -ne 0 ] || [ "$state" != "disabled" ]; then
+			#
+			# skip if not managed my ipadm or if not a persistent
+			# interface
+			#
+			continue;
+		else
+			# Enable the interface managed by ipadm
+			/usr/sbin/ipadm enable-if -t $intf_name
+		fi
+	done
+
+	#
+	# Set 6to4 Relay Router communication support policy and, if
+	# applicable, the destination Relay Router IPv4 address.  See
+	# /etc/default/inetinit for setting and further info on
+	# ACCEPT6TO4RELAY and RELAY6TO4ADDR.  If ACCEPT6TO4RELAY=NO, the
+	# default value in the kernel will be used.
+	#
+	[ -f /etc/default/inetinit ] && . /etc/default/inetinit
+	ACCEPT6TO4RELAY=`echo "$ACCEPT6TO4RELAY" | /usr/bin/tr '[A-Z]' '[a-z]'`
+	if [ "$ACCEPT6TO4RELAY" = yes ]; then
+		if [ "$RELAY6TO4ADDR" ]; then
+			/usr/sbin/6to4relay -e -a $RELAY6TO4ADDR
+		else
+			/usr/sbin/6to4relay -e
+		fi
+	fi
+	;;
+
+stop)
+	tunnel_links=`get_tunnel_links`
+
+	# Unplumb IP interfaces
+	for tun in $tunnel_links; do
+		/usr/sbin/ipadm disable-if -t $tun > /dev/null 2>&1
+	done
+
+	# Take down the IP tunnel links
+	/usr/sbin/dladm down-iptun
+	;;
+
+unconfigure)
+	for tun in `get_tunnel_links`; do
+		/usr/sbin/ipadm delete-ip $tun > /dev/null 2>&1
+		/usr/sbin/dladm delete-iptun $tun
+	done
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | unconfigure }"
+	exit 1
+	;;
+esac
+
+exit $SMF_EXIT_OK

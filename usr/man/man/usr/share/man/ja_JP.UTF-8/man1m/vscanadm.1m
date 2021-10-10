@@ -1,0 +1,661 @@
+'\" te
+.\" Copyright (c) 2007 Sun Microsystems, Inc. All Rights Reserved.
+.TH vscanadm 1M "2009 年 7 月 7 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+vscanadm \- vscan サービス構成ユーティリティー
+.SH 形式
+.LP
+.nf
+\fBvscanadm\fR \fBset\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]...
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBget\fR [\fB-p\fR \fIproperty\fR]...
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBimport\fR \fB-p\fR \fIproperty\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBexport\fR \fB-p\fR \fIproperty\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBvalidate\fR \fB-p\fR \fIproperty\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBadd-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBremove-engine\fR \fIengine_id\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBset-engine\fR \fB-p\fR\fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBget-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... [\fIengine_id\fR]
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBshow\fR
+.fi
+
+.LP
+.nf
+\fBvscanadm\fR \fBstats\fR [\fB-z\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBvscanadm\fR コマンドは、\fBvscan\fR サービス \fBvscand\fR(1M) のプロパティーの設定や表示を行うほか、スキャンの統計情報を提供します。
+.sp
+.LP
+\fBzfs\fR(1M) などの適切なファイルシステム管理コマンドを使用すると、あるファイルシステムをウィルススキャンから除外するような設定をファイルシステム単位で行うことができます。
+.sp
+.LP
+スキャンエンジンは外部ホスト上の他社製アプリケーションであり、ファイルに対する実際のウィルススキャン処理を実行します。\fBvscan\fR サービスで使用する複数のスキャンエンジンを構成できます。最低でも 2 つのスキャンエンジンを使用することをお勧めします。ファイルスキャン要求は、負荷分散を実現するために複数の構成済みスキャンエンジンに分配されます。スキャンエンジンはその \fIengine_id\fR で識別されます。\fIengine_id\fR は、最大 64 バイトのユーザー定義文字列です。
+.sp
+.LP
+\fBvscan\fR サービスのプロパティーは 2 つのカテゴリに分けられます。1 つはスキャンエンジン定義に固有のスキャンエンジンプロパティー、もう 1 つはサービスに適用され、スキャンエンジン固有ではない一般プロパティーです。
+.SH サブコマンド
+.sp
+.LP
+\fBvscanadm\fR で認証されるサブコマンドは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm set\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+\fBvscan\fR サービスの一般プロパティーの値を設定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+プロパティー値を指定します
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm get\fR [\fB-p\fR \fIproperty\fR]...\fR
+.ad
+.sp .6
+.RS 4n
+\fBvscan\fR サービスの一般プロパティーの値を表示します。プロパティーが指定されなかった場合、\fBvscan\fR サービスのすべての一般プロパティーが表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR\fR
+.ad
+.RS 15n
+.rt  
+プロパティー値を指定します
+.RE
+
+.RE
+
+.sp
+.LP
+\fBvscanadm set\fR および \fBvscanadm get\fR サブコマンドで使用可能なプロパティーは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-size\fR\fR
+.ad
+.RS 19n
+.rt  
+ウィルススキャンを実行すべきファイルの最大サイズ。\fImax-size\fR を超えるファイルではスキャンが実行されません。\fImax-size\fR を超えるファイルへのアクセスを許可するかどうかは、\fImax-size-action\fR プロパティーで決まります。
+.sp
+\fImax-size\fR は数値 (10 進) コンポーネントと単位サイズを表す省略可能な文字コンポーネントから成る文字列で、その形式は「N[.N][KMGTP][B]」です。
+.sp
+数値コンポーネントのあとには、省略可能な単位を 1 文字、2 文字のいずれかで指定できます。たとえば、K バイトを指定するには「K」、「KB」のいずれかを使用できます。単位指定子は、大文字と小文字は区別されませんが、数値の直後にスペースを入れずに続ける必要があります。
+.sp
+単位指定子が指定されなかった場合や単位指定子「B」が指定された場合、数値の単位はバイトとみなされます。デフォルト値は 1G バイトです。
+.sp
+スキャンの最大ファイルサイズは \fBvscan\fR サービスで定義されますが、通常はスキャンエンジンでも独自の最大ファイルサイズ設定が定義されます。スキャンエンジンの最大ファイルサイズ以下の値に \fImax-size\fR を設定することをお勧めします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-size-action\fR\fR
+.ad
+.RS 19n
+.rt  
+\fImax-size\fR より大きいファイルへのアクセスを許可するかどうかを指定します。\fImax-size\fR より大きいファイルではウィルススキャンが実行されません。有効な値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBallow\fR
+.ad
+.RS 9n
+.rt  
+\fImax-size\fR より大きいファイル (ウィルススキャンなし) へのアクセスを許可します。これがデフォルト値です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdeny\fR
+.ad
+.RS 9n
+.rt  
+\fImax-size\fR より大きいファイル (ウィルススキャンなし) へのアクセスを拒否します
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm import\fR \fB-p\fR \fIproperty\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルからプロパティー値をインポートします。このファイルには、単一のプロパティー値を指定する行が 1 行だけ含まれている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm export\fR \fB-p\fR \fIproperty\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルにプロパティー値をエクスポートします。このファイルには、単一のプロパティー値を指定する行が 1 行だけ含まれている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm validate\fR \fB-p\fR \fIproperty\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイル内のプロパティー値を検証します。このファイルには、単一のプロパティー値を指定する行が 1 行だけ含まれている必要があります。
+.RE
+
+.sp
+.LP
+\fBvscanadm import\fR、\fBvscanadm export\fR、および \fBvscanadm validate\fR サブコマンドで使用可能なプロパティーは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtypes\fR\fR
+.ad
+.RS 9n
+.rt  
+ファイルタイプ拡張子マッチングルールのコンマ区切りリスト。このリストは、ウィルススキャンの実行時にどのタイプのファイルをスキャンし、どのファイルを除外すべきかを定義します。各ルールは、ルールインジケータ [+|-] および、ファイルのタイプ拡張子と比較するファイルタイプ \fIexpresssion\fR から構成されます。ファイルタイプ \fIexpresssion\fR では大文字と小文字は区別されず、「*」および「?」のワイルドカードを含めることができます。ルールインジケータとファイルタイプ \fIexpresssion\fR との間にスペースが入らないようにしてください。ファイルタイプ式にコンマが含まれている場合には、そのコンマを「\e」(バックスラッシュ) でエスケープする必要があります。ファイルタイプ式には直前のドットは含めません。
+.sp
+ルールインジケータは単一の文字であり、次のいずれかになります。
+.sp
+.in +2
+.nf
++ include file type in virus scanning
+- exclude file type from virus scanning
+.fi
+.in -2
+.sp
+
+あるファイルがウィルススキャンの候補として評価される際には、そのファイルタイプが types 内に定義されたルールと比較されます。最初に一致したルールが適用されます。一致するルールが 1 つも見つからない場合、そのファイルに対してウィルススキャンが実行されます。types 文字列の合計長が 4096 バイトを超えてはいけません。types リストのデフォルトの内容は、「+*」です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm add-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIengine_id\fR で識別される新しいスキャンエンジンを追加します。指定されなかったスキャンエンジンプロパティーでは常に、デフォルト値が使用されます。ホスト名のデフォルト値は、\fIengine_id\fR になります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+プロパティー値を指定します
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm remove-engine\fR \fIengine_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIengine_id\fR で識別されるスキャンエンジンとそのすべての構成プロパティー値を削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm set-engine\fR \fB-p\fR\fIproperty\fR=\fIvalue\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIengine_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIengine_id\fR で識別されるスキャンエンジンの構成プロパティー値を作成または更新します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+プロパティー値を指定します
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm get-engine\fR [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... [\fIengine_id\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIengine_id\fR で識別されるスキャンエンジンの指定されたスキャンエンジンプロパティーの値を表示します。\fIengine_id\fR が指定されなかった場合、このサブコマンドは、すべての構成済みスキャンエンジンの指定されたスキャンエンジンプロパティーの値を表示します。プロパティーが指定されなかった場合、このサブコマンドは、\fBvscan\fR サービスのすべてのスキャンエンジンプロパティーを表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.RS 21n
+.rt  
+プロパティー値を指定します
+.RE
+
+.RE
+
+.sp
+.LP
+\fBvscanadm add-engine\fR、\fBvscanadm remove-engine\fR、\fBvscanadm set-engine\fR、および \fBvscanadm get-engine\fR サブコマンドで使用可能なプロパティーは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR\fR
+.ad
+.RS 18n
+.rt  
+スキャンエンジンの有効/無効を指定します。有効な値は「on」(有効) と「off」(無効) です。デフォルトは「on」(有効) です。host プロパティーが無効の場合、スキャンエンジンは有効化できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR\fR
+.ad
+.RS 18n
+.rt  
+スキャンエンジンのホスト名または \fBIPv4\fR 形式の \fBIP\fR アドレス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR\fR
+.ad
+.RS 18n
+.rt  
+スキャンエンジンの \fBICAP\fR ポート番号。この数値の範囲は 0 から 65535 です。デフォルトの \fBICAP\fR ポートは 1344 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-connection\fR\fR
+.ad
+.RS 18n
+.rt  
+スキャンエンジンで確立可能な最大同時接続数。この数値の範囲は 1 から 512 までです。このプロパティーのデフォルトは 8 です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm show\fR\fR
+.ad
+.RS 23n
+.rt  
+\fBvscan\fR サービスのすべての一般プロパティーとスキャンエンジンプロパティーの値を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscanadm stats\fR [\fB-z\fR]\fR
+.ad
+.RS 23n
+.rt  
+\fBvscan\fR サービスの次の統計情報を表示またはリセットします。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+スキャンされたファイルの数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+感染していたファイルの数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+失敗したスキャン要求の数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+スキャンエラー数 (スキャンエンジンごとのエラー数も含む)
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.RS 6n
+.rt  
+\fBvscan\fR サービスの統計カウンタをゼロにリセットします
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR最大サイズ制限の設定
+.sp
+.LP
+ウィルススキャンの対象となるファイルの最大サイズ制限を 128M バイトに設定するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm set -p max-size=128M
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRファイルへのアクセス許可
+.sp
+.LP
+最大ファイルサイズを超えるファイルへのアクセスを許可するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm set -p max-size-action=allow
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRファイルタイプの設定
+.sp
+.LP
+タイプ「odt」、「exe」、「jpg」のファイルのみがウィルススキャンの対象となるように types を設定するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm set -p types=+odt,+exe,+jpg,-*
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+「doc」以外のすべてのファイルタイプがウィルススキャンの対象となるように types を設定するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm set -p types=-doc,+*
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRファイルタイプリストの表示
+.sp
+.LP
+ファイルタイプのリストを表示するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm get -p types
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRスキャンエンジンの追加
+.sp
+.LP
+スキャンエンジン「\fBmy_eng\fR」をデフォルト値を使用して追加するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm add-engine my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRスキャンエンジンの無効化
+.sp
+.LP
+スキャンエンジン「\fBmy_eng\fR」を無効にするには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm set-engine -p enable=off my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRスキャンエンジンのプロパティーの表示
+.sp
+.LP
+スキャンエンジン「\fBmy_eng\fR」のプロパティーを表示するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm get-engine my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRスキャンエンジンの削除
+.sp
+.LP
+スキャンエンジン「\fBmy_eng\fR」を削除するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm remove-engine my_eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRvscan サービスの一般プロパティーとスキャンエンジンプロパティーの表示
+.sp
+.LP
+vscan サービスのすべての一般プロパティーとスキャンエンジンプロパティーを表示するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+# vscanadm show
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0 以外\fR\fR
+.ad
+.RS 12n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/storage/virus-scan
+_
+インタフェースの安定性不確実
+_
+ユーティリティーの出力形式インタフェースではない
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBvscand\fR(1M), \fBzfs\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBvscanadm\fR を使用して \fBvscan\fR プロパティーや統計情報を表示する権限は、すべてのユーザーに対して許可されます。プロパティー値を設定したり統計情報をリセットしたりするには、次の承認が必要となります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.value.vscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティー値を変更、または統計情報をリセットします
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.manage.vscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+サービスを更新してプロパティー値の変更内容を反映します
+.RE
+
+.sp
+.LP
+プロパティーの追加や削除 (\fBadd-engine\fR、\fBremove-engine\fR) を行うには、次の承認が必要となります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify.application\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーグループを追加または削除します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.manage.vscan\fR\fR
+.ad
+.sp .6
+.RS 4n
+サービスを更新してプロパティー値の変更内容を反映します
+.RE
+
+.sp
+.LP
+「\fBVSCAN\fR Management」プロファイルには、これらの承認がすべて含まれています。

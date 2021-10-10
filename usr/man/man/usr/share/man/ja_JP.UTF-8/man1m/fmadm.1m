@@ -1,0 +1,646 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fmadm \- 障害管理構成ツール
+.SH 形式
+.LP
+.nf
+\fBfmadm\fR [\fB-q\fR] [\fIsubcommand\fR [\fIarguments\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfmadm\fR ユーティリティーは、管理者とサービス担当者が Solaris Fault Manager (\fBfmd\fR(1M)) によって管理されているシステム構成パラメータを表示および変更するために使用できます。\fB fmd\fR は、システムソフトウェアが検出した問題に関する遠隔測定情報を受け取り、問題を診断し、障害のあるコンポーネントの無効化などの予測的自己修復操作を開始します。
+.sp
+.LP
+\fBfmadm\fR を使って次の操作を実行できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+障害管理に現在関与している一連の診断エンジンおよびエージェントの表示
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+障害があると診断されたシステムコンポーネントのリストの表示
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+前述のエンティティーに関連する管理タスクの実行
+.RE
+.sp
+.LP
+Fault Manager ができるだけ多くの操作を自動化しようとするため、通常は \fBfmadm\fR を使用する必要はありません。Fault Manager が管理者、サービス修復技術者、または Oracle の助けを必要とする場合は、その必要性を示すメッセージが生成されます。また、Sun の Web サイトのナレッジ記事が参照先として示されます。この Web サイトでは、\fBfmadm\fR またはほかの障害管理ユーティリティーを使った詳細情報の収集や追加タスクの実行を求められることがあります。\fBfmd\fR(1M)、\fBfmdump\fR(1M)、および \fBfmstat\fR(1M) の各ドキュメントには、障害管理操作を監視するツールに関する詳しい説明があります。
+.sp
+.LP
+Fault Manager が行う処理の 1 つに、コンポーネントの位置の追跡があります。シャーシレベルでは、\fBfmadm\fR *\fB-alias\fR サブコマンドはシャーシの \fIproduct-id\fR.\fIchassis-id\fR から \fIalias-id \fR へのマッピングを管理します。管理された \fIalias-id\fR は、なんらかの意味のある方法でシャーシの物理的な位置を記述するためのものです。
+.sp
+.LP
+\fBfmadm\fR ユーティリティーを使用するユーザーは、\fBSYS_CONFIG\fR 特権を持っている必要があります。Solaris の特権を構成する方法の詳細については、\fI\fR を参照してください。\fBfmadm\fR \fBload\fR サブコマンドを使用するユーザーは、すべての特権を持っている必要があります。
+.SS "サブコマンド"
+.sp
+.LP
+\fBfmadm\fR で使用できるサブコマンドは、次のとおりです。一部のサブコマンドは追加のオプションやオペランドを受け入れるか、または追加のオプションやオペランドが必要です。\fBload\fR、\fBunload\fR、\fBreset\fR、および \fBrotate\fR は、トレーニングを受けた技術担当者向けのサブコマンドです。これらのサブコマンドを使用する際には、ナレッジベース記事などの具体的な指針に従うことをお勧めします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm acquit\fR \fIfmri\fR \fB|\fR \fIlabel\fR [\fIuuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager に、指定したリソースが \fIuuid\fR で識別される障害イベントで、または UUID が指定されていない場合は、検出されたどの障害でも疑わしいとは見なされないことを通知します。\fBfmadm acquit\fR サブコマンドは、Sun のマニュアルに記載されている修復手順で指示された場合にのみ使用してください。管理者は、以前に障害が発生したリソースを再度有効にするために、追加のコマンドを適用しなければならない場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm acquit\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager に、\fIuuid\fR で識別された障害イベントを安全に無視できることを通知します。\fBfmadm acquit\fR サブコマンドは、Sun のマニュアルに記載されている修復手順で指示された場合にのみ使用してください。管理者は、以前に障害が発生したリソースを再度有効にするために、追加のコマンドを適用しなければならない場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm config\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager 自体の構成を表示します。これには、各コンポーネントモジュールのモジュール名、バージョン、および説明が含まれます。Fault Manager のモジュールは、システムに存在するハードウェアおよびソフトウェアに対して自動診断、自己修復、メッセージ配信などのサービスを提供します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm faulty\fR [\fB-afgiprsv\fR] [\fB-n\fR \fImax\fR] [\fB-u\fR \fIuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager で現在障害があると見なされているリソースのステータス情報を表示します。
+.sp
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 10n
+.rt  
+すべての障害を表示します。 \fBfmadm faulty\fR コマンドのデフォルトでは、現時点で存在し、障害のあるリソースに関する出力が一覧表示されます。\fB-a\fR オプションを指定すると、自動的に修正された障害や、復旧操作を必要としない障害も含め、Fault Manager によってキャッシュされたすべてのリソース情報が表示されます。この一覧表示には、システムにすでに存在しない可能性があるリソースの情報も含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 10n
+.rt  
+障害のある \fBFRU\fR (現場交換可能ユニット) を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.RS 10n
+.rt  
+FRU、クラス、および障害メッセージが同じ障害をグループ化します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 10n
+.rt  
+Fault Manager 内の各リソースの永続的キャッシュ識別子を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fImax\fR\fR
+.ad
+.RS 10n
+.rt  
+障害またはリソースが \fB-a\fR または \fB-g\fR オプションでグループ化されている場合は、出力を \fImax\fR 個のエントリに制限します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 10n
+.rt  
+各障害の間にフォームフィードを挿入して出力をページャーを介してパイプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 10n
+.rt  
+障害管理リソースを識別子 (FMRI) と障害管理状態とともに表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 10n
+.rt  
+障害イベントごとに 1 行の障害要約を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuid\fR\fR
+.ad
+.RS 10n
+.rt  
+指定された \fBuid\fR の障害のみを表示します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 10n
+.rt  
+完全な出力を表示します。
+.RE
+
+障害の原因が、別のクラスまたは別の \fBFRU\fR のどちらかに複数存在する場合は、確実性の割合 (パーセント) が表示されます。同じ \fBFRU\fR 上に複数のリソースがあり、障害がその \fBFRU\fR に関連していることが 100% 確実でない場合は、原因がその \fBFRU\fR にある確実性の最大の割合 (パーセント) が表示されます。
+.RE
+
+.sp
+.LP
+Fault Manager は、受け取った遠隔測定情報を持つすべてのリソースに次の状態を割り当てます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースが存在し、使用中であり、Fault Manager に関するかぎり既知の問題はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースが存在しないか、または使用不能ですが、既知の問題はありません。これは、管理者によってリソースが無効化または構成解除されたことを示している場合があります。詳細については、適切な管理ツールを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfaulted\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースは存在しますが、Fault Manager の診断によって 1 つ以上の問題が見つかったため、使用不能です。システムにこれ以上の損害を与えないように、このリソースは無効化されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdegraded\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースが存在し、使用できますが、Fault Manager の診断によってこのリソースに 1 つ以上の問題が見つかりました。
+.sp
+影響を受けるすべてのリソースが同じ状態にある場合は、これがリストの最後にあるメッセージに反映されます。それ以外の場合は、影響を受ける各リソースのあとに状態が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm flush\fR\fI fmri\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager によってキャッシュされたリソースの情報を FMRI で指定してフラッシュします。このサブコマンドは、Sun のマニュアルに記載されている修復手順で指示された場合にのみ使用してください。Fault Manager がキャッシュを自動的に最新の状態に維持するため、通常はこのコマンドを使用する必要はありません。キャッシュから障害のあるリソースをフラッシュした場合、管理者は指定したリソースを有効にするために追加のコマンドを適用しなければならないことがあります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm load\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された Fault Manager モジュールを読み込みます。\fIpath\fR は、絶対パスで指定し、モジュール用に定義されたいずれかのディレクトリに存在するモジュールを参照する必要があります。Fault Manager が Solaris の初期起動時や必要な場合に自動的にモジュールを読み込むため、通常はこのコマンドを使用する必要はありません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm unload\fR \fImodule\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された Fault Manager モジュールを読み込み解除します。\fImodule\fR は、\fBfmadm config\fR の出力に表示されたベース名を使って指定します。Fault Manager がシステム構成に基づいて自動的にモジュールの読み込みと読み込み解除を行うため、通常はこのコマンドを使用する必要はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm repaired\fR \fIfmri\fR \fB|\fR \fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager に、指定したリソースに対して修復手順が実行されたことを通知します。\fBfmadm repaired\fR サブコマンドは、Sun のマニュアルに記載されている修復手順で指示された場合にのみ使用してください。管理者は、以前に障害が発生したリソースを再度有効にするために、追加のコマンドを適用しなければならない場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm replaced\fR \fIfmri\fR \fB|\fR \fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager に、指定したリソースが交換されたことを通知します。このコマンドは、Fault Manager が交換を自動的に検出できない場合に使用してください。\fBfmadm replaced\fR サブコマンドは、Sun のマニュアルに記載されている修復手順で指示された場合にのみ使用してください。管理者は、以前に障害が発生したリソースを再度有効にするために、追加のコマンドを適用しなければならない場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm reset\fR [\fB-s\fR \fIserd\fR\fB]\fR \fImodule\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された Fault Manager モジュールまたはモジュールのサブコンポーネントをリセットします。\fB-s\fR オプションを指定すると、モジュール内部の指定した Soft Error Rate Discrimination (SERD) エンジンがリセットされます。\fB-s\fR オプションを指定しないと、モジュール全体がリセットされ、モジュールに関連付けられたすべての永続状態が削除されます。\fBfmadm reset\fR サブコマンドは、Sun のマニュアルに記載されている修復手順で指示された場合にのみ使用してください。Fault Manager がモジュールを自動的に管理するため、通常はこのコマンドを使用する必要はありません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm rotate\fR \fBerrlog | fltlog | infolog | infolog_hival\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBrotate\fR サブコマンドは、\fBlogadm\fR が有効なログファイルを正しくローテーションできるようにするための、\fBlogadm\fR(1M) のヘルパーコマンドです。これは、直接呼び出すようには設計されていません (直接呼び出すとログ履歴が失われる可能性が高くなります)。現在のログファイルのサイズが 0 でない場合に、適切なログファイルがローテーションされるようにするには、次のいずれかのコマンドを使用します。
+.sp
+.in +2
+.nf
+# \fBlogadm -p now -s 1b /var/fm/fmd/errlog\fR
+# \fBlogadm -p now -s 1b /var/fm/fmd/fltlog\fR
+# \fBlogadm -p now -s 1b /var/fm/fmd/infolog\fR
+# \fBlogadm -p now -s 1b /var/fm/fmd/infolog_hival\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm add-alias\fR \fIproduct-id\fR.\fIchassis-id\fR \fIalias-id\fR ['\fIcomment\fR']\fR
+.ad
+.sp .6
+.RS 4n
+\fBadd-alias\fR サブコマンドは、\fIalias-id\fR を \fIproduct-id\fR.\fIchassis-id\fR シャーシの管理された別名として確立するために使用します。管理された別名が定義されている場合、シャーシの \fB/dev/chassis\fR \fBdevchassis\fR(7FS) 名前空間表現では、\fIproduct-id\fR.\fIchassis-id\fR ではなく、より意味のある \fIalias-id\fR が使用されます。
+.sp
+.in +2
+.nf
+# \fBfmadm add-alias SUN-Storage-J4410.1039QAQ007 RACK29.U25-28\fR
+.fi
+.in -2
+.sp
+
+上記のコマンドでは、新しいマッピングが既存のマッピングと競合しないことを検証します。競合する場合は、マッピングの変更は行われません。このサブコマンドは、関連付けられた名前空間の更新が完了したときに完了します。更新された名前空間が新しい \fIalias-id\fR を使用しない場合、警告が出力されますが、マッピングは更新されます。名前空間の更新に時間がかかりすぎる場合、警告が出力されます。
+.sp
+省略可能な注釈を指定した場合、注釈は保持され、後続の \fBlookup-alias\fR または \fBlist-alias\fR コマンドによって表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm remove-alias\fR \fIalias-id\fR | \fIproduct-id\fR.\fIchassis-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBremove-alias\fR サブコマンドは、\fIproduct-id\fR.\fIchassis-id\fR から \fIalias-id\fR へのマッピングを削除するために使用します。
+.sp
+.in +2
+.nf
+# \fBfmadm remove-alias RACK29.U25-28\fR
+.fi
+.in -2
+.sp
+
+上記のサブコマンドは、関連付けられた名前空間の更新が完了したときに完了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm lookup-alias\fR \fIalias-id\fR | \fIproduct-id\fR.\fIchassis-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlookup-alias\fR サブコマンドは、現在のマッピングの内容を確認するために使用できます。コマンドの例を次に示します。
+.sp
+.in +2
+.nf
+# \fBfmadm lookup-alias SUN-Storage-J4410.1039QAQ007\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm list-alias\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlist-alias\fR サブコマンドは、すべての注釈とマッピングを表示するために使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmadm sync-alias\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsync-alias\fR サブコマンドは、一連のマッピングを一括で手動インポートするために使用します。現在のマッピングは 2 つのコピーが保持されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/dev/chassis_aliases\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/dev/.chassis_aliase\fR
+.RE
+一連のマッピングを一括でインポートするには、\fB/etc/dev/chassis_aliases\fR ファイルを更新してから、\fBsync-alias\fR を実行します。
+.RE
+
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 6n
+.rt  
+非出力モードを設定します。操作が成功したときに、\fBfmadm\fR は標準出力に結果メッセージを出力しません。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcmd\fR\fR
+.ad
+.RS 9n
+.rt  
+「サブコマンド」に示されているサブコマンドの名前。\fB\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIargs\fR \fR
+.ad
+.RS 9n
+.rt  
+選択したサブコマンドに対応する 1 つ以上のオプションまたは引数 (「サブコマンド」に示されているもの)。\fI\fR\fB\fRこれらの引数としては、\fBfmri\fR、\fBuuid\fR、\fBlabel\fR などが挙げられます。これらは、\fBfmadm\fR サブコマンドの対象となるリソースを識別します。ある対象リソースの \fBfmri\fR、\fBuuid\fR、および \fBlabel\fR を取得するには、\fBfmadm faulty\fR を使用します。「\fB使用例\fR」を参照してください。一般に、これらのオペランドの中でもっともユーザーにとってわかりやすいのは、\fBlabel\fR です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBfaulty\fR サブコマンドの呼び出し
+.sp
+.LP
+次のコマンドは \fBfaulty\fR サブコマンドを呼び出すことで、あるコンポーネントの \fBuuid\fR、\fBlabel\fR、および \fBfmri\fR を表示しています。
+
+.sp
+.in +2
+.nf
+# \fBfmadm faulty\fR
+------------ ------------------------------------  ------------ ---------
+TIME         EVENT-ID                              MSG-ID       SEVERITY
+------------ ------------------------------------  ------------ ---------
+Sep 09 16:15 96609fae-113c-e48c-b1cf-ebf4b0902d72  DISK-8000-3E Critical
+                                                                injected
+
+Host      : x4170-brm-02
+Platform  : SUN-FIRE-X4170-SERVER     Chassis_id  : 0920XF508B
+Product_sn:
+
+Fault class: fault.io.scsi.cmd.disk.dev.rqs.derr
+Affects : dev:///:devid=id1,sd@n5000c5000940edbb//scsi_vhci/disk@g5000c\e
+5000940edbb  out of service, but associated components no longer faulty
+FRU     : "DISK 11"
+(hc://:product-id=SUN-Storage-J4410:server-id=:chassis-id=:serial=000930\e
+G01CN4----3SJ01CN4:part=SEAGATE-ST330057SSUN300G:revision=0205/\e
+ses-enclosure=0/bay=11/disk=0)
+replaced
+\&...
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の出力で、\fBuuid\fR は \fBEVENT-ID\fR 列の最初の項目 \fB96609fae-113c-e48c-b1cf-ebf4b0902d72\fR です。\fBlabel\fR は、\fBFRU\fR 行の \fBDISK 11\fR です。\fBfmri\fR は次のとおりです。
+
+.sp
+.in +2
+.nf
+dev:///:devid=id1,sd@n5000c5000940edbb//scsi_vhci/disk@g5000c\e
+5000940edbb
+
+hc://:product-id=SUN-Storage-J4410:server-id=:chassis-id=:serial=000930\e
+G01CN4--------3SJ01CN4:part=SEAGATE-ST330057SSUN300G:revision=0205/\e
+ses-enclosure=0/bay=11/disk=0)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBfmdump\fR \fB-v\fR でも次のように、同じ値を表示できます。
+
+.sp
+.in +2
+.nf
+# \fBfmdump -v\fR
+Sep 09 16:15:36.9252 96609fae-113c-e48c-b1cf-ebf4b0902d72 DISK-8000-3E \e
+Diagnosed 100%  fault.io.scsi.cmd.disk.dev.rqs.derr
+
+Problem in: hc://:scheme=:product-id=SUN-Storage-J4410:chassis-id=:\e
+server-id=/ses-enclosure=0/bay=11/disk=0
+
+Affects: dev:///:devid=id1,sd@n5000c5000940edbb//\e
+scsi_vhci/disk@g5000c5000940edbb
+FRU: hc://:product-id=SUN-Storage-J4410:server-id=:chassis-id=:\e
+serial=000930G01CN4--------3SJ01CN4:part=SEAGATE-ST330057SSUN300G:\e
+revision=0205/ses-enclosure=0/bay=11/disk=0
+
+Location: DISK 11
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBlabel\fR がもっとも使用しやすい識別子です。
+
+.LP
+\fB例 2 \fRモジュール名の取得
+.sp
+.LP
+次のコマンドは、各コンポーネントのモジュール名を表示しています。モジュール名は、\fBfmadm unload\fR コマンドの入力として指定します。
+
+.sp
+.in +2
+.nf
+# \fBfmadm config\fR
+MODULE                   VERSION STATUS  DESCRIPTION
+cpumem-retire            1.1     active  CPU/Memory Retire Agent
+disk-transport           1.0     active  Disk Transport Agent
+eft                      1.16    active  eft diagnosis engine
+\&..
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+エラーが発生しました。エラーには、\fBfmd\fR との通信の失敗や、要求された操作の実行に必要な特権の不足などが含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/fault-management
+_
+インタフェースの安定性下記を参照
+.TE
+
+.sp
+.LP
+コマンド行オプションは「確実」です。人間が読める形式の出力は非インタフェースです。
+.SH 関連項目
+.sp
+.LP
+\fBfmd\fR(1M), \fBfmdump\fR(1M), \fBfmstat\fR(1M), \fBlogadm\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBdevchassis\fR(7FS)
+.sp
+.LP
+\fI『System Administration Guide: Common Management Tasks』\fR

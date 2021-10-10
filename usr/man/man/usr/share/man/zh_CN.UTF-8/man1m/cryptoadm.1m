@@ -1,0 +1,724 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH cryptoadm 1M "2010 年 12 月 9 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cryptoadm \- 加密框架管理
+.SH 用法概要
+.LP
+.nf
+\fBcryptoadm\fR list [\fB-mpv\fR] [provider=\fIprovider-name\fR] 
+     [mechanism=\fImechanism-list\fR]
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR disable
+     provider=\fIprovider-name\fR mechanism=\fImechanism-list\fR | random | all
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR enable
+     provider=\fIprovider-name\fR mechanism=\fImechanism-list\fR | random | all
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR install provider=\fIprovider-name\fR
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR install provider=\fIprovider-name\fR 
+     [mechanism=\fImechanism-list\fR]
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR uninstall provider=\fIprovider-name\fR
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR unload provider=\fIprovider-name\fR
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR disable fips-140
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR enable fips-140
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR list fips-140
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR refresh
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR start
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR stop
+.fi
+
+.LP
+.nf
+\fBcryptoadm\fR \fB-\fR\fB-help\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBcryptoadm\fR 实用程序可以显示系统的加密提供器信息，配置每个提供器的机制策略，以及安装或卸载加密提供器。加密框架支持三种类型的提供器：用户级提供器（PKCS11 共享库）、内核软件提供器（可装入的内核软件模块）以及内核硬件提供器（加密硬件设备）。
+.sp
+.LP
+对于内核软件提供器，\fBcryptoadm\fR 实用程序提供了 \fBunload\fR 子命令。该子命令可指示内核卸载内核软件提供器。
+.sp
+.LP
+对于加密框架的 metaslot，\fBcryptoadm\fR 实用程序提供了子命令，用于启用和禁用 metaslot 的功能、列出 metaslot 的配置、指定备用持久性对象存储以及配置 metaslot 的机制策略。
+.sp
+.LP
+\fBcryptoadm\fR 实用程序提供了子命令，用于启用和禁用加密框架中的 FIPS-140 模式。此外，它还提供了 \fBlist\fR 子命令用来显示 FIPS-140 模式的当前状态。
+.sp
+.LP
+管理员会发现，使用 \fBsyslog\fR 实用程序（参见 \fBsyslogd\fR(1M) 和 \fBlogadm\fR(1M)）来维护加密子系统非常有用。日志记录在以下情况下尤其有用：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果内核级守护进程停用，则所有应用程序都会发生故障。您可以通过系统日志了解这一情况，并使用 \fBsvcadm\fR(1M) 重新启动 \fBsvc:/system/cryptosvc\fR 服务。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果在框架中插入了故障提供器，您可以通过系统日志了解这一情况，然后将其从框架中删除。
+.RE
+.sp
+.LP
+\fBcryptoadm\fR 命令只能由特权用户运行，但下列子命令或选项除外。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+子命令 \fBlist\fR，任何选项
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+子命令 \fB-\fR\fB-help\fR
+.RE
+.SH 选项
+.sp
+.LP
+\fBcryptoadm\fR 实用程序具有如下所示的各种子命令和选项的组合。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示已安装提供器的列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist metaslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 metaslot 的系统范围配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR \fB-m\fR \fB[ provider=\fIprovider-name\fR | metaslot ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示可用于已安装的提供器或 metaslot 的机制的列表。如果指定了提供器，则显示指定提供器的名称以及可用于该提供器的机制列表。如果指定了 metaslot 关键字，则显示可用于 metaslot 的机制列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR \fB-p\fR \fB[ provider=\fIprovider-name\fR | metaslot ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示已安装提供器的机制策略（即哪些机制可用，哪些机制不可用）。此外，还会显示提供器功能策略或 metaslot。如果指定了提供器，则仅显示对其强制实施了机制策略的提供器的名称。如果指定了 metaslot 关键字，则显示对 metaslot 强制实施的机制策略。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist\fR \fB-v\fR \fBprovider=\fIprovider-name\fR | metaslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果指定了提供器，则显示指定提供器的详细信息。如果指定了 metaslot 关键字，则显示有关 metaslot 的详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于上述各种 \fBlist\fR 子命令（\fBlist\fR \fB-p\fR 除外），使用 \fB-v\fR（即详细）选项可获取有关提供器、机制和插槽的详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBdisable provider=\fIprovider-name\fR\fR\fR
+.ad
+.br
+.na
+\fB[ mechanism=\fImechanism-list\fR | \fIprovider-feature\fR \fB\&... |\fR \fBall\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+禁用为提供器指定的机制或提供器功能。有关 \fImechanism\fR、\fIprovider-feature\fR 和 \fBall\fR 关键字的描述，请参见"操作数"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fB[ mechanism=\fImechanism-list\fR ] [ auto-key-migrate ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用加密框架中的 metaslot 功能，或者禁用 metaslot 的某些功能。如果没有指定任何操作数，此命令将禁用加密框架中的 metaslot 功能。如果指定了机制列表，则禁用为 metaslot 指定的机制。如果禁用了 metaslot 的所有机制，则 metaslot 也将被禁用。有关机制的描述，请参见"操作数"部分。如果指定了 \fBauto-key-migrate\fR 关键字，即使必须执行加密操作，该关键字也将禁止将敏感令牌对象迁移到其他插槽。有关 \fBauto-key-migrate\fR 的描述，请参见"操作数"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBenable provider=\fIprovider-name\fR\fR\fR
+.ad
+.br
+.na
+\fB[ mechanism=\fImechanism-list\fR | \fIprovider-feature\fR \fB\&... |\fR \fBall\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+启用为提供器指定的机制或提供器功能。有关 \fImechanism\fR、\fIprovider-feature\fR 和 \fBall\fR 关键字的描述，请参见"操作数"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBenable metaslot [ mechanism=\fImechanism-list\fR ] |\fR\fR
+.ad
+.br
+.na
+\fB\fB[ [ token=\fItoken-label\fR] [ slot=\fIslot-description\fR] |\fR\fR
+.ad
+.br
+.na
+\fB\fBdefault-keystore ] | [ auto-key-migrate ]\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果没有指定任何操作数，此命令将启用加密框架中的 metaslot 功能。如果指定了机制列表，则仅启用为 metaslot 指定的机制。如果指定了 \fItoken-label\fR，则将使用指定的令牌作为持久性对象存储。如果指定了 \fIslot-description\fR，则将使用指定的插槽作为持久性对象存储。如果同时指定了 \fItoken-label\fR 和 \fIslot-description\fR，则将使用带有匹配的令牌标签和插槽描述的提供器作为持久性对象存储。如果指定了 \fBdefault-keystore\fR 关键字，metaslot 将使用缺省的持久性对象存储。如果指定了 \fBauto-key-migrate\fR 关键字，敏感令牌对象将根据需要自动迁移到其他插槽，以完成某些特定加密操作。有关机制、令牌、插槽、\fBdefault-keystore\fR 和 \fBauto-key-migrate\fR 的描述，请参见"操作数"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBinstall provider=\fIprovider-name\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+将用户级提供器安装到系统中。\fIprovider\fR 操作数必须是对应共享库的绝对路径名。如果一个库存在 32 位和 64 位两个版本，则该命令只能使用包含 \fB$ISA\fR 的路径名参数运行一次。请注意，\fB$ISA\fR 不是对环境变量的引用。另请注意，\fB$ISA\fR 必须加引号（使用单引号，例如，\fB\&'$ISA'\fR），或者，必须对 \fB$\fR 进行转义，以免被 shell 错误地扩展。用户级框架可将 \fB$ISA\fR 扩展为空字符串或体系结构特定的目录，例如 \fBsparcv9\fR。
+.sp
+安装用户级提供器时，推荐的方法是为该提供器构建一个软件包。有关更多信息，请参见\fISolaris 开发者安全性指南\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBinstall provider=\fIprovider-name\fR\fR\fR
+.ad
+.br
+.na
+\fBmechanism=\fImechanism-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+将内核软件提供器安装到系统中。提供器只应包含基名。\fImechanism-list\fR 操作数指定了该提供器要支持的机制的完整列表。
+.sp
+安装内核级提供器时，推荐的方法是为提供器构建一个软件包。有关更多信息，请参见\fISolaris 开发者安全性指南\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBuninstall provider=\fIprovider-name\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+从系统中卸载指定的 \fIprovider\fR 以及关联的机制策略。此子命令仅适用于用户级提供器或内核软件提供器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBunload provider=\fIprovider-name\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载由 \fIprovider\fR 指定的内核软件模块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBdisable fips-140\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用加密框架中以及硬件提供器的 FIPS-140 模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBenable fips-140\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用加密框架中以及硬件提供器的 FIPS-140 模式。此子命令不会禁用用户级 \fBpkcs11_softtoken\fR 库以及内核软件提供器中的未经 FIPS 批准的算法。框架使用者只能使用经 FIPS 批准的算法。
+.sp
+执行此子命令以后，系统会立即发出一条消息，告知管理员添加任何不在允许范围内的插件可能会违反 FIPS 遵从性，并会检查这些插件的安全策略。 
+.sp
+系统将需要重新引导来执行"通电自检"，包括加密算法测试和软件完整性测试。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBlist fips-140\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示加密框架中以及硬件提供器的 FIPS-140 模式的当前设置。FIPS-140 模式的状态为 \fBenabled\fR 或 \fBdisabled\fR。缺省 FIPS-140 模式为 \fBdisabled\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fBrefresh\fR\fR
+.ad
+.br
+.na
+\fB\fBcryptoadm\fR \fBstart\fR\fR
+.ad
+.br
+.na
+\fB\fBcryptoadm\fR \fBstop\fR\fR
+.ad
+.sp .6
+.RS 4n
+供 \fBsmf\fR(5) 使用的专用接口，不得直接使用这些接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcryptoadm\fR \fB-help\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示命令用法。
+.RE
+
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fBprovider=\fIprovider-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户级提供器（PKCS11 共享库）、内核软件提供器（可装入的内核软件模块）或内核硬件提供器（加密硬件设备）。
+.sp
+\fIprovider\fR 操作数的有效值是格式为 \fBcryptoadm\fR \fIlist\fR 的命令输出项中的一项。用户级提供器的 \fIprovider\fR 操作数是对应共享库的绝对路径名。内核软件提供器的 \fIprovider\fR 操作数仅包含基名。内核硬件提供器的 \fIprovider\fR 操作数采用 \fIname\fR/\fInumber\fR 格式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmechanism=\fImechanism-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+包含一个或多个 PKCS #11 机制的由逗号分隔的列表。PKCS #11 规范中定义了实现加密操作的进程。您可以使用 \fBall\fR 来替换 \fImechanism-list\fR，以指定提供器的所有机制。请参见下面关于 \fBall\fR 关键字的讨论。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprovider-feature\fR\fR
+.ad
+.sp .6
+.RS 4n
+给定提供器的加密框架功能。目前只接受 \fBrandom\fR 功能。对于用户级提供器，禁用随机功能将使提供器无法使用 PKCS #11 例程 \fBC_GenerateRandom\fR 和 \fBC_SeedRandom\fR。对于内核提供器，禁用随机功能将导致 \fB/dev/random\fR 无法从该提供器收集随机数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以将关键字 \fBall\fR 与 \fBdisable\fR 和 \fBenable\fR 子命令结合使用，以便对所有提供器功能进行操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken=\fR\fItoken-label\fR\fR
+.ad
+.sp .6
+.RS 4n
+加密框架中某个提供器的令牌的标签。
+.sp
+令牌操作数的有效值是 \fBcryptoadm list\fR \fB-v\fR 命令输出中"Token Label"下显示的项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslot=\fR\fIslot-description\fR\fR
+.ad
+.sp .6
+.RS 4n
+加密框架中某个提供器的插槽的描述。
+.sp
+插槽操作数的有效值是 \fBcryptoadm list\fR \fB-v\fR 命令输出中"Description"下显示的项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-keystore\fR\fR
+.ad
+.sp .6
+.RS 4n
+关键字 \fBdefault-keystore\fR 仅对 metaslot 有效。通过指定此关键字，可将 metaslot 的持久性对象存储重新设置为使用缺省存储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauto-key-migrate\fR\fR
+.ad
+.sp .6
+.RS 4n
+关键字 auto-key-migrate 仅对 metaslot 有效。通过指定此关键字，可以配置是否允许 metaslot 将敏感令牌对象从令牌对象插槽移至其他插槽来执行加密操作。
+.RE
+
+.sp
+.LP
+可通过下述两种方式将关键字 \fBall\fR 与 \fBdisable\fR 和 \fBenable\fR 子命令结合使用：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+您可以使用 \fBall\fR 来替换 \fBmechanism\fR=\fImechanism-list\fR 及其他任何提供器功能，如下所示：
+.sp
+.in +2
+.nf
+# \fBcryptoadm enable provider=dca/0 all\fR
+.fi
+.in -2
+.sp
+
+此命令可启用提供器的机制\fB以及\fR其他任何提供器功能，如 \fBrandom\fR。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+您也可以将 \fBall\fR 用作 \fBmechanism\fR 的参数，如下所示：
+.sp
+.in +2
+.nf
+# \fBcryptoadm enable provider=des mechanism=all\fR
+.fi
+.in -2
+.sp
+
+此命令可启用提供器的所有机制，但不会启用其他任何提供器功能，如 \fBrandom\fR。
+.RE
+.SH 示例
+.LP
+\fB示例 1 \fR显示系统中已安装提供器的列表
+.sp
+.LP
+以下命令显示所有已安装提供器的列表：
+
+.sp
+.in +2
+.nf
+example% \fBcryptoadm list\fR
+user-level providers:
+/usr/lib/security/$ISA/pkcs11_kernel.so
+/usr/lib/security/$ISA/pkcs11_softtoken.so
+/opt/lib/libcryptoki.so.1
+/opt/system/core-osonn/lib/$ISA/libpkcs11.so.1
+  
+kernel software providers:
+    des
+    aes
+    bfish
+    sha1
+    md5
+
+kernel hardware providers:
+    dca/0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR显示 \fBmd5\fR 提供器的机制列表
+.sp
+.LP
+以下命令是 \fBlist\fR 子命令的变体形式：
+
+.sp
+.in +2
+.nf
+example% \fBcryptoadm list -m provider=md5\fR
+md5: CKM_MD5,CKM_MD5_HMAC,CKM_MD5_HMAC_GENERAL
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR禁用内核软件提供器的特定机制
+.sp
+.LP
+以下命令禁用内核软件提供器 \fBdes\fR 的 \fBCKM_DES3_ECB\fR 机制和 \fBCKM_DES3_CBC\fR 机制：
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm disable provider=des\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR显示提供器的机制策略
+.sp
+.LP
+以下命令显示 \fBdes\fR 提供器的机制策略：
+
+.sp
+.in +2
+.nf
+example% \fBcryptoadm list -p provider=des\fR
+des: All mechanisms are enabled, except CKM_DES3_ECB, CKM_DES3_CBC
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR启用提供器的特定机制
+.sp
+.LP
+以下命令启用内核软件提供器 \fBdes\fR 的 \fBCKM_DES3_ECB\fR 机制：
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm enable provider=des mechanism=CKM_DES3_ECB\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR安装用户级提供器
+.sp
+.LP
+以下命令安装用户级提供器：
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm install provider=/opt/lib/libcryptoki.so.1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR安装包含 32 位和 64 位版本的用户级提供器
+.sp
+.LP
+以下命令安装包含 32 位和 64 位版本的用户级提供器：
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm install \e\fR
+provider=/opt/system/core-osonn/lib/'$ISA'/libpkcs11.so.1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR卸载提供器
+.sp
+.LP
+以下命令卸载 \fBmd5\fR 提供器：
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm uninstall provider=md5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR禁用 metaslot
+.sp
+.LP
+以下命令禁用加密框架中的 metaslot 功能。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm disable metaslot\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR指定 metaslot 使用指定的令牌作为持久性对象存储
+.sp
+.LP
+以下命令指定 metaslot 使用 Venus 令牌作为持久性对象存储。
+
+.sp
+.in +2
+.nf
+example# \fBcryptoadm enable metaslot token="SUNW,venus"\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+\fBstart\fR、\fBstop\fR 和 \fBrefresh\fR 选项是专用接口。其他所有选项及实用程序名称均为 Committed（已确定）。
+.SH 另请参见
+.sp
+.LP
+\fBlogadm\fR(1M)、\fBsvcadm\fR(1M)、\fBsyslogd\fR(1M)、\fBlibpkcs11\fR(3LIB)、\fBexec_attr\fR(4)、\fBprof_attr\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBrandom\fR(7D)
+.sp
+.LP
+
+.sp
+.LP
+\fISolaris 开发者安全性指南\fR
+.SH 附注
+.sp
+.LP
+即使已明确制定硬件提供器的策略（换句话说，已禁用其中的某些机制），且该硬件提供器已分离，仍然会列出该硬件提供器的策略。
+.sp
+.LP
+\fBcryptoadm\fR 会假定为每个用户级提供器至少提供一个 32 位共享对象。如果同时提供 32 位和 64 位共享对象，这两个版本必须提供相同的功能。这两个版本也使用同一个机制策略。

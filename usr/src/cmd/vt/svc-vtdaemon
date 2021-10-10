@@ -1,0 +1,73 @@
+#!/usr/bin/ksh -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+
+if smf_dont_configure_vt; then
+	#
+	# This is gross, but we have to disable the console-login:vt
+	# services as well, or they'll show up in the output of svcs -x
+	# if they're enabled.  This is done in the relatively uncommon
+	# case that vt's are not supported for this hardware, and helps
+	# avoid noise in the svcs -x output for the machine.
+	#
+	print -u 2 "vtdaemon(1m) is not applicable to this system" \
+	    "configuration.\nDisabling the following service instances:"
+	svcs=""
+	for vtsvc in $(svcs -Ho fmri 'svc:/system/console-login:vt*'); do
+		print -u 2 -- "\t$vtsvc"
+		svcs="$svcs $vtsvc"
+	done
+	# batch up all of the disables to try to keep this lightweight.
+	[[ -n $svcs ]] && svcadm disable -st $svcs
+
+	print -u 2 "Disabling this service ($SMF_FMRI)."
+	#
+	# This odd idiom-- disable, then sleep in the background and exit--
+	# is a kludge, used to implement self-disable.  We issue the
+	# asynchronous disable, let the service be online (the sleep takes
+	# care of that), then exit, which gives SMF time to process the
+	# disable.
+	#
+	svcadm disable -t $SMF_FMRI
+	sleep 5 &
+	exit $SMF_EXIT_OK
+fi
+
+args=""
+
+val=$(svcprop -p options/hotkeys $SMF_FMRI)
+[ "$val" = "false" ] && args="$args -k"
+
+val=$(svcprop -p options/secure $SMF_FMRI)
+[ "$val" = "false" ] && args="$args -s"
+
+val=$(svcprop -p options/nodecount $SMF_FMRI)
+[ -n "$val" -a "$val" != "0" ] && args="$args -c $val"
+
+# Unfortunately, vtdaemon doesn't actually daemonize.
+/usr/lib/vtdaemon $args &
+
+exit $SMF_EXIT_OK

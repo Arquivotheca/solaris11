@@ -1,0 +1,150 @@
+'\" te
+.\"  Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH cksum 1 "2011 年 7 月 25 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+cksum \- ファイルのチェックサムとサイズの出力
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/cksum\fR [\fIfile\fR...]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcksum\fR コマンドは、各入力ファイルの循環冗長性検査 (CRC) を算出し、その結果を各ファイルのオクテット数と共に標準出力に書き込みます。
+.sp
+.LP
+正常に処理された各ファイルについて \fBcksum\fR 方式は次の書式でチェックサム情報を出力します。
+.sp
+.LP
+\fB"%u %d %s\en"\fR <\fIchecksum\fR>, <\fI# of octets\fR>, <\fIpath name\fR>
+.sp
+.LP
+file オペランドが指定されなかった場合、パス名と先行する空白は省略されます。
+.sp
+.LP
+使用される CRC は、参照されるイーサネット標準における CRC エラーチェックで使用される多項式に基づいています。
+.sp
+.LP
+CRC チェックサムのコード化は、生成多項式によって定義されます。
+.sp
+.in +2
+.nf
+G(x) = x**32 + x**26 + x**23 + x**22+ x**16 + x**12 + x**11
++ x**10 + x**8 + x**7 + x**5 + x**4 + x**2 + x + 1
+.fi
+.in -2
+
+.sp
+.LP
+指定したファイルに対応する CRC 値は、数学的には次の手順で定義されます。
+.RS +4
+.TP
+1.
+評価される \fIn\fR ビットは、2 を法とした n-\fI1\fR 次多項式 \fIM\fR(\fIx\fR) の係数と見なされます。これらの \fIn\fR ビットは、ファイル内のビットに対応し、最上位ビットはファイルの先頭のオクテットの最上位ビットであり、最後のビットはファイルの最後のオクテットの最下位ビットです。これらの \fIn\fR ビットには、オクテットの数が整数になるように、(必要であれば) 0 のビットが埋め込まれ、その後にファイルの長さを表す 1 つまたは複数のオクテットが、最下位オクテットを先頭にして 2 進数で続きます。この整数を表すことができる最小のオクテット数が使用されます。
+.RE
+.RS +4
+.TP
+2.
+\fIM\fR(\fIx\fR) の値は、\fIx\fR ^\fI32\fR で乗算されて (つまり、32 ビット左にシフト)、2 を法とした除算を使用して \fIG\fR(\fIx\fR) で除算されます。結果として、次数 \(<= 31 の除余 \fIR\fR(\fIx\fR) が生成されます。
+.RE
+.RS +4
+.TP
+3.
+\fIR\fR(\fIx\fR) の係数は、32 ビットのシーケンスとみなされます。
+.RE
+.RS +4
+.TP
+4.
+ビットシーケンスの補数がとられ、その結果が CRC になります。
+.RE
+.SH オペランド
+.sp
+.LP
+次のオペランドを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+検査するファイルのパス名。\fIfile\fR オペランドを指定しないと、標準入力が使用されます。
+.RE
+
+.SH 使用法
+.sp
+.LP
+\fBcksum \fR コマンドは通常、疑いのあるファイルを同じファイルの信頼できるバージョンと簡単に比較して、ノイズの多いメディアを介して送信されたファイルが正しく受信できたかどうかを確認するのに使用します。ただし、この比較は、暗号化した場合ほど安全ではありません。損傷を受けたファイルが、元のファイルと同じ CRC を生成する確率は天文学的低い値です。ただし、意図的に同じ CRC を生成することは困難ではありますが、不可能ではありません。
+.sp
+.LP
+\fBcksum\fR の入力ファイルはどんなタイプでもかまいませんが、文字型特殊デバイスファイルでは期待通りの結果が得られないことがあります。本書では、入力時に使用されるブロックサイズを規定していないため、文字型特殊ファイルのチェックサムでは、これらのファイル内のデータがすべて処理されるとはかぎりません。
+.sp
+.LP
+アルゴリズムは、オクテット単位に分割されたビットストリームで表現されます。ファイルが 2 つのシステム間で送信されるときに、何らかのデータ変換 (8 ビット文字を 9 ビットバイトに移行したり、リトルエンディアンのバイト順序をビッグエンディアンに変更するなど) が行われる場合、同じ CRC 値を得ることは期待できません。\fB\fR\fB\fRこのような変換を実行する実装では、\fBcksum\fR を拡張して、そのような状況に対処します。
+.sp
+.LP
+2G バイト (2^31 バイト) 以上のファイルを検出した場合の \fBcksum\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 環境
+.sp
+.LP
+\fBcksum\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイルはすべて正しく処理されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdigest\fR(1), \fBsum\fR(1), \fBbart\fR(1M), \fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5), \fBstandards\fR(5)

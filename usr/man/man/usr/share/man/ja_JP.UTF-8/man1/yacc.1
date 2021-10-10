@@ -1,0 +1,360 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved. 
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH yacc 1 "2011 年 6 月 8 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+yacc \- 構文解析プログラムの生成
+.SH 形式
+.LP
+.nf
+\fByacc\fR [\fB-dltVv\fR] [\fB-b\fR \fIfile_prefix\fR] [\fB-Q\fR [y | n]] 
+      [\fB-P\fR \fIparser\fR] [\fB-p\fR \fIsym_prefix\fR] \fIfile\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fByacc\fR コマンドは、文脈自由文法を、LALR(1) 構文解析アルゴリズムを実行する簡易オートマトン用のテーブル群に 変換します。文法はあいまいであっても構いません。指定された優先順位規則に従ってあいまいな記述を処理します。
+.sp
+.LP
+出力ファイル \fBy.tab.c\fR は、\fByyparse()\fR 関数を生成するために C コンパイラを使ってコンパイルする必要があります。この関数は、字句解析プログラム \fByylex()\fR、\fBmain()\fR、およびエラー処理ルーチン \fByyerror()\fR とともにロードすることが必要です。これらのルーチンはユーザーが用意しなければなりません。\fByacc\fR が使用できる字句解析プログラムを生成するには、\fBlex\fR(1) コマンドを使うと便利です。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIfile_prefix\fR \fR
+.ad
+.RS 19n
+.rt  
+すべての出力ファイルに対して、接頭辞として \fBy\fR の代わりに \fIfile_prefix\fR を使用します。コードファイルの \fBy.tab.c\fR、ヘッダーファイルの \fBy.tab.h\fR (\fB-d\fR が指定されたとき)、記述ファイルの \fBy.output\fR (\fB-v\fR が指定されたとき) は、それぞれ \fIfile_prefix\fR\fB\&.tab.c\fR、\fIfile_prefix\fR\fB\&.tab.h\fR、および \fIfile_prefix\fR\fB\&.output\fR に変更されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 19n
+.rt  
+\fByacc\fR またはユーザーが割り当てたトークン番号を、 ユーザーが宣言したトークン名に対応させる \fB#define\fR 文を含んだ \fBy.tab.h\fR ファイルを生成します。この対応付けにより、 \fBy.tab.c\fR 以外のソースファイルから トークン番号を参照することが可能となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBy.tab.c\fR 中に生成するコードには \fB#line\fR 構造を含めないことを指定します。このオプションは、プログラムの文法および動作が 完全にデバッグされるまでは使用すべきではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIsym_prefix\fR \fR
+.ad
+.RS 19n
+.rt  
+\fByacc\fR が生成するすべての外部名の接頭辞として、 \fByy\fR の代わりに \fIsym_prefix\fR を使用します。影響を受ける名前としては、関数 \fByyparse()\fR、\fByylex()\fR、\fByyerror()\fR、および変数 \fIyylval\fR、\fIyychar\fR、\fIyydebug\fR が挙げられます。こでは、これらの 6 つのシンボルを便宜上デフォルト名を使って表しています。局所的な名前も \fB-p\fR オプションの影響を受けます。しかし、\fB-p\fR オプションは \fByacc\fR が生成する \fB#define\fR シンボルには影響を及ぼしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIparser\fR \fR
+.ad
+.RS 19n
+.rt  
+\fB/usr/share/lib/ccs/yaccpar\fR の代わりに使用する構文解析プログラムを指定できます。たとえば、以下のように指定できます。
+.sp
+.in +2
+.nf
+example% \fByacc -P ~/myparser parser.y\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Q\fR[\fBy\fR|\fBn\fR] \fR
+.ad
+.RS 19n
+.rt  
+\fB-Qy\fR オプションは、バージョン情報を \fBy.tab.c\fR 中に書き出すことを表します。この情報により、どのバージョンの \fByacc\fR によってファイルが生成されたかが分かります。\fB-Qn\fR オプションは、このバージョン情報を書き出さないことを表すもので、 これがデフォルトとなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fR
+.ad
+.RS 19n
+.rt  
+実行時デバッグコードをコンパイルすることをデフォルトとします。このコードは条件付きコンパイル制御行とともに、常に \fBy.tab.c\fR ファイル中に置かれます。デフォルトでは、 この部分のコードを含まないよう \fBy.tab.c\fR はコンパイルされます。\fB-t\fR オプションを指定したか否かに関わらず、実行時デバッグコードは、 プリプロセッサシンボルである \fBYYDEBUG\fR により制御されます。\fBYYDEBUG\fR の値がゼロ以外のとき、実行時デバッグコードが含まれるようにコンパイルされます。値が \fB0\fR のときは含まれません。このコードなしで生成されたプログラムは、サイズが小さくなり、実行の速度も少し速くなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 19n
+.rt  
+構文解析用テーブル群、および文法上のあいまいさにより発生した 矛盾点に関するレポートを記述した \fBy.output\fR ファイルを生成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR \fR
+.ad
+.RS 19n
+.rt  
+\fByacc\fR 用のバージョン情報を標準エラー出力に書き出します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR \fR
+.ad
+.RS 9n
+.rt  
+構文解析プログラム生成の対象とする命令を 含んでいるファイルのパス名
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRyacc コマンドの使用
+.sp
+.LP
+\fBcc\fR コマンドのライブラリ検索オペランドに指定することにより、 \fByacc\fR ライブラリを使用することが可能です。\fBmain\fR という \fByacc\fR ライブラリを使用するには、以下のコマンドを実行します。
+
+.sp
+.in +2
+.nf
+example% \fBcc y.tab.c -ly\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBlex\fR と \fByacc\fR の両方のライブラリに \fBmain\fR が含まれています。\fByacc\fR ライブラリの \fBmain\fR を使うには以下のコマンドを実行します。
+
+.sp
+.in +2
+.nf
+example% \fBcc y.tab.c lex.yy.c -ly -ll\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これにより、最初に \fByacc\fR ライブラリが検索されるので、 \fByacc\fR ライブラリ中の main が用いられます。
+
+.sp
+.LP
+\fByacc\fR ライブラリには、通常はアプリケーションプログラマが作成する 2 つの簡単な関数が定義されています。これらの関数は 以下のようなコードです。
+
+.sp
+.in +2
+.nf
+#include <locale.h>
+int main(void)
+{
+        extern int yyparse();
+
+        setlocale(LC_ALL, "");
+
+        /* If the following parser is one created by lex, the
+           application must be careful to ensure that LC_CTYPE
+           and LC_COLLATE are set to the POSIX locale.  */
+        (void) yyparse();
+        return (0);
+}
+
+#include <stdio.h>
+
+int yyerror(const char *msg)
+{
+        (void) fprintf(stderr, "%s\en", msg);
+        return (0);
+}
+.fi
+.in -2
+
+.SH 環境
+.sp
+.LP
+\fByacc\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.LP
+\fByacc\fR は \fBEUC\fR の主および補助コードセット中の文字を 1 文字トークン記号として扱う ことができます。この場合、\fBEUC\fR コードは引用符によって囲まれた 1 文字の終端記号でなければなりません。\fByacc\fR は、 \fByylex()\fR がこれらの 1 文字トークン記号に対して 1 つのワイド文字 (\fBwchar_t\fR) を返すものと想定しています。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fBy.output\fR \fR
+.ad
+.RS 15n
+.rt  
+生成した構文解析プログラムの状態遷移
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBy.tab.c\fR \fR
+.ad
+.RS 15n
+.rt  
+生成した構文解析プログラムのソースコード
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBy.tab.h\fR \fR
+.ad
+.RS 15n
+.rt  
+生成した構文解析プログラムのヘッダファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fByacc.acts\fR \fR
+.ad
+.RS 15n
+.rt  
+一時ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fByacc.debug\fR \fR
+.ad
+.RS 15n
+.rt  
+一時ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fByacc.tmp\fR \fR
+.ad
+.RS 15n
+.rt  
+一時ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fByaccpar\fR \fR
+.ad
+.RS 15n
+.rt  
+C プログラム用の構文解析プログラムのプロトタイプ
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件developer/base-developer-utilities
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBlex\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.LP
+還元 - 還元衝突 および シフト - 還元衝突の矛盾の数が標準エラー出力に報告されます。詳細な情報は \fBy.output\fR ファイルに出力されます。また開始記号からたどることのできない 規則があれば、これについても報告されます。
+.SH 注意事項
+.sp
+.LP
+出力するファイル名が固定されているので、1 つのディレクトリ内で同時に複数の \fByacc\fR プロセスを動作させることはできません。
+.sp
+.LP
+識別名にはドル記号 (\fB$\fR) を使用しないようにしてください。

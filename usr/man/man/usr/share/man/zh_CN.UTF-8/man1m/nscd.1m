@@ -1,0 +1,182 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH nscd 1M "2011 年 8 月 15 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+nscd \- 名称服务高速缓存守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/nscd\fR [\fB-f\fR \fIconfiguration-file\fR] [\fB-g\fR] [\fB-e\fR \fIcachename\fR, yes
+ | no] [\fB-i\fR \fIcachename\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnscd\fR 守护进程是一个为大多数名称服务请求提供高速缓存的进程。\fBsvc:/system/name-service/cache\fR SMF 服务的服务属性决定了高速缓存守护进程的行为。请参见 \fBnscd.conf\fR(4)。
+.sp
+.LP
+通过标准 \fBlibc\fR 接口（如 \fBgethostbyname\fR(3NSL)、\fBgetipnodebyname\fR(3SOCKET)、\fBgethostbyaddr\fR(3NSL)和其他），\fBnscd\fR 为 \fBpasswd\fR(4)、\fBgroup\fR(4)、\fBhosts\fR(4)、\fBipnodes\fR(4)、\fBexec_attr\fR(4)、\fBprof_attr\fR(4)、\fBuser_attr\fR(4)、\fBethers\fR(4)、\fBrpc\fR(4)、\fBprotocols\fR(4)、\fBnetworks\fR(4)、\fBbootparams\fR(4)、\fBauth_attr\fR(4)、\fBservices\fR(4)、\fBnetmasks\fR(4)、\fBproject\fR(4) 数据库提供缓存。将不会专门高速缓存影子文件。\fBgetspnam\fR(3C) 调用将保持未缓存状态。
+.sp
+.LP
+每个高速缓存的数据都具有一个单独的生存时间。缺省情况下，修改本地数据库（\fB/etc/hosts\fR、\fB/etc/passwd\fR 等）会导致下次调用 \fBnscd\fR 时此高速缓存无效。
+.sp
+.LP
+更新和刷新 \fBsvc:/system/name-service/cache\fR 选择性依赖的任何服务（如下所示）会导致重新启动 \fBnscd\fR，这会有效地清除所有高速缓存。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/dns/client\fR，请参见 \fBresolv.conf\fR(4)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/nis/client\fR，请参见 \fBypbind\fR(1M) 和 \fBypfiles\fR(4)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/ldap/client\fR，请参见 \fBldapclient\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/system/name-service/switch\fR，请参见 \fBnsswitch.conf\fR(4)
+.RE
+.sp
+.LP
+请参见 \fBnscd.conf\fR(4)。
+.sp
+.LP
+\fBnscd\fR 还可充当其自己的管理工具。如果 \fBnscd\fR 的实例已在运行，命令将透明地传递至正在运行的版本。
+.sp
+.LP
+当在启用每用户查找的情况下运行时（请参见 \fBnscd.conf\fR(4)），\fBnscd\fR 将代表发出请求的用户派生一个且仅一个子进程（即每用户 \fBnscd\fR）。每用户 \fBnscd\fR 将使用用户凭证打开到为每用户形式的查找配置的名称信息库的每用户连接。查找将在子进程中执行。结果将缓存在进程中，且仅可用于同一用户。此高速缓存的管理方式与主 \fBnscd\fR 守护进程管理其自己的高速缓存的方式完全相同。每用户 \fBnscd\fR 终止之前，将一直处理来自用户的后续请求。每用户 \fBnscd\fR 使用可配置的非活动生存时间 (time-to-live，TTL) 值，并在非活动 TTL 到期之后终止其自身。
+.sp
+.LP
+可由主 \fBnscd\fR 创建的每用户 \fBnscd\fR 的最大数目是可配置的（请参见 \fBnscd.conf\fR(4)）。创建最大数目的每用户 nscd 之后，主 \fBnscd\fR 将使用 LRU 算法根据需要终止不太活动的子 \fBnscd\fR。
+.sp
+.LP
+主 \fBnscd\fR 守护进程创建、监视并管理所有子 \fBnscd\fR。它将在接收用户的第一次每用户查找时创建用户自己的 \fBnscd\fR。启动 \fBnscd\fR 守护进程时，如果启用每用户查找，它将进行检查以确保在准备创建每用户 \fBnscd\fR 之前满足所有条件。停止此守护进程时，它将终止其控制下的所有每用户 \fBnscd\fR。
+.sp
+.LP
+每用户 \fBnscd\fR 使用与主 \fBnscd\fR 相同的配置。它们读取并使用同一缺省配置文件或使用 \fB-f\fR 命令行选项指定的配置文件。读取配置后，每用户 \fBnscd\fR 将在其整个生命周期中使用它。
+.SH 选项
+.sp
+.LP
+下面所述的若干选项需要指定 \fIcachename\fR。\fIcachename\fR 支持的值包括：\fBpasswd\fR、\fBgroup\fR、\fBhosts\fR、\fBipnodes\fR、\fBexec_attr\fR、\fBprof_attr\fR、\fBuser_attr\fR、\fBethers\fR、\fBrpc\fR、\fBprotocols\fR、\fBnetworks\fR、\fBbootparams\fR、\fBauth_attr\fR、\fBservices\fR、\fBnetmasks\fR、\fBprinters\fR 和 \fBproject\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIconfiguration-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+导致 \fBnscd\fR 在指定文件中读取其配置数据。该选项已过时，在将来的发行版中将被删除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前配置和统计信息打印到标准输出中。这是非超级用户可执行的唯一选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIcachename\fR\fB, yes\fR|\fBno\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用或禁用指定的高速缓存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIcachename\fR\fR
+.ad
+.sp .6
+.RS 4n
+使指定的高速缓存失效。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR停止并重新启动 \fBnscd\fR 守护进程。
+.sp
+.in +2
+.nf
+example# \fBsvcadm disable system/name-service/cache\fR
+
+example# \fBsvcadm enable system/name-service/cache\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nscd.conf\fR\fR
+.ad
+.RS 18n
+.rt  
+已过时。之前确定的高速缓存守护进程的行为
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvcadm\fR(1M)、\fBypbind\fR(1M)、\fBgetspnam\fR(3C)、\fBgethostbyname\fR(3NSL)、\fBgetipnodebyname\fR(3SOCKET)、\fBauth_attr\fR(4)、\fBbootparams\fR(4)、\fBethers\fR(4)、\fBexec_attr\fR(4)、\fBgroup\fR(4)、\fBhosts\fR(4)、\fBnetmasks\fR(4)、\fBnetworks\fR(4)、\fBnscd.conf\fR(4)、\fBnsswitch.conf\fR(4)、\fBpasswd\fR(4)、\fBprof_attr\fR(4)、\fBproject\fR(4)、\fBprotocols\fR(4)、\fBresolv.conf\fR(4)、\fBrpc\fR(4)、\fBservices\fR(4)、\fBuser_attr\fR(4)、\fBattributes\fR(5)
+.SH 附注
+.sp
+.LP
+\fB-g\fR 选项到 \fBnscd\fR 的输出可能会发生更改。请不要依赖它作为编程接口。
+.sp
+.LP
+\fBnscd\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/system/name-service/cache
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+保留了过时的服务 \fBsvc:/system/name-service-cache\fR，以便实现与可能引用该服务的脚本的向后兼容性。它的唯一用途就是用作服务 \fBsvc:/system/name-service/cache\fR 的 \fBoptional_all\fR 依赖项。过时的服务名称在将来的发行版中将被删除。

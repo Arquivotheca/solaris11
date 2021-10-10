@@ -1,0 +1,242 @@
+'\" te
+.\" Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH pkcs11_tpm 5 "2010 年 10 月 25 日" "SunOS 5.11" "標準、環境、マクロ"
+.SH 名前
+pkcs11_tpm \- トラステッドプラットフォームモジュール (TPM) 用 RSA PKCS#11 トークン
+.SH 形式
+.LP
+.nf
+/usr/lib/security/pkcs11_tpm.so
+.fi
+
+.LP
+.nf
+/usr/lib/security/64/pkcs11_tpm.so
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpkcs11_tpm.so\fR オブジェクトは、Trusted Computing Group のプロトコルを使用して TPM セキュリティーデバイスと通信することで、RSA Security Inc. の PKCS#11 暗号化トークンインタフェース (Cryptoki) v2.20 仕様を実装します。このプロバイダは PKCS#11 仕様を実装し、\fBSUNWtss\fR パッケージの TCG ソフトウェアスタック (TSS) API を使用します。 
+.sp
+.LP
+アプリケーション開発者は、\fBpkcs11_tpm.so\fR に直接リンクするのではなく、\fBlibpkcs11.so.1\fR にリンクするようにしてください。\fBlibpkcs11\fR(3LIB) を参照してください。
+.sp
+.LP
+実装されている暗号化アルゴリズムは、\fBRSA\fR、\fB SHA1\fR、および \fBMD5\fR です。
+.sp
+.LP
+\fBlibpkcs11\fR(3LIB) のリストに示されている標準の PKCS#11 関数は、次のものを除きすべて実装されています。
+.sp
+.in +2
+.nf
+C_EncryptUpdate
+C_EncryptFinal
+C_DecryptUpdate
+C_DecryptFinal
+C_DigestEncryptUpdate
+C_DecryptDigestUpdate
+C_SignEncryptUpdate
+C_DecryptVerifyUpdate
+C_GetFunctionStatus
+C_CancelFunction
+C_WaitForSlotEvent
+C_GenerateKey
+C_DeriveKey
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+サポートされている RSA PKCS#11 v2.20 メカニズムは次のとおりです。
+.sp
+.in +2
+.nf
+CKM_RSA_PKCS_KEY_PAIR_GEN
+CKM_RSA_PKCS
+CKM_RSA_PKCS_OAEP
+CKM_RSA_X_509
+CKM_MD5_RSA_PKCS
+CKM_SHA1_RSA_PKCS
+CKM_SHA_1
+CKM_SHA_1_HMAC
+CKM_SHA_1_HMAC_GENERAL
+CKM_MD5
+CKM_MD5_HMAC
+CKM_MD5_HMAC_GENERAL
+.fi
+.in -2
+.sp
+
+.SS "ユーザーごとの初期化"
+.sp
+.LP
+\fBpkcs11_tpm\fR プロバイダを使用できるのは、システムに TPM デバイスが存在し、かつ \fBSUNWtss\fR パッケージがインストールされている場合だけです。これらの前提条件が満たされている場合、ユーザーは \fBpktool\fR(1) を使用すると自分専用のプライベートトークンを作成できます。このトークンにより、TPM デバイスを使用した操作を実行でき、TPM によって保護された鍵で自分の非公開データを保護できます。
+.sp
+.LP
+ユーザーの TPM トークンを準備して初期化するには、次の手順を実行する必要があります。
+.RS +4
+.TP
+1.
+トークンを初期化します。
+.RE
+.RS +4
+.TP
+2.
+SO (セキュリティー責任者) の PIN を設定します。
+.RE
+.RS +4
+.TP
+3.
+ユーザーの一意の PIN を設定します。
+.RE
+.sp
+.LP
+トークンを初期化するには、\fBpktool\fR(1) コマンドを次のように使用します。
+.sp
+.in +2
+.nf
+$ \fBpktool inittoken currlabel=TPM newlabel=tpm/myname\fR
+.fi
+.in -2
+.sp
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+デフォルトでは、初期化されていない TPM は \fB TPM\fR という名前で認識されます。ユーザーが自分専用のプライベートトークンを初期化するときに、別の名前 (\fBtpm/joeuser\fR など) に変更することも、\fBTPM\fR のままにする (この場合は \fBnewlabel\fR 引数を省略する) こともできます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザーは自分のトークンを初期化する前に、デフォルトの SO PIN を入力する必要があります。デフォルトの SO PIN は \fB87654321\fR です。これは上記の手順 2 で変更されています。
+.RE
+.sp
+.LP
+トークンを初期化したあとは、SO PIN とユーザー PIN をデフォルト値から変更する必要があります。これらの PIN の値を変更するには、再度 \fBpktool\fR(1) を使用します。
+.sp
+.LP
+SO PIN の変更は次のように行います。
+.sp
+.in +2
+.nf
+$ \fBpktool setpin token=tpm/joeuser so\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBso\fR オプションは、この「setpin」操作が SO PIN の変更であることを示すもので、省略できません。ユーザーはデフォルトの SO PIN (\fB87654321\fR) を入力してから、新しい PIN を入力 (および確認) する必要があります。
+.sp
+.LP
+SO PIN をデフォルトから変更したあと、ユーザーの一意の PIN もリセットする必要があります。
+.sp
+.LP
+ユーザーの PIN の変更は次のように行います。
+.sp
+.in +2
+.nf
+$ \fBpktool setpin token=tmp/joeuser\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SO 以外のユーザーのデフォルト PIN は \fB12345678\fR です。ユーザーはデフォルトの PIN を入力してから、新しい一意の PIN を入力 (および確認) する必要があります。
+.sp
+.LP
+\fBpktool\fR \fBsetpin\fR 操作または \fBC_Login()\fR 関数と \fBC_SetPIN()\fR 関数に設定する PIN には、長さが 1 から 256 までで、空文字を含まない、任意の文字列を使用できます。
+.SS "トークンへのアクセス"
+.sp
+.LP
+ユーザーは自分のトークンを初期化したあと、\fBpktool\fR(1) で、あるいは PKCS11 アプリケーションを作成することにより、トークンの使用を開始できます。その際、前述の手順で作成した名前 (前述の例では \fBtpm/joeuser\fR) を使用してトークンを特定します。
+.sp
+.LP
+たとえば、
+.sp
+.in +2
+.nf
+$ \fBpktool gencert token=tpm/joeuser -i\fR
+$ \fBpktool list token=tpm/joeuser\fR
+.fi
+.in -2
+.sp
+
+.SS "注意事項"
+.sp
+.LP
+\fBpkcs11_tpm.so\fR により、ファイルシステム固有のトークンオブジェクトの記憶領域にオブジェクトストレージが提供されます。プライベートオブジェクトは秘密鍵による暗号化で保護されています。復号化するには、トークンの秘密鍵を TPM に読み込み、復号化をすべて TPM 内で実行する必要があります。ユーザーの秘密鍵は、ユーザーが個人用の PIN を設定したときに (前述の説明を参照)、TPM によって生成されます。SO の鍵もユーザーの鍵も、TSS 永続的ストレージデータベースに保存され、一意の UUID 値で参照されます。どのユーザートークンにも一意の SO 鍵と一意のユーザー鍵があるため、あるユーザーのトークンの PIN で、同じマシンの別のユーザーのトークンに保存されている非公開データがロック解除されることはありません。
+.sp
+.LP
+TPM はそれぞれ一意なので、ある TPM で作成されたトークンキーを別の TPM で使用することはできません。\fBpkcs11_tpm.so\fR トークンのデータは、TPM が存在しているシステムですべて管理されます。ほかのシステムに移動することはできません。TPM がリセットされ SRK (ストレージルートキー) が変更された場合、その TPM でそれまでに生成された鍵はすべて無効になります。
+.sp
+.LP
+\fBpkcs11_tpm.so\fR は、作成されたトークンごとに専用のワークスペースを作成して、管理ファイルを管理します。デフォルトでは、この領域は \fB/var/tpm/pkcs11/$USERNAME\fR として作成されます。ただし、ユーザーはトークンの初期化や使用を開始する前に \fBPKCS11_TPM_DIR\fR 環境変数を設定することにより、この設定を上書きできます。
+.SH 戻り値
+.sp
+.LP
+実装されている各関数の戻り値は、RSA PKCS#11 v2.20 仕様で定義されています。\fBhttp://www.rsasecurity.com \fR を参照してください。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/tpm/pkcs11/USERNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのデフォルトのトークンオブジェクトストア。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB${PKCS11_TPM_DIR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替のトークンオブジェクトストア。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+インタフェースの安定性確実
+_
+MT レベルT{
+例外付きで MT-安全 (後述の説明を参照)
+T}
+_
+標準 PKCS#11 v2.20
+.TE
+
+.sp
+.LP
+「MT-安全」属性の例外については、RSA PKCS#11 v2.20 のセクション 6.6.2 を参照してください。
+.SH 関連項目
+.sp
+.LP
+\fBpktool\fR(1), \fBcryptoadm\fR(1M), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+TCG ソフトウェアスタック (TSS) 仕様 https://www.trustedcomputinggroup.org/specs/TSS  (公開時点のアドレス)
+.sp
+.LP
+RSA PKCS#11 v2.20 http://www.rsasecurity.com 

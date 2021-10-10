@@ -1,0 +1,1103 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH zonestat 1 "2011 年 6 月 16 日" "SunOS 5.11" "用户命令"
+.SH 名称
+zonestat \- 报告活动区域的统计信息
+.SH 用法概要
+.LP
+.nf
+\fBzonestat\fR [\fB-z\fR \fIzonelist\fR] [\fB-r\fR \fIreslist\fR] [\fB-n\fR \fInamelist\fR] [\fB-T u | d | i\fR] 
+   [\fB-R\fR \fIreports\fR] [\fB-q\fR] [\fB-x\fR] [\fB-p\fR [\fB-P\fR \fIlines\fR]] 
+   [\fB-S\fR \fIcols\fR] \fIinterval\fR [\fIduration\fR [\fIreport\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzonestat\fR 实用程序会报告当前正在运行的区域的 \fBcpu\fR、内存、网络和资源控制使用情况。对于每个区域的使用情况，都将报告系统资源百分比和区域所配置的限制两方面的内容。
+.sp
+.LP
+\fBzonestat\fR 实用程序按指定的时间间隔输出一系列的间隔报告。它还可以按指定的时间间隔输出一个或多个摘要报告。
+.sp
+.LP
+缺省输出是 \fBcpu\fR、物理内存、虚拟内存和网络使用情况的摘要。可使用 \fB-r\fR 选项为特定资源选择详细的输出。
+.SS "安全"
+.sp
+.LP
+在非全局区域 (\fBNGZ\fR) 内运行时，只会报告对 \fBNGZ\fR 可见的处理器集。\fBNGZ\fR 输出中包括所有其他系统资源，例如内存和限制。
+.sp
+.LP
+对于报告的所有资源，都会输出 \fBNGZ\fR 的使用情况。由系统、全局区域及所有其他区域使用的每个资源都会报告为由 [system] 使用。
+.sp
+.LP
+对于网络资源，只会输出 \fBNGZ\fR 的使用情况。\fBNGZ\fR 对其他区域的网络资源和统计信息不具有可见性。
+.sp
+.LP
+\fBproc_info\fR 特权是使用 \fBzonestat\fR 实用程序所必需的。该特权是基本特权集的成员。 
+.SH 选项
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR[\fI ,name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定要报告的资源名称的列表。对于 \fBpset\fR 资源，这是处理器集合的名称。对于 physical-memory、locked-memory 和 virtual-memory 资源，可指定的名称只有 \fBmem_default\fR 和 \fBvm_default\fR。对于网络资源，这是数据链路的名称。
+.sp
+专用 CPU 处理器集可由其 pset 名称 (\fBSUNWtmp_zonename\fR) 指定或只由其 \fBzonename\fR 指定。
+.sp
+由 \fBpsrset\fR 创建的处理器集可由其池 \fBpset\fR 名称 (\fBSUNWlegacy_pset\fR id) 指定，或只由 \fBpset\fR id 指定。
+.sp
+除了用逗号分隔的列表，还可以指定多个 \fB-n\fR 选项来报告一组资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+可解析的输出。
+.sp
+以计算机可分析的稳定格式显示输出。各个字段以冒号 (\fB:\fR) 进行分隔。行的格式为：
+.sp
+.in +2
+.nf
+report type:resource:field[:field]*
+.fi
+.in -2
+.sp
+
+如果指定了 -T，每行会以时间戳作为前缀：
+.sp
+报告类型包括：report-total、report-average、report-high 和 interval。
+.sp
+资源类型包括：header、footer、summary、physical-memory、virtual-memory、locked-memory、processor-set、processes、\fBlwps\fR、\fBsysv-shared-memory\fR、\fBsysv-shmids\fR、\fBsysv-semids\fR、\fBsysv-msgids\fR、\fBlofi\fR、network。
+.sp
+header 资源是用于声明间隔或摘要报告的开始的一个特殊资源。位于 header 资源之间的所有输出行都属于同一个报告。每个 header 都有一个相匹配的 footer。
+.sp
+其余字段是特定于资源类型的。有关详细信息，请参见 \fBzonestat\fR 实用程序。
+.sp
+所有现有的输出字段都是稳定的。将来的版本可能会引入新的报告和资源类型。将来的版本还可能会在现有输出 N 行的末尾添加其他新字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIline\fR[\fI ,line\fR]\fR
+.ad
+.sp .6
+.RS 4n
+对于可解析的输出，请指定要在可解析的输出中输出的行。可以选择下列行类型中的一个或多个：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheader、footer\fR\fR
+.ad
+.RS 19n
+.rt  
+每个间隔和摘要报告都包含一个 header，它输出诸如间隔和计数信息等方面的详细信息。在每个报告后还会输出一个 \fBfooter\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBresource\fR\fR
+.ad
+.RS 19n
+.rt  
+描述每个资源的行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsystem\fR\fR
+.ad
+.RS 19n
+.rt  
+系统对每个资源的使用率。这包括内核和不是由特定区域消耗的任何资源。当 \fBzonestat\fR 在非全局区域内运行时，该值是系统和所有其他区域所消耗的总体资源。不支持网络资源类型的 \fBsystem\fR 使用情况。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtotal\fR\fR
+.ad
+.RS 19n
+.rt  
+每个资源的总使用率。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzones\fR\fR
+.ad
+.RS 19n
+.rt  
+用于按区域详细列出每个资源的使用率的行。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+静默模式。只输出摘要报告（需要 \fB-R\fR 选项）。将忽略所有间隔报告。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIresource\fR[\fI ,resource\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定要报告的资源类型。可用的资源包括：\fBphysical-memory\fR、\fBvirtual-memory\fR、\fBlocked-memory\fR、\fBprocessor-set\fR、\fBprocesses\fR、\fBlwps\fR、\fBshm-memory \fR、\fBshm-ids\fR、\fBsem-ids\fR、\fBmsg-ids\fR、\fBlofi\fR 和 \fBnetwork\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsummary\fR\fR
+.ad
+.RS 22n
+.rt  
+\fBcpu\fR、\fBphysical-memory\fR、\fBvirtual memory\fR 和 \fBnetwork\fR 使用情况的摘要。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmemory（内存）\fR\fR
+.ad
+.RS 22n
+.rt  
+\fBphysical-memory\fR、\fBvirtual-memory\fR 和 \fBlocked-memory\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsets\fR\fR
+.ad
+.RS 22n
+.rt  
+\fBprocessor-set\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-pset\fR\fR
+.ad
+.RS 22n
+.rt  
+仅缺省的 \fBpset\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimits\fR\fR
+.ad
+.RS 22n
+.rt  
+\fBprocesses\fR、\fBlwps\fR、\fBlofi \fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 22n
+.rt  
+网络数据链路。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsysv\fR\fR
+.ad
+.RS 22n
+.rt  
+\fBshm-memory\fR、\fBshm-ids\fR、\fB sem-ids\fR \fBmsg-ids\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 22n
+.rt  
+所有资源类型。
+.RE
+
+缺省情况下将输出 summary 资源。
+.sp
+除了以逗号分隔的列表，还可以指定多个 -r 选项来报告一组资源类型。 
+.sp
+系统的 \fBcpu\fR 可划分为处理器集 (\fBpsets\fR)。缺省情况下，所有 \fBcpu\fR 都位于名为 \fBpset_default\fR 的单个 \fBpset\fR 中。
+.sp
+内存不能划分为不同的集。\fBzonestat\fR 实用程序针对这些资源的输出中将它们的名称显示为 \fBmem_default\fR 和 \fBvm_default\fR。
+.sp
+all 资源指定应该报告所有资源类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIreport\fR[\fI ,report\fR]\fR
+.ad
+.sp .6
+.RS 4n
+输出一个摘要报告。下面介绍了支持的报告类型。除了以逗号分隔的列表，还可以指定多个 -R 选项以输出一组摘要报告。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtotal\fR\fR
+.ad
+.RS 11n
+.rt  
+输出为每个资源详细列出以下内容的摘要报告：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsets\fR\fR
+.ad
+.RS 26n
+.rt  
+自启动命令调用以来所占用的总 cpu 时间。计算每个区域所占用的百分比时会考虑区域未运行的时间。例如，如果区域在运行时占用了 100% 的 cpu，但该区域运行时间间隔的一半后便停止，摘要报告便会显示该区域占用了 50% 的 cpu 时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmemory、limits、sysv\fR\fR
+.ad
+.RS 26n
+.rt  
+自调用命令以来所报告的所有间隔的平均资源占用值。此平均值将区域未运行的时间间隔考虑在内。例如，如果某个区域在运行时占用的物理内存平均值为 100M，且只运行时间间隔的一半，摘要报告便会显示该区域平均占用了 50M 的物理内存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 26n
+.rt  
+由所有利用物理带宽的数据链路传输和接收的所有字节的总和。总和是自启动命令调用以来所计算的字节总数，并标准化为每秒的字节数。所使用的百分比基于总可用带宽。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaverage\fR\fR
+.ad
+.RS 11n
+.rt  
+与 total 类似，但只将区域运行的时间间隔考虑在内。例如，如果某个区域只在单个时间间隔内运行，且在该时间间隔内使用了 200M 虚拟内存，无论在该摘要报告之前报告了多少个时间间隔，其使用的平均虚拟内存都为 200M。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhigh\fR\fR
+.ad
+.RS 11n
+.rt  
+输出详细列出在调用 \fBzonestat\fR 实用程序的任何时间间隔内每个资源和区域的最高使用率的摘要报告。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIcol\fR[\fI ,col\fR]\fR
+.ad
+.sp .6
+.RS 4n
+对使用每个资源的区域进行排序。
+.sp
+可指定以下排序列：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 11n
+.rt  
+按区域名称的字母数字顺序排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBused\fR\fR
+.ad
+.RS 11n
+.rt  
+按所使用的资源数量排序。对于网络资源，这与按字节排序相同。
+.sp
+这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcap\fR\fR
+.ad
+.RS 11n
+.rt  
+按所配置的上限排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcap\fR\fR
+.ad
+.RS 11n
+.rt  
+按所使用的上限的百分比排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshr\fR\fR
+.ad
+.RS 11n
+.rt  
+按所分配的份额排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpshru\fR\fR
+.ad
+.RS 11n
+.rt  
+按所使用的份额的百分比排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbytes\fR\fR
+.ad
+.RS 11n
+.rt  
+按传输和接收的总字节对网络资源进行排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprbyte\fR\fR
+.ad
+.RS 11n
+.rt  
+按通过线路接收的字节百分比对网络资源进行排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpobyte\fR\fR
+.ad
+.RS 11n
+.rt  
+按通过线路传输的字节百分比对网络资源进行排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxbw\fR\fR
+.ad
+.RS 11n
+.rt  
+按使用的带宽百分比对网络资源进行排序。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcpu\fR\fR
+.ad
+.RS 19n
+.rt  
+在摘要中按 cpu 使用率排序。这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBphysical-memory\fR\fR
+.ad
+.RS 19n
+.rt  
+在摘要中按物理内存的使用率排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvirtual-memory\fR\fR
+.ad
+.RS 19n
+.rt  
+在摘要中按虚拟内存的使用率排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 19n
+.rt  
+在摘要中按网络使用率排序。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 11n
+.rt  
+在摘要中按网络使用率排序。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBu | d | i\fR\fR
+.ad
+.sp .6
+.RS 4n
+包含每个报告的时间戳。支持下列格式：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 5n
+.rt  
+标准日期格式。请参见 \fBdate\fR(1)。此选项对 \fB--p\fR 无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+使用 ISO 8601 兼容格式设置的时间：
+.sp
+.in +2
+.nf
+ YYYYMMDDThhmmssZ
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR\fR
+.ad
+.RS 5n
+.rt  
+时间的内部表示形式的印刷表示形式。请参见 \fBtime\fR(2)。这也称为 \fBunix\fR 时间。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示具有更多详细信息的扩展视图。例如，当与网络资源一起使用时，扩展视图会列出每个虚拟数据链路的详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzonename\fR[\fI ,zonename\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定要报告的区域的列表。缺省情况下会报告所有区域。
+.sp
+除了以逗号分隔的列表，还可以指定多个 -z 选项来报告一组区域。输出中包括指定的区域使用过的任何资源。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定每个间隔报告之间暂停的时间长度（以秒为单位）。缺省时间间隔将使用为区域监视服务配置的时间间隔。请参见 \fBzonestatd\fR(1M)。 
+.sp
+\fIinterval\fR 是必需的。\fIinterval\fR 不能为零。\fIinterval\fR 可以指定为 [\fIn\fR\fBh\fR][\fIn\fR\fBm\fR][\fIn\fR\fB s\fR]，例如 \fB10s\fR 或 \fB1m\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIduration\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要报告的时间间隔数。如果未指定，则缺省使用 infinity。命令持续时间为 (\fIinterval * duration\fR)。\fIduration\fR 不能为零。还可以指定一个 \fBinf\fR 值以显式选择 infinity。
+.sp
+还可以将 duration 指定为 [\fIn\fR\fBh\fR][\fIn\fR\fBm\fR][\fIn\fR\fBs\fR]。在这种情况下，\fIduration\fR 被解释为执行时间的持续期。实际的 \fIduration\fR 会舍入到最接近的时间间隔倍数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIreport\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定摘要报告周期。例如，report 为 \fB4\fR 时，每 4 个时间间隔生成一次报告。如果命令持续时间不是 report 的倍数，则最后一个报告为任何剩余时间间隔的内容。
+.sp
+还可以将 \fIreport\fR 指定为 [\fIn\fR\fBh\fR][\fIn\fR\fBm\fR][\fIn\fR\fBs\fR]。在这种情况下，报告会按指定的时间段输出，并舍入到最近的时间间隔。如果命令 \fIduration\fR 不是 report 的倍数，则最后一个报告为任何剩余时间间隔的内容。
+.sp
+需要 \fB-R\fR。如果指定了 \fB-R\fR 但未指定 report，则报告周期为整个命令持续时间，即在命令执行结束时生成指定的报告。
+.RE
+
+.SH OUTPUT
+.sp
+.LP
+以下列表定义了命令输出的列标题：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSTEM-MEMORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理主机上可用的内存总量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSTEM-LIMIT\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理主机上可用的最大资源量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCPUS\fR\fR
+.ad
+.sp .6
+.RS 4n
+分配给一个处理器集的 \fBcpu\fR 数量
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBONLINE（联机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+在分配给一个处理器集的 \fBcpu\fR 中，可以执行进程的 \fBcpu\fR 的数量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMIN/MAX\fR\fR
+.ad
+.sp .6
+.RS 4n
+可由系统分配给处理器集的 \fBcpu\fR 的最小数量和最大数量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZONE\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用资源的区域。除了区域名称，此列还可以包含：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[total]\fR\fR
+.ad
+.RS 12n
+.rt  
+系统范围内使用的资源总量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[system]\fR\fR
+.ad
+.RS 12n
+.rt  
+由内核使用的或以不与任何特定区域关联的方式使用的资源量。
+.sp
+当在非全局区域中使用 \fBzonestat\fR 时，[system] 指示由系统和所有其他区域使用的总体资源。
+.sp
+对于网络资源，不提供网络的系统使用情况。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUSED\fR\fR
+.ad
+.sp .6
+.RS 4n
+所使用的资源量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%USED\fR\fR
+.ad
+.sp .6
+.RS 4n
+所使用的资源量占总资源的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCT\fR\fR
+.ad
+.sp .6
+.RS 4n
+所使用的资源量占总资源的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%PART\fR\fR
+.ad
+.sp .6
+.RS 4n
+所使用的 \fBcpu\fR 量占该区域绑定到的处理器集中的总 \fBcpu\fR 的百分比。如果某个区域是全局区域，或者如果使用了 \fBpsrset\fR(1M) \fBpsets\fR，则该区域只能将进程绑定到多个处理器集。如果为某个区域找到了多个绑定，则 \fB%PART\fR 就是所使用的 cpu 量占所有绑定 \fBpsets\fR 的百分比。对于 \fB [total]\fR 和 \fB[system]\fR，\fB%PART\fR 是所使用的 cpu 量占系统上所有 \fBcpu\fR 的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果为某个区域在指定资源配置了上限，则会在此列中显示该上限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%CAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+所使用的资源量占区域中配置的上限的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHRS\fR\fR
+.ad
+.sp .6
+.RS 4n
+分配给区域的份额数量。对于 [total] 行，这是分配给共享此资源的所有区域的份额总数。如果某个区域未配置为使用份额，并且与配置为使用份额的其他区域共享某个资源，则此列会针对该区域包含 \fBno-fss\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%SHRS\fR\fR
+.ad
+.sp .6
+.RS 4n
+分配给此区域的份额占总份额的百分比。例如，如果 2 个区域共享一个处理器集合，每个具有 10 个份额，则每个区域的 \fB%SHR\fR 为 50%。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%SHRU\fR\fR
+.ad
+.sp .6
+.RS 4n
+在分配给区域的份额中，占资源的百分比为 100% 的份额。由于份额只会在存在资源争用时实施，因此区域可能具有超过 100% 的 \fB%SHRU\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTOBYTES\fR\fR
+.ad
+.sp .6
+.RS 4n
+由数据链路或虚拟链路传输和接收的字节数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRBYTE\fR\fR
+.ad
+.sp .6
+.RS 4n
+消耗物理带宽的接收字节数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOBYTE\fR\fR
+.ad
+.sp .6
+.RS 4n
+消耗物理带宽的传输字节数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%PRBYE\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于接收 \fBPRBYTE\fR 的可用物理带宽百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%POBYE\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于传输 \fBPOBYTE\fR 的可用物理带宽百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%PUSE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBPRBYTE\fR 和 \fBPOBYTE\fR 的总和占总可用物理带宽的百分比。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK\fR\fR
+.ad
+.sp .6
+.RS 4n
+数据链路的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAXBW\fR\fR
+.ad
+.sp .6
+.RS 4n
+在数据链路上配置的最大带宽。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%MAXBW\fR\fR
+.ad
+.sp .6
+.RS 4n
+所有传输和接收的字节总和占配置的最大带宽的百分比。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBzonestat\fR 显示 \fBcpu\fR 和内存使用情况的摘要
+.sp
+.LP
+以下命令会每隔 5 秒钟显示一次 \fBcpu\fR 和内存使用情况的摘要：
+
+.sp
+.in +2
+.nf
+ # zonestat 5 1
+        SUMMARY   Cpus/Online: 4/4  Physical: 8063M  Virtual: 11.8G
+                     ---CPU---   --PHYSMEM-- ---VMEM---  ---NET---
+               ZONE  USED %PART  USED %USED  USED %USED PBYTE %PUSE
+            [total]  0.23 5.76% 3211M 39.8% 4191M 34.6%  350M 18.7%     -
+           [system]  0.03 0.83% 2791M 34.6% 3890M 32.1%     -     -
+             global  0.19 4.86%  324M 4.01%  228M 1.89%  200M 10.7%
+              zoneA  0.00 0.03% 47.9M 0.59% 36.3M 0.30%  100M  5.3%
+              zoneB  0.00 0.02% 48.1M 0.59% 36.4M 0.30%   50M  2.7%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 \fBzonestat\fR 生成可解析的输出
+.sp
+.LP
+以下命令会生成可解析的输出。此命令以 5 秒的时间间隔为每个使用 \fBpset\fR 资源的区域输出一行：
+
+.sp
+.in +2
+.nf
+# zonestat -p -P zones -r psets 5 1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用 \fBzonestat\fR 针对缺省的 \fBpset\fR 进行报告
+.sp
+.LP
+以下命令在一分钟的时间内每一秒针对缺省的 \fBpset\fR 报告一次：
+
+.sp
+.in +2
+.nf
+# zonestat -r default-pset 1 1m
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR使用 \fBzonestat\fR 报告总使用率和最高使用率
+.sp
+.LP
+以下命令在 24 个小时内以 10 秒的时间间隔静默监视，并每隔 1 小时生成总使用率和最高使用率报告：
+
+.sp
+.in +2
+.nf
+# zonestat -q -R total,high 10s 24h 1h
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR使用 \fBzonestat\fR 报告数据链路使用率
+.sp
+.LP
+以下命令以 5 秒的时间间隔对名为 \fBe1000g0\fR 的数据链路报告 5 次：
+
+.sp
+.in +2
+.nf
+# zonestat -r network -n e1000g0 5 5
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+用法无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvc:system/zones_monitoring\fR：缺省情况下未运行或未响应。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性\fBsystem/zones\fR
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令调用和可解析的输出是 "Committed"（已确定）。人类可阅读的输出（缺省输出）是 "Uncommitted"（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBdate\fR(1)、\fBprctl\fR(1)、\fBpooladm\fR(1M)、\fBpoolcfg\fR(1M)、\fBpsrset\fR(1M)、\fBrcapadm\fR(1M)、\fBzoneadm\fR(1M)、\fBzonecfg\fR(1M)、\fBzonestatd\fR(1M)、\fBtime\fR(2)、\fBtimezone\fR(4)、\fBattributes\fR(5)、\fBprivileges\fR(5)、\fBresource_controls\fR(5)
+.SH 附注
+.sp
+.LP
+\fBzonestat\fR 实用程序依赖于区域监视服务：\fBsvc/system/zonestat:default\fR。如果运行 \fBzonestat\fR 实用程序时 \fBzonestat\fR 服务停止，则 \fBzonestat\fR 命令调用将退出，且不再输出任何报告。如果在到达下一个报告周期之前，\fBzonestat\fR 被（CTRL/c、SIGINT）中断，则会输出报告 (\fB-R\fR)。

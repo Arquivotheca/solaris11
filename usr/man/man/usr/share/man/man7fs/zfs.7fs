@@ -1,0 +1,123 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH zfs 7FS "21 Dec 2010" "SunOS 5.11" "File Systems"
+.SH NAME
+zfs \- ZFS file system
+.SH SYNOPSIS
+.LP
+.nf
+\fB#include <sys/libzfs.h>\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+ZFS is the default root file system in the Oracle Solaris release. ZFS is a disk based file system with the following features:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Uses a pooled storage model where whole disks can be added to the pool so that all file systems use storage space from the pool.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+A ZFS file system is not tied to a specific disk slice or volume, so previous tasks, such as repartitioning a disk or unmounting a  file system to add disk space, are unnecessary.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ZFS administration is simple and easy with two basic commands: \fBzpool\fR(1M) to manage storage pools and \fBzfs\fR(1M) to manage file systems. No need exists to learn complex volume management interfaces.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+All file system operations are copy-on-write transactions so the on-disk state is always valid. Every block is checksummed to prevent silent data corruption. In a replicated RAID-Z or mirrored configuration, ZFS detects corrupted data and uses another copy to repair it.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+A disk scrubbing feature reads all data to detect latent errors while the errors are still correctable. A scrub traverses the entire storage pool to read every data block, validates the data against its 256-bit checksum, and repairs the data, if necessary. 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ZFS is a 128-bit file system, which means support for 64-bit file offsets, unlimited links, directory entries, and so on.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ZFS provides snapshots, a read-only point-in-time copy of a file system and cloning, which provides a writable copy of a snapshot.
+.RE
+.sp
+.LP
+A ZFS storage pool and ZFS file system are created in two steps:
+.sp
+.in +2
+.nf
+# zpool create tank mirror c1t0d0 c1t1d0
+# zfs create tank/fs1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+A ZFS file system is mounted automatically when created and when the system is rebooted by an SMF service. No need exists to edit the \fB/etc/vfstab\fR file manually. If you need to mount a ZFS file manually, use syntax similar to the following:
+.sp
+.in +2
+.nf
+# zfs mount tank/fs1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+For more information about managing ZFS file systems, see the \fIOracle Solaris Administration: ZFS File Systems\fR.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdu\fR(1), \fBdf\fR(1M), \fBzpool\fR(1M), \fBzfs\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+\fIOracle Solaris Administration: ZFS File Systems\fR
+.SH NOTES
+.RS +4
+.TP
+1.
+ZFS does not have an \fBfsck\fR-like repair feature because the data is always consistent on disk. ZFS provides a pool scrubbing operation that can find and repair bad data. In addition, because hardware can fail, ZFS pool recovery features are also available.
+.RE
+.RS +4
+.TP
+2.
+Use the \fBzpool list\fR and \fBzfs list\fR to identify ZFS space consumption. A limitation of using the \fBdu\fR(1) command to determine ZFS file system sizes is that it also reports ZFS metadata space consumption. The \fBdf\fR(1M) command does not account for space that is consumed by ZFS snapshots, clones, or quotas.
+.RE
+.RS +4
+.TP
+3.
+A ZFS storage pool that is not used for booting should be created by using whole disks. When a ZFS storage pool is created by using whole disks, an EFI label is applied to the pool's disks. Due to a long-standing boot limitation, a ZFS root pool must be created with disks that contain a valid SMI (VTOC) label and a disk slice, usually slice \fB0\fR.
+.RE

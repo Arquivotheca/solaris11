@@ -1,0 +1,785 @@
+'\" te
+.\" Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH dhcpconfig 1M "2011 年 6 月 22 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+dhcpconfig \- DHCP サービス構成ユーティリティー
+.SH 形式
+.LP
+.nf
+\fBdhcpconfig\fR \fB-D\fR \fB-r\fR \fIresource\fR \fB-p\fR \fIpath\fR [\fB-u\fR \fIuninterpreted\fR] 
+     [\fB-l\fR \fIlease_length\fR] [\fB-n\fR ] [\fB-d\fR \fIDNS_domain\fR] 
+     [\fB-a\fR \fIDNS_server_addresses\fR] [\fB-h\fR \fIhosts_resource\fR] 
+     [\fB-y\fR \fIhosts_domain\fR]
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-R\fR \fIserver_addresses\fR
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-U\fR [\fB-f\fR] [\fB-x\fR] [\fB-h\fR]
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-N\fR \fInetwork_address\fR [\fB-m\fR \fIsubnet_mask\fR] [\fB-b\fR ] 
+     [\fB-t\fR \fIrouter_addresses\fR] [\fB-y\fR \fINIS-domain\fR] 
+     [\fB-a\fR \fINIS_server_addresses\fR] [\fB-g\fR]
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-C\fR \fB-r\fR \fIresource\fR \fB-p\fR \fIpath\fR [\fB-f\fR] [\fB-k\fR] 
+     [\fB-u\fR \fIuninterpreted\fR]
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-X\fR \fIfilename\fR [\fB-m\fR \fImacro_list\fR] [\fB-o\fR \fIoption_list\fR] 
+     [\fB-a\fR \fInetwork_addresses\fR] [\fB-f\fR] [\fB-x\fR] [\fB-g\fR]
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-I\fR \fIfilename\fR [\fB-f\fR] [\fB-g\fR]
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-P\fR [\fIparameter\fR[=\fIvalue\fR],]...
+.fi
+
+.LP
+.nf
+\fBdhcpconfig\fR \fB-S\fR [\fB-f\fR] [\fB-e\fR | \fB-d\fR | \fB-r\fR | \fB-q\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBdhcpconfig\fR コマンドは、動的ホスト構成プロトコル (DHCP) サービスまたは BOOTP リレーサービスを設定および管理するために使用します。経験豊かな Solaris システム管理者を対象としており、スクリプトで簡単に使用できるように設計されています。経験の浅い管理者や、DHCP サービスまたは BOOTP リレーサービスの設定と管理にグラフィカルなユーティリティーを使用したいユーザーには、\fBdhcpmgr\fR ユーティリティーをお勧めします。
+.sp
+.LP
+\fBdhcpconfig\fR コマンドは、root または DHCP 管理プロファイルに割り当てられたユーザーが実行できます。\fBrbac\fR(5) および \fBuser_attr\fR(4) を参照してください。
+.sp
+.LP
+\fBdhcpconfig\fR には、\fB-D\fR、\fB-R\fR、\fB-U\fR、\fB-N\fR、\fB-C\fR、\fB-X\fR、\fB-I\fR、\fB-P\fR、\fB-S\fR のいずれかの機能フラグを指定する必要があります。
+.sp
+.LP
+\fBdhcpconfig\fR のメニュー駆動モードは、Solaris 8 以前のバージョンでサポートされています。
+.SS "dhcpconfig が取得する構成情報の場所"
+.sp
+.LP
+\fBdhcpconfig\fR は、Solaris マシン上のさまざまな構成ファイルを走査して、\fBdhcptab\fR 構成テーブルに追加するマクロに含まれるオプションに値を割り当てるために使用できる情報を取得します。次の表に、\fBdhcpconfig\fR に必要な情報、情報のソース、および情報の使用方法を一覧表示します。 
+.sp
+
+.sp
+.TS
+tab() box;
+lw(1.38i) |lw(2.06i) |lw(2.06i) 
+lw(1.38i) |lw(2.06i) |lw(2.06i) 
+.
+\fI情報\fR\fIソース\fR\fI使用する場所\fR
+_
+タイムゾーンT{
+システムの日付とタイムゾーンの設定
+T}\fBLocale\fR マクロ
+DNS パラメータ\fBnsswitch.conf\fR、\fB/etc/resolv.conf\fRサーバーマクロ
+NIS のパラメータT{
+システムのドメイン名、\fBnsswitch.conf\fR、NIS
+T}ネットワークマクロ
+サブネットマスクT{
+ネットワークインタフェース、ネームサービスの \fBnetmasks\fR テーブル
+T}ネットワークマクロ
+.TE
+
+.sp
+.LP
+サーバーマシンに前述のパラメータを設定していない場合は、\fBdhcpconfig\fR を使って DHCP サーバーを構成する前に各パラメータを設定してください。\fBdhcpconfig \fR\fB-D\fR でコマンド行にオプションを指定した場合は、指定した値がシステムファイルの値より優先されます。
+.sp
+.LP
+\fBdhcpconfig\fR ユーティリティーは廃止されており、Oracle Solaris の将来のリリースで削除されます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいデータストアに変換します。新しいデータストアに対応する形式で DHCP データテーブルが再作成され、新しいデータストアを使用するように DHCP サーバーが設定されます。 
+.sp
+次のサブオプションは必須です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpath_to_data\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSUNWfiles\fR および \fBSUNWbinfiles\fR のパスは、\fBUNIX\fR の絶対パス名である必要があります。\fBdhcp_modules\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIdata_resource\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいデータストアリソース。\fBSUNWfiles\fR または \fBSUNWbinfiles\fR のいずれかを指定する必要があります。\fBdhcp_modules\fR(5) を参照してください。
+.RE
+
+次のサブオプションは省略可能です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+確認を求めるプロンプトを出力しません。\fB-f\fR を指定しないと、変換の開始前に警告と確認のプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.sp .6
+.RS 4n
+変換の完了後も古い DHCP データテーブルを保持します。変換中に問題が発生した場合は、\fB-k\fR サブオプションを指定していなくても、テーブルは削除されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuninterpreted\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcpconfig\fR では無視されるが、データストアに渡されて解釈されるデータ。この非公開レイヤーは、\fBRESOURCE_CONFIG\fR キーワードを使ったモジュール固有の構成情報に対応します。解釈されないデータは、\fBdhcpsvc.conf\fR(4) の \fBRESOURCE_CONFIG\fR キーワードの内部に格納されます。\fB-u\fR サブオプションは、\fBSUNWfiles\fR および \fBSUNWbinfiles\fR データストアと同時に指定できません。\fBdhcp_modules\fR(5) を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBDHCP\fR サービスを構成します。 
+.sp
+次のサブオプションは必須です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIdata_resource\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSUNWfiles\fR または \fBSUNWbinfiles\fR のいずれかを指定する必要があります。その他のデータストアを使用できる場合があります。\fBdhcp_modules\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSUNWfiles\fR および \fBSUNWbinfiles\fR のパスは、\fBUNIX\fR の絶対パス名である必要があります。\fBdhcp_modules\fR(5) を参照してください。
+.RE
+
+次のサブオプションは省略可能です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIDNS_servers\fR\fR
+.ad
+.sp .6
+.RS 4n
+DNS サーバーの IP アドレスをコンマで区切って指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIDNS_domain\fR\fR
+.ad
+.sp .6
+.RS 4n
+DNS ドメイン名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhosts_resource\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストデータを格納するリソース。通常は、サーバーで使用されているネームサービスです。有効な値は、\fBfiles\fR または \fBdns\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+リース期間が指定されていないアドレスに適用されるリース期間 (秒単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネゴシエーション不可能なリース
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR \fIhosts_domain\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストデータとして使用する DNS ドメイン名。\fBh\fR サブオプションに \fB-dns\fR を指定した場合にのみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuninterpreted\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcpconfig\fR では無視されるが、データストアに渡されて解釈されるデータ。この非公開レイヤーは、\fBRESOURCE_CONFIG\fR キーワードを使ったモジュール固有の構成情報に対応します。解釈されないデータは、\fBdhcpsvc.conf\fR(4) の \fBRESOURCE_CONFIG\fR キーワードの内部に格納されます。\fB-u\fR サブオプションは、\fBSUNWfiles\fR および \fBSUNWbinfiles\fR データストアと同時に指定できません。\fBdhcp_modules\fR(5) を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+事前に Solaris DHCP サーバーからエクスポートしたデータを含む \fIfilename\fR からデータをインポートします。インポートしたあとで、正しいドメイン名を指定するためにマクロを編集したり、インポートしたネットワークのアドレスの所有サーバーを変更するためにネットワークテーブルを編集したりする必要がある場合があります。そのためには、\fBdhtadm\fR および \fBpntadm\fR を使用します。
+.sp
+次のサブオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+重複するデータをインポートされたデータで置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+インポートの完了後に \fBdhcptab\fR の再読み込みを指示するシグナルをデーモンに送信します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fInet_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービス用の追加ネットワークを構成します。 
+.sp
+次のサブオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fINIS_server_addresses\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS サーバーの IP アドレスのリスト。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークがポイントツーポイント (PPP) ネットワークであるため、ブロードキャストアドレスを構成しません。\fB-\fRb を使用しない場合、ネットワークは LAN とみなされ、ネットワークアドレスとサブネットマスクを使ってブロードキャストアドレスが決定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcptab\fR の再読み込みを指示するシグナルをデーモンに送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIxxx.xxx.xxx.xxx\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークのサブネットマスク。\fB-m\fR を使用しない場合は、ネットマスクからサブネットマスクが取得されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIrouter_addresses\fR\fR
+.ad
+.sp .6
+.RS 4n
+ルーター IP アドレスのリスト。指定しない場合は、ルーター検索フラグが設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR \fINIS_domain_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+このネットワークで NIS が使用されている場合に、NIS のドメイン名を指定します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスのパラメータを構成します。個々のパラメータと値を次のパターンで指定します。 
+.sp
+.in +2
+.nf
+\fIparameter\fR[=\fIvalue\fR],\&.\|.\|.
+.fi
+.in -2
+.sp
+
+パラメータと値の詳細は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIparameter\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcpsvc.conf\fR(4) に示されているいずれかの DHCP サービスパラメータ。対応する \fIvalue\fR を指定しないと、現在のパラメータ値が表示されます。\fIparameter\fR を指定しないと、すべてのパラメータと現在の値が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバーパラメータを設定するための省略可能な文字列 (設定可能な値の場合)。値を指定していないか、値が空 (\fB""\fR) の場合は、そのパラメータと現在の値が削除されます。
+.RE
+
+パラメータの変更後に新しいパラメータ値を使用するには、DHCP サーバーを再起動する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIserver_addresses\fR\fR
+.ad
+.sp .6
+.RS 4n
+BOOTP リレーサービスを構成します。BOOTP 要求または DHCP 要求は、このリストで指定した各サーバーに転送されます。 
+.sp
+\fIserver_addresses\fR は、ホスト名または IP アドレス、あるいはその両方をコンマで区切ったリストです。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスを制御します。
+.sp
+次のサブオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスを無効にして停止します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスを有効にして起動します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスの状態を表示します。ステータスは終了ステータスにエンコードされています。
+.sp
+.in +2
+.nf
+0    DHCP service disabled and stopped
+1    DHCP service enabled and stopped
+2    DHCP service disabled and running
+3    DHCP service enabled and running
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスを有効にして再起動します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サービスまたは BOOTP リレーサービスの構成を解除します。 
+.sp
+次のサブオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+確認を求めるプロンプトを出力しません。\fB-f\fR を指定しないと、警告と確認のプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネームサービスからホストのエントリを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcptab\fR とネットワークテーブルを削除します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-X\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+別の Solaris DHCP サーバーにデータを移動するため、DHCP データテーブルのデータをエクスポートして \fIfilename\fR に保存します。 
+.sp
+次のサブオプションは省略可能です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fInetworks_to_export\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスをエクスポートする必要があるネットワークのリスト、またはすべてのネットワークを示すキーワード ALL。\fB-a\fR を指定しないと、ネットワークはエクスポートされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fR
+.ad
+.sp .6
+.RS 4n
+エクスポートの完了後に \fBdhcptab\fR の再読み込みを指示するシグナルをデーモンに送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fImacros_to_export\fR\fR
+.ad
+.sp .6
+.RS 4n
+エクスポートするマクロのリスト、またはすべてのマクロを示すキーワード \fBALL\fR。\fB-m\fR を指定しないと、マクロはエクスポートされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoptions_to_export\fR\fR
+.ad
+.sp .6
+.RS 4n
+エクスポートするオプションのリスト、またはすべてのオプションを示すキーワード \fBALL\fR。\fB-o\fR を指定しないと、オプションはエクスポートされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+エクスポート後、このサーバーからデータを削除します。\fB-x\fR を指定しないと、実質的にデータをコピーすることになります。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRバイナリファイルのデータストアを使って DHCP サービスを構成する
+.sp
+.LP
+次のコマンドは、リース期間を 28800 秒 (8 時間) とし、DNS ドメイン \fBacme.eng\fR のバイナリファイルのデータストアを使って DHCP サービスを構成します。 
+
+.sp
+.in +2
+.nf
+example# dhcpconfig -D -r SUNWbinfiles -p /var/dhcp -l 28800\e
+             -d acme.eng -a 120.30.33.4 -h dns -y acme.eng
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRBOOTP リレーエージェントを構成する
+.sp
+.LP
+次のコマンドは、DHCP デーモンを BOOTP リレーエージェントとして構成します。このエージェントは IP アドレスが 120.30.33.7 のサーバーと 120.30.42.132 のサーバーに BOOTP 要求と DHCP 要求を転送します。 
+
+.sp
+.in +2
+.nf
+example# dhcpconfig -R 120.30.33.7,120.30.42.132
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRDHCP サービスの構成を解除する
+.sp
+.LP
+次のコマンドは、確認付きで DHCP サービスの構成を解除し、DHCP データテーブルとホストテーブルのエントリを削除します。
+
+.sp
+.in +2
+.nf
+example# dhcpconfig -U -x -h
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRDHCP サービス用のネットワークを構成する
+.sp
+.LP
+次のコマンドは、DHCP サービス用の追加の LAN ネットワークを構成します。クライアントがルーター検索を使用するように設定し、NIS ドメイン名と NIS サーバーアドレスを指定します。 
+
+.sp
+.in +2
+.nf
+example# dhcpconfig -N 120.30.171.0 -y east.acme.eng.com\e
+             -a 120.30.33.4
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRDHCP サーバーからネットワーク、マクロ、およびオプションをエクスポートする
+.sp
+.LP
+次のコマンドは、1 つのネットワーク (\fB120.30.171.0\fR) とその内部のアドレス、マクロ \fB120.30.171.0\fR、およびオプション \fBmotd\fR と \fBPSptr\fR を DHCP サーバーからエクスポートし、エクスポートしたデータを \fB/export/var/120301710_data\fR というファイルに保存したあと、エクスポートしたデータをサーバーから削除します。
+
+.sp
+.in +2
+.nf
+example# dhcpconfig -X /var/dhcp/120301710_export
+     -a 120.30.171.0 -m 120.30.171.0 -o motd,PSptr
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRDHCP サーバーにデータをインポートする
+.sp
+.LP
+次のコマンドは、以前に Solaris DHCP サーバーからエクスポートされたデータを格納する \fB/net/golduck/export/var/120301710_data\fR というファイルから DHCP データをインポートし、インポート先のサーバー上の衝突するデータを上書きし、インポートの完了後に \fBdhcptab\fR の再読み込みを指示するシグナルをデーモンに送信します。
+
+.sp
+.in +2
+.nf
+example# dhcpconfig -I /net/golduck/export/var/120301710_data -f -g
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRDHCP サーバーのパラメータを設定する
+.sp
+.LP
+次のコマンドは、DHCP クライアント上の DNS 情報の更新がタイムアウトするまでの DHCP サーバーの待機時間を 5 分に設定します。
+
+.sp
+.in +2
+.nf
+example# example# dhcpconfig -P UPDATE_TIMEOUT=5
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRDHCP サーバーを再起動する
+.sp
+.LP
+次のコマンドは、DHCP サーバーを停止してから再起動します。
+
+.sp
+.in +2
+.nf
+example#  example# dhcpconfig -S -r
+DHCP server stopped
+DHCP server started
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/dhcp
+_
+インタフェースの安定性廃止
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdhcpmgr\fR(1M), \fBdhtadm\fR(1M), \fBin.dhcpd\fR(1M), \fBpntadm\fR(1M), \fBdhcp_network\fR(4), \fBdhcptab\fR(4), \fBdhcpsvc.conf\fR(4), \fBnsswitch.conf\fR(4), \fBresolv.conf\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5), \fBdhcp\fR(5), \fBdhcp_modules\fR(5), \fBrbac\fR(5)
+.sp
+.LP
+\fI\fR

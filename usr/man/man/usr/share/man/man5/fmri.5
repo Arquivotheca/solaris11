@@ -1,0 +1,1566 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmri 5 "25 Jul 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+fmri \- Fault Managed Resource Identifier
+.SH DESCRIPTION
+.sp
+.LP
+Oracle Solaris subsystems such as the Service Management Facility (see \fBsmf\fR(5)), the Fault Management Daemon (see \fBfmd\fR(1M), \fBfmadm\fR(1M)), and the Image Packaging System (see \fBpkg\fR(5)) identify each element they manage using a \fBfault managed resource identifier\fR, abbreviated as FMRI.
+.sp
+.LP
+FMRIs are used to identify both hardware resources and software resources and abstractions. For hardware resources the FMRIs are usually an implementation detail, and when a component is diagnosed as faulty it is the FRU (field replaceable unit) location label which is used to identify it. If no FRU label is available, the FMRI is used. For software abstractions such as an SMF service or a \fBpkg\fR(5) software package the FMRI (often in string form) is the one and only means of naming the managed resource (abbreviations aside).
+.sp
+.LP
+All FMRIs include an indication of the FMRI scheme adhered to, and the version of that FMRI scheme in use. Once the scheme and version are known, the remainder of the FMRI is interpreted as specified in the formal definition of that FMRI scheme version. Schemes exists for \fBsvc\fR, \fBpkg\fR, \fBcpu\fR, \fBhc\fR (hardware component), \fBdev\fR (device), and a number of others.
+.sp
+.LP
+The formal definition of a given version of a particular FMRI scheme is specified as an unordered series of FMRI members specified as (member-name, data-type, data-semantics) tuples. An instance of an FMRI is a series of (name, type, value) tuples wherein the name and type match the FMRI specification and the value provided is a value of the given type and derived and interpreted according the semantics described in the formal FMRI definition for that scheme and version. In Oracle Solaris C library APIs such as \fBlibfmevent\fR(3LIB), FMRIs are represented as \fBnvlists\fR using the \fBlibnvpair\fR(3LIB) library.
+.sp
+.LP
+It is often more convenient to represent a given FMRI instance as a string, such as in command line interaction or in command output. The specification of each FMRI scheme version includes rules for formatting an FMRI of that scheme and version as a string instead of an name-value pair list, and given an FMRI string those same rules can be applied in reverse to recover the more-formal FMRI form. In some cases the string form of an FMRI can include a reduced amount of information as compared to the formal form, but still provide enough information to identify the resource for administrative purposes. The string form of an FMRI usually does not include the FMRI version number, and so the version is understood to be that whose formal FMRI-to-string formatting rules the given FMRI string matches. The string form of an FMRI is not unlike a URI as outlined in \fIRFC 2396\fR which we use as a syntactical model. In particular, we reserve the same set of characters \fB:, ;, =, @, /, &, ', $\fR and \fB,\fR and require the same escaped encoding conventions should these characters appear in an FMRI member value that is rendered in the string.
+.SS "FMRI Members"
+.sp
+.LP
+The formal definition of a given version of a particular FMRI scheme is specified as an unordered series of:
+.sp
+.in +2
+.nf
+(member-name, data-type, data-semantics)
+.fi
+.in -2
+
+.sp
+.LP
+tuples, some of which are required and some of which are optional. The formal definition also specifies how to render the FMRI in string form.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmember-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+This associates a name with the FMRI member, with characters drawn from the following alphabet:
+.sp
+.in +2
+.nf
+A-Z
+a-z
+\&'_' (underscore)
+\&'-' (hyphen)
+\&'.' (period)
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdata-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+This specifies the data type for this member. Legal primitive datatypes are listed in the following table, and for all primitive types we also define an array of that type as a legal datatype. The primitive integer and double datatypes are defined as in C, and we add boolean value and string primitive datatypes:
+.sp
+.in +2
+.nf
+Primitive Datatype   Description
+---------------------------------------------
+boolean_value        Values can be 0 or 1
+string               ASCII string
+[u]int8              (Un)signed 8-bit integer
+[u]int16             (Un)signed 16-bit integer
+[u]int32             (Un)signed 32-bit integer
+[u]int64             (Un)signed 64-bit integer
+double               Double precision floating point
+.fi
+.in -2
+
+For each primitive datatype we form an aggregate datatype that is an ordered array of the primitive type:
+.sp
+.in +2
+.nf
+Primitive Datatype    Description
+----------------------------------------------
+boolean_value array   Array of boolean_value
+string array          Array of ASCII strings
+[u]int8 array         Array of (un)signed 8-bit integer
+[u]int16 array        Array of (un)signed 16-bit integer
+[u]int32 array        Array of (un)signed 32-bit integer
+[u]int64 array        Array of (un)signed 64-bit integer
+double array          Array of double
+.fi
+.in -2
+
+A further aggregate datatype is defined - the \fBnvlist\fR (name- value list). An \fBnvlist\fR is an unordered list of (\fBlist-member-name, list-member-datatype\fR) in which \fBlist-member-name\fR names the member using the same alphabet as for \fBmember-name\fR above, and \fBlist-member-datatype\fR is any primitive or aggregate datatype including \fBnvlist\fR itself. We term the members of an \fBnvlist\fR: \fBnvpairs\fR (name-value pairs).
+.sp
+A special type of \fBnvlist\fR is an \fBfmri\fR which is an \fBnvlist\fR that conforms to one of the FMRI scheme versions defined below.
+.sp
+.in +2
+.nf
+Synthetic Datatype    Description
+---------------------------------------------------------
+nvlist                Unordered list of nvpairs
+nvlist array          Array of nvlist
+fmri                  An nvlist that specifies an FMRI
+                      scheme and version and includes other
+                      members so as to be a valid FMRI
+                      in that scheme version.
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdata-semantics\fR\fR
+.ad
+.sp .6
+.RS 4n
+The data semantics for a given member in an FMRI definition specify how the values for that member should be interpreted, that is, their meaning. The data semantics can constrain the set of legal values that the member can assume to a subset of those representable by the member data type.
+.RE
+
+.SS "Stabilities"
+.sp
+.LP
+Some FMRI schemes, such as \fBsvc\fR for SMF, are administrator-facing while others are more of a private implementation detail. Correspondingly, the definition of some FMRI schemes constitute a \fBCommitted\fR interface, while the definition of others form a \fBPrivate\fR interface. See \fBattributes\fR(5). As with all \fBPrivate\fR interfaces the definition of \fBPrivate\fR FMRI components is subject to possibly incompatible change at any time, and you should not consume such interfaces nor rely on the presence or assumed semantics of private FMRI members.
+.sp
+.LP
+In defining an FMRI scheme below we list a series of (\fBmember-name, data-type, data-semantics\fR), specify which members are required and which are optional, and the rules for rendering an FMRI in string form. In terms of stability assignments, there are two stability levels associated with each member:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Stability of the (\fBmember-name, data-type\fR) pair
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Stability of the corresponding data-semantics
+.RE
+.sp
+.LP
+The default in both cases is \fBPrivate\fR. When the stability of both aspects of a member are identical (the common case) we write the stability level just once. When they differ then we write the member name and data type stability first, followed by a comma and the data semantics stability level. Today the only stability levels employed in FMRIs are \fBCommitted\fR, \fBPrivate\fR, and \fBNot An Interface\fR but others are allowed. The semantics of a \fBCommitted\fR FMRI component do not change incompatibly for given scheme and version thereof.
+.SS "FMRI Scheme and Version Identification"
+.sp
+.LP
+All FMRI definitions are required to include members for the scheme name and major version thereof. The name/datatype and data semantics stabilities are \fBCommitted\fR, thus all FMRI definitions are required to begin as follows:
+.sp
+.in +2
+.nf
+Member Name      Data Type    Stability
+----------------------------------------
+scheme           string       Committed
+version          uint8        Committed
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscheme\fR\fR
+.ad
+.sp .6
+.RS 4n
+Names this FMRI scheme
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBversion\fR\fR
+.ad
+.sp .6
+.RS 4n
+Scheme major version
+.RE
+
+.sp
+.LP
+Together these select the set of rules (as below) by which the given FMRI should be interpreted. A small number of scheme names are defined to cope with identifying resources within differing subsystems, and each scheme is versioned starting at version number 0. 
+.sp
+.LP
+When using the informal string representation of an FMRI, the scheme is always written but the scheme version in use is usually not included. The version in use is understood to be the latest for which the given FMRI string matches the FMRI-to-string conversion rules.
+.SS "FMRI Authority"
+.sp
+.LP
+A further required, although implicitly present in some cases, FMRI member is \fBauthority\fR:
+.sp
+.in +2
+.nf
+Member Name   Data Type  Stability
+----------------------------------------
+[authority]   nvlist     Committed, (Varies)
+.fi
+.in -2
+
+.sp
+.LP
+Every FMRI includes authority information, either explicitly with the \fBauthority nvlist\fR if present in the FMRI or implicitly that of the local fault management domain if not present. Authority information has two flavors:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+High-level authority information, such as to identify the platform and hostname within which a particular resource that is the subject of an FMRI is located
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Leaf-level authority information, providing identity information for the specific resource that is the subject of the FMRI
+.RE
+.sp
+.LP
+For example, an FMRI identifying a disk can have high-level authority information detailing the platform (host name, product name, chassis serial) in which the disk resides, and leaf-level authority information detailing the individual disk part number, serial, and so forth.
+.sp
+.LP
+It is an unfortunate fact that some FMRI schemes have evolved to include leaf-level authority information outside of the \fBauthority nvlist\fR as standalone FMRI members, and written as part of the path component in string form.
+.SS "Logical vs. Universal FMRI Schemes"
+.sp
+.LP
+A \fBlogical\fR FMRI scheme defines FMRIs that can only meaningfully be interpreted within the fault management domain (typically an Oracle Solaris instance) in which they were generated. Identical FMRIs of a logical scheme that are native to distinct fault management domains do not necessarily identify the same actual resource. For example a \fBcpu\fR identified as \fBcpu id 1\fR using the \fBcpu\fR scheme must be interpreted in the Oracle Solaris instance that generated the FMRI (that is, its native context), and many other Oracle Solaris instances also have a logical processor id number \fB1\fR but all such FMRIs do not identify the same actual processor. The native fault management domain is identified by its high-level authority information which is typically not captured in an FMRI instance but instead understood to be that of the local Oracle Solaris instance. 
+.sp
+.LP
+A \fBuniversal\fR FMRI scheme identifies resources in a universally unique manner, and two identical FMRIs in a universal scheme identify the same actual resource wherever they are interpreted. Such schemes are used when ambiguity must be avoided, such as in identifying hardware components that are faulted. 
+.sp
+.LP
+FMRI schemes do not include a member indicating whether the scheme is logical or universal.
+.SS "FMRI Schemes and Versions"
+.sp
+.LP
+The following FMRI scheme versions are defined in the sections that follow:
+.sp
+.in +2
+.nf
+Scheme Version(s) Universal? Description
+-------------------------------------------------------------
+cpu    0, 1       No         Logical processor identification
+dev    0          No         Device resources
+fmd    0          No         Fault Management Daemon modules
+hc     0          Yes        Hardware Components
+mem    0          No         Memory modules and cache
+mod    0          No         Kernel modules
+pkg    0, 1       Yes        Software packages
+svc    0          No         SMF services & service instances
+sw     0          No         Software objects
+zfs    0          No         zfs filesystem resources
+.fi
+.in -2
+
+.sp
+.LP
+Of these, the \fBsvc\fR and \fBpkg\fR schemes are the most-likely to be encountered in day-to-day Oracle Solaris use, while the remainder are usually hidden behind command line interaction with the fault management subsystem when problems have been diagnosed.
+.SS "SCHEME \fBcpu\fR VERSION 0"
+.sp
+.LP
+The \fBcpu\fR scheme is used to identify the logical Oracle Solaris processor resource that can be affected by a problem that has been diagnosed, and which can be offlined in response to that problem diagnosis. It does not necessarily identify the physical resource involved, and should not be used to identify parts for replacement.
+.sp
+.LP
+The \fBcpu\fR scheme is a logical FMRI scheme: an FMRI in the \fBcpu\fR scheme is meaningful only within the fault management domain identified by the authority information.
+.sp
+.in +2
+.nf
+Member Name   Data Type    Stability
+------------------------------------
+scheme        string       Committed, value "cpu"
+version       uint8        Committed, value 0
+cpuid         uint32       Committed
+[serial]      uint64       Private
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcpuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+The Oracle Solaris processor instance id of this logical execution unit, as listed by \fBpsradm\fR(1M) on the Oracle Solaris instance identified by the authority information.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[serial]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this Private FMRI member are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+cpu:///cpuid=<cpuid>[/serial=<hex-serial>]
+.fi
+.in -2
+
+\fB<hex-serial>\fR is the \fBserial\fR member written in hexadecimal with no \fB0x\fR prefix.
+.RE
+
+.SS "SCHEME \fBcpu\fR VERSION 1"
+.sp
+.LP
+Version 1 of the \fBcpu\fR FMRI scheme has the same use as version 0, with some private FMRI member changes and additions.
+.sp
+.in +2
+.nf
+Member Name   Data Type   Stability
+------------------------------------------------
+scheme        string      Committed, value "cpu"
+version       uint8       Committed, value 1
+cpuid         uint32      Committed
+[serial]      string      Private
+[cpumask]     uint8       Private
+[cpufru]      string      Private
+[cacheindex]  uint32      Private
+[cacheway]    uint32      Private
+[cachebit]    uint16      Private
+[cachetype]   uint8       Private
+
+cpuid
+
+       As per cpu scheme version 0
+
+[serial]
+[cpumask]
+[cpufru]
+[cacheindex]
+[cacheway]
+[cachebit]
+[cachetype]
+.fi
+.in -2
+
+.sp
+.LP
+The semantics of these Private FMRI members are not documented.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+cpu:///cpuid=<cpuid>[/serial=<serial>]
+         [/cacheindex=.../cacheway=.../
+         cachebit=.../cachetype=...]
+.fi
+.in -2
+
+Members \fBcpumask\fR and \fBcpufru\fR do not appear in the string form.
+.RE
+
+.SS "SCHEME \fBdev\fR VERSION 0"
+.sp
+.LP
+The \fBdev\fR scheme is used to identify devices.  It is not an invariant scheme. A \fBdev\fR scheme FMRI should be interpreted only in the fault management domain identified within the authority information.
+.sp
+.in +2
+.nf
+Member Name        Data Type   Stability
+-------------------------------------------------------------------
+scheme             string      Committed, value "dev"
+version            uint8       Committed, value 0
+device-path        string      Committed
+[devid]            string      Private
+[target-port-l0id] string      Private
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice-path\fR\fR
+.ad
+.sp .6
+.RS 4n
+A filesystem path within the Oracle Solaris \fB/devices\fR tree that identifies a device node, such as \fBpci@0,0/pci108e,cb84@2,1\fR. Beyond this interpretation that this member identifies a \fB/devices\fR path, the internal structure of such paths, that is, the structure and node naming of the Oracle Solaris \fB/devices\fR tree) is \fBNot An Interface\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[devid]\fR\fR
+.ad
+.br
+.na
+\fB\fB[target-port-l0id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of these \fBPrivate\fR FMRI members are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+dev:///[:devid=<devid>]
+    [:target-port-l0id=<target-port-l0id>]
+    <device-path>
+.fi
+.in -2
+
+.RE
+
+.SS "SCHEME \fBfmd\fR VERSION 0"
+.sp
+.LP
+This scheme is used to identify Oracle Solaris Fault Manager (\fBfmd\fR(1M)) modules.
+.sp
+.in +2
+.nf
+Member Name  Data Type  Stability
+-----------------------------
+scheme       string     Committed, value "fmd"
+version      uint8      Committed, value 0
+mod-name     string     Committed, Not an Interface
+mod-version  string     Committed, Not an Interface
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmod-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fBfmd\fR module name, an opaque string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmod-version\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fBfmd\fR module version, an opaque string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfmd:///module/mod-name>\fR
+.RE
+
+.SS "SCHEME \fBhc\fR VERSION 0"
+.sp
+.LP
+The \fBhc\fR scheme is used to identify hardware components.  In most cases these FMRIs should remain as an internal implementation detail, and where a hardware component is diagnosed as faulty it is identified (for example, in \fBfmadm\fR(1M)) by its FRU label or location label.  
+.sp
+.LP
+There is only one version of the \fBhc\fR scheme in use (version 0) but we differentiate two minor versions, distinguished by the presence or absence of a member named \fBcomponent\fR.  An \fBhc\fR scheme FMRI that includes a \fBcomponent\fR member is an instance of the obsoleted \fBlegacy hc\fR scheme.
+.sp
+.LP
+Obsolete \fBlegacy hc\fR variant:
+.sp
+.in +2
+.nf
+Member Name  Data Type  Stability
+-------------------------------------------------------------------
+scheme       string      Committed, value "hc"
+version      uint8       Committed, value 0
+component    string      Committed
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcomponent\fR\fR
+.ad
+.sp .6
+.RS 4n
+The FRU label for the resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form for legacy hc:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+hc:///component=<component>
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.in +2
+.nf
+Current variant of hc version 0:  
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The authority \fBnvlist\fR is concerned with identifying the fault management domain in which a given FMRI was generated. Thus it includes members for the hostname, product name, chassis serial number and so on.  Some of these members are invariant (such as platform serial number) and serve uniquely to identify some element, while others (such as hostname) are a soft identification which could change over time (albeit infrequently).
+.sp
+.in +2
+.nf
+Member Name   Data Type   Stability
+-----------------------------------------------------
+[server-id]   string      Committed, Not an Interface
+[chassis-id]  string      Committed, Not an Interface
+[product-sn]  string      Committed, Not an Interface
+[product-id]  string      Committed, Not an Interface
+[domain-id]   string      Committed, Not an Interface
+[host-id]     string      Committed, Not an Interface
+[devid]       string      Private, Not an Interface
+.fi
+.in -2
+
+.sp
+.LP
+While all members are listed as optional, as many as make sense for a given FMRI should be included.  If the authority \fBnvlist\fR is absent in an FMRI then the authority is understood to be the local fault management domain; if an \fBhc\fR scheme FMRI is transmitted outside of its native domain it should include explicit high-level authority information.  
+.sp
+.LP
+The \fBNot an Interface\fR stability for the data semantics of each means that the value can be treated as an opaque string only and any internal structure to the string is not an interface.  For example a serial number can be matched using string compare, but the length of the serial number string and the meaning of individual characters therein is not an interface.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[server-id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The hostname (\fBuname -n\fR) string for the entity on which the fault manager is running.  Not invariant.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[chassis-id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is a serial number identifying the chassis within which the resource resides.  Some large systems can include multiple distinct chassis components.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[product-sn]\fR\fR
+.ad
+.sp .6
+.RS 4n
+In some cases chassis-id alone does not fully identify the system, for example, for service entitlement keyed by a product serial number and where the product can comprise multiple chassis elements. Invariant.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[product-id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The product name string, such as \fBSun-Fire-X4600\fR. Invariant.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[domain-id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies a particular hardware domain in the case of hardware that supports this feature. Not invariant.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[host-id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fBhostid\fR string (see \fBhostid\fR(1) in Oracle Solaris); not generally used.  Not necessarily invariant.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[devid]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The device id.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+These authority members, those that are present in a given FMRI, can be written in string form as an unordered series of colon-separated \fIname\fR\fB=\fR\fIvalue\fR pairs.  We'll define this as \fBauthstr\fR, to be used in the specification of the string form for individual FMRI schemes below which import the default authority information.
+.sp
+.in +2
+.nf
+authstr = server-id=<server-id>
+                [:chassis-id=<chassis-id>]
+                [:product-sn=<product-sn>]
+                [:product-id=<product-id>]
+                [:domain-id=<domain-id>]
+                [:host-id=<host-id>]
+                [:devid=<devid>]
+.fi
+.in -2
+
+.RE
+
+.sp
+.LP
+There is no leaf-level authority/identity information included in the authority \fBnvlist\fR - instead such information (serial and part numbers) feature as top-level members of the FMRI.
+.sp
+.in +2
+.nf
+Member Name    Data Type    Stability
+------------------------------------------------------
+scheme         string       Committed, value "hc"
+version        uint8        Committed, value 0
+[authority]    nvlist       Committed, See above
+[serial]       string       Committed, Not-an-Interface
+[part]         string       Committed, Not-an-Interface
+[revision]     string       Committed, Not-an-Interface
+[hc-root]      string       Private
+hc-list-sz     uint32       Private
+hc-list        nvlist array Private
+[facility]     nvlist       Private
+[hc-specific]  nvlist       Private
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[serial]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The serial number string of the hardware component identified in this FMRI.  This is an opaque string whose internal structure is not an interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[part]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The part number string of the hardware component identified in this FMRI.  This is an opaque string whose internal structure is not an interface.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[revision]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The revision of the part number, as a string.  Again this is an opaque string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[hc-root]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this Private FMRI member are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-list-sz\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this Private FMRI member are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this Private FMRI member are not documented, however we enumerate the structure of the content (subject to incompatible change).  Each member of the (ordered) \fBnvlist\fR array has the following structure:
+.sp
+.in +2
+.nf
+Member Name    Data Type   Stability
+------------------------------------
+hc-name        string      Private
+hc-id          string      Private
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[facility]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this Private FMRI member are not documented, however we enumerate the structure of the content (subject to incompatible change).  The facility \fBnvlist\fR has members as follows:
+.sp
+.in +2
+.nf
+Member Name    Data Type   Stability
+------------------------------------
+facility-type  string      Private
+facility-name  string      Private
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[hc-specific]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this Private FMRI member are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+authstr is defined above
+hcauthstr = [:serial=<serial>]
+
+                 [:part=<part>]
+                 [:revision=<revision>]
+
+hc-path =<hc-list[0].hc-name>=<hc-list[0].hc-id>
+               /<hc-list[1].hc-name>=<hc-list[1].hc-id>
+               /<hc-list[2].hc-name>=<hc-list[2].hc-id>
+               ...
+hcspecstr = private string formed from hc-specific nvlist,
+               of the form "/name=value"
+
+facstr = <facility.facility-type>=<facility.facility-name>
+
+hc://[authstr][hcauthstr]/[hc-root/]<hc-path>
+                                     [<hcspecstr>]
+                                     [?<facstr>]
+.fi
+.in -2
+
+The high-level authority information from the authority nvlist appears adjacent to the leaf-level authority information of serial and part number, all colon separated.  The components of this authority string can appear in any order, with high-level and leaf authority elements interleaved. Parsing such a string is clumsy and relies on knowing in advance which components belong to which class of authority information.
+.RE
+
+.SS "SCHEME \fBmem\fR VERSION 0"
+.sp
+.LP
+This scheme is used to identify memory modules and memory pages, although more recently these have been identified in the \fBhc\fR scheme. The \fBmem\fR scheme has also been used to identify \fBcpu\fR cache resources.
+.sp
+.in +2
+.nf
+Member Name   Data Type   Stability
+-------------------------------------------------------------------
+scheme        string      Committed, value "mem"
+version       uint8       Committed, value 0
+unum          string      Committed, Private
+[serial]      string      arrayPrivate
+[physaddr]    uint64      Private
+[offset]      uint64      Private
+.fi
+.in -2
+
+.SS "SCHEME \fBmem\fR VERSION 0"
+.sp
+.LP
+This scheme is used to identify memory modules and memory pages, although more recently these have been identified in the \fBhc\fR scheme. The \fBmem\fR scheme has also been used to identify cpu cache resources.
+.sp
+.in +2
+.nf
+Member Name   Data Type    Stability
+-------------------------------------------------
+scheme        string       Committed, value "mem"
+version       uint8        Committed, value 0
+unum          string       Committed, Private
+[serial]      string array Private
+[physaddr]    uint64       Private
+[offset]      uint64       Private
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunum\fR\fR
+.ad
+.sp .6
+.RS 4n
+This string identifies the memory module, generally as labelled on the platform silkscreens or service label. The presence of this member of type string is a Committed interface, but the internal structure of the \fBunum\fR string is a \fBPrivate\fR interface. Therefore, you can use the opaque \fBunum\fR string to identify a memory module, but the interpretation of the components of a \fBunum\fR string is platform dependent and \fBPrivate\fR.  
+.sp
+A \fBunum\fR can identify a group (or bank) of memory modules. These should instead have been identified by multiple FMRIs, one for each memory module, but this is an historical anomaly from early implementations.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[serial]\fR\fR
+.ad
+.sp .6
+.RS 4n
+A string array of the serial number(s) of the memory module(s) named by the \fBunum\fR member.  The internal structure of a serial number string is not an interface so you can use only the opaque string value in matching serial number and not apply any further interpretation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[physaddr]\fR\fR
+.ad
+.br
+.na
+\fB\fB[offset]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of these Private FMRI members are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+mem:///unum=<unum>
+        [/offset=<hex-offset> | /physaddr=<hex-physaddr>]
+.fi
+.in -2
+
+.RE
+
+.SS "SCHEME \fBmod\fR VERSION 0"
+.sp
+.LP
+This scheme is used to identify Oracle Solaris kernel modules.
+.sp
+.in +2
+.nf
+Member Name    Data Type    Stability
+--------------------------------------------------
+scheme         string       Committed, value "fmd"
+version        uint8        Committed, value 0
+mod-name       string       Committed
+[mod-desc]     string       Committed
+[mod-pkg]      fmri         (fmri)
+[mod-id]       int32        Private
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmod-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The module name, as in per \fBmodinfo\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[mod-desc]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The module description, again as per \fBmodinfo\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[mod-pkg]\fR\fR
+.ad
+.sp .6
+.RS 4n
+A \fBpkg\fR scheme FMRI of the package which delivers this module.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmod-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+The module id in the current Oracle Solaris instance, as per \fBmodinfo\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+mod:///mod-name=<mod-name>/:mod-id=<decimal-mod-id>
+.fi
+.in -2
+.sp
+
+.RE
+
+.SS "SCHEME \fBpkg\fR VERSION 0"
+.sp
+.LP
+This version of the \fBpkg\fR scheme corresponds to legacy SVR4 packaging as used with \fBpkgadd\fR(1M), \fBpkginfo\fR(1), \fBpkgrm\fR(1M), and related utilities. This scheme is universal if package name and package version conventions are adhered to.
+.sp
+.in +2
+.nf
+Member Name   Data Type   Stability
+-------------------------------------------------------------------
+scheme        string      Committed, value "pkg"
+version       int8        Committed, value 0
+pkg-name      string      Committed
+pkg-basedir   string      Committed
+pkg-inst      string      Committed
+pkg-version   string      Committed
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpkg-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The package name.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpkg-basedir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBBASEDIR\fR as per \fBpkginfo\fR(1)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpkg-inst\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBPKGINST\fR as per \fBpkginfo\fR(1)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpkg-version\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBVERSION\fR as per \fBpkginfo\fR(1)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+pkg:///<pkg-name>/:version=<pkg-version>
+.fi
+.in -2
+.sp
+
+.RE
+
+.SS "SCHEME \fBpkg\fR VERSION 1"
+.sp
+.LP
+This version of the \fBpkg\fR scheme corresponds to the \fBpkg\fR(5) Image Packaging System.  Such FMRIs are used in string form in the \fBpkg\fR(1) command line and its output, and the command line permits abbreviations of the FMRI string.
+.sp
+.LP
+FMRIs in the \fBpkg\fR scheme version 1 are universal: the same FMRI interpreted in two distinct contexts (such as in distinct Oracle Solaris instances) identify the same actual package (or copies thereof).  
+.sp
+.LP
+The \fBpkg\fR(5) command line uses the string form of version 1 \fBpkg\fR FMRIs, and permits abbreviations of such strings.
+.sp
+.in +2
+.nf
+Member Name   Data Type    Stability
+-------------------------------------------------
+scheme        string       Committed, value "pkg"
+version       uint8        Committed, value 1
+[authority]   nvlist       Committed
+pkg-name      string       Committed
+[pkg-version] nvlist       Committed
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[authority]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fBauthority nvlist\fR specifies the package publisher, per \fBpkg publisher\fR output:
+.sp
+.in +2
+.nf
+Member Name    Data Type    Stability
+-------------------------------------
+publisher      string       Committed
+
+publisher
+.fi
+.in -2
+
+The publisher of this package, such as Oracle Solaris.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpkg-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name (stem) of the package
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[pkg-version]\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+Member Name    Data Type    Stability
+---------------------------------------
+release        string       Committed
+[built-on]     string       Committed
+[branch]       string       Committed
+[timestamp]    string       Committed
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrelease\fR\fR
+.ad
+.sp .6
+.RS 4n
+The primary version of the component, written as a dot sequence string (an arbitrary-length, dot-separated series of non-zero-leading decimal digits).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbuilt-on\fR\fR
+.ad
+.sp .6
+.RS 4n
+The operating system version on which the component was built, again specified as a dot sequence.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbranch\fR\fR
+.ad
+.sp .6
+.RS 4n
+The vendor branch version, as a dot sequence.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimestamp\fR\fR
+.ad
+.sp .6
+.RS 4n
+An ISO 8601 date string: \fIyyyymmdd\fR\fBT\fR\fIhhmmss\fR\fBZ\fR in which the \fBT\fR and \fBZ\fR are literals.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+pkgauthstr = <authority.publisher>
+
+pkg://[pkgauthstr]/<pkg-name>
+    [@<release>[,<built-on>][-<branch>][:<timestamp>]
+.fi
+.in -2
+
+.RE
+
+.SS "SCHEME \fBsvc\fR VERSION 0"
+.sp
+.LP
+The \fBsvc\fR scheme describes SMF (see\fBsmf\fR(5) services and service instances.  In SMF command lines such as \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsvcprop\fR(1), \fBsvcs\fR(1) and their output such FMRI are always written in their string form, and the SMF command lines permit abbreviations.
+.sp
+.LP
+The \fBsvc\fR scheme FMRI is a logical scheme, and, as such an FMRI should only be interpreted in the fault management domain (Oracle Solaris instance) in which it was generated.
+.sp
+.in +2
+.nf
+Member Name    Data Type   Stability
+-------------------------------------------------
+scheme         string      Committed, value "svc"
+version        uint8       Committed, value 0
+svc-name       string      Committed
+[svc-instance] string      Committed
+[contract-id]  string      Committed
+[svc-scope]    string      Committed
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The service name, such as \fBnetwork/smtp\fR.  See \fBsmf\fR(5).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[svc-instance]\fR\fR
+.ad
+.sp .6
+.RS 4n
+Used when identifying an instance of a service.  Often \fBdefault\fR, but can also be things like the \fBsendmail\fR instance of service \fBnetwork/smtp\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[contract-id]\fR\fR
+.ad
+.sp .6
+.RS 4n
+This identifies the numeric (although written as a  decimal string) contract id (see \fBsmf\fR(5) and \fBcontract\fR(4) used to manage a particular running instance of a service.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[svc-scope]\fR\fR
+.ad
+.sp .6
+.RS 4n
+As per \fBsmf\fR(5), all service and instance objects are contained in a \fBscope\fR that represents a collection of configuration information.  The configuration of the local Oracle Solaris instance is called the \fBlocalhost\fR scope, and is the only currently supported scope.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+svc://[<svc-scope>]/<svc-name>
+        [:<svc-instance>[@<contract-id>]]
+.fi
+.in -2
+
+SMF subsystem commands such as \fBsvcadm\fR(1M) permit (or even require) abbreviations of the string form above. The indication of \fBsvc\fR scheme at the start of the string is considered optional and implied by the SMF command line utility.  When the \fBsvc\fR scheme identifier is used, the authority component is also abbreviated to \fBsvc:/<svc-name>\fR instead of the more-formal \fBsvc:///<svc-name>\fR. For example, in SMF we write
+.sp
+.in +2
+.nf
+svc:/network/smtp:sendmail
+.fi
+.in -2
+
+instead of the more-formal
+.sp
+.in +2
+.nf
+svc:///network/smtp:sendmail
+.fi
+.in -2
+
+or even the more formal
+.sp
+.in +2
+.nf
+svc://localhost/network/smtp:sendmail
+.fi
+.in -2
+
+Furthermore, SMF permits further abbreviation if it identifies a unique service or instance.  For example the instance name \fBsendmail\fR is unique and one can use \fBsvcs sendmail\fR, \fBsvcadm restart sendmail\fR, and so forth.  
+.sp
+Such abbreviations are a convention of the SMF subsystem and not part of the formal FMRI definition.  When a \fBsvc\fR scheme FMRI is received in \fBnvlist\fR form (for example, in a \fBlibfmevent\fR(3LIB) subscription it appears in the more formal form when rendered as a string.
+.RE
+
+.SS "SCHEME \fBsw\fR VERSION 0"
+.sp
+.LP
+This FMRI scheme is used to identify software resources such as executables, library objects, and core files.  This is a logical FMRI scheme.
+.sp
+.in +2
+.nf
+Member Name   Data Type   Stability
+-----------------------------------------------
+scheme        string      Committed, value "sw"
+version       uint8       Committed, value 0
+object        nvlist      See belowPrivate
+[site]        nvlist      See belowPrivate
+[context]     nvlist      See belowPrivate
+.fi
+.in -2
+
+.sp
+.LP
+The \fBobject\fR, \fBsite\fR, and \fBcontext\fR members are all \fBPrivate\fR and so subject to incompatible change, but their content is documented below for informational purposes.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobject\fR\fR
+.ad
+.sp .6
+.RS 4n
+This required member identifies the software object. At this time only objects resident within the filesystem are catered for.
+.sp
+.in +2
+.nf
+Member     Type        Description
+------------------------------------------------------------
+path       string      Filesystem path to object
+[root]     string      If present, real path to chroot root
+                       directory
+[pkg]      fmri        "pkg" scheme fmri of package that
+                       delivers path
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsite\fR\fR
+.ad
+.sp .6
+.RS 4n
+This optional member identifies a site within the object.
+.sp
+.in +2
+.nf
+Member   Type    Description
+------------------------------------------------------------
+[token]  string  Vendor and subsystem unique publisher
+                 token id
+[module] string  Source module information
+[file]   string  Source filename (translation unit)
+[func]   string  Source function
+[line]   int64   Source file line number
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcontext\fR\fR
+.ad
+.sp .6
+.RS 4n
+This optional member communicates runtime information.
+.sp
+.in +2
+.nf
+Member             Type         Description
+-------------------------------------------------------
+[origin]           string       "userland" or "kernel"
+[execname]         string       Executable name
+[pid]              uint64       Process id
+[thread-id]        uint64       Thread id
+[os-instance-uuid] string       Solaris instance UUID
+[zone]             string       Zone name, if not the global zone
+[ctid]             uint64       Contract id
+[stack]            string array Symbolic stack trace
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+sw://[<authority>]/
+       [:root=<object.root]
+       :path=<object.path>
+       [#<fragment-identifier>]
+.fi
+.in -2
+
+Slash characters \fB/\fR in the root and object path are not escaped.
+.sp
+\fB<fragment-identifier>\fR is one of:
+.sp
+.in +2
+.nf
+:token=<site.token>
+.fi
+.in -2
+
+or
+.sp
+.in +2
+.nf
+:file=<site.file>[:func=<site.func>][:line=<site.line>]
+.fi
+.in -2
+
+.RE
+
+.SS "SCHEME \fBzfs\fR VERSION 0"
+.sp
+.in +2
+.nf
+Member Name   Data Type    Stability
+-------------------------------------------------------------------
+scheme        string       Committed, value "zfs"
+version       uint8        Committed, value 0
+[pool-name]   string       Committed
+pool          uint64       Committed
+[vdev]        uint64       Private
+[vdev-name]   string       Private
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[pool-name]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The pool name, as per \fBzpool list -o name\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpool\fR\fR
+.ad
+.sp .6
+.RS 4n
+The pool GUID as per \fBzpool list -o guid\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[vdev]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this \fBPrivate\fR FMRI member are not documented
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[vdev-name]\fR\fR
+.ad
+.sp .6
+.RS 4n
+The semantics of this \fBPrivate\fR FMRI member are not documented.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBString form:\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+hex-vdev = 'vdev' in hexadecimal with no '0x' prefix.  
+hex-pool = 'pool' in hexadecimal with no '0x' prefix.
+zfs://[pool_name=<pool-name>/]pool=<hex-pool>
+zfs://[pool_name=<zfs://[pool_name=<hex-pool>
+[/vdev=<hex-vdev>][:vdev_name=<vdev-name>]
+.fi
+.in -2
+
+The \fB<vdev-name>\fR is written without escaping any \fB/\fR characters.
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBfmadm\fR(1M), \fBfmd\fR(1M), \fBfmdump\fR(1M), \fBpkgadd\fR(1M), \fBpkginfo\fR(1), \fBpkgrm\fR(1M), \fBpsradm\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsvcprop\fR(1), \fBsvcs\fR(1), \fBlibfmevent\fR(3LIB), \fBlibnvpair\fR(3LIB), \fBcontract\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fBpkg\fR(5)
+.sp
+.LP
+\fIRFC 2396\fR

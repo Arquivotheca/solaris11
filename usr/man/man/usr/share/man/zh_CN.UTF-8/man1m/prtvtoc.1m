@@ -1,0 +1,233 @@
+'\" te
+.\" 版权所有 1989 AT&T 保留所有权利。
+.\" 版权所有 (c) 2002，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH prtvtoc 1M "2010 年 12 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+prtvtoc \- 报告有关磁盘几何参数和分区的信息
+.SH 用法概要
+.LP
+.nf
+\fBprtvtoc\fR [\fB-fhs\fR] [\fB-t\fR \fIvfstab\fR] [\fB-m\fR \fImnttab\fR] \fIdevice\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBprtvtoc\fR 命令允许查看标签内容。只有超级用户才能使用此命令。
+.sp
+.LP
+\fIdevice\fR 名称可以是以 \fB/dev/rdsk/c?t?d?s2\fR 形式显示的原始设备的文件名，也可以是以 \fB/dev/dsk/c?t?d?s2\fR 形式显示的块设备的文件名。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 13n
+.rt  
+报告磁盘空闲空间，包括空闲空间的起始块地址、块数和未使用的分区。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 13n
+.rt  
+在常规输出中忽略标题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fImnttab\fR\fR
+.ad
+.RS 13n
+.rt  
+使用 \fImnttab\fR 作为挂载的文件系统的列表，而不使用 \fB/etc/mnttab\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 13n
+.rt  
+在常规输出中忽略除列标题之外的所有标题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIvfstab\fR\fR
+.ad
+.RS 13n
+.rt  
+使用 \fIvfstab\fR 作为文件系统缺省值的列表，而不使用 \fB/etc/vfstab\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBprtvtoc\fR 命令
+.sp
+.LP
+以下示例在一个 424 MB 硬盘上使用 \fBprtvtoc\fR 命令：
+
+.sp
+.in +2
+.nf
+example# prtvtoc /dev/rdsk/c0t3d0s2
+* /dev/rdsk/c0t3d0s2 partition map
+*
+* Dimension:
+*     512 bytes/sector
+*      80 sectors/track
+*       9 tracks/cylinder
+*     720 sectors/cylinder
+*    2500 cylinders
+*    1151 accessible cylinders
+*
+* Flags:
+*   1: unmountable
+*  10: read-only
+* *                           First    Sector   Last
+* Partition   Tag   Flags   Sector   Count    Sector   Mount Directory
+     0         2     00          0    76320    76319   /
+     1         3     01      76320   132480   208799
+     2         5     00          0   828720   828719
+     5         6     00     208800   131760   340559   /opt
+     6         4     00     340560   447120   787679   /usr
+     7         8     00     787680    41040   828719   /export/home
+example#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上面 \fBTag\fR 列中的数据表示分区类型，如下所示：
+
+.sp
+
+.sp
+.TS
+tab();
+cw(2.5i) cw(3i) 
+lw(2.5i) lw(3i) 
+.
+\fIName\fR\fINumber\fR
+UNASSIGNED0x00
+BOOT0x01
+ROOT0x02
+SWAP0x03
+USR0x04
+BACKUP0x05
+STAND0x06
+VAR0x07
+HOME0x08
+ALTSCTR 0x09
+CACHE0x0a
+RESERVED0x0b
+SYSTEM0x0c
+BOOT0x18
+.TE
+
+.sp
+.LP
+上面 \fBFlags\fR 列中的数据表示分区是如何挂载的，如下所示：
+
+.sp
+
+.sp
+.TS
+tab();
+lw(2.5i) lw(3i) 
+lw(2.5i) lw(3i) 
+.
+\fIName\fR\fINumber\fR
+MOUNTABLE, READ AND WRITE0x00
+NOT MOUNTABLE0x01
+MOUNTABLE, READ ONLY0x10
+.TE
+
+.LP
+\fB示例 2 \fR使用 \fBprtvtoc\fR 命令和 \fB-f\fR 选项
+.sp
+.LP
+以下示例在一个 424 MB 硬盘上使用 \fBprtvtoc\fR 命令和 \fB-f\fR 选项：
+
+.sp
+.in +2
+.nf
+example# prtvtoc \fB-f\fR /dev/rdsk/c0t3d0s2
+FREE_START=0 FREE_SIZE=0 FREE_COUNT=0 FREE_PART=34
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR在超过 1 TB 的磁盘上使用 \fBprtvtoc\fR 命令
+.sp
+.LP
+以下示例在一个超过 1 TB 的磁盘上使用 \fBprtvtoc\fR 命令：
+
+.sp
+.in +2
+.nf
+example# prtvtoc /dev/rdsk/c1t1d0s2
+* /dev/rdsk/c1t1d0s2 partition map
+*
+* Dimensions:
+*     512 bytes/sector
+* 3187630080 sectors
+* 3187630013 accessible sectors
+*
+* Flags:
+*   1: unmountable
+*  10: read-only
+*
+*                          First     Sector    Last
+* Partition  Tag  Flags    Sector     Count    Sector  Mount Directory
+0      2    00         34    262144    262177
+1      3    01     262178    262144    524321
+6      4    00     524322 3187089340 3187613661
+8     11    00  3187613662     16384 318763004
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdevinfo\fR(1M)、\fBfmthard\fR(1M)、\fBformat\fR(1M)、\fBmount\fR(1M)、\fBattributes\fR(5)
+.SH 警告
+.sp
+.LP
+\fBmount\fR 命令不检查 "not mountable"（不可挂载）位。

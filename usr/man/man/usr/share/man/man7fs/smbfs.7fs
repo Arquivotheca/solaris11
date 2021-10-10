@@ -1,0 +1,111 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH smbfs 7FS "29 Apr 2011" "SunOS 5.11" "File Systems"
+.SH NAME
+smbfs \- SMB file system
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsmbfs\fR file system allows you to mount SMB shares that are exported from Windows or compatible systems. 
+.sp
+.LP
+The \fBsmbfs\fR file system permits ordinary UNIX applications to change directory into an \fBsmbfs\fR mount and perform simple file and directory operations. Supported operations include \fBopen\fR, \fBclose\fR, \fBread\fR, \fBwrite\fR, \fBrename\fR, \fBdelete\fR, \fBmkdir\fR, \fBrmdir\fR and \fBls\fR.
+.SS "Limitations"
+.sp
+.LP
+Some local UNIX file systems (for example UFS) have features that are not supported by \fBsmbfs\fR. These include:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+No mapped-file access because \fBmmap\fR(2) returns \fBENOSYS\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Locking is \fBlocal only\fR and is not sent to the server.
+.RE
+.sp
+.LP
+The following are limitations in the SMB protocol:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBunlink()\fR or \fBrename()\fR of open files returns \fBEBUSY\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBrename()\fR of extended attribute files returns \fBEINVAL\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Creation of files with any of the following illegal characters returns \fBEINVAL\fR: colon (\fB:\fR), backslash (\fB\\\fR), slash (\fB/\fR), asterisk (\fB*\fR), question mark (\fB?\fR), double quote (\fB"\fR), less than (\fB<\fR), greater than (\fB>\fR), and vertical bar (\fB|\fR).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBchmod\fR  can be used only to modify ACLs, and only when the SMB server and mounted share support ACLs. Changes to the file \fBmode\fR bits are silently discarded.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBchown\fR enables you to become the file owner only if the SMB server grants you the \fBtake ownership\fR privilege.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Links are not supported.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Symbolic links are not supported.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBmknod\fR is not supported. (Only file and directory objects are supported.)
+.RE
+.sp
+.LP
+The current \fBsmbfs\fR implementation does not support multi-user mounts. Instead, each Unix user needs to make their own private mount points. 
+.sp
+.LP
+Currently, all access through an \fBsmbfs\fR mount point uses the Windows credentials established by the user that ran the \fBmount\fR command. Normally, permissions on \fBsmbfs\fR mount points should be \fB0700\fR to prevent Unix users from using each others' Windows credentials. See the \fBdirperms\fR option to \fBmount_smbfs\fR(1M) for details regarding how to control \fBsmbfs\fR mount point permissions.
+.sp
+.LP
+An important implication of this limitation is that system-wide mounts, such as those made using \fB/etc/vfstab\fR or automount maps are only useful in cases where access control is not a concern, such as for public read-only resources.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.39i) |cw(3.11i) 
+lw(2.39i) |lw(3.11i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/smb
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBmount_smbfs\fR(1M), \fBsmbadm\fR(1M)\fBattributes\fR(5)

@@ -1,0 +1,208 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+-->
+
+<service_bundle type='manifest' name='SUNWcsr:dns-client'>
+
+<service
+	name='network/dns/client'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='false' />
+
+	<single_instance />
+
+	<dependency
+	    name='filesystem'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri value='svc:/system/filesystem/root' />
+		<service_fmri value='svc:/system/filesystem/usr' />
+		<service_fmri value='svc:/system/filesystem/minimal' />
+	</dependency>
+
+	<dependency
+	    name='loopback'
+	    grouping='require_any'
+	    restart_on='error'
+	    type='service'>
+		<service_fmri value='svc:/network/loopback' />
+	</dependency>
+
+	<dependency
+	    name='network'
+	    grouping='optional_all'
+	    restart_on='error'
+	    type='service'>
+		<service_fmri value='svc:/milestone/network' />
+	</dependency>
+
+	<!--
+	 During system configuration, explicitly wait until manifest-import
+	 is online and has imported the new profile explicitly.
+	-->
+	<dependency
+		name='manifest_import'
+		grouping='optional_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/manifest-import' />
+	</dependency>
+
+	<dependency
+		name='milestone'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/milestone/unconfig' />
+	</dependency>
+
+	<dependent
+		name='network-dns-client_self-assembly-complete'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/self-assembly-complete' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/dns-client %m'
+		timeout_seconds='30' />
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec='/lib/svc/method/dns-client %m'
+		timeout_seconds='30' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='30' />
+
+	<exec_method
+		type='method'
+		name='unconfigure'
+		exec='/lib/svc/method/dns-client unconfigure'
+		timeout_seconds='30' >
+	</exec_method>
+
+	<property_group name='general' type='framework'>
+		<!-- to start stop the service -->
+		<propval name='action_authorization' type='astring'
+			value='solaris.smf.manage.name-service.dns.client' />
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.manage.name-service.dns.client' />
+	</property_group>
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring' value='transient' />
+	</property_group>
+
+	<property_group name='config' type='application'>
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.value.name-service.dns.client' />
+	</property_group>
+
+	<property_group name='sysconfig' type='application'>
+	    <propval name='group' type='astring' value='naming_services' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+				DNS resolver
+			</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='resolver' section='3RESOLV'
+				manpath='/usr/share/man' />
+		</documentation>
+		<pg_pattern name='config' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    DNS configuration data used to configure DNS client.
+			 </loctext> </description>
+			<prop_pattern name='nameserver' type='net_address'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    The value used to construct the "nameserver" directive in resolv.conf(4).
+				</loctext> </description>
+				<cardinality min='1' max='3'/>
+			</prop_pattern>
+			<prop_pattern name='domain' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    The value used to construct the "domain" directive in resolv.conf(4).
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='search' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    The value used to construct the "search" directive in resolv.conf(4).
+				</loctext> </description>
+				<cardinality min='1' max='6'/>
+			</prop_pattern>
+<!--
+			NOTE: DNS expects sort format as  IP[/MASK] where
+			      MASK is a dotted netmask, and SMF uses
+			      IP "slash notation: IP[/n], so translation
+			      is necessary.  Example:
+			      SMF		 DNS
+			      192.168.1.1/24 <-> 192.168.1.1/255.255.255.0
+-->
+			<prop_pattern name='sortlist' type='net_address'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    The value used to construct the "sortlist" directive in resolv.conf(4).
+				</loctext> </description>
+				<cardinality min='1' max='10'/>
+			</prop_pattern>
+			<prop_pattern name='options' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    The value used to construct the "options" directive in resolv.conf(4).
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+
+</service>
+
+</service_bundle>

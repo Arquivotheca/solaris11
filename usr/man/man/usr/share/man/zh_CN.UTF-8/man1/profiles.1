@@ -1,0 +1,839 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH profiles 1 "2011 年 5 月 24 日" "SunOS 5.11" "用户命令"
+.SH 名称
+profiles \- 列出和管理权限配置文件
+.SH 用法概要
+.LP
+.nf
+\fBprofiles\fR [\fB-l\fR] [\fB-a\fR | \fIuser\fR ...] [\fB-S\fR \fIrepository\fR]
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR]
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR] \fIsubcommand\fR
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR] \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fBhelp\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBprofiles\fR 实用程序在本地文件名称服务或 LDAP 名称服务中的 \fBprof_attr\fR(4) 或 \fBexec_attr\fR(4) 数据库中创建和修改权限配置文件的配置。一个权限配置文件配置由一个配置文件名称和多个属性组成。
+.sp
+.LP
+profiles 子命令的以下概要适用于交互式用法：
+.sp
+.in +2
+.nf
+profiles \fB-p\fR \fIprofile\fR [\fB-S\fR \fIrepository\fR] [\fIsubcommand\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBprofiles\fR 命令在标准输出上输出已分配给您（或可选择指定的用户或角色名）的权限配置文件的名称。配置文件是用于枚举执行特定函数所需的命令和授权的一种绑定机制。如果进程是由特权命令解释程序启动的，则随每个可执行程序一起列出的还有进程运行时使用的进程属性，例如有效的用户和组 \fBID\fR。请参见 \fBpfexec\fR(1) 手册页。配置文件可以包含 \fBprof_attr\fR(4) 中定义的其他配置文件。
+.sp
+.LP
+可以组合多个配置文件来构造合适的访问控制。分配配置文件时，授权将添加到现有的集合中。如果同一命令出现在多个配置文件中，则将第一次出现（根据配置文件的顺序确定）的命令用于进程属性设置。为方便起见，可指定一个通配符以匹配所有命令。
+.sp
+.LP
+特殊配置文件 "Stop"（停止）会截断对后续配置文件的评估。将不会对位于 "Stop"（停止）配置文件后的配置文件进行评估，也不会使用它们来查找其他命令。该配置文件可用来绕过 \fB/etc/security/policy.conf\fR 中以 \fBPROF_GRANTED\fR 键列出的配置文件和以 \fBAUTH_GRANTED\fR 键列出的授权。
+.sp
+.LP
+解释配置文件时，将从 \fBuser_attr\fR(4) 装入配置文件列表。如果在 \fB/etc/security/policy.conf\fR 中定义了任何缺省配置文件（请参见 \fBpolicy.conf\fR(4)），则缺省配置文件的列表将添加到从 \fBuser_attr\fR(4)装入的列表中。\fBprof_attr\fR(4) 中的匹配项提供了授权列表，\fBexec_attr\fR(4) 中的匹配项提供了命令列表。
+.SS "属性"
+.sp
+.LP
+使用 \fB-p\fR 选项调用时，可以管理指定配置文件的属性及其相关联的可执行文件的属性。不过，为维护系统完整性，此命令不能修改由 Solaris 维护的那些配置文件。这类配置文件只能在系统更新期间通过 pkg(1) 命令进行修改。 
+.sp
+.LP
+另外，还可通过 pkg(1) 命令将其他配置文件声明为不可修改的。 
+.sp
+.LP
+为防止特权升级，可根据用户的授权来限制属性值。至少要授予管理员 "Rights Management"（权限管理）配置文件。此外，要修改由委托授权控制的安全相关属性，必须向管理员授予 "Rights Delegation"（权限委托）配置文件。有关详细信息，请参见 \fBexec_attr\fR(4)、\fBprof_attr\fR(4) 及以下摘要。
+.sp
+.LP
+属性值可以是简单字符串，也可以是简单字符串的逗号分隔列表。包含空格的简单字符串必须括在双引号中。 
+.sp
+.LP
+profiles 命令在 \fBprofile\fR 上下文和 \fBcommand\fR 上下文中运行。\fBprofile\fR 上下文是初始状态，在此状态下，可管理各种配置文件属性。下表概述了 \fBprofile\fR 上下文中的属性：
+.sp
+.in +2
+.nf
+Property Name   Value Type         Required Authorizations
+
+name            simple             none
+auths           list of simple     solaris.auth.{assign/delegate}
+profiles        list of simple     solaris.profile.{assign/delegate}
+privs           list of simple     solaris.privilege.{assign/delegate}
+limitpriv       list of simple     solaris.privilege.{assign/delegate}
+defaultpriv     list of simple     solaris.privilege.{assign/delegate}
+always_audit    list of simple     solaris.audit.assign
+never_audit     list of simple     solaris.audit.assign
+desc            simple             none
+help            simple             none
+cmd             simple/new context none
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过指定 \fBcmd\fR 属性可进入 command 上下文。在 \fBcommand\fR 上下文中，可管理当前命令的属性。 
+.sp
+.LP
+下表概述了 \fBcommand\fR 上下文中的属性： 
+.sp
+.in +2
+.nf
+Property Name   Value Type         Required Authorizations
+
+id              simple             none
+privs           list of simple     solaris.privilege.{assign/delegate}
+limitprivs      list of simple     solaris.privilege.{assign/delegate}
+euid            simple             solaris.profile.cmd.setuid
+uid             simple             solaris.profile.cmd.setuid
+egid            simple             solaris.group.{assign/delegate}
+gid             simple             solaris.group.{assign/deleg
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下列表介绍了可在 \fBprofile\fR 上下文属性中指定的值。如以下列表中所指定，在属性与属性值之间需要有一个等号 (\fB=\fR)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalways_audit\fR\fR
+.ad
+.RS 16n
+.rt  
+用来将事件类指定为始终审计的审计标志。在登录和执行 \fBsu\fR 命令时，只会应用该属性的第一个实例（在用户的 \fBuser_attr\fR(4) 条目中或者在所分配的配置文件的有序列表中）。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauths\fR\fR
+.ad
+.RS 16n
+.rt  
+要添加到新配置文件中的一个或多个以逗号分隔的授权。如果在授权名称中使用了通配符 (\fB*\fR)，则名称必须括在双引号 (\fB"\fR) 中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcmd\fR\fR
+.ad
+.RS 16n
+.rt  
+可执行文件的全限定路径或星号 (\fB*\fR)，后者用于指定所有命令。替换路径名中文件名组件的星号用于指示某个特定目录中的所有文件。
+.sp
+这是一个特殊属性，用于进入 \fBcommand\fR 上下文以管理命令的安全属性。
+.sp
+可以将数字 ID 或名称用于这些 ID。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBid\fR\fR
+.ad
+.RS 14n
+.rt  
+此属性初始设置为由前面的 \fBcmd\fR 属性指定的值，但是可以修改。与 select 子命令一起使用时，可以克隆现有命令的属性以进行后续编辑。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivs\fR\fR
+.ad
+.RS 14n
+.rt  
+应用于可执行进程的可继承集的特权集。缺省值为 basic。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimitprivs\fR\fR
+.ad
+.RS 14n
+.rt  
+应用于可执行进程的限制集的特权集。缺省值为 all。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeuid\fR\fR
+.ad
+.RS 14n
+.rt  
+通过该命令执行的进程的有效用户 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid\fR\fR
+.ad
+.RS 14n
+.rt  
+通过该命令执行的进程的实际用户 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBegid\fR\fR
+.ad
+.RS 14n
+.rt  
+通过该命令执行的进程的有效组 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid\fR\fR
+.ad
+.RS 14n
+.rt  
+通过该命令执行的进程的实际组 ID。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaultpriv\fR\fR
+.ad
+.RS 16n
+.rt  
+分配给用户的进程集的缺省特权集。在登录和执行 \fBsu\fR 命令时，只会应用该属性的第一个实例（在用户的 \fBuser_attr\fR(4) 条目中或者在所分配的配置文件的有序列表中）。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdesc\fR\fR
+.ad
+.RS 16n
+.rt  
+新配置文件的说明。文本必须括在引号中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.RS 16n
+.rt  
+新配置文件的帮助文件名称。帮助文件将被复制到 \fB/usr/lib/help/profiles/locale/<locale>\fR 目录中。其中，\fB<locale>\fR 是用户的语言环境的值，如果未指定任何内容，则为 \fBC\fR。只有在文件系统信息库中才适合指定此属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimitpriv\fR\fR
+.ad
+.RS 16n
+.rt  
+用户或者由用户启动的任何进程（不管是通过 \fBsu\fR(1M) 还是以任何其他方式）可以获得的最大特权集。在登录和执行 \fBsu\fR 命令时，只会应用该属性的第一个实例（在用户的 \fBuser_attr\fR(4) 条目中或者在所分配的配置文件的有序列表中）。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 16n
+.rt  
+配置文件的名称。名称的初始值是在命令行中使用 \fB-p\fR 选项指定的。如果名称发生更改，当前的配置文件属性将应用于新命名的配置文件。通过这种方式，可以克隆现有的配置文件以进行后续编辑。名称不得与某个现有的配置文件相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnever_audit\fR\fR
+.ad
+.RS 16n
+.rt  
+用来将事件类指定为从不审计的审计标志。在登录和执行 \fBsu\fR 命令时，只会应用该属性的第一个实例（在用户的 \fBuser_attr\fR(4) 条目中或者在所分配的配置文件的有序列表中）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivs\fR\fR
+.ad
+.RS 16n
+.rt  
+可使用 \fBpfexec\fR(1) 命令的 \fBP\fR 选项指定的特权集。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofiles\fR\fR
+.ad
+.RS 16n
+.rt  
+要添加到新配置文件中的一个或多个以逗号分隔的辅助配置文件。 
+.RE
+
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 19n
+.rt  
+列出指定的系统信息库中的所有配置文件名称。如果未指定信息库，它将显示在 \fBnsswitch.conf\fR(4) 中为 \fBprof_attr\fR 配置的任何配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.RS 19n
+.rt  
+指定 profiles 命令文件的名称。\fIcommand_file\fR 是包含 profiles 的子命令的文本文件，一行一个。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 19n
+.rt  
+提供有关权限配置文件的信息，并列出命令及其特别的进程属性，如用户和组 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprofile\fR\fR
+.ad
+.RS 19n
+.rt  
+指定配置文件名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIrepository\fR\fR
+.ad
+.RS 19n
+.rt  
+有效的系统信息库为 \fBfiles\fR 和 \fBldap\fR。\fIrepository\fR 指定要更新的名称服务。缺省 \fIrepository\fR 为文件。 
+.RE
+
+.SH 子命令
+.sp
+.LP
+使用 \fB-p\fR 选项调用时，可在命令行中或以交互方式提供子命令。可在命令行上指定以分号分隔的多个子命令，并且需要将整个子命令集括在引号中。未提供子命令意味着交互式会话，在此会话期间，可通过使用 TAB 键调用子命令的自动完成。
+.sp
+.LP
+可使用 \fBadd\fR 和 \fBselect\fR 子命令选择一个特定的命令，从而使上下文更改为该命令的上下文。在交互式会话期间，\fBcommand\fR 上下文由提示字符串中的命令根基名称标识。可使用 \fBend\fR 和 \fBcancel\fR 子命令结束命令指定，从而将上下文恢复为 \fBprofile\fR 上下文。
+.sp
+.LP
+可导致破坏性操作或导致工作丢失的子命令具有一个强制执行操作的 \fB-F\fR 选项。如果输入来自终端设备，系统会在适当的时候提示用户。如果指定子命令时没有使用 \fB-F\fR 选项，这就有可能发生。其他情况下，不允许执行操作，并向标准错误写入一条诊断消息。
+.sp
+.LP
+属性值可以是一个简单值，对于接受列表的属性来说，则是简单值的列表。支持以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd cmd=\fR\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBprofile\fR 上下文中，开始指定给定的命令。上下文将更改为 \fBcommand\fR 类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定值添加到当前属性值。此子命令仅可应用于接受列表的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+结束命令指定，并将上下文重新设置为 \fBprofile\fR。放弃任何部分指定的资源。cancel 仅适用于 \fBcommand\fR 上下文。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIproperty name\fR\fR
+.ad
+.sp .6
+.RS 4n
+清除属性的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前配置从内存提交到稳定存储器。必须提交配置才能使更改生效。在提交内存中的配置之前，可以使用 \fBrevert\fR 子命令删除更改。在 \fBprofiles\fR 会话完成时，会自动尝试 \fBcommit\fR 操作。因为配置必须是正确的才能提交，因此该操作将自动执行 \fBverify\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+从内存和稳定存储器中删除指定的配置文件。如果该配置文件是同一系统信息库中另一个配置文件的子配置文件，则不允许此操作。但是会提供包含该配置文件的配置文件的列表，用户可在删除该配置文件之前手动将其移除。指定 \fB-F\fR 选项可强制执行操作。如果允许删除，其操作是即时的，会话将终止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+结束命令指定。此子命令仅适用于 \fBcommand\fR 上下文。\fBprofiles\fR 命令验证是否完整指定了当前命令。如果是，当前命令将添加到内存中的配置（有关将其保存到稳定存储器的信息，请参见 \fBcommit\fR），且上下文将恢复为 \fBprofile\fR 上下文。如果指定不完整，它将发出相应的错误消息。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+退出 profiles 会话。如果需要，会自动尝试 \fBcommit\fR。还可使用 \fBEOF\fR 字符退出 profiles。可使用 \fB-F\fR 选项强制执行操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-f\fR \fIoutput-fle\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将配置输出至标准输出。使用 \fB-f\fR 选项可将配置输出至输出文件。此选项以适合在命令文件选项中使用的格式生成输出。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fIusage\fR] [\fIsubcommands\fR] [\fIproperties\fR] [\fI<subcommand.\fR] [\fI<properties>\fR]\fR
+.ad
+.sp .6
+.RS 4n
+输出常规帮助或有关特定主题的帮助。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfo\fR [\fIproperty-name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示有关当前配置文件或指定属性的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fBcmd=\fR\fIfullpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+从配置文件中删除指定的命令。此子命令仅在 \fBprofile\fR 上下文中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-F\fR] \fBcmd\fR\fR
+.ad
+.sp .6
+.RS 4n
+从配置文件中删除所有命令。如果未使用 \fB-F\fR 选项，则需要确认。此子命令仅在 \fBprofile\fR 上下文中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+从属性中删除指定的值。这仅可应用于接受列表的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将配置恢复到上次提交时的状态。可使用 \fB-F\fR 选项强制执行操作。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect cmd=\fR\fIfullpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择与给定路径名标准相匹配的命令以进行修改。此子命令仅适用于 \fBprofile\fR 上下文。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+将给定属性名称设置为给定值。某些属性（如 \fBname\fR 和 \fBdesc\fR）仅在 \fBprofile\fR 上下文中有效，而某些属性则仅在 \fBcommand\fR 上下文中有效。此子命令同时适用于 \fBprofile\fR 和 \fBcommand\fR 上下文。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+检验当前配置是否正确：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+是否指定了必需的属性。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各个值是否对每个关键字都有效。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用户是否有权指定这些值。
+.RE
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBprofiles\fR 命令
+.sp
+.LP
+\fBprofiles\fR 命令的输出具有以下格式：
+
+.sp
+.in +2
+.nf
+example% profiles tester01 tester02
+tester01 : Audit Management, All Commands
+tester02 : Device Management, All Commands
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 \fBlist\fR 选项
+.sp
+.in +2
+.nf
+example% profiles -l tester01 tester02
+tester01 :
+    Audit Management:
+      /usr/sbin/audit          euid=root
+      /usr/sbin/auditconfig    euid=root    egid=sys
+    All Commands:
+      *
+tester02 :
+    Device Management:
+      /usr/bin/allocate:       euid=root
+      /usr/bin/deallocate:     euid=root
+    All Commands
+      *
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR创建新的配置文件
+.sp
+.LP
+以下示例在 LDAP 中创建了一个新的 User Manager 配置文件。新配置文件的说明是 "Manage users and groups"，分配的授权是 \fBsolaris.user.manage\fR。分配的辅助配置文件是 Mail Management。帮助文件名是 \fBRtUserMgmt.html\fR。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> set desc="Manage users and groups"
+profiles:User Manager> set help=RtUserMgmt.html
+profiles:User Manager> set auths=solaris.user.manage
+profiles:User Manager> set profiles="Mail Management"
+profiles:User Manager> exit
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR显示有关当前配置的信息
+.sp
+.LP
+以下命令显示有关 User Manager 配置文件的信息：
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap info
+name=User Manager
+desc=Manage users and  groups
+auths=solaris.user.manage
+profiles=Mail Management
+help=RtUserMgmt.html
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR删除配置文件
+.sp
+.LP
+以下命令从 LDAP 中删除 User Manager 配置文件：
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap delete -F
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR修改配置文件
+.sp
+.LP
+以下示例修改 LDAP 中的 User Manager 配置文件。新配置文件的说明是 "\fBManage world\fR"，新的授权分配是 \fBsolaris.user.*\fR 授权，新的辅助配置文件分配是 \fBAll\fR。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> set desc="Manage world"
+profiles:User Manager> set auths="solaris.user.*"
+profiles:User Manager> set profiles=All
+profiles:User Manager> exit
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR创建 \fBexec_attr\fR 数据库条目
+.sp
+.LP
+以下命令为 LDAP 中的 User Manager 配置文件创建一个新的 \fBexec_attr\fR 条目。将添加 \fB/usr/bin/cp\fR 条目。此命令的有效用户 ID 为 \fB0\fR，有效组 ID 为 \fB0\fR。 
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> add cmd=/usr/bin/cp
+profiles:User Manager:cp> set euid=0
+profiles:User Manager:cp> set egid=0
+profiles:User Manager:cp> end
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR删除 \fBexec_attr\fR 数据库条目
+.sp
+.LP
+以下示例将从 LDAP 中的 User Manager 配置文件删除一个 \fBexec_attr\fR 数据库条目。将删除为命令 \fB/usr/bin/cp\fR 指定的条目。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> remove cmd=/usr/bin/cp
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR修改 \fBexec_attr\fR 数据库条目
+.sp
+.LP
+以下命令为 LDAP 中的 User Manager 配置文件修改 \fBexec_attr\fR 数据库条目的属性。将 \fB/usr/bin/cp\fR 条目修改为以实际用户 ID \fB0\fR 和实际组 ID \fB0\fR 执行。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> select cmd=/usr/bin/cp
+profiles:User Manager:cp> clear euid
+profiles:User Manager:cp> clear egid
+profiles:User Manager:cp> set uid=0
+profiles:User Manager:cp> set gid=0
+profiles:User Manager:cp> end
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+出现错误。
+.RE
+
+.SH 文件
+.sp
+.LP
+\fB/etc/security/exec_attr\fR
+.sp
+.LP
+\fB/etc/security/prof_attr\fR
+.sp
+.LP
+\fB/etc/user_attr\fR
+.sp
+.LP
+\fB/etc/security/policy.conf\fR
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBauths\fR(1)、\fBpfexec\fR(1)、\fBpkg\fR(1)、\fBroles\fR(1)、\fBgetprofattr\fR(3C)、\fBauth_attr\fR(4)、\fBexec_attr\fR(4)、\fBnsswitch.conf\fR(4)、\fBpolicy.conf\fR(4)、\fBprof_attr\fR(4)、\fBuser_attr\fR(4)、\fBaudit_flags\fR(5)、\fBattributes\fR(5)、\fBprivileges\fR(5)

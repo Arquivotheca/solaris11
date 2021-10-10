@@ -1,0 +1,527 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+-->
+
+<service_bundle type='manifest' name='SUNWcsr:ldap-client'>
+
+<service
+	name='network/ldap/client'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='false' />
+
+	<single_instance />
+
+	<dependency
+	    name='usr'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri value='svc:/system/filesystem/minimal' />
+	</dependency>
+
+	<dependency
+	    name='net'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri value='svc:/network/initial' />
+	</dependency>
+
+	<dependency
+	    name='domain'
+	    grouping='require_all'
+	    restart_on='restart'
+	    type='service'>
+		<service_fmri value='svc:/network/nis/domain' />
+	</dependency>
+
+	<!--
+	 During system configuration, explicitly wait until manifest-import
+	 is online and has imported the new profile explicitly.
+	-->
+	<dependency
+		name='manifest_import'
+		grouping='optional_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/manifest-import' />
+	</dependency>
+
+	<dependency
+	    name='milestone'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+	    <service_fmri value='svc:/milestone/unconfig' />
+	</dependency>
+
+	<exec_method
+	    type='method'
+	    name='start'
+	    exec='/lib/svc/method/ldap-client %m'
+	    timeout_seconds='120' >
+		<method_context>
+			<method_credential user='root' group='root'
+			    privileges='basic,file_dac_write' />
+		</method_context>
+	</exec_method>
+
+	<exec_method
+	    type='method'
+	    name='refresh'
+	    exec='/lib/svc/method/ldap-client %m'
+	    timeout_seconds='120' >
+		<method_context>
+			<method_credential user='root' group='root'
+			    privileges='basic,file_dac_write' />
+		</method_context>
+	</exec_method>
+
+	<exec_method
+	    type='method'
+	    name='stop'
+	    exec='/lib/svc/method/ldap-client %m'
+	    timeout_seconds='60' >
+		<method_context>
+			<method_credential user='root' group='root'
+			    privileges='basic' />
+		</method_context>
+	</exec_method>
+
+	<exec_method
+	    type='method'
+	    name='unconfigure'
+	    exec='/lib/svc/method/ldap-client unconfigure'
+	    timeout_seconds='60' >
+		<method_context>
+			<method_credential user='root' group='root'
+			    privileges='basic' />
+		</method_context>
+	</exec_method>
+
+	<property_group name='general' type='framework'>
+		<!-- to start stop the service -->
+		<propval name='action_authorization' type='astring'
+			value='solaris.smf.manage.name-service.ldap.client' />
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.manage.name-service.ldap.client' />
+	</property_group>
+
+	<property_group name='config' type='application'>
+	    <!-- to manage properties of the service -->
+	    <propval name='value_authorization' type='astring'
+		value='solaris.smf.value.name-service.ldap.client' />
+	    <!-- to secure the properties of the service -->
+	    <propval name='read_authorization' type='astring'
+		value='solaris.smf.value.name-service.ldap.client' />
+	    <propval name='version' type='astring' value='2.0'/>
+	    <propval name='search_base' type='astring' value=''/>
+	    <property name='server_list' type='host'>
+		<host_list>
+		    <value_node value='0.0.0.0' />
+		</host_list>
+	    </property>
+
+	</property_group>
+	<property_group name='cred' type='application'>
+	    <!-- to manage properties of the service -->
+	    <propval name='value_authorization' type='astring'
+		value='solaris.smf.value.name-service.ldap.client' />
+	    <!-- to secure the properties of the service -->
+	    <propval name='read_authorization' type='astring'
+		value='solaris.smf.value.name-service.ldap.client' />
+	</property_group>
+
+	<property_group name='sysconfig' type='application'>
+	    <propval name='group' type='astring' value='naming_services' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+				LDAP Name Service Client
+			</loctext>
+		</common_name>
+		<description>
+			<loctext xml:lang='C'>
+LDAP daemon to manage client configuration for LDAP based name
+service lookups
+			</loctext>
+		</description>
+		<documentation>
+			<manpage title='ldap_cachemgr' section='1M' manpath='/usr/share/man' />
+		</documentation>
+		<pg_pattern name='config' type='application'
+		    target='this' required='true'>
+			<description> <loctext xml:lang='C'>
+			    LDAP Name Service configuration data as described in ldapclient(1m).
+			 </loctext> </description>
+			<prop_pattern name='version' type='astring'
+			    required='true'>
+				<description> <loctext xml:lang='C'>
+				    Version (must equal 2.0)
+				</loctext> </description>
+                                <visibility value='readonly' />
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <value name='2.0'>
+				      <description> <loctext xml:lang='C'>
+				      Version 2.0 (rfc-4876 and rfc-2307bis)
+				      </loctext> </description>
+				    </value>
+				</constraints>
+				<choices>
+				    <value name='2.0'/>
+				</choices>
+			</prop_pattern>
+			<prop_pattern name='profile' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Profile Name
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='preferred_server_list' type='host'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Preferred Server List
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+			<prop_pattern name='server_list' type='host'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Server List
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+			<prop_pattern name='search_base' type='astring'
+			    required='true'>
+				<description> <loctext xml:lang='C'>
+				    Search Base
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='search_scope' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Search Scope
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <value name='base'>
+				      <description> <loctext xml:lang='C'>
+				      Search base DN
+				      </loctext> </description>
+				    </value>
+				    <value name='one'>
+				      <description> <loctext xml:lang='C'>
+				      Search one-level
+				      </loctext> </description>
+				    </value>
+				    <value name='sub'>
+				      <description> <loctext xml:lang='C'>
+				      Search Subtree
+				      </loctext> </description>
+				    </value>
+				</constraints>
+				<choices>
+				    <value name='base'/>
+				    <value name='one'/>
+				    <value name='sub'/>
+				</choices>
+			</prop_pattern>
+			<prop_pattern name='authentication_method' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Authentication Method(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+				<constraints>
+                                    <value name='none'>
+				      <description> <loctext xml:lang='C'>
+                                      no authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='simple'>
+				      <description> <loctext xml:lang='C'>
+                                      simple authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='sasl/CRAM-MD5'>
+				      <description> <loctext xml:lang='C'>
+                                       sasl/CRAM-MD5 authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='sasl/DIGEST-MD5'>
+				      <description> <loctext xml:lang='C'>
+                                      sasl/DIGEST-MD5 authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='sasl/DIGEST-MD5:auth-int'>
+				      <description> <loctext xml:lang='C'>
+                                      sasl/DIGEST-MD5:auth-int authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='sasl/DIGEST-MD5:auth-conf'>
+				      <description> <loctext xml:lang='C'>
+                                      sasl/DIGEST-MD5:auth-conf authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='sasl/EXTERNAL'>
+				      <description> <loctext xml:lang='C'>
+                                      sasl/EXTERNAL authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='sasl/GSSAPI'>
+				      <description> <loctext xml:lang='C'>
+                                      sasl/GSSAPI authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:none'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:none authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:simple'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:simple authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:sasl/CRAM-MD5'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:sasl/CRAM-MD5 authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:sasl/DIGEST-MD5'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:sasl/DIGEST-MD5 authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:sasl/DIGEST-MD5:auth-int'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:sasl/DIGEST-MD5:auth-int authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:sasl/DIGEST-MD5:auth-conf'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:sasl/DIGEST-MD5:auth-conf authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:sasl/EXTERNAL'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:sasl/EXTERNAL authentication
+				      </loctext> </description>
+				    </value>
+                                    <value name='tls:sasl/GSSAPI'>
+				      <description> <loctext xml:lang='C'>
+                                      tls:sasl/GSSAPI authentication
+				      </loctext> </description>
+				    </value>
+				</constraints>
+				<choices>
+                                    <value name='none'/>
+                                    <value name='simple'/>
+                                    <value name='sasl/CRAM-MD5'/>
+                                    <value name='sasl/DIGEST-MD5'/>
+                                    <value name='sasl/DIGEST-MD5:auth-int'/>
+                                    <value name='sasl/DIGEST-MD5:auth-conf'/>
+                                    <value name='sasl/EXTERNAL'/>
+                                    <value name='sasl/GSSAPI'/>
+                                    <value name='tls:none'/>
+                                    <value name='tls:simple'/>
+                                    <value name='tls:sasl/CRAM-MD5'/>
+                                    <value name='tls:sasl/DIGEST-MD5'/>
+                                    <value name='tls:sasl/DIGEST-MD5:auth-int'/>
+                                    <value name='tls:sasl/DIGEST-MD5:auth-conf'/>
+                                    <value name='tls:sasl/EXTERNAL'/>
+                                    <value name='tls:sasl/GSSAPI'/>
+
+				</choices>
+			</prop_pattern>
+			<prop_pattern name='credential_level' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Credential Level(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+				<constraints>
+				    <value name='anonymous'>
+				      <description> <loctext xml:lang='C'>
+				      Anonymous - No bind
+				      </loctext> </description>
+				    </value>
+				    <value name='proxy'>
+				      <description> <loctext xml:lang='C'>
+				      Proxy - Bind with auth method and credentials
+				      </loctext> </description>
+				    </value>
+				    <value name='self'>
+				      <description> <loctext xml:lang='C'>
+				      Self - Bind using Kerberos credentials (sasl/GSSAPI)
+				      </loctext> </description>
+				    </value>
+				</constraints>
+				<choices>
+				    <value name='anonymous'/>
+				    <value name='proxy'/>
+				    <value name='self'/>
+				</choices>
+			</prop_pattern>
+			<prop_pattern name='service_search_descriptor' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Service Search Descriptor(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+			<prop_pattern name='search_time_limit' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Search Time Limit
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='bind_time_limit' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Bind Time Limit
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='follow_referrals' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Follow Referrals
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='profile_ttl' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Profile Time To Live
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='attribute_map' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Attribute Map(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+			<prop_pattern name='objectclass_map' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Objectclass Map(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+			<prop_pattern name='service_credential_level' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Service Credential Level(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+			<prop_pattern name='service_authentication_method' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Service Authentication Method(s)
+				</loctext> </description>
+				<cardinality min='1'/>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='cred' type='application'
+		    target='this' required='true'>
+			<description> <loctext xml:lang='C'>
+			    LDAP Name Service credential data as described in ldapclient(1m).
+			 </loctext> </description>
+			<prop_pattern name='bind_dn' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Bind DN
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='bind_passwd' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Bind Password
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='enable_shadow_update' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Enable Shadow Update
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='admin_bind_dn' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Admin Bind DN
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='admin_bind_passwd' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Admin Bind Password
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='host_certpath' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Host Certificate path
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+
+</service>
+
+</service_bundle>

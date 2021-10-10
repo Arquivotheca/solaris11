@@ -1,0 +1,98 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH smf_bootstrap 5 "2011 年 7 月 9 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+smf_bootstrap \- 服务管理工具的引导、打包和兼容性行为
+.SH 描述
+.sp
+.LP
+服务管理工具在提供服务清单、合并服务清单更改、描述服务配置稳定性、使用服务配置覆盖以及使用服务配置文件等方面建立了相关约定。
+.SS "引导时的清单装入"
+.sp
+.LP
+在系统引导期间，以及管理员或程序运行时，处理标准目录树 \fB/lib/svc/manifest\fR 和 \fB/var/svc/manifest\fR 的清单：
+.sp
+.in +2
+.nf
+$ svcadm restart manifest-import
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+处理之前未导入，或自上一次导入以来发生更改的清单。使用散列来确定清单是否已更改。
+.sp
+.LP
+当标准位置中的清单第一次导入时，它的属性、实例和服务作为 \fBmanifest\fR 层的一部分添加到系统信息库。
+.sp
+.LP
+当标准位置中的清单更新时，将自动导入它们。添加新的服务和实例，升级属性（如果它们发生变化），并在服务、实例和属性被移除时将其删除。
+.sp
+.LP
+在引导期间，将在两个不同的阶段处理清单。 
+.sp
+.LP
+服务 \fBsvc:/system/early-manifest-import:default\fR 是一项伪服务，负责首次清单处理。此服务仅在 \fBsvc.startd\fR(1M) 初始化任何服务之前处理 \fB/lib/svc/manifest\fR 目录树中的清单，从而使 \fB/lib/svc/manifest\fR 中提供的服务始终以最新定义启动。由于此服务是伪服务，因此将忽略 \fBsvcadm\fR(1M) 命令，但可以使用 \fBsvcs\fR(1) 观察状态及获取日志文件信息。
+.sp
+.LP
+\fBsvc:/system/manifest-import:default\fR 服务负责第二次清单处理并按相应顺序依次导入 \fB/lib/svc/manifest\fR 和 \fB/var/svc/manifest\fR 目录树中的清单文件。
+.sp
+.LP
+对 \fB/var/svc/manifest\fR 的支持是对引入 \fBsystem/early-manifest-import:default\fR 之前该目录树中所提供清单的兼容性支持。当服务可能以旧系统信息库配置启动时，由于其更新的清单尚未导入，因此 \fB/var/svc/manifest\fR 中所提供的服务可以会出现与升级相关的问题。同样，由于其清单文件尚未得到处理，因此新添加的服务也可能不可用或者已删除的服务仍在引导期间启动。为避免这些问题，强烈建议开发者将清单移至 \fB/lib/svc/manifest\fR。
+.SS "配置文件应用"
+.sp
+.LP
+early-manifest-import 和 manifest-import 服务还应用配置文件。
+.sp
+.LP
+\fB/etc/svc/profile/generic.xml\fR 和 \fB/etc/svc/profile/platform.xml\fR 中的系统提供的配置文件导入到 \fBsystem-profile\fR 层。
+.sp
+.LP
+\fB/etc/svc/profile/site\fR 目录中的站点特定的配置文件和传统站点文件 \fB/etc/svc/profile/site.xml\fR 和 \fB/var/svc/profile/site.xml\fR 导入到 \fBsite-profile\fR 层。
+.sp
+.LP
+管理员可以通过运行以下命令请求重新应用这些配置文件：
+.sp
+.in +2
+.nf
+$ svcadm restart manifest-import
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+配置文件定义的属性、实例和服务的行为与由清单定义的相同。 
+.SS "打包操作期间的清单处理"
+.sp
+.LP
+软件包中的所有服务清单都应由类 \fBmanifest\fR 来标识。安装和移除服务清单的类操作脚本包含在软件包子系统中。调用 \fBpkg install\fR 时，会导入服务清单。
+.sp
+.LP
+调用 \fBpkg uninstall\fR 时，会删除清单中禁用的实例。清单中联机或降级的实例将先被禁用，然后再被删除。清单中没有剩余实例的所有服务也将被删除。
+.SS "稳定性声明"
+.sp
+.LP
+清单中所提供的每个服务组和每个属性组都应根据 \fBattributes\fR(5) 定义声明稳定性级别。通过了解稳定性级别，应用程序开发者可以根据服务或对象的组件是否存在或者它们是否可能跨发行版边界仍能正常使用，确定功能开发的可能性。
+.sp
+.LP
+在 \fBsmf\fR(5) 上下文中，稳定性值还可以跨服务的发行版边界（可包含该服务的修补程序）标识属性组中属性的预期更改范围。以下两部分对这一点进行了更详细地讨论。
+.SS "属性组删除"
+.sp
+.LP
+\fBservice_bundle\fR(4) 文档类型定义包含一个删除属性，该属性适用于服务清单中的每个属性组。如果该删除属性设置为\fB true\fR，它会指示 \fBsvccfg\fR(1M) 及其他清单导入工具从系统信息库中删除此属性组。如果该删除属性缺失，或者存在但设置为 \fBfalse\fR，将保留系统信息库中的属性组。
+.sp
+.LP
+不会删除声明为稳定或发展中的属性组。可跨任何发行版边界删除声明为不稳定的属性组。
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBsvc.startd\fR(1M)、\fBlibscf\fR(3LIB)、\fBservice_bundle\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBsmf_security\fR(5)
+.sp
+.LP
+\fBpkg\fR(1)
+.SH 附注
+.sp
+.LP
+\fBsmf\fR(5) 的现有版本不支持多个系统信息库。

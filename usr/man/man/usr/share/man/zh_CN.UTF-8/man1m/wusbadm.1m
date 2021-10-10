@@ -1,0 +1,607 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH wusbadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+wusbadm \- 管理无线 USB 主机和设备
+.SH 用法概要
+.LP
+.nf
+\fBwusbadm\fR list [\fB-h\fR | \fB-d\fR] [\fB-o\fR \fIfield\fR[,...]]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR associate [\fB-h\fR \fIhost-id\fR] [[\fB-c\fR [\fB-f\fR]] | \fB-n\fR] [\fB-o\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR remove-dev [[\fB-d\fR \fIdev-id\fR] | [\fB-h\fR \fIhost-id\fR]] [\fB-f\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR remove-host [\fB-h\fR \fIhost-id\fR] [\fB-f\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR enable-host [\fB-h\fR \fIhost-id\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR disable-host [\fB-h\fR \fIhost-id\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBwusbadm\fR 命令提供了一个可用于管理无线 USB 主机和设备的命令行接口，其功能包括列出主机信息和设备信息、将主机和设备关联起来、删除系统中的主机信息或设备信息以及启用或禁用主机。
+.sp
+.LP
+首次将无线 USB 设备连接到主机之前，用户需通过运行 wusbadm 的 associate 子命令，在设备和主机之间设置关联信息。然后，用户即可通过直接打开或关闭设备射频（可能是设备上的一个按钮，具体取决于生产商）连接到设备或断开与设备的连接。设备射频的打开和关闭类似于有线 USB 设备的热插拔。
+.sp
+.LP
+由 \fBassociate\fR 子命令创建的关联信息保存在设备和主机的非易失性内存中。在主机上，可通过 \fBremove-dev\fR 或 \fBremove-host\fR 子命令删除这些信息。在设备上，可通过另一关联操作覆盖这些信息。对于与多个主机相关联的设备来说，其确定多个关联记录的优先级或更新这些关联记录的方式取决于生产商。
+.sp
+.LP
+每个 \fBwusbadm\fR 子命令都作用于下面的某个对象：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个两位数的数字（其范围为 01 到 99），可唯一标识系统中的无线 USB 主机。该数字是在 \fBwusb\fR 服务（请参见\fB\fR"附注"部分）成功启用并首次找到主机实例的情况下生成的。在由 \fBremove-host\fR 子命令删除之前，该数字将一直保留。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdev-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个五位数的数字，可唯一标识与无线 USB 主机关联的无线 USB 设备。头两位数字是与设备关联的无线 USB 主机的 host-id。后三位数字（范围为 001 到 999）用于区分与同一主机关联的设备。在这个五位数中，头两位数与后三位数之间用点隔开。
+.sp
+\fIdev-id\fR 是在设备关联过程中生成的。通过 \fBremove-dev\fR 子命令删除该数字之前，或者通过同一主机和设备之间的另一关联操作对其进行更新之前，系统将始终为设备保留该数字。
+.RE
+
+.SH 子命令
+.sp
+.LP
+所支持的子命令如下。如果在运行子命令时没有设置任何选项或操作数，则每个子命令都会显示特定于该子命令的用法信息，\fBlist\fR 子命令除外。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fB-h\fR | \fB-d\fR] [\fB-o\fR \fIfield\fR[,...]]\fR
+.ad
+.sp .6
+.RS 4n
+列出系统上的无线 USB 主机和设备，同时显示所有主机和设备的 ID、状态及类型。缺省情况下，\fBlist\fR 将列出所有主机和设备及所有字段。每个主机及其设备都将显示为一个组。该子命令支持以下选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR=\fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。字段名称必须是下面列出的某个字段，或者是可以显示所有字段的特殊值 \fBall\fR。缺省情况下（无 \fB-o\fR），\fBlist\fR 会显示所有字段。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBID\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIhost-id\fR 或 \fIdev-id\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBhost\fR（主机）或 \fBdevice\fR（设备）类型。
+.sp
+对于 \fBhost\fR（主机）来说，其类型包括 \fBwhci\fR（板载主机）和 \fBhwa\fR（热插拔主机）。
+.sp
+对于 \fBdevice\fR（设备）来说，其类型包括 \fBkbd\fR（键盘）、\fBmouse\fR（鼠标）、\fBstorage\fR（存储器）、\fBprinter\fR（打印机）、\fBdwa\fR（无线 USB 集线器）、\fBaudio\fR（音频）、\fBvideo\fR（视频）等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+主机有下述几种状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled（已启用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+主机准备好工作或已经在工作，包括执行关联、连接设备、执行数据通信等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled（禁用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+主机尚未准备好与任何设备一起工作，且没有设备连接到该主机。出现这种情况的原因，可能是因为已通过 \fBdisable-host\fR 子命令停用主机，或者主机因插头已拔下或驱动程序分离而无法使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected（断开）\fR\fR
+.ad
+.sp .6
+.RS 4n
+主机没有连接到系统。将 \fBhwa\fR 设备从系统的 USB 端口拔下以后，该设备将处于此状态。
+.RE
+
+设备有下述几种状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected（已连接）\fR\fR
+.ad
+.sp .6
+.RS 4n
+设备已与主机连接，可以打开，或已打开并处于工作状态。缺省情况下，设备会在完成关联并打开射频后尝试进入此状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected（断开）\fR\fR
+.ad
+.sp .6
+.RS 4n
+设备未连接到主机或尚未做好打开准备。设备之所以会处于这种状态，可能是因为射频超出范围、电源关闭、硬件问题，等等。
+.RE
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB--host\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅列出无线 USB 主机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--device\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅列出无线 USB 设备。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBassociate\fR [\fB-h\fR \fIhost-id\fR] [[\fB-c\fR [\fB-f\fR]] | \fB-n\fR] [\fB-o\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定主机启动关联过程。在将无线 USB 设备与无线 USB 主机连接之前，初始步骤是关联。
+.sp
+共有两种关联模式：
+.sp
+.ne 2
+.mk
+.na
+\fB电缆关联\fR
+.ad
+.sp .6
+.RS 4n
+用户首先使用 USB 电缆连接设备和主机，然后运行此子命令，指定主机设置与设备的关联信息。关联生效以后，在同一主机和设备的后续连接中将不再需要该电缆。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB数字关联\fR
+.ad
+.sp .6
+.RS 4n
+用户打开设备射频并运行此命令，指定主机与设备通话。然后，主机和设备上会显示一个短数字。用户可比较数字的值并在主机和设备上进行确认。
+.RE
+
+成功关联以后，关联的 USB 主机和设备即可继续无线连接过程。缺省情况下，在被删除或覆盖之前，关联信息将一直保留在主机和设备上。
+.sp
+如果存在多个可关联的设备，则此子命令会列出所有这些设备以供用户选择。此子命令具有以下选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR, \fB--host\fR \fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定关联操作所针对的主机。如果未指定此选项，此子命令将列出所有已启用的主机供用户选择。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--cable\fR\fR
+.ad
+.sp .6
+.RS 4n
+启动电缆关联过程。用户将无线 USB 设备插入主机，然后运行带有此选项的 associate 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR, \fB--numeric\fR\fR
+.ad
+.sp .6
+.RS 4n
+启动数字关联过程。此子命令会提示用户比较显示在主机和设备上的数字。
+.RE
+
+如果前述两个关联模式选项（\fB-n\fR 或 \fB-c\fR）均未指定，此子命令会提示用户指定下述关联模式选项之一。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+启动电缆关联过程。用户将无线 USB 设备插入主机，然后运行带有此选项的 associate 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR, \fB--onetime\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示该关联用于一次性连接。也就是说，在关联以后，如果设备连接然后又断开，则该设备的关联信息将从主机系统中删除。要进行下一次连接，用户需再一次执行关联操作。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-dev\fR [[\fB-d\fR \fIdev-id\fR] | [\fB-h\fR \fIhost-id\fR]][\fB-f\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将无线 USB 设备的关联信息从系统中删除。删除以后，除非用户再一次对主机和设备运行 \fBassociate\fR 子命令，否则设备将无法与主机连接。此子命令具有以下选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--device\fR=\fIdev-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除 \fIdev-id\fR 指定的无线 USB 设备的关联信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR, \fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除与 \fIhost-id\fR 指定的主机关联的所有无线 USB 设备的关联信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+在未经确认的情况下执行删除操作。如果设备正在与主机进行连接，则此子命令将强制设备断开连接。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-host\fR [\fB-h\fR \fIhost-id\fR] [\fB-f\fR]\fR
+.ad
+.sp .6
+.RS 4n
+从系统中删除主机信息，包括 \fIhost-id\fR 以及与主机关联的所有设备的关联信息。此子命令最常用于移除临时使用的热插拔无线 USB 主机，例如 \fBhwa\fR dongle。该主机可通过重新枚举的方式恢复，只需以物理方式对 \fBhwa\fR dongle 执行热插拔即可。然后系统会对 host-id 进行更新，但设备关联信息无法恢复。不建议移除板载主机。此子命令具有以下选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR, \fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要删除的 \fIhost-id\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+在未经确认的情况下执行删除操作。如果有一个或多个设备与主机建立了连接，则强制其断开连接。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-host\fR [\fB-h\fR \fIhost-id\fR]\fR
+.ad
+.sp .6
+.RS 4n
+使主机进入启用状态。缺省情况下，主机处于启用状态。此子命令具有以下选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR, \fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要启用的 \fIhost-id\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-host\fR [\fB-h\fR \fIhost-id\fR] [\fB-f\fR]\fR
+.ad
+.sp .6
+.RS 4n
+使主机进入禁用状态。主机的 \fIhost-id\fR 和所有关联信息都将保留。发出 \fBenable-host\fR 子命令即可令主机恢复启用状态。此子命令具有以下选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR, \fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要禁用的 \fIhost-id\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+在未经确认的情况下执行禁用操作。如果有一个或多个设备与主机建立了连接，此选项将强制其断开连接。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR列出所有主机和设备
+.sp
+.LP
+以下命令列出了所有无线 USB 主机和设备。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm list\fR
+01      enabled         hwa
+01.001  connected       mouse
+01.002  connected       kbd
+02      enabled         whci
+02.001  connected       printer
+02.002  disconnected    storage
+03      disabled        hwa
+03.001  disconnected    storage
+03.002  disconnected    dwa
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用电缆与设备进行关联
+.sp
+.LP
+以下命令使用电缆关联方法将设备与特定主机 (host-id \fB01\fR) 关联。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm associate -h 01 -c\fR
+Associate a device with host (01) via cable.
+Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR删除设备的关联
+.sp
+.LP
+以下命令从主机系统中删除设备的关联信息。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm remove-dev -d 01.002\fR
+Remove the information of device (01.002) from system.
+This device can not be connected with the host until it is associated
+again. Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR删除所有设备的关联
+.sp
+.LP
+以下命令删除与特定主机关联的所有设备的关联信息。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm remove-dev -h 02\fR
+Remove the information of all the devices associated with host (02)
+from the system.
+All the devices associated with the host cannot be connected with it
+until they are associated again. Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+错误：操作失败。例如，某个设备无法与主机关联。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+用法错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+.LP
+\fB/usr/sbin\fR
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/io/usb
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBattributes\fR(5)、\fBhwahc\fR(7D)、\fBusba\fR(7D)
+.SH 附注
+.sp
+.LP
+\fBwusb\fR（无线 USB 管理）服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/system/wusb:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+\fBwusb\fR 服务可通过 \fBwusbd\fR 守护进程这一专用接口实现。与 \fBwusb\fR 服务一样，守护进程由 SMF 启动。使用服务实例指定守护进程：
+.sp
+.in +2
+.nf
+svc:/system/wusbd:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+不应直接调用 \fBwusbd\fR 守护进程。

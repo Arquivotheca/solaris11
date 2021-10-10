@@ -1,0 +1,123 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright 2000, Sun Microsystems, Inc. All Rights Reserved
+.TH getopt 1 "2000 年 1 月 7 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+getopt \- コマンドオプションの解析
+.SH 形式
+.LP
+.nf
+\fBset\fR \fB--\fR ` getopt \fIoptstring\fR $ * `
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBgetopts\fR コマンドが、 \fBgetopt\fR に取って代わります。詳細は、 以下の「注意事項」の項を参照してください。
+.sp
+.LP
+\fBgetopt\fR は、シェルプロシージャによる解析を容易にするために コマンド行のオプションを分解し、 各オプションが正当であるかどうかの確認に使用します。\fIoptstring\fR は、 認識されるオプションの文字列です。\fBgetopt\fR(3C) を参照してください。オプション文字のあとにコロン (\fB:\fR) が付いている場合は、 そのオプションに引数があるとみなされます。コロンと引数の間は、 スペースで区切られていても、区切られていなくてもかまいません。特殊なオプション \fB-\|-\fR は、 オプションの終わりを表すのに使用されます。 このオプションを明示的に使用すると \fBgetopt\fR はこれを認識し、 省略された場合には \fBgetopt\fR がこれを生成します。いずれの場合でも、 \fBgetopt\fR はオプションの終わりにこの特殊オプションを付けます。シェルの位置パラメータ (\fB$1 $2\fR . \|.\|.\|) が再設定されて、各オプションの前に \fB\(mi\fR が付き、各オプションはそのオプションの位置パラメータに入ります。各オプション引数も、同様にその引数の位置パラメータに入るように解析されます。
+.SH 使用例
+.LP
+\fB例 1 \fRコマンド引数の処理
+.sp
+.LP
+次の部分コードに、 オプション \fB-a\fR または \fB-b\fR 、および引数の必要なオプション \fB-o\fR を使用するコマンドについて、 引数の処理例を示します。
+
+.sp
+.in +2
+.nf
+\fBset -- `getopt abo: $*`
+if [ $? != 0 ]
+then
+           echo $USAGE
+           exit 2
+fi
+for i in $*
+do
+           case $i in
+           -a | -b)     FLAG=$i; shift;;
+           -o)           OARG=$2; shift 2;;
+           --)           shift; break;;
+           esac
+done\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコードは、 次のコマンドすべてを同一内容として受け入れます。
+
+.sp
+.in +2
+.nf
+\fBcmd -aoarg filename1 filename2
+cmd -a -o arg filename1 filename2
+cmd -oarg -a filename1 filename2
+cmd -a -oarg -- filename1 filename2\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBIntro\fR(1), \fBgetopts\fR(1), \fBgetoptcvt\fR(1), \fBsh\fR(1), \fBshell_builtins\fR(1), \fBgetopt\fR(3C), \fBattributes\fR(5) 
+.SH 診断
+.sp
+.LP
+\fBgetopt\fR は、 \fIoptstring\fR に含まれていないオプション文字を検出すると、 標準エラー出力に エラーメッセージを表示します。
+.SH 注意事項
+.sp
+.LP
+\fBgetopt\fR は、次のメジャーリリースではサポートされません。このリリースにおいては、 変換ツール \fBgetoptcvt\fR が提供されています。詳細については、\fBgetopts\fR(1) および \fBgetoptcvt\fR(1) を参照してください。
+.sp
+.LP
+オプションを再走査する際は、 \fBoptind\fR に \fB1\fR を再設定してください。
+.sp
+.LP
+\fBgetopt\fR は、オプションに続くオプション引数を、 スペースおよび引用符で区切って指定できるという コマンド構文標準規則 8 の一部をサポートしません ( \fBIntro\fR(1) 参照)。たとえば、次のように指定します。
+.sp
+.in +2
+.nf
+\fBcmd -a -b -o "xxx z yy" filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+は、正しく処理されません。この不完全性を正すためには、 \fBgetopt\fR コマンドの代わりに \fBgetopts\fR コマンドを使用してください。
+.sp
+.LP
+オプション引数を持つあるオプションに、\fIoptstring\fR で示されているオプションの 1 つと同じ値が続いている場合 (前述の「使用例」の項を参照。ただし、次のコマンド行を使用する場合)、 
+.sp
+.in +2
+.nf
+\fBcmd -o -a filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBgetopt\fR は、常に \fB-a\fR を \fB-o\fR のオプション引数として扱うので、 a はオプションとして認識されません。この場合、 この例の \fBfor\fR ループは、\fIfilename\fR 引数を通り越してシフトします。

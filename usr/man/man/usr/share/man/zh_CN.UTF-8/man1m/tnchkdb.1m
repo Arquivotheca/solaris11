@@ -1,0 +1,171 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH tnchkdb 1M "2007 年 7 月 20 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+tnchkdb \- 检查可信网络数据库的文件语法
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/tnchkdb\fR  [\fB-h\fR \fIpath\fR] [\fB-t\fR \fIpath\fR] [\fB-z\fR \fIpath\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBtnchkdb\fR 检查 \fBtnrhtp\fR、\fBtnrhdb\fR 和 \fBtnzonecfg\fR 数据库的语法。缺省情况下，各个文件的 \fIpath\fR 为：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/security/tsol/tnrhtp\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/security/tsol/tnrhdb\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/security/tsol/tnzonecfg\fR
+.RE
+.sp
+.LP
+通过在命令行上使用 \fB-h\fR (\fBtnrhdb\fR)、\fB-t\fR (\fBtnrhtp\fR) 和 \fB-z\fR (\fBtnzonecfg\fR) 选项指定路径，可以为任一文件或所有文件指定其他路径。在将文件安装为新系统数据库之前测试修改的文件集时，这些选项非常有用。
+.sp
+.LP
+将检查所有三个数据库文件的完整性。如果所有文件句法正确并且语义尽可能正确，则 \fBtnchkdb\fR 返回退出状态 \fB0\fR。如果一个或多个文件有错误，则返回退出状态 \fB1\fR。如果命令行有问题（例如不可读取的文件），则返回退出状态 \fB2\fR。错误将写入到标准错误。
+.sp
+.LP
+为了避免级联错误，当 \fBtnrhtp\fR 中存在错误时，\fBtnrhdb\fR 中的模板名称将无法通过验证。
+.sp
+.LP
+\fBtnchkdb\fR 可以在任何标签上运行，但是标准 \fB/etc/security/tsol\fR 文件仅在全局区域中才可见。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR [ \fIpath\fR ]\fR
+.ad
+.RS 15n
+.rt  
+检查 \fIpath\fR 中的 \fBtnrhdb\fR 的语法是否正确。如果未指定 \fIpath\fR，则检查 \fB/etc/security/tsol/tnrhdb\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [ \fIpath\fR ]\fR
+.ad
+.RS 15n
+.rt  
+检查 \fIpath\fR 中的 \fBtnrhtp\fR 的语法是否正确。如果未指定 \fIpath\fR，则检查 \fB/etc/security/tsol/tnrhtp\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR [ \fIpath\fR ]\fR
+.ad
+.RS 15n
+.rt  
+检查 \fIpath\fR 中的 \fBtnzonecfg\fR 的语法是否正确。如果未指定 \fIpath\fR，则检查 \fB/etc/security/tsol/tnzonecfg\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR样例错误消息
+.sp
+.LP
+\fBtnchkdb\fR 命令检查 CIPSO 错误。在本例中，\fBadmin_low\fR 模板的缺省标签有一个错误的值 \fBADMIN_HIGH\fR。
+
+.sp
+.in +2
+.nf
+# \fBtnchkdb\fR
+checking /etc/security/tsol/tnrhtp ...
+tnchkdb: def_label classification 7fff is invalid for cipso labels:
+line 14 entry admin_low
+tnchkdb: def_label compartments 241-256 must be zero for cipso labels:
+line 14 entry admin_low
+checking /etc/security/tsol/tnrhdb ...
+checking /etc/security/tsol/tnzonecfg ...
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信网络远程主机数据库
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhtp\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信网络远程主机模板
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnzonecfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信区域配置数据库
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/trusted
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令行为 Committed（已确定）。输出为 Uncommitted（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBtnd\fR(1M)、\fBtnctl\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+\fISolaris Trusted Extensions Administrator\&'s Procedures\fR
+.SH 附注
+.sp
+.LP
+仅当系统配置有 Trusted Extensions 时，本手册页中介绍的功能才可用。
+.sp
+.LP
+当使用 \fBLDAP\fR 来提供缺少的模板时，可能具有有效但不一致的 \fBtnrhtp\fR 和 \fBtnrhdb\fR 配置。

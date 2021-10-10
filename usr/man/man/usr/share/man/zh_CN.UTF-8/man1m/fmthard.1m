@@ -1,0 +1,172 @@
+'\" te
+.\" 版权所有 1989 AT&T
+.\" 版权所有 (c) 1989，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH fmthard 1M "2010 年 12 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+fmthard \- 在硬盘上填充标签
+.SH 用法概要
+.SS "SPARC"
+.LP
+.nf
+\fBfmthard\fR \fB-d\fR \fIdata\fR | \fB-n\fR \fIvolume_name\fR | \fB-s\fR \fIdatafile\fR [\fB-i\fR] /dev/rdsk/c? 
+     [t?] d?s2
+.fi
+
+.SS "x86"
+.LP
+.nf
+\fBfmthard\fR \fB-d\fR \fIdata\fR | \fB-n\fR \fIvolume_name\fR | \fB-s\fR \fIdatafile\fR [\fB-i\fR] /dev/rdsk/c? 
+     [t?] d?s2
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBfmthard\fR 命令更新硬盘上的 \fBVTOC\fR（Volume Table of Contents，卷目录），并且在 x86 系统上将向 Solaris \fBfdisk\fR 分区添加引导信息。必须使用选项 \fB-s\fR \fIdatafile\fR、\fB-d\fR \fIdata\fR 或 \fB-n\fR \fIvolume_name\fR 中的一个或多个才能请求修改磁盘标签。要打印磁盘标签内容，请参见 \fBprtvtoc\fR(1M)。\fB/dev/rdsk/c\fR\fI?\fR[\fBt\fR\fI?\fR]\fBd\fR\fI?\fR\fBs2\fR 文件必须是要安装新标签的设备的字符特殊文件。在 x86 系统上，在运行 \fBfmthard\fR 之前必须在驱动器上运行 \fBfdisk\fR(1M)。
+.sp
+.LP
+如果使用 x86 系统，请注意，此页中的术语"分区"是指 x86 计算机 x86 \fBfdisk\fR 分区内的\fI分片\fR。不要将 \fBfmthard\fR 创建的分区与 \fBfdisk\fR 创建的分区混淆。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdata\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项的 \fIdata\fR 参数是一个表示当前 VTOC 中特定分区信息的字符串。该字符串必须为 \fIpart:tag:flag:start:size\fR 格式，其中 \fIpart\fR 是分区号，\fItag\fR 是分区的 \fBID\fR TAG，\fIflag\fR 是权限标志集，\fIstart\fR 是分区的起始扇区号，\fIsize\fR 是分区中的扇区数。有关这些字段的更多信息，请参见下面 \fIdatafile\fR 的介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项允许命令创建所需的 \fBVTOC\fR 表，但将信息打印到标准输出中，而不是修改磁盘上的 \fBVTOC\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIvolume_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项用于为磁盘提供 \fIvolume_name\fR，最多 8 个字符长度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdatafile\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项用于根据用户创建的 \fIdatafile\fR 填充 \fBVTOC\fR。如果 \fIdatafile\fR 为 \fB\(mi\fR（连字符），\fBfmthard\fR 将会从标准输入中读取。\fIdatafile\fR 格式在下面进行说明。此选项会导致所有磁盘分区时间标记字段均设置为零。
+.sp
+按照惯例，\fBfmthard\fR 生成的每个 \fBVTOC\fR 也具有对应整个磁盘的分区 2。如果 \fIdatafile\fR 的输入未指定分区 2 条目，将会在 \fBVTOC\fR 中自动创建缺省分区 2 条目，该缺省条目具有标记 \fBV_BACKUP\fR 且大小与整个磁盘的大小相等。
+.sp
+\fIdatafile\fR 包含每个分区的一个规范行，从分区 0 开始。每行以换行符 (\fB\en\fR) 来分隔。如果一行的第一个字符为星号 (*)，则将该行视为注释。每一行由与位置有关、以空格分隔并具有以下格式的条目组成：
+.sp
+\fIpartition tag flag starting_sector size_in_sectors\fR
+.sp
+其中这些条目具有以下值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fI分区\fR\fR
+.ad
+.sp .6
+.RS 4n
+分区号。目前，对于 Solaris SPARC，一个磁盘最多可具有 8 个分区，\fB0\fR\(mi\fB7\fR。即使 \fIpartition\fR 字段具有 4 位，但目前只使用 3 位。对于 x86，会使用 4 位以允许分片 \fB0\fR\(mi\fB15\fR。每个 Solaris \fBfdisk\fR 分区最多可具有 16 个分片。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItag（标记）\fR\fR
+.ad
+.sp .6
+.RS 4n
+分区标记：十进制数。以下是保留代码：\fB0\fR (\fBV_UNASSIGNED\fR)、\fB1\fR (\fBV_BOOT\fR)、\fB2\fR (\fBV_ROOT\fR)、\fB3\fR (\fBV_SWAP\fR)、\fB 4\fR (\fBV_USR\fR)、\fB5\fR (\fBV_BACKUP\fR)、\fB6\fR (\fBV_STAND\fR)、\fB7\fR (\fBV_VAR\fR)、\fB8\fR (\fBV_HOME\fR)、\fB12\fR (\fBV_SYSTEM\fR) 和 \fB24\fR (\fBV_BIOS_BOOT\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflag\fR\fR
+.ad
+.sp .6
+.RS 4n
+该标志允许将分区标记为无法挂载或只读，掩码为：\fBV_UNMNT 0x01\fR 和 \fBV_RONLY 0x10\fR。对于可挂载分区，使用 \fB0x00\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstarting_sector\fR\fR
+.ad
+.sp .6
+.RS 4n
+分区的起始扇区号（十进制）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsize_in_sectors\fR\fR
+.ad
+.sp .6
+.RS 4n
+分区占用的扇区数（十进制）。
+.RE
+
+可将 \fBprtvtoc\fR 命令的输出保存到一个文件中，编辑该文件，然后将它作为 \fB-s\fR 选项的 \fIdatafile\fR 参数使用。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBuname\fR(1)、\fBformat\fR(1M)、\fBprtvtoc\fR(1M)、\fBattributes\fR(5)
+.SS "仅限于 x86"
+.sp
+.LP
+\fBfdisk\fR(1M)、\fBinstallgrub\fR(1M)
+.SH 附注
+.sp
+.LP
+当覆盖现有 \fBVTOC\fR 时需要特别小心，因为不正确的条目可能导致当前数据无法访问。作为预防措施，应保存旧的 \fBVTOC\fR。
+.sp
+.LP
+对于低于 2 兆兆字节的磁盘，\fBfmthard\fR 无法在无标签磁盘上编写 \fBVTOC\fR。要实现此操作，可使用 \fBformat\fR(1M)。

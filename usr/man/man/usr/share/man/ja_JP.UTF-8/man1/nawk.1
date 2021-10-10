@@ -1,0 +1,1443 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH nawk 1 "2010 年 7 月 9 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+nawk \- パターン走査およびパターン処理の言語
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/nawk\fR  [\fB-F\fR \fIERE\fR] [\fB-v\fR \fIassignment\fR] \fI\&'program'\fR
+ |  \fB-f\fR \fIprogfile\fR... [\fIargument\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/awk\fR  [\fB-F\fR \fIERE\fR] [\fB-v\fR \fIassignment\fR]... \fI\&'program'\fR
+ |  \fB-f\fR \fIprogfile\fR... [\fIargument\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fB/usr/bin/nawk\fR と \fB/usr/xpg4/bin/awk\fR の両ユーティリティーは、テキストデータ処理専用の \fBnawk\fR プログラミング言語で記述されたプログラムを実行します。\fI\fR\fBnawk\fR プログラムは、一連のパターンとそれに対応するアクション (動作) から構成されます。\fI\fR\fIprogram\fR を指定する文字列は、シェルによって解釈されないように単一引用符 (') で囲む必要があります。一連のパターン - アクション文は、\fIprogram\fR としてコマンド行に指定することも、\fB-f\fR\fI progfile\fR オプションで指定する 1 つ以上のファイル内に指定することもできます。パターンに一致する入力が読み取られると、そのパターンに関連付けられたアクションが実行されます。
+.sp
+.LP
+入力は一連のレコードとして解釈されます。1 レコードはデフォルトで 1 行ですが、\fBRS\fR 組み込み変数を使用すれば変更できます。入力の各レコードは、\fIprogram\fR 内の各パターンと照合されます。パターンが一致するごとに、関連付けられたアクションが実行されます。
+.sp
+.LP
+\fBnawk\fR ユーティリティーは、各入力レコードを一連のフィールドとして解釈します。デフォルトでは、フィールドは空白以外の文字列です。デフォルトのスペースフィールド区切り文字 (スペースまたはタブ、あるいはその両方) は、\fBFS\fR 組み込み変数または \fB-F\fR\fI ERE\fR オプションを使って変更できます。\fBnawk\fR ユーティリティーは、レコードの最初のフィールドを \fB$1\fR、2 番目のフィールドを \fB$2\fR、(以下同様) と見なします。記号 \fB$0\fR はレコード全体を指します。その他のフィールドを設定すると、\fB$0\fR が再評価されます。\fB$0\fR を割り当てると、すべてのフィールドと \fBNF\fR 組み込み変数の値がリセットされます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIERE\fR\fR
+.ad
+.RS 17n
+.rt  
+入力が読み取られる前に、入力フィールド区切り文字が拡張正規表現 \fIERE\fR であることを定義します (文字も可)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIprogfile\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBnawk\fR プログラムが含まれているファイル \fIprogfile\fR のパス名を指定します。このオプションを複数指定した場合は、\fIprogfile\fR として指定されたファイルが指定された順序で連結されて \fBnawk\fR プログラムになります。\fBnawk\fR プログラムは、1 つの引数としてコマンド行に指定することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIassignment\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIassignment\fR 引数は、\fIassignment\fR オペランドと同じ形式にする必要があります。代入の形式は \fIvar=value\fR です。\fIvar\fR は後述する変数の 1 つです。指定された代入は、\fBBEGIN\fR パターンがあればそれに関連付けられたアクションも含め、\fBnawk\fR プログラムの実行前に行われます。このオプションは複数回指定できます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprogram\fR\fR
+.ad
+.RS 12n
+.rt  
+\fB-f\fR オプションを省略すると、\fBnawk\fR の最初のオペランドは \fBnawk\fR プログラムのテキストになります。アプリケーションは、\fIprogram\fR オペランドを \fBnawk\fR への単一引数として提供します。テキストが復帰改行文字で終わっていない場合でも、\fBnawk\fR は復帰改行文字で終わっているものと解釈します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIargument\fR\fR
+.ad
+.RS 12n
+.rt  
+次の 2 つのタイプの \fIargument\fR は混在可能です。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 14n
+.rt  
+読み取られる入力が含まれているファイルのパス名。プログラム内の一連のパターンと照合されます。\fIfile\fR オペランドが指定されない場合、または \fB\(mi\fR の場合は、標準入力が使用されます。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIassignment\fR\fR
+.ad
+.RS 14n
+.rt  
+下線または移植性のある文字セットの英字で始まり、そのあとに下線、移植性のある文字セットの数字と英字、\fB=\fR 記号が続くオペランドは、パス名ではなく変数の代入を指定するものです。\fB=\fR 記号より前の文字は \fBnawk\fR 変数の名前を表します。この名前が \fBnawk\fR の予約語である場合、動作は未定義です。等号よりあとの文字は、\fBnawk\fR プログラム内に二重引用符 (\fB"\fR) で囲まれているもの、つまり \fBSTRING\fR トークンとして解釈されます。ただし、最後の文字がエスケープされていないバックスラッシュの場合、それはシーケンス「\fB\e\fR」の最初の文字ではなく、バックスラッシュという文字そのものとして解釈されます。変数には、この \fBSTRING\fR トークンの値が代入されます。値が数値列と考えられる場合、変数にはその数値が代入されます。\fI\fR\fI\fRこのような変数代入は、そのあとに \fIfile\fR 指定があればその処理の直前に実行されます。そのため、最初の \fBfile\fR 引数より前の代入は、\fBBEGIN\fR アクション (ある場合) のあとに実行され、最後の \fIfile\fR 引数よりあとの代入は \fBEND\fR アクション (ある場合) の前に実行されます。\fIfile\fR 引数がない場合は、標準入力の処理の前に代入が実行されます。
+.RE
+
+.RE
+
+.SH 入力ファイル
+.sp
+.LP
+\fBnawk\fR プログラムへの入力ファイルとして、次のソースからのものがあります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIfile\fR オペランドまたはそれと同等のもの (\fBnawk\fR 変数 \fBARGV\fR と \fBARGC\fR を変更して得られる)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+標準入力 (\fIfile\fR オペランドがない場合)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgetline\fR 関数の引数
+.RE
+.sp
+.LP
+これらはテキストファイルである必要があります。これらのファイルについて、変数 \fBRS\fR が復帰改行文字以外の値に設定されるかどうかによって、システムでは指定された区切り文字で終わるレコードを \fB{LINE_MAX}\fR バイトまでサポートしたり、もっと長いレコードをサポートすることができます。
+.sp
+.LP
+\fB-\fR\fBf\fR \fIprogfile\fR を指定する場合、\fIprogfile\fR オプション引数のそれぞれが示すファイルは、\fBnawk\fR プログラムが含まれているテキストファイルである必要があります。
+.sp
+.LP
+標準入力が使用されるのは、\fIfile\fR オペランドが指定されない場合、または \fB\(mi\fR の場合だけです。\fI\fR
+.SH 拡張機能説明
+.sp
+.LP
+\fBnawk\fR プログラムは、次の形式のパターンとアクションのペアから構成されます。
+.sp
+.in +2
+.nf
+pattern { \fIaction\fR }
+.fi
+.in -2
+
+.sp
+.LP
+パターンまたはアクション (中括弧を含む) のどちらかを省略することもできます。パターン - アクション文は、セミコロンまたは復帰改行文字で区切られます。
+.sp
+.LP
+パターンを省略すると、入力のどのレコードとも一致します。アクションを省略すると、入力内の一致するレコードが標準出力に書き込まれます。
+.sp
+.LP
+\fBnawk\fR プログラムの実行は、まずすべての \fBBEGIN\fR パターンに関連付けられたアクションをプログラム内の順序で実行することによって開始されます。次に、レコード区切り文字 (デフォルトでは復帰改行文字) が検出されるまで、各 \fIfile\fR オペランド (ファイルを指定しない場合は標準入力) が処理され、ファイルからデータが読み取られ、現在の \fBFS\fR 値を使用して現在のレコードがフィールドに分割され、プログラム内の順序で各パターンが評価され、現在のレコードに一致する各パターンに関連付けられたアクションが実行されます。後続のパターンが評価される前に、一致するパターンのアクションが実行されます。最後に、すべての \fBEND\fR パターンに関連付けられたアクションがプログラム内の順序で実行されます。
+.SS "nawk 内の式"
+.sp
+.LP
+式は、パターンとアクションで使用される計算を記述します。\fI\fR\fI\fR次の表では、有効な式演算をグループごとに、優先度の高い順に並べてあります。優先度が同じ演算子は上下の横線で囲まれています。構文があいまいな式は、優先度の高い演算子が優先度の低い演算子よりも先に評価されます。この表の \fIexpr\fR、\fIexpr1\fR、\fIexpr2\fR、および \fIexpr3\fR は任意の式を表し、\fIlvalue\fR は代入される要素 (つまり、代入演算子の左側にあるもの) を表します。
+.sp
+
+.sp
+.TS
+tab();
+cw(1.38i) cw(1.38i) cw(1.35i) cw(1.39i) 
+lw(1.38i) lw(1.38i) lw(1.35i) lw(1.39i) 
+.
+\fB構文\fR\fB名前\fR\fB結果の型\fR\fB結合規則\fR
+_
+( \fIexpr\fR )グループ化\fIexpr\fR の型該当せず
+_
+$\fIexpr\fRフィールド参照文字列該当せず
+_
+++ \fIlvalue\fR前置インクリメント数値該当せず
+ \(mi\(mi\fIlvalue\fR前置デクリメント数値該当せず
+\fIlvalue\fR ++後置インクリメント数値該当せず
+\fIlvalue\fR \(mi\(mi後置デクリメント 数値該当せず
+_
+\fIexpr\fR ^ \fIexpr\fRべき乗数値右
+_
+! \fIexpr\fR論理否定数値該当せず
++ \fIexpr\fR単項プラス数値該当せず
+\(mi \fIexpr\fR単項マイナス数値該当せず
+_
+\fIexpr\fR * \fIexpr\fR乗算数値左
+\fIexpr\fR / \fIexpr\fR除算数値左
+\fIexpr\fR % \fIexpr\fR剰余演算数値左
+_
+\fIexpr\fR + \fIexpr\fR加算数値左
+\fIexpr\fR \(mi \fIexpr\fR減算数値 左
+_
+\fIexpr\fR \fIexpr\fR文字列連結文字列左
+_
+\fIexpr\fR < \fIexpr\fRより小さい数値なし
+\fIexpr\fR <= \fIexpr\fR小さいか等しい数値なし
+\fIexpr\fR != \fIexpr\fR等しくない数値なし
+\fIexpr\fR == \fIexpr\fR等しい数値なし
+\fIexpr\fR > \fIexpr\fRより大きい数値なし
+\fIexpr\fR >= \fIexpr\fR大きいか等しい数値なし
+_
+\fIexpr\fR ~ \fIexpr\fRERE 一致数値なし
+\fIexpr\fR !~ \fIexpr\fRERE 不一致 数値なし
+_
+\fIexpr\fR in array配列のメンバー数値左
+( \fIindex\fR ) in多次元配列数値左
+    \fIarray\fR    メンバー
+_
+\fBexpr\fR && \fIexpr\fR論理積数値左
+_
+\fBexpr\fR |\|| \fIexpr\fR論理和数値左
+_
+\fIexpr1\fR ? \fIexpr2\fR条件式選ばれた式の型右
+    : \fIexpr3\fR   \fIexpr2\fR または \fIexpr3\fR
+_
+\fIlvalue\fR ^= \fIexpr\fRべき乗数値右 
+代入
+\fIlvalue\fR %= \fIexpr\fR剰余演算代入数値右
+\fIlvalue\fR *= \fIexpr\fR乗算数値右
+代入
+\fIlvalue\fR /= \fIexpr\fR除算代入数値右
+\fIlvalue\fR += \fIexpr\fR加算代入数値右
+\fIlvalue\fR \(mi= \fIexpr\fR減算代入数値右
+\fIlvalue\fR = \fIexpr\fR代入\fIexpr\fR の型右
+.TE
+
+.sp
+.LP
+各式には、1 つの文字列値、数値、またはその両方が入ります。すでに述べた特殊なコンテキストを除き、式の値は、その式が使われるコンテキストに必要な型に暗黙のうちに変換されます。文字列値は、次の呼び出しと同等のものによって数値に変換されます。
+.sp
+.in +2
+.nf
+setlocale(LC_NUMERIC, "");
+\fInumeric_value\fR = atof(\fIstring_value\fR);
+.fi
+.in -2
+
+.sp
+.LP
+数値 (正確には整数値) は、文字列 \fB%d\fR が \fBfmt\fR 引数として使用され、変換される数値が最初で唯一の \fIexpr\fR 引数として使用される \fBsprintf\fR 関数の呼び出しと同等のものによって文字列に変換されます。その他の数値は、変数 \fBCONVFMT\fR の値が \fBfmt\fR 引数として使用され、変換される数値が最初で唯一の \fIexpr\fR 引数として使用される \fBsprintf\fR 関数の呼び出しと同等のものによって文字列に変換されます。
+.sp
+.LP
+次の場合、文字列値は数値列と見なされます。\fI\fR
+.RS +4
+.TP
+1.
+先行および末尾の空白文字が無視されます。
+.RE
+.RS +4
+.TP
+2.
+無視されない最初の文字が \fB+\fR または \fB\(mi\fR の場合、それは無視されます。
+.RE
+.RS +4
+.TP
+3.
+無視されない残りの文字が構文上 \fBNUMBER\fR トークンとして認識される場合、文字列は数値列と見なされます。\fI\fR
+.RE
+.sp
+.LP
+前述の手順で \fB\(mi\fR 文字が無視されると、数値列の値は、認識された \fBNUMBER\fR トークンの数値の正負を逆にした値になります。\fI\fRそれ以外の場合、数値列の数値は認識された \fBNUMBER\fR トークンの数値になります。\fI\fR文字列が数値列かどうかが問題になるのは、この節でその用語が使用されているコンテキストにおいてのみです。\fI\fR
+.sp
+.LP
+ブール型のコンテキストで式が使用されるとき、式に数値が含まれている場合、値ゼロは偽として扱われ、その他の値は真として扱われます。それ以外の場合、NULL 文字列の文字列値は偽として扱われ、その他の値は真として扱われます。ブール型のコンテキストは、次のいずれかです。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+条件式の最初の部分式。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+論理否定、論理積、または論理和によって演算される式。\fB\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfor\fR 文の 2 番目の式。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBif\fR 文の式。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB\fR\fBwhile\fR 文または \fBdo\fR \fB\&.\|.\|.\fR \fBwhile\fR 文の while 句の式。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+パターンとして使用される式 (Overall Program Structure 内のように)。
+.RE
+.sp
+.LP
+\fBnawk\fR 言語は、数字や文字列を格納するための配列を提供します。配列は宣言する必要があります。配列は最初は空で、サイズは動的に変わります。連想配列機能の一種を提供する添字 (要素識別子) は文字列です。配列名とそれに続く角括弧内の添字は、構文で説明しているように、\fIlvalue\fR や式として使用できます。添字のない配列名を使用できるのは、次のコンテキストにおいてのみです。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+関数定義または関数呼び出し内のパラメータ。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+キーワード \fBin\fR のあとに続く \fBNAME\fR トークン。
+.RE
+.sp
+.LP
+有効な配列インデックスは、一部のプログラミング言語で多次元配列にインデックスが付けられるのと同様に、コンマで区切られた 1 つ以上の式から構成されます。\fI\fR\fBnawk\fR 配列は実際には 1 次元なので、\fBSUBSEP\fR 変数の値で区切られている個々の式の文字列値を連結することで、そのようなコンマで区切られたリストが 1 つの文字列に変換されます。
+.sp
+.LP
+したがって、次の 2 つのインデックス処理は等しい結果となります。
+.sp
+.in +2
+.nf
+var[expr1, expr2, ... exprn]
+var[expr1 SUBSEP expr2 SUBSEP ... SUBSEP exprn]
+.fi
+.in -2
+
+.sp
+.LP
+\fBin\fR 演算子が付いた多次元インデックスは、括弧で囲む必要があります。\fI\fR\fBin\fR 演算子は、特定の配列要素の有無を調べ、無い場合には要素を作成しません。存在しない配列要素へのその他の参照を行うと、要素は自動的に作成されます。
+.SS "変数と特殊変数"
+.sp
+.LP
+\fBnawk\fR プログラムでは、変数を参照することで変数を使用できます。関数パラメータ以外は、明示的に宣言されません。初期化されていないスカラー変数と配列要素には、ゼロの数値と空の文字列の文字列値の両方が入っています。
+.sp
+.LP
+フィールド変数は、\fB$\fR とそれに続く数字または数値式によって指定されます。負でない整数以外のものに評価されるフィールド番号 \fIexpression\fR の結果は不確定です。この状況では、初期化されていない変数や文字列値は数値に変換される必要がありません。新しいフィールド変数は、値を割り当てることによって作成されます。存在しないフィールド (つまり、\fB$NF\fR のあとのフィールド) を参照すると、NULL 文字列が生成されます。ただし、存在しないフィールドに割り当てると (たとえば、\fB$(NF+2) = 5\fR)、\fBNF\fR の値が増分され、値として NULL 文字列を持つ中間フィールドが作成され、\fB$0\fR の値が再計算され、\fBOFS\fR の値でフィールドが区切られます。各フィールド変数には、作成時に文字列値が入ります。現在のロケールの小数点文字がピリオド文字に変更された文字列は数値列と見なされ (前述の「nawk 内の式」を参照)、フィールド変数にも数値列の値が入ります。\fI\fR\fB\fR\fI\fR
+.SS "/usr/bin/nawk、/usr/xpg4/bin/awk"
+.sp
+.LP
+\fBnawk\fR では次の特殊な変数を設定します。これらの変数は、\fB/usr/bin/nawk\fR と \fB/usr/xpg4/bin/awk\fR の両方でサポートされます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBARGC\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBARGV\fR 配列内の要素の数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBARGV\fR\fR
+.ad
+.RS 13n
+.rt  
+オプションと \fIprogram\fR 引数を除いたコマンド行引数の配列。ゼロから \fBARGC\fR - 1 までの番号が付けられます。
+.sp
+\fBARGV\fR 内の引数は変更や追加が可能です。\fBARGC\fR は変更できます。各入力ファイルが終わると、\fBnawk\fR は、現在の \fBARGC\fR - 1 の値まで、\fBARGV\fR の次の NULL 以外の要素を次の入力ファイルの名前として扱います。\fBARGV\fR の要素を NULL に設定すると、入力ファイルとして扱われなくなります。名前 \fB\(mi\fR は標準入力を示します。引数が \fIassignment\fR オペランドの形式と一致すると、その引数は \fIfile\fR 引数ではなく代入として扱われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENVIRON\fR\fR
+.ad
+.RS 13n
+.rt  
+変数 \fBENVIRON\fR は環境値を表す配列です。配列のインデックスは環境変数の名前から成る文字列で、各配列要素の値はその変数の値から成る文字列です。環境変数の値が数値列と見なされる場合は、配列要素にもその数値が入ります。\fI\fR
+.sp
+\fBnawk\fR の動作が環境変数の影響を受ける (\fBnawk\fR が \fBsystem\fR 関数を使って実行するコマンド、および \fBprint\fR 文、\fBprintf\fR 文、または \fBgetline\fR 関数を使ってパイプライン経由で実行するコマンドの環境を含む) 場合はいずれも、\fBnawk\fR の実行開始時点の環境が使われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFILENAME\fR \fR
+.ad
+.RS 13n
+.rt  
+現在の入力ファイルのパス名。\fBBEGIN\fR アクション内では、この値は未定義です。\fBEND\fR アクション内では、この値は最後に処理された入力ファイルの名前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFNR\fR \fR
+.ad
+.RS 13n
+.rt  
+現在のファイル内の現在のレコードの序数。\fBBEGIN\fR アクション内では、この値はゼロです。\fBEND\fR アクション内では、この値は最後に処理されたファイル内の最後に処理されたレコードの番号です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFS\fR \fR
+.ad
+.RS 13n
+.rt  
+入力フィールド区切り文字の正規表現。デフォルトはスペース文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNF\fR \fR
+.ad
+.RS 13n
+.rt  
+現在のレコード内のフィールドの数。\fBBEGIN\fR アクション内では、\fIvar\fR 引数のない \fBgetline\fR 関数がその前に実行されていないかぎり、\fBNF\fR の使用は未定義です。\fBEND\fR アクション内では、\fBEND\fR アクションに入る前に後続のリダイレクトされた \fIvar\fR 引数のない \fBgetline\fR 関数が実行されていないかぎり、\fBNF\fR は最後に読み取られたレコードの値を保持します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNR\fR \fR
+.ad
+.RS 13n
+.rt  
+入力の開始からの現在のレコードの序数。\fBBEGIN\fR アクション内では、この値はゼロです。\fBEND\fR アクション内では、この値は最後に処理されたレコードの番号です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFMT\fR \fR
+.ad
+.RS 13n
+.rt  
+出力文 \fB"%.6g"\fR 内でデフォルトとして数字を文字列に変換するための \fBprintf\fR 形式。\fBOFMT\fR の値が浮動小数点形式の仕様でない場合、変換の結果は不確定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFS\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBprint\fR 文出力フィールド区切り文字。デフォルトはスペース文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBORS\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBprint\fR 出力レコード区切り文字。デフォルトは復帰改行文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLENGTH\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBmatch\fR 関数によって照合される文字列の長さ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRS\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBRS\fR の文字列値の最初の文字は入力レコード区切り文字 (デフォルトは復帰改行文字) です。\fBRS\fR に複数の文字が含まれている場合、結果は不確定です。\fBRS\fR が NULL の場合、レコードは一連の 1 つ以上の空白行で区切られます。先頭または末尾に空白行があっても、入力の先頭または最後に空のレコードが生成されることはありません。また、\fBFS\fR の値に関係なく、フィールド区切り文字は常に復帰改行文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRSTART\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBmatch\fR 関数によって照合される文字列の開始位置。1 から順に番号が付いています。これは常に \fBmatch\fR 関数の戻り値と同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSUBSEP\fR \fR
+.ad
+.RS 13n
+.rt  
+多次元配列用の添字区切り文字列。デフォルト値は \fB\e034\fR です。
+.RE
+
+.SS "/usr/xpg4/bin/awk"
+.sp
+.LP
+次の変数は、\fB/usr/xpg4/bin/awk\fR でのみサポートされます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCONVFMT\fR\fR
+.ad
+.RS 11n
+.rt  
+数字を文字列に変換するための \fBprintf\fR 形式 (\fBOFMT\fR が使用される出力文を除く)。デフォルトは \fB%.6g\fR です。
+.RE
+
+.SS "正規表現"
+.sp
+.LP
+\fB/usr/xpg4/bin/nawk\fR ユーティリティーは、拡張正規表現 (ERE) (\fBregex\fR(5) を参照) を利用しています。ただし、ERE 内で特殊文字をエスケープするときは C 言語規約を使用できます。つまり、\fB\e\e\fR、\fB\ea\fR、\fB\eb\fR、\fB\ef\fR、\fB\en\fR、\fB\er\fR、\fB\et\fR、\fB\ev\fR、および次の表に示したエスケープシーケンスを使用できます。これらのエスケープシーケンスは、括弧の内でも外でも認識されます。なお、レコードは復帰改行文字で区切る必要がなく、文字列定数には復帰改行文字を含めることができるため、\fBnawk\fR ERE では \fB\en\fR シーケンスも有効です。正規表現内にスラッシュ文字を使用する場合は、次の表に示すようにエスケープ処理を行う必要があります。
+.sp
+
+.sp
+.TS
+tab();
+lw(.61i) lw(2.44i) lw(2.44i) 
+lw(.61i) lw(2.44i) lw(2.44i) 
+.
+\fBエスケープシーケンス\fR\fB機能説明\fR\fB意味\fR
+_
+\fB\e"\fRバックスラッシュ引用符引用符文字
+_
+\fB\e/\fRバックスラッシュスラッシュスラッシュ文字
+_
+\fB\e\fR\fIddd\fRT{
+バックスラッシュ文字のあとに 1 から 3 桁の 8 進文字 (01234567) の最長シーケンスが続きます。すべての桁が 0 である (つまり、NULL 文字を表している) 場合、動作は未定義です。
+T}T{
+1 から 3 桁の 8 進整数で文字がエンコードされます。複数バイト文字には、バイトごとに先行 \e を含む、複数の連結されたエスケープシーケンスが必要です。
+T}
+_
+\fB\e\|\fR\fIc\fRT{
+バックスラッシュ文字のあとにこの表で説明されていない文字または特殊文字が続きます (\fB\e\e\fR、\fB\ea\fR、\fB\eb\fR、\fB\ef\fR、\fB\en\fR、\fB\er\fR、\fB\et\fR、\fB\ev\fR)。 
+T}未定義
+.TE
+
+.sp
+.LP
+正規表現照合演算子 \fB~\fR または \fB!\|~\fR のどちらかを使用して、正規表現を特定のフィールドまたは文字列と照合させることができます。これらの演算子は、オペランドの右側を正規表現として解釈し、オペランドの左側を文字列として解釈します。正規表現が文字列と一致すると、\fB~\fR 式は値 \fB1\fR に評価され、\fB!\|~\fR 式は値 \fB0\fR に評価されます。正規表現が文字列と一致しないと、\fB~ \fR 式は値 \fB0\fR に評価され、\fB!\|~\fR 式は値 \fB1\fR に評価されます。右辺のオペランドが字句トークン \fBERE\fR 以外の式であれば、前述のエスケープ規約も含め、式の文字列値は拡張正規表現として解釈されます。文字列リテラル (字句トークン \fBSTRING\fR) の値を判断するときも、これと同じエスケープ規約が適用され、この状況で文字列リテラルが使用されるときにもう一度適用されます。
+.sp
+.LP
+\fBERE\fR トークンが、\fB~\fR または \fB!\|~\fR 演算子の右辺以外の状況で使用されている場合、または後述の組み込み関数の引数の 1 つとして使用されている場合、結果の式の値は次のものと等価になります。
+.sp
+.in +2
+.nf
+$0 ~ /\fIere\fR/
+.fi
+.in -2
+
+.sp
+.LP
+\fBgsub\fR、\fBmatch\fR、\fBsub\fR 関数の \fIere\fR 引数と、\fBsplit\fR 関数の \fIfs\fR 引数 (「文字列関数」を参照) は、拡張正規表現として解釈されます。\fB\fRこれらの引数は \fBERE\fR トークンまたは任意の式のどちらでもよく、\fB~\fR または \fB!\|~\fR 演算子の右辺と同じ方法で解釈されます。
+.sp
+.LP
+\fB-F\fR\fI ERE\fR オプションを使うか、式を含んだ文字列を組み込み変数 \fBFS\fR に割り当てることで、フィールドの分割に拡張正規表現を使用できます。\fBFS\fR 変数のデフォルト値は 1 つのスペース文字です。\fBFS\fR の動作について次に説明します。
+.RS +4
+.TP
+1.
+\fBFS\fR が 1 つの文字の場合  
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBFS\fR がスペース文字であれば、先行および末尾のスペース文字をスキップします。フィールドは 1 つ以上のスペース文字で区切られます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBFS\fR が空白以外の文字 \fIc\fR であれば、フィールドは個々の \fIc\fR によって区切られます。
+.RE
+.RE
+.RS +4
+.TP
+2.
+それ以外の場合、\fBFS\fR の文字列値は拡張正規表現と見なされます。拡張正規表現と一致するシーケンスの発生により、フィールドが区切られます。
+.RE
+.sp
+.LP
+\fBgsub\fR、\fBmatch\fR、\fBsplit\fR、および \fBsub\fR 組み込み関数の場合を除き、正規表現照合は入力レコードに基づいて行われます。つまり、レコード区切り文字 (変数 \fBRS\fR の値の最初の文字、デフォルトは復帰改行文字) は式に組み込めず、レコード区切り文字と一致する式はありません。レコード区切り文字が復帰改行文字以外であれば、式に組み込まれた復帰改行文字を照合させることができます。この 4 つの組み込み関数では、正規表現照合がテキスト文字列に基づいて行われます。そのため、どの文字 (復帰改行文字やレコード区切り文字を含む) もパターンに組み込め、適切なパターンを任意の文字と照合させることができます。しかし、\fBnawk\fR のすべての正規表現照合では、パターン、入力レコード、またはテキスト文字列に 1 つ以上の NULL 文字を使用すると、結果が未定義になります。
+.SS "パターン"
+.sp
+.LP
+パターンは、有効な式、コンマで区切られた 2 つの式で指定された範囲、または 2 つの特殊パターン \fBBEGIN\fR と \fBEND\fR のいずれかです。\fI\fR\fI\fR
+.SS "特殊パターン"
+.sp
+.LP
+\fBnawk\fR ユーティリティーでは、2 つの特殊パターン \fBBEGIN\fR と \fBEND\fR を認識します。各 \fBBEGIN\fR パターンは一度照合され、最初の入力レコードが読み取られる前 (以前の \fBBEGIN\fR アクションで \fBgetline\fR 関数が使用された場合を除く) とコマンド行割り当てが行われる前に、関連付けられたアクションが実行されます。各 \fBEND\fR パターンは一度照合され、最後の入力レコードが読み取られたあとに、関連付けられたアクションが実行されます。この 2 つのパターンにはアクションが関連付けられています。
+.sp
+.LP
+\fBBEGIN\fR と \fBEND\fR は、他のパターンとは組み合わせられません。複数の \fBBEGIN\fR および \fBEND\fR パターンを使用できます。\fBBEGIN\fR パターンに関連付けられたアクションは、プログラム内に指定された順序で実行されます。これは \fBEND\fR アクションの場合も同じです。プログラム内では、\fBEND\fR パターンが \fBBEGIN\fR パターンより前にあってもかまいません。
+.sp
+.LP
+\fBnawk\fR プログラムが \fBBEGIN\fR パターンのアクションだけで構成されていて、\fBBEGIN\fR アクションに \fBgetline\fR 関数が含まれていない場合、最後の \fBBEGIN\fR アクションの最後の文が実行されると、\fBnawk\fR は入力を読み取らずに終了します。\fBnawk\fR プログラムが \fBEND\fR パターンのアクションだけ、または \fBBEGIN\fR および \fBEND\fR パターンのアクションだけで構成されている場合、\fBEND\fR アクションの文が実行される前に入力が読み取られます。
+.SS "式パターン"
+.sp
+.LP
+式パターンは、ブール型のコンテキストの式として評価されます。結果が真の場合、パターンは一致すると見なされ、関連付けられたアクションがあればそれが実行されます。結果が偽の場合、アクションは実行されません。
+.SS "パターンの範囲"
+.sp
+.LP
+パターンの範囲は、コンマで区切られた 2 つの式で構成されます。この場合、最初の式の一致から 2 番目の式の一致までの間にあるすべてのレコードに対してアクションが実行されます。この時点で、入力レコードの先頭から一致した範囲の最後まで、パターンの範囲を繰り返すことができます。
+.SS "アクション"
+.sp
+.LP
+アクションは一連の文です。使用できる文は次のうちのいずれかです。
+.sp
+.in +2
+.nf
+if ( \fIexpression\fR ) \fIstatement\fR [ else \fIstatement\fR ]
+while ( \fIexpression\fR ) \fIstatement\fR 
+do \fIstatement\fR while ( \fIexpression\fR )
+for ( \fIexpression\fR ; \fIexpression\fR ; \fIexpression\fR ) \fIstatement\fR 
+for ( \fIvar\fR in \fIarray\fR ) \fIstatement\fR 
+delete \fIarray\fR[\fIsubscript\fR] #delete an array element
+break
+continue
+{ [ \fIstatement\fR ] .\|.\|. }
+\fIexpression\fR        # commonly variable = expression
+print [ \fIexpression-list\fR ] [ >\fIexpression\fR ]
+printf format [ ,\fIexpression-list\fR ] [ >\fIexpression\fR ]
+next              # skip remaining patterns on this input line
+exit [expr] # skip the rest of the input; exit status is expr
+return [expr]
+.fi
+.in -2
+
+.sp
+.LP
+1 つの文を、括弧で囲まれた文のリストに置き換えることができます。文は、復帰改行文字またはセミコロンで区切られ、指定された順序で実行されます。
+.sp
+.LP
+\fBnext\fR 文は、現在の入力レコードの以降の処理をすべて破棄します。\fBBEGIN\fR または \fBEND\fR アクション内で \fBnext\fR が現れたり、呼び出されたりすると、動作は未定義です。
+.sp
+.LP
+\fBexit\fR 文は、すべての \fBEND\fR アクションをプログラムソース内の順序で呼び出した後、以降の入力を読み取らずにプログラムを終了させます。\fBEND\fR アクション内の \fBexit\fR 文は、以降の \fBEND\fR アクションを実行せずにプログラムを終了させます。\fBexit\fR 文内に式が指定されている場合は、その数値が \fBnawk\fR の終了ステータスになります。ただし、エラーが検出されたり、式を含んだ \fBexit\fR 文が実行される場合を除きます。
+.SS "出力文"
+.sp
+.LP
+\fBprint\fR 文も \fBprintf\fR 文もデフォルトでは標準出力に書き込みます。次のように、\fIoutput_redirection\fR が指定されていれば、その宛先に出力が書き込まれます。
+.sp
+.in +2
+.nf
+\fB>\fR \fIexpression\fR\fB>>\fR \fIexpression\fR\fB|\fR \fIexpression\fR
+.fi
+.in -2
+
+.sp
+.LP
+どの場合でも、\fIexpression\fR が評価されて、書き込み先のフルパス名 (\fB>\fR または \fB>>\fR の場合) または実行されるコマンド (\fB|\fR の場合) として使用される文字列が生成されます。最初の 2 つの形式を使うと、その名前のファイルが現在開いていなければ開かれ、必要ならファイルが作成されます。最初の形式を使うと、ファイルは切り捨てられます。次に、出力がファイルに付加されます。ファイルが開いているかぎり、式が同じ文字列値に評価される以降の呼び出しは、単に出力をファイルに付加していきます。\fI\fR同じ文字列値に評価される式で \fBclose\fR 関数が呼び出されるまで、ファイルは開いたままです。
+.sp
+.LP
+3 番目の形式は、コマンドの入力にパイプされたストリームに出力を書き込みます。コマンド名として \fIexpression\fR の値を持つストリームが現在開いていない場合は、ストリームが作成されます。作成されたストリームは、\fIcommand\fR 引数として \fIexpression\fR の値、\fImode\fR 引数として \fBw\fR の値を指定した \fBpopen\fR(3C) 関数の呼び出しによって作成されるものと同等です。ストリームが開いているかぎり、\fIexpression\fR が同じ文字列値に評価される以降の呼び出しは、出力を既存のストリームに書き込みます。同じ文字列値に評価される式で \fBclose\fR 関数が呼び出されるまで、ストリームは開いたままです。close 関数が呼び出されると、\fBpclose\fR 関数が呼び出されたかのようにストリームが閉じます。
+.sp
+.LP
+これらの出力文は、コンマで区切られた \fIexpression\fR \fI\fR のリストを取ります。このリストは、文法解釈において非終端記号 \fBexpr_list\fR、\fBprint_expr_list\fR、または \fBprint_expr_list_opt\fR によって参照されます。ここでは、このリストを「式リスト」\fI\fR と呼び、各メンバーを「式引数」\fI\fR と呼びます。
+.sp
+.LP
+\fBprint\fR 文は、現在の出力フィールド区切り文字 (前述の変数 \fBOFS\fR を参照) で区切られ、出力レコード区切り文字 (前述の変数 \fBORS\fR を参照) で終わる、指定された出力ストリームに各式引数の値を書き込みます。式引数はすべて文字列として扱われ、必要があれば変換されます。ただし、\fBCONVFMT\fR の値ではなく、\fBOFMT\fR の \fBprintf\fR 形式が使用されます。空の式リストは、入力レコード全体 (\fB\fR$0\fB\fR) を意味します。
+.sp
+.LP
+\fBprintf\fR 文は、本書でファイル形式の説明に使用しているファイル形式表記と同様の表記に基づいて出力を生成します。出力は、文字列 \fBformat\fR として最初の式引数、\fBarg1\fR から \fBargn\fR までの文字列として後続の式引数で指定されたとおりに生成されます。ただし、次のような例外があります。
+.RS +4
+.TP
+1.
+\fIformat\fR はグラフィック表現ではなく、実際の文字列です。そのため、空の文字位置を含めることはできません。\fIformat\fR 文字列内のスペース文字は、変換仕様の \fIflag\fR 以外のコンテキストでは、通常の文字として扱われ、出力にコピーされます。
+.RE
+.RS +4
+.TP
+2.
+文字セットにデルタ文字が含まれていて、その文字が \fIformat\fR 文字列に現れた場合は、通常の文字として扱われ、出力にコピーされます。
+.RE
+.RS +4
+.TP
+3.
+バックスラッシュ文字で始まる \fIescape sequences\fR は、通常の文字のシーケンスとして扱われ、出力にコピーされます。なお、このようなシーケンスは、リテラル文字列に現れたときに \fBnawk\fR によって字句が解析されますが、\fBprintf\fR 文では特に処理されません。
+.RE
+.RS +4
+.TP
+4.
+\fIfield width\fR または \fIprecision\fR は、数字列ではなく \fB*\fR 文字として指定できます。この場合、式リストの次の引数が取り出され、その数値がフィールド幅または精度と見なされます。
+.RE
+.RS +4
+.TP
+5.
+システムでは、\fIformat\fR 文字列で指定されていない空白文字を \fBd\fR または \fBu\fR 変換仕様の出力の先頭や末尾には付けません。
+.RE
+.RS +4
+.TP
+6.
+システムでは、\fIformat\fR 文字列で指定されていない先行ゼロを \fBo\fR 変換仕様の出力には付けません。
+.RE
+.RS +4
+.TP
+7.
+\fBc\fR 変換仕様の場合、引数が数値であれば、エンコーディングとしてその値を持つ文字が出力されます。値がゼロの場合、または文字セットのどの文字にもエンコードされていない場合、動作は未定義です。引数が数値を持たない場合、文字列値の最初の文字が出力されます。文字列に文字が含まれていない場合、動作は未定義です。
+.RE
+.RS +4
+.TP
+8.
+引数が必要な変換仕様のそれぞれについて、次の式引数が評価されます。\fBc\fR 変換以外は、変換仕様に応じて値が適切な型に変換されます。
+.RE
+.RS +4
+.TP
+9.
+\fIformat\fR 文字列内のすべての変換仕様を満たすだけの十分な式引数がない場合、動作は未定義です。
+.RE
+.RS +4
+.TP
+10.
+\fIformat\fR 文字列内の文字シーケンスが % 文字で始まるが、有効な変換仕様を形成していない場合、動作は未定義です。
+.RE
+.sp
+.LP
+\fBprint\fR と \fBprintf\fR はどちらも、少なくとも \fB{LINE_MAX}\fR バイトを出力できます。
+.SS "関数"
+.sp
+.LP
+\fBnawk\fR 言語は、算術関数、文字列関数、入出力関数、一般関数など、さまざまな組み込み関数を備えています。
+.SS "算術関数"
+.sp
+.LP
+\fBint\fR を除き、算術関数は \fBISO\fR \fBC\fR 標準に基づいています。エラーが返される、または動作が未定義であると \fBISO\fR \fBC\fR 標準で指定している場合、動作は未定義です。文法上は引数や括弧のない組み込み関数が認められていますが、次のリストで引数や括弧が省略可能 (\fB[ ]\fR 括弧で表示) と示されていないかぎり、省略した場合の結果は未定義です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBatan2(\fR\fIy\fR,\fIx\fR\fB)\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIy\fR/\fIx\fR の逆正接を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcos\fR(\fIx\fR)\fR
+.ad
+.RS 17n
+.rt  
+\fIx\fR をラジアン単位とし、\fIx\fR の余弦を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsin\fR(\fIx\fR)\fR
+.ad
+.RS 17n
+.rt  
+\fIx\fR をラジアン単位とし、\fIx\fR の正弦を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexp\fR(\fIx\fR)\fR
+.ad
+.RS 17n
+.rt  
+\fIx\fR の指数関数を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlog\fR(\fIx\fR)\fR
+.ad
+.RS 17n
+.rt  
+\fIx\fR の自然対数を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsqrt\fR(\fIx\fR)\fR
+.ad
+.RS 17n
+.rt  
+\fIx\fR の平方根を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR(\fIx\fR)\fR
+.ad
+.RS 17n
+.rt  
+引数を切り捨てて、整数にします。つまり \fIx\fR が 0 よりも大きい場合は、0 に向かって切り捨てます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrand()\fR\fR
+.ad
+.RS 17n
+.rt  
+0 \(<= \fIn\fR < 1 の範囲の乱数 \fIn\fR を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsrand\fR([\fBexpr\fR])\fR
+.ad
+.RS 17n
+.rt  
+\fBrand\fR のシード値を \fIexpr\fR に設定します。\fIexpr\fR が省略された場合は、時刻を使用します。直前のシード値が返されます。
+.RE
+
+.SS "文字列関数"
+.sp
+.LP
+次のリストの文字列関数がサポートされています。文法上は引数や括弧のない組み込み関数が認められていますが、次のリストで引数や括弧が省略可能 (\fB[ ]\fR 括弧で表示) と示されていないかぎり、省略した場合の結果は未定義です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgsub\fR(\fIere\fR,\fIrepl\fR[,\|\fIin\fR])\fR
+.ad
+.sp .6
+.RS 4n
+後述の \fBsub\fR と同様の機能ですが、相違点は (\fBed\fR ユーティリティーの一括置換のように) 指定されたときに、\fB$0\fR または \fIin\fR 引数内に出現する正規表現をすべて置換することです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBindex\fR(\fIs\fR,\fIt\fR)\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR の中で文字列 \fIt\fR が最初に出現する位置 (最初の文字を 1 として文字数を数えたもの) を返します。出現しない場合はゼロを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlength\fR[([\fIs\fR])]\fR
+.ad
+.sp .6
+.RS 4n
+引数を文字列として解釈し、その長さ (文字数) を返します。引数が指定されていない場合は、レコード \fB$0\fR 全体の長さを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmatch\fR(\fIs\fR,\fIere\fR)\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR の中で拡張正規表現 \fIere\fR が出現する位置 (最初の文字を 1 として文字数を数えたもの) を返します。出現しない場合はゼロを返します。\fBRSTART\fR は開始位置 (返される値と同じ) に設定され、一致しない場合はゼロに設定されます。\fBRLENGTH\fR は一致した文字列の長さに設定され、一致しない場合は \(mi1 に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsplit\fR(\fIs\fR,\fIa\fR[,\|\fIfs\fR])\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR を配列要素 \fIa\fR[1]、\fIa\fR[2]、\fB\&...、\fR \fIa\fR[\fIn\fR] に分割し、値 \fIn\fR を返します。この分割は、拡張正規表現 \fIfs\fR によって行われ、\fIfs\fR が指定されていない場合はフィールドセパレータ \fB FS\fR によって行われます。各配列要素は、作成されたときに文字列値を持ちます。配列要素に割り当てられた文字列が、現在のロケールの小数点文字がピリオド文字に変更されていて、数値列と見なされる場合は、配列要素もその数値列の数値を持つことになります。\fI\fR\fI\fR\fIfs\fR の値が NULL 文字列の場合、結果は不確定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsprintf\fR(\fBfmt\fR,\fIexpr\fR,\fIexpr\fR,\fB\&...\fR)\fR
+.ad
+.sp .6
+.RS 4n
+\fIfmt\fR で指定した \fBprintf\fR 形式に従って式を書式設定し、結果として得られた文字列を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsub\fR(\fIere\fR,\fIrepl\fR[,\|\fIin\fR])\fR
+.ad
+.sp .6
+.RS 4n
+文字列 in 内で最初に見つかった拡張正規表現 \fIERE\fR のインスタンスを文字列 \fBrepl\fR に置き換え、置換した数を返します。文字列 \fIrepl\fR 内に出現するアンパサンド (\fB&\fR) は、正規表現に一致する in 内の文字列に置換されます。アンパサンドの前にバックスラッシュ (\fB\e\fR) を付けると、リテラルのアンパサンド文字として解釈されます。バックスラッシュが連続で 2 つ現れると、単一のリテラルバックスラッシュ文字として解釈されます。そのほかに現れるバックスラッシュ (ほかの文字の前など) は、リテラルバックスラッシュ文字として処理されます。\fIrepl\fR が文字列リテラルの場合、アンパサンド文字の処理は字句処理 (バックスラッシュによるエスケープシーケンスの字句処理など) のあとに発生します。\fBin\fR を指定し、それが \fBlvalue\fR 以外の場合、動作は未定義です。in を省略した場合、\fBnawk\fR では代わりに現在のレコード (\fB$0\fR) が使用されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubstr\fR(\fIs\fR,\fIm\fR[,\|\fIn\fR])\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR 内の \fIm\fR 文字目から始まる最大 \fIn\fR 文字の長さの部分文字列を返します。\fIn\fR がない場合、部分文字列の長さは文字列 \fIs\fR の長さによって制限されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtolower\fR(\fIs\fR)\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR に基づいて文字列を返します。現在のロケールの \fBLC_CTYPE\fR カテゴリによって \fBtolower\fR マッピングを持つように指定されている \fIs\fR 内の各大文字が、そのマッピングで指定されている小文字に置換されます。\fIs\fR 内のほかの文字は変更されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoupper\fR(\fIs\fR)\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR に基づいて文字列を返します。現在のロケールの \fBLC_CTYPE\fR カテゴリによって \fBtoupper\fR マッピングを持つように指定されている \fIs\fR 内の各小文字が、そのマッピングで指定されている大文字に置換されます。\fIs\fR 内のほかの文字は変更されません。
+.RE
+
+.sp
+.LP
+パラメータとして \fIERE\fR を取る前述の関数はすべて、次に定義されているように、正規表現であるパターン値または文字列値の式を受け付けます。
+.SS "入出力関数と一般関数"
+.sp
+.LP
+入出力関数と一般関数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclose(\fR\fIexpression\fR)\fR
+.ad
+.RS 27n
+.rt  
+\fBprint\fR または \fBprintf\fR 文で開かれたファイルまたはパイプ、あるいは同じ文字列値の \fIexpression\fR を指定した \fBgetline\fR 呼び出しで開かれたファイルまたはパイプを閉じます。正常に閉じられた場合、関数は \fB0\fR を返します。それ以外の場合は、ゼロ以外を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR|\fBgetline\fR[\fIvar\fR]\fR
+.ad
+.RS 27n
+.rt  
+コマンドの出力からパイプされたストリームから、入力レコードを読み取ります。コマンド名として \fIexpression\fR の値を持つストリームが現在開いていない場合は、ストリームが作成されます。作成されたストリームは、\fBcommand\fR 引数として \fIexpression\fR の値、\fImode\fR 引数として \fBr\fR の値を指定した \fIpopen\fR 関数の呼び出しによって作成されるものと同等です。ストリームが開いているかぎり、\fIexpression\fR が同じ文字列値に評価される以降の呼び出しは、ファイルから後続のレコードを読み取ります。同じ文字列値に評価される式で \fBclose\fR 関数が呼び出されるまで、ストリームは開いたままです。close 関数が呼び出されると、\fBpclose\fR 関数が呼び出されたかのようにストリームが閉じます。\fIvar\fR がない場合、\fB$0\fR および \fBNF\fR が設定されます。それ以外の場合、\fIvar\fR が設定されます。
+.sp
+\fB|\fR の左側 (\fBgetline\fR を含む式の先頭まで) に括弧で囲まれていない演算子 (連結を含む) がある場合、\fBgetline\fR 演算子の構造があいまいになる可能性があります。演算子 \fB$\fR のコンテキストでは、\fB|\fR は \fB$\fR よりも優先度が低いかのように動作します。その他の演算子を評価した結果は不確定であるため、移植性のあるアプリケーションでは、このような表記をすべて正しく括弧で囲む必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgetline\fR\fR
+.ad
+.RS 30n
+.rt  
+\fB$0\fR に、現入力ファイルの次の入力レコードを設定します。この形式の \fBgetline\fR では、\fBNF\fR、\fBNR\fR、および \fBFNR\fR 変数を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgetline\fR \fIvar\fR\fR
+.ad
+.RS 30n
+.rt  
+変数 \fIvar\fR に、現在の入力ファイルの次のレコードを設定します。この形式の \fBgetline\fR では、\fBFNR\fR および \fBNR\fR 変数を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgetline\fR [\fIvar\fR]\fB < \fR\fIexpression\fR\fR
+.ad
+.RS 30n
+.rt  
+指定されたファイルから次の入力レコードを読み取ります。\fIexpression\fR が評価されて、フルパス名として使用される文字列が生成されます。その名前のファイルが現在開いていない場合は開きます。ストリームが開いているかぎり、\fIexpression\fR が同じ文字列値に評価される以降の呼び出しは、ファイルから後続のレコードを読み取ります。同じ文字列値に評価される式で \fBclose\fR 関数が呼び出されるまで、ファイルは開いたままです。\fIvar\fR がない場合、\fB$0\fR および \fBNF\fR が設定されます。それ以外の場合、\fIvar\fR が設定されます。
+.sp
+\fB<\fR の右側 (\fBgetline\fR を含む式の終わりまで) に括弧で囲まれていない 2 項演算子 (連結を含む) がある場合、\fBgetline\fR 演算子の構造があいまいになる可能性があります。このような構造を評価した結果は不確定であるため、移植性のあるアプリケーションでは、このような表記をすべて正しく括弧で囲む必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsystem\fR(\fIexpression\fR)\fR
+.ad
+.RS 30n
+.rt  
+\fIexpression\fR で指定されたコマンドを、\fBsystem\fR(3C) 関数と同等の方法で実行し、コマンドの終了ステータスを返します。
+.RE
+
+.sp
+.LP
+\fBgetline\fR 関数はどの形式でも、正常終了時には \fB1\fR、ファイルの終わりに達すると \fB0\fR、エラーが発生時には \fB\(mi1\fR を返します。
+.sp
+.LP
+ファイルやパイプラインの名前として文字列が使用されている場所では、文字列のテキストをまったく同じにする必要があります。「同じ文字列値」とは「等価文字列」を意味し、スペース文字が違うだけでも異なるファイルを表すことになります。
+.SS "ユーザー定義関数"
+.sp
+.LP
+\fBnawk\fR 言語ではユーザー定義関数も使用できます。ユーザー定義関数は次のように定義できます。
+.sp
+.in +2
+.nf
+\fBfunction\fR \fIname\fR(\fIargs\fR,\|.\|.\|.) { \fIstatements\fR }
+.fi
+.in -2
+
+.sp
+.LP
+関数は、\fBnawk\fR プログラム内のどこからでも参照でき、特に、その定義より前に使用できます。関数の有効範囲はグローバルです。
+.sp
+.LP
+関数の引数は、スカラーまたは配列のどちらでもかまいません。スカラーを使用する関数に引数として配列名が渡された場合、または配列を使用する関数に引数としてスカラー式が渡された場合、その動作は未定義です。関数の引数は、スカラーの場合は値によって、配列名の場合は参照によって渡されます。引数名は関数に対してローカルであり、その他のすべての変数名はグローバルです。引数名と関数名または特殊な \fBnawk\fR 変数名に同じ名前は使用されません。グローバルな有効範囲を持つ変数名と関数名に同じ名前を使用しないでください。同じ有効範囲内では、スカラー変数と配列に同じ名前を使用しないでください。
+.sp
+.LP
+関数定義内のパラメータの数は、関数呼び出しのときのパラメータの数と一致する必要はありません。ローカル変数として、余分な仮パラメータを使用できます。関数定義内の引数よりも少ない引数が関数呼び出しの際に指定された場合、関数本体でスカラーとして使用されている余分なパラメータは、NULL 文字列の文字列値とゼロの数値で初期化されます。また、関数本体で配列として使用されている余分なパラメータは、空の配列として初期化されます。関数定義内の引数よりも多い引数が関数呼び出しの際に指定された場合、その動作は未定義です。
+.sp
+.LP
+関数の呼び出し時に、関数名と左括弧の間にスペースを入れることはできません。関数呼び出しは入れ子にすることができ、再帰呼び出しも可能です。入れ子または再帰関数呼び出しから戻っても、参照によって渡された配列パラメータ以外、呼び出し側関数のパラメータのどの値も変わりません。\fBreturn\fR 文を使用すれば、値を返すことができます。\fBreturn\fR 文が関数定義の外で使用された場合、その動作は未定義です。
+.sp
+.LP
+関数定義において、左括弧より前と右括弧よりあとの復帰改行文字は任意指定です。関数定義は、パターンとアクションのペアが許可されている場所であればプログラム内のどこに置いてもかまいません。\fI\fR
+.SH 使用法
+.sp
+.LP
+\fBindex\fR、\fBlength\fR、\fBmatch\fR、および \fBsubstr\fR 関数と \fBISO C\fR 標準の同様の関数とを混同しないようにしてください。\fBnawk\fR バージョンでは文字を扱い、\fBISO C\fR 標準ではバイトを扱います。
+.sp
+.LP
+連結演算は、明示的な演算子ではなく隣接する式によって表現されるので、評価の正しい優先度を適用するため、括弧を使う必要があることがよくあります。
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBnawk\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.sp
+.LP
+\fBsh\fR を使用するアプリケーションの場合、コマンド行に指定する \fBnawk\fR プログラムは、単一引用符で囲んで指定する (たとえば、\fB\&'\fR\fIprogram\fR\fB\&'\fR) のがもっとも簡単な方法です。\fBnawk\fR プログラムには一般に、二重引用符をはじめとする、シェルに対して特殊な意味を持つ文字が含まれていることが多いためです。\fBnawk\fR プログラムに単一引用符文字が含まれている場合、プログラムの大部分を単一引用符で囲んで文字列として指定し、引用符付きの単一引用符文字とシェルによって連結するのが通常もっとも簡単な方法です。例: 
+.sp
+.in +2
+.nf
+nawk '/'\e''/ { print "quote:", $0 }'
+.fi
+.in -2
+
+.sp
+.LP
+これは、標準入力から読み取った単一引用符文字を含むすべての行に \fBquote:\fR という接頭辞を付けて出力します。
+.sp
+.LP
+簡単な \fBnawk\fR プログラムの例を次に示します。
+.LP
+\fB例 1 \fR第 3 フィールドの値が 5 より大きい入力行をすべて標準出力に書き出します。
+.sp
+.in +2
+.nf
+\fB$3 > 5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR10 行ごとに書き出します。
+.sp
+.in +2
+.nf
+\fB(NR % 10) == 0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR部分文字列が正規表現と一致する行を書き出します。
+.sp
+.in +2
+.nf
+\fB/(G|D)(2[0-9][[:alpha:]]*)/\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR部分文字列として、文字 G または D のあとに一連の数字と文字を伴う行を出力します。
+.sp
+.LP
+この例では、文字クラス \fBdigit\fR と \fBalpha\fR を使って、言語に依存しない数字と英字をそれぞれ照合します。
+
+.sp
+.in +2
+.nf
+\fB/(G|D)([[:digit:][:alpha:]]*)/\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR第 2 フィールドは正規表現と一致するが第 4 フィールドは一致しない、という行を出力します。
+.sp
+.in +2
+.nf
+\fB$2 ~ /xyz/ && $4 !~ /xyz/\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR第 2 フィールドにバックスラッシュが含まれている行を出力します。
+.sp
+.in +2
+.nf
+\fB$2 ~ /\e\e/\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR第 2 フィールドにバックスラッシュが含まれている行を出力します (別の方法)。
+.sp
+.LP
+ここではバックスラッシュによるエスケープを 2 度解釈しています。1 度は文字列の字句処理時、もう 1 度は正規表現の処理時です。
+
+.sp
+.in +2
+.nf
+\fB$2 ~ "\e\e\e\e"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR各行の最後から 2 番目のフィールドと最後のフィールドをコロンで区切って出力します。
+.sp
+.in +2
+.nf
+\fB{OFS=":";print $(NF-1), $NF}\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR各行の行番号とフィールドの数を出力します。
+.sp
+.LP
+行番号、コロン、フィールド数を表す 3 つの文字列が連結され、1 つの文字列として標準出力に書き込まれます。
+
+.sp
+.in +2
+.nf
+\fB{print NR ":" NF}\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR長さが 72 文字を超えている行を出力します。
+.sp
+.in +2
+.nf
+\fB{length($0) > 72}\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fR最初の 2 つのフィールドを逆の順序で、OFS で区切って出力します。
+.sp
+.in +2
+.nf
+\fB{ print $2, $1 }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fR前述と同様ですが、入力フィールドはコンマ、またはスペース文字とタブ文字、あるいはその両方で区切られています。
+.sp
+.in +2
+.nf
+\fBBEGIN { FS = ",[\et]*|[\et]+" }
+      { print $2, $1 }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 13 \fR先頭のカラムの値を合計し、その合計値と平均値を出力します。
+.sp
+.in +2
+.nf
+\fB{s += $1 }
+END {print "sum is ", s, " average is", s/NR}\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 14 \fRフィールドの内容を逆の順序で、1 行につき 1 フィールドずつ出力します。1 入力行につき多数の出力行が発生します。
+.sp
+.in +2
+.nf
+\fB{ for (i = NF; i > 0; --i) print $i }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 15 \fR「start」と「stop」という 2 つの文字列の間にあるすべての行を出力します。
+.sp
+.in +2
+.nf
+\fB/start/, /stop/\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 16 \fR先頭フィールドの値が直前の行の先頭フィールドと異なっている行をすべて出力します。
+.sp
+.in +2
+.nf
+\fB$1 != prev { print; prev = $1 }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 17 \fRecho コマンドの動作をシミュレートします。
+.sp
+.in +2
+.nf
+\fBBEGIN  {
+       for (i = 1; i < ARGC; ++i)
+             printf "%s%s", ARGV[i], i==ARGC-1?"\en":""
+       }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 18 \fRPATH 環境変数に含まれているパス接頭辞を 1 行につき 1 つずつ出力します。
+.sp
+.in +2
+.nf
+\fBBEGIN  {
+       n = split (ENVIRON["PATH"], path, ":")
+       for (i = 1; i <= n; ++i)
+              print path[i]
+       }\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 19 \fR「input」ファイルの内容を、ページ番号 5 を開始ページとして出力します。
+.sp
+.LP
+\fBinput\fR という名前のファイルがあり、次の形式のページヘッダーが含まれているとします。
+
+.sp
+.in +2
+.nf
+Page#
+.fi
+.in -2
+
+.sp
+.LP
+また、\fBprogram\fR という名前のファイルの内容は次のとおりとします。
+
+.sp
+.in +2
+.nf
+/Page/{ $2 = n++; }
+{ print }
+.fi
+.in -2
+
+.sp
+.LP
+ここで、次に示すコマンドを実行します。
+
+.sp
+.in +2
+.nf
+\fBnawk -f program n=5 input\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これにより、\fBinput\fR ファイルが、ページ番号 5 を開始ページとして出力されます。
+
+.SH 環境
+.sp
+.LP
+実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES \fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_NUMERIC\fR\fR
+.ad
+.RS 14n
+.rt  
+数値入力の解釈、数値と文字列との変換、数値出力のフォーマットに用いる、小数点文字を決定します。\fBawk\fR プログラム (コマンド行引数で指定される代入も含む) の処理で認識される小数点文字は、ロケールに関係なくピリオド (POSIX ロケールの小数点文字) です。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+指定されたファイルはすべて正常に処理されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.LP
+プログラム内で \fBexit\fR 式を使って終了ステータスを変更することができます。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/nawk"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SS "/usr/xpg4/bin/awk"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBawk\fR(1)、\fBed\fR(1)、\fBegrep\fR(1)、\fBgrep\fR(1)、\fBlex\fR(1)、\fBsed\fR(1)、\fBpopen\fR(3C)、\fBprintf\fR(3C)、\fBsystem\fR(3C)、\fBattributes\fR(5)、\fBenviron\fR(5)、\fBlargefile\fR(5)、\fBregex\fR(5)、\fBXPG4\fR(5)
+.sp
+.LP
+『\fIThe AWK Programming Language\fR』、Aho, A. V.、B. W. Kernighan、P. J. Weinberger 共著、Addison-Wesley 発行、1988 年
+.SH 診断
+.sp
+.LP
+\fIfile\fR オペランドが指定され、指定されたファイルにアクセスできない場合、\fBnawk\fR は標準エラーに診断メッセージを書き込んだあと、それ以上何もせずに終了します。
+.sp
+.LP
+\fIprogram\fR オペランドまたは \fIprogfile\fR オペランドで指定されたプログラムが有効な \fBnawk\fR プログラム (「拡張機能説明」で指定されている) でない場合、その動作は未定義です。\fB\fR
+.SH 注意事項
+.sp
+.LP
+入力行にスペースが含まれる場合、出力時に保証されません。
+.sp
+.LP
+数値と文字の間の明示的な変換は行われません。式が数値として扱われるようにするには、式に 0 を加算します。式が文字列として扱われるようにするには、式に NULL 文字列 (\fB""\fR) を連結します。

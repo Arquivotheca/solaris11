@@ -1,0 +1,520 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH share_smb 1M "30 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+share_smb \- make SMB shares available for mounting by remote systems
+.SH SYNOPSIS
+.LP
+.nf
+\fBshare\fR  \fB-F\fR smb [-a [\fB-o\fR \fIspecific-options\fR] [\fB-d\fR \fIdescription\fR]
+     \fIpathname\fR \fIshare-name\fR  | [-A]]
+\fBzfs set\fR share=name=\fIshare-name\fR,path=\fIpathname\fR,[desc="\fIdescription\fR"],
+     prot=smb,[[\fIproperty=value\fR[,...]] \fIdataset\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBshare\fR command defines and publishes a SMB share, which makes a local file system available for mounting by remote systems.
+.sp
+.LP
+You can modify the behavior of SMB shares by setting property values with either the \fBshare\fR or \fBzfs set share\fR command. See the \fBshare\fR(1M) and \fBzfs\fR(1M) man pages.
+.sp
+.LP
+The \fBshare\fR command has the following options:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-F\fR \fBsmb\fR\fR
+.ad
+.sp .6
+.RS 4n
+Share \fBSMB\fR file sharing protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Publish all defined shares.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIspecific-options\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify \fIspecific-options\fR in a comma-separated list of keywords and attribute-value-assertions for interpretation by the SMB protocol. By default, a share is published with read-write access to all clients, unless a specific option overrides the default access. \fIspecific-options\fR can be any combination of the properties supported by a given file system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+Provide a comment that describes the file system to be shared.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display all defined shares.
+.RE
+
+.SS "Share Properties"
+.sp
+.LP
+The following SMB share properties are supported and can be set by the \fBzfs\fR and \fBshare\fR commands:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBabe=\fR\fIboolean\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the access-based enumeration (ABE) policy for a share. When set to \fBtrue\fR, ABE filtering is enabled on this share and directory entries to which the requesting user has no access will be omitted from directory listings returned to the client. When set to \fBfalse\fR or not defined, ABE filtering will not be performed on this share. This property is not defined by default.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+Disable ABE for this share.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enable ABE for this share.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBad-container\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the AD container in which to publish shares.
+.sp
+The AD container is specified as a comma-separated list of attribute name-value pairs using the LDAP distinguished name (DN) or relative distinguished name (RDN) format.
+.sp
+The following example uses the \fBshare\fR command to specify the AD container:
+.sp
+.in +2
+.nf
+$ \fBshare -F smb -o name=sh1,abe=true,\e
+ad-container=cn=sales,ou=mycompany,dc=com /export/home\fR
+.fi
+.in -2
+.sp
+
+The following example uses the \fBzfs\fR command to specify the AD container:
+.sp
+.in +2
+.nf
+$ \fBzfs set share=name=sh1,path=/export/home,prot=smb,\e
+ad-container=cn=sales,ou=mycompany,dc=com,abe=true rpool/export/home\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The DN or RDN must be specified in LDAP format using the \fBcn=\fR, \fBou=\fR, and \fBdc=\fR prefixes:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcn\fR represents the common name
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBou\fR represents the organizational unit
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBdc\fR represents the domain component
+.RE
+\fBcn=\fR, \fBou=\fR and \fBdc=\fR are attribute types. The attribute type used to describe an object's RDN is called the naming attribute, which, for ADS, includes the following object classes:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcn\fR for the \fBuser\fR object class
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBou\fR for the organizational unit (\fBOU\fR) object class
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBdc\fR for the \fBdomainDns\fR object class
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcatia=\fIboolean\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies whether to perform CATIA character substitution. CATIA V4 uses characters in file names that are considered to be invalid by Windows. A CATIA V4 file could be inaccessible to Windows clients if the file name contains any of the characters that are considered illegal in Windows. By default, CATIA character substitution is not performed. See "Enabling CATIA V4/V5 Character Translations" in \fIOracle Solaris SMB and Windows Interoperability Administration Guide\fR.
+.sp
+If the \fBcatia\fR property is set to \fBtrue\fR, the following character substitution is applied to file names.
+.sp
+.in +2
+.nf
+CATIA    CATIA 
+V4 UNIX  V5 Windows
+  "      \e250   0x00a8  Dieresis
+  *      \e244   0x00a4  Currency Sign
+  /      \e370   0x00f8  Latin Small Letter O with Stroke
+  :      \e367   0x00f7  Division Sign
+  <      \e253   0x00ab  Left-Pointing Double Angle Quotation Mark
+  >      \e273   0x00bb  Right-Pointing Double Angle Quotation Mark
+  ?      \e277   0x00bf  Inverted Question Mark
+  \e      \e377   0x00ff  Latin Small Letter Y with Dieresis
+  |      \e246   0x00a6  Broken Bar
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcsc=\fR\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the client-side caching policy for a share. Client-side caching is a client feature and offline files are managed entirely by the clients.
+.sp
+.LP
+The following are valid values for the \fBcsc\fR property:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBmanual\fR \fB-\fR Clients are permitted to cache files from the specified share for offline use as requested by users. However, automatic file-by-file reintegration is not permitted. \fBmanual\fR is the default value.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBauto\fR \fB-\fR Clients are permitted to automatically cache files from the specified share for offline use and file-by-file reintegration is permitted.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBvdo\fR \fB-\fR Clients are permitted to automatically cache files from the specified share for offline use, file-by-file reintegration is permitted, and clients are permitted to work from their local cache even while offline.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBdisabled\fR \fB-\fR Client-side caching is not permitted for this share.
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdfsroot=\fIboolean\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Marks a share as a distributed file system (DFS) root share to distinguish it from a regular share. By default, \fBdfsroot\fR is not defined. If \fBdfsroot\fR is \fBfalse\fR or not defined, the share is not a DFS root share.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBguestok=\fR\fIboolean\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the guest access policy for the share. When set to \fBtrue\fR guest access is allowed on this share. When set to \fBfalse\fR or not defined guest access is not allowed on this share. This property is not defined by default.
+.sp
+An \fBidmap\fR(1M) name-based rule can be used to map \fBguest\fR to any local user name, such as \fBguest\fR or \fBnobody\fR. If the local account has a password in \fB/var/smb/smbpasswd\fR the guest connection will be authenticated against that password. Any connection made using an account that maps to the local guest account will be treated as a guest connection.
+.sp
+The following name-based rule maps the Windows \fBGuest\fR user to the UNIX \fBguest\fR user:
+.sp
+.in +2
+.nf
+# \fBidmap add winname:Guest unixuser:guest\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnone=\fR\fIaccess-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that access is not allowed to any client that matches the access list. The exception is when the access list is an asterisk (\fB*\fR), in which case \fBro\fR or \fBrw\fR can override \fBnone\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro=\fR\fIaccess-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that sharing is read-only to the clients listed in \fIaccess-list\fR. Overrides the \fBrw\fR suboption for the clients specified. See \fIaccess-list\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrw=\fR\fIaccess-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that sharing is read-write to the clients listed in \fIaccess-list\fR. Overrides the \fBro\fR suboption for the clients specified. See \fIaccess-list\fR.
+.RE
+
+.SS "Access List Argument"
+.sp
+.LP
+The \fIaccess-list\fR argument is either the string \fB"*"\fR to represent all hosts or a colon-separated list whose components may be any number of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the name of a host. \fIhostname\fR must be a fully qualified \fBDNS\fR or \fBLDAP\fR name when the host specifies these naming schemes in the \fBhosts\fR portion of the \fBnsswitch.conf\fR file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInetgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+A netgroup contains a number of host names. Any \fIhostname\fR in a netgroup must be a fully qualified \fBDNS\fR or \fBLDAP\fR name when the host specifies these naming schemes in the \fBhosts\fR portion of the \fBnsswitch.conf\fR file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdomainname\fR\fB\&.\fR\fIsuffix\fR\fR
+.ad
+.sp .6
+.RS 4n
+To use domain membership, the server must use \fBDNS\fR or \fBLDAP\fR to resolve host names to \fBIP\fR addresses. This means that the \fBhosts\fR entry of the \fB/etc/nsswitch.conf\fR file must specify \fBdns\fR or \fBldap\fR before \fBnis\fR. You must do this because only \fBDNS\fR and \fBLDAP\fR return the full domain name of the host.
+.sp
+Other naming services, such as \fBNIS\fR, cannot be used to resolve host names on the server because these naming services do not return domain information. For example, the following shows how \fBNIS\fR, \fBDNS\fR, and \fBLDAP\fR return host name information for the \fB172.16.45.9\fR IP address:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNIS\fR\fR
+.ad
+.RS 15n
+.rt  
+Returns: \fBmyhost\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDNS\fR or \fBLDAP\fR\fR
+.ad
+.RS 15n
+.rt  
+Returns: \fBmyhost.mydomain.mycompany.com\fR
+.RE
+
+The domain name suffix is distinguished from host names and netgroups by a prefixed dot. For example, \fBrw=.mydomain.mycompany.com\fR matches all host names in \fBmydomain.mycompany.com\fR.
+.sp
+The \fBrw=.\fR notation uses a single dot to match a host name that has no suffix. This notation matches \fBmydomain\fR but not \fBmydomain.mycompany.com\fR. This feature can be used to match hosts that are resolved by \fBNIS\fR rather than by \fBDNS\fR and \fBLDAP\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInetwork\fR\fR
+.ad
+.sp .6
+.RS 4n
+The network or subnet component is preceded by an at-sign character (\fB@\fR). It can be either a network name or a dotted address.
+.sp
+A network name is converted to a dotted address by using \fBgetnetbyname\fR(3SOCKET). For example, \fB=@mynet\fR is equivalent to \fB=@172.16\fR or \fB=@172.16.0.0\fR.
+.sp
+The network prefix assumes an octet-aligned netmask. The netmask is determined from the zeroth octet in the low-order part of the address up to and including the high-order octet. If network prefixes are not byte-aligned, the syntax permits a mask length to be explicitly specified following a slash delimiter (\fB/\fR). For example, \fB=@theothernet/17\fR or \fB=@172.16.132/22\fR where the mask is the number of leftmost contiguous significant bits in the corresponding IP address.
+.sp
+When specifying individual IP addresses, use the same \fB@\fR notation described previously, but do not use a netmask specification. For example, \fB=@172.16.132.14\fR.
+.sp
+You can use a colon character (\fB:\fR) to separate multiple, individual IP addresses. For example, \fBroot=@172.16.132.20:@172.16.134.20\fR.
+.RE
+
+.sp
+.LP
+A prefixed minus sign (\fB\(mi\fR) denies access to that component of \fIaccess-list\fR. The list is searched sequentially until a match is found that either grants or denies access, or until the end of the list is reached. For example, if host "terra" is in the "engineering" netgroup, specifying \fBrw=-terra:engineering\fR denies access to \fBterra\fR. However, specifying \fBrw=engineering:-terra\fR grants access to \fBterra\fR.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSetting a Share Property
+.sp
+.LP
+The following examples use the \fBzfs share\fR and \fBshare\fR commands to create and publish an SMB share.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The following example shows how to use the \fBzfs share\fR command to create and publish an SMB share that also enables guest access:
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=smb_share,path=/mntpnt/dir2,prot=smb,\e\fR
+\fBguestok=true tank/home\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The following example shows how to use the \fBshare\fR command to enable guest access on a share:
+.sp
+.in +2
+.nf
+# \fBshare -F smb -o guestok=true /mntpnt/dir2\fR
+.fi
+.in -2
+.sp
+
+.RE
+.LP
+\fBExample 2 \fRViewing the Share Properties on a Share
+.sp
+.LP
+The following examples show how to use the \fBzfs get\fR command and the \fB/etc/dfs/sharetab\fR file to view share properties:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBzfs get\fR command enables you to view share properties on the \fBtank/home\fR dataset:
+.sp
+.in +2
+.nf
+# \fBzfs get share tank/home\fR
+NAME PROPERTY VALUE SOURCE
+tank/home share name=smb_share,path=/mntpnt/dir2,guestok=true \e
+local
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fB/etc/dfs/sharetab\fR file shows all the active shares on the system. The entry for each share shows the properties set and their values:
+.sp
+.in +2
+.nf
+# \fBcat /etc/dfs/sharetab\fR
+/mntpnt/dir2 smb_share smb csc=auto,guestok=true
+.fi
+.in -2
+.sp
+
+.RE
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/sharetab\fR\fR
+.ad
+.sp .6
+.RS 4n
+System record of shared file systems
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilityservice/file-system/smb
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBidmap\fR(1M), \fBshare\fR(1M), \fBzfs_share\fR(1M), \fBzfs\fR(1M), \fBgetnetbyname\fR(3SOCKET), \fBnetgroup\fR(4), \fBattributes\fR(5)

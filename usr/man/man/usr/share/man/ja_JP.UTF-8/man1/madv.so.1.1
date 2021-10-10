@@ -1,0 +1,310 @@
+'\" te
+.\"  Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH madv.so.1 1 "2011 年 4 月 4 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+madv.so.1 \- madv ライブラリ
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/madv.so.1\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmadv.so.1\fR 共有オブジェクトは、起動されたプロセス (1 つまたは複数) とその子孫の VM アドバイスを選択的に構成する手段を提供します。\fBmadv.so.1\fR を有効にするには、次の文字列が 1 つ以上の \fBMADV\fR 環境変数とともに環境内に存在する必要があります (\fBld.so.1\fR(1) を参照)。
+.sp
+.in +2
+.nf
+\fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBLD_PRELOAD\fR リストに \fBmadv.so.1\fR 共有オブジェクトを指定すると、次の環境変数が \fBmadv\fR 共有オブジェクトに読み込まれ、指定されたアドバイスをどの生成済みプロセスに適用するのかが決定されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMADV\fR=\fIadvice\fR \fR
+.ad
+.RS 27n
+.rt  
+\fBMADV\fR には、プロセスのアドレス空間内のすべてのヒープ、共有メモリー、および mmap 領域に使用される VM アドバイスを指定します。この情報は生成されたすべてのプロセスに適用されます。
+.sp
+\fIadvice\fR の値は、\fBmadvise\fR(3C) でメモリーアクセスパターンを指定するために使用する <sys/mman.h> の値と対応しています。
+.br
+.in +2
+normal
+.in -2
+.br
+.in +2
+random
+.in -2
+.br
+.in +2
+sequential
+.in -2
+.br
+.in +2
+access_lwp
+.in -2
+.br
+.in +2
+access_many
+.in -2
+.br
+.in +2
+access_many_pset
+.in -2
+.br
+.in +2
+access_default
+.in -2
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMADVCFGFILE\fR=\fIconfig-file\fR\fR
+.ad
+.RS 27n
+.rt  
+\fIconfig-file\fR は、次の形式の \fBmadv\fR 構成エントリを 1 つ以上含むテキストファイルです。
+.sp
+.in +2
+.nf
+\fIexec-name\fR \fIexec-args\fR:\fIadvice-opts\fR
+.fi
+.in -2
+.sp
+
+\fIconfig-file\fR で指定されたアドバイスは、\fBMADV\fR 環境変数によって指定された情報よりも優先されます。\fBMADVCFGFILE\fR が設定されていない場合は、\fB/etc/madv.conf\fR ファイルからアドバイスが取得されます (存在している場合)。
+.sp
+\fIexec-name\fR には、アプリケーションまたは実行可能ファイルの名前を指定します。対応するアドバイスは、ファイル内で最初に見つかった \fIexec-name\fR と一致する新規作成プロセス (\fBgetexecname\fR(3C) を参照) 用に設定されます。
+.sp
+\fIexec-name\fR には、フルパス名、基本名、またはパターン文字列を指定できます。パターンマッチングについては、\fBsh\fR(1) の「\fBファイル名の生成\fR」を参照してください。
+.sp
+\fIexec-args\fR は、引数と照合する任意指定のパターン文字列です。\fIexec-args\fR が指定されていないか、または \fIexec-name\fR の引数内に存在する場合にのみ、アドバイスは設定されます。
+.sp
+\fIadvice-opts\fR は、次のようなさまざまなメモリー領域に対するアドバイスを指定したコンマ区切りのリストです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmadv\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+プロセスのアドレス空間のすべてのヒープ、共有メモリー、および mmap 領域に適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheap\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+ヒープは、brk 領域 (\fBbrk\fR(2) を参照) として定義されます。既存のヒープにも、将来割り当てられる追加ヒープメモリーにも適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshm\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBism\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBdism\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+任意のフラグ、\fBSHM_SHARE_MMU\fR フラグ、または \fBSHM_PAGEABLE\fR フラグを使用して接続された共有メモリーセグメント (\fBshmat\fR(2) を参照)。\fBism\fR および \fBdism\fR オプションは、\fBshm\fR オプションよりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmap\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBmapshared\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBmapprivate\fR=\fIadvice\fR\fR
+.ad
+.br
+.na
+\fB\fBmapanon\fR=\fIadvice\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBmmap\fR(2) の任意のフラグ、\fBMAP_SHARED\fR フラグ、\fBMAP_PRIVATE\fR フラグ、または \fBMAP_ANON\fR フラグを使用して確立されたマッピング。\fBmapshared\fR、\fBmapprivate\fR、および \fBmapanon\fR オプションは、\fBmap\fR オプションよりも優先されます。\fBmapanon\fR オプションは、\fBmapshared\fR および \fBmapprivate\fR よりも優先されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMADVERRFILE\fR=\fIpathname\fR\fR
+.ad
+.RS 27n
+.rt  
+デフォルトでは、エラーメッセージは \fBsyslog\fR(3C) の \fBLOG_ERR\fR レベルと \fBLOG_USER\fR 機能を使用してログに記録されます。\fBMADVERRFILE\fR に有効な \fIpathname\fR (\fB/dev/stderr\fR など) が含まれている場合は、エラーメッセージがその場所に記録されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRアドバイスをすべての ISM セグメントに適用する
+.sp
+.LP
+次の構成では、\fB/usr/bin/foo\fR アプリケーションのすべての ISM セグメントにアドバイスを適用します。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    /usr/bin/foo:ism=access_lwp
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR例外付きですべてのアプリケーションにアドバイスを設定する
+.sp
+.LP
+次の構成では、\fBls\fR を除くすべてのアプリケーションにアドバイスを設定します。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADV=access_many\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADV MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    ls:
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR優先順位規則 (例 2 の続き)
+.sp
+.LP
+\fBMADVCFGFILE\fR は \fBMADV\fR よりも優先されるため、最後の \fBmadv\fR 構成エントリの \fIexec-name\fR に「\fB*\fR」(すべてに一致するパターン) を指定することは、\fBMADV\fR を設定することと同等です。次の例は、例 2 と同等です。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    ls:
+    *:madv=access_many
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR領域ごとに異なるアドバイスを適用する
+.sp
+.LP
+次の構成では、\fBfoo\fR で始まる実行可能ファイル名を持つ一連のアプリケーションについて、あるタイプのアドバイスを \fBmmap\fR 領域に、別のタイプのアドバイスをヒープ領域と共有メモリー領域に適用します。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    foo*:madv=access_many,heap=sequential,shm=access_lwp
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRアドバイスを選択して適用する
+.sp
+.LP
+次の構成では、名前が \fBora\fR で始まり、引数として \fBora1\fR が指定されたアプリケーションのヒープにアドバイスを適用します。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:madv.so.1\fR
+example$ \fBMADVCFGFILE=madvcfg\fR
+example$ \fBexport LD_PRELOAD MADVCFGFILE\fR
+example$ \fBcat $MADVCFGFILE\fR
+    ora* ora1:heap=access_many
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/madv.conf\fR \fR
+.ad
+.RS 19n
+.rt  
+構成ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+system/extended-system-utilities (32 ビット)
+T}
+_
+SUNWesxu (64 ビット)
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcat\fR(1), \fBld.so.1\fR(1), \fBproc\fR(1), \fBsh\fR(1), \fBbrk\fR(2), \fBexec\fR(2), \fBfork\fR(2), \fBmmap\fR(2), \fBmemcntl\fR(2), \fBshmat\fR(2), \fBgetexecname\fR(3C), \fBmadvise\fR(3C), \fBsyslog\fR(3C), \fBproc\fR(4), \fBattributes\fR(5) 
+.SH 注意事項
+.sp
+.LP
+アドバイスは継承されます。子プロセスには親と同じアドバイスが適用されます。\fBexec()\fR (\fBexec\fR(2) を参照) では、\fBmadv\fR 共有オブジェクトで別のアドバイスが設定されていないかぎり、アドバイスはデフォルトのシステムアドバイスに設定されます。
+.sp
+.LP
+アドバイスは、ユーザープログラムによって作成された \fBmmap\fR 領域にのみ適用されます。実行時リンカーまたは直接システムコールを行うシステムライブラリ (\fBlibthread\fR によるスレッドスタックの割り当てなど) によって確立された領域は影響を受けません。

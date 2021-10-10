@@ -1,0 +1,254 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH tpmadm 1M "2011 年 6 月 8 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+tpmadm \- 管理可信平台模块
+.SH 用法概要
+.LP
+.nf
+\fBtpmadm status\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm init\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm clear\fR [\fBowner\fR | \fBlock\fR]
+.fi
+
+.LP
+.nf
+\fBtpmadm auth\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm keyinfo\fR [\fIuuid\fR]
+.fi
+
+.LP
+.nf
+\fBtpmadm deletekey\fR \fIuuid\fR
+.fi
+
+.LP
+.nf
+\fBtpmadm pcrextend\fR \fIpcr\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fBtpmadm pcrreset\fR \fIpcr\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+可信平台模块 (Trusted Platform Module, TPM) 是为受保护的密钥存储和用于引导操作系统的软件的可靠度量提供的一个硬件组件。\fBtpmadm\fR 实用程序用于初始化并管理 TPM，以使其可供操作系统和其他程序使用。
+.sp
+.LP
+TPM 子系统可以存储和管理数目不受限的密钥供操作系统和用户使用。每个密钥由一个全局唯一标识符（或称 UUID）来标识。
+.sp
+.LP
+虽然 TPM 在任一给定时间只能保留有限数量的密钥，但支持软件可以根据需要自动加载和卸载密钥。当密钥存储在 TPM 外部时，其父密钥始终会对其进行加密或"包装"，以使得密钥不会在 TPM 外部以可读形式公开。
+.sp
+.LP
+TPM 必须由平台所有者进行初始化，然后才可供使用。此过程包括设置用于对特权操作进行授权的所有者口令。
+.sp
+.LP
+虽然 TPM 所有者类似于传统的超级用户，但两者仍有重要的区别。首先，对 TPM 功能的访问与进程特权无关。不论调用方进程的特权等级如何，所有特权操作都需要知道所有者口令。其次，TPM 所有者无法覆盖由 TPM 密钥保护的数据的访问控制。所有者可以通过重新初始化 TPM 有效地销毁数据，但是无法访问已使用其他用户所拥有的 TPM 密钥加密的数据。
+.SH 子命令
+.sp
+.LP
+以如下格式使用下列子命令：
+.sp
+.in +2
+.nf
+# tpamadm \fI<subcommand>\fR \fI[operand]\fR
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+报告 TPM 的状态信息。输出包括是否已建立了 TPM 的所有权、当前的 PCR 内容，以及 TPM 资源（如通信会话和已加载的密钥）的使用情况等等基本信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinit\fR\fR
+.ad
+.sp .6
+.RS 4n
+初始化 TPM 以供使用。这包括通过设置所有者授权口令来获取 TPM 的所有权。获取 TPM 的所有权将创建新的存储根密钥，这是该 TPM 创建的所有密钥的祖先。在发出此命令后，要想重新初始化 TPM，必须使用 BIOS 操作重置 TPM。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauth\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改 TPM 的所有者授权口令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fBlock\fR\fR
+.ad
+.sp .6
+.RS 4n
+清除验证尝试失败的次数。验证尝试失败多次后，TPM 对后续尝试的响应将变得更慢，以挫败那些试图通过穷举搜索来获取所有者口令的人。此命令（需要正确的所有者口令）将重置失败尝试的次数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fBowner\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消激活 TPM 并将其返回无所有者状态。此操作（需要当前的 TPM 所有者口令）使绑定到 TPM 的所有密钥和数据失效。要想重新使用 TPM，必须重新启动系统，从 BIOS 或 ILOM 预引导环境重新激活 TPM，且必须使用 \fBtpmadm init\fR 命令重新初始化 TPM。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyinfo\fR [\fIuuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+报告存储在 TPM 子系统中的密钥的相关信息。未指定其他参数时，此子命令将生成所有密钥的简短列表。如果指定了单个密钥的 UUID，则将显示该密钥的详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeletekey\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 TPM 子系统的持久性存储中删除具有指定 UUID 的密钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcrextend\fR \fIpcr\fR [\fIfilename\fR]\fR
+.ad
+.sp .6
+.RS 4n
+创建 \fIfilename\fR 内容的 SHA-1 散列，并使用散列值作为将扩展的数据对指示的 PCR 执行 PCR 扩展操作。如果未指定文件名，则从 stdin 读取数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcrreset\fR \fIpcr\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指示的 PCR 重置为其最初状态（全零）。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+在完成所请求的操作之后，\fBtpmadm\fR 以下列状态值之一退出。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功终止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+失败。无法完成所请求的操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+用法错误。调用 \fBtpmadm\fR 命令时使用了无效的参数。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBprof_attr\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+另请参见 \fBSUNWtss\fR 软件包中的 \fBtcsd(8)\fR 手册页。
+.sp
+.LP
+TCG 软件栈 (TCG Software Stack, TSS) 规范：\fBhttps://www.trustedcomputinggroup.org/specs/TSS\fR（截止到出版日期）
+.SH 附注
+.sp
+.LP
+\fBtpmadm\fR 通过 \fBtcsd\fR 服务与 TPM 设备通信。在使用 \fBtpmadm\fR 命令之前，\fBtcsd\fR 必须正在运行。如果 \fBtcsd\fR 没有正在运行，\fBtpmadm\fR 将生成以下错误：
+.sp
+.in +2
+.nf
+Connect context: Communication failure (0x3011)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关更多详细信息，请参见 \fBtcsd(8)\fR。

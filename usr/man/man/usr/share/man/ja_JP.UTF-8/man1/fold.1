@@ -1,0 +1,176 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH fold 1 "2011 年 8 月 17 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+fold \- 行の折り返し用フィルタ
+.SH 形式
+.LP
+.nf
+\fBfold\fR [\fB-bs\fR] [\fB-w\fR \fIwidth\fR | \fB-width\fR] [\fIfile\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfold\fR ユーティリティーは、入力ファイルから読み込んだ各行を、行の最大長が \fIwidth\fR で示すカラム位置 (\fB-b\fR オプション指定時はバイト数) になるように分割して複数行に表示するフィルタです。各出力行 (この節では以降、セグメントと呼ぶ) が指定されたカラム位置 (またはバイト数) を超えない最大長になるように、NEWLINE 文字を挿入して行が分割されます。行が文字の途中で分割されることはありません。入力中の 1 つの文字が占有するカラム数より小さい値を \fIwidth\fR に指定した場合、その結果は予測できません。
+.sp
+.LP
+入力中に CARRIAGE-RETURN、BACKSPACE、または TAB 文字が検出され、\fB-b\fR オプションが指定されていない場合、特殊な処理が行われます。
+.sp
+.ne 2
+.mk
+.na
+\fBBACKSPACE\fR
+.ad
+.RS 19n
+.rt  
+現在の行の幅の数が 1 だけ減らされます。ただし負になることはありません。\fBfold\fR は、BACKSPACE 文字の直前や直後に NEWLINE 文字を挿入することはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBCARRIAGE-RETURN\fR
+.ad
+.RS 19n
+.rt  
+現在の行の幅の数が \fB0\fR に設定されます。\fBfold\fR は、CARRIAGE-RETURN 文字の直前や直後に NEWLINE 文字を挿入することはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTAB\fR
+.ad
+.RS 19n
+.rt  
+検出された各 TAB 文字は、カラム位置ポインタを次のタブストップへ進めます。タブストップは、各カラム位置 \fIn\fR (\fIn\fR は 8 で割った剰余が 1 に等しくなる数) にあります。
+.RE
+
+.SH オプション
+.sp
+.LP
+次のオプションを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fR
+.ad
+.RS 19n
+.rt  
+\fIwidth\fR の値はカラム数ではなくバイト数で示されていることを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fR
+.ad
+.RS 19n
+.rt  
+入力行に空白文字が含まれている場合、 出力セグメントの長さが \fIwidth\fR カラムまたはバイトを超えない範囲で、最後の空白文字の直後で 行を分割します。要件を満たす空白文字が存在しなければ、\fB-s\fR オプションは入力行のその出力セグメントに対して効果がありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIwidth\fR\fB|\fR\fB-\fR\fIwidth\fR\fR
+.ad
+.RS 19n
+.rt  
+出力セグメントの最大長をカラム数  (\fB-b\fR 指定時はバイト数) で指定します。\fIwidth\fR の値が正の整数でないと、エラーが発生します。デフォルトの値は 80 です。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIfile\fR\fR \fR
+.ad
+.RS 9n
+.rt  
+行の折り返しを行うテキストファイルのパス名。\fIfile\fR オペランドを指定しないと、標準入力が使用されます。
+.RE
+
+.SH 環境
+.sp
+.LP
+\fBfold\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。 
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+指定されたファイルはすべて正常に処理されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生した。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcut\fR(1), \fBpr\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBfold\fR と \fBcut\fR(1) は、どちらも長い行を持つファイルから新たなテキストファイルを 生成する目的で使われます。\fBfold\fR は行の内容を連続させるべき場合に使用するのに対して、\fBcut\fR は行 (またはレコード) の数を一定にしておく場合に使用します。
+.sp
+.LP
+\fBfold\fR は、最大印刷幅  (通常は 80 または 132 カラム) を超える行は切り捨ててしまうような プリンタにテキストファイルを出力させるためによく使われます。
+.sp
+.LP
+下線が存在する場合には、\fBfold\fR は正しく動作しないことがあります。

@@ -1,0 +1,336 @@
+'\" te
+.\" Copyright (c) 1992, X/Open Company Limited.  All Rights Reserved.
+.\" Portions Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at  http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html.  This notice shall appear on any product containing this material.
+.TH iconv_open 3C "18 Jan 2011" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+iconv_open \- code conversion allocation function
+.SH SYNOPSIS
+.LP
+.nf
+#include <iconv.h>
+
+\fBiconv_t\fR \fBiconv_open\fR(\fBconst char *\fR\fItocode\fR, \fBconst char *\fR\fIfromcode\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBiconv_open()\fR function returns a conversion descriptor that describes a conversion from the codeset specified by the string pointed to by the \fIfromcode\fR argument to the codeset specified by the string pointed to by the \fItocode\fR argument. For state-dependent encodings, the conversion descriptor will be in  a codeset-dependent initial shift state, ready for immediate use with the  \fBiconv\fR(3C) function.
+.sp
+.LP
+Settings of \fIfromcode\fR and \fItocode\fR and their permitted combinations are implementation-dependent.
+.sp
+.LP
+The \fBiconv_open()\fR function supports the alias of the encoding name specified in \fItocode\fR and \fIfromcode\fR.  The alias table of the encoding name is described in the file \fB/usr/lib/iconv/alias\fR. See \fBalias\fR(4).
+.sp
+.LP
+When " " (empty string) or \fBchar\fR is supplied as the string value for \fIfromcode\fR argument, \fItocode\fR argument, or both, it is interpreted by the function as the codeset name of the current locale. Similarly, when \fBwchar_t\fR is supplied, the function interprets it as the wide character encoding of the current locale in the natural byte order of the current processor or as defined by the locale.
+.sp
+.LP
+When one or more of the following indicators are appended to the string values pointed to by the arguments, code conversion behavior will be modified as specified at below:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//ILLEGAL_DISCARD\fR\fR
+.ad
+.sp .6
+.RS 4n
+When specified, during subsequent \fBiconv()\fR code conversion, a sequence of illegal input bytes that does not form a valid character in the codeset specified by the \fIfromcode\fR argument is silently discarded as if there are no such illegal bytes in the input buffer and the conversion continues.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//ILLEGAL_REPLACE_HEX\fR\fR
+.ad
+.sp .6
+.RS 4n
+For any illegal input bytes, the \fBiconv()\fR code conversion converts each of such bytes into a hexadecimal number with a specific leading four-letter designator sequence as if such is a valid input byte and the conversion continues. More specifically, each of such hexadecimal numbers has a leading four-letter designator sequence of "IL--" followed by two hexadecimal digits in uppercase, for instance, "IL--01" for 1, "IL--0A" for 10, "IL--0B" for 11, "L--EF" for 239, and so on.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//ILLEGAL_RESTORE_HEX\fR\fR
+.ad
+.sp .6
+.RS 4n
+When specified, the \fBiconv()\fR code conversion simply converts back the above mentioned hexadecimal numbers for illegal input bytes into corresponding byte values regardless of the codeset specified by the \fItocode\fR argument. For instance, "IL--0A" will be converted back into a byte with 10 as the value and "IL--FF" into 255.
+.sp
+If the characters following the leading four-letter designator sequence do not form a valid hexadecimal number, such a sequence will not be treated as a hexadecimal number for illegal input bytes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//NON_IDENTICAL_DISCARD\fR\fR
+.ad
+.sp .6
+.RS 4n
+During subsequent \fBiconv()\fR code conversion, if the conversion encounters a character in the input buffer in the codeset specified by the \fIfromcode\fR argument that is legal but for which an identical character does not exist in the target codeset specified by the \fItocode\fR argument, i.e., non-identical characters, the conversion discards such characters in the output buffer instead of doing an implementation-defined conversion.
+.sp
+The number of such conversions are, nonetheless, still counted and returned as the return value of \fBiconv()\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//NON_IDENTICAL_REPLACE_HEX\fR\fR
+.ad
+.sp .6
+.RS 4n
+For non-identical characters, the \fBiconv()\fR code conversion converts each byte of such characters into a hexadecimal number with a specific leading four-letter designator sequence. More specifically, each of such hexadecimal numbers has a leading four-letter designator sequence of "NI--" followed by two hexadecimal digits in uppercase, for instance, "NI--02" for 2, "NI--0C" for 12, "NI--EF" for 239, and so on.
+.sp
+The number of such non-identical characters are counted and returned as the return value of \fBiconv()\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//NON_IDENTICAL_RESTORE_HEX\fR\fR
+.ad
+.sp .6
+.RS 4n
+When specified, the \fBiconv()\fR code conversion converts back the above mentioned non-identical hexadecimal numbers into corresponding byte values regardless of the codeset specified by the \fItocode\fR argument. For instance, "NI--0B" will be converted back into a byte with 11 as the value and "NI--FF" into 255.
+.sp
+If the characters following the leading four-letter designator sequence do not form a valid hexadecimal number, such a sequence will not be treated as a non-identical hexadecimal number.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//NON_IDENTICAL_TRANSLITERATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+For non-identical characters, if applicable, the \fBiconv()\fR code conversion transliterates each of such characters into one or more characters of the target codeset best resembling the input character.
+.sp
+The number of such non-identical characters are counted and returned as the return value of \fBiconv()\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//IGNORE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A convenience alias to \fB//NON_IDENTICAL_DISCARD\fR\fB//ILLEGAL_DISCARD\fR indicators.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//REPLACE_HEX\fR\fR
+.ad
+.sp .6
+.RS 4n
+A convenience alias to \fB//NON_IDENTICAL_REPLACE_HEX\fR\fB//ILLEGAL_REPLACE_HEX\fR indicators.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//RESTORE_HEX\fR\fR
+.ad
+.sp .6
+.RS 4n
+A convenience alias to \fB//NON_IDENTICAL_RESTORE_HEX\fR\fB//ILLEGAL_RESTORE_HEX\fR indicators.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB//TRANSLIT\fR\fR
+.ad
+.sp .6
+.RS 4n
+A convenience alias to \fB//NON_IDENTICAL_TRANSLITERATE\fR indicator.
+.RE
+
+.sp
+.LP
+When conflicting indicators are specified, one specified right-most within an argument and at \fItocode\fR argument if specified at both arguments will override preceding indicators. As an example, in the following:
+.sp
+.in +2
+.nf
+cd = iconv_open("UTF-8//IGNORE//REPLACE_HEX", "ISO8859-1//ILLEGAL_REPLACE_HEX");
+.fi
+.in -2
+
+.sp
+.LP
+Among the three indicators specified, the \fB//REPLACE_HEX\fR will be honored. For more details on the associated error numbers and function return values at \fBiconv()\fR, see \fBiconv\fR(3C).
+.sp
+.LP
+A conversion descriptor remains valid in a process until that process closes it.
+.sp
+.LP
+For examples using the  \fBiconv_open()\fR function, see the Examples section below and \fBiconv\fR(3C).
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion  \fBiconv_open()\fR returns a conversion descriptor for use on subsequent calls to  \fBiconv()\fR. Otherwise, \fBiconv_open()\fR returns \fB(iconv_t)\fR \fB\(mi1\fR and sets \fBerrno\fR to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The  \fBiconv_open\fR function may fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEMFILE\fR\fR
+.ad
+.RS 10n
+.rt  
+\fB{OPEN_MAX}\fR files descriptors are currently open in the calling process.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENFILE\fR\fR
+.ad
+.RS 10n
+.rt  
+Too many files are currently open in the system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 10n
+.rt  
+Insufficient storage space is available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+The conversion specified by \fIfromcode\fR and \fItocode\fR is not supported by the implementation.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUse \fBiconv_open()\fR to open a simple code conversion.
+.sp
+.in +2
+.nf
+#include <stdio.h>
+#include <errno.h>
+#include <iconv.h>
+
+    :
+iconv_t cd;
+    :
+
+/* Open an iconv code conversion from ISO 8859-1 to UTF-8. */
+cd = iconv_open("UTF-8", "ISO8859-1");
+if (cd == (iconv_t)-1) {
+    (void) fprintf(stderr, "iconv_open(UTF-8, ISO8859-1) failed.\n");
+    return (1);
+}
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRChange conversion behavior by supplying conversion behavior modification indicators.
+.sp
+.in +2
+.nf
+#include <stdio.h>
+#include <errno.h>
+#include <iconv.h>
+
+    :
+iconv_t cd;
+    :
+
+/*
+ * Open an iconv code conversion from UTF-8 to ISO 8859-1 with
+ * conversion behavior modification indicators that will remove
+ * illegal byte sequences and replace non-identicals into hexadecimal
+ * number strings.
+ */
+
+cd = iconv_open("ISO8859-1//ILLEGAL_DISCARD//NON_IDENTICAL_REPLACE_HEX",
+    "UTF-8");
+if (cd == (iconv_t)-1) {
+    (void) fprintf(stderr, "iconv_open(UTF-8, ISO8859-1) failed.\n");
+    return (1);
+}
+.fi
+.in -2
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/iconv/alias\fR\fR
+.ad
+.RS 24n
+.rt  
+alias table file of the encoding name
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes: 
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe with exceptions.
+_
+StandardSee \fBstandards\fR(5).
+.TE
+
+.sp
+.LP
+The \fBiconv_open()\fR function is MT-Safe with exception if and only if \fIfromcode\fR, \fItocode\fR, or both arguments are pointing to a value that is " " (empty string), \fBchar\fR, or \fBwchar_t\fR since the function will have to call \fBnl_langinfo\fR(3C) to know the codeset of the current locale in such cases. See Attributes and Notes sections of \fBsetlocale\fR(3C) for more detail. Otherwise, it is fully MT-Safe.
+.SH SEE ALSO
+.sp
+.LP
+\fBexec\fR(2), \fBiconv\fR(3C), \fBiconv_close\fR(3C), \fBmalloc\fR(3C), \fBnl_langinfo\fR(3C), \fBsetlocale\fR(3C), \fBalias\fR(4), \fBattributes\fR(5), \fBstandards\fR(5)
+.SH NOTES
+.sp
+.LP
+The \fBiconv_open()\fR function uses \fBmalloc\fR(3C) to allocate space for internal buffer areas. \fBiconv_open()\fR may fail if there is insufficient storage space to accommodate these buffers.
+.sp
+.LP
+Portable applications must assume that conversion descriptors are not valid after a call to one of the \fBexec\fR functions (see \fBexec\fR(2)).
+.sp
+.LP
+Individually, depending on the actual implementation of a code conversion, it is possible that one or more (including all) conversion behavior modification indicators are not supported by the code conversion and \fBiconv_open()\fR may fail.

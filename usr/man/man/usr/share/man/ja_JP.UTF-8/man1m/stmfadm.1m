@@ -1,0 +1,1076 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH stmfadm 1M "2011 年 8 月 22 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+stmfadm \- SCSI ターゲットモードフレームワーク (SCSI Target Mode Framework、SCSI) のコマンド行インタフェース
+.SH 形式
+.LP
+.nf
+\fBstmfadm\fR \fBadd-hg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBadd-tg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBadd-view\fR [\fB-n\fR, \fB--lun\fR \fIlogical-unit-number\fR
+     \fB-t\fR, \fB--target-group\fR \fIgroup-name\fR \fB-h\fR, \fB--host-group\fR \fIgroup-name\fR] \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBcreate-hg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBcreate-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR
+     \fB-s\fR, \fB--size\fR \fIsize\fR] \fIlu-file\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBcreate-tg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBdelete-hg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBdelete-lu\fR \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBdelete-tg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBimport-lu\fR \fIlu-file\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-hg\fR [\fB-v\fR] [\fIhost-group-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-tg\fR [\fB-v\fR] [\fItarget-group-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-lu\fR [\fB-v\fR] [\fIlu-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-target\fR [\fB-v\fR] [\fItarget-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-view\fR \fB-l\fR, \fB--lu-name\fR \fIlu-name\fR [\fIentry-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-state\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBmodify-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR
+     \fB-s\fR, \fB--size\fR \fIsize\fR, \fB-f\fR, \fB--file\fR] \fIlu-name\fR|\fIlu-file\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBonline-lu\fR \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBoffline-lu\fR \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBonline-lu\fR \fItarget-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBoffline-lu\fR \fItarget-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBremove-hg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBremove-tg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBremove-view\fR \fB-l\fR, \fB--lu-name\fR \fIlu-name\fR \fIentry-name\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBstmfadm\fR コマンドは、STMF フレームワーク内部の論理ユニットを構成します。このフレームワークおよびこのマニュアルページでは、次の用語を使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBイニシエータ\fR\fR
+.ad
+.sp .6
+.RS 4n
+SCSI I/O コマンドを SCSI ターゲットと論理ユニットに発行する役割を果たすデバイス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBターゲット\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理ユニットへの SCSI I/O コマンドを受信する役割を果たすデバイス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB論理ユニット\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲット内にあり、SCSI I/O コマンドを実行する役割を果たすデバイス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB論理ユニット番号\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲット内の論理ユニットの識別子。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBイニシエータグループ\fR\fR
+.ad
+.sp .6
+.RS 4n
+イニシエータグループは、\fBビュー\fR (下記を参照) に適用するために結合された 1 つ以上のイニシエータのセットです。1 つのイニシエータが複数のイニシエータグループのメンバーにはなることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBターゲットグループ\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットグループは、\fBビュー\fR (下記を参照) を作成するときに同じように扱われる 1 つ以上の SCSI ターゲットポートのセットです。特定の SCSI イニシエータが認識できる論理ユニットのセットは、ビューの結合されたセットによって決まります。
+.sp
+各論理ユニットにはビューエントリのセットが含まれ、各ビューエントリは、ターゲットグループ、ホストグループ、および LUN を指定します。そのホストグループからのイニシエータがそのターゲットグループを介して接続する場合、イニシエータはその論理ユニットを識別し、指定された LUN を使用してその論理ユニットに接続できます。ビューを使用すると、特定のイニシエータが認識できる論理ユニットのセットを制限したり、使用される LUN のセットを割り当てたりできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBビュー\fR\fR
+.ad
+.sp .6
+.RS 4n
+ビューは、イニシエータグループ、ターゲットグループ、および論理ユニット番号と、指定された論理ユニットとの関連付けを定義します。論理ユニットに追加されるどのビューエントリも、その論理ユニットの既存のビューエントリと競合してはいけません。ビューエントリが競合していると見なされるのは、任意のイニシエータ、ターゲット、および論理ユニット番号の関連付けの複製が試みられた場合です。たとえば、論理ユニット \fBLU_0\fR に、次のビューエントリが関連付けられているとします。
+.sp
+.in +2
+.nf
+Logical Unit: LU_0
+			View Entry: 0	
+				initiator group: HostA
+				target group: All targets
+				logical unit number: 32
+.fi
+.in -2
+.sp
+
+次を試みた場合、
+.sp
+.in +2
+.nf
+# \fBstmf add-view -n 31 -h HostA LU_0\fR
+.fi
+.in -2
+.sp
+
+この操作によってエラーが返され、このビューエントリが 1 つ以上の既存のビューエントリと競合していることを示すメッセージが表示されます。この競合は、既存のビューエントリ \fB0\fR がすでに \fBLU_0\fR をイニシエータグループ \fBHostA\fR の論理ユニット番号 32 にマップしているために発生します。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+\fBstmfadm\fR コマンドは、次のサブコマンドをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-view\fR [\fB-n\fR, \fB--lun\fR \fIlogical-unit-number\fR \fB-t\fR, \fB--target-group\fR \fIgroup-name\fR \fB-h\fR, \fB--host-group\fR \fIgroup-name\fR] \fI lu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理ユニットのビューエントリを論理ユニット \fIlu-name\fR に追加します。ここで、\fIlu-name\fR は、\fBlist-lu\fR サブコマンドで表示される論理ユニットの STMF 名です。\fBadd-view\fR サブコマンドは、論理ユニットのアクセス制御を実装するためのメカニズムをユーザーに提供するだけでなく、イニシエータとターゲットの特定のセットの論理ユニットに論理ユニット番号を割り当てるための手段も提供します。論理ユニットは、少なくとも 1 つのビューが適用されるまでは、どのイニシエータからも使用できません。各ビューエントリにはエントリ名が割り当てられます。このエントリ名を使用すると、\fBremove-view\fR サブコマンドや \fBlist-view\fR サブコマンドでエントリを参照できます。
+.sp
+\fBadd-view\fR は次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR, \fB--lun\fR \fIlogical-unit-number\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIlogical-unit-number\fR は、このビューエントリの論理ユニットに割り当てられる 0 - 16383 の範囲の整数です。このオプションが指定されていない場合、論理ユニット番号は STMF フレームワークによって割り当てられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--target-group\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR は、STMF の \fBcreate-tg\fR サブコマンドを使用して以前に作成されたターゲットグループの名前です。このオプションが指定されていない場合、この論理ユニットはすべてのターゲットから使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB-host-group\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR は、STMF の \fBcreate-hg\fR サブコマンドを使用して以前に作成されたホストグループの名前です。このオプションが指定されていない場合、この論理ユニットは、STMF フレームワークにログインするすべてのイニシエータから使用できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-hg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR...\fR
+.ad
+.sp .6
+.RS 4n
+ホストグループメンバーをホストグループに追加します。\fIgroup-name\fR は、\fBcreate-hg\fR サブコマンドを使用して作成された既存のグループである必要があります。\fIgroup member\fR は、\fIname_type\fR.\fIname_value\fR として指定できます。ここで、\fIname_type\fR には次のいずれかを指定できます。
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+また、\fIname_value\fR はイニシエータ名の値です。たとえば、ファイバチャネルイニシエータポートのワールドワイドネーム \fB200000e08b909221\fR をホストグループ \fBHostA\fR に追加するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm add-hg-member -g HostA wwn.200000e08b909221\fR
+.fi
+.in -2
+.sp
+
+\fBiqn.1986-03.com.sun:01.46f7e262\fR という名前の ISCSI イニシエータノードメンバーを \fBHostA\fR に追加するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm add-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+あるいは、メンバーをそれぞれの SCSI 名文字列識別子で指定することもできます。上の 2 つのイニシエータをそれぞれの SCSI 名文字列識別子を使用して追加するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm add-hg-member -g HostA eui.200000e08b909221\fR
+# \fBstmfadm add-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+1 つのホストグループメンバーが複数のホストグループのメンバーになることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-tg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR...\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットグループメンバーをターゲットグループに追加します。\fIgroup-name\fR は、\fBcreate-tg\fR サブコマンドを使用して作成された既存のグループである必要があります。\fIgroup member\fR は、\fIname_type\fR.\fIname_value\fR として指定できます。ここで、\fIname_type\fR には次のいずれかを指定できます。
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+また、\fIname_value\fR はターゲット名の値です。たとえば、ファイバチャネルターゲットポートのワールドワイドネーム \fB501000e092376af7\fR をターゲットグループ \fBTG0\fR に追加するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm add-tg-member -g TG0 wwn.501000e092376af7\fR
+.fi
+.in -2
+.sp
+
+\fBiqn.1986-03.com.sun:target.01.01110\fR という名前の ISCSI ターゲットメンバーを \fBTG0\fR に追加するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm add-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+あるいは、メンバーをそれぞれの SCSI 名文字列識別子で指定することもできます。上の 2 つのターゲットをそれぞれの SCSI 名文字列識別子を使用して追加するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm add-tg-member -g TG0 eui.501000e092376af7\fR
+# \fBstmfadm add-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+1 つのターゲットグループメンバーが複数のターゲットグループのメンバーになることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-hg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR という名前のイニシエータグループを作成します。\fIgroup-name\fR は、最大長が 255 の Unicode 文字の文字列です。このグループ名は、STMF システム内で一意である必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR \fB--s\fR, \fB--size\fR \fIsize\fR] \fIlu-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+STMF に登録できる論理ユニットを作成します。\fB-p\fR オプションでは、\fIlogical-unit-property\fR に次のいずれかのプロパティーを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+最大 255 文字。デバイスのユーザー定義の名前を表します。デフォルトはバッキングストアの名前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBblk\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスのブロックサイズを指定します。デフォルトは 512 ですが、この値を 4096K バイトより高い値に設定しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBguid\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効な NAA Registered Extended Identifier を表す 32 個の 16 進 ASCII 文字。デフォルトは、STMF によって設定された生成値になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホスト ID の割り当てを表す 8 個の 16 進 ASCII 文字。これは、論理ユニットのグローバル一意識別子 (GUID) を生成するために使用されます。デフォルトは \fBhostid\fR(1) によって返される値です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmeta\fR\fR
+.ad
+.sp .6
+.RS 4n
+メタデータファイル名。指定されている場合は、論理ユニットの SCSI メタデータを保持するために使用されます。シグナルを送るプロセスまたはジョブにデフォルトはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmgmt-url\fR\fR
+.ad
+.sp .6
+.RS 4n
+最大 1024 文字。管理ネットワークアドレスの URL を表します。一対の単一引用符 (\fB"\fR) で囲まれたスペース区切りの URL を使用すると、複数の URL を 1 つのパラメータとして渡すことができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoui\fR\fR
+.ad
+.sp .6
+.RS 4n
+組織の一意の識別子。IEEE OUI 企業 ID の割り当てを表す 6 個の 16 進 ASCII 文字。これは、デバイス識別子 (GUID) を生成するために使用されます。デフォルトは \fB00144F\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+製品 ID の SCSI SPC-3 を表す 16 個の文字。この値は、デバイス用に返される標準の \fBINQUIRY\fR データに反映されます。デフォルトは \fBCOMSTAR\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserial\fR\fR
+.ad
+.sp .6
+.RS 4n
+シリアル番号。SCSI の重要な製品データのシリアル番号 (ページ \fB80h\fR) を指定します。これは、最大 252 バイト長のキャラクタ値です。デフォルト値はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvid\fR\fR
+.ad
+.sp .6
+.RS 4n
+SCSI SPC-3 ごとのベンダー ID を表す 8 個の文字。この値は、デバイス用に返される標準の \fBINQUIRY\fR データに反映されます。デフォルトは \fBSUN\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwcd\fR\fR
+.ad
+.sp .6
+.RS 4n
+ライトバックキャッシュ無効。ライトバックキャッシュ無効の動作を決定するには、\fBtrue\fR または \fBfalse\fR を指定します。デフォルトは、\fIlu-file\fR 引数で指定されたバッキングストアデバイスのライトバックキャッシュ設定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwp\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み保護ビット。書き込み保護されているデバイスとして報告するかどうかを決定するには、\fBtrue\fR または \fBfalse\fR を指定します。デフォルトは \fBfalse\fR です。
+.RE
+
+\fB-s\fR オプションでは、\fIsize\fR として、整数のあとにサイズの単位を示す次のいずれかの文字を指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBk\fR\fR
+.ad
+.RS 5n
+.rt  
+K バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+M バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 5n
+.rt  
+G バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+T バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+P バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+E バイト
+.RE
+
+\fIlu-file\fR は、論理ユニットのバッキングストアとして使用されるファイルです。\fB-s\fR オプションが指定されていない場合は、指定された \fIlu-file\fR のサイズが論理ユニットのサイズとして使用されます。STMF に登録された論理ユニットには、メタデータを格納するための領域が必要です。バッキングストアデバイスとして \fBzvol\fR が指定されている場合、デフォルトでは、\fBzvol\fR の特殊なプロパティーを使用してメタデータが格納されます。そのほかのすべてのデバイスでは、デフォルトの動作として、そのデバイスの最初の 64k が使用されます。あるいは、\fBcreate-lu\fR コマンドの \fBmeta\fR プロパティーを使用して、メタデータを格納するための代替ファイルを指定する方法もあります。論理ユニットのメタデータ用に十分な記憶領域 (64k を推奨) を提供できるファイルを使用することをお勧めします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-tg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR という名前のターゲットグループを作成します。\fIgroup-name\fR は、最大長が 255 の Unicode 文字の文字列です。このグループ名は、STMF システム内で一意である必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-hg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR で識別されるホストグループを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-lu\fR \fIlu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBstmfadm create-lu\fR を使用して作成された既存の論理ユニットを削除します。これにより、事実上、その論理ユニットが STMF フレームワークからアンロードされます。その論理ユニット上の既存のデータは、すべてそのまま維持されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-tg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR で識別されるターゲットグループを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport-lu\fR \fIlu-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBstmfadm create-lu\fR を使用して以前に作成されたあとで \fBstmfadm delete-lu\fR を使用して STMF から削除された論理ユニットを、STMF にインポートおよびロードします。成功した場合、その論理ユニットは STMF から再度使用できるようになります。\fIlu-file\fR は、\fBstmfadm create-lu\fR コマンドで使用されるファイル名です。この論理ユニットが個別のメタデータファイルを使用している場合は、\fBstmfadm create-lu\fR コマンドで使用された \fBmeta\fR プロパティー値のファイル名をここで使用する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-hg\fR [\fB-v\fR,\fB--verbose\fR] [\fIhost-group-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+\fIhost-group-name\fR によって参照されたシステム内のホストグループの情報を一覧表示します。\fIhost-group-name\fR が指定されていない場合は、システム内のすべてのホストグループが一覧表示されます。\fB--v\fR または \fB--verbose\fR オプションが指定されている場合は、ホストグループ内のすべてのメンバーが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-lu\fR [\fB-v\fR,\fB--verbose\fR] [\fIlu-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+\fIlu-name\fR によって参照されたシステム内の論理ユニットの情報を一覧表示します。\fIlu-name\fR が指定されていない場合は、システム内のすべての論理ユニットが一覧表示されます。\fB-v\fR または \fB--verbose\fR オプションが指定されている場合は、論理ユニットに関する追加情報が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-target\fR [\fB-v\fR,\fB--verbose\fR] [\fItarget-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+\fItarget-name\fR によって参照されたシステム内のターゲットポートの情報を一覧表示します。ターゲット名が指定されていない場合は、システム内のすべてのターゲットポートが一覧表示されます。\fB-v\fR または \fB--verbose\fR オプションが指定されている場合は、ログインしているイニシエータの SCSI セッション情報とともに、ターゲットに関する追加情報が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-tg\fR [\fB-v\fR,\fB--verbose\fR] [\fItarget-group-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+\fItarget-group-name\fR によって参照されたシステム内のターゲットグループの情報を一覧表示します。\fItarget-group-name\fR が指定されていない場合は、システム内のすべてのターゲットグループが一覧表示されます。\fB--v\fR または \fB--verbose\fR オプションが指定されている場合は、ターゲットグループ内のすべてのメンバーが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-view\fR \fB--l\fR, \fB--lu-name\fR \fIlu-name\fR [\fIentry-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+\fIlu-name\fR によって参照された論理ユニットのビューエントリを一覧表示します。\fIentry-name\fR が指定されていない場合は、指定された論理ユニットのすべてのビューエントリが一覧表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR \fB--s\fR, \fB--size\fR \fIsize\fR, \fB-f\fR, \fB--file\fR] \fI lu-name\fR|\fIlu-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBstmfadm create-lu\fR コマンドを使用して作成された論理ユニットの属性を変更します。\fB-p\fR オプションでは、\fIlogical-unit-property\fR に次のいずれかのプロパティーを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+最大 255 文字。デバイスのユーザー定義の名前を表します。デフォルトはバッキングストアの名前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmgmt-url\fR\fR
+.ad
+.sp .6
+.RS 4n
+最大 1024 文字。管理ネットワークアドレスの URL を表します。一対の単一引用符 (\fB"\fR) で囲まれたスペース区切りの URL を使用すると、複数の URL を 1 つのパラメータとして渡すことができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwcd\fR\fR
+.ad
+.sp .6
+.RS 4n
+ライトバックキャッシュ無効。ライトバックキャッシュ無効の動作を決定するには、\fBtrue\fR または \fBfalse\fR を指定します。デフォルトは、\fIlu-file\fR 引数で指定されたバッキングストアデバイスのライトバックキャッシュ設定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwp\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み保護ビット。書き込み保護されているデバイスとして報告するかどうかを決定するには、\fBtrue\fR または \fBfalse\fR を指定します。デフォルトは \fBfalse\fR です。
+.RE
+
+\fB-s\fR オプションでは、\fIsize\fR として、整数のあとにサイズの単位を示す次のいずれかの文字を指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBk\fR\fR
+.ad
+.RS 5n
+.rt  
+K バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+M バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 5n
+.rt  
+G バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+T バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+P バイト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+E バイト
+.RE
+
+\fIlu-name\fR は、変更される論理ユニットの \fBguid\fR です。\fB-f\fR オプションが指定されている場合、オペランドはファイル名として解釈されます。これにより、現在 STMF にインポートされていない論理ユニットを変更することが可能になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline-lu\fR \fIlu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在 STMF に登録されている論理ユニットをオンラインにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline-target\fR \fItarget-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたターゲットをオンラインにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline-lu\fR \fIlu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在 STMF に登録されている論理ユニットをオフラインにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline-target\fR \fItarget-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたターゲットをオフラインにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-state\fR\fR
+.ad
+.sp .6
+.RS 4n
+STMF の動作状態および構成状態を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-hg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストグループメンバーをホストグループから削除します。\fIgroup-name\fR は、\fBcreate-hg\fR サブコマンドを使用して作成された既存のグループである必要があります。\fIgroup member\fR は、\fIname_type\fR.\fIname_value\fR として指定できます。ここで、\fIname_type\fR には次のいずれかを指定できます。
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+また、\fIname_value\fR はイニシエータ名の値です。たとえば、ファイバチャネルイニシエータポートのワールドワイドネーム \fB200000e08b909221\fR をホストグループ \fBHostA\fR から削除するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-hg-member -g HostA wwn.200000e08b909221\fR
+.fi
+.in -2
+.sp
+
+\fBiqn.1986-03.com.sun:01.46f7e262\fR という名前の ISCSI イニシエータノードメンバーを \fBHostA\fR から削除するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+あるいは、メンバーをそれぞれの SCSI 名文字列識別子で指定することもできます。上の 2 つのイニシエータをそれぞれの SCSI 名文字列識別子を使用して削除するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-hg-member -g HostA eui.200000e08b909221\fR
+# \fBstmfadm remove-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-tg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットグループメンバーをターゲットグループから削除します。\fIgroup-name\fR は、\fBcreate-tg\fR サブコマンドを使用して作成された既存のグループである必要があります。\fIgroup member\fR は、\fIname_type\fR.\fIname_value\fR として指定できます。ここで、\fIname_type\fR には次のいずれかを指定できます。
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+また、\fIname_value\fR はターゲット名の値です。たとえば、ファイバチャネルターゲットポートのワールドワイドネーム \fB501000e092376af7\fR をターゲットグループ \fBTG0\fR から削除するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-tg-member -g TG0 wwn.501000e092376af7\fR
+.fi
+.in -2
+.sp
+
+\fBiqn.1986-03.com.sun:target.01.01110\fR という名前の ISCSI ターゲットメンバーを \fBTG0\fR から削除するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+あるいは、メンバーをそれぞれの SCSI 名文字列識別子で指定することもできます。上の 2 つのターゲットをそれぞれの SCSI 名文字列識別子を使用して削除するには、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-tg-member -g TG0 eui.501000e092376af7\fR
+# \fBstmfadm remove-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-view\fR \fB--l\fR, \fB--lu-name\fR \fIlu-name\fR \fIentry-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理ユニットの 1 つ以上のビューエントリを論理ユニットから削除します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR2 つのイニシエータポートを含むホストグループの作成
+.sp
+.LP
+次のコマンドは、\fBcreate-hg\fR サブコマンドと \fBadd-hg-member\fR サブコマンドを使用してホストグループを作成し、2 つのイニシエータポートをそのホストグループに追加します。
+
+.sp
+.in +2
+.nf
+# \fBstmfadm create-hg host-group-a\fR
+# \fBstmfadm add-hg-member -g host-group-a wwn.210105b0000d92d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR論理ユニットへのビューエントリの追加
+.sp
+.LP
+次のコマンドは、\fBadd-view\fR サブコマンドを使用して、\fBhost-group-a\fR から論理ユニットへのアクセスを許可します。
+
+.sp
+.in +2
+.nf
+# \fBstmfadm add-view -h host-group-a 6000AE40C5000000000046FC4FEA001C\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRビューエントリの一覧表示
+.sp
+.LP
+次のコマンドは、\fBlist-view\fR サブコマンドを使用して、指定された論理ユニットのすべてのビューエントリを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBstmfadm list-view -l 6000AE40C5000000000046FC4FEA001C\fR
+View Entry: 0 
+    			Host group      : host-group-a
+    			Target group   : All 
+    			LUN               : 0 
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+system/storage/scsi-target-mode-framework
+T}
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBhostid\fR(1), \fBsbdadm\fR(1M), \fBattributes\fR(5)

@@ -1,0 +1,716 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmdump 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+fmdump \- fault management log viewer
+.SH SYNOPSIS
+.LP
+.nf
+\fBfmdump\fR [[\fB-e\fR | \fB-i\fR | \fB-I\fR] | \fB-A\fR ] [\fB-f\fR] [\fB-mvVp\fR] [\fB-c\fR \fIclass\fR] [\fB-R\fR \fIroot\fR]
+     [\fB-t\fR \fItime\fR] [\fB-T\fR \fItime\fR] [\fB-u\fR \fIuid\fR] [\fB-n\fR \fIname\fR[.\fIname\fR]*[=\fIvalue\fR]]
+     [\fB-E\fR \fIENA\fR] [\fIfile\fR] ...
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBfmdump\fR utility can be used to display the contents of any of the log files associated with the Solaris Fault Manager, \fBfmd\fR(1M). The Fault Manager runs in the background on each Solaris system. It receives telemetry information relating to problems detected by the system software, diagnoses these problems, and initiates proactive self-healing activities such as disabling faulty components.
+.sp
+.LP
+The \fBfmdump\fR utility is not intended as the primary administrative interface to the Fault Manager. For that purpose, use \fBfmadm\fR (and see \fBfmadm\fR(1M)). The \fBfmdump\fR utility simply dumps Fault Manager historical logs with little further interpretation, and can include implementation detail without explanation. See the \fBATTRIBUTES\fR section below.
+.sp
+.LP
+The Fault Manager maintains several sets of log files for use by service personnel and, to a lesser extent, administrators:
+.sp
+.ne 2
+.mk
+.na
+\fBerror log\fR
+.ad
+.RS 13n
+.rt  
+A log that records error telemetry, the symptoms of problems detected by the system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinfo log\fR
+.ad
+.RS 13n
+.rt  
+A log that records informational events. This is realized as two sets of log files: high-value informational events, and other informational events.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfault log\fR
+.ad
+.RS 13n
+.rt  
+A log that records fault diagnosis information, the problems believed to explain the symptoms recorded in the error and info logs.
+.RE
+
+.sp
+.LP
+A log file set consists of the current active log file together with a possible number of older rotated log files in that set. All logs are managed with \fBlogadm\fR(1M) and have entries in \fB/etc/logadm.conf\fR.
+.sp
+.LP
+Note that the \fBfmdump\fR utility dumps the current log file and all rotated log files for the target set. It therefore displays the entire log history. For the fault log, in particular, it is important to recognize that \fBfmdump\fR will show all problems \fBever\fR diagnosed and is not limited to still-current problems. (Use \fBfmadm\fR faulty for that information.)
+.sp
+.LP
+By default, \fBfmdump\fR displays the contents of the fault log, which records the result of each diagnosis made by the fault manager or one of its component modules. The error log can be selected using \fB-e\fR, the info log with \fB-i\fR, and the high-value info log with \fB-I\fR; or a specific log file path may be specified as [\fIfile\fR] on the command line (which will dump just that file and not look for rotated versions of the log). One can also use option \fB-A\fR to aggregate all logs, or a set of log file paths listed on the command line.
+.sp
+.LP
+An example of a default \fBfmdump\fR display follows:
+.sp
+.in +2
+.nf
+# \fBfmdump\fR
+TIME                 UUID                                 SUNW-MSG-ID EVENT
+Mar 23 14:06:35.2682 0a11a1a7-a8ce-c941-8527-8d7a9d320071 ZFS-8000-CS Diagnosed
+Mar 25 14:51:41.2261 0a11a1a7-a8ce-c941-8527-8d7a9d320071 FMD-8000-4M Repaired
+Mar 25 14:51:41.2523 0a11a1a7-a8ce-c941-8527-8d7a9d320071 FMD-8000-6U Resolved
+May 31 23:35:39.9146 c63ac52e-506b-c1cc-e965-ff3b8544490d SMF-8000-YX Diagnosed
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+(Output wraps on displays of 80 or fewer characters.)
+.sp
+.LP
+This dumps the fault log, because no command line options or arguments selected any other log. The fault log records the lifecycle of problems diagnosed by the Fault Manager or its component modules, from initial problem diagnosis to problem resolution.
+.sp
+.LP
+Each problem recorded in the fault log is identified by:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The timestamp of the event describing the problem lifecycle state change.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+A Universal Unique Identifier (UUID) that can be used to uniquely identify this particular problem across any set of systems. All events describing problem lifecycle state changes for a given problem will use the same UUID (as above: we see initial diagnosis and, later, repair and resolution all quoting the same problem UUID).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+A message identifier that can be used to access a corresponding knowledge article located at Sun's web site, http://www.oracle.com/us/sun/msg/
+.RE
+.sp
+.LP
+If a problem requires action by a human administrator or service technician or affects system behavior, the Fault Manager also issues a human-readable message to \fBsyslogd\fR(1M). This message provides a summary of the problem and a reference to the knowledge article on the Sun web site, http://www.oracle.com/us/sun/msg/. The \fBfmdump\fR utility can dump \fBfltlog\fR entries in a similar format to that rendered to \fBsyslog\fR through use of the \fB-m\fR option.
+.sp
+.LP
+You can use the \fB-v\fR and \fB-V\fR options to expand the display from a single-line summary to increased levels of detail for each event recorded in the log. The \fB-p\fR option can be used with \fB-V\fR to request "prettier" output.
+.sp
+.LP
+The \fB-c\fR, \fB-t\fR, \fB-T\fR, \fB-n\fR and \fB-u\fR options can be used to filter the output by selecting only those events that match the specified class, range of times, or uuid. If more than one filter option is present on the command-line, the options combine to display only those events that are selected by the logical \fBAND\fR of the options. If more than one instance of the same filter option is present on the command-line, the like options combine to display any events selected by the logical \fBOR\fR of the options. For example, the command: 
+.sp
+.in +2
+.nf
+# \fBfmdump -u uuid1 -u uuid2 -t 02Dec09\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...selects events whose attributes are (\fBuuid1 OR uuid2\fR) \fBAND\fR (time on or after \fB02Dec09\fR). 
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+Perform log aggregation. If one of more log file paths are listed on the command line, then aggregate those files; otherwise aggregate all known log types, including all \fBlogadm\fR-rotated files. Logs are merged in time order but with the characteristic that any two records from the same log file are ordered in the aggregation exactly as they were in the original log file (which is in the order they were received and processed by the Fault Manager, which will be an approximate time order).
+.sp
+You cannot use other log set selection options with \fB-A\fR: \fB-e\fR, \fB-i\fR, or \fB-I\fR.  Filter options such as \fB-c\fR, \fB-t\fR, \fB-T\fR, and \fB-n\fR can be used, but \fB-u\fR cannot.  Output options \fB-v\fR, \fB-V\fR, and \fB-p\fR are available, but \fB-m\fR is not.  Option \fB-f\fR will follow all the selected logs.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select events that match the specified class. The class argument can use the glob pattern matching syntax described in \fBsh\fR(1). The class represents a hierarchical classification string indicating the type of telemetry event. More information about Sun's telemetry protocol is available at Sun's web site, http://www.oracle.com/us/sun/msg/.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display events from the fault management error log instead of the fault log.
+.sp
+The error log contains Private telemetry information used by Sun's automated diagnosis software. This information is recorded to facilitate post-mortem analysis of problems and event replay, and should not be parsed or relied upon for the development of scripts and other tools. See \fBattributes\fR(5) for information about Sun's rules for Private interfaces.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIENA\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select events, of any generation, that match the specified ENA value. For detectors that support ENA, this option can be used to show multiple events associated with the same operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+Follow the growth of the log file (or files if using \fB-A\fR) by waiting for additional data. \fBfmdump\fR enters an infinite loop where it will sleep for a second, attempt to read and format new data from the log file, and then go back to sleep. This loop can be terminated at any time by sending an interrupt (\fBControl-C\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+Print the localized diagnosis message associated with each entry in the fault log.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR[.\fIname\fR]*[=\fIvalue\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Select log events (from the log(s) selected on the command line) that have properties with a matching name (and optionally a matching value). For string properties the value can be a regular expression match. Regular expression syntax is described in the EXTENDED REGULAR EXPRESSIONS section of the \fBregex\fR(5) manual page. Be careful when using the characters:
+.sp
+.in +2
+.nf
+$  *  {  ^  |  (  )  \e
+.fi
+.in -2
+.sp
+
+\&...or a regular expression, because these are meaningful to the shell. It is safest to enclose any of these in single quotes. For numeric properties, the value can be octal, hex, or decimal.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+Combined with \fB-V\fR (very verbose) option, requests that the pretty-printing options that are available are, in fact, performed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+Use the specified root directory for the log files accessed by \fBfmdump\fR, instead of the default root (\fB/\fR). 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select events that occurred at or after the specified time. The time can be specified using any of the following forms: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy hh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Month, day, year, hour in 24-hour format, minute, and second. Any amount of whitespace can separate the date and time. The argument should be quoted so that the shell interprets the two strings as a single argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy hh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Month, day, year, hour in 24-hour format, and minute. Any amount of whitespace can separate the date and time. The argument should be quoted so that the shell interprets the two strings as a single argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+12:00:00AM on the specified month, day, and year.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIddMonyy hh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Day, month name, year, hour in 24-hour format, minute, and second. Any amount of whitespace can separate the date and time. The argument should be quoted so that the shell interprets the two strings as a single argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIddMonyy hh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Day, month name, year, hour in 24-hour format, and minute. Any amount of whitespace can separate the date and time. The argument should be quoted so that the shell interprets the two strings as a single argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIMon\fR \fIdd\fR \fIhh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Month, day, hour in 24-hour format, minute, and second of the current year.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIyyyy\fR-\fImm\fR-\fIdd\fR [T \fIhh\fR:\fImm\fR[:\fIss\fR]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+Year, month, day, and optional hour in 24-hour format, minute, and second. The second, or hour, minute, and second, can be optionally omitted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIddMonyy\fR\fR
+.ad
+.sp .6
+.RS 4n
+12:00:00AM on the specified day, month name, and year.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIhh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hour in 24-hour format, minute, and second of the current day.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIhh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hour in 24-hour format and minute of the current day.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIT\fR\fBns\fR | \fIT\fR\fBnsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR nanoseconds ago where T is an integer value specified in base 10.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRus |\fIT\fRusec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR microseconds ago where T is an integer value specified in base 10.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIT\fR\fBms\fR | \fIT\fR\fBmsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+T milliseconds ago where T is an integer value specified in base 10.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRs | \fIT\fRsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+T seconds ago where \fIT\fR is an integer value specified in base 10.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRm |\fIT\fRmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR minutes ago where \fIT\fR is an integer value specified in base 10.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRh |\fIT\fRhour\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR hours ago where \fIT\fR is an integer value specified in base 10. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRd |\fIT\fRday\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR days ago where \fIT\fR is an integer value specified in base 10.
+.RE
+
+You can append a decimal fraction of the form \fB\&.\fR\fIn\fR to any \fB-t\fR option argument to indicate a fractional number of seconds beyond the specified time. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select events that occurred at or before the specified time. \fItime\fR can be specified using any of the time formats described for the \fB-t\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select problem diagnosis events in the fault log that exactly match the specified \fIuuid\fR. Each diagnosis is associated with a Universal Unique Identifier (UUID) for identification purposes. The \fB-u\fR option can be combined with other options, such as \fB-v\fR, to show all of the details associated with a particular diagnosis. Note that multiple fault log events can be associated with the same problem diagnosis UUID\(emall events describing the lifecycle of a single problem (from initial diagnosis to final resolution) quote the same problem UUID.
+.sp
+If the \fB-e\fR option and \fB-u\fR option are both present, the error events that are cross-referenced by the specified diagnosis are displayed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display verbose event detail. The event display is enlarged to show additional common members of the selected events. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display very verbose event detail. The event display is enlarged to show every member of the name-value pair list associated with each event. In addition, for fault logs, the event display includes a list of cross-references to the corresponding errors that were associated with the diagnosis.
+.sp
+Use \fB-p\fR with \fB-V\fR to request pretty-printing.
+.RE
+
+.SH OPERANDS
+.sp
+.LP
+The following operands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+Specifies an alternate log file (or files if using \fB-A\fR) to display instead of the system fault log. The \fBfmdump\fR utility determines the type of the specified log automatically and produces appropriate output for the selected log.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRRetrieving Given Class from \fBfmd\fR Log
+.sp
+.LP
+Use any of the following commands to retrieve information about a specified class from the \fBfmd\fR log. The complete class name is \fBereport.io.ddi.context\fR.
+
+.sp
+.in +2
+.nf
+# \fBfmdump -Ve -c 'ereport.io.ddi.context'\fR
+# \fBfmdump -Ve -c 'ereport.*.context'\fR
+# \fBfmdump -Ve -n 'class=ereport.io.ddi.context'\fR
+# \fBfmdump -Ve -n 'class=ereport.*.context'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Any of the preceding commands produces the following output:
+
+.sp
+.in +2
+.nf
+Oct 06 2007 11:53:20.975021712 ereport.io.ddi.context
+        nvlist version: 0
+                class = ereport.io.ddi.context
+                ena = 0x1b03a15ecf00001
+                detector = (embedded nvlist)
+                nvlist version: 0
+                        version = 0x0
+                        scheme = dev
+                        device-path = /
+                (end detector)
+
+                __ttl = 0x1
+                __tod = 0x470706b0 0x3a1da690
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRRetrieving Specific Detector Device Path from \fBfmd\fR Log
+.sp
+.LP
+The following command retrieves a detector device path from the \fBfmd\fR log.
+
+.sp
+.in +2
+.nf
+# \fBfmdump -Ve -n 'detector.device-path=.*/disk@1,0$'\fR
+Oct 06 2007 12:04:28.065660760 ereport.io.scsi.disk.rqs
+nvlist version: 0
+       class = ereport.io.scsi.disk.rqs
+       ena = 0x453ff3732400401
+       detector = (embedded nvlist)
+                nvlist version: 0
+                        version = 0x0
+                        scheme = dev
+                        device-path = /pci@0,0/pci1000,3060@3/disk@1,0
+                (end detector)
+
+                __ttl = 0x1
+                __tod = 0x4707094c 0x3e9e758
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Successful completion. All records in the log file were examined successfully.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+A fatal error occurred. This prevented any log file data from being examined, such as failure to open the specified file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+Invalid command-line options were specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+The log file was opened successfully, but one or more log file records were not displayed, either due to an I/O error or because the records themselves were malformed. \fBfmdump\fR issues a warning message for each record that could not be displayed, and then continues on and attempts to display other records.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd\fR\fR
+.ad
+.RS 29n
+.rt  
+Fault management log directory
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/errlog\fR\fR
+.ad
+.RS 29n
+.rt  
+Fault management error log
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/fltlog\fR\fR
+.ad
+.RS 29n
+.rt  
+Fault management fault log
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/infolog_hival\fR\fR
+.ad
+.RS 29n
+.rt  
+High-value informational log
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/infolog\fR\fR
+.ad
+.RS 29n
+.rt  
+Informational log
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/fault-management
+_
+Interface StabilitySee below.
+.TE
+
+.sp
+.LP
+The command-line options are Uncommitted. The human-readable error log and informational log output is Private. The human-readable fault log output is Uncommitted.
+.SH SEE ALSO
+.sp
+.LP
+\fBsh\fR(1), \fBfmadm\fR(1M), \fBfmd\fR(1M), \fBfmstat\fR(1M), \fBlogadm\fR(1M), \fBsyslogd\fR(1M), \fBlibexacct\fR(3LIB), \fBattributes\fR(5), \fBregex\fR(5)
+.sp
+.LP
+\fI\fR
+.sp
+.LP
+http://www.oracle.com/us/sun/msg/
+.SH NOTES
+.sp
+.LP
+Fault logs contain references to records stored in error logs that can be displayed using \fBfmdump\fR \fB-V\fR to understand the errors that were used in the diagnosis of a particular fault. These links are preserved if an error log is renamed as part of log rotation. They can be broken by removing an error log file, or by moving it to another filesystem directory. \fBfmdump\fR can not display error information for such broken links. It continues to display any and all information present in the fault log.

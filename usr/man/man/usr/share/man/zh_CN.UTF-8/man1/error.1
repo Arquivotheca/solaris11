@@ -1,0 +1,275 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH error 1 "2011 年 6 月 8 日" "SunOS 5.11" "用户命令"
+.SH 名称
+error \- 在恰当的源行上插入编译器错误消息
+.SH 用法概要
+.LP
+.nf
+\fBerror\fR [\fB-n\fR] [\fB-q\fR] [\fB-s\fR] [\fB-v\fR] [\fB-t\fR \fIsuffixlist\fR] [\fB-I\fR \fIignorefile\fR] 
+     [\fIfilename\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBerror\fR 分析由大量编译器和语言处理器产生的错误消息。它取代了在纸上记下错误缩写这种费力的传统方法，允许同时查看错误消息和源代码。
+.sp
+.LP
+\fBerror\fR 可以从指定的文件 \fIfilename\fR 或标准输入中查看错误消息，并且：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+确定每个错误消息是由哪个语言处理器产生的。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+确定文件名和错误行的行号。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将错误消息插入到源文件中错误行的正前方。
+.RE
+.sp
+.LP
+无法按语言处理器或内容进行分类的错误消息不会插入到任何文件中，但将被发送到标准输出中。只有在读取所有输入后，\fBerror\fR 才会触动源文件。
+.sp
+.LP
+\fBerror\fR 被设计为使用其标准输入运行，其标准输入通过管道连接到错误消息源。一些语言处理器将错误消息放置在它们的标准错误文件中，而其他语言处理器将其消息放置在标准输出中。因此，两个错误源应该采用管道一起连接到 \fBerror\fR。例如，当使用 \fBcsh\fR 语法时，以下命令会分析由 \fBmake\fR(1S) 在创建 lint 时运行的任何程序产生的所有错误消息：
+.sp
+.LP
+\fBexample% make\fR \fB-s\fR \fBlint |\|& error\fR \fB-q\fR \fB-v\fR
+.sp
+.LP
+\fBerror\fR 了解由 \fBas\fR(1)、\fBcpp\fR(1)、\fBld\fR(1)、\fBmake\fR(1S) 和其他编译器产生的错误消息。对于除 Pascal 之外的所有语言，都将错误消息限制为一行。某些错误消息引用了多个文件中的多个行，在这种情况下，\fBerror\fR 会复制错误消息，并将其插入到所有相应的位置。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 17n
+.rt  
+\fI不\fR触动任何文件；所有错误消息将被发送到标准输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBerror\fR 询问是否应该触动文件。需要回答 "\fBy\fR" 或 "\fBn\fR" 以继续操作。不使用 \fB-q\fR 选项意味着将触动所有被引用的文件（那些引用了被丢弃的错误消息的文件除外）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 17n
+.rt  
+输出关于错误类别的统计信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+在触动所有文件之后，打开可视化编辑器 \fBvi\fR，将其设置为用于编辑所触动的所有文件，并定位到所触动的第一个文件中的第一个错误。如果无法找到 \fBvi\fR(1)，则从标准位置尝试 \fBex\fR(1) 或 \fBed\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIsuffixlist\fR\fR
+.ad
+.RS 17n
+.rt  
+采用以下参数作为后缀列表。不触动其后缀没有出现在后缀列表中的文件。后缀列表以点分隔，可以使用 "\fB*\fR" 通配符。因此，后缀列表： 
+.sp
+\fB\&.c.y.f*.h\fR
+.sp
+允许 \fBerror\fR 触动以 "\fB\&.c\fR"、"\fB\&.y\fR"、"\fB\&.f*\fR" 和 "\fB\&.h\fR" 结尾的文件。
+.RE
+
+.sp
+.LP
+\fBerror\fR 捕捉中断和终止信号，并以有序的方式地进行终止。
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBerror\fR 命令
+.sp
+.LP
+在以下 C shell \fB(/usr/bin/csh)\fR 示例中，\fBerror\fR 从 FORTRAN 编译器获取输入：
+
+.sp
+.in +2
+.nf
+\fBexample% f77\fR \fB-c\fR \fB\fIany\fR.f |& error \fIoptions\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下是使用 Korn shell \fB(/usr/bin/ksh)\fR 的同一示例：
+
+.sp
+.in +2
+.nf
+\fBexample% f77\fR \fB-c\fR \fB\fIany\fR.f 2>&1 | error \fIoptions\fR\fR
+.fi
+.in -2
+.sp
+
+.SH 用法
+.sp
+.LP
+\fBerror\fR 对错误消息执行以下六项操作之一。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsynchronize\fR\fR
+.ad
+.RS 21n
+.rt  
+一些语言处理器会产生一些简短错误，描述它们正在处理的文件。\fBerror\fR 使用这些错误来为每个错误消息中不包括文件名的那些语言确定文件名。这些同步消息完全由 \fBerror\fR 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscard\fR\fR
+.ad
+.RS 21n
+.rt  
+丢弃来自 \fBlint\fR 的引用了两个 \fBlint\fR 库（\fB/usr/lib/lint/llib-lc\fR 和 \fB/usr/lib/lint/llib-port\fR）之一的错误消息，以防止意外触动这些库。同样，这些错误消息完全由 \fBerror\fR 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnullify\fR\fR
+.ad
+.RS 21n
+.rt  
+如果来自 \fBlint\fR 的错误消息引用了一个特定的函数，并且已知该函数生成不受关注的诊断信息，则可以废除这些错误消息。被废除的错误消息不会插入到源文件中，但会写入到标准输出中。要忽略的函数名称是从用户的起始目录中名为 \fB\&.errorrc\fR 的文件或从由 \fB-I\fR 选项指定的文件中获取的。如果该文件不存在，则不会废除任何错误消息。如果该文件存在，必须是每个函数名称占用一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnot\fR \fBfile\fR \fBspecific\fR\fR
+.ad
+.RS 21n
+.rt  
+无法凭直觉知晓的错误消息将被分组到一起，并在触动任何文件之前写入到标准输出中。它们不会插入到任何源文件中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR \fBspecific\fR\fR
+.ad
+.RS 21n
+.rt  
+当触动某个特定文件时，将引用该文件的错误消息写入到标准输出，但不将引用特定行的错误消息写入到标准输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrue\fR \fBerrors\fR\fR
+.ad
+.RS 21n
+.rt  
+可以凭直觉知晓的错误消息可供插入到它们引用的文件中。
+.RE
+
+.sp
+.LP
+只将真正的错误消息插入到源文件中。其他错误消息完全由 \fBerror\fR 使用或被写入到标准输出中。\fBerror\fR 将错误消息插入到源文件中的行上，并将放在错误消息中的行号之前。每个错误消息将被变成一行语言注释，在错误的开头和结尾分别以字符串 \fB###\fR 和 \fB%%%\fR 进行内部标记。这样，可以使用编辑器更方便地以模式搜索方式查找错误，并可以方便地删除消息。此外，每个错误消息包含该消息引用的行的源行号。格式合理的源程序在重新编译后可以仍将错误消息包含在其中，并且这些错误消息本身不会导致新的错误。对于以自由格式语言（例如 C 或 Pascal）编译的格式很差的源程序，可能会将一个注释插入到另一个注释中，这会严重破坏以后的编译。要避免这种情况，应对源程序进行格式设置，使注释的结尾所在的行上不存在任何语言语句。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~/.errorrc\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBlint\fR 错误消息中要忽略的函数名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB设备/dev/tty\fR\fR
+.ad
+.RS 18n
+.rt  
+用户的电传打字机
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性developer/base-developer-utilities
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBas\fR(1)、\fBcpp\fR(1)、\fBcsh\fR(1)、\fBed\fR(1)、\fBex\fR(1)、\fBmake\fR(1S)、\fBld\fR(1)、\fBvi\fR(1)、\fBattributes\fR(5)
+.SH 已知问题
+.sp
+.LP
+直接打开 tty 设备进行用户输入。
+.sp
+.LP
+具有多个链接的源文件生成一个新的文件副本，该副本仅具有一个到该文件的链接。
+.sp
+.LP
+更改语言处理器的错误消息格式可能会导致 \fBerror\fR 无法理解该错误消息。
+.sp
+.LP
+\fBerror\fR，由于它是纯机械的，无法过滤出由微小的语法错误所开启的"水闸"导致的后续错误。在丢弃这些相关的错误方面，还是人类更为擅长。
+.sp
+.LP
+Pascal 错误消息应当放置在受影响的行后，但 error 将它们放置在受影响的行前。\fBerror\fR 还打乱了用来标记错误点的 \fB\|`|'\|\fR 的对齐。
+.sp
+.LP
+\fBerror\fR 是为以相当高的速度在 \fBCRT\fR 上运行而设计的。它不太适合低速终端，也不适用于硬拷贝终端。

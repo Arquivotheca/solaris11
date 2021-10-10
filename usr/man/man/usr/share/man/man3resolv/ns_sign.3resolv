@@ -1,0 +1,658 @@
+'\" te
+.\" Copyright (C) 2009 Internet Systems Consortium, Inc. ("ISC")
+.\" Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.  THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\" Portions Copyright (c) 2009, Sun Microsystems Inc. All Rights Reserved.
+.TH ns_sign 3RESOLV "11 Nov 2009" "SunOS 5.11" "Resolver Library Functions"
+.SH NAME
+ns_sign, ns_sign_tcp, ns_sign_tcp_init, ns_verify, ns_verify_tcp, ns_verify_tcp_init, ns_find_tsig \- TSIG system
+.SH SYNOPSIS
+.LP
+.nf
+\fBcc\fR [ \fIflag\fR... ] \fIfile\fR... \fB-lresolv\fR \fB -lsocket \fR \fB -lnsl \fR [ \fIlibrary\fR...]
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+\fBint\fR \fBns_sign\fR(\fBu_char *\fR\fImsg\fR, \fBint *\fR\fImsglen\fR, \fBint\fR \fImsgsize\fR, \fBint\fR \fIerror\fR, \fBvoid *\fR\fIk\fR,
+     \fBconst u_char *\fR\fIquerysig\fR, \fBint\fR \fIquerysiglen\fR, \fBu_char *\fR\fIsig\fR, \fBint *\fR\fIsiglen\fR,
+     \fBtime_t\fR \fIin_timesigned\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBns_sign_tcp\fR(\fBu_char *\fR\fImsg\fR, \fBint *\fR\fImsglen\fR, \fBint\fR \fImsgsize\fR, \fBint\fR \fIerror\fR,
+     \fBns_tcp_tsig_state *\fR\fIstate\fR, \fBint\fR \fIdone\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBns_sign_tcp_init\fR(\fBvoid *\fR\fIk\fR, \fBconst u_char *\fR\fIquerysig\fR, \fBint\fR \fIquerysiglen\fR,
+     \fBns_tcp_tsig_state *\fR\fIstate\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBns_verify\fR(\fBu_char *\fR\fImsg\fR, \fBint *\fR\fImsglen\fR, \fBvoid *\fR\fIk\fR, \fBconst u_char *\fR\fIquerysig\fR,
+     \fBint\fR \fIquerysiglen\fR, \fBu_char *\fR\fIsig\fR, \fBint *\fR\fIsiglen\fR, \fBtime_t\fR \fIin_timesigned\fR,
+     \fBint\fR \fInostrip\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBns_verify_tcp\fR(\fBu_char *\fR\fImsg\fR, \fBint *\fR\fImsglen\fR, \fBns_tcp_tsig_state *\fR\fIstate\fR,
+     \fBint\fR \fIrequired\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBns_verify_tcp_init\fR(\fBvoid *\fR\fIk\fR, \fBconst u_char *\fR\fIquerysig\fR, \fBint\fR \fIquerysiglen\fR,
+     \fBns_tcp_tsig_state *\fR\fIstate\fR);
+.fi
+
+.LP
+.nf
+\fBu_char *\fR\fBns_find_tsig\fR(\fBu_char *\fR\fImsg\fR, \fBu_char *\fR\fIeom\fR);
+.fi
+
+.SH PARAMETERS
+.SS "\fBns_sign()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsg\fR\fR
+.ad
+.RS 15n
+.rt  
+the incoming DNS message, which will be modified
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the DNS message, on input and output
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgsize\fR\fR
+.ad
+.RS 15n
+.rt  
+the size of the buffer containing the DNS message on input
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIerror\fR\fR
+.ad
+.RS 15n
+.rt  
+the value to be placed in the TSIG error field
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIk\fR\fR
+.ad
+.RS 15n
+.rt  
+the (DST_KEY *) to sign the data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysig\fR\fR
+.ad
+.RS 15n
+.rt  
+for a response, the signature contained in the query
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysiglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the query signature
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsig\fR\fR
+.ad
+.RS 15n
+.rt  
+a buffer to be filled with the generated signature
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsiglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the signature buffer on input, the signature length on output
+.RE
+
+.SS "\fBns_sign_tcp()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsg\fR\fR
+.ad
+.RS 11n
+.rt  
+the incoming DNS message, which will be modified
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsglen\fR\fR
+.ad
+.RS 11n
+.rt  
+the length of the DNS message, on input and output
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgsize\fR\fR
+.ad
+.RS 11n
+.rt  
+the size of the buffer containing the DNS message on input
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIerror\fR\fR
+.ad
+.RS 11n
+.rt  
+the value to be placed in the TSIG error field
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 11n
+.rt  
+the state of the operation
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdone\fR\fR
+.ad
+.RS 11n
+.rt  
+non-zero value signifies that this is the last packet
+.RE
+
+.SS "\fBns_sign_tcp_init()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fIk\fR\fR
+.ad
+.RS 15n
+.rt  
+the (DST_KEY *) to sign the data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysig\fR\fR
+.ad
+.RS 15n
+.rt  
+for a response, the signature contained in the query
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysiglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the query signature
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 15n
+.rt  
+the state of the operation, which this initializes
+.RE
+
+.SS "\fBns_verify()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsg\fR\fR
+.ad
+.RS 15n
+.rt  
+the incoming DNS message, which will be modified
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the DNS message, on input and output
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIk\fR\fR
+.ad
+.RS 15n
+.rt  
+the (DST_KEY *) to sign the data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysig\fR\fR
+.ad
+.RS 15n
+.rt  
+for a response, the signature contained in the query
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysiglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the query signature
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsig\fR\fR
+.ad
+.RS 15n
+.rt  
+a buffer to be filled with the signature contained
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsiglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the signature buffer on input, the signature length on output
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInostrip\fR\fR
+.ad
+.RS 15n
+.rt  
+non-zero value means that the TSIG is left intact
+.RE
+
+.SS "\fBns_verify_tcp()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsg\fR\fR
+.ad
+.RS 12n
+.rt  
+the incoming DNS message, which will be modified
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsglen\fR\fR
+.ad
+.RS 12n
+.rt  
+the length of the DNS message, on input and output
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 12n
+.rt  
+the state of the operation
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrequired\fR\fR
+.ad
+.RS 12n
+.rt  
+non-zero value signifies that a TSIG record must be present at this step
+.RE
+
+.SS "\fBns_verify_tcp_init()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fIk\fR\fR
+.ad
+.RS 15n
+.rt  
+the (DST_KEY *) to verify the dat
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysig\fR\fR
+.ad
+.RS 15n
+.rt  
+for a response, the signature contained in the quer
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIquerysiglen\fR\fR
+.ad
+.RS 15n
+.rt  
+the length of the query signature
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 15n
+.rt  
+the state of the operation, which this initializes
+.RE
+
+.SS "\fBns_find_tsig()\fR"
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsg\fR\fR
+.ad
+.RS 7n
+.rt  
+the incoming DNS messag
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIeom\fR\fR
+.ad
+.RS 7n
+.rt  
+the length of the DNS message
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The TSIG functions are used to implement transaction/request security of DNS messages.
+.sp
+.LP
+The \fBns_sign()\fR and \fBns_verify()\fR functions are the basic routines. The \fBns_sign_tcp()\fR and \fBns_verify_tcp()\fR functions are used to sign/verify TCP messages that may be split into multiple packets, such as zone transfers. The \fBns_sign_tcp_init()\fR and \fBns_verify_tcp_init()\fR functions initialize the state structure necessary for TCP operations. The \fBns_find_tsig()\fR function locates the TSIG record in a message if one is present.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBns_find_tsig()\fR function returns a pointer to the TSIG record if one is found, and \fINULL\fR otherwise.
+.sp
+.LP
+All other functions return 0 on success, modifying arguments when necessary.
+.sp
+.LP
+The \fBns_sign()\fR and \fBns_sign_tcp()\fR functions return the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-1\fR\fR
+.ad
+.RS 26n
+.rt  
+bad input data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ns_r_badkey\fR\fR
+.ad
+.RS 26n
+.rt  
+The key was invalid or the signing failed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNS_TSIG_ERROR_NO_SPACE\fR\fR
+.ad
+.RS 26n
+.rt  
+The message buffer is too small.
+.RE
+
+.sp
+.LP
+The \fBns_verify()\fR and \fBns_verify_tcp()\fR functions return the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-1\fR\fR
+.ad
+.RS 29n
+.rt  
+bad input data
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNS_TSIG_ERROR_FORMERR\fR\fR
+.ad
+.RS 29n
+.rt  
+The message is malformed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNS_TSIG_ERROR_NO_TSIG\fR\fR
+.ad
+.RS 29n
+.rt  
+The message does not contain a TSIG record.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNS_TSIG_ERROR_ID_MISMATCH\fR\fR
+.ad
+.RS 29n
+.rt  
+The TSIG original ID field does not match the message ID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ns_r_badkey\fR\fR
+.ad
+.RS 29n
+.rt  
+Verification failed due to an invalid key.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ns_r_badsig\fR\fR
+.ad
+.RS 29n
+.rt  
+Verification failed due to an invalid signature.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ns_r_badtime\fR\fR
+.ad
+.RS 29n
+.rt  
+Verification failed due to an invalid timestamp.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBns_r_badkey\fR\fR
+.ad
+.RS 29n
+.rt  
+Verification succeeded but the message had an error of \fBBADKEY\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBns_r_badsig\fR\fR
+.ad
+.RS 29n
+.rt  
+Verification succeeded but the message had an error of \fBBADSIG\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBns_r_badtime\fR\fR
+.ad
+.RS 29n
+.rt  
+Verification succeeded but the message had an error of \fBBADTIME\fR.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBresolver\fR(3RESOLV), \fBattributes\fR(5)

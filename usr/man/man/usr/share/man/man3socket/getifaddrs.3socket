@@ -1,0 +1,108 @@
+'\" te
+.\" Copyright 1994-2009 The FreeBSD Project. All rights reserved.
+.\" Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:     1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  THIS SOFTWARE IS PROVIDED BY THE FREEBSD PROJECT ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  The views and conclusions contained in the software and documentation are those of the authors and should not be interpreted as representing official policies, either expressed or implied, of the FreeBSD Project.
+.\" Portions Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH getifaddrs 3SOCKET "10 May 2010" "SunOS 5.11" "Sockets Library Functions"
+.SH NAME
+getifaddrs, freeifaddrs \- get interface addresses
+.SH SYNOPSIS
+.LP
+.nf
+\fBcc\fR [ \fIflag\fR\&.\|.\|. ] \fIfile\fR \&.\|.\|. \fB-lsocket\fR \fB -lnsl \fR [ \fIlibrary\fR \&.\|.\|. ] 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+
+int getifaddrs(struct ifaddrs **\fIifap\fR);
+.fi
+
+.LP
+.nf
+void freeifaddrs(struct ifaddrs *\fIifp\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBgetifaddrs()\fR function stores a reference to a linked list of network interface addresses on the local machine in the memory referenced by \fIifap\fR. The list consists of \fBifaddrs\fR structures, as defined in the include file \fB<ifaddrs.h>\fR. Each element of the list describes one network interface address. The caller can process each \fBifaddrs\fR structure in this list by following the \fIifa_next\fR pointer, until a null pointer is encountered.
+.sp
+.in +2
+.nf
+struct ifaddrs {
+ struct ifaddrs          *ifa_next;    /* next structure in linked list*/
+ char                    *ifa_name;    /* Interface name */
+ uint64_t                ifa_flags;    /* Interface flags (if_tcp(7P)) */
+ struct sockaddr         *ifa_addr;    /* Interface address */
+ struct sockaddr         *ifa_netmask; /* Interface netmask */
+ union {
+        /* Interface broadcast address */
+        struct sockaddr        *ifa_dstaddr;
+        /* P2P interface destination */
+        struct sockaddr        *ifa_broadaddr;
+  } ifa_ifu;
+ void                     *ifa_data; /* Address specific data (unused) */
+};
+#ifndef ifa_broadaddr
+#define ifa_broadaddr   ifa_ifu.ifu_broadaddr
+#endif
+#ifndef ifa_dstaddr
+#define ifa_dstaddr     ifa_ifu.ifu_dstaddr
+#endif
+.fi
+.in -2
+
+.sp
+.LP
+The \fIifa_name\fR member contains the interface name.
+.sp
+.LP
+The \fIifa_flags\fR member contains the interface flags.
+.sp
+.LP
+The \fIifa_addr\fR member references the address of the interface. (The \fIsa_family\fR member of the \fIifa_addr\fR member should be consulted to determine the format of the \fIifa_addr\fR address.)
+.sp
+.LP
+The \fIifa_netmask\fR member references the netmask associated with \fIifa_addr\fR, if one is set, otherwise it is NULL.
+.sp
+.LP
+The \fIifa_broadaddr\fR member, which should only be referenced for non-P2P interfaces, references the broadcast address associated with \fIifa_addr\fR, if one exists, otherwise it is \fINULL\fR.
+.sp
+.LP
+The \fIifa_dstaddr\fR member references the destination address on a P2P inter face, if one exists, otherwise it is \fINULL\fR.
+.sp
+.LP
+The \fIifa_data\fR member is currently unused.
+.sp
+.LP
+The data returned by \fBgetifaddrs()\fR is dynamically allocated and should be freed using \fBfreeifaddrs()\fR when no longer needed.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBgetifaddrs()\fR function returns the value 0 if successful; otherwise -1 is returned and \fBerrno\fR is set to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBgetifaddrs()\fR function may fail and set \fBerrno\fR for any of the errors specified for \fBioctl\fR(2), \fBsocket\fR(3SOCKET), and \fBmalloc\fR(3C).
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBipadm\fR(1M), \fBifconfig\fR(1M), \fBioctl\fR(2), \fBmalloc\fR(3C), \fBsocket\fR(3SOCKET), \fBif_tcp\fR(7P), \fBattributes\fR(5)

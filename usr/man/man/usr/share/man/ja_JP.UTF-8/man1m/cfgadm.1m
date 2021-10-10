@@ -1,0 +1,737 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH cfgadm 1M "2004 年 10 月 25 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm \- 構成の管理
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR] 
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR | \fIap_type\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-t\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR 
+     [\fIap_id\fR | \fIap_type\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcfgadm\fR コマンドを使用して、動的な再構成が可能なハードウェアリソースに対して構成の管理を行うことができます。これらの操作には、ステータス (state) の表示 (\fB-l\fR)、検査の開始 (\fB-t\fR)、構成ステータスの変更の開始 (\fB-c\fR)、ハードウェア固有の機能の実行 (\fB-x\fR)、および構成管理のヘルプ情報の表示 (\fB-h\fR)、が含まれます。構成管理は、接続点 (\fBattachment point\fR) で実行されます。接続点は、Solaris の動作中にハードウェアリソースの動的再構成を行うことにシステムソフトウェアが対応している場所です。
+.sp
+.LP
+構成の管理では、マシン上に実際にあるハードウェアリソースと、構成済みで Solaris が認識できるハードウェアリソースが区別されます。構成管理機能の特性はハードウェアに依存し、ハードウェア固有のライブラリを呼び出すことで実行されます。
+.sp
+.LP
+構成管理は、\fB接続点\fRで実行されます。接続点に設置されているハードウェアリソースには、システムの稼働中に物理的な交換ができるものとできないものがありますが、構成管理インタフェースによって、動的に再構成することはできます。 
+.sp
+.LP
+接続点は、接続点の向こう側に位置するハードウェアリソースとは別の2 つの固有の要素を定義します。接続点の 2 つの要素は、受容体(\fBreceptacle\fR) と占有装置 (\fBoccupant\fR) です。ハードウェアリソースの物理的な取り付け、取り外しは接続点で行われ、その結果、受容体に占有装置が追加されたり削除されたりします。構成管理は、接続点での構成管理機能だけでなく、この物理的な着脱操作にも対応しています。
+.sp
+.LP
+接続点には、状態 (state) と条件 (condition) の情報が関連付けられています。構成管理インタフェースを使用して、接続点の状態の変化を制御することができます。受容体は、 \fBempty\fR、\fBdisconnected\fR、\fBconnected\fR の 3 つの状態のいずれかになります。また、占有装置は、 \fBconfigured\fR と \fBunconfigured\fR のいずれかの状態になります。
+.sp
+.LP
+受容体は、接続点に占有装置がない場合に、必ず受容体の通常の状態である \fBempty\fR になります。この状態には、稼働中のシステムの一部を一時的に停止することができる、ハードウェア固有の機能が関係します。受容体が占有装置をシステムの通常の使用から切り離すことができる場合に、その受容体は \fBdisconnected\fR 状態になることもできます。この状態は、占有装置のハードウェアリソースをシステムが完全に利用できるようにする前にそのハードウェアに対する検査を実行する場合や、占有装置の物理的な取り外しや再構成のための準備の 1 つの段階として、主に使用されます。disconnected 状態の受容体は、ハードウェアの許容範囲内で占有装置をシステムから分離しますが、検査や設定が必要な場合は使用を許可する場合があります。受容体は、占有装置に含まれるハードウェアリソースの通常の使用が許可されている場合に、必ず \fBconnected\fR 状態になります。connected 状態は、占有装置を含み、かつ構成管理操作が実行されていない受容体の通常の状態です。
+.sp
+.LP
+\fBunconfigured\fR 状態の占有装置に含まれるハードウェアリソースは、Solaris の通常のデータ構造では表現されないため、Solaris はそのハードウェアを使用できません。未構成の占有装置に対して実行できる操作は、構成管理操作に限られています。\fBconfigured\fR 状態の占有装置に含まれるハードウェアリソースは、Solaris の通常のデータ構造で表現されるため、Solaris は、一部またはすべてのハードウェアリソースを使用することができます。占有装置は、必ず \fBconfigured\fR 状態か \fBunconfigured\fR 状態になります。
+.sp
+.LP
+接続点は、 \fBunknown\fR、\fBok\fR、\fBfailing\fR、\fBfailed\fR、\fBunusable\fR の 5 つの条件のいずれかになります。接続点は、電源投入検査と不揮発性記録保存の結果によって、システムをどの条件にも置く可能性があります。
+.sp
+.LP
+\fBconfigured\fR 状態の占有装置を持つ接続点は、 \fBunknown\fR、\fBok\fR、\fBfailing\fR、\fBfailed\fR の条件のいずれかになります。\fBfailing\fR または \fBfailed\fR 条件にない接続点は、ハードウェア固有の回復可能なエラーがしきい値を超えると、操作中に \fBfailing\fR 状態になる場合があります。また、\fBfailed\fR 条件にない接続点は、回復不可能なエラーによって、操作中に \fBfailed\fR 条件に変わる場合があります。
+.sp
+.LP
+\fBunconfigured\fR 状態にある占有装置を持つ接続点は今までに挙げた条件のどれになる可能性もあります。\fBunconfigured\fR 状態にある占有装置を持つ接続点の条件は、マシン固有の時間しきい値が経過した後に、\fBok\fR から \fBunknown\fR になる場合があります。検査機能を開始した場合は、検査の結果によって接続点の条件が \fBok\fR、\fBfailing\fR、\fBfailed\fR のいずれかに変わります。検査機能を持たない接続点は、接続点を \fBunknown\fR 条件のままにする場合があります。検査が中断された場合は、接続点の条件は、以前の条件、\fBunknown\fR、\fBfailed\fR に設定することができます。\fBunknown\fR、\fBok\fR、\fBfailing\fR、\fBfailed\fR のいずれかの条件にある接続点には、再検査を行うことができます。
+.sp
+.LP
+接続点は、さまざまな理由によって \fBunusable\fR 条件になります。理由としては、受容体に対する不適切な電力投入や冷却、占有装置が認識できない、対応していない、不適切に構成されている、などが挙げられます。\fBunusable\fR 条件にある接続点は、システムで使用することができません。通常、この条件は、接続点に対して物理的な対処がなされない限り変わりません。
+.sp
+.LP
+また、接続点は、状態の変更処理が進行中である場合や、条件が再評価されている場合に、それを示す使用状態情報を保持します。
+.sp
+.LP
+接続点は、システムデバイス階層構造の中での接続点のタイプと位置に関連するハードウェア固有の識別子 (\fIap_id\fRs) に対応しています。\fIap_id\fR は単一の接続点を特定するために、一意になっている必要があります。\fIap_id\fR の仕様には、 物理タイプと論理タイプの 2種類が用意されています。物理 \fIap_id\fR には、完全なパス名を指定します。論理 \fIap_id\fR には、簡略表記法を使用し、ユーザーにとってより簡単な方法で接続点を指定します。 
+.sp
+.LP
+たとえば、システムのバックプレーンスロット番号 \fB7\fR にある接続点の物理 \fIap_id\fR は \fB/devices/central/fhc/sysctrl:slot7\fR となり、論理 \fIap_id\fR は \fBsystem:slot7\fR になります。また、システムの第 2 \fBPCI 入出力\fRバス上にある 3 番目の受容体の論理 \fIap_id\fR は \fBpci2:plug3\fR になります。 
+.sp
+.LP
+接続点も動的に作成されます。動的接続点には、そのシステムに設定されている基本接続点を基にして名前が付けられます。動的接続点の \fBap_id\fRs は、2 つのコロン (\fB::\fR)、基本コンポーネント、および動的コンポーネントで構成されます。基本コンポーネントは、基本接続点 \fBap_id\fR です。動的コンポーネントは、ハードウェア固有で、対応するハードウェア固有のライブラリによって生成されます。
+.sp
+.LP
+たとえば、\fBSCSI HBA\fR を表現し、物理 \fBap_id\fR が\fB/devices/sbus@1f,0/SUNW,fas@e,8800000:scsi\fR で、論理 \fBap_id\fR が c0 である基本接続点を想定します。この \fBSCSI HBA\fR に接続されているディスクは、論理 \fBap_id\fR が \fBc0::dsk/c0t0d0\fR である動的接続点によって表現されます。ここで、\fBc0\fR は基本コンポーネントで、\fBdsk/c0t0d0\fR はハードウェア固有の動的コンポーネントです。同様に、この動的接続点の物理 \fBap_id\fR は  \fB/devices/sbus@1f,0/SUNW,fas@e,8800000:scsi::dsk/c0t0d0\fR になります。 
+.sp
+.LP
+\fIap_type\fR は \fBap_id\fR の一部で、それ自身だけでは一意にならず、単一の接続点を特定することができません。\fIap_type\fR は、論理 \fBap_id\fR の一部を含み、コロン (\fB:\fR) 区切り記号を含まない部分文字列です。たとえば、\fBpci\fR の \fIap_type\fR は、論理 \fIap_id\fR が \fBpci\fR で始まる接続点をすべて出力します。
+.sp
+.LP
+\fIap_types\fR は、できるだけ使用しないでください。\fB-s\fR オプションの新しい選択サブオプションを使用すれば、より汎用的な方法で柔軟に接続点を選択することができます。詳しくは「オプション」の節を参照してください。\fB\fR 
+.sp
+.LP
+\fBcfgadm\fR コマンドは、ハードウェア固有ライブラリに含まれるハードウェア固有の機能と主に対話するため、cfgadm コマンドの動作はハードウェアに依存します。
+.sp
+.LP
+それぞれの構成管理操作では、サービスの中断が必要になる場合があります。要求された機能を完了するために、対話式で操作中のユーザーにとって目に見えるサービスの中断が必要になる場合は、機能の開始前に標準エラー出力に確認メッセージが表示され、標準入力による確認を促します。すべての質問に対する yes を意味する \fB-y\fR オプション、または no を意味する \fB-n\fR オプションを指定することによって、確認を省略することもできます。検査レベルなどのハードウェア固有のオプションは \fB-o\fR オプションを使用して、サブオプションとして指定することができます。
+.sp
+.LP
+システム構成の状態を変更する操作は、システムログデーモンである \fBsyslogd\fR(1M) によって監視されます。
+.sp
+.LP
+このコマンドの引数は、\fBgetopt\fR(3C) および \fBgetsubopt\fR(3C) の構文規約に従います。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-l\fRオプションによって、動的接続点のリストも出力されるように指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIap_id\fR で指定された接続点の状態を \fIfunction\fR で指定された状態に変更します。
+.sp
+\fIfunction\fR には、\fBinsert\fR、\fBremove\fR、\fBdisconnect\fR、\fBconnect\fR、\fBconfigure\fR、\fBunconfigure\fR のいずれかを指定することができます。これらの関数は、ハードウェア固有のライブラリルーチンを呼び出して接続点の状態を変更します。これらの関数の定義を以下に示します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert\fR\fR
+.ad
+.RS 15n
+.rt  
+占有装置を手動で追加する操作を実行したり、物理的な追加を実行するハードウェア機能を起動します。\fBinsert\fR には、システムの一部を一時的に停止するハードウェア固有の副作用が伴う場合があります。このような場合、ハードウェア固有のライブラリは、対応する警告メッセージを生成し、ユーザーに対して、そのハードウェア固有の問題と手順を提供します。ハードウェアに起因するさまざまなエラーによってこの関数が失敗し、受容体の条件が \fBunusable\fR になる場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR\fR
+.ad
+.RS 15n
+.rt  
+占有装置を手動で削除する操作を実行したり、物理的な削除を実行するハードウェア機能を起動します。\fBremove\fR には、システムの一部を一時的に停止するハードウェア固有の副作用が伴う場合があります。このような場合、ハードウェア固有のライブラリは、対応する警告メッセージを生成し、ユーザーに対して、そのハードウェア固有の問題と手順を提供します。ハードウェアに起因するさまざまなエラーによってこの関数が失敗し、受容体の条件が unusable になる場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.RS 15n
+.rt  
+ハードウェア固有の操作を実行して、受容体を disconnected 状態にします。disconnected 状態にすることによって、占有装置に対して、受容体を介した通常の方法による操作が行えなくなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR\fR
+.ad
+.RS 15n
+.rt  
+ハードウェア固有の操作を実行して、受容体を \fBconnected\fR 状態にします。受容体が connect 状態にすることによって、占有装置に対して、受容体を介した通常の方法による操作が行えるようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.RS 15n
+.rt  
+ハードウェア固有の操作を実行して、占有装置のハードウェアリソースを Solaris が使用できるようにします。構成された占有装置はシステム構成の一部になり、\fBpsradm\fR(1M)、\fBmount\fR(1M)、\fBifconfig\fR(1M) などの Solarisデバイス操作メンテナンスコマンドによる操作の対象となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.RS 15n
+.rt  
+ハードウェア固有の操作を実行して、占有装置のハードウェアリソースをシステムから論理的に削除します。この関数を使用するには、占有装置が現在構成されていて、占有装置のハードウェアが Solaris によって使用されていない必要があります。
+.RE
+
+状態変更関数は、接続点の条件や、その他のハードウェア固有の問題によって失敗する場合があります。リソースを追加するための状態変更関数 \fB(insert、\fR\fBconnect\fR、\fBconfigure)\fR は、接続点が \fBok\fR または \fBunknown\fR 条件にある場合に、ハードウェア固有のライブラリに渡されます。\fI\fR接続点がそれ以外の条件にある場合は、強制オプション (-f) を使用した場合に限って、資源を追加するための\fI関数\fRがハードウェア固有のライブラリに渡されます。システムからハードウェアリソースを削除するための関数 (\fBremove\fR、\fBdisconnect\fR、\fBunconfigure\fR) によるハードウェア固有のライブラリの呼び出しは、接続点の条件によって妨げられることはありません。接続点が \fBunknown\fR 条件にある場合に、\fI関数\fRは、ハードウェア固有のライブラリによって拒否される場合があります。
+.sp
+接続点の条件は、状態変更関数によって変更されないこともありますが、状態変更操作中のエラーによって接続点の条件が変わる場合があります。条件の書き換えと状態の強制的な変更は、強制オプション (\fB-f\fR) を指定した場合だけ実行することができます。これらの処理は、強制オプションを指定しないと失敗します。強制オプションは、ハードウェア固有の安全性検査および整合性検査によって無効になる場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された処理を強制的に実行します。これは主に、ハードウェア固有の安全機能を無効にするために使用します。状態の変更操作を強制することによって、ハードウェア固有の安全検査によって \fBok\fR や \fBunknown\fR 状態にない占有装置のハードウェアリソースを使用することができる場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-h\fR [\fIap_id\fR | \fIap_type\fR \|.\|.\|. ]\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプメッセージテキストを出力します。\fIap_id\fR または \fIap_type\fR を指定すると、この引数によって指定された接続点に関するハードウェア固有のライブラリのヘルプルーチンが呼び出されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-l\fR [\fIap_id\fR | \fIap_type\fR \|.\|.\|. ]\fR
+.ad
+.sp .6
+.RS 4n
+指定された接続点の状態や条件を一覧表示します。接続点を抽出するには、\fB-s\fR オプションと \fBselect\fR サブオプションを使用します。いずれかの処理オプションを使用せずに \fBcfgadm\fR コマンドを起動するのは、引数を使用せずに \fB-l\fR を使用するのと同等です。表示画面の書式は \fB-v\fR および \fB-s\fR オプションによって制御されます。\fB-a\fR オプションが指定されているときは、接続点が動的に展開されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+対話型の確認を行わず、応答が \fIno\fR であるとみなします。\fB-n\fRと \fB-y\fR のいずれも指定しないと、標準エラー出力と標準入力によって対話型の確認が行われます。これらの標準的なチャネルのいずれも端末 (\fBisatty\fR(3C) によって判定されている) に対応していない場合は、\fB-n\fR オプションが想定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの主オプションに対してハードウェア固有のオプションを指定します。hardware_options の文字列の書式と内容は完全にハードウェア固有のものです。オプション文字列の \fIhardware_options\fR は \fBgetsubopt\fR(3C) の構文規約に従います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+一覧表示 (\fB-l\fR) コマンドに対して一覧表示オプションを指定します。\fIlisting_options\fR は \fBgetsubopt\fR(3C) の構文規約に従います。サブオプションを使用して、接続点の選択条件 (\fBselect\fR=\fIselect_string\fR)、適切な照合タイプ (\fBmatch\fR=\fImatch_type\fR)、一覧表示する順序 (\fBsort\fR=\fIfield_spec\fR)、表示するデータ (\fBcols=\fR\fIfield_spec\fR と \fBcols2=\fR\fIfield_spec\fR)、列の区切り記号 (\fBdelim=\fR\fIstring\fR)、列の見出し行の抑制 (\fBnoheadings\fR) を指定します。 
+.sp
+\fBselect\fR サブオプションを指定すると、指定された条件と一致する接続点だけが一覧表示されます。\fBselect\fR サブオプションの構文は次のとおりです。 
+.sp
+.in +2
+.nf
+cfgadm \fB-s\fR select=attr1(value1):attr2(value2)... 
+.fi
+.in -2
+.sp
+
+\fIattr\fR は、\fBap_id\fR、\fBclass\fR、\fBtype\fR のいずれかです。\fBap_id\fR は論理 \fIap_id\fR フィールド、\fBclass\fR は接続点のクラス、\fBtype\fR はタイプフィールドです。\fIvalue1\fR、\fIvalue2\fR などは、照合する値です。照合タイプを指定するには、次のように \fBmatch\fR サブオプションを使用します。 
+.sp
+.in +2
+.nf
+cfgadm \fB-s\fR match=\fImatch_type\fR,select=attr1(value1)...
+.fi
+.in -2
+.sp
+
+\fImatch_type\fR は、\fBexact\fR または \fBpartial\fR から選択します。デフォルト値は \fBexact\fR です。
+.sp
+\fBselect\fR サブオプションの引数は、シェルから保護するために引用符で囲みます。
+.sp
+\fIfield_spec\fR には、1 つの \fIdata-field\fR、または次のようにコロン (\fB:\fR) で区切った複数の \fIdata-field\fR を指定します。\fIdata-field\fR: \fIdata-field\fR: data-field。\fIdata-field\fR は、\fBap_id\fR、\fBphysid\fR、\fBr_state\fR、\fBo_state\fR、\fBcondition\fR、\fBtype\fR、\fBbusy\fR、\fBstatus_time\fR、\fBstatus_time_p\fR、\fBclass\fR、\fBinfo\fR のいずれかです。\fBap_id\fR フィールドの出力は接続点の論理名で、\fBphysid\fRフィールドは物理名です。\fBr_state\fR フィールドは、\fBempty\fR、\fBdisconnected\fR、\fBconnected\fR のいずれかになります。\fBo_state\fRフィールドは、\fBconfigured\fR と \fBunconfigured\fR のいずれかになります。\fBbusy\fR フィールドは、接続点が使用中の場合に \fBy\fR になり、使用中でない場合に \fBn\fR となります。\fBtype\fR フィールドと \fBinfo\fR フィールドはハードウェア固有のフィールドです。\fBstatus_time\fR フィールドには、\fBr_state\fR、\fBo_state\fR、または接続点の条件が最後に変更された時刻が表示されます。\fBstatus_time_p\fR フィールドは、構文解析が可能な \fBstatus_time\fR フィールドです。接続点にクラスが関連付けられている場合は、\fBclass\fR フィールドにクラス名が表示されます。接続点にクラスが関連付けられていない場合は、\fBclass\fR フィールドに \fBnone\fR が表示されます。
+.sp
+\fIfield_spec\fR 内のフィールドの順序は重要です。 \fBsort\fR サブオプションでは、最初に与えられたフィールドが主ソートキーになります。\fBcols\fR および \fBcols2\fR サブオプションでは、指定した順序でフィールドが出力されます。\fIdata-field\fR に対するソートの順序は、\fBsort\fR サブオプションに対する \fIfield_sec\fR 内の \fIdata-field\fR 名の前にマイナス (\fB\(mi\fR) を付けることによって逆になります。\fBsort\fR のデフォルトの値は \fBap_id\fR です。\fBcols\fR および \fBcols2\fR のデフォルトの値は \fB-v\fR オプションが指定されているかどうかによって異なります。 \fBv\fR が指定されていない場合は、\fBcols\fR は \fBap_id:r_state:o_state:condition\fR になり、cols2 は設定されません。\fB-v\fR が指定されている場合は、\fBcols\fR は \fBap_id:r_state:o_state:condition:info\fR になり、\fBcols2\fR は \fBstatus_time:type:activity:physid:\fR になります。\fBdelim\fR のデフォルトの値は、単一のスペース文字です。\fBdelim\fR の値には、任意の長さの文字列を指定することもできます。区切り記号にはコンマ (\fB,\fR) を含めることはできません (\fBgetsubopt\fR(3C) を参照)。これらの一覧表示オプションは、構文解析が可能な出力を生成するために使用することができます。「\fB注意事項\fR」 を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つまたは複数の接続点の検査を実行します。この検査機能は、接続点の条件を再評価するために使用します。\fIhardware_options\fR の中で検査レベル指示子を指定しないと、重度の障害を検出する最も早い検査方法が使用されます。
+.sp
+より包括的な検査は個々のハードウェアに依存するため、\fIhardware_options\fR を使用して選択します。
+.sp
+検査の結果は、指定された占有装置の条件を \fBok\fR (障害が発見されなかった場合)、\fBfailing\fR (回復可能な障害が発見された場合)、\fBfailed\fR (回復不可能な障害が発見された場合) のいずれかに更新するために使用されます。
+.sp
+検査が中断された場合は、接続点の条件は、以前の値に戻すか、\fBunknown\fR (障害が発見されなかった場合)、\fBfailing\fR (回復可能な障害が発見された場合)、\fBfailed\fR (回復不可能な障害が発見された場合) のいずれかに設定されます。接続点は、エラーがなく、検査が正常に完了した場合のみ \fBok\fR に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細表示モードで実行します。\fB-c\fR、\fB-t\fR、\fB-x\fR オプションを指定した場合に、各試行操作の結果を表示するメッセージを出力します。\fB-h\fR オプションを指定した場合は、詳細なヘルプ情報が表示されます。\fB-l\fR オプションを指定した場合は、各接続点に関するすべての情報を出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェア固有の機能を実行します。受容体や占有装置の状態は、専用ハードウェア固有の機能を使用して変更します。接続点の状態は、ハードウェア固有の機能の動作中に検出されたエラーの結果として変化する場合があります。\fIhardware_function\fR 文字列の書式と内容は完全にハードウェア固有のものです。オプション文字列の \fIhardware_function\fR は \fBgetsubopt\fR(3C) の構文規約に従います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+対話型の確認を行わず、応答が \fByes\fR であるとみなします。
+.RE
+
+.SH 使用法
+.sp
+.LP
+このコマンドを使用するために必要な特権は、ハードウェアに依存します。一般的に、デフォルトのシステム設定では、一覧表示オプション以外のすべての機能はスーパーユーザーのみが使用することができます。
+.SH 使用例
+.LP
+\fB例 1 \fRデバイスツリー内の接続点の一覧表示
+.sp
+.LP
+以下の例は、動的接続点以外のすべての接続点を一覧表示します。 
+
+.sp
+.in +2
+.nf
+example# cfgadm
+
+  Ap_Id         Type        Receptacle      Occupant       Cond
+system:slot0    cpu/mem     connected       configured     ok
+system:slot1    sbus-upa    connected       configured     ok
+system:slot2    cpu/mem     connected       configured     ok
+system:slot3    unknown     connected       unconfigured   unknown
+system:slot4    dual-sbus   connected       configured     failing
+system:slot5    cpu/mem     connected       configured     ok
+system:slot6    unknown     disconnected    unconfigured   unusable
+system:slot7    unknown     empty           unconfigured   ok
+c0              scsi-bus    connected       configured     unknown
+c1              scsi-bus    connected       configured     unknown
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR構成することができるすべてのハードウェアの情報の一覧表示
+.sp
+.LP
+以下の例は、現在構成することができるすべてのハードウェアの情報を一覧表示します。動的接続点で表現されるハードウェアも表示されます。
+
+.sp
+.in +2
+.nf
+example# cfgadm -al
+
+  Ap_Id            Type         Receptacle      Occupant        Cond
+system:slot0       cpu/mem      connected       configured      ok
+system:slot1       sbus-upa     connected       configured      ok
+system:slot2       cpu/mem      connected       configured      ok
+system:slot3       unknown      connected       unconfigured    unknown
+system:slot4       dual-sbus    connected       configured      failing
+system:slot5       cpu/mem      connected       configured      ok
+system:slot6       unknown      disconnected    unconfigured    unusable
+system:slot7       unknown      empty           unconfigured    ok
+c0                 scsi-bus     connected       configured      unknown
+c0::dsk/c0t14d0    disk         connected       configured      unknown 
+c0::dsk/c0t11d0    disk         connected       configured      unknown 
+c0::dsk/c0t8d0     disk         connected       configured      unknown
+c0::rmt/0          tape         connected       configured      unknown 
+c1                 scsi-bus     connected       configured      unknown
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR接続点の属性に基づいて選択された情報の一覧表示
+.sp
+.LP
+次の例は、接続点のうち、\fBscsi\fR で始まるクラス、\fBc\fR で始まる \fBap_id\fR、および \fBscsi\fR で始まる \fBtype\fR フィールドを持つものをすべて一覧表示します。\fB-s\fR オプションの引数は、シェルから保護するために引用符で囲みます。
+
+.sp
+.in +2
+.nf
+example# cfgadm -s "match=partial,select=class(scsi):ap_id(c):type(scsi)"
+
+Ap_Id         Type          Receptacle      Occupant           Cond
+ c0          scsi-bus      connected       configured         unknown
+ c1          scsi-bus      connected       configured         unknown
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR現在構成することができるハードウェアの情報の詳細表示
+.sp
+.LP
+以下の例は、\fIap-type\fR \fBsystem\fR の現在構成することができるハードウェアの情報を詳細表示モードで示します。
+
+.sp
+.in +2
+.nf
+example# cfgadm -v -l system
+Ap_Id                      Receptacle Occupant   Condition Information
+When         Type      Busy     Phys_Id
+system:slot1               connected  configured ok
+Apr  4 23:50 sbus-upa  n        /devices/central/fhc/sysctrl:slot1
+system:slot3               connected  configured ok        non-detachable
+Apr 17 11:20 cpu/mem   n        /devices/central/fhc/sysctrl:slot3
+system:slot5               connected  configured ok
+Apr  4 23:50 cpu/mem   n        /devices/central/fhc/sysctrl:slot5
+system:slot7               connected  configured ok
+Apr  4 23:50 dual-sbus n        /devices/central/fhc/sysctrl:slot7
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBWhen\fR 列は \fBstatus_time\fR フィールドの内容を表示します。
+.LP
+\fB例 5 \fRハードウェア固有の拡張検査を使用した 2 つの占有装置の検査\fB\fR
+.sp
+.LP
+次の例は、ハードウェア固有の拡張検査を使用して 2 つの占有装置を検査します。\fB\fR
+
+.sp
+.in +2
+.nf
+example# cfgadm -v -o extended -t system:slot3 system:slot5
+Testing attachment point system:slot3 ...  ok
+Testing attachment point system:slot5 ...  ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR強制オプションを使用した占有装置の構成
+.sp
+.LP
+以下の例は、強制オプションを使用して、\fBfailing\fR 状態の占有装置をシステムに構成します。
+
+.sp
+.in +2
+.nf
+example# cfgadm -f -c configure system:slot3
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRシステムからの占有装置の構成解除
+.sp
+.LP
+以下の例は、システムから占有装置を構成解除します。
+
+.sp
+.in +2
+.nf
+example# cfgadm -c unconfigure system:slot4
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR接続点の占有装置の構成
+.sp
+.LP
+以下の例は、占有装置を構成します。
+
+.sp
+.in +2
+.nf
+example# cfgadm -c configure c0::dsk/c0t0d0
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBcfgadm\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。 \fBLC_TIME\fR、\fBLC_MESSAGES\fR、\fBNLSPATH\fR、および \fBTZ\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBcfgadm\fR が見出し行とエラーメッセージを表示する方法を特定します。出力されるデータは、この環境変数の影響を受けません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_TIME\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBcfgadm\fR がステータスの変更時間 (\fBstatus_time\fR) を表示する方法 (人による判読が可能な形式) を特定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.RS 15n
+.rt  
+ステータスの変更時間を変換する際に使用されるタイムゾーンを特定します。これは人による判読が可能な (\fBstatus_time\fR) と構文解析が可能な (\fBstatus_time_p\fR) 形式の両方に当てはまります。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定された宛先が構成管理に対応していません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+使用方法のエラー。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm_fp\fR(1M), \fBcfgadm_ib\fR(1M), \fBcfgadm_pci\fR(1M), \fBcfgadm_sata\fR(1M), \fBcfgadm_sbd\fR(1M ), \fBcfgadm_scsi\fR(1M), \fBcfgadm_usb\fR(1M), \fBifconfig\fR(1M), \fBmount\fR(1M), \fBprtdiag\fR(1M), \fBpsradm\fR(1M), \fBsyslogd\fR(1M), \fBconfig_admin \fR(3CFGADM), \fBgetopt\fR(3C), \fBgetsubopt \fR(3C), \fBisatty\fR(3C), \fBattributes \fR(5), \fBenviron\fR(5)
+.SH 診断
+.sp
+.LP
+診断メッセージは標準エラー出力に表示されます。オプションや使用方法のエラー以外に、次の診断メッセージがこのユーティリティによって表示されます。
+.sp
+.in +2
+.nf
+cfgadm: Configuration administration not supported on\fIap_id\fR
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: No library found for \fIap_id\fR
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIap_id\fRis ambiguous
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Insufficient privileges
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: Attachment point is busy, try again
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: No attachment points with specified attributes found
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: System is busy, try again
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Operation requires a service interruption
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Data error: \fIerror_text\fR
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Hardware specific failure: \fIerror_text\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+エラーメッセージの詳細については \fBconfig_admin\fR(3CFGADM) を参照してください。
+.SH 注意事項
+.sp
+.LP
+ハードウェアリソースは、ハードウェア固有の方法で未構成プールに入ります。これは、 システムの初期設定や構成解除操作の結果としてなど、さまざまな状況で発生します。\fBunconfigured\fR 状態にある占有装置は、システムによる特定の介入が発生するまで、システムが使用することはできません。このような干渉は、オペレーターが開始したコマンドや、自動構成メカニズムによって発生します。
+.sp
+.LP
+\fBcfgadm\fR コマンドの一覧表示オプションは、シェルスクリプトの中などで、別のコマンドに対する構文解析可能な入力として使用することができます。構文解析可能な出力の場合は、必要なフィールドを選択するときに、\fB-s\fR オプションを使用する必要があります。\fB-s\fR オプションは、列の見出しを抑制するときにも使用できます。次のフィールドは、常に構文解析が可能な出力を生成します。 \fBap_id\fR、\fBphysid\fR、\fBr_state\fR、\fBo_state\fR、\fBcondition\fR、\fBbusy\fR、\fBstatus_time_p\fR、\fBclass\fR、および \fBtype\fR。解析可能な出力には、フィールドの値にスペース文字が含まれることはありません。
+.sp
+.LP
+以下はシェルスクリプトの一部分で、タイプが \fBCPU\fR の正常な未構成の占有装置で最初のものを検出します。\fB\fR
+.sp
+.in +2
+.nf
+found=
+cfgadm -l -s "noheadings,cols=ap_id:r_state:condition:type" | \e
+while read ap_id r_state cond type
+do
+     if [ "$r_state" = unconfigured -a "$cond" = ok -a "$type" = CPU ]
+     then
+          if [ -z "$found" ]
+          then
+               found=$ap_id
+          fi
+     fi
+done
+if [ -n "$found" ]
+then
+         echo "Found CPU $found"
+fi
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+構文解析が可能な時間フィールド (\fBstatus_time_p\fR) の形式は、\fIYYYYMMDDhhmmss\fR で、文字列の比較を行うのに都合がよい書式で、年、月、日、時間、分、秒を表示します。
+.sp
+.LP
+システム構成管理で使用できるものの詳細については、ハードウェア固有のドキュメントを参照してください。

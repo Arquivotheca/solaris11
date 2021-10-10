@@ -1,0 +1,522 @@
+'\" te
+.\" 版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利。
+.TH prctl 1 "2009 年 8 月 25 日" "SunOS 5.11" "用户命令"
+.SH 名称
+prctl \- 获取或设置正在运行的进程、任务和项目的资源控制
+.SH 用法概要
+.LP
+.nf
+\fBprctl\fR [\fB-P\fR] [\fB-t\fR [basic | privileged | system]] 
+     [\fB-n\fR \fIname\fR [\fB-srx\fR] [\fB-v\fR \fIvalue\fR] [\fB-e\fR | \fB-d\fR \fIaction\fR] [\fB-p\fR \fIpid\fR]] 
+     [\fB-i\fR \fIidtype\fR] \fIid\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+使用 \fBprctl\fR 实用程序，可以检查和修改与系统中的活动进程、任务或项目相关联的资源控制。它允许访问基本限制和特权限制以及当前在指定实体上使用的限制。
+.sp
+.LP
+有关当前发行版的 Solaris 操作系统中支持的资源控制的说明，请参见 \fBresource_controls\fR(5)。
+.SH 选项
+.sp
+.LP
+如果未指定 \fB-s\fR、\fB-r\fR、\fB-x\fR、\fB-v\fR、\fB-d\fR 或 \fB-e\fR 选项中的任何一个，则调用被视为获取操作。否则，它被视为修改操作。
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR | \fB-e\fR \fIaction\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fB-v\fR、\fB-t\fR 和 \fB-p\fR 指定的资源控制值禁用 (\fB-d\fR) 或启用 (\fB-e\fR) 指定的 \fIaction\fR。如果未指定 \fB-v\fR、\fB-t\fR 或 \fB-p\fR 选项中的任何一个，则它们与任何值、特权或接收者 pid 都匹配。例如，仅指定 \fB-v\fR 将修改具有匹配的值且与任意特权和接收者 pid 匹配的第一个资源控制。如果未找到匹配的资源控制值，则按指定了 \fB-s\fR 时的方式添加新值。
+.sp
+\fB操作:\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 17n
+.rt  
+此操作仅适用于 \fB-d\fR。它将禁用所有操作。对于具有 \fBdeny\fR 全局标志的资源控制值，此操作将失败。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeny\fR\fR
+.ad
+.RS 17n
+.rt  
+表示资源控制尝试拒绝向所请求的资源超出了资源控制值的请求上的进程、任务、项目或区域授予资源。如果资源控制具有 \fBno-deny\fR 全局标志，则无法启用 \fBdeny\fR 操作。如果资源控制具有 \fBdeny\fR 全局标志，则无法禁用 \fBdeny\fR 操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsignal\fR\fR
+.ad
+.RS 17n
+.rt  
+此操作仅适用于 \fB-d\fR。它将停用 \fBsignal\fR 操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsignal\fR=\fIsignum\fR\fR
+.ad
+.RS 17n
+.rt  
+在 \fBsignal=\fR\fIsignum\fR 操作中，\fIsignum\fR 是一个信号编号（或信号的字符串表示形式）。对具有 \fBno-local-action\fR 全局标志的资源控制设置 \fBsignal\fR 操作会失败。可以发送一组有限的信号。有关其他详细信息，请参见\fB注\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIidtype\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 id 操作数的类型。有效的 \fIidtype\fR 为 \fBprocess\fR、\fBtask\fR、\fBproject\fR 或 \fBzone\fR。还可以为 \fBpid\fR、\fBtaskid\fR、\fBprojid\fR 和 \fBzoneid\fR。如果省略了 \fB-i\fR 选项，则缺省 id 类型为 \fBprocess\fR。
+.sp
+对于修改操作，id 操作数归属的实体是目标实体。例如，在 \fB-i\fR \fBprocess\fR 上设置一个项目资源控制将会在每个给定进程参数归属的项目上设置该资源控制。
+.sp
+对于获取操作，将为 id 操作数归属的所有实体列出资源控制。例如，\fB-i\fR \fBtask\fR \fItaskid\fR 将为任务以及该任务归属的项目和区域列出任务、项目和区域资源控制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要获取或设置的资源控制的名称。如果未指定 \fIname\fR，将检索所有资源控制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+处理基本任务项目或区域资源控制值时（使用 \fB-s\fR、\fB-r\fR、\fB-x\fR、\fB-d\fR 或 \fB-e\fR），可使用 \fB-p\fR 指定接收者 \fIpid\fR。在任务、项目或区域上设置一个或多个新的基本资源控制时，如果 \fB-i\fR \fIidtype\fR 选项参数不是 \fBprocess\fR，则 \fB-p\fR 选项是必需的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+以空格分隔形式显示资源控制值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用通过 \fB-v\fR 选项指定的新值替换第一个资源控制值（与 \fB-t\fR \fBprivilege\fR 相匹配的）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置一个新的资源控制值。
+.sp
+此选项需要 \fB-v\fR 选项。 
+.sp
+如果未指定 \fB-t\fR 选项，则使用基本特权。如果要设置基本任务、进程或区域资源控制，则需要 \fB-p\fR。如果还指定了 \fB-e\fR 或 \fB-d\fR，则也将设置对新的\fB资源控制\fR的操作。 
+.sp
+为了与早期版本兼容，如果指定了 \fB-v\fR 且未指定 \fB-e\fR、\fB-d\fR、\fB-r\fR 或 \fB-x\fR 中的任何一个，则会隐式包含此选项。
+.sp
+有关设置资源控制值时可用于表示大值的单位修饰符和比例因子的说明，请参见 \fBresource_controls\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [ \fBbasic\fR | \fBprivileged\fR | \fBsystem\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+指定要设置的资源控制类型。除非为资源控制设置了 "lowerable" 标志，否则只有其特权等效于 root 的用户（或 setuid 程序）执行的调用可修改特权资源控制。有关 \fBRCTL_GLOBAL_LOWERABLE\fR 标志的说明，请参见 \fBrctlblk_set_value\fR(3C)。如果未指定类型，则采用 \fBbasic\fR。对于获取操作，如果未指定类型，则将显示所有资源控制类型的值，包括 \fBsystem\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+为设置操作指定资源控制值。如果未指定 \fIvalue\fR，则将在给定类型的具有最低值的资源控制上执行修改（删除、启用或禁用操作）。
+.sp
+有关设置资源控制值时可用于表示大值的单位修饰符和比例因子的说明，请参见 \fBresource_controls\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除指定的资源控制值。如果未提供删除选项，则 \fBprctl\fR 的缺省操作是修改具有匹配的值和特权的资源控制值，或插入具有给定特权的新值。\fBsetrctl\fR(2) 中更完整地讨论了匹配条件。
+.RE
+
+.sp
+.LP
+如果未指定 \fB-d\fR、\fB-e\fR、\fB-v\fR 或 \fB-x\fR 选项中的任何一个，则调用被认为是获取操作。
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIid\fR\fR
+.ad
+.RS 6n
+.rt  
+要查询的实体（\fBprocess\fR、\fBtask\fR、\fBproject\fR 或 \fBzone\fR）的 \fBID\fR。如果调用方用户的凭证没有特权，且正被查询的实体拥有不同的凭证，则操作将失败。如果未指定 \fIid\fR，则将返回一条错误消息。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR显示当前的资源控制设置
+.sp
+.LP
+以下示例显示当前 shell 所属任务的当前资源控制设置：
+
+.sp
+.in +2
+.nf
+ example$ ps -o taskid -p $$
+TASKID
+8
+example$ prctl -i task 8
+136150: /bin/ksh
+NAME    PRIVILEGE       VALUE    FLAG   ACTION             RECIPIENT
+task.max-cpu-time
+        usage            8s
+        system          18.4Es    inf   none                -
+task.max-lwps
+        usage              39
+        system          2.15G     max   deny                -
+project.max-contracts
+        privileged      10.0K       -   deny                -
+project.max-locked-memory
+        usage               0B
+        privileged       508MB      -   deny                -
+project.max-port-ids
+        privileged      8.19K       -   deny                -
+project.max-shm-memory
+        privileged       508MB      -   deny                -
+project.max-shm-ids
+        privileged        128       -   deny                -
+project.max-msg-ids
+        privileged        128       -   deny                -
+project.max-sem-ids
+        privileged        128       -   deny                -
+project.max-crypto-memory
+         usage            0B
+privileged       508MB      -   deny                -
+project.max-tasks
+        usage               2
+        system          2.15G     max   deny                -
+project.max-lwps
+         usage             39
+        system          2.15G     max   deny                -
+project.cpu-shares
+        usage               1
+        privileged          1       -   none                -
+zone.max-shm-memory
+        system          16.0EB    max   deny                -
+zone.max-shm-ids
+        system          16.8M     max   deny                -
+zone.max-sem-ids
+        system          16.8M     max   deny                -
+zone.max-msg-ids
+        system          16.8M     max   deny                -
+zone.max-lwps
+        system          2.15G     max   deny                -
+zone.cpu-shares
+        privileged          1       -   none                -
+zone.max-locked-memory
+        usage               0B
+        privileged       508MB      -   deny                -
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR显示、替换和验证特定控制的值
+.sp
+.LP
+以下示例显示、替换和验证某个现有项目上的特定控制的值：
+
+.sp
+.in +2
+.nf
+example# prctl -n project.cpu-shares -i project group.staff
+project: 10: group.staff
+NAME    PRIVILEGE       VALUE    FLAG   ACTION               RECIPIENT
+project.cpu-shares
+        usage               1
+        privileged          1       -   none                         -
+        system          65.5K     max   none                         -
+
+example# prctl -n project.cpu-shares -v 10 -r -i project group.staff
+example# prctl -n project.cpu-shares -i project group.staff
+project: 10: group.staff
+NAME    PRIVILEGE       VALUE    FLAG   ACTION               RECIPIENT
+project.cpu-shares
+        usage              10
+        privileged         10       -   none                         -
+        system          65.5K     max   none                         -
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR调整资源
+.sp
+.LP
+以下示例使用了 \fBproject.max-locked-memory\fR 资源。
+
+.sp
+.LP
+首先，使用 \fBid\fR \fB-p\fR 找出当前 shell 是哪个项目的成员：
+
+.sp
+.in +2
+.nf
+/home/garfield> id -p
+          uid=77880(garfield) gid=10(staff) projid=10(group.staff)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用目标项目，确定更改前的资源限制值：
+
+.sp
+.in +2
+.nf
+/home/garfield> prctl -n project.max-locked-memory -i project \e
+                      group.staff
+	project 10: group.staff
+	project.max-locked-memory
+            privileged         256MB       -    deny                  -
+      	    system            16.0EB     max    deny                  -
+
+current limit is 256 Megabytes.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+然后，将目标项目的 \fBproject.max-locked-memory\fR 限制调整为 300M 字节：
+
+.sp
+.in +2
+.nf
+# prctl -n project.max-locked-memory -v 300M -r -i project group.staff
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+更改后的资源限制值将显示新值 300M 字节：
+
+.sp
+.in +2
+.nf
+# prctl -n project.max-locked-memory -i project group.staff
+	project 10:group.staff
+	project.max-locked-memory
+	    usage              200MG
+     privileged         300MB       -    deny                           -
+	   system            16.0EB     max    deny                           -
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR修改项目的 CPU 上限
+.sp
+.LP
+\fBprctl\fR 命令可使用 \fBproject.cpu-cap\fR 资源控制（请参见 \fBresource_controls\fR(5)）设置和修改项目的 CPU 上限。（可在 \fB/etc/project\fR 文件中使用相同的资源控制。请参见 \fBproject\fR(4)）。以下命令将修改 CPU 上限，将 \fBuser.smith\fR 限制到三个 CPU：
+
+.sp
+.in +2
+.nf
+# \fBprctl -r -t privileged -n project.cpu-cap -v 300 -i project user.smith\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上面所使用的 \fBprctl\fR \fB-r\fR 选项用来动态更改项目或区域的 CPU 上限。例如，以下命令将上述命令中的上限设置更改为 80%：
+
+.sp
+.in +2
+.nf
+# \fBprctl -r -t privileged -n project.cpu-cap -v 80 -i project user.smith\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要删除 CPU 上限，请输入：
+
+.sp
+.in +2
+.nf
+# \fBprctl -x -n project.cpu-cap $$\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR修改区域的 CPU 上限
+.sp
+.LP
+\fBprctl\fR 命令可使用 \fBzone.cpu-cap\fR 资源控制（请参见 \fBresource_controls\fR(5)）设置和修改区域的 CPU 上限。（可使用 \fBzonecfg\fR(1M) 命令操控相同的资源控制。）以下命令将修改 CPU 上限，将全局区域限制到 CPU 的 80%：
+
+.sp
+.in +2
+.nf
+# \fBprctl -t privileged -n zone.cpu-cap -v 80 -i zone global\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可使用以下命令将上限降低至 50%：
+
+.sp
+.in +2
+.nf
+# \fBprctl -r -t privileged -n zone.cpu-cap -v 50 -i zone global\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+遇到致命错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/pid/*\fR\fR
+.ad
+.RS 15n
+.rt  
+进程信息和控制文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令行语法是 "Committed"（已确定）。人可阅读的输出是 "Uncommitted"（未确定）。可解析的输出是 "Committed"（已确定）。
+.SH 另请参见
+.sp
+.LP
+\fBrctladm\fR(1M)、\fBzonecfg\fR(1M)、\fBsetrctl\fR(2)、\fBrctlblk_get_local_action\fR(3C)、\fBproject\fR(4)、\fBattributes\fR(5)、\fBresource_controls\fR(5)
+.SH 附注
+.sp
+.LP
+可在允许本地操作的资源控制块上设置的有效信号有 \fBSIGABRT\fR、\fBSIGXRES\fR、\fBSIGHUP\fR、\fBSIGSTOP\fR、\fBSIGTERM\fR 和 \fBSIGKILL\fR。此外，CPU 时间相关控制可发出 \fBSIGXCPU\fR 信号，文件大小相关控制可发送 \fBSIGXFSZ\fR 信号。

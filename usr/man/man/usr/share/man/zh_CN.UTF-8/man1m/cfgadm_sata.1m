@@ -1,0 +1,805 @@
+'\" te
+.\" 版权所有 (c) 2007，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_sata 1M "2011 年 2 月 2 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_sata \- SATA 硬件专用 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR] 
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR | \fIap_type\fR]...]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIharware_options\fR] \fB-t\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBSATA\fR 硬件专用库 \fB/usr/lib/cfgadm/sata.so.1\fR 提供通过 \fBcfgadm\fR 命令热插拔 \fBSATA\fR 的功能。\fBcfgadm\fR 在挂接点上运行，这些挂接点是可动态重新配置硬件资源的系统位置。有关挂接点的信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+每个 \fBSATA\fR 控制器以及端口复用器的设备端口由设备树上的挂接点表示。系统中连接并配置的 \fBSATA\fR 设备显示为挂接点名称的扩展名。术语"挂接点"和"\fBSATA\fR 端口"可在下列描述中互换使用。
+.sp
+.LP
+挂接点可通过 \fBap_id\fR 命名。所有的 \fBSATA\fR 挂接点 \fBap_id\fR 由以下格式的字符串组成：
+.sp
+.in +2
+.nf
+sataX/P[.M][::dsk/cXtYd0]
+.fi
+.in -2
+
+.sp
+.LP
+其中
+.sp
+.ne 2
+.mk
+.na
+\fBX\fR
+.ad
+.RS 14n
+.rt  
+表示 \fBSATA\fR 控制器号
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBP\fR
+.ad
+.RS 14n
+.rt  
+表示 \fBSATA\fR 控制器的设备端口号（0 到 31）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM\fR
+.ad
+.RS 14n
+.rt  
+表示端口复用器的设备端口号（0 到 14）。如果该项的值为 15，表示端口复用器的主机端口号。只有端口复用器连接到 \fBSATA\fR 控制器的设备端口时，该项才使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdev/cXtYd0\fR
+.ad
+.RS 14n
+.rt  
+标识连接的 \fBSATA\fR 设备
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBY\fR
+.ad
+.RS 14n
+.rt  
+表示目标号 
+.RE
+
+.sp
+.LP
+通常，设备标识符源自 /\fIdev\fR 中的设备的相应逻辑链接。由于 \fBSATA\fR 设备只支持一个 \fBLUN\fR (\fBLUN\fR 0)，因此，设备字符串中的 "d" 字符总是设置为 0（零）。
+.sp
+.LP
+例如，\fBSATA\fR 控制器 2 的设备端口 5 所连接的端口复用器的设备端口 4 的逻辑 \fBap_id\fR 可能为：
+.sp
+.in +2
+.nf
+sata2/5.4
+.fi
+.in -2
+
+.sp
+.LP
+如果 \fBSATA\fR 磁盘或 \fBCD\fR/\fBDVD\fR 设备连接到该挂接点并且该设备已配置，\fIap_id\fR 可能为：
+.sp
+.in +2
+.nf
+sata2/5.4::dsk/c2t645d0
+.fi
+.in -2
+
+.sp
+.LP
+标识设备的 \fIcXtYd0\fR 字符串与设备挂接点之间存在一对一的对应关系。
+.sp
+.LP
+系统挂接点的简单列表包含所有的 \fBSATA\fR 设备端口和连接的设备。例如：
+.sp
+.in +2
+.nf
+#\fBcfgadm -l\fR
+Ap_Id                     Type        Receptacle   Occupant     Condition
+  sata0/0::dev/c0t0d0     disk        connected    configured   ok
+  sata0/1::dev/c0t1d0     disk        connected    configured   ok
+  sata0/2::dev/c0t2d0     cd-dvd      connected    configured   ok
+  sata0/3                 sata-port   empty        unconfigured ok
+  sata1/0                 sata-port   disconnected unconfigured unknown
+  sata1/1                 sata port   disconnected unconfigured unknown
+  sata1/2                 sata port   empty        unconfigured ok
+  sata1/3.15              sata-pmult  connected    configured   ok
+  sata1/3.0::dev/c0t512d0 disk        connected    configured   ok
+  sata1/3.1               sata-port   empty        unconfigured ok
+  sata1/3.2               sata-port   empty        unconfigured ok
+  sata1/3.3               sata-port   empty        unconfigured ok
+  usb0/1                  unknown     empty        unconfigured ok
+  usb0/2                  unknown     empty        unconfigured ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关挂接点列表的更多信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+\fBSATA\fR 端口上的挂接点的插口状态的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBempty（空）\fR
+.ad
+.RS 28n
+.rt  
+\fBSATA\fR 端口已加电并启用。在该端口未检测到任何设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected（断开）\fR
+.ad
+.RS 28n
+.rt  
+\fBSATA\fR 端口未启用或检测到 \fBSATA\fR 设备但该设备的通信连接未建立，或者该端口故障。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected（已连接）\fR
+.ad
+.RS 28n
+.rt  
+在与设备建立通信的端口上检测到 \fBSATA\fR 设备。
+.RE
+
+.sp
+.LP
+插卡（\fBSATA\fR 端口连接的设备）状态的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured（已配置）\fR
+.ad
+.sp .6
+.RS 4n
+所连接的 \fBSATA\fR 设备已配置并且随时可由操作系统使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured（未配置）\fR
+.ad
+.sp .6
+.RS 4n
+未连接任何设备或 \fBSATA\fR 端口连接的 \fBSATA\fR 设备尚未配置。如果要配置该设备，请运行 "\fBcfgadm -c configure ap_id\fR" 命令。
+.RE
+
+.sp
+.LP
+挂接点（\fBSATA\fR 端口）的状态的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBok（正常）\fR
+.ad
+.RS 23n
+.rt  
+\fBSATA\fR 端口已加电并启用，随时可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfailed（失败）\fR
+.ad
+.RS 23n
+.rt  
+\fBSATA\fR 端口故障。该端口被系统禁用和/或断电。这种情况下，端口不可用且处于未知状态。这可能是由插入的设备导致的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunknown（未知）\fR
+.ad
+.RS 23n
+.rt  
+\fBSATA\fR 端口被禁用且处于 unknown（未知）状态。
+.RE
+
+.sp
+.LP
+"状态表"包含挂接点的插口状态、插卡状态以及挂接点（\fBSATA\fR 端口）状态。有效的状态如下：
+.sp
+.ne 2
+.mk
+.na
+\fBempty/unconfigured/ok\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR 端口已启用且处于活动状态。未检测到任何设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected/unconfigured/ok\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR 端口已启用并且检测到一个设备，但该设备的通信连接未建立。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected/unconfigured/unknown\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR 端口被禁用且处于未知状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected/unconfigured/failed\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR 端口被禁用且不可用。由于被检测的系统出现故障，该端口被系统禁用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected/unconfigured/ok\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR 端口已启用且处于活动状态。检测到一个设备并且该设备的通信连接已建立。该设备没有配置为由\fB操作系统\fR使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected/configured/ok\fR
+.ad
+.sp .6
+.RS 4n
+该设备存在且已配置，随时可由\fB操作系统\fR使用。
+.RE
+
+.SH 选项
+.sp
+.LP
+除列出 (\fB-l\fR)，\fBcfgadm\fR 外，还定义了几种类型的操作。这些操作包括测试 (\fB-t\fR)、调用配置状态更改 (\fB-c\fR)、调用硬件专用函数 (\fB-x\fR) 以及获取配置管理帮助消息 (\fB-h\fR)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+以下通用的 \fIfunction\fR 是为 \fBSATA\fR 硬件专用库定义的。对于 \fBSATA\fR 端口挂接点，支持以下配置状态更改操作：
+.sp
+.ne 2
+.mk
+.na
+\fBconnect\fR
+.ad
+.sp .6
+.RS 4n
+启用（激活）\fBSATA\fR 端口并建立与所连接的设备之间的通信。该操作意味着给端口加电（如有必要）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnect\fR
+.ad
+.sp .6
+.RS 4n
+如果尚未取消配置该设备，则取消配置所连接的设备并禁用（取消激活）\fBSATA\fR 端口。后面的 "\fBconnect\fR" 命令启用 \fBSATA\fR 端口操作但并不会使设备处于 "configured"（已配置）状态。
+.RE
+
+对于 \fBSATA\fR 端口连接的 \fBSATA\fR 设备，支持以下状态更改操作：
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure\fR
+.ad
+.RS 15n
+.rt  
+配置新设备以便由操作系统使用（如果尚未配置）。该命令意味着执行连接操作（如有必要）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure\fR
+.ad
+.RS 15n
+.rt  
+如果尚未取消配置 \fBSATA\fR 端口连接的设备，则取消配置该设备。
+.RE
+
+\fBconfigure\fR 与 \fBunconfigure\fR 操作不能用于端口复用器连接的挂接点。端口复用器由系统自动配置以及取消配置。但是，配置与取消配置操作适用于端口复用器的设备端口连接的所有 \fBSATA\fR 设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+不支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSATA\fR 专用帮助可通过使用帮助选项以及任何 \fBSATA\fR 挂接点获取。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+按照 \fBcfgadm\fR(1M) 中的描述使用 \fB-l\fR 选项。如果该选项与 \fB-v\fR 选项一起使用，"Information"（信息）字段包含以下 \fBSATA\fR 专用信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Mfg：生产商字符串
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Product：产品字符串
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+No：产品序列号
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前没有定义任何硬件专用选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+可使用 select 子选项列出 \fBSATA\fR 类的挂接点。请参见 \fBcfgadm\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBSATA\fR 控制器支持自检操作，执行 \fBSATA\fR 端口自检。如果 \fBSATA\fR 控制器不支持端口自检操作，将发送错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行硬件专用函数。
+.sp
+\fBSATA\fR 端口或 \fBSATA\fR 控制器上使用的下列某些命令可能影响所连接的 \fBSATA\fR 设备，请参见相应说明。\fBap_id\fR 指 \fBSATA\fR 端口或者整个 \fBSATA\fR 控制器，请参见相应说明。如果该操作意味着取消配置设备但该设备不能被取消配置（即该设备包含一个挂载的文件系统），将发送错误消息并且不执行该操作。如果 \fBSATA\fR 控制器不支持指定的操作，也将发送错误消息。
+.sp
+.ne 2
+.mk
+.na
+\fBsata_reset_device ap_id\fR
+.ad
+.sp .6
+.RS 4n
+重置 \fBap_id\fR \fBSATA\fR 端口连接的 \fBSATA\fR 设备。\fBSATA\fR 端口状态不会更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_reset_port ap_id\fR
+.ad
+.sp .6
+.RS 4n
+重置由 \fBap_id\fR 指定的 \fBSATA\fR 端口。如果 \fBSATA\fR 设备与端口相连接，该设备也会重置。该操作也可能在端口复用器连接的端口上执行。如果端口复用器连接到 \fBSATA\fR 控制器端口，端口复用器连接的 \fBSATA\fR 设备可能不会重置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_reset_all ap_id\fR
+.ad
+.sp .6
+.RS 4n
+重置 \fBap_id\fR 中的控制器号指定的 \fBSATA\fR 控制器以及所有连接的设备并重新枚举所有连接的设备，包括端口复用器以及端口复用器的设备端口所连接的设备。 
+.sp
+该操作意味着执行该操作前取消配置所有连接的设备。任何新枚举的设备将处于未配置状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_port_deactivate ap_id\fR
+.ad
+.sp .6
+.RS 4n
+如果所有方法都无效，强制取消端口激活。该操作为紧急步骤，因此使用时需慎重。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_port_activate ap_id\fR
+.ad
+.sp .6
+.RS 4n
+强制激活端口。该操作用于在紧急情况下激活端口（之前被取消激活以便从错误中恢复）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsata_port_self_test ap_id\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBSATA\fR 控制器上执行自检操作。该操作意味着取消配置所有设备并重置 \fBSATA\fR 控制器。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+在详细模式下执行。
+.sp
+以下转换表报告由 \fB-c\fR 操作以及热插拔操作导致的状态转换：
+.sp
+.in +2
+.nf
+current state     operation       possible new state
+-------------     ---------       ------------------
+empty/
+unconfigured/ok   device plug-in  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+empty/
+unconfigured/ok   -c unconfigure  error message, no state change
+
+empty/
+unconfigured/ok   -c configure    error message, no state change
+
+empty/
+unconfigured/ok   -c connect      error message, no state change
+
+empty/
+unconfigured/ok   -c disconnect   disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+
+disconnected/
+unconfigured/ok   device unplug   no state change
+
+disconnected/
+unconfigured/ok   -c unconfigure  error message, no state change
+
+disconnected/
+unconfigured/ok   -c configure    error message, no state change
+
+disconnected/
+unconfigured/ok   -c connect      error message, no state change
+
+disconnected/
+unconfigured/ok   -c disconnect   error message, no state change
+
+disconnected/
+unconfigured/
+unknown 
+(no disk plugged) -c configure    error message, state change to
+                                  empty/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+       
+disconnected/
+unconfigured/
+unknown           -c configure    state change to 
+(disk plugged)                    connected/configured/ok or,
+                                  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed and
+                                  possible error message
+       
+disconnected/
+unconfigured/
+unknown           -c connect      empty/unconfigured/ok, or
+                                  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+
+disconnected/
+unconfigured/
+unknown           -c disconnect   error message, no state change
+
+disconnected/
+unconfigured/
+failed            any command     error message, no state change
+                  other than
+                  -x commands
+
+connected/
+unconfigured/ok   disk unplug     error message and state:
+                                  empty/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+unconfigured/ok   -c configure    connected/unconfigured/ok, or
+                                  connected/configured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+unconfigured/ok   -c unconfigure  error message, no state change
+
+connected/
+unconfigured/ok   -c connect      error message, no state change
+       
+connected/
+unconfigured/ok   -c disconnect   disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+
+connected/
+configured/ok     disk unplug     error message and state:
+                                  empty/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+configured/ok     -c configure    error message, no state change
+
+connected/
+configured/ok     -c unconfigure  error message, if device cannot be
+                                  unconfigured, no state change, or
+                                  connected/unconfigured/ok, or
+                                  disconnected/unconfigured/ok, or
+                                  disconnected/unconfigured/failed
+
+connected/
+configured/ok     -c connect      error message, no state change
+
+connected/
+configured/ok     -c disconnect   error message, if device cannot be
+                                  unconfigured, no state change, or
+                                  disconnected/unconfigured/unknown, or
+                                  disconnected/unconfigured/failed
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR配置磁盘
+.sp
+.LP
+以下命令配置 \fBSATA\fR 控制器 0 上的端口 0 连接的磁盘：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c configure sata0/0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+当设备连接到 \fBSATA\fR 端口时，发出该命令。
+
+.LP
+\fB示例 2 \fR取消配置磁盘
+.sp
+.LP
+以下命令取消配置 \fBSATA\fR 控制器 0 上的端口 3 连接的磁盘：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c unconfigure sata0/3\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+当挂接点的插口状态为 "connected"（已连接）并且插卡状态为 "configured"（已配置）时，显示设备标识字符串。
+
+.LP
+\fB示例 3 \fR取消配置磁盘时遇到已挂载的文件系统
+.sp
+.LP
+以下命令表明在取消配置磁盘时遇到已挂载的文件系统：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c unconfigure sata1/5\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+系统作出如下响应：
+
+.sp
+.in +2
+.nf
+cfgadm: Component system is busy, try again: failed to offline:
+/devices/pci@0,0/pci8086,244e@1e/pci1095,3124@1/sd@5,0
+     Resource              Information
+------------------  --------------------------
+/dev/dsk/c1t5d0s0   mounted filesystem "/mnt"
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/lib/cfgadm/sata.so.1\fR
+.ad
+.RS 29n
+.rt  
+通用 \fBSATA\fR 热插拔硬件专用库。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBlibcfgadm\fR(3LIB)、\fBattributes\fR(5)
+.SH 附注
+.sp
+.LP
+如果端口所连接的磁盘包含关键分区，如根目录 (/)、/usr、swap 或者 /var，则该端口不支持 "sata_port_deactivate" 紧急操作。不应在这些端口尝试取消激活操作。不正确的用法可能导致系统挂起且需要重新引导。
+.sp
+.LP
+并非所有的 \fBSATA\fR 控制器都支持热插拔操作。
+.sp
+.LP
+如果 \fBSATA\fR 连接器为可热插拔类型并且 \fBSATA\fR 控制器支持热插拔，则 \fBSATA\fR 设备在任何时候都可进行热插拔。系统检测事件并建立与设备之间的通信。该设备需要通过 "\fBcfgadm -c configure ap_id\fR" 显式命令进行配置。
+.sp
+.LP
+如果 \fBSATA\fR 连接器为可热插拔类型并且 \fBSATA\fR 控制器支持热插拔，拔下设备前需取消配置设备，否则，可能导致系统挂起或数据丢失。如果设备是未配置的但插口不处于断开状态，从 \fBSATA\fR 端口拔下设备将导致错误消息。
+.SH 警告
+.sp
+.LP
+某些 \fBSATA\fR 设备上的连接器不符合 \fBSATA\fR 热插拔规范。在这些设备上执行热插拔操作可能损坏 \fBSATA\fR 控制器和/或 \fBSATA\fR 设备。

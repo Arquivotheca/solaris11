@@ -1,0 +1,112 @@
+'\" te
+.\" Copyright (C) 1999 Andi Kleen (ak@muc.de).
+.\" Permission is granted to distribute possibly modified copies of this page provided the header is included verbatim, and in case of nontrivial modification author and date of the modification is added to the header.
+.\" Portions Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH packet 7P "4 Oct 2010" "SunOS 5.11" "Protocols"
+.SH NAME
+packet, PF_PACKET \- packet interface on device level
+.SH SYNOPSIS
+.LP
+.nf
+\fB#include <sys/socket.h>\fR
+.fi
+
+.LP
+.nf
+\fB#include <netpacket/packet.h>\fR
+.fi
+
+.LP
+.nf
+\fB#include <sys/ethernet.h>\fR
+.fi
+
+.LP
+.nf
+\fBpacket_socket = socket(2,7,n)(PF_PACKET, int socket_type, int protocol);\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+Packet sockets are used to receive or send packets at the device driver (OSI Layer 2) level. These allow users to implement protocol modules in (1,8) user space on top of the physical layer.
+.sp
+.LP
+The \fBsocket_type\fR is either \fBSOCK_RAW\fR for raw packets including the link (1,2) level header or \fBSOCK_DGRAM\fR for cooked packets with the link (1,2) level header removed. The link (1,2) level header information is available in (1,8) a common format in (1,8) a \fBsockaddr_ll\fR. protocol is the IEEE 802.3 protocol number in (1,8) network order. See the \fB<sys/ethernet.h>\fR include file (1,n) for a list of allowed protocols. When protocol is set (7,n,1 builtins) to \fBhtons\fR (\fBETH_P_ALL\fR) then all protocols are received. All incoming packets of that protocol type is passed to the packet socket (2,7,n) before they are passed to the protocols implemented in (1,8) the kernel. 
+.sp
+.LP
+Only process with the \fBnet_rawaccesss\fR privilege may create \fBPF_PACKET\fR sockets. Processes in the global zone may bind to any network interface that is displayed using the command: \fBdladm show-link\fR.
+.sp
+.LP
+\fBSOCK_RAW\fR packets are passed to and from the device driver without any changes in (1,8) the packet data. When receiving a packet, the address is still parsed and passed in (1,8) a standard \fBsockaddr_ll\fR address structure. When transmitting a packet, the user supplied buffer should contain the physical layer header. That packet is then queued unmodified to the network driver of the interface defined by the destination address. 
+.sp
+.LP
+\fBSOCK_DGRAM\fR operates on a slightly higher level. The physical header is removed before the packet is passed to the user. Packets sent through a \fBSOCK_DGRAM\fR packet socket (2,7,n) get a suitable physical layer header based on the information in (1,8) the \fBsockaddr_ll\fR destination address before they are queued.
+.sp
+.LP
+By default, all packets of the specified protocol type are passed to a packet socket. To only get packets from a specific interface use bind (2,n,1 builtins)(2) specifying an address in (1,8) a \fBstruct sockaddr_ll\fR to bind (2,n,1 builtins) the packet socket (2,7,n)  to an interface. Only the \fBsll_protocol\fR and the \fBsll_ifindex\fR address fields are used for purposes of binding.
+.sp
+.LP
+The \fBconnect\fR(3SOCKET) operation is not supported on packet sockets.
+.SS "Address Types"
+.sp
+.LP
+The \fBsockaddr_ll\fR is a device independent physical layer address.
+.sp
+.in +2
+.nf
+struct sockaddr_ll {
+   unsigned short sll_family; /* Always AF_PACKET */
+   unsigned short  sll_protocol;  /* Physical layer protocol */
+   int             sll_ifindex;   /* Interface number */
+   unsigned short  sll_hatype;    /* Header type */
+   unsigned char   sll_pkttype;   /* Packet type */
+   unsigned char   sll_halen;     /* Length of address */
+   unsigned char   sll_addr[8];   /* Physical layer address */
+};
+.fi
+.in -2
+
+.sp
+.LP
+\fBsll_protocol\fR is the standard ethernet protocol type in (1,8) network order as defined in (1,8) the \fBsys/ethernet.h\fR include file. It defaults to the socket (2,7,n)'s protocol. \fBsll_ifindex\fR is the interface index of the interface. \fBsll_hatype\fR is a ARP type as defined in (1,8) the \fBsys/ethernet.h\fR include file. \fBsll_pkttype\fR contains the packet type. Valid types are \fBPACKET_HOST\fR for a packet addressed to the local host(1,5), \fBPACKET_BROADCAST\fR for a physical layer broadcast packet, \fBPACKET_MULTICAST\fR for a packet sent to a physical layer multicast address, \fBPACKET_OTHERHOST\fR for a packet to some other host (1,5) that has been caught by a device driver in (1,8) promiscuous mode, and \fBPACKET_OUTGOING\fR for a packet originated from the local host (1,5) that is looped back to a packet socket. These types make only sense for receiving. \fBsll_addr\fR and \fBsll_halen\fR contain the physical layer, for example, IEEE 802.3, address and its length. The exact interpretation depends on the device.
+.sp
+.LP
+When you send (2,n) packets it is enough to specify \fBsll_family\fR, \fBsll_addr\fR, \fBsll_halen\fR, \fBsll_ifindex\fR. The other fields should be 0. \fBsll_hatype\fR and \fBsll_pkttype\fR are set (7,n,1 builtins) on received packets for your information. For bind (2,n,1 builtins) only \fBsll_protocol\fR and \fBsll_ifindex\fR are used.
+.SS "Socket Options"
+.sp
+.LP
+Packet sockets can be used to configure physical layer multicasting and promiscuous mode. It works by calling \fBsetsockopt\fR(3SOCKET) on a packet socket (2,7,n) for \fBSOL_PACKET\fR and one of the options \fBPACKET_ADD_MEMBERSHIP\fR to add a binding or \fBPACKET_DROP_MEMBERSHIP\fR to drop  it. They both expect a \fBpacket_mreq\fR structure as argument: 
+.sp
+.in +2
+.nf
+struct packet_mreq
+{
+   int             mr_ifindex;    /* interface index */
+   unsigned short  mr_type;       /* action */
+   unsigned short  mr_alen;       /* address length */
+   unsigned char   mr_address[8]; /* physical layer address */
+};
+.fi
+.in -2
+
+.sp
+.LP
+\fBmr_ifindex\fR contains the interface index for the interface whose status should be changed. The \fBmr_type\fR parameter specifies which action to perform. \fBPACKET_MR_PROMISC\fR enables receiving all packets on a shared medium often known as \fBpromiscuous mode\fR, \fBPACKET_MR_MULTICAST\fR binds the socket (2,7,n) to the physical layer multicast group specified in (1,8) \fBmr_address\fR and \fBmr_alen\fR. \fBPACKET_MR_ALLMULTI\fR sets the socket (2,7,n) up to receive all multicast packets arriving at the interface.
+.sp
+.LP
+In addition the traditional ioctls, \fBSIOCSIFFLAGS\fR, \fBSIOCADDMULTI\fR, and \fBSIOCDELMULTI\fR can be used for the same purpose.
+.SH SEE ALSO
+.sp
+.LP
+\fBconnect\fR(3SOCKET), \fBsetsockopt\fR(3SOCKET)
+.SH NOTES
+.sp
+.LP
+For portable programs it is suggested to use\fBpcap\fR(3C) instead of \fBPF_PACKET\fR; although this only covers a subset of the \fBPF_PACKET\fR features.
+.sp
+.LP
+The \fBSOCK_DGRAM\fR packet sockets make no attempt to create or parse the IEEE 802.2 \fBLLC\fR header for a IEEE 802.3 frame. When \fBETH_P_802_3\fR is specified as protocol for sending the kernel creates the 802.3 frame and fills out the length field; the user has to supply the LLC header to get a fully conforming packet. Incoming 802.3 packets are not multiplexed on the DSAP/SSAP protocol fields; instead they are supplied to the user as protocol \fBETH_P_802_2\fR with the LLC header prepended. It is therefore not possible to bind (2,n,1 builtins) to \fBETH_P_802_3\fR; bind (2,n,1 builtins) to \fBETH_P_802_2\fR instead and do the protocol multiplex yourself. The default for sending is the standard Ethernet DIX encapsulation with the protocol filled in.
+.sp
+.LP
+Packet sockets are not subject to the input or output firewall chains. 

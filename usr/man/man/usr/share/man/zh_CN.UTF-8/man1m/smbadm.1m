@@ -1,0 +1,714 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH smbadm 1M "2011 年 8 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+smbadm \- 配置和管理 SMB 本地组和用户，管理域成员身份，管理持久性口令信息，以及发出各种命令
+.SH 用法概要
+.LP
+.nf
+\fBsmbadm add-key\fR [\fB-u\fR \fIusername\fR]
+.fi
+
+.LP
+.nf
+\fBsmbadm add-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm create-group\fR [\fB-d\fR \fIdescription\fR] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm crypt\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm delete-group\fR \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm disable-user\fR \fIusername\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm enable-user\fR \fIusername\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm get-group\fR [[\fB-p\fR \fIproperty\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm join\fR \fB-u\fR \fIusername\fR \fIdomain\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm join\fR \fB-w\fR \fIworkgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm lookup-server\fR //\fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm lookup-user\fR [\fB-u\fR \fIusername\fR] \fIname\fR | \fISID\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm print\fR [\fB-u\fR \fIusername\fR] //\fIserver\fR/\fIshare\fR {\fIprint_file\fR|-}
+.fi
+
+.LP
+.nf
+\fBsmbadm remove-key\fR [\fB-u\fR \fIusername\fR]
+.fi
+
+.LP
+.nf
+\fBsmbadm remove-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm rename-group\fR \fIgroup\fR \fInew-group\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm set-group\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [[\fB-p\fR \fIproperty\fR=\fIvalue\fR] \&.\|.\|.] \fIgroup\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-connections\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] [\fB-c\fR \fIcomputername\fR | -s \fIsharename\fR]
+     \fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-domains\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-files\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-groups\fR [\fB-m\fR] [\fB-p\fR] [\fIgroup\fR]
+.fi
+
+.LP
+.nf
+\fBsmbadm show-sessions\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR
+.fi
+
+.LP
+.nf
+\fBsmbadm show-shares\fR [\fB-t\fR] [\fB-A\fR | \fB-u\fR \fIusername\fR] \fIserver\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsmbadm\fR 命令用于配置 \fBSMB\fR 本地组、管理域成员身份、管理持久性口令信息，以及发出各种命令。您还可以使用 \fBsmbadm\fR 命令启用或禁用各个本地用户的 SMB 口令生成。
+.sp
+.LP
+当 Windows 帐户必须是某些本地组的成员时以及必须授予 Windows 式特权时，可以使用 \fBSMB\fR 本地组。Solaris 本地组无法提供这些功能。
+.sp
+.LP
+有两种类型的本地组：用户定义的本地组和内置本地组。内置本地组是用于支持常用管理任务的预定义本地组。
+.sp
+.LP
+为了在 \fBSMB\fR 本地组与 Solaris 组之间提供正确的标识映射，\fBSMB\fR 本地组必须具有对应的 Solaris 组。此项要求有两个推论：首先，组名必须同时符合 Windows 和 Solaris 组名规则。因此，\fBSMB\fR 本地组名称可包含最多八 (8) 个字符，并且只包含小写字母和数字。其次，创建 \fBSMB\fR 本地组之前，必须先创建一个 Solaris 本地组。
+.sp
+.LP
+内置组是由 \fBSMB\fR 服务预定义的标准 Windows 组。无法添加、删除或重命名内置组，而且这些组不遵循 \fBSMB\fR 本地组命名约定。
+.sp
+.LP
+当 \fBSMB\fR 服务器启动后，下列内置组可用：
+.sp
+.ne 2
+.mk
+.na
+\fBAdministrators\fR
+.ad
+.sp .6
+.RS 4n
+组成员可以管理系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBBackup Operators\fR
+.ad
+.sp .6
+.RS 4n
+组成员可以绕过文件访问控制来备份和恢复文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBPower Users\fR
+.ad
+.sp .6
+.RS 4n
+组成员可以共享目录。
+.RE
+
+.sp
+.LP
+Solaris 本地用户必须具有 SMB 口令才能进行验证，才能访问 SMB 资源。该口令是在系统的 PAM 配置中添加有 \fBpam_smb_password\fR 模块的情况下使用 \fBpasswd\fR(1) 命令创建的。请参见 \fBpam_smb_passwd\fR(5) 手册页。
+.sp
+.LP
+\fBdisable-user\fR 和 \fBenable-user\fR 子命令控制特定本地用户的 SMB 口令生成。被禁用时，用户无法连接到 Solaris SMB 服务。缺省情况下，会为所有本地用户启用 SMB 口令生成。
+.sp
+.LP
+要重新启用已禁用的用户，必须使用 \fBenable-user\fR 子命令，然后使用 \fBpasswd\fR 命令重置用户的口令。必须将 \fBpam_smb_passwd.so.1\fR 模块添加到系统的 PAM 配置中才能生成 SMB 口令。
+.SS "转义反斜杠字符"
+.sp
+.LP
+对于 \fBadd-member\fR、\fBremove-member\fR 以及 \fBjoin\fR（带 \fB-u\fR）子命令，转义字符 (\fB\e\fR) 是用于成员或用户名与域名之间的一个有效分隔符。反斜杠字符是一个 shell 特殊字符，而且必须括起。例如，可以通过一个反斜杠字符对另一个反斜杠字符进行转义：\fIdomain\fR\fB\e\e\fR\fIusername\fR。有关处理 shell 特殊字符的更多信息，请参阅适用于您的 shell 的手册页。
+.SH 操作数
+.sp
+.LP
+\fBsmbadm\fR 命令使用以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fI域\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要加入的现有 Windows 域的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBSMB\fR 本地组的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 Windows 用户名。\fIusername\fR 可以指定为下列任一格式：
+.sp
+.in +2
+.nf
+\fIdomain\fR\e\fIusername\fR[+\fIpassword\fR]
+\fIdomain\fR/\fIusername\fR[+\fIpassword\fR]
+\fIusername\fR@\fIdomain\fR
+\fIusername\fR
+.fi
+.in -2
+.sp
+
+\&...其中 \fIdomain\fR 可以是 NetBIOS 或 DNS 域名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定本地主机的名称或 IP 地址。
+.RE
+
+.SH 子命令
+.sp
+.LP
+\fBsmbadm\fR 命令包括以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-key\fR [\fB-k\fR \fIusername\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定用于 SMB 服务器用户帐户的持久性口令信息。指定此信息后，在非 Kerberos 配置中无需提示口令即可完成挂载。Kerberos 站点应该会自动使用 Kerberos，不会提示输入口令。如果缺省域在 SMF 中可用，则可以省略域。如果未指定用户名，则会使用 Solaris 用户帐户名称。也可以使用加密（散列）的口令，请参见 \fBcrypt\fR 子命令。该命令还可以从标准输入读取口令，提示标准输入是否为 TTY。
+.sp
+还可以通过用服务器名称替代域名称来为特定服务器存储口令。
+.sp
+持久性口令信息还为运行命令的用户存储在 \fB/var/smb/smbfspasswd\fR 中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的成员添加到指定的 \fBSMB\fR 本地组。\fB-m\fR \fImember\fR 选项指定 \fBSMB\fR 本地组成员的名称。成员名称必须包括一个现有的用户名和一个可选的域名。
+.sp
+以下列格式之一指定成员名称：
+.sp
+.in +2
+.nf
+[\fIdomain\fR\e]\fIusername\fR
+[\fIdomain\fR/]\fIusername\fR
+.fi
+.in -2
+.sp
+
+例如，有效的成员名称可以是 \fBsales\eterry\fR 或 \fBsales/terry\fR，其中 \fBsales\fR 是 Windows 域名，\fBterry\fR 是 \fBsales\fR 域中的一个用户的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-group\fR [\fB-d\fR \fIdescription\fR] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用指定的名称创建一个 \fBSMB\fR 本地组。您可以通过使用 \fB-d\fR 选项来指定组的描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrypt\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建口令散列。此子命令会提示输入口令，并将散列写入标准输出。该散列值适合用作 \fBsmbfs\fR 挂载和各种 \fBsmbadm\fR 子命令的加密口令选项的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-group\fR \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除指定的 \fBSMB\fR 本地组。内置组无法删除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-user\fR \fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+为指定的本地用户禁用 SMB 口令生成功能。被禁用的本地用户无法通过 SMB 服务访问系统。如果某个本地用户帐户被禁用，在重新启用该用户帐户前，您无法使用 \fBpasswd\fR 命令来修改该用户的 SMB 口令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-user\fR \fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+为指定的本地用户启用 SMB 口令生成功能。重新启用口令生成功能后，必须使用 \fBpasswd\fR 命令来为本地用户生成 SMB 口令，然后才能连接到 SMB 服务。
+.sp
+如果已将 \fBpam_smb_passwd\fR 模块添加到系统的 PAM 配置，则 \fBpasswd\fR 命令可以同时管理用户的 Solaris 口令和 SMB 口令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget-group\fR [[\fB-p\fR \fIproperty\fR=\fIvalue\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+检索指定组的属性值。如果未指定任何属性，将显示所有属性值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBjoin\fR \fB-u\fR \fIusername\fR \fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+加入一个 Windows 域或工作组。
+.sp
+\fBSMB\fR 服务的缺省模式是工作组模式，该模式使用缺省的工作组名称 \fBWORKGROUP\fR。
+.sp
+要加入域，必须使用经过验证的用户帐户，因此必须使用 \fB-u\fR 选项来指定 Windows 管理用户名称。如果未在命令行中指定口令，将提示用户输入口令。该用户应当是域管理员或对目标域具有管理特权的用户。
+.sp
+\fIusername\fR 和 \fIdomain\fR 可以采用下面的任一格式输入：
+.sp
+.in +2
+.nf
+\fIusername\fR[+\fIpassword\fR] \fIdomain\fR
+\fIdomain\fR\e\fIusername\fR[+\fIpassword\fR]
+\fIdomain\fR/\fIusername\fR[+\fIpassword\fR]
+\fIusername\fR@\fIdomain\fR
+.fi
+.in -2
+.sp
+
+\&...其中 \fIdomain\fR 可以是 NetBIOS 或 DNS 域名。
+.sp
+如果系统的计算机信任帐户已存在于域控制器中，在加入域时，可以使用经过验证的任意用户帐户。不过，如果计算机信任帐户\fB不\fR存在，则必须使用对域具有管理特权的帐户才能加入域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBjoin\fR \fB-w\fR \fIworkgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+加入一个 Windows 域或工作组。
+.sp
+使用 \fBjoin\fR 子命令时，\fB-w\fR \fIworkgroup\fR 选项指定要加入的工作组的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlookup-server\fR //\fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的服务器解析为 IP 地址、NetBIOS 域和 NetBIOS 服务器名称。\fIserver\fR 可以为以下值之一：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NetBIOS 主机名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+DNS 主机名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IP 地址
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlookup-user\fR [\fB-u\fR \fIusername\fR] \fIname\fR | \fISID\fR\fR
+.ad
+.sp .6
+.RS 4n
+解析当前域或任意受信任域中某个帐户的名称或 SID 的相关信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprint\fR [\fB-u\fR \fIusername\fR] //\fIserver\fR/\fIshare\fR {\fIprint_file\fR|-}\fR
+.ad
+.sp .6
+.RS 4n
+将文件输出到指定的远程打印机。如果 \fIprint_file\fR 是连字符 (\fB-\fR)，则读取标准输入。如果缺省域在 SMF 中可用，则可以省略域。如果未指定用户名，则会使用 Solaris 用户帐户名称。也可以使用加密（散列）的口令，请参见 \fBcrypt\fR 子命令。该命令也可以通过重定向获取口令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-key\fR [\fB-u\fR \fIusername\fR]\fR
+.ad
+.sp .6
+.RS 4n
+为正在运行命令的用户清除口令。还将为正在运行命令的用户清除 \fB/var/smb/smbfspasswd\fR 中的口令。
+.sp
+名称的用户名和域名部分是可选的。如果缺省域在 SMF 中可用，则可以省略域。如果未指定 \fIusername\fR，将删除为正在运行命令的用户存储的所有密钥。
+.sp
+如果为特定服务器存储用户口令，则应指定服务器名称替代域名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-member\fR \fB-m\fR \fImember\fR [[\fB-m\fR \fImember\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+从指定的 \fBSMB\fR 本地组中删除指定成员。\fB-m\fR \fImember\fR 选项指定 \fBSMB\fR 本地组成员的名称。成员名称必须包括一个现有的用户名和一个可选的域名。
+.sp
+以下列格式之一指定成员名称：
+.sp
+.in +2
+.nf
+[\fIdomain\fR\e]\fIusername\fR
+[\fIdomain\fR/]\fIusername\fR
+.fi
+.in -2
+.sp
+
+例如，有效的成员名称可以是 \fBsales\eterry\fR 或 \fBsales/terry\fR，其中 \fBsales\fR 是 Windows 域名，\fBterry\fR 是 \fBsales\fR 域中的一个用户的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrename-group\fR \fIgroup\fR \fInew-group\fR\fR
+.ad
+.sp .6
+.RS 4n
+重命名指定的 \fBSMB\fR 本地组。该组必须已存在。内置组无法重命名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-group\fR \fB-p\fR \fIproperty\fR=\fIvalue\fR [[\fB-p\fR \fIproperty\fR=\fIvalue\fR] \&.\|.\|.] \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置 \fBSMB\fR 本地组的配置属性。无法为内置组更改描述和特权。
+.sp
+\fB-p\fR \fIproperty\fR\fB=\fR\fIvalue\fR 选项指定要在指定组上设置的属性的列表。
+.sp
+与组相关的属性如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbackup=[on|off]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBSMB\fR 本地组的成员能否绕过文件访问控制来备份文件系统对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdescription=\fR\fIdescription-text\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBSMB\fR 本地组的文本描述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestore=[on|off]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBSMB\fR 本地组的成员能否绕过文件访问控制来恢复文件系统对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtake-ownership=[on|off]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBSMB\fR 本地组的成员能否取得文件系统对象的所有权。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-domains\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示当前工作组或域的相关信息。该信息通常包括工作组名称或主域名称。在域模式下，该信息包括域控制器名称和受信任域的名称。
+.sp
+输出中的每个条目由以下标记之一予以标识：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[*]\fR 主域
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[.]\fR 本地域
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[-]\fR 其他域
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[+]\fR 选定的域控制器
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-groups\fR [\fB-m\fR] [\fB-p\fR] [\fIgroup\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示指定的 \fBSMB\fR 本地组的相关信息。如果未指定任何组，则显示所有组的信息。如果指定了 \fB-m\fR 选项，还将显示组成员。如果指定了 \fB-p\fR 选项，还将显示组特权。
+.RE
+
+.sp
+.LP
+下面的子命令集显示有关用户共享、会话、连接以及在本地或远程服务器上打开的文件的信息。
+.sp
+.LP
+要显示上面列出的那些类型的数据，需要使用经过验证的用户帐户，因此您必须使用 \fB-u\fR 选项来指定 Windows 管理用户名。如果未在命令行中指定口令，将提示用户输入口令。该用户应当是域管理员或对目标域具有管理特权的用户。如果未指定用户名，则会使用 Solaris 用户帐户名称。
+.sp
+.LP
+\fIusername\fR 可以采用"操作数"部分中描述的任意格式。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-connections\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] [\fB-c\fR \fIcomputername\fR | \fB-s\fR \fIsharename\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示在服务器上创建的 SMB 树连接的信息。\fB-c\fR 选项指定客户机关注的连接的计算机名称。\fB-s\fR 选项指定客户机关注的连接的共享名称。\fB-t\fR 选项指定要显示的命令头。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-files\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示有关在服务器上通过 SMB 打开的文件的信息。\fB-t\fR 选项指定要显示的命令头。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-sessions\fR [\fB-t\fR] [\fB-u\fR \fIusername\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示有关服务器上的 SMB 用户会话的信息。\fB-t\fR 选项指定要显示的命令头。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-shares\fR [\fB-t\fR] [\fB-A\fR | \fB-u\fR \fIusername\fR] \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示有关服务器上的 SMB 共享的信息。\fB-t\fR 选项指定要显示的命令头。\fB-A\fR 选项指定匿名用户。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.RS 13n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB>0\fR
+.ad
+.RS 13n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5) 手册页：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/file-system/smb
+_
+实用程序名称和选项Uncommitted（未确定）
+_
+实用程序输出格式Not-An-Interface（不是接口）
+_
+\fBsmbadm join\fRObsolete（已过时）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpasswd\fR(1)、\fBgroupadd\fR(1M)、\fBidmap\fR(1M)、\fBidmapd\fR(1M)、\fBkclient\fR(1M)、\fBmount_smbfs\fR(1M)、\fBshare\fR(1M)、\fBsharectl\fR(1M)、\fBsmbd\fR(1M)、\fBsmbstat\fR(1M)、\fBsmb\fR(4)、\fBsmbautohome\fR(4)、\fBattributes\fR(5)、\fBpam_smb_passwd\fR(5)、\fBsmf\fR(5)

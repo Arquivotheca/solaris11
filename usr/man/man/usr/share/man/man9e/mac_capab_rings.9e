@@ -1,0 +1,174 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH mac_capab_rings 9E "16 Jun 2011" "SunOS 5.11" "Driver Entry Points"
+.SH NAME
+mac_capab_rings, mr_rget, mr_gget, mr_gaddring, mr_gremring \- MAC capab rings driver entry points
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mac_provider.h>
+
+void prefix_ring_get(void *\fIdriver_handle\fR, mac_ring_type_t \fIrtype\fR,
+     int \fIring_index\fR, mac_ring_info_t *\fIrinfop\fR,
+     mac_ring_handle_t \fIring_handle\fR);
+.fi
+
+.LP
+.nf
+void prefix_group_get(void *\fIdriver_handle\fR, mac_ring_type_t \fIrtype\fR,
+     int \fIgroup_index\fR, mac_group_info_t *\fIginfop\fR,
+     mac_group_handle_t \fIgroup_handle\fR);
+.fi
+
+.LP
+.nf
+void prefix_group_add_ring(mac_group_driver_t \fIgroup_handle\fR,
+     mac_ring_driver_t ring_handle, mac_ring_type_t rtype);
+.fi
+
+.LP
+.nf
+void prefix_group_remove_ring(mac_group_driver_t \fIgroup_handle\fR,
+     mac_ring_driver_t \fIring_handle\fR, mac_ring_type_t, \fIrtype\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdriver_handle\fR\fR
+.ad
+.RS 17n
+.rt  
+Pointer to the driver-private handle which was specified by the device driver through the \fIm_driver\fR field of the \fBmac_register\fR(9S) structure during registration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrtype\fR\fR
+.ad
+.RS 17n
+.rt  
+The ring type being queried, either RX or TX rings.
+.sp
+\fBMAC_RING_TYPE_TX\fR for TX rings or TX ring groups.
+.sp
+\fBMAC_RING_TYPE_RX\fR for RX rings or RX ring groups.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgroup_index\fR\fR
+.ad
+.RS 17n
+.rt  
+The ring group index supplied by the MAC layer to query a specific driver ring group. The group index should not exceed the number of ring groups reported in response to a \fBMAC_CAPAB_RINGS\fR query.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIring_index\fR\fR
+.ad
+.RS 17n
+.rt  
+The ring index supplied by the MAC layer to query a specific ring. The ring index should not exceed the number of rings reported in a \fBMAC_CAPAB_RINGS\fR query.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrinfop\fR\fR
+.ad
+.RS 17n
+.rt  
+The \fBmac_ring_info\fR(9S) structure to be filled by the driver for the mac layer. This structure provides the MAC layer the specific information it requires to manipulate this specific driver ring.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIginfop\fR\fR
+.ad
+.RS 17n
+.rt  
+The \fBmac_group_info\fR(9S) structure to be filled by the driver for the mac layer. This structure provides the MAC layer the specific information it requires to manipulate this specific driver ring group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgroup_handle\fR\fR
+.ad
+.RS 17n
+.rt  
+An opaque handle to the MAC layer's representation of this ring group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIring_handle\fR\fR
+.ad
+.RS 17n
+.rt  
+An opaque handle to the MAC layer's representation of this ring.
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris architecture specific (Solaris DDI).
+.SH DESCRIPTION
+.sp
+.LP
+The entry points described below are implement the MAC device driver and passed to the MAC layer through the \fBmac_capab_rings\fR structure as part of the response to a \fBMAC_CAPAB_RINGS\fR request from the MAC layer.
+.sp
+.LP
+The \fBmr_gget()\fR function requests the driver to fill in the \fBmac_group_info\fR structure in response to the MAC layer. The MAC layer then uses the response to further manipulate the ring group of the driver.
+.sp
+.LP
+The \fBmr_rget()\fR function requests the driver to fill in the \fBmac_ring_info\fR structure in response to the MAC layer. The MAC layer then uses the response to further manipulate a ring controlled by the driver.
+.sp
+.LP
+The \fBmr_gaddring()\fR function adds the specified ring to the specified ring group. This action should be implemented only in MAC drivers that implement dynamic ring grouping as described in \fBmac_capab_rings\fR(9S).
+.sp
+.LP
+The \fBmr_gremring()\fR function removes the specified ring from the specified ring group. This action should be implemented only in MAC drivers that implement dynamic ring grouping as described in \fBmac_capab_rings\fR(9S).
+.SH RETURN VALUES
+.sp
+.LP
+None of these entry points have return values.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/header
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBmac_capab_rings\fR(9S), \fBmac_group_info\fR(9S), \fBmac_register\fR(9S), \fBmac_ring_info\fR(9S)

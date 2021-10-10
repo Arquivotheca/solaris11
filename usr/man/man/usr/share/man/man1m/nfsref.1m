@@ -1,0 +1,141 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.TH nfsref 1M "10 Nov 2009" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+nfsref \- NFS referral utility
+.SH SYNOPSIS
+.LP
+.nf
+\fBnfsref\fR [\fB-t\fR \fIsvc_type\fR] add \fIpath\fR \fIlocation\fR [location ...]
+.fi
+
+.LP
+.nf
+\fBnfsref\fR [\fB-t\fR \fIsvc_type\fR] remove \fIpath\fR
+.fi
+
+.LP
+.nf
+\fBnfsref\fR [\fB-t\fR \fIsvc_type\fR] lookup \fIpath\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnfsref\fR command manages NFS Version 4 referrals, which are server-side pointers used to redirect clients to actual locations of file systems. Referrals are based on reparse points (see \fBreparsed\fR(1M) and \fBlibreparse\fR(3LIB)). The path arguments in all forms of the synopsis refer to the path to the reparse point symbolic link. This command currently implements one "service type" - \fBnfs-basic\fR, which is the default.
+.sp
+.LP
+The first form of the command, \fBnfsref add\fR, creates a referral pointing to the specified locations. If a reparse point does not exist, one is created. If it does exist, NFS service data is added or replaces existing NFS service data. Each location has a \fB\fIhost\fR:/\fIpath\fR\fR format. The path can contain spaces, which must be escaped to ensure proper shell parsing.
+.sp
+.LP
+The second form of the command, \fBnfsref delete\fR, removes an NFS referral. It removes NFS service data from the specified reparse point, and removes the reparse point if there are no other types of service data present.
+.sp
+.LP
+The third form of the command, \fBnfsref lookup\fR, displays the locations to which the specified NFS referral points.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIsvc_type\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify a service type. Currently, only \fBnfs-basic\fR is supported.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRAdding an NFS Referral
+.sp
+.LP
+The following command creates an NFS referral at the server path \fB/pool/home/bob\fR, pointing to the resource \fBhomeserver:/homepool/bob\fR.
+
+.sp
+.in +2
+.nf
+# \fBnfsref add /pool/home/bob homeserver:/homepool/bob\fR
+Created reparse point /pool/home/bob
+
+# \fBnfsref lookup /pool/home/bob\fR
+homeserver:/homepool/bob
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRRemoving an NFS Referral
+.sp
+.LP
+The following command removes an NFS referral at the server path \fB/pool/home/bob\fR.
+
+.sp
+.in +2
+.nf
+# \fBnfsref remove /pool/home/bob homeserver:/homepool/bob\fR
+Removed svc_type 'nfs-basic' from /pool/home/bob
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/reparsed/*.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+Per-service plugins for \fBreparsed\fR.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilityservice/file-system/nfs
+_
+Interface StabilityConsolidation Private
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBreparsed\fR(1M), \fBlibreparse\fR(3LIB), \fBattributes\fR(5)

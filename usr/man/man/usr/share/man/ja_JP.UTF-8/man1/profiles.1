@@ -1,0 +1,839 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH profiles 1 "2011 年 5 月 24 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+profiles \- 権利プロファイルの一覧表示および管理
+.SH 形式
+.LP
+.nf
+\fBprofiles\fR [\fB-l\fR] [\fB-a\fR | \fIuser\fR ...] [\fB-S\fR \fIrepository\fR]
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR]
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR] \fIsubcommand\fR
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR] \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fBhelp\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBprofiles\fR ユーティリティーは、ローカルファイルのネームサービスまたは LDAP ネームサービスの \fBprof_attr\fR(4) または \fBexec_attr\fR(4) データベースの権利プロファイルの構成を作成および変更します。権利プロファイルの構成は、プロファイル名といくつかのプロパティーで作成されています。
+.sp
+.LP
+次の形式の profiles サブコマンドは、対話形式で使用されます。
+.sp
+.in +2
+.nf
+profiles \fB-p\fR \fIprofile\fR [\fB-S\fR \fIrepository\fR] [\fIsubcommand\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBprofiles\fR コマンドは、自分または任意指定のユーザーあるいは役割名に割り当てられている権利プロファイルの名前を標準出力に書き込みます。プロファイルは、特定の機能の実行に必要なコマンドおよび承認を列挙するために使用されるバンドリングメカニズムです。リストには各実行可能ファイルとともに、実効ユーザー \fBID\fR や実効グループ ID などのプロセス属性が表示されます。特権コマンドインタプリタによって起動されるときにこれらの属性を指定してプロセスが実行されます。\fBpfexec\fR(1) のマニュアルページを参照してください。プロファイルには、\fBprof_attr\fR(4) で定義されているほかのプロファイルを含めることができます。
+.sp
+.LP
+複数のプロファイルを結合して適切なアクセス制御を作成することができます。プロファイルが割り当てられると、既存のセットに承認が追加されます。複数のプロファイルに同じコマンドが存在する場合、プロファイルの順序付けによって決定された、最初のプロファイルがプロセス属性の設定に使用されます。すべてのコマンドに一致するようにワイルドカードを指定できます。
+.sp
+.LP
+特殊なプロファイル「Stop」を使用すると、以降のプロファイルの評価がショートカットされます。「Stop」プロファイル以降にあるプロファイルは、評価されることも、ほかのコマンドを見つけるために使用されることもありません。そのファイルに \fBAUTH_GRANTED\fR として一覧表示されている承認および \fBPROF_GRANTED\fR キーを持つプロファイルを使用すると、\fB/etc/security/policy.conf\fR に一覧表示されているプロファイルの一部を対象外にするためにこのプロファイルを使用できます。
+.sp
+.LP
+プロファイルが解釈されると、プロファイルリストが \fBuser_attr\fR(4) から読み込まれます。デフォルトプロファイルが \fB/etc/security/policy.conf\fR (\fBpolicy.conf\fR(4) を参照) で定義されている場合は、\fBuser_attr\fR(4) から読み込まれたリストにデフォルトプロファイルのリストが追加されます。\fBprof_attr\fR(4) で一致するエントリは承認リストを、\fBexec_attr\fR(4) で一致するエントリはコマンドリストを提供します。
+.SS "プロパティー"
+.sp
+.LP
+\fB-p\fR オプションを指定して呼び出すと、指定されたプロファイルのプロパティーおよび関連付けられている実行可能ファイルのプロパティーを管理できます。ただし、システムの整合性を維持するため、Solaris によって管理されるプロファイルは、このコマンドを使用しても変更できません。そのようなプロファイルは、システムの更新中に pkg(1) コマンドを使用した場合にのみ変更できます。 
+.sp
+.LP
+また、その他のプロファイルも、pkg(1) コマンドを使用すると、変更できないプロファイルとして必要に応じて配布できます。 
+.sp
+.LP
+特権のエスカレーションを防ぐため、プロパティー値はユーザーの承認に基づいて制限されます。管理者には、少なくとも Rights Management プロファイルが付与されている必要があります。また、委任承認によって管理されているセキュリティー関連のプロパティーを変更するには、管理者に Rights Delegation プロファイルが付与されている必要があります。詳細は、\fBexec_attr\fR(4)、\fBprof_attr\fR(4)、および次の要約を参照してください。
+.sp
+.LP
+プロパティー値には、単純な文字列、またはコンマで区切られた単純な文字列のリストを指定できます。スペース文字を含む単純な文字列は、二重引用符で囲む必要があります。 
+.sp
+.LP
+profiles コマンドは、\fBprofile\fR コンテキストと \fBcommand\fR コンテキストの両方で動作します。\fBprofile\fR コンテキストは、初期状態であり、各種のプロファイルプロパティーを管理できます。次の表は、\fBprofile\fR コンテキストのプロパティーをまとめたものです。
+.sp
+.in +2
+.nf
+Property Name   Value Type         Required Authorizations
+
+name            simple             none
+auths           list of simple     solaris.auth.{assign/delegate}
+profiles        list of simple     solaris.profile.{assign/delegate}
+privs           list of simple     solaris.privilege.{assign/delegate}
+limitpriv       list of simple     solaris.privilege.{assign/delegate}
+defaultpriv     list of simple     solaris.privilege.{assign/delegate}
+always_audit    list of simple     solaris.audit.assign
+never_audit     list of simple     solaris.audit.assign
+desc            simple             none
+help            simple             none
+cmd             simple/new context none
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+コマンドのコンテキストは、\fBcmd\fR プロパティーを指定することによって入力します。\fBcommand\fR コンテキストでは、現在のコマンドのプロパティーを管理できます。 
+.sp
+.LP
+次の表は、\fBcommand\fR コンテキストのプロパティーをまとめたものです。 
+.sp
+.in +2
+.nf
+Property Name   Value Type         Required Authorizations
+
+id              simple             none
+privs           list of simple     solaris.privilege.{assign/delegate}
+limitprivs      list of simple     solaris.privilege.{assign/delegate}
+euid            simple             solaris.profile.cmd.setuid
+uid             simple             solaris.profile.cmd.setuid
+egid            simple             solaris.group.{assign/delegate}
+gid             simple             solaris.group.{assign/deleg
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBprofile\fR コンテキストのプロパティーに指定可能な値を、次のリストに示します。次のリストで指定されているように、プロパティーとその値の間には等号 (\fB=\fR) が必要です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalways_audit\fR\fR
+.ad
+.RS 16n
+.rt  
+常に監査するイベントクラスを指定する監査フラグ。ユーザーの \fBuser_attr\fR(4) エントリ、または割り当てられているプロファイルの順序付けされたリストにある、このプロパティーの最初に出現しているもののみが、ログインおよび \fBsu\fR で適用されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauths\fR\fR
+.ad
+.RS 16n
+.rt  
+新しいプロファイルに追加される、コンマで区切られた 1 つ以上の承認。ワイルドカード文字 (\fB*\fR) を承認名に使用する場合は、名前を二重引用符 (\fB"\fR) で囲む必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcmd\fR\fR
+.ad
+.RS 16n
+.rt  
+実行可能ファイルへの完全指定パス、またはすべてのコマンドを指定するために使用されるアスタリスク (\fB*\fR) 記号。パス名のファイル名コンポーネントを置き換えるアスタリスクは、特定のディレクトリのすべてのファイルを示します。
+.sp
+これは、\fBcommand\fR コンテキストを入力して、コマンドのセキュリティープロパティーを管理するために使用される特殊なプロパティーです。
+.sp
+これらの ID には、数値 ID または名前を使用できます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBid\fR\fR
+.ad
+.RS 14n
+.rt  
+このプロパティーには、前の \fBcmd\fR プロパティーによって指定された値が設定されますが、この値は変更できます。select サブコマンドと組み合わせて使用すると、その後の編集のために既存のコマンドのプロパティーのクローンを作成できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivs\fR\fR
+.ad
+.RS 14n
+.rt  
+実行可能プロセスの継承可能セットに適用する一連の特権。デフォルトは basic です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimitprivs\fR\fR
+.ad
+.RS 14n
+.rt  
+実行可能プロセスの制限セットに適用する一連の特権。デフォルトは all です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeuid\fR\fR
+.ad
+.RS 14n
+.rt  
+コマンドで実行するプロセスの実効ユーザー ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid\fR\fR
+.ad
+.RS 14n
+.rt  
+コマンドで実行するプロセスの実ユーザー ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBegid\fR\fR
+.ad
+.RS 14n
+.rt  
+コマンドで実行するプロセスの実効グループ ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid\fR\fR
+.ad
+.RS 14n
+.rt  
+コマンドで実行するプロセスの実グループ ID。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaultpriv\fR\fR
+.ad
+.RS 16n
+.rt  
+ユーザーの一連のプロセスに割り当てられるデフォルトの一連の特権。ユーザーの \fBuser_attr\fR(4) エントリ、または割り当てられているプロファイルの順序付けされたリストにある、このプロパティーの最初に出現しているもののみが、ログインおよび \fBsu\fR で適用されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdesc\fR\fR
+.ad
+.RS 16n
+.rt  
+新しいプロファイルの説明。テキストは引用符で囲む必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.RS 16n
+.rt  
+新しいプロファイルのヘルプファイル名。ヘルプファイルは、\fB/usr/lib/help/profiles/locale/<locale>\fR ディレクトリにコピーされます。ここで、\fB<locale>\fR は、ユーザーの言語ロケールの値です。何も指定されていない場合は \fBC\fR になります。このプロパティーの指定は、files リポジトリでのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB limitpriv\fR\fR
+.ad
+.RS 16n
+.rt  
+ユーザーが \fBsu\fR(1M) またはその他の方法で開始したユーザーまたはプロセスが取得できる特権セットの最大数。ユーザーの \fBuser_attr\fR(4) エントリ、または割り当てられているプロファイルの順序付けされたリストにある、このプロパティーの最初に出現しているもののみが、ログインおよび \fBsu\fR で適用されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 16n
+.rt  
+プロファイルの名前。名前の初期値は、コマンド行で \fB-p\fR オプションを使用して指定します。名前を変更すると、現在のプロファイルのプロパティーが、新しい名前が付けられたプロファイルに適用されます。このようにして、その後の編集のために既存のプロファイルのクローンを作成できます。名前には、既存のプロファイルと同じ名前は使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnever_audit\fR\fR
+.ad
+.RS 16n
+.rt  
+監査しないイベントクラスを指定する監査フラグ。ユーザーの \fBuser_attr\fR(4) エントリ、または割り当てられているプロファイルの順序付けされたリストにある、このプロパティーの最初に出現しているもののみが、ログインおよび \fBsu\fR で適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivs\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBpfexec\fR(1) コマンドの \fBP\fR オプションを使用して指定できる一連の特権。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofiles\fR\fR
+.ad
+.RS 16n
+.rt  
+新しいプロファイルに追加される、コンマで区切られた 1 つ以上の補助プロファイル。 
+.RE
+
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 19n
+.rt  
+指定されたリポジトリのすべてのプロファイル名を一覧表示します。リポジトリが指定されていない場合は、\fBnsswitch.conf\fR(4) の \fBprof_attr\fR に設定されている内容に従います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.RS 19n
+.rt  
+profiles のコマンドファイルの名前を指定します。\fIcommand_file\fR は、profiles サブコマンドが 1 行に 1 つあるテキストファイルです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 19n
+.rt  
+権利プロファイルに関する情報を表示し、コマンドと、ユーザーやグループ \fBID\fR などそのコマンドの特殊なプロセス属性を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprofile\fR\fR
+.ad
+.RS 19n
+.rt  
+プロファイル名を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIrepository\fR\fR
+.ad
+.RS 19n
+.rt  
+有効なリポジトリは、\fBfiles\fR と \fBldap\fR です。\fIrepository\fR は、更新するネームサービスを指定します。デフォルトの \fIrepository\fR は files です。 
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+\fB-p\fR オプションを指定して呼び出すと、サブコマンドをコマンド行または対話形式で指定できます。セミコロンで区切られた複数のサブコマンドをコマンド行に指定するには、一連のサブコマンド全体を引用符で囲みます。サブコマンドが指定されていない場合は、対話型セッションが行われることを意味します。対話型セッションでは、TAB キーを使用することにより、サブコマンドの自動補完を呼び出すことができます。
+.sp
+.LP
+\fBadd\fR サブコマンドと \fBselect\fR サブコマンドを使用すると、特定のコマンドを選択できます。選択した時点で、コンテキストがそのコマンドのコンテキストに変更されます。対話型セッションでは、\fBcommand\fR コンテキストは、プロンプト文字列のコマンドのベース名によって識別されます。\fBend\fR サブコマンドと \fBcancel\fR サブコマンドを使用すると、コマンドの指定を終了できます。指定を終了した時点で、コンテキストは \fBprofile\fR コンテキストに戻ります。
+.sp
+.LP
+破壊的な動作や作業内容の消失を伴う可能性のあるサブコマンドには、強制的にその処理を実行するために \fB-F\fR オプションが用意されています。端末デバイスから入力を行う場合、ユーザーは適切なタイミングで入力を要求されます。これは、サブコマンドが \fB-F\fR オプションなしで指定された場合に発生することがあります。それ以外の場合、処理は許可されず、診断メッセージが標準エラー出力に書き込まれます。
+.sp
+.LP
+プロパティー値には、単純値、またはリストを受け入れるプロパティーの場合は、単純値のリストを指定できます。サポートされているサブコマンドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd cmd=\fR\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBprofile\fR コンテキストで、対象となるコマンドの指定を開始します。コンテキストは、\fBcommand\fR タイプに変更されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した値を現在のプロパティー値に追加します。このサブコマンドを適用できるのは、リストを受け入れるプロパティーのみです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの指定を終了し、コンテキストを \fBprofile\fR にリセットします。指定途中のリソースをすべて破棄します。cancel を適用できるのは、\fBcommand\fR コンテキストのみです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIproperty name\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの値を消去します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成をメモリーから安定した記憶領域に確定します。変更を適用するには、構成を確定する必要があります。メモリー内構成を確定するまでは、\fBrevert\fR サブコマンドを使って変更を取り消すことができます。\fBprofiles\fR セッションが終了するときには、\fBcommit\fR 処理が自動的に試みられます。構成が正しく設定されていないと確定できないので、この処理では自動的に構成が確認されます。\fB\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロファイルをメモリー内および安定した記憶領域から削除します。この操作は、対象のプロファイルが同じリポジトリの別のプロファイルにサブプロファイルとして含まれている場合は許可されません。代わりに、このプロファイルを含むプロファイルのリストが提供されます。それらのプロファイルからこのプロファイルを手動で削除してから、対象のプロファイルを削除する必要があります。この操作を強制的に実行する場合は、\fB-F\fR オプションを使用します。削除が許可される場合、処理はすぐに実行され、セッションは終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドの指定を終了します。このサブコマンドを適用できるのは、\fBcommand\fR コンテキストのみです。\fBprofiles\fR コマンドは、現在のコマンドが完全に指定されていることを検査します。完全に指定されている場合は、メモリー内構成に追加され (メモリー内構成を安定した記憶領域に保存する方法については \fBcommit\fR を参照)、コンテキストは \fBprofile\fR コンテキストに戻ります。指定が完全でない場合は、対応するエラーメッセージが通知されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+profiles のセッションを終了します。必要な場合は、\fBcommit\fR 操作が自動的に試行されます。\fBEOF\fR 文字を使用して profiles を終了することもできます。この操作を強制的に実行する場合は、\fB-F\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-f\fR \fIoutput-fle\fR]\fR
+.ad
+.sp .6
+.RS 4n
+標準出力に構成を出力します。output-file に構成を出力する場合は、\fB-f\fR オプションを使用します。このオプションを使用すると、コマンドファイルオプションに適した形式で出力が作成されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fIusage\fR] [\fIsubcommands\fR] [\fIproperties\fR] [\fI<subcommand.\fR] [\fI<properties>\fR]\fR
+.ad
+.sp .6
+.RS 4n
+一般ヘルプまたは特定項目のヘルプを出力します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfo\fR [\fIproperty-name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在のプロファイルまたは指定されたプロパティーに関する情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fBcmd=\fR\fIfullpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたコマンドをプロファイルから削除します。このサブコマンドは、\fBprofile\fR コンテキストでのみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-F\fR] \fBcmd\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロファイルからすべてのコマンドを削除します。\fB-F\fR オプションを使用していない場合は、確認が求められます。このサブコマンドは、\fBprofile\fR コンテキストでのみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した値をプロパティーから削除します。これを適用できるのは、リストを受け入れるプロパティーのみです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+構成を、最後に確定されたときの状態に戻します。この操作を強制的に実行する場合は、\fB-F\fR オプションを使用します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect cmd=\fR\fIfullpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更を行うために、指定したパス名の条件に一致するコマンドを選択します。このサブコマンドを適用できるのは、\fBprofile\fR コンテキストのみです。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロパティー名を、指定された値に設定します。\fBprofile\fR コンテキストでのみ有効なプロパティー (たとえば、\fBname\fR や \fBdesc\fR) と、\fBcommand\fR コンテキストでのみ有効なプロパティーがあります。このサブコマンドは、\fBprofile\fR コンテキストと \fBcommand\fR コンテキストの両方で適用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成が正しいかどうかを確認します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+必須のプロパティーが指定されている。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各キーワードの値が有効である。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザーは値を指定することを承認されている。
+.RE
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBprofiles\fR コマンドを使用する
+.sp
+.LP
+\fBprofiles\fR コマンドの出力は次の形式です。
+
+.sp
+.in +2
+.nf
+example% profiles tester01 tester02
+tester01 : Audit Management, All Commands
+tester02 : Device Management, All Commands
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBlist\fR オプションの使用
+.sp
+.in +2
+.nf
+example% profiles -l tester01 tester02
+tester01 :
+    Audit Management:
+      /usr/sbin/audit          euid=root
+      /usr/sbin/auditconfig    euid=root    egid=sys
+    All Commands:
+      *
+tester02 :
+    Device Management:
+      /usr/bin/allocate:       euid=root
+      /usr/bin/deallocate:     euid=root
+    All Commands
+      *
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR新しいプロファイルの作成
+.sp
+.LP
+次のコマンドは、新しい User Manager プロファイルを LDAP に作成します。新しいプロファイルの説明は「Manage users and groups」で、割り当てられる承認は \fBsolaris.user.manage\fR です。割り当てられる補助プロファイルは Mail Management です。ヘルプファイル名は、\fBRtUserMgmt.html\fR です。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> set desc="Manage users and groups"
+profiles:User Manager> set help=RtUserMgmt.html
+profiles:User Manager> set auths=solaris.user.manage
+profiles:User Manager> set profiles="Mail Management"
+profiles:User Manager> exit
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR現在の構成に関する情報の表示
+.sp
+.LP
+次のコマンドは、User Manager プロファイルに関する情報を表示します。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap info
+name=User Manager
+desc=Manage users and  groups
+auths=solaris.user.manage
+profiles=Mail Management
+help=RtUserMgmt.html
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRプロファイルの削除
+.sp
+.LP
+次のコマンドは、LDAP から User Manager プロファイルを削除します。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap delete -F
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRプロファイルの変更
+.sp
+.LP
+次のコマンドは、LDAP の User Manager プロファイルを変更します。新しいプロファイルの説明は「\fBManage world\fR」、新しい承認の割り当ては \fBsolaris.user.*\fR 承認、および新しい補助プロファイルの割り当ては \fBAll\fR です。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> set desc="Manage world"
+profiles:User Manager> set auths="solaris.user.*"
+profiles:User Manager> set profiles=All
+profiles:User Manager> exit
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR\fBexec_attr\fR データベースエントリの作成
+.sp
+.LP
+次のコマンドは、LDAP の User Manager プロファイルに新しい \fBexec_attr\fR のエントリを作成します。\fB/usr/bin/cp\fR というエントリが追加されます。コマンドには、実効ユーザー ID に \fB0\fR、および実効グループ ID に \fB0\fR が指定されています。 
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> add cmd=/usr/bin/cp
+profiles:User Manager:cp> set euid=0
+profiles:User Manager:cp> set egid=0
+profiles:User Manager:cp> end
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR\fBexec_attr\fR データベースエントリの削除
+.sp
+.LP
+次の例では、LDAP から User Manager プロファイルの \fBexec_attr\fR データベースエントリを削除します。コマンド \fB/usr/bin/cp\fR に指定されているエントリが削除されます。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> remove cmd=/usr/bin/cp
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR\fBexec_attr\fR データベースエントリの変更
+.sp
+.LP
+次を使用して、LDAP の User Manager プロファイルの \fBexec_attr\fR データベースエントリの属性を変更します。\fB/usr/bin/cp\fR エントリは、実ユーザー ID が \fB0\fR、および実グループ ID が \fB0\fR で実行するように変更されます。
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> select cmd=/usr/bin/cp
+profiles:User Manager:cp> clear euid
+profiles:User Manager:cp> clear egid
+profiles:User Manager:cp> set uid=0
+profiles:User Manager:cp> set gid=0
+profiles:User Manager:cp> end
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR \fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.LP
+\fB/etc/security/exec_attr\fR
+.sp
+.LP
+\fB/etc/security/prof_attr\fR
+.sp
+.LP
+\fB/etc/user_attr\fR
+.sp
+.LP
+\fB/etc/security/policy.conf\fR
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBauths\fR(1), \fBpfexec\fR(1), \fBpkg\fR(1), \fBroles\fR(1), \fBgetprofattr\fR(3C), \fBauth_attr\fR(4), \fBexec_attr\fR(4), \fBnsswitch.conf\fR(4), \fBpolicy.conf\fR(4), \fBprof_attr\fR(4), \fBuser_attr\fR(4), \fBaudit_flags\fR(5), \fBattributes\fR(5), \fBprivileges\fR(5)

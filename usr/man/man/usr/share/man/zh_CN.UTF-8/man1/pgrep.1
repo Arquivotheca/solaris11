@@ -1,0 +1,413 @@
+'\" te
+.\"  版权所有 (C) 2004，Oracle 和/或其附属公司。保留所有权利
+.TH pgrep 1 "2004 年 5 月 6 日" "SunOS 5.11" "用户命令"
+.SH 名称
+pgrep, pkill \- 通过名称及其他属性查找进程或发送进程信号
+.SH 用法概要
+.LP
+.nf
+\fBpgrep\fR [\fB-flvx\fR] [\fB-n\fR | \fB-o\fR] [\fB-d\fR \fIdelim\fR] [\fB-P\fR \fIppidlist\fR] 
+     [\fB-g\fR \fIpgrplist\fR] [\fB-s\fR \fIsidlist\fR] [\fB-u\fR \fIeuidlist\fR] [\fB-U\fR \fIuidlist\fR] 
+     [\fB-G\fR \fIgidlist\fR] [\fB-J\fR \fIprojidlist\fR] [\fB-t\fR \fItermlist\fR] 
+     [\fB-T\fR \fItaskidlist\fR] [\fB-c\fR \fIctidlist\fR] [\fB-z\fR \fIzoneidlist\fR] 
+     [\fIpattern\fR]
+.fi
+
+.LP
+.nf
+\fBpkill\fR [\fB-\fIsignal\fR\fR] [\fB-fvx\fR] [\fB-n\fR | \fB-o\fR] [\fB-P\fR \fIppidlist\fR] 
+     [\fB-g\fR \fIpgrplist\fR] [\fB-s\fR \fIsidlist\fR] [\fB-u\fR \fIeuidlist\fR] [\fB-U\fR \fIuidlist\fR] 
+     [\fB-G\fR \fIgidlist\fR] [\fB-J\fR \fIprojidlist\fR] [\fB-t\fR \fItermlist\fR] 
+     [\fB-T\fR \fItaskidlist\fR] [\fB-c\fR \fIctidlist\fR] [\fB-z\fR \fIzoneidlist\fR] 
+     [\fIpattern\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBPgrep\fR 实用程序检查系统上的活动进程，并报告属性与命令行中指定标准相匹配的进程 \fBID\fR。每个进程 \fBID\fR 打印为一个十进制值，并通过分界符与下个 \fBID\fR 分隔，其缺省为新行。对于每个属性选项，用户可以在命令行上指定一组可能值，由逗号分隔。例如，
+.sp
+.in +2
+.nf
+\fBpgrep -G other,daemon\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+与其真实组 \fBID\fR 为 \fBother\fR \fBOR\fR \fBdaemon\fR 的进程相匹配。如果指定多个标准选项，\fBpgrep\fR 与其属性符合标准选项的逻辑 \fBAND\fR 的进程相匹配。例如，
+.sp
+.in +2
+.nf
+\fBpgrep -G other,daemon -U root,daemon\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+与其属性为以下项的进程相匹配：
+.br
+.in +2
+（真实组 \fBID\fR 为 \fBother\fR \fBOR\fR \fBdaemon\fR）\fBAND\fR
+.in -2
+.br
+.in +2
+（真实用户 \fBID\fR 为 \fBroot\fR \fBOR\fR \fBdaemon\fR）
+.in -2
+.sp
+.LP
+\fBPkill\fR 与 \fBpgrep\fR 功能几乎相同，除了由 \fBkill\fR(1) 向每个匹配进程发送信号，而不是打印其进程 \fBID\fR。信号名称或数字可以指定为 \fBpkill\fR 的第一个命令行选项。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIctidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其合同 ID 位于列表中的进程相匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdelim\fR\fR
+.ad
+.RS 17n
+.rt  
+指定要在每个匹配进程 \fBID\fR 之间打印的输出分界符字符串。如果没有指定 \fB-d\fR 选项，缺省值为换行符。\fB-d\fR 选项仅当指定为 \fBpgrep\fR 的选项时才有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 17n
+.rt  
+常规表达\fI模式\fR应与完整进程参数字符串匹配（从 \fB/proc/\fInnnnn\fR/psinfo\fR 文件的 \fBpr_psargs\fR 字段获取）。如果没有指定 \fB-f\fR 选项，表达模式仅匹配可执行文件的名称 (从 \fB/proc/\fInnnnn\fR/psinfo\fR 文件的 \fBpr_fname\fR 字段获取）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIpgrplist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其组 \fBID\fR 位于给定列表中的进程相匹配。如果组 0 包括在列表中，则解释为 \fBpgrep\fR 或 \fBpkill\fR 进程的组 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIgidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其真实组 \fBID\fR 位于给定列表中的进程相匹配。每个组 \fBID\fR 可以指定为组名或数字组 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-J\fR \fIprojidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其项目 \fBID\fR 位于给定列表中的进程相匹配。每个项目 \fBID\fR 可以指定为项目名或数字项目 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 17n
+.rt  
+长输出格式。打印每个匹配进程的名称和进程 \fBID\fR。根据是否指定 \fB-f\fR 选项（参照上文），从 \fBpr_psargs\fR 或 \fBpr_fname\fR 字段获取进程名。\fB-l\fR 选项仅当指定为 \fBpgrep\fR 的选项时才有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与符合所有其他指定匹配标准的最新（最新创建的）进程相匹配。不能和选项 \fB-o\fR 同时使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与符合所有其他指定匹配标准的最旧（最早创建的）进程相匹配。不能和选项 \fB-n\fR 同时使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIppidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其父进程 \fBID\fR 位于给定列表中的进程相匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其进程会话 \fBID\fR 位于给定列表中的进程相匹配。如果 \fBID\fR 0 包括在列表中，则解释为\fB pgrep\fR 或 \fBpkill\fR 进程的会话 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItermlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅匹配与给定列表中的终端相关联的进程。每个终端将指定为 \fB/dev\fR 中终端设备路径名 "dev/" 的后缀。例如，\fBterm/a\fR 或 \fBpts/0\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItaskidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其任务 \fBID\fR 位于给定列表中的进程相匹配。如果 \fBID\fR 0 包括在列表中，则解释为 \fBpgrep \fR 或 \fBpkill\fR 进程的任务 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIeuidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其有效用户 \fBID\fR 位于给定列表中的进程相匹配。每个用户 \fBID\fR 可以指定为登录名或数字用户 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIuidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其真实用户 \fBID\fR 位于给定列表中的进程相匹配。每个用户 \fBID\fR 可以指定为登录名或数字用户 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+逆向读取匹配。匹配所有进程，\fB除了\fR符合指定匹配标准的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 17n
+.rt  
+仅将其参数字符串或可执行文件名与指定\fI模式\fR\fB完全\fR匹配的进程视为匹配进程。当进程参数字符串或可执行文件名中的所有字符都与模式匹配时，才将该模式匹配视为完全匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzoneidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+仅与其区域 \fBID\fR 位于给定列表中的进程相匹配。每个区域 \fBID\fR 可以指定为区域名或数字区域 \fBID\fR。此选项仅在全局区域中执行时有效。如果 \fBpkill\fR 功能用于向其他区域中的进程发送信号，该进程必须已声明 \fB{PRIV_PROC_ZONE}\fR 特权（请参见 \fBprivileges\fR(5)）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fIsignal\fR\fR
+.ad
+.RS 17n
+.rt  
+指定发送到每个匹配进程的信号。如果未指定信号，将缺省发送 \fBSIGTERM\fR。\fIsignal\fR 的值可以是 \fBsignal.h\fR(3HEAD) 中定义的一个符号名称，没有 \fBSIG\fR 前缀，或者是对应信号数字的十进制值。\fB-\fR\fIsignal\fR 选项仅当指定为 \fBpkill\fR 的第一个选项时才有效。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpattern\fR\fR
+.ad
+.RS 11n
+.rt  
+指定扩展常规表达 (Extended Regular Expression, \fBERE\fR) 模式，以匹配可执行文件名或完整进程参数字符串。有关 \fBERE\fR 语法的完整说明，请参见\fBregex\fR(5)。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR获取进程 ID
+.sp
+.LP
+获取 \fBsendmail\fR 的进程 \fBID\fR： 
+
+.sp
+.in +2
+.nf
+example% \fBpgrep -x -u root sendmail\fR
+283
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR终止进程
+.sp
+.LP
+终止最新创建的 \fBxterm\fR： 
+
+.sp
+.in +2
+.nf
+example% \fBpkill -n xterm\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+一个或多个进程匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+无进程匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+发生了致命错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/\fInnnnn\fR/psinfo\fR\fR
+.ad
+.RS 22n
+.rt  
+进程信息文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBkill\fR(1)、\fBproc\fR(1)、\fBps\fR(1)、\fBtruss\fR(1)、\fBkill\fR(2)、\fBsignal.h\fR(3HEAD)、\fBproc\fR(4)、\fBattributes\fR(5)、\fBprivileges\fR(5)、\fBregex\fR(5)、\fBzones\fR(5)
+.SH 附注
+.sp
+.LP
+这两个实用程序将 \fBERE\fR \fIpattern\fR 参数与 \fB/proc/\fR\fInnnnn\fR\fB/psinfo\fR 文件的 \fBpr_fname\fR 或 \fBpr_psargs\fR 字段进行匹配。这些字符串的长度根据 \fB<sys/procfs.h>\fR 中的定义进行限制。如果模式可匹配比当前限制长的字符串，则可能无法匹配指定的进程集。
+.sp
+.LP
+如果 \fIpattern\fR 参数包含 \fBERE\fR 元字符（同时也是 shell 元字符），可能需要使用适当的 shell 引号将此模式括起来。
+.sp
+.LP
+从不使用 \fBpgrep\fR 或 \fBpkill\fR 匹配死进程。
+.sp
+.LP
+当前 \fBpgrep\fR 或 \fBpkill\fR 进程绝不会将自身视为可能匹配。

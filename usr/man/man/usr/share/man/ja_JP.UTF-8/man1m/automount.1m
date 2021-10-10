@@ -1,0 +1,609 @@
+'\" te
+.\" Copyright 1989 AT&T 
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH automount 1M "2011 年 3 月 4 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+automount \- 自動マウントポイントのインストール
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/automount\fR [\fB-t\fR \fIduration\fR] [\fB-v\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBautomount\fR ユーティリティーは、\fBautofs\fR マウントポイントをインストールし、automount マップと各マウントポイントを対応付けます。ローカルまたは分散された automount マップのどちらかに重要なエントリがあり、\fBautomountd\fR(1M) デーモンがまだ起動していない場合、automount ユーティリティーは automountd1M デーモンを起動します。\fBautofs\fR ファイルシステムは、自身のファイルシステム内のディレクトリへのアクセスを監視し、\fBautomountd\fR(1M) デーモンに通知します。このデーモンはマップを使用してファイルシステムを特定し、\fBautofs\fR ファイルシステム内の参照ポイントにそのファイルシステムをマウントします。マップは、\fB/etc/auto_master\fR マップのエントリを使用するか、または直接マップを使用することによって、\fBautofs\fR マウントに割り当てることができます。
+.sp
+.LP
+一定時間内 (デフォルトでは \fB10\fR 分間) にファイルシステムに対してアクセスがなければ、\fBautomountd\fR デーモンはファイルシステムのマウントを解除します。
+.sp
+.LP
+ファイル \fB/etc/auto_master\fR により、すべての \fBautofs\fR マウントポイントの位置が決定されます。デフォルトでは、このファイルには 3 つのエントリが含まれます。
+.sp
+.in +2
+.nf
+# Master map for automounter
+#
++auto_master
+/net          -hosts    -nosuid
+/home         auto_home
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB+auto_master\fR エントリは、外部 \fBNIS\fR マスターマップへの参照です。マスターマップが存在する場合、\fB+auto_master\fR エントリの位置へ読み取られます。マスターファイルの残りのエントリは、\fBautofs\fR マウントが行われるディレクトリを指定し、さらにそのディレクトリに対応付けるオートマウントマップを指定します。各エントリの 3 番目のオプションフィールドには、任意のマウントオプションを指定できます。これらのオプションは、マウントオプションが明示的に指定されていない、マップ内のすべてのエントリに適用されます。\fBautomount\fR コマンドは通常、引数を指定しないで実行します。\fBautomount\fR コマンドは、\fB/etc/auto_master\fR 内のエントリと \fB/etc/mnttab\fR 内の \fBautofs\fR マウントのその時点のリストを比較し、\fBautofs\fR マウントを追加、削除、または変更することによって、\fB/etc/auto_master\fR の情報を /etc/mnttab ファイルに反映させます。\fBautomount\fR コマンドはブート時に、マスターマップからすべての autofs マウントをインストールします。その後、マスターマップまたは直接マップの新規エントリを \fBautofs\fR マウントにインストールするか、削除されたエントリに関してのマウントを解除します。
+.SS "SMF による管理"
+.sp
+.LP
+\fBautomount\fR サービスはサービス管理機能 \fBsmf\fR(5) により次のサービス識別子の下で管理されます。
+.sp
+.in +2
+.nf
+svc:/system/filesystem/autofs:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+\fBautomount\fR の起動時 autofs SMF パラメータは、\fBsharectl\fR(1M) を使用して操作できます。これらのパラメータを表示および更新する方法については、\fBsharectl\fR(1M) を参照してください。サポートされるパラメータは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムが使用されていないときに、マウントしたままにしておく時間の間隔を秒数で指定します。デフォルト値は \fB600\fR (10 分) です。\fBautomount\fR の \fB-t\fR オプションと同等の機能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautomount_verbose\fR=\fBTRUE\fR | \fBFALSE\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モード。\fBautofs\fR のマウントおよびマウント解除のような重要ではないイベントを通知します。デフォルト値は \fBFALSE\fR です。\fBautomount\fR の \fB-v\fR オプションと同等の機能です。
+.RE
+
+.SS "Oracle Solaris Trusted Extensions でのオートマウント"
+.sp
+.LP
+システムが Oracle Solaris Trusted Extensions で構成されている場合、ユーザーには認可上限内の各ラベルにホームディレクトリがあります。このため、対応するラベル付きの各ゾーンでホームディレクトリが使用可能である必要があります。\fBauto_home\fR マップを使用する代わりに、特殊マップが自動的に生成され、ゾーンの名前が接尾辞として付けられます。デフォルトでは、このマップには単一のエントリが含まれます。
+.sp
+.in +2
+.nf
+-fstype=lofs   :/export/home/&
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ホームディレクトリが参照された際に、その名前がゾーンの \fBauto_home_\fR\fIzonename\fR マップ内のほかのどのキーとも一致しなかった場合、それはこのループバックマウント指定に一致します。このループバック一致が発生し、かつその名前が、ゾーン内にホームディレクトリを持たない有効なユーザーに対応していた場合、ユーザーに代わってディレクトリが自動的に作成されます。
+.sp
+.LP
+NFS を使用すると、ゾーン内のホームディレクトリを、上位レベルのゾーンと読み取り専用モードで共有することもできます。この場合、上位レベルのゾーンは、インポートされる下位レベルの各ゾーンのオートマップエントリを備えている必要があります。内部ゾーンで解釈される、公開ゾーンの一般的なマップエントリは、\fBauto_home_public\fR と呼ばれ、次のような内容を含んでいます。
+.sp
+.in +2
+.nf
++auto_home_public
+
+\fIpublic-zone-IP-address\fR:/export/home/&
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このオートマップエントリは、次のように \fB/etc/auto_master\fR に含められます。
+.sp
+.in +2
+.nf
+/zone/public/home      auto_home_public      -nobrowse
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上位レベルのゾーンのユーザーは、\fBupdatehome\fR(1) ユーティリティーを使用すると、最下位のラベル付きゾーンを同期元として使用し、特定の起動ファイルを同期できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIduration\fR\fR
+.ad
+.RS 15n
+.rt  
+ファイルシステムが使用されていないときに、マウントしたままにしておく時間の間隔を秒数で指定します。\fI\fRデフォルトは \fB10\fR 分です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 15n
+.rt  
+冗長モード。\fBautofs\fR のマウント、マウント解除、またはその他の関連情報を通知します。
+.RE
+
+.SH 使用法
+.SS "マップエントリの形式"
+.sp
+.LP
+単純マップエントリ (マッピング) の形式は、次のとおりです。
+.sp
+.in +2
+.nf
+key [ -\fImount-options\fR ] \fIlocation\fR .\|.\|.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBkey\fR は、直接マップで使用する場合はマウントするディレクトリのフルパス名であり、間接マップの場合はサブディレクトリからの相対名です。\fImount-options\fR は、コンマで区切った \fBmount\fR オプションのリストです。\fIlocation\fR には、ファイルシステムがマウントされるディレクトリを指定します。単純 \fBNFS\fR マウントの場合は、\fBmount_nfs\fR(1M) で指定されているのと同じオプションが使用できます。\fIlocation\fR の形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fIhost\fR\fB:\|\fR\fIpathname\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIhost\fR は、マウントするファイルシステムが置かれているホスト名です。\fIpathname\fR は、マウントするディレクトリの絶対パス名です。
+.sp
+.LP
+ほかのファイルシステム用のオプションについては、\fBmount_nfs\fR(1M) など、ほかの \fBmount_*\fR のマニュアルページを参照してください。
+.SS "複製されたファイルシステム"
+.sp
+.LP
+複製された \fBNFS\fR ファイルシステムには複数の \fIlocation\fR フィールドを指定できます。その場合、 \fBautomount\fR とカーネルのそれぞれがその情報を使用して、可用性の向上を計ります。読み取り専用フラグがマップエントリに設定されている場合、\fBautomountd\fR はカーネルが使用する、いくつかの条件によってソートされている位置リストを使用してマウントします。マウント時に利用できる位置だけがマウントされ、カーネルで利用可能になります。サーバーが応答しなかった場合、カーネルは代替サーバーに切り替えます。\fBautomount\fR のソート順序は、次のサーバーの選択方法を決定するのに使用されます。読み取り専用フラグが設定されていない場合、\fBautomount\fR は同じソート順序によって選択された、最善の位置をマウントします。新しいサーバーが選択されるのは、マウント解除が可能だった場合に限られ、再マウントが実行されます。同じローカルサブネット上のサーバーに最も高い優先順位が与えられ、その次にローカルネット上のサーバーに高い優先順位が与えられます。等距離のサーバー間では、重み付け係数 (後述) が使用されていないかぎり、応答時間によって順序が決まります。
+.sp
+.LP
+\fBNFS\fR Version 2 プロトコルと \fBNFS\fR Version 3 プロトコルの両方を使用するサーバーの位置がリストに含まれている場合、\fBautomount\fR はリストに指定されたサーバー位置の一部だけを選択し、すべてのエントリが同じプロトコルになるようにします。 \fBNFS\fR Version 3 プロトコルを使用するサーバーが選択されるのは、ローカルサブネット上にある、\fBNFS\fR Version 2 プロトコルを使用するサーバーが無視されない場合に限られます。詳細については、『\fI\fR』を参照してください。
+.sp
+.LP
+リストの各 \fIlocation\fR が同じ \fIpathname\fR を共有している場合、コンマで区切ったホスト名に対して、1 つの \fIlocation\fR を使用できます。
+.sp
+.in +2
+.nf
+\fBhostname\fR\fB,\fR\fBhostname\fR\|.\|.\|.\|\fB:\fR\|\fIpathname\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+括弧で囲んだ整数を重み付け係数としてサーバー名のうしろに指定することにより、サーバー要求に重み付けを設定できます。重み付けが設定されていないサーバーは、ゼロの値 (選択される可能性が最も高い) が与えられているものとみなされます。値が大きくなるにしたがって、選択される可能性が小さくなります。次に例を示します。
+.sp
+.in +2
+.nf
+\fBman\fR -ro \fBalpha,bravo,charlie(1),delta(4)\|:\|/usr/man\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ホスト \fBalpha\fR および \fBbravo\fR に最も高い優先順位が与えられており、ホスト \fBdelta\fR には最も低い優先順位が与えられています。
+.sp
+.LP
+選択プロセスではサーバーの近接度が優先されます。前述の例で、サーバー \fBdelta\fR はクライアントと同じネットワークセグメントにあり、ほかのサーバーは異なるネットワークセグメントにある場合、重み付けの値は無視され、\fBdelta\fR が選択されます。重み付けが有効なのは、同じネットワーク近接度を持つサーバー間で選択が行われる場合だけです。自動マウンターは重み付けに関わらず、同じネットワークセグメント上の他のサーバー経由でローカルホストをつねに選択します。
+.sp
+.LP
+サーバーごとにエクスポートポイントが異なる場合にも、重み付けを適用できます。例: 
+.sp
+.in +2
+.nf
+man -ro alpha:/usr/man  bravo,charlie(1):/usr/share/man  
+     delta(3):/export/man
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+マッピングを複数の入力行にわたって記述する場合は、バックスラッシュ (\e) で復帰改行をエスケープします。コメントは番号記号 (\fB#\fR) で始まり、その後の復帰改行で終了します。\fB\fR
+.SS "マップキーの置換"
+.sp
+.LP
+アンパサンド (\fB&\fR) 記号は、使用されているエントリの \fBkey\fR フィールドの値に展開されます。次のコマンドを見てください。
+.sp
+.in +2
+.nf
+\fBjane\fR \fBsparcserver\|:\|/home/&\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、\fB&\fR は \fBjane\fR に展開されます。
+.SS "ワイルドカードキー"
+.sp
+.LP
+アスタリスク (\fB*\fR) 記号は、\fBkey\fR フィールドとして与えられた場合、どのようなキーにも当てはまるエントリとして認識されます。このようなエントリは、それまで一致しなかったあらゆるキーと一致します。たとえば、\fB/config\fRの間接マップに次のエントリが指定されている場合、
+.sp
+.in +2
+.nf
+*         &\|:\|/export/config/&
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+位置を次のように指定できるリモートファイルシステムは、\fB/config\fR にすべて自動マウントされます。
+.sp
+.in +2
+.nf
+hostname\|:\|/export/config/hostname
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ワイルドカードキーは \fB-browse\fR オプションと組み合わせて使用できないことに注意してください。
+.SS "変数置換"
+.sp
+.LP
+\fBautomount\fR マップ内でクライアント固有の変数を使用できます。たとえば、マップに \fB$HOST\fR が指定されている場合、\fBautomount\fR は $HOST をクライアントのホスト名に対応する現在値に展開します。次の変数を使用できます。
+.sp
+
+.sp
+.TS
+tab();
+lw(1.07i) lw(2.6i) lw(1.83i) 
+lw(1.07i) lw(2.6i) lw(1.83i) 
+.
+\fBARCH\fR\fBarch\fR の出力T{
+アーキテクチャ名。たとえば、 sun4u マシンでは \fBsun4\fR。
+T}
+\fBCPU\fR\fBuname \fR\fB-p\fR の出力プロセッサタイプ
+たとえば、sparc
+\fBHOST\fR\fBuname \fR\fB-n\fR の出力ホスト名
+たとえば、\fBmyhost\fR。
+\fBKARCH\fR\fBarch -k\fR または \fBuname -m\fR の出力T{
+カーネルアーキテクチャー名またはマシンのハードウェア名。たとえば、\fBsun4u\fR。
+T}
+
+\fBOSNAME\fR\fBuname \fR\fB-s\fR の出力OS 名
+たとえば、SunOS
+\fBOSREL\fR\fBuname \fR\fB-r\fR の出力OS リリース名 
+たとえば、5.3
+\fBOSVERS\fR\fBuname \fR\fB-v\fR の出力OS バージョン
+たとえば、beta1.0
+\fBNATISA\fR\fBisainfo \fR\fB-n\fR の出力T{
+システムのネイティブ命令セットアーキテクチャー。
+T}
+たとえば、sparcv9
+\fBPLATFORM\fR\fBuname -i\fR の出力T{
+プラットフォーム名。たとえば、\fBSUNW,Sun-Fire-V240\fR。
+T}
+
+.TE
+
+.sp
+.LP
+参照が接辞付き文字から保護される必要がある場合は、変数名を中括弧 (\fB\|{\|}\|\fR) で囲みます。
+.SS "多重マウント"
+.sp
+.LP
+多重マウントエントリの形式は、次のとおりです。
+.sp
+.in +2
+.nf
+key [\fI-mount-options\fR] [\|[\fImountpoint\fR] [\fI-mount-options\fR] \fIlocation\fR.\|.\|.\|]\|.\|.\|.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+最初の \fB/\fR[\fImountpoint\fR\|] は、最初のマウントでは省略可能ですが、以降のすべてのマウントでは必須です。省略可能な \fImountpoint\fR は、\fBkey\fR で指定されたディレクトリからの相対パス名とみなされます。最初の \fImountpoint\fR を省略した場合、\fB/\fR (ルート) の \fImountpoint\fR が暗黙に使用されます。
+.sp
+.LP
+\fB/src\fR の直接マップに次のエントリがあるとします。
+.sp
+.in +2
+.nf
+beta     -ro\e
+  /           svr1,svr2:/export/src/beta  \e
+  /1.0        svr1,svr2:/export/src/beta/1.0  \e
+  /1.0/man    svr1,svr2:/export/src/beta/1.0/man
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+すべてのオフセットは、\fBbeta\fR の下のサーバー上になければなりません。\fBautomount\fR は \fBsvr1\fR または \fBsvr2\fR のどちらかから、つまり最も近くにあり先に応答した方のホストから、\fB/src/beta\fR、\fB/src/beta/1.0\fR、および \fB/src/beta/1.0/man\fR を必要に応じて自動的にマウントします。
+.SS "その他のファイルシステムタイプ"
+.sp
+.LP
+オートマウントは、デフォルトのファイルシステムタイプとして \fBNFS\fR マウントを想定しています。他のファイルシステムタイプを指定する場合は、\fBfstype\fR マウントオプションを使用します。\fBfstype\fR オプションと組み合わせることにより、そのファイルシステムタイプ固有の他のマウントオプションを使用できます。位置フィールドにはファイルシステムタイプ固有の情報を指定する必要があります。たとえば、CD ファイルシステムをマウントする場合のように、位置フィールドがスラッシュで始まる場合は、その前にコロンが必要です。
+.sp
+.in +2
+.nf
+\fBcdrom -fstype=hsfs,ro   :\|/dev/sr0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBautofs\fR マウントを実行するには、次のように指定します。
+.sp
+.in +2
+.nf
+\fBsrc\fR \fB-fstype\fR\fB=autofs    auto_src\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+注: この手順は、Volume Manager を使用しない場合に限って使用してください。
+.sp
+.LP
+オプションの継承については、「注意事項」を参照してください。\fB\fR
+.SS "間接マップ"
+.sp
+.LP
+間接マップを使用すると、コマンド行で指定した \fBdirectory\fR からマウントするサブディレクトリの、マッピングを指定できます。間接マップの各 \fBkey\fR は、必要に応じてマウントする 1 つ以上のファイルシステムを参照する単純名です。
+.SS "直接マップ"
+.sp
+.LP
+直接マップのエントリは、\fBautofs\fR マウントポイントと直接対応づけられます。各 \fIkey\fR は \fBautofs\fR マウントポイントのフルパス名です。直接マップ全体が 1 つのディレクトリに対応付けられることはありません。
+.sp
+.LP
+直接マップは、\fB/-\fR キーによって間接マップと区別されます。例: 
+.sp
+.in +2
+.nf
+# Master map for automounter
+#
++auto_master
+/net            -hosts          -nosuid,nobrowse
+/home           auto_home       -nobrowse
+/-              auto_direct
+.fi
+.in -2
+.sp
+
+.SS "インクルードマップ"
+.sp
+.LP
+次の形式のエントリを使用すると、マップ内に別のマップの内容を含めることができます。
+.sp
+.in +2
+.nf
++\fImapname\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fImapname\fR がスラッシュで始まる場合、mapname はローカルファイルのパス名とみなされます。それ以外の場合、マップの位置は次に示すように、\fB/etc/nsswitch.conf\fR 内のオートマウンタ用のエントリに基づくネームサービススイッチのポリシーによって決まります。
+.sp
+.in +2
+.nf
+automount: files nis
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ネームサービスが \fBfiles\fRの場合、\fB/etc\fR 内のローカルファイルの名前が想定されます。検索対象のキーが取り込まれたマップにない場合、次のエントリで検索が続けられます。
+.SS "特殊マップ"
+.sp
+.LP
+使用可能な特殊マップには 3 つの種類があります。\fB-hosts\fR、\fB-fedfs\fR、および \fB-null\fR です。\fBhosts\fR マップは \fB/net\fR ディレクトリと組み合わせて使用します。この場合、マップのキーは NFS サーバーのホスト名とみなされます。\fBautomountd\fR デーモンは、エクスポートされたファイルシステムのサーバーリストに基づいて、マップエントリを動的に作成します。\fB/net/hermes\fR のディレクトリ参照では、\fBhermes\fR のルートからの相対位置にある、対応するディレクトリが参照されます。
+.sp
+.LP
+\fB-fedfs\fR マップは \fB/nfs4\fR ディレクトリと組み合わせて使用します。この場合、マップのキーはドメインのルートファイルシステムが必要な DNS ドメインとみなされます。\fBautomountd\fR デーモンは、ドメインのルートサーバーを次のようなクエリーで検索します。
+.sp
+.in +2
+.nf
+% \fBnslookup -q=srv _nfs4._domainroot._tcp.\fIdomain\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+その後、\fIserver-list\fR\fB:/.domainroot-\fR\fIdomain\fR を \fB/nfs4/\fR\fIdomain\fR にマウントします。
+.sp
+.LP
+これは、次の文書にドキュメント化されている保留中の IETF 標準をサポートします。
+.sp
+.in +2
+.nf
+http://datatracker.ietf.org/doc/\e
+draft-ietf-nfsv4-federated-fs-dns-srv-namespace/
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-null\fR マップは、指定されたディレクトリに対してすでに設定されているマップを取り消します。これは \fB/etc/auto_master\fR において、\fB+auto_master\fR によって与えられるエントリから継承されるエントリを取り消す場合に便利です。ただし、取り込まれたマップのエントリの前に \fB-null\fR エントリを挿入しないと、効果はありません。
+.SS "実行可能マップ"
+.sp
+.LP
+ファイルパーミションの実行ビットが設定されているローカルマップは、オートマウンタによって実行され、引数として検索されるキーを与えられます。実行可能マップは、標準出力にオートマウンタのマップエントリの内容を返すようにします。エントリが特定できなかった場合、出力はありません。直接マップを実行可能にすることはできません。
+.SS "構成と auto_master マップ"
+.sp
+.LP
+引数を指定しないで \fBautomount\fR を開始した場合、\fBautomount\fR はマスターマップで、autofs マウントポイントのリストおよび対応するマップを調べます。automount はまだマウントされていない \fBautofs\fR マウントがあればそれらをマウントし、マスターマップまたは直接マップから削除されている \fBautofs\fR マウントがあればそれらをマウント解除します。
+.sp
+.LP
+マスターマップは \fBauto_master\fR とみなされ、その位置はネームサービススイッチのポリシーによって決まります。通常、ローカルファイル \fB/etc/auto_master\fR がマスターマップとして最初に検索されます。
+.SS "ブラウズ機能"
+.sp
+.LP
+\fBautomount\fR デーモンは、間接マップのブラウズ機能をサポートします。これにより、マウントされているかどうかに関係なく、マウント可能なマウントポイントをすべて表示できます。任意の間接 \fBautofs\fR マップに  \fB-nobrowse\fR オプションを追加すると、ブラウズ機能を無効にできます。例: 
+.sp
+.in +2
+.nf
+/net     -hosts      -nosuid,nobrowse
+/home    auto_home
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、\fB/net\fR で表示されるのはマウントされている \fIhostnames\fR だけですが、\fB/home\fRではマウント可能なすべてのマウントポイントが表示されます。\fBautofs\fR ファイルシステムのブラウズ機能は、\fB-browse\fR オプションによって有効になります。これはすべての間接マップにおけるデフォルトの設定です。
+.sp
+.LP
+\fB-browse\fR オプションは、ワイルドカードキーと組み合わせては使用できません。
+.SS "マウント制限マップ"
+.sp
+.LP
+あるマップに指定したオプションは、そのマップ内のすべてのエントリに対するデフォルトのオプションとして使用されます。そして、このようなオプションは、マップ内のエントリが独自のマウントオプションを指定するときに初めて無視されます。
+.sp
+.LP
+しかし、マウントマップとそのサブマウント全体に、\fBnosuid\fR、\fBnodevices\fR、\fBnosetuid\fR、または \fBnoexec\fR を強制的に適用することが望ましい場合もあります。これを行うには、拡張マウントオプション \fB-restrict\fR を使用します。 
+.sp
+.in +2
+.nf
+ /home     auto_home       -restrict,nosuid,hard
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-restrict\fR オプションを使用すると、制限的なオプション (つまり、\fBnosuid\fR、\fBnodevices\fR、\fBnosetuid\fR、および \fBnoexec\fR) はすべて、-restrict オプション自身とともに、強制的に継承されます。前述の例では、\fBnosuid\fR と \fBrestrict\fR オプションは継承されますが、\fBhard\fR オプションは継承されません。また、\fBrestrict\fR オプションは「実行可能なマップ」の実行を防ぎます。さらに、restrict オプションは、あるプログラムが自分のゾーン内で利用できるすべての特権を持たずに、一部の特権だけで確立した自動マウントに対しても強制されます。 
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/auto_master\fR\fR
+.ad
+.RS 22n
+.rt  
+マスターオートマウントマップ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/auto_home\fR\fR
+.ad
+.RS 22n
+.rt  
+オートマウントされるホームディレクトリ用のマップ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nsswitch.conf\fR\fR
+.ad
+.RS 22n
+.rt  
+ネームサービススイッチの構成ファイル。\fBnsswitch.conf\fR(4) を参照してください。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBisainfo\fR(1), \fBls\fR(1), \fBsvcs\fR(1), \fBuname\fR(1), \fBupdatehome\fR(1), \fBautomountd\fR(1M), \fBmount\fR(1M), \fBmount_nfs\fR(1M), \fBsharectl\fR(1M), \fBsvcadm\fR(1M), \fBattributes\fR(5), \fBnfssec\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fI『System Administration Guide: Network Services 』\fR
+.SH 注意事項
+.sp
+.LP
+\fBautofs\fR マウントポイント間に階層関係が存在してはいけません。\fBautomount\fR では、\fBautofs\fR マウント内に別の \fBautofs\fR マウントポイントを作成できません。
+.sp
+.LP
+直接マップエントリごとに新しい \fBautofs\fR マウントが作成されるので、直接マップはできるだけ短くしてください。
+.sp
+.LP
+直接マップと間接マップのエントリはどちらも、いつでも変更できます。新しい情報は、\fBautomountd\fR が次回そのマップエントリを使用してマウントを実行するときに使用されます。
+.sp
+.LP
+マスターマップまたは直接マップに追加された新しいエントリは、automount コマンドを実行してそれらの新しいエントリを新しい \fBautofs\fR マウントポイントとしてインストールするまで使用できません。間接マップに追加された新しいエントリは、ただちに使用できます。
+.sp
+.LP
+Solari 2.6 リリースでは、間接マップに対応づけられた \fBautofs\fR ディレクトリの表示 (\fBls\fR(1) を参照) には、潜在的にマウント可能なエントリがすべて含まれます。潜在的にマウント可能なエントリに対応づけられる属性は一時的なものです。実際のファイルシステム属性が表示されるのは、ファイルシステムのマウント後に限られます。
+.sp
+.LP
+マスターマップの 3 番目のオプションフィールドを指定すると、デフォルトのマウントオプションをマップ全体に割り当てることができます。これらのオプションが適用されるのは、マウントオプションが指定されていないマップエントリだけです。マップエントリにオプションが指定されていると、デフォルトのオプションは無効になります。現時点では、オプションの連結は行われません。連結機能は、将来のリリースに備えて計画中です。
+.sp
+.LP
+オートマウンタのデフォルトの NFS マウント操作の再試行回数は 0 です。つまり、マウント試行は 1 回だけで、再試行されません。これは、\fBmount_nfs\fR(1M) ユーティリティーのデフォルト (10000 回) と大きく異なる点なので、注意してください。
+.sp
+.LP
+ネットワーク情報サービス (NIS) は従来、Sun イエローページ (YP) と呼ばれていました。これらの機能は同等です。

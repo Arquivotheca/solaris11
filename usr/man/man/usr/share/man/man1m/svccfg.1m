@@ -1,0 +1,1047 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH svccfg 1M "6 Jun 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+svccfg \- import, export, and modify service configurations
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR] \fIsubcommand\fR [\fBargs\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR] \fB-f\fR \fIcommand-file\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsvccfg\fR command manipulates data in the service configuration repository. \fBsvccfg\fR can be invoked interactively, with an individual subcommand, or by specifying a command file that contains a series of subcommands.
+.sp
+.LP
+Changes made to an existing service in the repository typically do not take effect for that service until the next time the service instance is refreshed. See the \fBrefresh\fR subcommand on the \fBsvcadm\fR(1M) man page for more details.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+Reads and executes \fBsvccfg\fR subcommands from \fIcommand-file\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+Selects the entity indicated by \fIFMRI\fR (a fault management resource identifier) before executing any subcommands. See \fBsmf\fR(5).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verbose.
+.RE
+
+.SH SUBCOMMANDS
+.sp
+.LP
+Subcommands are divided into the categories specified in the subsections that follow.
+.sp
+.LP
+All subcommands that accept \fIFMRI\fRs also accept abbreviated or globbed patterns. Instances and services can be abbreviated by specifying the instance name, or the trailing portion of the service name. For example, given the \fIFMRI\fR:
+.sp
+.in +2
+.nf
+svc:/network/smtp:sendmail
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+All the following are valid abbreviations: 
+.sp
+.in +2
+.nf
+sendmail 
+:sendmail 
+smtp 
+smtp:sendmail 
+network/smtp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+While the following are invalid:
+.sp
+.in +2
+.nf
+mail
+network
+network/smt
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Abbreviated forms of \fIFMRI\fRs are unstable, and should not be used in scripts or other permanent tools. If a pattern matches more than one instance or service, an error message is printed and no action is taken.
+.SS "General Subcommands"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.br
+.na
+\fB\fBexit\fR\fR
+.ad
+.br
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+Exits immediately.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrepository\fR [\fB-p\fR \fIprefix\fR] \fIrepfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+Uses \fIrepfile\fR as a repository. By default, \fBsvccfg\fR(1M) uses the system repository.
+.sp
+Use repository only with files from the identical version of Solaris, including patches, that you are currently running. Do not use this subcommand with the system repository, \fB/etc/svc/repository.db\fR.
+.sp
+If you use \fBsvccfg repository\fR to pre-populate the SMF repository before deployment time, use \fB-p\fR option to specify the root prefix for the system standard location for manifests imported with \fBimport\fR. This prefix will be replaced by \fB/lib/svc/manifest\fR and \fB/var/svc/manifest\fR once the repository is on a live system. If manifests from your \fB-p\fR directory do not appear in a system standard location at runtime, the services associated with them will be removed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR [\fB-v\fR|\fB-V\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Sets optional behavior. If no options are specified, set displays the options currently in effect.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Turns on verbose mode.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+Turns off verbose mode.
+.RE
+
+.RE
+
+.SS "Service Manifest and Profile Subcommands"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapply\fR [\fB-n\fR] [\fB-v\fR] \fIfile\fR | \fIdirectory\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the argument is a service profile or manifest, apply the configuration to the admin layer of the SMF repository. Services, instances, property groups, and properties will be created as necessary.
+.sp
+If the type attribute of a property or property group is unspecified, an attempt will be made to determine the type from existing type settings or from the service template. If a type cannot be determined, a warning will be presented and the service will be skipped so inconsistent data will not be introduced into a service and instance. Nonexistent services and instances are ignored.
+.sp
+To use the relaxed element definitions in a profile, the following definitions need to be added to the \fBDOCTYPE\fR entry:
+.sp
+.in +2
+.nf
+<!ENTITY % profile "INCLUDE">
+<!ENTITY % manifest "IGNORE">
+.fi
+.in -2
+.sp
+
+Services and instances modified by the profile will be refreshed. If \fB-n\fR is specified, the profile is processed and no changes are applied to the SMF repository. Any syntax error found will be reported on stderr and an exit code of \fB1\fR will be returned. See \fBsmf\fR(5) for a description of service profiles. This command requires privileges to modify properties in the service and instance. See \fBsmf_security\fR(5) for the privileges required to modify properties.
+.sp
+Services and instances in the manifest or profile will be validated against template data in the manifest and the  repository, and warnings will be issued for all template violations. See \fBsmf_template\fR(5) for a description of  templates. If the \fB-V\fR option is specified, manifests that violate the defined templates will fail to import. In interactive invocations of \fBsvccfg\fR, \fB-V\fR is the default behavior.
+.sp
+If the argument to \fBapply\fR is a directory, all profiles found under that directory tree will get applied as described above. The subcommand fails if a specified file or any file found under a specified directory is not a service profile.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextract\fR [\fB-a\fR] [\fB-l\fR \fIlayer\fR] [\fI> file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Prints a service profile that represents the local customizations on the system.
+.sp
+If \fB-l\fR is supplied, a list of layers can be selected from which to export values. The \fB-l\fR option requires a layer name and takes the arguments: \fBmanifest\fR, \fBsystem-profile\fR, \fBsite-profile\fR, \fBadmin\fR, \fBcurrent\fR, \fBall\fR. \fBcurrent\fR and \fBall\fR are synonyms and mean the highest-layer values. They are both provided for consistency with the \fBlistprop\fR subcommand. Multiple layers can be comma-separated or specified with multiple \fB-l\fR options.
+.sp
+If \fB-l\fR is not supplied, the default is \fB-l\fR \fBadmin,site-profile\fR.
+.sp
+If a property is defined in multiple selected layers, only the highest layer is exported in the profile.
+.sp
+Without the \fB-a\fR option, property groups containing  protected information (identified by the presence of the \fBread_authorization\fR property\(emsee \fBsmf_security\fR(5)) will be extracted without their property values. When the \fB-a\fR option is specified, all values will be extracted. An error results if there are insufficient privileges to read these values.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-a\fR] \fIservice_FMRI\fR [\fI>file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Running \fBsvccfg export\fR is equivalent to:
+.sp
+.in +2
+.nf
+svccfg extract -l current [-a] \fIservice_FMRI\fR [>\fIfile\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR [\fB-V\fR] [\fIfile\fR | \fIdirectory\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvccfg import\fR on a file in a system-managed filesystem location (subdirectories of \fB/lib/svc/manifest\fR and \fB/var/svc/manifest\fR) invokes: \fBsvcadm restart manifest-import\fR.
+.sp
+Placing your manifests in a system-managed location and invoking \fBsvcadm restart manifest-import\fR to import them is the recommended practice.
+.sp
+\fBsvccfg import\fR on files in other locations imports their properties as administrative customization into the admin layer. It is equivalent to:
+.sp
+.in +2
+.nf
+svccfg apply [\fIfile\fR | \fIdirectory\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinventory\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+If \fIfile\fR is determined to be a service manifest or profile, then the \fBFMRI\fRs of the services and instances the \fIfile\fR describes are printed. For each service, the \fBFMRI\fRs of its instances are displayed before the \fBFMRI\fR of the service. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalidate\fR [\fIfile\fR | \fIfmri\fR]\fR
+.ad
+.sp .6
+.RS 4n
+The \fBvalidate\fR subcommand can operate on a manifest file, an instance FMRI, or the current instance or snapshot entity selection. When an argument is specified, \fBsvccfg\fR will check to see whether the specified file exists. If the file exists, it will be validated. If a file of the specified name does not exist, the argument is treated as an FMRI pattern. If a conflict arises between a filename and an FMRI, use the \fBsvc:\fR and \fBfile:\fR prefixes to tell \fBsvccfg\fR how to interpret the argument.
+.sp
+When you specify a file, the file is processed in a manner similar to \fBimport\fR \fB-V\fR, but no changes are made to the repository. If any errors are detected, \fBsvccfg\fR displays the errors and exits with a nonzero exit status.
+.sp
+For an instance \fIfmri\fR, instance entity selection, or snapshot entity selection, the specified instance in its composed form (see "Properties and Property Groups" in \fBsmf\fR(5)) will be validated against template data in the repository. Instance FMRIs and instance entity selections use the "running" snapshot for validation. Warnings will be issued for all template violations. See \fBsmf_template\fR(5) for a description of templates.
+.sp
+If the service or instance is backed by a manifest or profile, it is masked. See \fBsmf\fR(5).
+.RE
+
+.SS "Entity Selection, Modification, and Navigation Subcommands"
+.sp
+.LP
+An "entity" refers to a scope, service, or service instance.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+A new entity with the given name is created as a child of the current selection. See \fBsmf_security\fR(5) for the privileges required to create entities.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-f\fR] \fB{\fIname\fR | \fIfmri\fR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+The named child of the current selection or the entity specified by \fIfmri\fR is deleted. Attempts to delete service instances in the "online" or "degraded" state will fail unless the \fB-f\fR flag is specified. If a service or service instance has a "dependents" property group of type "framework", then for each of its properties with type "astring" or "fmri", if the property has a single value which names a service or service instance then the dependency property group in the indicated service or service instance with the same name as the property will be deleted. See \fBsmf_security\fR(5) for the privileges required to delete service configurations.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+The child entities of the current selection whose names match the glob pattern \fIpattern\fR are displayed (see \fBfnmatch\fR(5)). \&':properties' is also listed for property-bearing entities, namely services and service instances.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR {\fIname\fR | \fIfmri\fR}\fR
+.ad
+.sp .6
+.RS 4n
+If the argument names a child of the current selection, it becomes the current selection. Otherwise, the argument is interpreted as an \fBFMRI\fR and the entity that the argument specifies becomes the current selection.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunselect\fR\fR
+.ad
+.sp .6
+.RS 4n
+The parent of the current selection becomes the current selection. 
+.RE
+
+.SS "Property Inspection and Modification Subcommands"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddpg\fR \fIname\fR \fItype\fR [\fIflags\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Adds a property group with the given \fIname\fR and type to the current selection. \fIflags\fR is a string of characters which designates the flags with which to create the property group. 'P' represents \fBSCF_PG_FLAG_NONPERSISTENT\fR (see \fBscf_service_add_pg\fR(3SCF)). See \fBsmf_security\fR(5) for the privileges required to create property groups.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddpropvalue\fR \fIpg\fR\fI/name\fR [\fItype:\fR] \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Adds the given value to a property. If \fItype\fR is given and the property exists, then if \fItype\fR does not agree with the property's \fItype\fR, the subcommand fails. The values may be enclosed in double-quotes. String values containing double-quotes or backslashes must be enclosed by double-quotes and the contained double-quotes and backslashes must be quoted by backslashes. Nonexistent properties are created, in which case the \fItype\fR specifier must be present. See \fBscf_value_create\fR(3SCF) for a list of available property types. See \fBsmf_security\fR(5) for the privileges required to modify properties. The new value will be appended to the end of the list of property values associated with the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelcust\fR [\fB-M\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Delete any administrative customizations for the current selection. If an argument is supplied, it is taken as a glob pattern and only property groups and properties with names that match the argument are deleted.
+.sp
+If \fB-M\fR is supplied, delete only masked entities.
+.sp
+To see what customizations \fBdelcust\fR would remove, use \fBlistcust\fR with the same options. As \fBdelcust\fR can potentially remove all administrative customizations, always run \fBlistcust\fR first to determine you are removing what you intend to.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelpg\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the property group \fIname\fR of the current selection. See \fBsmf_security\fR(5) for the privileges required to delete property groups.
+.sp
+If the property group is backed by a manifest or profile, it is masked. See \fBsmf\fR(5).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelprop\fR \fIpg\fR[\fI/name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Deletes the named property group or property of the current selection. See \fBsmf_security\fR(5) for the privileges required to delete properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelpropvalue\fR \fIpg/name\fR \fIglobpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deletes all values matching the given \fIglob\fR pattern in the named property. Succeeds even if no values match. See \fBsmf_security\fR(5) for the privileges required to modify properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdescribe\fR [\fB-v\fR] [\fB-t\fR] [\fIpropertygroup\fR/\fIproperty\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Describes either the current or the possible settings.
+.sp
+When invoked without arguments, \fBdescribe\fR gives basic descriptions (if available) of the currently selected entity and all of its currently set property groups and properties. A property group or specific property can be queried by specifying either the property group name, or the property group name and property name, separated by a slash (\fB/\fR), as an argument.
+.sp
+The \fB-v\fR option gives all information available, including descriptions for current settings, constraints, and other possible setting choices.
+.sp
+The \fB-t\fR option shows only the template data for the selection (see \fBsmf_template\fR(5)), and does not display the current settings for property groups and properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeditprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+Comments of commands to reproduce the property groups and properties of the current selection are placed in a temporary file and the program named by the \fBEDITOR\fR environment variable is invoked to edit it. Upon completion, the commands in the temporary file are executed. The default editor is \fBvi\fR(1). See \fBsmf_security\fR(5) for the privileges required to create, modify, or delete properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistpg\fR [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Displays the names, types, and flags of property groups of the current selection. If an argument is given, it is taken as a glob pattern and only property groups with names which match the argument are listed.
+.sp
+In interactive mode, a basic description of the property groups is also given.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistprop\fR [\fB-l\fR \fIlayer\fR...] [\fB-f\fR | \fB-o\fR \fIformat\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Lists property groups and properties of the current selection. For property groups, names, types, and flags are listed. For properties, names (prepended by the property group name and a slash (/)), types, and values are listed. See \fBscf_value_create\fR(3SCF) for a list of available property types. If an argument is supplied it is taken as a glob pattern and only property groups and properties with names which match the argument are listed.
+.sp
+With the \fB-l\fR option, print the layer the value came from. The \fB-l\fR option requires a layer, and takes the arguments: \fBmanifest\fR, \fBsystem-profile\fR, \fBsite-profile\fR, \fBadmin\fR, \fBcurrent\fR, \fBall\fR. \fBcurrent\fR prints the same property values as \fBlistprop\fR without \fB-l\fR, along with the layer that value was defined in.
+.sp
+The \fB-f\fR and \fB-o\fR options are mutually exclusive. \fB-f\fR prints the file, if any, a property came from. \fB-o\fR allows field selection. Selectable fields include:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpropname\fR\fR
+.ad
+.RS 15n
+.rt  
+the property name
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpgname\fR\fR
+.ad
+.RS 15n
+.rt  
+the property group name
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstname\fR\fR
+.ad
+.RS 15n
+.rt  
+the instance name
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBservicename\fR\fR
+.ad
+.RS 15n
+.rt  
+the service name
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlayer\fR\fR
+.ad
+.RS 15n
+.rt  
+the layer
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproptype\fR\fR
+.ad
+.RS 15n
+.rt  
+the property type
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalue\fR\fR
+.ad
+.RS 15n
+.rt  
+the property value
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.RS 15n
+.rt  
+the source file
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmasked\fR\fR
+.ad
+.RS 15n
+.rt  
+whether the property group or property is currently masked
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtime\fR\fR
+.ad
+.RS 15n
+.rt  
+the time this property last changed
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistcust\fR [\fB-L\fR] [\fB-M\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Print any site profile and admin layer customizations and masked entities for the current selection. If an argument is supplied it is taken as a glob pattern and only property groups and properties with names that match the argument are listed. If there is no current selection, list all customizations for all services.
+.sp
+If \fB-M\fR is supplied, print only masked entities.
+.sp
+If \fB-L\fR is supplied, show all local customizations, including those in both the admin layer and the site profile layer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetenv\fR [\fB-i\fR | \fB-s\fR] [\fB-m\fR \fImethod_name\fR] \fIenvvar value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets a method environment variable for a service or instance by changing the "environment" property in the \fImethod_name\fR property 	group, if that property group has type "method". If \fImethod_name\fR is not specified and the \fB-i\fR option is used, the "method_context" property group is used, if an instance is currently selected. If the \fB-s\fR option is used and a service is currently selected, its "method_context" property group is used. If the \fB-s\fR option is used and an instance is currently selected, the "method_context" property group of its parent is used. If neither the \fB-i\fR option nor the \fB-s\fR option is used, the "start" property group is searched for in the currently selected entity and, if an instance is currently selected, its parent is also searched. If the "inetd_start" property group is not located, it is searched for in a similar manner.
+.sp
+Once the property is located, all values which begin with \fIenvvar\fR followed by a "=" are removed, and the value "\fIenvvar\fR=\fIvalue\fR" is added. See \fBsmf_security\fR(5) for the privileges required to modify properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetprop\fR \fIpg/name\fR = [\fItype:\fR] \fIvalue\fR\fR
+.ad
+.br
+.na
+\fBsetprop \fIpg/name\fR = [\fItype:\fR] ([\fIvalues ...\fR])\fR
+.ad
+.sp .6
+.RS 4n
+Sets the \fIname\fR property of the \fIpg\fR property group of the current selection to the given values of type \fItype\fR. See \fBscf_value_create\fR(3SCF) for a list of available property types. If the property already exists and the \fItype\fR disagrees with the existing \fItype\fR on the property, the subcommand fails. Values may be enclosed in double-quotes. String values which contain double-quotes or backslashes must be enclosed by double-quotes and the contained double-quotes and backslashes must be quoted by backslashes. If the named property does not exist, it is created, as long as the type is specified. See \fBsmf_security\fR(5) for the privileges required to create or modify properties. Multiple values will be stored in the order in which they are specified.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunsetenv\fR [\fB-i\fR | \fB-s\fR] [\fB-m\fR \fImethod_name\fR] \fIenvvar value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes a method environment variable for a service or instance by changing the "environment" property in the \fImethod_name\fR property 	group, if that property group has type "method". If \fImethod_name\fR is not specified and the \fB-i\fR option is used, the "method_context" property group is used, if an instance is currently selected. If the \fB-s\fR option is used and a service is currently selected, its "method_context" property group is used. If the \fB-s\fR option is used and an instance is currently selected, the "method_context" property group of its parent is used. If neither the \fB-i\fR option nor the \fB-s\fR option is used, the "start" property group is searched for in the currently selected entity and, if an instance is currently selected, its parent is also searched. If the "inetd_start" property group is not located, it is searched for in a similar manner.
+.sp
+Once the property is located, all values which begin with \fIenvvar\fR followed by "=" are removed. See \fBsmf_security\fR(5) for the privileges required to modify properties.
+.RE
+
+.SS "Notification Parameters Subcommands"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetnotify\fR {[\fB-g\fR] \fItset\fR | \fIclass\fR} \fInotification_parameters\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets notifications parameters for software events and Fault Management problem lifecycle events in the SMF repository.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+Used to set system-wide notification parameters for SMF state transition. See \fBsmf\fR(5). These notification parameters are set in \fBsvc:/system/svc/global:default\fR regardless of any \fBsvccfg\fR current selection. This subcommand refreshes all instances it modifies.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+Comma-separated list of FMA Event classes or aliases. See \fBsmf\fR(5) Notification Parameters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItset\fR\fR
+.ad
+.sp .6
+.RS 4n
+Comma-separated list of SMF state transitions. See \fBsmf\fR(5) Notification Parameters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInotification_parameters\fR\fR
+.ad
+.sp .6
+.RS 4n
+URI format for each notification mechanism implemented: For SMTP use:
+.sp
+.in +2
+.nf
+mailto:\fIaddr\fR[?\fIheader1\fR=\fIvalue1\fR[&\fIheader2\fR=\fIvalue2\fR]]
+.fi
+.in -2
+.sp
+
+\&...or:
+.sp
+.in +2
+.nf
+mailto:{[active]|inactive}
+.fi
+.in -2
+.sp
+
+\&...and for SNMP traps use:
+.sp
+.in +2
+.nf
+snmp:{[active]|inactive}
+.fi
+.in -2
+.sp
+
+The parameter \fBmsg_template\fR defined in \fBsmtp-notify\fR(1M) can be set as a header value in the \fBmailto\fR URI. For example:
+.sp
+.in +2
+.nf
+mailto:root@localhost?msg_template=\fI<path to template file>\fR
+.fi
+.in -2
+.sp
+
+SNMP traps are directed to the host as defined by the \fBtrapsink\fR directive in \fB/etc/net-snmp/snmp/snmpd.conf\fR or as specified by the SNMP trap notification daemon. See \fBsmtp-notify\fR(1M).
+.sp
+The notification parameters are specific to the class or tset specified and overwrite preexisting notification parameters. The active/inactive form does not overwrite previous notification parameters. It just switches on or off the notification mechanism for the specified class or tset. Setting notification parameters implicitly sets them as active.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistnotify\fR [\fB-g\fR] [\fItset\fR] | \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays the existing notification parameters for the specified class or tset. With the \fB-g\fR option, the notification parameters in \fBsvc:/system/svc/global:default\fR are displayed. If tset is omitted, \fBall\fR is implied.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelnotify\fR [\fB-g\fR] \fItset\fR | \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+Delete the existing notification parameters for the specified class or tset. With the \fB-g\fR option, the notification parameters in \fBsvc:/system/svc/global:default\fR are deleted.
+.RE
+
+.SS "Snapshot Navigation and Selection Subcommands"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistsnap\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays snapshots available for the currently selected instance. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fIsnapshot\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Reverts the administrative customizations of the currently selected instance and its service to those recorded in the named snapshot. If no argument is given, use the currently selected snapshot and deselect it on success. The changed property values can be made active via the \fBrefresh\fR subcommand of \fBsvcadm\fR(1M). See \fBsmf_security\fR(5) for the privileges required to change properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselectsnap\fR [\fIname\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Changes the current snapshot to the one named by \fIname\fR. If no \fIname\fR is specified, deselect the currently selected snapshot. Snapshots are read-only.
+.RE
+
+.SS "Instance Subcommands"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.sp .6
+.RS 4n
+Commit the values from the current configuration to the running snapshot, making them available for use by the currently selected instance. If the repository subcommand has not been used to select a repository, direct the instance's restarter to reread the updated configuration.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRImporting a Service Description
+.sp
+.LP
+The following example imports a service description for the \fBseismic\fR service in the XML manifest specified on the command line.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg import /var/svc/manifest/site/seismic.xml\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Note that the manifest must follow the format specified in \fBservice_bundle\fR(4).
+
+.LP
+\fBExample 2 \fRExporting a Service Description
+.sp
+.LP
+To export a service description on the local system:
+
+.sp
+.in +2
+.nf
+# \fBsvccfg export dumpadm >/tmp/dump.xml\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRDeleting a Service Instance
+.sp
+.LP
+To delete a service instance:
+
+.sp
+.in +2
+.nf
+# \fBsvccfg delete network/inetd-upgrade:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRChecking Properties in an Alternate Repository
+.sp
+.LP
+To examine the state of a service's properties after loading an alternate repository, use the sequence of commands shown below. One might use such commands, for example, to determine whether a service was enabled in a particular repository backup.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg\fR
+svc:> \fBrepository /etc/svc/repository-boot\fR
+svc:> \fBselect telnet:default\fR
+svc:/network/telnet:default> \fBlistprop general/enabled\fR
+general/enabled  boolean  false
+svc:/network/telnet:default> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fREnabling Debugging
+.sp
+.LP
+To modify \fBLD_PRELOAD\fR for a start method and enable the use of \fBlibumem\fR(3LIB) with debugging features active:
+
+.sp
+.in +2
+.nf
+$ \fBsvccfg -s system/service setenv LD_PRELOAD libumem.so\fR
+$ \fBsvccfg -s system/service setenv UMEM_DEBUG default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRUsing \fBdescribe\fR Subcommand
+.sp
+.LP
+The following command illustrates the use of the \fBdescribe\fR subcommand.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s console-login describe ttymon\fR
+ttymon                      application
+ttymon/device               astring  /dev/console
+   \fBterminal device to be used for the console login prompt\fR
+ttymon/label                astring  console
+   \fBappropriate entry from /etc/ttydefs\fR
+   ...
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 7 \fRConfiguring Notification Preferences
+.sp
+.LP
+The following command configures notification preferences for SMF service state transition events.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify -g from-online,to-maintenance \e\fR
+\fBmailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fREnabling SNMP Notifications
+.sp
+.LP
+The following command enables SNMP notifications for Fault Management events.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify problem-diagnosed,problem-updated \e\fR
+\fBmailto:admin@somehost.com snmp:\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 9 \fRListing Notification Settings
+.sp
+.LP
+The following command lists notification settings for Fault Management events.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg listnotify problem-diagnosed,problem-updated\fR
+Event: problem-diagnosed
+  Notification Type: smtp
+    active: true
+   to: admin@somehost.com
+  Notification Type: snmp
+    active: true
+
+Event: problem-updated
+  Notification Type: smtp
+    active: true
+   to: admin@somehost.com
+  Notification Type: snmp
+    active: true
+.fi
+.in -2
+.sp
+
+.SH ENVIRONMENTAL VARIABLES
+.sp
+.ne 2
+.mk
+.na
+\fBEDITOR\fR
+.ad
+.sp .6
+.RS 4n
+The command to run when the \fBeditprop\fR subcommand is used. The default editor is \fBvi\fR(1).
+.RE
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful execution.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+One or more subcommands resulted in failure. Error messages are written to the standard error stream. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalid command line options were specified. 
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilitySee below.
+.TE
+
+.sp
+.LP
+The interactive output is Uncommitted. The invocation and non-interactive output are Committed.
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcprop\fR(1), \fBsvcs\fR(1), \fBsmtp-notify\fR(1M), \fBsvcadm\fR(1M), \fBsvc.configd\fR(1M), \fBlibscf\fR(3LIB), \fBlibumem\fR(3LIB), \fBscf_service_add_pg\fR(3SCF), \fBscf_value_create\fR(3SCF), \fBcontract\fR(4), \fBservice_bundle\fR(4), \fBattributes\fR(5), \fBfnmatch\fR(5), \fBsmf\fR(5), \fBsmf_method\fR(5), \fBsmf_security\fR(5), \fBsmf_template\fR(5)

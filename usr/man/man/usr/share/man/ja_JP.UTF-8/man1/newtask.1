@@ -1,0 +1,240 @@
+'\" te
+.\"  Copyright (c) 2004, Sun Microsystems, Inc. All Rights Reserved
+.TH newtask 1 "2004 年 11 月 17 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+newtask \- タスクの新規作成と任意のプロジェクト変更
+.SH 形式
+.LP
+.nf
+\fBnewtask\fR [\fB-p\fR \fIproject\fR] [\fB-v\fR] [\fB-c\fR \fIpid\fR | [\fB-Fl\fR] [\fIcommand...\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnewtask\fR コマンドは、ユーザーのデフォルトシェルまたは指定されたコマンドを実行し、実行したコマンドを指定されたプロジェクトが所有する新しいタスクに配置します。ユーザーのデフォルトシェルは、\fBpasswd\fR データベースに指定されたシェルであり、\fBgetpwnam()\fR を使用して特定されます。
+.sp
+.LP
+また、newtask では、すでに実行されているプロセスを使用すると、新しく作成したタスクを入れることができます。新しいタスク用のプロジェクトもこの形式のコマンドで指定できます。これは、非常に重要で再起動できないプロセスを新しいプロジェクトに配置するのに適しています。
+.sp
+.LP
+また、拡張アカウンティングがアクティブな場合に \fBnewtask\fR コマンドを使用すると、タスクのアカウンティングレコードを作成して、先行するシステムタスクの完了をマークすることもできます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIpid\fR\fR
+.ad
+.RS 10n
+.rt  
+実行中のプロセスを新しく作成したタスクに入れます。また、\fB-p\fR オプションを使用すると、新しいタスク用のプロジェクトを指定できます。コマンドを起動したユーザーは、プロセスを所有しているか、スーパーユーザー特権を持っている必要があります。
+.sp
+プロジェクトを変更する場合は、プロセスの所有者が指定のプロジェクトのメンバーであるか、コマンドを起動したユーザーがスーパーユーザー特権を持っている必要があります。実行中のプロセスのプロジェクトが変更されると、そのプールバインディングとリソース制御が新しいプロジェクトの構成に合わせて変更されます。プロジェクトのエントリで明示的に指定されなかった制御は保持されます。
+.sp
+このオプションは、\fB-F\fR および \fB-l\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 10n
+.rt  
+ファイナライズタスクを作成します。ファイナライズタスク内では、以降の \fBnewtask\fR または \fBsettaskid\fR(2) の起動は失敗します。ファイナライズタスクは、一部のサイトでリソース消費の帰属を簡略化する際に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 10n
+.rt  
+環境を、ユーザーが実際に新しいプロジェクトのメンバーとして再度ログインした場合に得られる環境に変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 10n
+.rt  
+新しいタスクのプロジェクト \fBID\fR を特定のプロジェクト名に関連付けられた ID に変更します。コマンドを正常に実行するには、起動したユーザーが、要求するプロジェクトの有効なメンバーであるか、スーパーユーザー特権を持っている必要があります。プロジェクト名を指定しなかった場合、新しいタスクは、起動したユーザーの現在のプロジェクト内で開始されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 10n
+.rt  
+詳細: 新しいシステムタスクの開始時にシステムタスク ID を表示します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIproject\fR\fR
+.ad
+.RS 11n
+.rt  
+作成したタスクのリソース使用量をチャージするプロジェクト。要求するプロジェクトは、\fBnsswitch.conf\fR(4) で定義されたプロジェクトデータベースで定義されている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcommand\fR\fR
+.ad
+.RS 11n
+.rt  
+新しいタスクとして実行するコマンド。コマンドを指定しなかった場合、ユーザーのログインシェルが起動されます。ログインシェルが使用できない場合は、\fB/bin/sh\fR が起動されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR新しいシェルを作成する
+.sp
+.LP
+次の例では、\fBcanada\fR プロジェクトに新しいシェルを作成し、タスク ID を表示しています。
+
+.sp
+.in +2
+.nf
+example$ \fBid -p\fR
+uid=565(gh) gid=10(staff) projid=10(default)
+example$ \fBnewtask -v -p canada\fR
+38
+example$ \fBid -p\fR
+uid=565(gh) gid=10(staff) projid=82(canada)
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBdate\fR コマンドを実行する
+.sp
+.LP
+次の例では、\fBrussia\fR プロジェクトで date コマンドを実行しています。
+
+.sp
+.in +2
+.nf
+example$ \fBnewtask -p russia date\fR
+Tue Aug 31 11:12:10 PDT 1999
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR既存プロセスのプロジェクトを変更する
+.sp
+.LP
+次の例では、pid が \fB9999\fR の既存プロセスのプロジェクトを \fBrussia\fR に変更しています。
+
+.sp
+.in +2
+.nf
+example$ \fBnewtask -c 9999 -p russia\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+実行中に致命的なエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/project\fR\fR
+.ad
+.RS 16n
+.rt  
+このマシンの有効なプロジェクト定義を含むローカルデータベース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/pid/*\fR\fR
+.ad
+.RS 16n
+.rt  
+プロセス情報および制御ファイル。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBproc\fR(1), \fBid\fR(1M), \fBpoolbind\fR(1M), \fBexecvp\fR(2), \fBsetrctl\fR(2), \fBsettaskid\fR(2), \fBsetproject\fR(3PROJECT), \fBnsswitch.conf\fR(4), \fBproc\fR(4), \fBproject\fR(4), \fBattributes\fR(5)

@@ -1,0 +1,765 @@
+'\" te
+.\"  Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH crle 1 "2011 年 6 月 10 日" "SunOS 5.11" "用户命令"
+.SH 名称
+crle \- 配置运行时链接环境
+.SH 用法概要
+.LP
+.nf
+\fBcrle\fR [\fB-64\fR] [\fB-a\fR \fIname\fR] [\fB-A\fR \fIname\fR] [\fB-c\fR \fIconf\fR] [\fB-e\fR \fIenv\fR] [\fB-E\fR \fIenv\fR] 
+     [\fB-f\fR \fIflags\fR] [\fB-i\fR \fIname\fR] [\fB-I\fR \fIname\fR] [\fB-g\fR \fIname\fR] [\fB-G\fR \fIname\fR] 
+     [\fB-l\fR \fIdir\fR] [\fB-o\fR \fIdir\fR] [\fB-s\fR \fIdir\fR] [\fB-u\fR] [\fB-v\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBcrle\fR 实用程序针对运行时链接配置文件的创建和显示而提供。配置文件由运行时链接程序 \fBld.so.1\fR(1) 在进程启动期间读取和解释。运行时链接程序尝试为所有进程读取一个缺省配置文件。对于 32 位进程，缺省配置文件是 \fB/var/ld/ld.config\fR。对于 64 位进程，缺省配置文件是 \fB/var/ld/64/ld.config\fR。
+.sp
+.LP
+若不带任何参数，或仅仅只有 \fB-c\fR 选项，\fBcrle\fR 将显示配置信息。此信息包括配置文件的内容、所有系统缺省值以及重新生成该配置文件所需的命令行。当与其他任何选项结合使用时，将会创建或更新为一个新的配置文件。
+.sp
+.LP
+还可通过设置 \fBLD_CONFIG\fR 系列的环境变量之一将运行时链接程序定向至备用配置文件。\fBLD_CONFIG\fR 对于 32 位和 64 位程序均适用。因为 32 位和 64 位配置文件不同，单一的配置文件无法同时用于两类对象。因此，在一类程序执行另一类程序时，\fBLD_CONFIG \fR 可能会对程序执行产生不利影响。尤其是，由 32 位版本的标准 Solaris 实用程序执行其对应的 64 位程序这种情况很常见。\fBLD_CONFIG\fR 在此情况下无法胜任。因此，建议使用专门针对某一类进程的 \fBLD_CONFIG_32\fR 和 \fB LD_CONFIG_64\fR 环境变量。
+.sp
+.LP
+在标准位置 \fB/var/ld\fR 中创建不正确的配置文件可能会阻止程序运行，进而可能难于从其中进行恢复。若要防止出现此情况，建议首先在临时位置创建新的配置文件。然后，针对此新的配置文件设置适当的 \fBLD_CONFIG\fR 环境变量。该设置会使运行时链接程序使用新的配置文件而非任何缺省值。验证后，如果需要，可将新的配置文件移至缺省位置。任何时候，都可将环境变量 \fBLD_NOCONFIG\fR 设置为任意值以指示运行时链接程序忽略任何配置文件。该设置可通过实验证明其有用性。
+.sp
+.LP
+配置文件可以包含以下信息。
+.sp
+.ne 2
+.mk
+.na
+\fB缺省搜索路径\fR
+.ad
+.sp .6
+.RS 4n
+运行时链接程序使用规定的搜索路径定位对象的动态相关项。此搜索路径的构成部分如下所示：以任何一个 \fBLD_LIBRARY_PATH\fR 定义所指定的路径开始，后跟对象的 \fBrunpath\fR 所指定的路径。最后使用特定于对象类的任何缺省搜索路径。搜索路径中这个最后的组成部分可以在配置文件中提供。通常，使用该功能时可通过任何系统缺省值进行补充。请参见 \fB-l\fR 和 \fB-u\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB可信目录\fR
+.ad
+.sp .6
+.RS 4n
+在处理安全应用程序时，运行时链接程序将限制 \fBLD_LIBRARY_PATH\fR 搜索和 \fB$ORIGIN\fR 标记扩展的使用。请参见\fI"Security"\fR in \fI《Linker and Libraries Guide》\fR。此外，也会限制可从其中定位预装入和审计库的目录。与预装入和审计库关联的路径名会限制为已知可信目录。可信目录可以在配置文件中提供。通常，使用该功能时可通过任何系统缺省值进行补充。请参见 \fB-s\fR 和 \fB-u\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB环境变量\fR
+.ad
+.sp .6
+.RS 4n
+任何由运行时链接程序解释的环境变量都可在配置文件中进行指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB目录高速缓存\fR
+.ad
+.sp .6
+.RS 4n
+已定义目录内共享对象的位置可以作为配置文件内的高速缓存进行维护。该目录高速缓存可以降低搜索应用程序相关项的开销。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB备用对象\fR
+.ad
+.sp .6
+.RS 4n
+结合目录高速缓存，共享对象可以指定备用对象以便在运行时使用。这些备用对象可以由用户提供。备用对象还可由 \fBcrle\fR 创建，作为共享对象的副本固定在已知存储单元。这些固定的备用对象在运行时所需的处理要少于其对应的原始共享对象。
+.RE
+
+.sp
+.LP
+对于希望在中心位置安装第三方软件或者更改未用适当 runpath 编码的应用程序搜索路径的管理员而言，定义额外的缺省搜索路径或额外的可信目录非常有用。
+.sp
+.LP
+声明备用对象提供了一种替换相关项的方法，无需使用符号链接或 \fBLD_LIBRARY_PATH\fR 设置。
+.sp
+.LP
+声明由运行时链接程序解释的环境变量提供了一种针对所有应用程序集中控制其定义的方法。
+.sp
+.LP
+目录高速缓存和 \fBcrle\fR 生成的备用对象可以提供一种减少应用程序的运行时启动开销的方法。对于需要许多相关项或重新定位其相关项的开销极其高的应用程序而言，备用对象非常有用。包含 \fBposition-dependent\fR 代码的共享对象若要进行重新定位，通常开销都比较大。请注意，系统具有许多有助于降低开销的高速缓存工具（如负路径查找），因此，利用 \fBcrle\fR 创建目录高速缓存所产生的影响可能很小（一些非常特殊的情况除外）。
+.sp
+.LP
+如果在配置文件中指定由 \fBcrle\fR 生成的备用对象，运行时链接程序将执行一些最小一致性验证。备用对象将针对其原始对象进行验证。此验证意在避免由于应用程序配置信息与底层系统组件失去同步而导致的应用程序故障。当此情况出现时，可能会危及到动态链接系统组件提供的灵活性。此类型的应用程序故障可能非常难于诊断。不会验证目录高速缓存信息。进程看不到对目录结构所做的任何更改，直到重新构建高速缓存。
+.sp
+.LP
+系统共享对象通常都经过了良好的调优，进行高速缓存所带来的好处并不是那么明显。目录高速缓存和备用对象功能通常适用于用户应用程序和共享对象，并且可能仅在某些非常特殊的情况下才会显示出情况的改善。
+.sp
+.LP
+使用 \fB-I\fR 和 \fB-G\fR 选项时，\fBcrle\fR 将使用 \fBdldump\fR(3C) 为所发现的共享对象创建备用对象。备用对象在前面的 \fB- o\fR 选项所指定的目录中创建，或缺省设置为创建配置文件时所在的目录。\fBdldump()\fR 所用的标志由 \fB-f\fR 选项指定，或缺省设置为 \fBRTLD_REL_RELATIVE\fR。
+.SH 选项
+.sp
+.LP
+支持下列选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-64\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要处理 64 位对象，缺省值为 32 位。使用 \fB-64\fR 创建 64 位特定配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fIname\fR 创建备用路径名称。将备用路径名称添加到配置文件。
+.sp
+实际备用文件必须由用户提供。允许此选项出现多次。如果 \fIname\fR 是一个目录，则将此目录中的所有共享对象添加到高速缓存。如果 \fIname\fR 不存在，则在高速缓存中将 \fIname\fR 标记为不存在的文件。
+.sp
+通常，此选项与 \fB-o\fR 选项结合使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fIname\fR 创建可选备用路径名称。将此备用路径名称添加到配置文件。
+.sp
+此选项类似 \fB-a\fR 选项，只是如果在运行时备用对象不可用，将使用原始对象 \fIname\fR。此模型类似辅助过滤器的用法。请参见\fI"Generating Auxiliary Filters"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+通常，此选项与 \fB-o\fR 选项结合使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconf\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要使用配置文件名 \fIconf\fR。如果未提供此选项，则使用缺省配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIenv\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定一个\fB可替换的\fR环境变量 \fIenv\fR。只有适用于运行时链接程序的环境变量才有意义。允许此选项出现多次。此选项类似于 \fB-E\fR 选项。然而，对于在运行时解析配置文件定义以及同名的进程环境定义的方式，这两个选项有所不同。
+.sp
+配置文件中设置的定义可以由进程环境定义\fB覆盖\fR，或由空值进程环境定义\fB抑制\fR。
+.sp
+换言之，在运行时进程环境可以替换或删除这些配置文件定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIenv\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定一个\fB永久的\fR环境变量 \fIenv\fR。只有适用于运行时链接程序的环境变量才有意义。允许此选项出现多次。此选项类似于 \fB-e\fR 选项。然而，对于在运行时解析配置文件定义以及同名的进程环境定义的方式，这两个选项有所不同。
+.sp
+对于运行时链接程序有意义的环境变量定义属于这两种类别之一。单一定义是指诸如 \fBLD_NOLAZYLOAD=1\fR 和 \fB LD_DEBUG_OUTPUT=\fR\fIfile\fR 之类的定义。列表定义（可以有一个或多个值）是指诸如 \fBLD_LIBRARY_PATH=\fR\fIpath\fR 和 \fBLD_DEBUG=\fR\fIfiles\fR,\fIdetails\fR 之类的定义。
+.sp
+在配置文件中设置的单一定义优先于进程环境定义。在配置文件中设置的列表定义\fB附加\fR到进程环境定义。空值进程环境定义\fB不能\fR抑制配置文件中设置的任何定义。
+.sp
+换言之，在运行时进程环境\fB不能\fR替换或删除这些配置文件定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+向用于生成备用对象的 \fBdldump\fR(3C) 调用提供符号 \fIflags\fR 参数。可以使用 \fB/usr/include/dlfcn.h\fR 中定义的任何 \fBRTLD_REL\fR 标志。可以使用 "\fB|\fR" 字符将多个标志连接起来（逻辑 \fBor\fR 关系）。在这种情况下，字符串应以引号括起来，以避免 shell 进行扩充。如果未提供 \fIflags\fR 值，则缺省标志为 \fBRTLD_REL_RELATIVE\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+向配置高速缓存添加单个 \fIname\fR。允许此选项出现多次。\fIname\fR 可以是一个共享对象或一个目录。如果 \fIname\fR 是一个目录，则将此目录中的所有共享对象添加到高速缓存。如果 \fIname\fR 不存在，则在高速缓存中将 \fIname\fR 标记为不存在的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+类似 \fB-i\fR，此外所处理的任何共享对象均使用 \fBdldump\fR(3C) 创建一个备用对象。如果 \fB-f\fR 标志包含 \fBRTLD_REL_EXEC\fR，则 \fIname\fR 可以是将为其创建备用对象的动态可执行对象。以此种方式只能指定一个动态可执行对象，因为创建的高速缓存特定于此应用程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+向配置高速缓存添加组 \fIname\fR。每个对象都会展开以确定其相关项。允许此选项出现多次。\fI name\fR 可以是动态可执行对象、共享对象或目录。如果 \fIname\fR 是共享对象，则将该共享对象及其相关项添加到高速缓存。如果 \fIname\fR 是目录，则将该目录中的每个共享对象及其相关项添加到高速缓存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+类似 \fB-g\fR 选项，此外所处理的任何共享对象均使用 \fBdldump\fR(3C) 创建一个备用对象。如果 \fIname\fR 是动态可执行对象，而且 \fB-f\fR 标志包含 \fBRTLD_REL_EXEC \fR，则还会为此动态可执行对象创建一个备用对象。以此种方式只能指定一个动态可执行对象，因为创建的高速缓存特定于此应用程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fBELF\fR 对象指定新的缺省搜索目录 \fIdir\fR。允许此选项出现多次。适用于搜索的对象类型由前面的 \fB-t\fR 选项指定，或缺省设置为 \fBELF\fR。
+.sp
+32 位 \fBELF\fR 对象的缺省搜索路径是 \fB/lib\fR，后跟 \fB/usr/lib\fR。64 位 \fBELF\fR 对象的缺省搜索路径是 \fB/lib/64\fR，后跟 \fB/usr/lib/64\fR。
+.sp
+使用此选项将\fB替换\fR缺省搜索路径。因此，通常需要使用 \fB-l\fR 选项来指定与任何要应用的新路径相关的原始系统缺省值。但是，如果 \fB-u\fR 选项生效，而配置文件\fB不\fR存在，则系统缺省值会添加到新配置文件。这些缺省值在使用 \fB-l\fR 选项指定新路径之前进行添加。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+当与 \fB-a\fR 或 \fB-A\fR 选项结合使用时，指定任何备用对象所在的目录 \fIdir\fR。如果备用对象由 \fBcrle\fR 创建，此选项将指定备用对象的创建位置。若不使用此选项，备用对象将位于创建配置文件的目录。允许此选项出现多次，目录 \fIdir\fR 用于为后面的任何命令行选项定位备用对象。备用对象不允许覆盖其关联的原始对象。
+.sp
+通常，此选项与 \fB-a\fR 或 \fB-A\fR 选项结合使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 \fIsecure\fR\fBELF\fR 对象指定新的可信目录 \fIdir\fR。有关安全对象的定义，请参见 \fBld.so.1\fR(1) 中的 \fBSECURITY\fR（安全性）。有关安全应用程序上强加的运行时限制的讨论，请参见\fI"Security"\fR in \fI《Linker and Libraries Guide》\fR。
+.sp
+允许此选项出现多次。适用于搜索的对象类型由前面的 \fB-t\fR 选项指定，或缺省设置为 \fBELF\fR。
+.sp
+32 位安全 \fBELF\fR对象的缺省可信目录是 \fB/lib/secure\fR，后跟 \fB/usr/lib/secure\fR。64 位安全 \fBELF\fR 对象的缺省可信目录是 \fB/lib/secure/64\fR，后跟 \fB/usr/lib/secure/64\fR。
+.sp
+使用此选项将\fB替换\fR缺省可信目录。因此，通常需要使用 \fB-s\fR 选项来指定与任何要应用的新目录相关的原始系统缺省值。但是，如果 \fB-u\fR 选项生效，而配置文件\fB不\fR存在，则系统缺省值会添加到新配置文件。这些缺省值在使用 \fB-l\fR 选项指定新目录之前进行添加。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+请求更新配置文件，可能是添加新信息。若无其他选项，将检查任何现有配置文件并重新计算其内容。其他参数允许将信息附加到重新计算的内容。请参见"注释"。
+.sp
+如果配置文件不存在，则会按其他参数的指示创建配置文件。对于 \fB-l\fR 和 \fB-s\fR 选项，任何系统缺省值都在使用这些选项指定目录之前应用于配置文件。
+.sp
+配置文件的格式可以是缺少系统标识信息（通常写在文件开头处）的较旧格式。在这种情况下，\fBcrle\fR 不会将系统标识信息放入所生成的文件中，以保留文件与旧版本 Solaris 的兼容性。请参见"注释"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定详细模式。创建配置文件时，对于要处理的文件的跟踪会写入标准输出。在输出配置文件的内容时，会提供更详细的目录和文件信息。
+.RE
+
+.sp
+.LP
+缺省情况下，运行时链接程序会为每个处理的 32 位应用程序尝试读取配置文件 \fB/var/ld/ld.config\fR。对于每个 64 位应用程序，则读取 \fB/var/ld/64/ld.config\fR。在处理备用应用程序时，运行时链接程序将使用 \fB$ORIGIN/ld.config.\fIapp-name\fR\fR 配置文件（如果存在）。请参见"注释"。应用程序可以通过设置 \fBLD_CONFIG\fR 环境变量引用备用配置文件。还可通过在构建应用程序时在应用程序中记录配置文件名来指定备用配置文件。请参见 \fBld\fR(1) 的 \fB-c\fR 选项。
+.SH 示例
+.LP
+\fB示例 1 \fR试用临时配置文件
+.sp
+.LP
+以下示例将使用 ELF 对象的新缺省搜索路径创建一个临时配置文件。环境变量 \fBLD_CONFIG_32\fR 用于指示运行时链接程序针对所有 32 位进程使用此配置文件。
+
+.sp
+.in +2
+.nf
+$ \fBcrle -c /tmp/ld.config -u -l /local/lib\fR
+$ \fBcrle -c /tmp/ld.config\fR
+
+Configuration file [version 4]: /tmp/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib:/local/lib
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e
+                               (system default)
+
+Command line:
+  crle -c /tmp/ld.config -l /lib:/usr/lib:/local/lib
+
+$ \fBLD_CONFIG_32=/tmp/ld.config date\fR
+Thu May 29 17:42:00 PDT 2008
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR为 ELF 对象更新并显示新的缺省搜索路径
+.sp
+.LP
+以下示例将更新并显示 ELF 对象的新缺省搜索路径。
+
+.sp
+.in +2
+.nf
+# \fBcrle -u -l /local/lib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib:/local/lib
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e 
+                               (system default)
+
+Command line:
+  crle -l /lib:/usr/lib:/local/lib
+
+# \fBcrle -u -l /ISV/lib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform      32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib:/local/lib:/ISV/lib
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e
+                               (system default)
+
+Command line:
+  crle -l /lib:/usr/lib:/local/lib:/usr/local/lib
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本示例中，缺省配置文件最初并不存在。因此，新的搜索路径 \fB/local/lib\fR 附加到系统缺省值。下一次更新将搜索路径 \fB/ISV/lib\fR 附加到已在配置文件中设置的那些路径。
+
+.LP
+\fB示例 3 \fR从错误配置文件进行恢复
+.sp
+.LP
+以下示例将在缺省位置创建一个错误配置文件。可通过使用 \fBLD_NOCONFIG\fR 环境变量指示运行时链接程序忽略任何配置文件来删除该文件。请注意，建议创建临时配置文件，并使用环境变量 \fBLD_CONFIG\fR 试用这些文件。
+
+.sp
+.in +2
+.nf
+# \fBcrle -l /local/lib\fR
+# \fBdate\fR
+ld.so.1: date: fatal: libc.so.1: open failed:  \e 
+   No such file or directory
+Killed
+# \fBLD_NOCONFIG=yes rm /var/ld/ld.config\fR
+# \fBdate\fR
+Thu May 29 17:52:00 PDT 2008
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，配置文件错误是因为系统缺省搜索路径不存在。因此，\fBdate\fR 实用程序不能定位所需的系统相关项。在这种情况下，应使用 \fB-u\fR 选项。
+.LP
+\fB示例 4 \fR为 ELF 对象新建缺省搜索路径和可信目录并进行显示
+.sp
+.LP
+以下示例将为 ELF 对象新建缺省搜索路径和可信目录并进行显示。
+
+.sp
+.in +2
+.nf
+# \fBcrle -l /local/lib -l /lib -l /usr/lib -s /local/lib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /local/lib:/lib:/usr/lib
+  Trusted Directories (ELF):   /local/lib
+
+Command line:
+  crle -l /local/lib:/lib:/usr/lib -s /local/lib
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过此配置文件，第三方应用程序可以安装在 \fB/local/bin\fR 中，其相关项可安装在 \fB/local/lib\fR 中。缺省搜索路径允许应用程序无需设置 \fBLD_LIBRARY_PATH\fR 即可定位其相关项。本示例中缺省可信目录也进行了替换。
+
+.LP
+\fB示例 5 \fR为 ELF 对象创建目录高速缓存
+.sp
+.LP
+以下示例将为 ELF 对象创建目录高速缓存。
+
+.sp
+.in +2
+.nf
+$ \fBcrle -i /usr/dt/lib -i /usr/openwin/lib -i /lib -i /usr/lib  \e
+        -c config\fR
+$ \fBldd -s ./main\fR
+\&....
+   find object=libc.so.1; required by ./main
+    search path=/usr/dt/lib:/usr/openwin/lib  (RUNPATH/RPATH ./main)
+    trying path=/usr/dt/lib/libc.so.1
+    trying path=/usr/openwin/lib/libc.so.1
+    search path=/lib  (default)
+    trying path=/lib/libc.so.1
+        libc.so.1 =>     /lib/libc.so.1
+
+$ \fBLD_CONFIG=config ldd -s ./main\fR
+\&....
+   find object=libc.so.1; required by ./main
+    search path=/usr/dt/lib:/usr/openwin/lib  (RUNPATH/RPATH ./main)
+    search path=/lib  (default)
+    trying path=/lib/libc.so.1
+        libc.so.1 =>     /lib/libc.so.1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过此配置，高速缓存将反映出系统库 \fBlibc.so.1\fR 不存在于目录 \fB/usr/dt/lib\fR 或 \fB/usr/openwin/lib \fR中。因此，针对此系统文件的搜索将忽略这些目录，即使应用程序的 runpath 指示应搜索这些路径。
+
+.LP
+\fB示例 6 \fR为 ELF 可执行对象创建备用对象高速缓存
+.sp
+.LP
+以下示例将为 ELF 可执行对象创建备用对象高速缓存。
+
+.sp
+.in +2
+.nf
+$ \fBcrle -c /local/$HOST/.xterm/ld.config.xterm  \e
+        -f RTLD_REL_ALL  -G /usr/openwin/bin/xterm\fR
+$ \fBln  -s /local/$HOST/.xterm/xterm  /local/$HOST/xterm\fR
+$ \fBldd /usr/local/$HOST/xterm\fR
+    libXaw.so.5 =>  /local/$HOST/.xterm/libWaw.so.5  (alternate)
+    libXmu.so.4 =>  /local/$HOST/.xterm/libXmu.so.4  (alternate)
+    ....
+    libc.so.1 =>    /local/$HOST/.xterm/libc.so.1  (alternate)
+    ....
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过此配置，将创建新的 \fBxterm\fR 及其相关项。这些新对象相互进行完全重定位，与原始对象相比，加快了启动速度。此应用程序的执行使用其自己特定的配置文件。通常，此模型比使用环境变量 \fBLD_CONFIG\fR 更为灵活，因为配置文件不可能由其他应用程序（如 \fBldd\fR(1) 或 \fBtruss\fR(1)）错误使用。
+
+.LP
+\fB示例 7 \fR创建备用对象高速缓存以替换 ELF 共享对象
+.sp
+.LP
+以下示例将创建备用对象高速缓存以替换 ELF 共享对象。
+
+.sp
+.in +2
+.nf
+$ \fBldd /usr/bin/vi\fR
+    libcurses.so.1 =>  /lib/libcurses.so.1
+    ....
+
+# \fBcrle -a /lib/libcurses.so.1 -o /usr/ucblib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib  (system default)
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e
+                               (system default)
+
+Directory: /lib
+  libcurses.so.1  (alternate: /usr/ucblib/libcurses.so.1)
+\&....
+
+$ \fBldd /usr/bin/vi\fR
+    libcurses.so.1 => /usr/ucblib/libcurses.so.1 (alternate)
+    ....
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过此配置，任何通常解析至 \fB/usr/lib/libcurses.so.1\fR 的相关项改为解析至 \fB/usr/ucblib/libcurses.so.1\fR。
+
+.LP
+\fB示例 8 \fR设置可替换环境变量和永久环境变量
+.sp
+.LP
+以下示例将设置可替换环境变量和永久环境变量。
+
+.sp
+.in +2
+.nf
+# \fBcrle -e LD_LIBRARY_PATH=/local/lib  \e
+        -E LD_PRELOAD=preload.so.1\fR
+# \fBcrle\fR
+\&.....
+Environment Variables:
+  LD_LIBRARY_PATH=/local/lib  (replaceable)
+  LD_PRELOAD=preload.so.1  (permanent)
+
+\&.....
+$ \fBLD_DEBUG=files LD_PRELOAD=preload.so.2 ./main\fR
+\&.....
+18764: file=preload.so.2;  preloaded
+18764: file=/local/lib/preload.so.2  [ ELF ]; generating link map
+\&.....
+18764: file=preload.so.1;  preloaded
+18764: file=/local/lib/preload.so.1  [ ELF ]; generating link map
+\&.....
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过此配置文件，可替换搜索路径将与附加到进程环境定义的永久预装入对象一起进行指定。
+
+.SH 退出状态
+.sp
+.LP
+创建或显示配置文件将导致返回 \fB0\fR。否则，任何错误情形都会随附一条诊断消息并返回非零值。
+.SH 附注
+.sp
+.LP
+如果原始应用程序包含 \fI\&.dynamic\fR 标记 \fB DT_FLAGS_1\fR 或 \fBDT_FEATURE_1\fR 之一，则可标记备用应用程序以使用应用程序特定的配置文件。如果没有这些条目，必须使用 \fBLD_CONFIG\fR 环境变量指定配置文件。使用后一种方法时应格外小心，因为此环境变量对任何分支应用程序均可见。
+.sp
+.LP
+使用 \fB-u\fR 选项至少需要 \fBcrle\fR 版本 2。从显示配置文件内容的角度来看，很显然需要此版本级别。
+.sp
+.in +2
+.nf
+$ \fBcrle\fR
+
+Configuration file [2]: /var/ld/ld.config
+  ......
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用版本 2 配置文件，\fBcrle\fR 能够构造重新生成配置文件所需的命令行参数。此命令行构造使用 \fB-u\fR 选项提供完整的更新功能。尽管版本 1 配置文件更新也是可以的，但配置文件内容可能对于 \fBcrle\fR 计算整个更新需求而言并不够用。
+.sp
+.LP
+配置文件包含平台特定的二进制数据。给定的配置文件只能由具有相同机器类和字节排序的软件进行解释。然而，强制执行此限制所必需的信息并未包含在配置文件中，直至 \fBSXCE\fR 内部版本 \fB41\fR。从此 \fBSXCE\fR 内部版本开始，配置文件在文件开头处具备了系统标识信息。此额外信息由 \fBcrle\fR 和运行时使用以检查其与配置文件的兼容性。此信息还允许 \fBfile\fR(1) 命令正确识别配置文件。为了保持向后兼容性，缺少此信息的较旧文件仍是可以接受的，尽管不具备标识和错误检查（具有这些检查也是可以的）。在针对缺少系统信息的较旧文件处理更新 (\fB-u\fR) 操作时，\fBcrle\fR 不会向结果添加系统标识信息。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/ld/ld.config\fR\fR
+.ad
+.sp .6
+.RS 4n
+32 位应用程序的缺省配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/ld/64/ld.config\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 位应用程序的缺省配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/tmp\fR\fR
+.ad
+.sp .6
+.RS 4n
+临时配置文件的缺省位置。请参见 \fBtempnam\fR(3C)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/lddstub\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于 \fBdldump\fR(3C) 32 位对象的桩应用程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/lddstub\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于 \fBdldump\fR(3C) 64 位对象的桩应用程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/libcrle.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于 \fBdldump\fR(3C) 32 位对象的审计库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/libcrle.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于 \fBdldump\fR(3C) 64 位对象的审计库。
+.RE
+
+.SH 环境变量
+.sp
+.LP
+没有 \fBcrle\fR 引用的环境变量。不过，在处理由 \fBcrle\fR 创建的配置文件时，有几个环境变量会影响运行时链接程序的行为。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_CONFIG\fR、\fBLD_CONFIG_32\fR 和 \fBLD_CONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供备用配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOCONFIG\fR、\fBLD_NOCONFIG_32\fR 和 \fBLD_NOCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用配置文件处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NODIRCONFIG\fR、\fBLD_NODIRCONFIG_32\fR 和 \fBLD_NODIRCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+从配置文件禁用目录高速缓存处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOENVCONFIG\fR、\fBLD_NOENVCONFIG_32\fR 和 \fBLD_NOENVCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+从配置文件禁用环境变量处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOOBJALTER\fR、\fBLD_NOOBJALTER_32\fR 和 \fBLD_NOOBJALTER_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+从配置文件禁用备用对象处理。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/linker
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBfile\fR(1)、\fBld\fR(1)、\fBld.so.1\fR(1)、\fBdldump\fR(3C)、\fBtempnam\fR(3C)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR

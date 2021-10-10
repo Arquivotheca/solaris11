@@ -1,0 +1,205 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pciv_vf_config 9F "19 May 2011" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+pciv_vf_config \- obtain and configure VF configuration parameters for a device driver instance
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/sunddi.h>
+
+int pciv_vf_config(dev_info_t *\fIdip\fR, pciv_config_vf_t *\fIvfcfg_p\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdip\fR\fR
+.ad
+.sp .6
+.RS 4n
+pointer to a \fBdev_info\fR structure
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvfcfg_p\fR\fR
+.ad
+.sp .6
+.RS 4n
+pointer to a \fBpciv_config_vf\fR structure
+.sp
+.in +2
+.nf
+typedef enum {
+    PCIV_VFCFG_PARAM,
+    PCIV_VF_ENABLE,
+    PCIV_EVT_VFENABLE_PRE,
+    PCIV_EVT_VFENABLE_POST,
+    PCIV_EVT_VFDISABLE_PRE,
+    PCIV_EVT_VFDISABLE_POST
+} pciv_vf_config_cmd;
+.fi
+.in -2
+
+.sp
+.in +2
+.nf
+typedef struct pciv_config_vf {
+    int                     version;
+    pciv_vf_config_cmd      cmd;
+    uint16_t                num_vf;
+    uint16_t                first_vf_offset;
+    uint16_t                vf_stride;
+    boolean_t               ari_cap;
+    uint32_t                page_size;
+} pciv_config_vf_t;
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcmd\fR\fR
+.ad
+.RS 19n
+.rt  
+pre/post VF Enable/Disable
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInum_vf\fR\fR
+.ad
+.RS 19n
+.rt  
+number of VFs to be used
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfirst_vf_offset\fR\fR
+.ad
+.RS 19n
+.rt  
+offset between 1st VF and PF
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvf_stride\fR\fR
+.ad
+.RS 19n
+.rt  
+distance between VFs 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIari_cap\fR\fR
+.ad
+.RS 19n
+.rt  
+ARI-capable hierarchy
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpage_size\fR\fR
+.ad
+.RS 19n
+.rt  
+system page size
+.RE
+
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpciv_vf_config()\fR function is used by SR-IOV (Single-Root IO Virtualization) device      PF (Physical Function) drivers to obtain VF (Virtual Function) configuration parameters and to configure their VFs. When the \fIcmd\fR field in set as \fBPCIV_VFCFG_PARAM\fR the call returns with appropriate values in the rest of fields of \fBpciv_config_vf_t\fR.
+.sp
+.LP
+The \fInum_vf\fR field indicates the number of VFs that is defined in the backend store such as MD or the \fB/etc/pci.conf\fR file for this device. The \fIfirst_vf_offset\fR, \fIvf_stride\fR, \fIari_cap\fR, and \fIpage_size\fR are the corresponding values retrieved from the SRIOV capability structure of the PF device.
+.sp
+.LP
+After first calling \fBpciv_vf_config()\fR with \fIcmd\fR set to \fBPCIV_VFCFG_PARAM\fR, the caller can then call the interface again with \fIcmd\fR set to \fBPCIV_VF_ENABLE\fR to enable its VF devices, without modifying any of the \fInum_vf\fR, \fIfirst_vf_offset\fR, \fIvf_stride\fR, \fIari_cap\fR, or \fIpage_size\fR values that were returned when \fIcmd\fR was set as \fBPCIV_VFCFG_PARAM\fR.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBpciv_vf_config()\fR function returns:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_SUCCESS\fR\fR
+.ad
+.RS 15n
+.rt  
+The request was accepted and this PF's VFs are enabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_INVAL\fR\fR
+.ad
+.RS 15n
+.rt  
+The command was other than \fBPCIV_VFCFG_PARAM\fR or \fBPCIV_VF_ENABLE\fR, the device is not IOV capable, \fInum_vf\fR was set to 0, and the call was made to enable the VF; or parameters of \fBPCIV_VF_ENABLE\fR do not correspond to the values returned by \fBPCIV_VFCFG_PARAM\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_FAILURE\fR\fR
+.ad
+.RS 15n
+.rt  
+Implementation-specific failures occurred.
+.RE
+
+.SH CONTEXT
+.sp
+.LP
+The \fBpciv_vf_config()\fR function can be called from kernel non-interrupt context.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityUncommitted
+_
+MT-LevelUnsafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBddi_cb_register\fR(9F), \fBpci_param_get\fR(9F)

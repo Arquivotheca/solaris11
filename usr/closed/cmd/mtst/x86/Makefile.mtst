@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+#
+
+PROG = mtst
+
+OBJS = \
+	mtst.o \
+	mtst_cmd.o \
+	mtst_cpu.o \
+	mtst_cpumod_api.o \
+	mtst_debug.o \
+	mtst_err.o \
+	mtst_inject.o \
+	mtst_list.o \
+	mtst_main.o \
+	mtst_mem.o \
+	mtst_memtest.o \
+	mtst_util.o
+
+LINTFILES = $(OBJS:%.o=%.ln)
+
+.KEEP_STATE:
+.PARALLEL: $(OBJS) $(LINTFILES)
+
+include $(SRC)/cmd/Makefile.cmd
+
+$(NOT_RELEASE_BUILD)CPPFLAGS += -DDEBUG
+CPPFLAGS += -I../../common/mtst -I$(ROOT)/usr/platform/i86pc/include
+
+CFLAGS += $(CTF_FLAGS) $(CCVERBOSE)
+LDLIBS += -lumem $(MTST_LDLIBS)
+LINTFLAGS += -u
+
+all: $(PROG)
+
+install: all $(ROOTPROG)
+
+lint: $(LINTFILES)
+	$(LINT) $(LINTFLAGS) $(LINTFILES) $(LDLIBS)
+
+clean:
+	$(RM) $(OBJS) $(LINTFILES)
+
+clobber: clean
+	$(RM) $(PROG)
+
+$(PROG): $(OBJS)
+	$(LINK.c) $(OBJS) -o $@ $(LDLIBS)
+	$(CTFMERGE) -L VERSION -o $@ $(OBJS)
+	$(POST_PROCESS)
+
+%.o: ../../common/mtst/%.c
+	$(COMPILE.c) $<
+	$(CTFCONVERT_O)
+
+%.ln: ../../common/mtst/%.c
+	$(LINT.c) -c $<

@@ -1,0 +1,475 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zfs_allow 1M "24 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+zfs_allow \- delegates ZFS file system administration permission to non-privileged users
+.SH SYNOPSIS
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR [\fB-ldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] \fIperm\fR|\fI@setname\fR[,...] 
+     \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR [\fB-ld\fR] \fB-e\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fB-c\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fB-s\fR @\fIsetname\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-rldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] [\fIperm\fR|@\fIsetname\fR[,... ]] 
+     \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-rld\fR] \fB-e\fR [\fIperm\fR|@\fIsetname\fR[,... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-r\fR] \fB-c\fR [\fIperm\fR|@\fIsetname\fR[ ... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-r\fR] \fB-s\fR @\fIsetname\fR [\fIperm\fR|@\fIsetname\fR[,... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBzfs allow\fR command can be used to delegate permissions to non-privileged users for administering ZFS file systems in a \fBZFS\fR storage pool, as described in \fBzpool\fR(1M). You can use the \fBzfs unallow\fR command to revoke administrative permissions.
+.sp
+.LP
+Permissions are generally the ability to use a \fBZFS\fR subcommand or change a \fBZFS\fR property. The following permissions are available:
+.sp
+.in +2
+.nf
+NAME             TYPE           NOTES
+allow            subcommand     Must also have the permission that is
+                                being allowed
+clone            subcommand     Must also have the 'create' ability and
+                                'mount' ability in the origin file system
+create           subcommand     Must also have the 'mount' ability
+destroy          subcommand     Must also have the 'mount' ability
+diff             subcommand     Allows user to compare differences
+                                between snapshots of a ZFS dataset
+hold             subcommand     Allows adding a user hold to a snapshot
+key              subcommand     Allows key loading or unloading
+keychange        other          Allows wrapping key change and re-key
+mount            subcommand     Allows mount/umount of ZFS datasets
+promote          subcommand     Must also have the 'mount' and 'promote'
+                                ability in the origin file system
+receive          subcommand     Must also have the 'mount' and 'create' ability
+release          subcommand     Allows releasing a user hold which
+                                might destroy the snapshot
+rename           subcommand     Must also have the 'mount' and 'create'
+                                ability in the new parent
+rollback         subcommand
+send             subcommand
+share            subcommand     Allows sharing file systems over NFS or
+                                SMB protocols
+snapshot         subcommand
+groupquota       other          Allows accessing any groupquota@...
+                                property
+groupused        other          Allows reading any groupused@... property
+userprop         other          Allows changing any user property
+userquota        other          Allows accessing any userquota@... property
+userused         other          Allows reading any userused@... property
+aclinherit       property
+aclmode          property
+atime            property
+canmount         property
+casesensitivity  property
+checksum         property
+compression      property
+copies           property
+dedup            property
+devices          property
+encryption       property
+exec             property
+keysource        property
+logbias          property
+mlslabel         property
+mountpoint       property
+nbmand           property
+normalization    property
+primarycache     property
+quota            property
+readonly         property
+recordsize       property
+refquota         property
+refreservation   property
+reservation      property
+rstchown         property
+secondarycache   property
+setuid           property
+sharenfs         property
+sharesmb         property
+snapdir          property
+sync             property
+utf8only         property
+version          property
+volblocksize     property
+volsize          property
+vscan            property
+xattr            property
+zoned            property
+.fi
+.in -2
+.sp
+
+.SH SUBCOMMANDS
+.sp
+.LP
+All subcommands that modify state are logged persistently to the pool in their original form.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays a help message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays \fBzfs\fR command usage information. You can display help for a specific command, property, or delegated permission. If you display help for a specific command or property, the command syntax or property value is displayed. Using \fBzfs help\fR without any arguments displays a complete list of \fBzfs\fR commands.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fIfilesystem\fR | \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays permissions that have been delegated on the specified filesystem or volume. See the other forms of \fBzfs allow\fR for more information.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR [\fB-ldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR| \fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs allow\fR [\fB-ld\fR] \fB-e\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR | \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Delegates \fBZFS\fR administration permission for the file systems to non-privileged users.
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-ug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+Specifies to whom the permissions are delegated. Multiple entities can be specified as a comma-separated list. If neither of the \fB-ug\fR options are specified, then the argument is interpreted preferentially as the keyword \fBeveryone\fR, then as a user name, and lastly as a group name. To specify a user or group named "everyone", use the \fB-u\fR or \fB-g\fR options. To specify a group with the same name as a user, use the \fB-g\fR options.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-e\fR] \fIperm\fR|@\fIsetname\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the permissions be delegated to \fBeveryone\fR. Multiple permissions may be specified as a comma-separated list. Permission names are the same as \fBZFS\fR subcommand and property names. See the property list below. Property set names, which begin with an at sign (\fB@\fR) , may be specified. See the \fB-s\fR form below for details.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-ld\fR] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies where the permissions are delegated. If neither of the \fB-ld\fR options are specified, or both are, then the permissions are allowed for the file system or volume, and all of its descendents. If only the \fB-l\fR option is used, then is allowed "locally" only for the specified file system. If only the \fB-d\fR option is used, then is allowed only for the descendent file systems.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fB-c\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets "create time" permissions. These permissions are granted (locally) to the creator of any newly-created descendent file system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fB-s\fR @\fIsetname\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Defines or adds permissions to a permission set. The set can be used by other \fBzfs allow\fR commands for the specified file system and its descendents. Sets are evaluated dynamically, so changes to a set are immediately reflected. Permission sets follow the same naming restrictions as ZFS file systems, but the name must begin with an "at sign" (\fB@\fR), and can be no more than 64 characters long.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unallow\fR [\fB-rldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] [\fIperm\fR|@\fIsetname\fR[, ...]] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB-rld\fR] \fB-e\fR [\fIperm\fR|@\fIsetname\fR [,...]] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB-r\fR] \fB-c\fR [\fIperm\fR|@\fIsetname\fR[,...]]\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes permissions that were granted with the \fBzfs allow\fR command. No permissions are explicitly denied, so other permissions granted are still in effect. For example, if the permission is granted by an ancestor. If no permissions are specified, then all permissions for the specified \fIuser\fR, \fIgroup\fR, or \fBeveryone\fR are removed. Specifying \fBeveryone\fR (or using the \fB-e\fR option) only removes the permissions that were granted to \fBeveryone\fR, not all permissions for every user and group. See the \fBzfs allow\fR command for a description of the \fB-ldugec\fR options.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+Recursively remove the permissions from this file system and all descendents.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unallow\fR [\fB-r\fR] \fB-s\fR @\fIsetname\fR [\fIperm\fR|@\fIsetname\fR[,...]]\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes permissions from a permission set. If no permissions are specified, then all permissions are removed, thus removing the set entirely.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRDelegating ZFS Administration Permissions on a ZFS Dataset
+.sp
+.LP
+The following example shows how to set permissions so that user \fBanne\fR can create, destroy, mount, and take snapshots on \fBpool/home/anne\fR. The permissions on \fBpool/home/anne\fR are also displayed.
+
+.sp
+.in +2
+.nf
+# \fBzfs allow anne create,destroy,mount,snapshot pool/home/anne\fR
+# \fBzfs allow pool/home/anne\fR
+---- Permissions on pool/home/anne -----------------------------------
+Local+Descendent permissions:
+        user anne create,destroy,mount,snapshot
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Because the \fBpool/home/anne\fR mount point permission is set to 755 by default, user \fBanne\fR will be unable to mount file systems under \fBpool/home/anne\fR. Set an \fBACL\fR similar to the following syntax to provide mount point access:
+
+.sp
+.in +2
+.nf
+# \fBchmod A+user:anne:add_subdirectory:allow /pool/home/anne\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDelegating Create Time Permissions on a ZFS Dataset
+.sp
+.LP
+The following example shows how to grant anyone in the group \fBstaff\fR to create file systems in \fBpool/home\fR. This syntax also allows staff members to destroy their own file systems, but not destroy anyone else's file system. The permissions on \fBpool/home\fR are also displayed.
+
+.sp
+.in +2
+.nf
+# \fBzfs allow staff create,mount pool/home\fR
+# \fBzfs allow -c destroy pool/home\fR
+# \fBzfs allow pool/home\fR
+---- Permissions on pool/home ----------------------------------------
+Create time permissions:
+        destroy
+Local+Descendent permissions:
+        group staff create,mount
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRDefining and Granting a Permission Set on a ZFS Dataset
+.sp
+.LP
+The following example shows how to define and grant a permission set on the \fBpool/home\fR file system. The permissions on \fBpool/home\fR are also displayed.
+
+.sp
+.in +2
+.nf
+# \fBzfs allow -s @pset create,destroy,snapshot,mount pool/home\fR
+# \fBzfs allow staff @pset pool/home\fR
+# \fBzfs allow pool/home\fR
+---- Permissions on pool/home ----------------------------------------
+Permission sets:
+        @pset create,destroy,mount,snapshot
+Create time permissions:
+        destroy
+Local+Descendent permissions:
+        group staff @pset,create,mount
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRDelegating Property Permissions on a ZFS Dataset
+.sp
+.LP
+The following example shows to grant the ability to set quotas and reservations on the \fBtank/users\fR file system. The permissions on \fBtank/users\fR are also displayed.
+
+.sp
+.in +2
+.nf
+# \fBzfs allow mark quota,reservation tank/users\fR
+# \fBzfs allow tank/users\fR
+---- Permissions on tank/users ---------------------------------------
+Local+Descendent permissions:
+        user mark quota,reservation
+mark% zfs set quota=10G tank/users/tim   
+mark% zfs get quota tank/users/tim
+NAME            PROPERTY  VALUE  SOURCE
+tank/users/tim  quota     10G    local
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRRemoving ZFS Delegated Permissions on a ZFS Dataset
+.sp
+.LP
+The following example shows how to remove the snapshot permission from the \fB@pset\fR permission set for the \fBstaff\fR group on the \fBpool/home\fR file system. The permissions on \fBpool/home\fR are also displayed.
+
+.sp
+.in +2
+.nf
+# \fBzfs unallow -s @pset snapshot pool/home\fR
+# \fBzfs allow pool/home\fR
+---- Permissions on pool/home ----------------------------------------
+Permission sets:
+        @pset create,destroy,mount
+Create time permissions:
+        destroy
+Local+Descendent permissions:
+        group staff @pset,create,mount
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalid command line options were specified.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/zfs
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBzfs\fR(1M), \fBzpool\fR(1M), \fBchmod\fR(2), \fBchown\fR(2), \fBattributes\fR(5)
+.sp
+.LP
+For information about using other \fBZFS\fR features, see \fBzfs_encrypt\fR(1M), \fBzfs_share\fR(1M), \fBzfs\fR(1M) and the \fISolaris ZFS Administration Guide\fR.

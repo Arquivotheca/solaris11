@@ -1,0 +1,569 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH scf_decoration_create 3SCF "16 Jun 2011" "SunOS 5.11" "Service Configuration Facility Library Functions"
+.SH NAME
+scf_decoration_create, scf_decoration_handle, scf_decoration_destroy, scf_service_get_decoration, scf_instance_get_decoration, scf_pg_get_decoration, scf_property_get_decoration, scf_property_get_value_at_layer, scf_iter_service_decorations, scf_iter_instance_decorations, scf_iter_pg_decorations, scf_iter_property_decorations, scf_iter_decoration_values, scf_iter_next_decoration, scf_decoration_get_bundle, scf_decoration_get_layer, scf_decoration_layer_to_string, scf_decoration_layer_from_string, scf_decoration_is_type, scf_decoration_type, scf_decoration_get_value \- get decoration and layer information in the Service Configuration Facility
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR... ] \fIfile\fR... -lscf [ \fIlibrary\fR... ]
+#include <libscf.h>
+
+scf_decoration_t *scf_decoration_create(scf_handle_t *\fI*handle)\fR);
+.fi
+
+.LP
+.nf
+scf_handle_t *scf_decoration_handle(const scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+void scf_decoration_destroy(scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+int scf_service_get_decoration(const scf_service_t *\fI\fR,
+     scf_decoration_layer_t \fI\fR, scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+int scf_instance_get_decoration(const scf_instance_t *\fIinst\fR,
+     scf_decoration_layer_t \fIlayer\fR, scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+int scf_pg_get_decoration(const scf_propertygroup_t *\fIpg\fR,
+     scf_decoration_layer_t \fIlayer\fR, scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+int scf_property_get_decoration(const scf_property_t *\fIprop\fR,
+     scf_decoration_layer_t layer \fIlayer\fR, scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+int scf_property_get_value_at_layer(const scf_property_t *\fIprop\fR,
+     scf_decoration_layer_t layer \fIlayer\fR, scf_value_t *\fIv\fR);
+.fi
+
+.LP
+.nf
+int scf_iter_service_decorations(scf_iter_t *\fIiter\fR,
+     const scf_service_t \fI*svc\fR, int \fIflags\fR);
+.fi
+
+.LP
+.nf
+int scf_iter_instance_decorations(scf_iter_t *\fIiter\fR,
+     const scf_instance_t *\fIinst\fR, int \fIflags\fR);
+.fi
+
+.LP
+.nf
+int scf_iter_pg_decorations(scf_iter_t *\fIiter\fR,
+     const scf_propertygroup_t *\fIpg\fR, int \fIflags\fR);
+.fi
+
+.LP
+.nf
+int scf_iter_property_decorations(scf_iter_t *\fIiter\fR,
+     const scf_property_t *\fI\fR);
+.fi
+
+.LP
+.nf
+int scf_iter_decoration_values(scf_iter_t *\fI\fR,
+     const scf_decoration_t *\fIdec\fR);
+.fi
+
+.LP
+.nf
+int scf_iter_next_decoration(scf_iter_t *\fIiter\fR, scf_decoration_t *\fIout\fR);
+.fi
+
+.LP
+.nf
+ssize_t scf_decoration_get_bundle(const scf_decoration_t *\fIdec\fR,
+     char *\fIout\fR, size_t \fIlen\fR);
+.fi
+
+.LP
+.nf
+int scf_decoration_get_layer(const scf_decoration_t *\fIdec\fR,
+     scf_decoration_layer_t *\fIout\fR);
+.fi
+
+.LP
+.nf
+const char *scf_decoration_layer_to_string(scf_decoration_layer_t \fIlayer\fR);
+.fi
+
+.LP
+.nf
+scf_decoration_layer_t scf_decoration_layer_from_string(const char *\fIlayer\fR);
+.fi
+
+.LP
+.nf
+int scf_decoration_is_type(const scf_decoration_t *\fIdec\fR, scf_type_t \fIbase_arg\fR);
+.fi
+
+.LP
+.nf
+int scf_decoration_type(const scf_decoration_t *\fIdec\fR, scf_type_t *\fIout\fR);
+.fi
+
+.LP
+.nf
+int scf_decoration_get_value(const scf_decoration_t *\fIdec\fR,
+     scf_value_t *\fIv\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBscf_decoration_*()\fR functions allow \fBlibscf\fR(3LIB) consumers to explore decorations of each type of \fBlibscf\fR entity. Basic \fB_get\fR interfaces are provided, along with iterators for all decorations on an entity.
+.sp
+.LP
+Decorations are metadata about entities within \fBlibscf\fR. A single entity may have multiple decorations in the repository to describe metadata about what files or actions contributed to that entity. These decorations are disambiguated by their layer. Only four layers are used, though more may be added later: \fBadmin\fR, \fBsite-profile\fR, \fBsystem-profile\fR, and \fBmanifest\fR.
+.sp
+.LP
+These layers are ordered, with the \fBadmin\fR layer overriding the \fBsite-profile\fR layer, and down to the \fBmanifest\fR layer as the lowest layer.
+.sp
+.LP
+All property reading \fBlibscf\fR interfaces will get the value of properties contributed only by the highest layer. All property writing \fBlibscf\fR interfaces will change values in only the administrative layer. The interfaces documented here allow access to layers explicitly.
+.sp
+.LP
+Additionally, decorations are completely general, and in the future non-layer decorations may be added to capture other metadata.
+.sp
+.LP
+An \fBscf_decoration_t\fR is an opaque handle that can be set to a single decoration at any given time. The \fBscf_decoration_create()\fR function allocates and initializes a new \fBscf_decoration_t\fR bound to a handle. The \fBscf_decoration_destroy()\fR function destroys and frees the decoration. The \fBscf_decoration_handle()\fR function retrieves the handle to which the decoration is bound.
+.sp
+.LP
+The \fBscf_decoration_layer_t\fR describes specific layers:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSCF_DECORATION_ADMIN\fR is the \fBadmin\fR layer.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSCF_DECORATION_SITE_PROFILE\fR is the \fBsite-profile\fR layer.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSCF_DECORATION_SYSTEM_PROFILE\fR is the \fBsystem-profile\fR layer.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSCF_DECORATION_MANIFEST\fR is the \fBmanifest\fR layer.
+.RE
+.sp
+.LP
+The \fBscf_service_get_decoration()\fR, \fBscf_instance_get_decoration()\fR, \fBscf_pg_get_decoration()\fR, and \fBscf_property_get_decoration()\fR functions take an entity and an \fBscf_decoration_layer_t\fR in order to retrieve the decoration at the requested layer. The layer may also be defined as \fBSCF_DECORATION_TOP\fR to get the topmost layer.
+.sp
+.LP
+The \fBscf_property_get_value_at_layer()\fR function retrieves the \fBscf_value_t\fR at the defined layer.
+.sp
+.LP
+The \fBscf_iter_service_decorations()\fR, \fBscf_iter_instance_decorations()\fR, \fBscf_iter_pg_decorations()\fR, \fBscf_iter_property_decorations()\fR, and \fBscf_iter_decoration_values()\fR functions take an iterator created by \fBscf_iter_create\fR(3SCF) and start the iteration over all decorations on the supplied entity. The \fBscf_iter_next_decoration()\fR function gets the next decoration.
+.sp
+.LP
+A set of functions offer access to information about a retrieved decoration. The \fBscf_decoration_get_bundle()\fR function retrieves the file, if any, that a decoration was created from.
+.sp
+.LP
+The \fBscf_decoration_get_layer()\fR and \fBscf_decoration_layer_from_string()\fR functions retrieve the layer information. The \fBscf_decoration_layer_to_string()\fR function retrieves the layer information in string form.
+.sp
+.LP
+Values within a decoration, if any, and their types can be retrieved with \fBscf_decoration_is_type()\fR, \fBscf_decoration_type()\fR, and \fBscf_decoration_get_value()\fR.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, \fBscf_decoration_create()\fR returns a new \fBscf_property_t\fR. Upon successful completion, \fBscf_decoration_handle()\fR returns an \fBscf_handle_t\fR. Otherwise, they return \fINULL\fR.
+.sp
+.LP
+Upon successful completion, \fBscf_service_get_decoration()\fR, \fBscf_instance_get_decoration()\fR, \fBscf_pg_get_decoration()\fR, \fBscf_property_get_decoration()\fR, and \fBscf_property_get_value_at_layer()\fR return 0. Otherwise, they return -1.
+.sp
+.LP
+Upon successful completion, \fBscf_iter_service_decorations()\fR, \fBscf_iter_instance_decorations()\fR, \fBscf_iter_pg_decorations()\fR, \fBscf_iter_property_decorations()\fR, and \fBscf_iter_decoration_values()\fR return 0. Otherwise, they return -1.
+.sp
+.LP
+Upon successful completion, \fBscf_iter_next_decoration()\fR returns 1. If the iterator is complete, it returns 0. Otherwise, it returns -1.
+.sp
+.LP
+Upon successful completion \fBscf_decoration_get_bundle()\fR returns the length of the string written, not including the terminating null byte. Otherwise, it returns -1.
+.sp
+.LP
+Upon successful completion, \fBscf_decoration_get_layer()\fR, \fBscf_decoration_type()\fR, \fBscf_decoration_get_value()\fR, and \fBscf_decoration_is_type()\fR return 0. On error, they return -1.
+.SH ERRORS
+.sp
+.LP
+The \fBscf_decoration_create()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INVALID_ARGUMENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The value of the \fIhandle\fR argument is \fINULL\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NO_MEMORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+There is not enough memory to allocate an \fBscf_decoration_t\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NO_RESOURCES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The server does not have adequate resources for a new property handle.
+.RE
+
+.sp
+.LP
+The \fBscf_decoration_handle()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_HANDLE_DESTROYED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The handle associated with \fIprop\fR has been destroyed.
+.RE
+
+.sp
+.LP
+The \fBscf_service_get_decoration()\fR, \fBscf_instance_get_decoration()\fR, \fBscf_pg_get_decoration()\fR, and \fBscf_property_get_decoration()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_CONSTRAINT_VIOLATED\fR\fR
+.ad
+.sp .6
+.RS 4n
+Multiple decorations are available at the specified layer.
+.RE
+
+.sp
+.LP
+The \fBscf_service_get_decoration()\fR, \fBscf_instance_get_decoration()\fR, \fBscf_pg_get_decoration()\fR, \fBscf_property_get_decoration()\fR, \fBscf_property_get_value_at_layer()\fR, \fBscf_decoration_get_bundle()\fR, and \fBscf_decoration_get_value()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_BACKEND_ACCESS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The storage mechanism that the repository server (\fBsvc.configd\fR(1M)) chose for the operation denied access.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_CONNECTION_BROKEN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The connection to the repository was lost.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_DELETED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The entity or an ancestor has been deleted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_HANDLE_MISMATCH\fR\fR
+.ad
+.sp .6
+.RS 4n
+The decoration and entity are not derived from the same handle.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INTERNAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+An internal error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INVALID_ARGUMENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The entity is not the correct type.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NO_RESOURCES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The server does not have the resources to complete the request.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_BOUND\fR\fR
+.ad
+.sp .6
+.RS 4n
+The handle was never bound or has been unbound.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_SET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The entity is not set.
+.RE
+
+.sp
+.LP
+The \fBscf_iter_service_decorations()\fR, \fBscf_iter_instance_decorations()\fR, \fBscf_iter_pg_decorations()\fR, \fBscf_iter_property_decorations()\fR, \fBscf_iter_decoration_values()\fR, and \fBscf_iter_next_decoration()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_DELETED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The parent has been deleted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_SET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The parent is not set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_BOUND\fR\fR
+.ad
+.sp .6
+.RS 4n
+The handle is not bound.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NO_RESOURCES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The server does not have the resources to complete the request.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_CONNECTION_BROKEN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The connection to the repository was lost.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_HANDLE_MISMATCH\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fIiter\fR and \fIparent\fR arguments are not derived from the same handle.
+.RE
+
+.sp
+.LP
+The \fBscf_iter_next_decoration()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INVALID_ARGUMENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The requested object type does not match the type the iterator is walking.
+.RE
+
+.sp
+.LP
+The \fBscf_decoration_get_layer()\fR, \fBscf_decoration_type()\fR, and \fBscf_decoration_is_type()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_BOUND\fR\fR
+.ad
+.sp .6
+.RS 4n
+The handle was never bound or has been unbound.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_DELETED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The parent has been deleted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_NOT_SET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The parent is not set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INTERNAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+An internal error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_CONNECTION_BROKEN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The connection to the repository was lost.
+.RE
+
+.sp
+.LP
+The \fBscf_decoration_is_type()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_INVALID_ARGUMENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fItype\fR argument is not a valid type.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSCF_ERROR_TYPE_MISMATCH\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fIprop\fR argument is not of a type compatible with type.
+.RE
+
+.sp
+.LP
+The \fBscf_error\fR(3SCF) function can be used to retrieve the error value.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvc.configd\fR(1M), \fBlibscf\fR(3LIB), \fBscf_error\fR(3SCF), \fBscf_iter_create\fR(3SCF), \fBattributes\fR(5)

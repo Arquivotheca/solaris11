@@ -1,0 +1,169 @@
+#
+# Warlock commands file for klmops module.
+#
+# Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License, Version 1.0 only
+# (the "License").  You may not use this file except in compliance
+# with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#ident	"%Z%%M%	%I%	%E% SMI"
+
+#
+# Indirectly called functions.
+# Note: it is possible for these targets to change, and it may become
+#	necessary for more to be added.  Therefore these directives
+#	should be verified for correctness from time to time.
+#
+add vnodeops::vop_frlock target \
+	lm_nlm_server.c:lm_block_callback \
+	lm_nlm4_server.c:lm_block_callback
+
+add vnodeops::vop_shrlock target lm_shrlock lm4_shrlock
+
+#
+# Hack.  VOP_PUTPAGE() always calls nfs_putpage() or nfs3_putpage()
+#	in klmops, but since we don't load these functions warlock
+#	would complain if we specified them as targets.  These
+#	functions never call back to klmops, so to appease warlock
+#	here we simply say it only calls back to a stub.
+#
+#       XXX: The `ignore' command doesn't fix this because it
+#       doesn't work on function pointers (it may in the future).
+#
+add vnodeops::vop_putpage target klmops_null
+
+#
+# VOP_VGET() does not call back into klm{ops,mod}, so we declare a stub.
+#
+add vfsops::vfs_vget target klmops_null
+
+add xp_ops::xp_freeargs target \
+	xdr_void \
+	xdr_nlm_testargs \
+	xdr_nlm_lockargs \
+	xdr_nlm_unlockargs \
+	xdr_nlm_cancargs \
+	xdr_nlm_shareargs \
+	xdr_nlm_notify \
+	xdr_status
+
+add xp_ops::xp_getargs target \
+	xdr_void \
+	xdr_nlm_testargs \
+	xdr_nlm_lockargs \
+	xdr_nlm_unlockargs \
+	xdr_nlm_cancargs \
+	xdr_nlm_shareargs \
+	xdr_nlm_notify \
+	xdr_status
+
+#
+# Call graph roots.
+# These are specified separately only for the purpose of
+# documentation.  warlock analyzes everything declared as a root
+# as such, in addition to analyzing it in any other valid context
+# (e.g., if it is called from another function in klmops).
+#
+
+#
+# True call graph roots for klmops.
+#
+root _init \
+	_fini \
+	_info \
+	lm_frlock \
+	lm4_frlock \
+	lm_nlm_dispatch \
+	lm_nlm4_dispatch
+
+#
+# Call graph roots which stem from registered kmem cache destructor
+# function calls.  If a function is both a destructor and can
+# also be called explicitly from klmops (e.g. lm_free_sysid_table()),
+# it is arbitrarily classified as a destructor on the premise that it
+# is likely to remain such (and therefore a root) forever.
+#
+root lm_free_sysid_table
+
+#
+# Call graph roots which actually stem from klmmod (but are
+# not roots in the true sense).  We declare these as roots
+# instead of ignoring them to give warlock the opportunity
+# to analyse their code paths.
+#
+# Note: need to be careful here to avoid cross-calls from
+#	klmmod -> klmops -> klmmod ...
+#
+root lm_alock \
+	lm_alock4 \
+	lm_asynrpc \
+	lm_asynrply \
+	lm_d_nsa \
+	lm_d_nsa4 \
+	lm_get_sleep \
+	lm_getconfig \
+	lm_getxprt \
+	lm_rel_sleep \
+	lm_relxprt \
+	lm_savexprt \
+	lm_signal_granted \
+	lm_waitfor_granted \
+	xdr_status
+
+root lm_nlm_reclaim \
+	lm_nlm4_reclaim
+
+#
+# Ignored functions.  This is an ugly hack to avoid
+# the complexity (as seen by warlock) of lm_get_sysid(),
+# until the function can be rewritten more simply.
+# See the warlock user's guide re data-dependent locking.
+#
+ignore lm_get_sysid
+
+#
+# Ignored variables.  warlock complains if we use
+# DATA_READABLE_WITHOUT_LOCK() on some of these for which it would make
+# sense to do so, but we aren't sure why.
+#
+ignore lm_stat.start_time  # modified w/lm_lck only (should be DATA_READABLE...)
+
+				# no protection needed (these have no locks)
+ignore flock64::l_len \
+	flock64::l_pad \
+	flock64::l_pid \
+	flock64::l_start \
+	flock64::l_sysid \
+	flock64::l_type \
+	flock64::l_whence \
+	netbuf::maxlen \
+	nlm_res::cookie.n_bytes \
+	nlm_res::cookie.n_len \
+	nlm_res::stat.stat \
+	nlm_shareres::stat \
+	nlm_testres::stat.stat \
+	nlm4_res::cookie.n_bytes \
+	nlm4_res::cookie.n_len \
+	nlm4_res::stat.stat \
+	nlm4_shareres::stat \
+	nlm4_testres::stat.stat \
+	shrlock::s_deny \
+	shrlock::s_sysid

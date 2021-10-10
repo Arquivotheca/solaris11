@@ -1,0 +1,474 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH init 1M "2011 年 6 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+init \- プロセス制御の初期化
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/init\fR [0123456abcQqSs]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBinit\fR はデフォルトの原始ユーザープロセスです。(ブート中にカーネルに渡されるオプションによっては、別の原始ユーザープロセスが呼び出されることもあります。\fBkernel\fR(1M)を参照してください)。\fBinit\fR はサービス管理機能の中心のコンポーネントである、\fBsvc.configd\fR(1M) および \fBsvc.startd\fR(1M) を初期化し、初期化に失敗した場合はこれらのコンポーネントを再開始します。下位互換性を保つため、\fBinit\fR は \fB/etc/inittab\fR に従って汎用プロセスの起動および再起動も行います (下記参照)。
+.sp
+.LP
+下記の実行レベルおよびシステムブートの説明は、互換性を保つ目的でのみ記述されており、それ以外の場合はサービス管理機能 \fBsmf\fR(5) によって廃止されています。
+.SS "init の障害"
+.sp
+.LP
+\fBinit\fR がシステムのシャットダウン以外の何らかの理由で終了した場合、プロセス \fBID\fR 1 で再起動されます。 
+.SS "定義されている実行レベル"
+.sp
+.LP
+任意の時点で、システムは 8 つの実行レベルのいずれか 1 つにあります。実行レベルはソフトウェア構成で、そこでは選択されたプロセスグループだけが存在します。各実行レベルに対する、\fBinit\fR によって生成されるプロセスは、\fB/etc/inittab\fR で定義されています。\fBinit\fR は 8 つの実行レベル、\fB0\(mi6\fR および \fBS\fR または \fBs\fR (\fBS\fR と \fBs\fR は同じ) のいずれか 1 つを取ることができます。実行レベルは、特権ユーザーが \fB/usr/sbin/init\fR を実行すると変更されます。
+.SS "init とシステムのブート"
+.sp
+.LP
+システムがブートされると、\fBinit\fR が呼び出され、次のイベントが発生します。最初に、\fBsvc:/system/environment:init\fR サービスのプロパティーを読み取ります。これらのプロパティーには、\fBLANG\fR や \fBLC_CTYPE\fR などのロケール関連の環境に使用する値があります。次に \fBinit\fR は、\fB/etc/inittab\fR で \fBinitdefault\fR エントリを探します (\fBinittab\fR(4) を参照)。\fBinitdefault\fR のエントリが、
+.sp
+.ne 2
+.mk
+.na
+\fB存在する場合\fR
+.ad
+.sp .6
+.RS 4n
+オプションまたはマイルストーンのプロパティーが \fBsvc.startd\fR(1M) に指定されていない場合のみ、\fBinit\fR は通常、このエントリで指定された実行レベルを開始時の最初の実行レベルとして使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB存在しない場合\fR
+.ad
+.sp .6
+.RS 4n
+サービス管理機能 \fBsmf\fR(5) は、\fBsvc.startd\fR(1M) で指定された構成を調べ、オプションまたはマイルストーンのプロパティーで指定されたマイルストーンを入力します。
+.RE
+
+.sp
+.LP
+\fB/etc/inittab\fR 内の \fBinitdefault\fR エントリは、次の実行レベルに対応します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR または \fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR はシングルユーザー状態に移行します。この状態では、システムコンソールデバイス (\fB/dev/console\fR) が読み取り/書き込み用に開かれ、コマンド \fB/usr/sbin/su\fR (\fBsu\fR(1M) を参照) が呼び出されます。\fBinit\fR を使用して、システムの実行レベルを変更します。(ファイルの終わり (EOF) を使用して) シェルを終了させたが、\fB/etc/inittab\fR が存在しない場合、\fBinit\fR は再びシングルユーザー状態に戻すだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0-6\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR は対応する実行レベルに移行します。実行レベル \fB0\fR、\fB5\fR、および \fB6\fR はシステム停止用に予約されています。実行レベル \fB2\fR、\fB3\fR、および \fB4\fR は、マルチユーザー操作用に使用できます。
+.RE
+
+.sp
+.LP
+電源投入後に、\fBinit\fR が最初のシングルユーザー状態以外の実行レベルに移行する場合、\fBinit\fR はまず、\fB/etc/inittab\fR を走査して \fBboot\fR および \fBbootwait\fR エントリを探します (\fBinittab\fR(4) を参照)。移行する実行レベルがエントリの実行レベルと一致している場合は、\fB/etc/inittab\fR の他のプロセスが実行される前に、これらのエントリが実行されます。このようにすると、ファイルシステムのマウントなど、オペレーティングシステムの特殊な初期化を先に終えてから、ユーザーにシステムを使用させることができます。次に \fBinit\fR は、\fB/etc/inittab \fR を走査し、その実行レベルで処理すべき他のすべてのエントリを実行します。
+.sp
+.LP
+\fB/etc/inittab\fR の各プロセスを生成するために、\fBinit\fR は各エントリを読み込み、再生成が必要なエントリごとに、子プロセスを生成します。\fB/etc/inittab\fR で指定された全プロセスを生成すると、\fBinit\fR は、子孫プロセスの消滅、\fBpowerfail\fR シグナル、またはシステムの実行レベルを変更する他の \fBinit\fR プロセスからのシグナルのいずれかを待機します。これらの状態のいずれか 1 つが発生すると、\fBinit\fR は \fB/etc/inittab\fR を再検査します。
+.SS "inittab に関するその他の事項"
+.sp
+.LP
+\fB/etc/inittab\fR にはいつでも新しいエントリを追加できますが、\fBinit\fR は前述の 3 つの状態のいずれかが発生するまで待機し続けるので、\fB/etc/inittab\fR を再検証しません。この状況を回避するには、\fBinit Q\fR または \fBinit q\fR コマンドを使用して、\fBinit\fR が \fB/etc/inittab\fR をただちに再検査するようにします。
+.sp
+.LP
+ブート時に \fBinit\fR が呼び出されたとき、また、システムがシングルユーザー状態から別の実行状態に移行するたびに、\fBinit\fR はコンソールの \fBioctl\fR(2) 状態をファイル \fB/etc/ioctl.syscon\fR に格納されているモードに設定します。\fBinit\fR はシングルユーザー状態が移行するたびに、このファイルに書き込みを行います。
+.SS "実行レベルの変更"
+.sp
+.LP
+実行レベルの変更が要求されると、\fBinit\fR は目標の実行レベルで定義されていないすべてのプロセスに警告シグナル (\fBSIGTERM\fR) を送ります。\fBinit\fR は 5 秒間待機したのち、終了シグナル (\fBSIGKILL\fR) を送信することによって、これらのプロセスを強制終了させます。さらに、init は、実行レベルが変更中であることを \fBsvc.startd\fR(1M) に通知します。すると、\fBsvc.startd\fR(1M) は、その実行レベル変更に対応するマイルストーンが依存している一連のサービスに、システムを制限します。
+.sp
+.LP
+\fBinit\fR によって生成されたプロセスが終了したことを通知するシグナルを受信すると、init は、その事実と原因を  \fB/var/adm/utmpx\fR と \fB/var/adm/wtmpx\fR (存在していれば) に記録します (\fBwho\fR(1) を参照)。生成されたプロセスの履歴は \fB/var/adm/wtmpx\fR に記録されます。
+.sp
+.LP
+\fBinit\fR は \fBpowerfail\fR シグナル (\fBSIGPWR\fR) を受信した場合、\fB/etc/inittab\fR を走査し、タイプが \fBpowerfail\fR と \fBpowerwait\fR の特殊なエントリを探します。これらのエントリが呼び出されてから (実行レベルが許可する場合)、その後の処理が実行されます。このように、\fBinit\fR はオペレーティングシステムの停止中にさまざまなクリーンアップおよび記録機能を実行します。
+.SS "環境変数の設定"
+.sp
+.LP
+タイムゾーンや文字の書式設定といった環境変数のデフォルト値を \fBsvc:/system/environment:init\fR サービスのプロパティーリストで設定できます。
+.SH セキュリティ
+.sp
+.LP
+\fBinit\fR は \fBpam\fR(3PAM) を使用してセッションを管理します。\fB/etc/pam.conf\fR に記述されている \fBPAM\fR 構成ポリシーにより、\fBinit\fR に使用されるセッション管理モジュールが指定されます。次に、\fBpam.conf\fR ファイルの抜粋を示します。UNIX セッション管理モジュールを使用する\fBinit\fR のエントリが指定されています。
+.sp
+.in +2
+.nf
+init   session   required    pam_unix_session.so.1
+.fi
+.in -2
+
+.sp
+.LP
+\fBinit\fR サービスに対応するエントリがない場合、「other」のサービスのエントリが使用されます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファームウェアモードに移行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムをシステム管理者モードにします。すべてのローカルファイルシステムがマウントされます。いくつかの重要なコアプロセスだけが実行を続けます。このモードはオプションのユーティリティーパッケージをインストールする場合など、管理作業を行うためのものです。すべてのファイルにアクセスできます。ユーザーはシステムにログインできません。
+.sp
+この要求は、\fBsmf\fR(5) がシステムのマイルストンを次の値に制限するための要求に対応しています。svc: /milestone/single-user: default。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムをマルチユーザーモードにします。すべてのマルチユーザー環境用の端末プロセスおよびデーモンが生成されます。一般に、この状態を、マルチユーザー状態といいます。
+.sp
+この要求は、\fBsmf\fR(5) がシステムのマイルストンを次の値に制限するための要求に対応しています。svc: /milestone/multi-user: default。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークを介してローカルリソースを使用できるようにすることで、マルチユーザーモードを拡張します。
+.sp
+この要求は、\fBsmf\fR(5) がシステムのマイルストンを次の値に制限するための要求に対応しています。svc: /milestone/multi-user-server: default。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替のマルチユーザー環境構成として定義できます。システム運用上は必要なく、通常は使用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB5\fR\fR
+.ad
+.sp .6
+.RS 4n
+電源を切っても安全なようにマシンを停止します。可能であれば電源を自動的に切断します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+オペレーティングシステムを停止したあと、\fB/etc/inittab\fR の \fBinitdefault\fR エントリに定義されている状態でリブートします。
+.sp
+サービス \fBsvc:/system/boot-config:default\fR はデフォルトで有効になっています。\fBconfig/fastreboot_default\fR プロパティーが \fBtrue\fR に設定されている場合に \fBinit 6\fR を指定すると、システムの特定の機能に応じて、特定のファームウェア初期化手順およびテスト手順が省略されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR、\fBb\fR、\fBc\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB/etc/inittab\fR エントリに \fBa\fR、\fBb\fR、または \fBc\fR という実行レベルが設定されているときだけ処理します。これらは擬似状態であり、特定のコマンドを実行するように定義できますが、現在の実行レベルが変更されるわけではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBQ\fR、\fBq\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB/etc/inittab\fR を再検査します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR、\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+シングルユーザーモードに移行します。適切な形式の \fB/etc/inittab\fR ファイルがなくてもかまわない唯一の実行レベルです。このファイルが存在しない場合、デフォルトで \fBinit\fR が入ることができる唯一の正当な実行レベルはシングルユーザーモードだけです。シングルユーザーモードでは、基本システム動作に必要なファイルシステムがマウントされます。システムがシングルユーザーモードに移行すると、これらのファイルシステムは (リモートファイルサーバーが提供している場合でも) マウントされたままになります。他のローカルファイルシステムもマウントされたままになります。シングルユーザーモードへの切り替え時に、\fBinit\fR または \fBinit.d\fR によって開始された、マルチユーザーモードでしか実行してはならないプロセスはすべて強制終了されます。さらに、\fButmpx\fR エントリが設定されているプロセスもすべて強制終了されます。この最後の状態では、\fBSAC\fR が起動したすべてのポートモニターが確実に強制終了され、これらのポートモニターによって起動されたサービスも、\fBttymon\fR login ログインサービスを含めてすべて強制終了されます。
+.sp
+この要求は、\fBsmf\fR(5) がシステムのマイルストンを次の値に制限するための要求に対応しています。svc: /milestone/single-user: default。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/console\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムコンソールデバイス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/init\fR\fR
+.ad
+.sp .6
+.RS 4n
+このファイルは廃止されたため、将来のリリースで削除される可能性があります。\fBinit\fR プロセスではこのファイルから値を取得するのではなく \fBsvc:/system/environment:init\fR サービスのプロパティーを読み取ります。以前に \fB/etc/default/init\fR の編集によって行われた変更を反映させるために、システム管理者またはシステム構成権利プロファイルを持つ管理者は \fBinit\fR サービスインスタンスの対応するプロパティーを設定し、そのインスタンスを更新できます。
+.sp
+この読み取り専用ファイルには、環境変数とそのデフォルト値が含まれています。変数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+常に \fBlocaltime\fR に設定されます。システムのタイムゾーンを設定するためには、管理者は SMF サービス \fBtimezone:default\fR の \fBtimezone/localtime\fR プロパティーを設定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCMASK\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR が使用し、すべてのプロセスが \fBinit\fR プロセスから継承するマスク (\fBumask\fR(1) を参照)。設定されていない場合、\fBinit\fR はカーネルから継承したマスクを使用します。\fBCMASK\fR の設定に関係なく、\fBinit\fR は必ず、022 で \fBumask\fR の適用を試みてからファイルを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+文字の種類の情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.sp .6
+.RS 4n
+翻訳メッセージ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MONETARY\fR\fR
+.ad
+.sp .6
+.RS 4n
+通貨の書式情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_NUMERIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+数値の書式情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_TIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+時刻の書式情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_ALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+設定されている場合、他のすべての \fBLC_*\fR 環境変数でこの値が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLANG\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBLC_ALL\fR が設定されてなく、かつ特定の \fBLC_*\fR も設定されていない場合は、これら環境変数に \fBLANG\fR の値が使用されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inittab\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinit\fR によるプロセスディスパッチ制御。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ioctl.syscon\fR\fR
+.ad
+.sp .6
+.RS 4n
+シングルユーザー状態に移行したときに \fBinit\fR によって保存された、コンソールの ioctl (入出力制御) 状態。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/svc/volatile/init.state\fR\fR
+.ad
+.sp .6
+.RS 4n
+障害から回復するのに必要な \fBinit\fR 状態
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/utmpx\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーアクセスおよび管理情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/wtmpx\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーアクセスと管理情報の履歴
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/initpipe\fR\fR
+.ad
+.sp .6
+.RS 4n
+内部通信用の名前付きパイプ。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBlogin\fR(1), \fBsh\fR(1), \fBstty\fR(1), \fBwho\fR(1), \fBkernel\fR(1M), \fBshutdown\fR(1M), \fBsu\fR(1M), \fBsvc.configd\fR(1M), \fBsvc.startd\fR(1M), \fBttymon\fR(1M), \fBioctl\fR(2), \fB kill\fR(2), \fBctime\fR(3C), \fB pam\fR(3PAM), \fBinit.d\fR(4), \fB inittab\fR(4), \fBpam.conf\fR(4), \fB TIMEZONE\fR(4), \fButmpx\fR(4), \fB attributes\fR(5), \fBpam_unix_session\fR(5), \fBsmf\fR(5), \fBtermio\fR(7I)
+.SH 診断
+.sp
+.LP
+2 分間に 10 回以上、\fB/etc/inittab\fR 内の 1 つのエントリが再起動されていることを検出すると、\fBinit\fR はそのエントリのコマンド文字列に誤りがあるとみなして、システムコンソール上にエラーメッセージを表示します。さらに 5 分経過するか、あるいはユーザーが生成した \fBinit\fR コマンドからシグナルを受信するまで、init はそのエントリを再起動することを拒否します。このようにすることで、\fBinittab\fR ファイルに入力ミスがあった場合や \fB/etc/inittab\fRで参照されているプログラムが削除された場合でも、\fBinit\fR がシステムリソースを使い果たすのを防止できます。
+.SH 注意事項
+.sp
+.LP
+\fBinit\fR を実行できるのは、特権ユーザーだけです。
+.sp
+.LP
+\fB/etc/inittab\fR で、\fBS\fR または \fBs\fR 状態をむやみに使用してはいけません。このファイルを変更するときに注意すべきことは、この状態を \fBinitdefault\fR 以外の行に追加しないことです。
+.sp
+.LP
+\fB/etc/inittab\fR の \fBinitdefault\fR エントリでデフォルトの状態が指定されていない場合は、状態 \fB6\fR になります。その結果、システムはファームウェアへのアクセスとリブートを繰り返すループに陥ります。
+.sp
+.LP
+システムのブート時に \fButmpx\fR ファイルを作成できない場合、システムは \fB/etc/inittab\fR の \fBinitdefault\fR エントリで指定されている状態に関係なく、"\fBs\fR" の状態でブートします。\fB/var\fR ファイルシステムにアクセスできない場合には、この状況が発生することがあります。
+.sp
+.LP
+システムが \fBS\fR または \fBs\fR 状態へ移行するときに、\fB/etc/nologin\fR ファイル (\fBnologin\fR(4) を参照) が作成されます。その後、実行レベル 2 に移行すると、/etc/rc2.d ディレクトリにあるスクリプトによってこのファイルが削除されます。
+.sp
+.LP
+\fBinit\fR は内部通信に名前付きパイプ \fB/var/run/initpipe\fR を使用します。

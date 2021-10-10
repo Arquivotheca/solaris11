@@ -1,0 +1,104 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+#	Common targets for sun4u CHALUPA implementation specific modules.
+#
+
+.KEEP_STATE:
+
+$(TONICBUILD)include $(UTSCLOSED)/../Makefile.tonic
+
+#
+# Rules for implementation subdirectories.
+#
+$(ROOT_CHALUPA_DIR): $(ROOT_PLAT_DIR)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_MOD_DIR): $(ROOT_CHALUPA_DIR)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_DRV_DIR_32): $(ROOT_CHALUPA_MOD_DIR)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_DRV_DIR_64): $(ROOT_CHALUPA_DRV_DIR_32)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_MISC_DIR_32): $(ROOT_CHALUPA_MOD_DIR)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_MISC_DIR_64): $(ROOT_CHALUPA_MISC_DIR_32)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_CRYPTO_DIR_32): $(ROOT_CHALUPA_MOD_DIR)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_CRYPTO_DIR_64): $(ROOT_CHALUPA_CRYPTO_DIR_32)
+	-$(INS.dir)
+
+$(USR_CHALUPA_DIR): $(USR_PLAT_DIR)
+	-$(INS.dir)
+
+$(USR_CHALUPA_INC_DIR): $(USR_CHALUPA_DIR)
+	$(INS.slink4)
+
+$(USR_CHALUPA_ISYS_DIR): $(USR_CHALUPA_INC_DIR)
+	$(INS.dir)
+
+#
+# This is an outrageously disgusting hack. As it turns out,
+# the contents of $USR_CHALUPA/sbin are all delivered by the open
+# part of the tree, so all we really really need is a symlink
+# for this closed platform to the architecture's sbin dir
+$(USR_CHALUPA_SBIN_DIR): $(USR_CHALUPA_DIR)
+	$(RM) $(USR_CHALUPA_SBIN_DIR)
+	$(SYMLINK) ../SUNW,Sun-Fire-V240/sbin $(USR_CHALUPA_SBIN_DIR)
+	if [ -z "$(TONICBUILD)" ]; then \
+		$(RM) \
+		$(USR_CHALUPA_SBIN_DIR:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+		$(SYMLINK) ../SUNW,Sun-Fire-V240/sbin \
+		$(USR_CHALUPA_SBIN_DIR:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	fi
+
+
+$(LINKED_PLATFORMS:%=$(ROOT_PLAT_DIR)/%): $(ROOT_PLAT_DIR)
+	$(INS.slink3)
+
+$(LINKED_PLATFORMS:%=$(USR_PLAT_DIR)/%): $(USR_PLAT_DIR)
+	$(INS.slink3)
+
+$(USR_CHALUPA_LIB_DIR): $(USR_CHALUPA_DIR)
+	-$(INS.dir)
+
+$(ROOT_CHALUPA_MISC_DIR)/%: $(OBJS_DIR)/% $(ROOT_CHALUPA_MISC_DIR)
+	$(INS.file)
+
+$(ROOT_CHALUPA_DRV_DIR)/%: $(OBJS_DIR)/% $(ROOT_CHALUPA_DRV_DIR) FRC
+	$(INS.file)
+
+#
+#	Include common targets.
+#
+include $(UTSCLOSED)/sun4u/chalupa/Makefile.rules
+include $(UTSCLOSED)/sun4u/Makefile.targ

@@ -1,0 +1,154 @@
+'\" te
+.\" Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" To view license terms, see http://www.opensource.org/licenses/cpl1.0.txt
+.\" Portions Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH builtin 1 "2007 年 5 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+builtin \- ksh 組み込み関数によるシェル組み込みの追加、削除、または表示
+.SH 形式
+.LP
+.nf
+\fBbuiltin\fR [\fB-ds\fR] [\fB-f\fR \fIlib\fR] [\fIpathname\fR ...]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBksh\fR \fBbuiltin\fR コマンドは、現在のシェル環境内で組み込みコマンドを追加、削除、または表示します。組み込みコマンドは現在のシェルプロセス内で実行されるため、現在のシェルに副作用を引き起こす場合があります。ほとんどのシステムでは、組み込みコマンドの起動時間は、個別のプロセスを作成するコマンドの 10 分の 1 から 100 分の 1 未満になります。
+.sp
+.LP
+指定した \fIpathname\fR ごとに、パス名のベース名に基づいて組み込み名が決定されます。ベース名ごとに、シェルは、組み込み名の先頭に \fBb_\fR が付加された C レベルの関数を現在のシェル内で検索します。\fIpathname\fR にスラッシュ (\fB/\fR) が含まれる場合、組み込みコマンドは \fIpathname\fR にバインドされています。パス名にバインドされた組み込みコマンドが実行されるのは、パス検索時に見つかった最初の実行可能ファイルが \fIpathname\fR である場合だけです。それ以外の場合、組み込みコマンドはパス検索を実行する前に見つかります。 
+.sp
+.LP
+\fIpathname\fR が指定されていない場合、\fBbuiltin\fR は現在の組み込みコマンドの一覧、または \fB-s\fR オプションが指定されているときには特殊な組み込みコマンドだけを標準出力に表示します。 パス名にバインドされた組み込みコマンドのフルパス名が表示されます。 
+.sp
+.LP
+組み込みコマンドを含むライブラリを指定するには、\fB-f\fR オプションを使用します。ライブラリに \fBlib_init()\fR という名前の関数が含まれる場合、ライブラリの読み込み時にこの関数が引数 \fB0\fR を付けて呼び出されます。\fBlib_init()\fR 関数を使用して組み込みコマンドを読み込むには、適切な C レベル関数を呼び出します。この場合、C レベル関数の名前に制限はありません。
+.sp
+.LP
+C レベル関数は、3 つの引数を付けて呼び出されます。最初の 2 つの引数は \fBmain()\fR と同じで、3 番目の引数はポインタです。
+.sp
+.LP
+制限付きシェルから \fBksh\fR \fBbuiltin\fR コマンドを呼び出すことはできません。 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 10n
+.rt  
+指定した各組み込みコマンドを削除します。特殊な組み込みコマンドは削除できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIlib\fR\fR
+.ad
+.RS 10n
+.rt  
+動的リンクの存在するシステムでは、組み込みコマンドの読み込みおよび検索は共有ライブラリ \fIlib\fR 内で行われます。 
+.sp
+ライブラリの検索は、\fB$PATH\fR およびシステム依存ライブラリディレクトリ内で行われます。システム依存共有ライブラリの接頭辞または接尾辞は省略できます。ライブラリが読み込まれると、そのシンボルを現在および後続の \fBbuiltin\fR の呼び出しで使用できるようになります。複数のライブラリを指定するには、\fBbuiltin\fR を別個に呼び出します。ライブラリは、指定された順序とは逆の順序で検索されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 10n
+.rt  
+特殊な組み込みコマンドだけを表示します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpathname\fR\fR
+.ad
+.RS 12n
+.rt  
+\fIpathname\fR を指定します。パス名のベース名に基づいて組み込み名が決まります。 
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBbuiltin\fR コマンドを読み込む
+.sp
+.LP
+次の例では、\fBbuiltin\fR コマンド \fBmycmd\fR をライブラリ \fBlibfoo.so\fR から読み込みます。
+
+.sp
+.in +2
+.nf
+example% builtin -f foo mycmd
+.fi
+.in -2
+.sp
+
+.SH 著者
+.sp
+.LP
+David Korn、\fBdgk@research.att.com\fR
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBksh\fR(1), \fBwhence\fR(1), \fBattributes\fR(5)

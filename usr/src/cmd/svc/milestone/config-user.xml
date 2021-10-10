@@ -1,0 +1,557 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+
+ NOTE:  This service manifest is not editable; its contents will
+ be overwritten by package or patch operations, including
+ operating system upgrade.  Make customizations in a different
+ file.
+-->
+<service_bundle type='manifest' name='system:system-config-user'>
+
+<service
+	name='system/config-user'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true'/>
+
+	<single_instance/>
+
+	<!-- system/config-user has to depend upon system/filesystem/minimal,
+	     since it works with following assumptions which in general
+	     are not guaranteed until system/filesystem/minimal comes online:
+	      - writable root filesystem
+	      - mounted /usr filesystem
+	      - mounted /var filesystem (can be created as a separate
+                filesystem in ROZR type of zone)
+        -->
+	<dependency name='fs-minimal'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/system/filesystem/minimal:default' />
+	</dependency>
+
+	<!--
+	 During system configuration, explicitly wait until manifest-import
+	 is online and has imported the new profile explicitly.
+	-->
+	<dependency
+		name='manifest-import'
+		grouping='optional_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/manifest-import' />
+	</dependency>
+
+        <dependent
+                name='systemconfiguser_self-assembly-complete'
+                grouping='optional_all'
+                restart_on='none'>
+                <service_fmri value='svc:/milestone/self-assembly-complete' />
+        </dependent>
+
+	<!-- We want this service up and running in single user mode,
+	     and if this service fails to configure user/root account
+	     we want to force system to end up in single-user mode,
+	     so that user could login as a 'root' and repair the system. -->
+	<dependent
+	    name='systemconfiguser_singleuser'
+            grouping='require_all'
+            restart_on='none'>
+            <service_fmri value='svc:/milestone/single-user' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/svc-config-user start'
+		timeout_seconds='0' />
+
+	<exec_method
+		type='method'
+		name='unconfigure'
+		exec='/lib/svc/method/svc-config-user unconfigure'
+		timeout_seconds='0' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='0' />
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec=':true'
+		timeout_seconds='0' />
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring'
+			value='transient' />
+	</property_group>
+
+	<!-- The following property group is used only at install
+	     time to configure an initial user account -->
+	<property_group name='user_account' type='application'>
+		<stability value='Evolving'/>
+		<propval name='read_authorization' type='astring'
+		    value='solaris.smf.read.system-config' />
+		<propval name='login' type='astring' value=''/>
+		<propval name='password' type='astring' value=''/>
+		<propval name='description' type='astring' value=''/>
+		<propval name='shell' type='astring' value=''/>
+		<propval name='uid' type='count' value='0'/>
+		<propval name='gid' type='count' value='0'/>
+		<propval name='profiles' type='astring' value=''/>
+		<propval name='roles' type='astring' value=''/>
+		<propval name='sudoers' type='astring' value=''/>
+		<propval name='type' type='astring' value=''/>
+		<propval name='expire' type='astring' value=''/>
+		<propval name='home_zfs_dataset' type='astring' value=''/>
+		<propval name='home_mountpoint' type='astring' value=''/>
+		<propval name='autohome' type='astring' value=''/>
+	</property_group>
+
+	<!-- The following property group is used only at install
+	     time to configure the root account -->
+	<property_group name='root_account' type='application'>
+		<stability value='Evolving' />
+		<propval name='read_authorization' type='astring'
+		    value='solaris.smf.read.system-config' />
+		<propval name='password' type='astring' value='' />
+		<propval name='type' type='astring' value=''/>
+		<propval name='expire' type='astring' value=''/>
+	</property_group>
+
+	<!-- The following property group is used only during unconfiguration
+	     of initial user account -->
+
+	<property_group name='configured_user' type='application'>
+		<stability value='Evolving' />
+		<propval name='login' type='astring' value=''/>
+	</property_group>
+
+	<!-- The following property group is used to control
+	     process of system configuration/unconfiguration --> 
+	<property_group name='sysconfig' type='application'>
+		<stability value='Evolving' />
+
+		<!-- Configuration group served by this smf service. -->
+		<propval name='group' type='astring' value='users'/>
+
+		<!-- Configuration of user/root acount does not support
+		     direct reconfiguration -->
+		<propval name='reconfigurable' type='boolean' value='false'/>
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+configure root and user account
+			</loctext>
+		</common_name>
+		<description>
+			<loctext xml:lang='C'>
+Provides the framework for system configuration of
+the root and initial user accounts.
+			</loctext>
+		</description>
+		<documentation>
+			<manpage
+				title='sysconfig'
+				section='1M'
+			manpath='/usr/share/man' />
+		</documentation>
+
+		<pg_pattern name='user_account' type='application'
+		    required='false'>
+			<common_name>
+				<loctext xml:lang='C'>
+user account parameters
+				</loctext>
+			</common_name>
+			<description>
+				<loctext xml:lang='C'>
+used to configure an initial user account
+see usermod(1M) for more information
+				</loctext>
+			</description>
+
+			<prop_pattern name='read_authorization' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+read authorization property.
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+provides read authorization
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+				<values>
+					<value name='solaris.smf.read.system-config'>
+						<description>
+							<loctext xml:lang='C'>
+general/action_authorization property that specifies read authorization service
+actions to be requested for the config-user service instance
+							</loctext>
+						</description>
+					</value>
+				</values>
+			</prop_pattern>
+
+			<prop_pattern name='login' type='astring'
+			    required='true'>
+				<common_name>
+					<loctext xml:lang='C'>
+user login
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+user login value is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='password' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+user password
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+user password value is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='description' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+user account description 
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+user account description value is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='shell' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+user shell
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+default shell is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='uid' type='count'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+user uid value
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+uid value is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='gid' type='count'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+user gid value
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+gid value is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='profiles' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+execution profiles
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+see prof_attr(4) for more information
+					</loctext>
+				</description>
+				<cardinality min='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='roles' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+user roles
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+user roles is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='sudoers' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+sudoers 
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+adds an entry into the /etc/sudoers file
+see sudoers(4) for more information
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='type' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+type field for user_attr
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+see user_attr(4) for more details
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='expire' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+expire
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+Expiration date for login. If set to 0, user will be forced to change
+password at the next login by expiring the password.
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='home_zfs_dataset' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+zfs home dataset
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+home directory ZFS dataset value is defined during configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='home_mountpoint' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+home mountpoint 
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+home directory mountpoint is defined during system configuration
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='autohome' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+autohome mountpoint
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+entry in /etc/auto_home file 
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+
+		<pg_pattern name='root_account' type='application'
+		    required='false'>
+			<common_name>
+				<loctext xml:lang='C'>
+system configuration root account parameters
+				</loctext>
+			</common_name>
+			<description>
+				<loctext xml:lang='C'>
+used at install time to configure a root account
+				</loctext>
+			</description>
+
+			<prop_pattern name='read_authorization' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+read authorization property.
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+Provides read authorization
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+				<values>
+					<value name='solaris.smf.read.system-config'>
+						<description>
+							<loctext xml:lang='C'>
+general/action_authorization property that specifies read authorization service actions to
+be requested for the config-user service instance
+							</loctext>
+						</description>
+					</value>
+				</values>
+			</prop_pattern>
+
+			<prop_pattern name='password' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+root password
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+Root password value is defined during configuration.
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='type' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+type field for user_attr
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+See user_attr(4) for more details. 
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+
+			<prop_pattern name='expire' type='astring'
+			    required='false'>
+				<common_name>
+					<loctext xml:lang='C'>
+expire
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+Expiration date for login. If set to 0, user will be forced to to change root
+password at the next login by expiring the password.
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+
+		<pg_pattern name='configured_user' type='application'
+	    	    required='false'>
+			<common_name>
+				<loctext xml:lang='C'>
+system configuration configured user
+				</loctext>
+			</common_name>
+			<description>
+				<loctext xml:lang='C'>
+Used during unconfiguration of the initial user account
+				</loctext>
+			</description>
+			<prop_pattern name='login' type='astring'
+			    required='true'>
+				<common_name>
+					<loctext xml:lang='C'>
+configured user login
+					</loctext>
+				</common_name>
+				<description>
+					<loctext xml:lang='C'>
+The login for the configured user. This value is defined during configuration.
+					</loctext>
+				</description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+</service>
+</service_bundle>

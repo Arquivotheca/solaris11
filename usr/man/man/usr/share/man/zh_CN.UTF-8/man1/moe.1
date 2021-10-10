@@ -1,0 +1,180 @@
+'\" te
+.\"  Copyright (c) 2005, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH moe 1 "2011 年 6 月 8 日" "SunOS 5.11" "用户命令"
+.SH 名称
+moe \- 显示路径名的最佳扩展
+.SH 用法概要
+.LP
+.nf
+\fBmoe\fR [\fB-c\fR] [\fB-32\fR | \fB-64\fR] [\fB-s\fR | \fB-v\fR] \fIpath\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBmoe\fR 实用程序显示包含保留的运行时链接程序标记的路径名的最佳扩展。这些标记可用于定义动态对象中的依赖项、filtee 和运行路径。这些运行时标记的扩展为选择能够在该计算机上以最佳性能运行的对象和搜索路径提供了灵活的机制。参见 \fBld.so.1\fR(1)。
+.sp
+.LP
+例如，标记 \fB$HWCAP\fR 可用于表示过滤器和依赖项。此标记的运行时解释使所分析的一系列对象能够确定它们是否适合随某个进程装入。这些对象根据每个对象需要执行的硬件功能排序。\fBmoe\fR 返回最适合在当前平台上执行的对象的名称。
+.sp
+.LP
+\fBmoe\fR 通过将所提供的 \fIpath\fR 传递到 \fBdlmopen\fR(3C)，同时传递 \fBRTLD_FIRST\fR 标志来分析路径名称。因此，保留标记的扩展是由 \fBld.so.1\fR 执行的，就像在正在执行的进程中发生的扩展一样。尽管使用 \fBdlmopen()\fR 调用可对多个对象进行分析，但是 \fBRTLD_FIRST\fR 标志可确保只处理最佳对象。
+.sp
+.LP
+缺省情况下，\fBmoe\fR 对指定的 \fIpath\fR 分析两次。第一次分析会查找 32 位对象。第二次分析（如果适用）会查找 64 位对象。通常，32 位对象和 64 位对象分别被置于不同的目录中。这些目录的名称通常能够反映目录所包含的对象类。如果 32 位对象和 64 位对象占用同一目录，可通过多次传递 \fBmoe\fR 捕获所有实例。如果用户无法从所指定的路径名推断该目录可能包含的对象类，也可以灵活地使用多次传递。
+.sp
+.LP
+有关运行时链接程序执行的保留标记扩展的完整说明，请参阅\fI《Linker and Libraries Guide》\fR。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-32\fR\fR
+.ad
+.RS 7n
+.rt  
+仅分析 32 位对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-64\fR\fR
+.ad
+.RS 7n
+.rt  
+仅分析 64 位对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 7n
+.rt  
+在每个路径名之前加上对象类作为前缀。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 7n
+.rt  
+无提示。不显示任何最佳名称或错误诊断消息。仅提供一个错误返回值。此选项只有与 \fB-32\fR 和 \fB-64\fR 选项一起使用时才有意义。\fB-s\fR 选项不可与 \fB-v\fR 选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 7n
+.rt  
+详细。如果无法确定最佳扩展名，则会向标准错误写入一条错误诊断消息。\fB-v\fR 选项不可与 \fB-s\fR 选项一起使用。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpath\fR\fR
+.ad
+.RS 8n
+.rt  
+要扩展的路径名。
+.RE
+
+.SH 示例
+.sp
+.LP
+以下示例使用 \fBmoe\fR 显示了 \fB/usr/lib/libc\fR 目录中的对象的最佳扩展。此目录包含一系列 Intel 对象，构建这些对象是为了使用各种硬件功能。
+.sp
+.in +2
+.nf
+% \fBmoe '/usr/lib/libc/$HWCAP'\fR
+/usr/lib/libc/libc_hwcap.so.1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-c\fR 选项可用于明确最佳对象的类。
+.sp
+.in +2
+.nf
+% \fBmoe -c '/usr/lib/libc/$HWCAP'\fR
+32-bit: /usr/lib/libc/libc_hwcap.so.1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下示例使用 \fBmoe\fR 显示了 \fB/opt/ISV/cpu\fR 目录分层结构下的对象的最佳扩展。这些目录包含一系列针对各种平台构建的 SPARC 对象。
+.sp
+.in +2
+.nf
+% \fBmoe -c -64 '/opt/ISV/$ISALIST/isa.so.1'\fR
+64-bit: /opt/ISV/sparcv9/isa.so.1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-v\fR 可用于诊断未返回最佳名称的实例。如果尝试将前面的路径名作为 32 位对象进行检查，将会产生下面的诊断消息。
+.sp
+.in +2
+.nf
+% \fBmoe -c -v -32 '/opt/ISV/$ISALIST/isa.so.1'\fR
+32-bit: /opt/ISV/sparcv9/isa.so.1: wrong ELF class: ELFCLASS64 
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+当使用 \fB-32\fR 或 \fB-64\fR 选项时，成功的最佳扩展将返回 \fB0\fR，其他情况下将返回非零值。未使用 \fB-32\fR 或 \fB-64\fR 选项时，返回值始终为 \fB0\fR。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/linker
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBld.so.1\fR(1)、\fBoptisa\fR(1)、\fBisalist\fR(1)、\fBdlmopen\fR(3C)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR

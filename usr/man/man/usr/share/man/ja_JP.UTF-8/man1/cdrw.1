@@ -1,0 +1,596 @@
+'\" te
+.\" Copyright (c) 2008, Sun Microsystems, Inc. All rights reserved. 
+.TH cdrw 1 "2008 年 7 月 10 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+cdrw \- CD の読み込みと書き込み
+.SH 形式
+.LP
+.nf
+\fBcdrw\fR \fB-i\fR [\fB-vSCO\fR] [\fB-d\fR \fIdevice\fR] [\fB-p\fR \fIspeed\fR] [\fIimage-file\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-a\fR [\fB-vSCO\fR] [\fB-d\fR \fIdevice\fR] [\fB-p\fR \fIspeed\fR] [\fB-T\fR \fIaudio-type\fR] \fIaudio-file1\fR 
+     [\fIaudio-file2\fR]...
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-x\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR] [\fB-T\fR \fIaudio-type\fR] \fItrack-number\fR \fIout-file\fR
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-c\fR [\fB-vSC\fR] [\fB-d\fR \fIdevice\fR] [\fB-p\fR \fIspeed\fR] [\fB-m\fR \fItmp-dir\fR] 
+     [\fB-s\fR \fIsrc-device\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-b\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR] all | session | fast
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-L\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-M\fR [\fB-v\fR] [\fB-d\fR \fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-l\fR [\fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBcdrw\fR \fB-h\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcdrw\fR コマンドを使用すると、データ CD および音楽 CD を作成することができます。また、音楽 CD から音楽トラックを取り出したり、データ DVD を作成したりできます。\fBcdrw\fR コマンドで CD あるいは DVD を作成するには、CD デバイスあるいは DVD デバイスが MMC 準拠である必要があります。
+.sp
+.LP
+\fB-d\fR オプションでデバイスを指定しない場合、\fBcdrw\fR はシステムに接続された CD ライターあるいは DVD ライターを探します。このようなデバイスがシステム上で 1 つだけ見つかった場合、\fBcdrw\fR コマンドはそのデバイスをデフォルトの CD ライターあるいは DVD ライターとして扱います。
+.sp
+.LP
+2 つ以上の CD ライターあるいは DVD ライターがシステムに接続されている場合は、\fB-d\fR オプションによりデバイスを指定してください。CDライターのデバイス名は、/dev/rdsk/cNtNdNsN、cNtNdNsN、cNtNdN のように指定されます。また、ボリュームマネージャで使用する \fBcdrom\fR や \fBcdrom1\fR などのシンボル名でも指定できます。\fB-l\fR オプションを使用すると、CD ライターあるいは DVD ライターのリストを表示できます。
+.sp
+.LP
+USB 外部記憶装置クラスに準拠した CD-RW あるいは DVD-RW デバイスをシステムに追加する方法については、\fBscsa2usb\fR(7D) を参照してください。
+.SS "データ CD の作成"
+.sp
+.LP
+データ CD を作成する場合、\fBcdrw\fR はトラック書き込みモード (Track-At-Once) を使用します。CD メディアに書き込むデータのファイルを指定するには、\fB-i\fR オプションを使用します。このオプションを指定しない場合、\fBcdrw\fR は標準入力からデータを読み込みます。
+.sp
+.LP
+どちらの場合でも、データを準備するときには、通常、\fBmkisofs\fR コマンドを使用して、ファイルおよびファイル情報を CD で使用される High Sierra フォーマットに変換します。コマンドの使用方法については「使用例」を参照してください。
+.SS "データ DVD の作成"
+.sp
+.LP
+\fBcdrw\fR は、\fBmkisofs\fR から生成されたイメージを使用することによって、シングルセッションのデータ DVD を DVD+RW デバイスあるいは DVD-RW デバイス上で作成できます。これらのディスクは HSFS ファイルシステムとしてマウントできます。データ DVD を作成するとき、\fBcdrw\fR は Disk-At-Once (DAO) 書き込みモードを使用します。このモードは、書き込みが完了したときにメディアを閉じることによって、それ以上セッションが追加されないようにします。DAO モードではイメージのサイズがあらかじめ判明している必要があるため、イメージを DVD メディアに書き込むときには、そのイメージをあらかじめ準備しておく必要があります。
+.SS "音楽 CD の作成"
+.sp
+.LP
+\fB-a\fR オプションを使用すると、音楽 CD を作成できます。このオプションには、1 つあるいは複数の音楽ファイルを指定できます。すべての音楽ファイルはサポートされた音楽形式でなければなりません。現在対応している形式は以下のものです。
+.sp
+.ne 2
+.mk
+.na
+\fBsun\fR
+.ad
+.RS 7n
+.rt  
+レッドブック CD-DA 形式の Sun .au ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBwav\fR
+.ad
+.RS 7n
+.rt  
+レッドブック CD-DA 形式の RIFF (.wav) ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcda\fR
+.ad
+.RS 7n
+.rt  
+生の CD 音楽データを含む .cda ファイル (リトルエンディアン 16 bit PCM ステレオ 44.1 KHz サンプリング)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBaur\fR
+.ad
+.RS 7n
+.rt  
+生の CD データを含む .aur ファイル (ビッグエンディアン)
+.RE
+
+.sp
+.LP
+音楽形式が指定されていない場合は、\fBcdrw\fR はファイルの拡張子により音楽形式を認識しようとします。拡張子の大文字小文字は無視されます。\fB-T\fR オプションにより音楽形式を指定した場合は、指定されたすべてのファイルの音楽形式として扱われます。また、\fB-cdrw\fR は音楽トラックを書き込んだ後セッションをクローズします。したがって、書き込まれるトラックは 1 つのコマンド行で指定する必要があります。
+.SS "音楽の取り出し"
+.sp
+.LP
+\fBcdrw\fR に \fB-x\fR オプションを指定すると、音楽 CD から音楽データを取り出すこともできます。CD にはレッドブック CD-DA 形式のトラックが存在する必要があります。デフォルトでは、出力の形式はファイルの拡張子に応じたものになります。\fB-T\fR オプションを使用すると、出力形式を \fBsun\fR、\fBwav\fR、\fBcda\fR、\fBaur\fR のいずれかに指定できます。
+.SS "CD のコピー"
+.sp
+.LP
+\fBcdrw\fR はシングルセッションのデータ CD-ROM やレッドブックの音楽 CD のコピーに使用できます。CD をコピーする場合、\fBcdrw\fR は指定されたソースデバイスを探します。\fB-c\fR オプション使用時にソースデバイスが指定されていない場合は、現在の書き込み用 CD デバイスがソースデバイスとみなされます。\fBcdrw\fR は一時ファイルに音楽トラックを取り出し、現在の書き込み用 CD デバイスに空の書き込み可能 CD-R/CD-RW メディアが入っているかどうかを調べます。メディアが見つからない場合、空の書き込み可能 CD メディアを現在の CD ライターに挿入します。デフォルトの一時ディレクトリに十分な領域がない場合、\fB-m\fR オプションを使用して代替のディレクトリを指定できます。
+.SS "CD-RW あるいは DVD-RW メディアの消去"
+.sp
+.LP
+ユーザーは再書き込みする前に CD-RW メディアを消去する必要があります。\fB-b\fR オプションは以下の消去方法をサポートしています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsession\fR\fR
+.ad
+.RS 11n
+.rt  
+最後のセッションを消去する
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfast\fR\fR
+.ad
+.RS 11n
+.rt  
+メディア全体を最小限消去する
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 11n
+.rt  
+メディア全体を完全に消去する
+.RE
+
+.sp
+.LP
+session 消去では \fBcdrw\fR は最後のセッションを消去します。セッションが 1 つしか書き込まれていない CD-RW (たとえば、このツールで作成したデータあるいは音楽 CD-RW) の場合、記録された部分だけが消去されます。ほかの空の部分は処理されません。したがって、メディア全体を消去する場合よりも高速です。DVD メディアの場合は、\fB-b session\fR を指定するとメディア全体が消去されます。
+.sp
+.LP
+\fBfast\fR 消去は、最初のセッションの \fBPMA\fR と \fBTOC\fR だけを削除することで、メディア全体を最小限消去します。メディア上にあるユーザーデータや後続のトラックなどは消去しません。それでも、このメディアは空のディスクとして処理されます。メディアを完全に消去する必要がある場合は、\fBall\fR オプションを使用します。
+.sp
+.LP
+\fBall\fR 消去は、マルチセッションの CD、最後のセッションがクローズされていない場合、CD のステータスが不明な場合、ユーザーが CD 全体を消去したい場合に使用してください。この場合、\fBcdrw\fR はディスク全体を消去します。
+.sp
+.LP
+DVD+RW メディアは消去をサポートしません。DVD+RW メディアを再利用するには、単に、新しいイメージをそのメディアに書き込みます。その後、\fBcdrw\fR は既存のメディアをフォーマットおよび上書きします。
+.SS "デバイスリストおよびメディアのステータスのチェック"
+.sp
+.LP
+システムに接続されている CD ライターあるいは DVD ライターのリストを表示するには、\fB-l\fR オプションを使用しますまた、メディアによっては \fB-M\fR オプションによって、消去のステータスや内容リスト (TOC) が表示されます。また、\fB-M\fR オプションは、最後のセッションの開始アドレスや次の書き込み可能アドレスも表示します。この情報は、\fB-O\fR オプションを指定してマルチセッション CD を作成するときに一緒に使用されます。詳細は、SUNWfsman パッケージ内の \fBmkisofs\fR(8) のマニュアルページ (\fB/usr/share/man/man8/mkisofs.8\fR) を参照してください。 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+音楽 CD を作成します。少なくとも 1 つの音楽ファイル (\fIaudio-file\fR) を指定する必要があります。最大 99 までの音楽トラックを指定することができます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 6n
+.rt  
+CD-RW あるいは DVD-RW メディアを消去します。消去する方法として、\fBall\fR、\fBfast\fR、または \fBsession\fR のいずれかの引き数を指定します。DVD+RW メディアは消去をサポートしません。しかし、消去しなくても、そのまま上書きできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+CD をコピーします。他に引き数の指定がない場合、cdrw はデフォルトの CD 書き込みデバイスをソースデバイスとみなします。この場合、コピー処理はソースメディアを一時ディレクトリに読み込み、コピー処理を続けるために空のメディアをドライブに入れるようにユーザーに要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 6n
+.rt  
+このオプションは廃止または互換性がなくなる可能性があります。 
+.sp
+このオプションは、\fBcdrw\fR でドライブを照会してメディアの容量を確認する場合に使用します。これは、現在のデフォルトの動作です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 6n
+.rt  
+CD あるいは DVD 書き込みを行うデバイスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 6n
+.rt  
+ヘルプ。使用法を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+データ CD あるいは DVD を作成するイメージファイルを指定します。ファイルのサイズは、メディアに書き込める容量未満である必要があります。また、ファイルの位置は、NFS マウントされたファイルシステムではなく、ローカルで利用できる位置である必要があります。これは、CD 書き込み処理が、途切れない連続したデータの供給を必要とするためです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+システムで利用できるすべての CD ライターあるいは DVD ライターのリストを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 6n
+.rt  
+ディスクを閉じます。前回の書き込み操作の後、メディアが開いたままである場合に、そのメディアを閉じて、それ以上書き込まないようにします。この処理を行うことができるのは、再書き込み可能 CD-RW メディアだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 6n
+.rt  
+CD あるいは DVD をコピーする際にトラックデータを置く一時ディレクトリ (デフォルトの一時ディレクトリ以外) を指定します。代替の一時ディレクトリが必要になる理由は、CD に含まれるデータ量が非常に多い場合があるためです。たとえば、80 分の音楽 CD の場合は 800M バイト、DVD の場合は 4.7G バイトのデータ量になることがあります。デフォルトの一時ディレクトリには十分な容量がない可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.RS 6n
+.rt  
+メディアのステータスを表示します。\fBcdrw\fR はメディアが空かどうか、内容リスト (TOC)、最後のセッションの開始アドレス、および、ディスクがオープンな場合は次の書き込み可能アドレスを表示します。DVD+RW は消去をサポートしません。また、メディアには常にいくつかの内容が入っています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.RS 6n
+.rt  
+ディスクをオープンのままにします。\fBcdrw\fR は通常セッションをクローズしますが、マルチセッション CD を作成する場合は次のセッションを追加するために、オープンのままにしておきます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+CD ライターの書き込み速度を設定します。たとえば、\fB-p\fR \fB4\fR は 4 倍速で書き込みます。オプションの指定がない場合、\fBcdrw\fR は CD ライターのデフォルトの書き込み速度を使用します。オプションが指定された場合、\fBcdrw\fR はドライブに指定された速度での書き込みを設定しようとしますが、実際にドライブがその速度で書き込めるという保証はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+CD をコピーするソースデバイスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.RS 6n
+.rt  
+疑似書き込みモードです。このモードでは、\fBcdrw\fR は CD ライターのレーザーをオフにして動作します。したがってメディアにはデータは書き込まれません。システムが CD ライターに指定された書き込み速度で、十分にデータを提供できるかどうか調べる場合にこのオプションを使用します。
+.sp
+CD-R、CD-RW (MRW 形式をのぞく)、DVD-R、および DVD-RW メディアは、疑似書き込みモード (\fB-S\fR) をサポートしています。DVD-RAM、DVD+R、DVD+RW、すべての MRW 形式のメディア、およびその他の一部のメディアは、疑似書き込みモード (\fB-S\fR) をサポートしていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.RS 6n
+.rt  
+音楽 CD を作成するために読み出す音楽ファイルあるいは取り出す音楽ファイルの形式を指定します。音楽形式 (\fIaudio-type\fR) には、\fBsun\fR、\fBwav\fR、\fBcda\fR、\fBaur\fR のいずれかを指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+冗長モード。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 6n
+.rt  
+音楽トラックから音楽データを取り出します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRデータ CD あるいは DVD の作成
+.sp
+.in +2
+.nf
+example% \fBcdrw -i /local/iso_image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRディレクトリからの CD あるいは DVD の作成
+.sp
+.LP
+以下は、\fB/home/foo\fR ディレクトリツリーから CD あるいは DVD を作成する例です。
+
+.sp
+.in +2
+.nf
+example% \fBmkisofs -r /home/foo 2>/dev/null | cdrw -i -p 1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRトラック番号を使用した音楽データの取り出し
+.sp
+.LP
+以下は、トラック番号が \fB1\fR の音楽トラックを \fB/home/foo/song1.wav\fR に取り出す例です。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -x -T wav 1 /home/foo/song1.wav\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR\fBwav\fR ファイルの使用
+.sp
+.LP
+以下は、ハードディスク上の \fBwav\fR ファイルから音楽 CD を作成する例です。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -a song1.wav song2.wav song3.wav song4.wav\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRCD-RW あるいは DVD-RW メディアの消去
+.sp
+.LP
+以下は、再書き込み可能メディアを消去する例です。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -b all\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR複数のドライブでのデータ CD あるいは DVD の作成
+.sp
+.LP
+以下は、複数の CD、DVD-R あるいは DVD-RW ドライブが接続されているシステムでデータ CD あるいは DVD を作成する例です。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -d c1t6d0s2 -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRデータ書き込み速度のチェック
+.sp
+.LP
+以下は、システムが書き込み処理に対して十分な速度で、CD-RW あるいは DVD ドライブにデータを提供できるかどうかを確認する例です。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -S -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR高優先度での実行
+.sp
+.LP
+以下は、優先順位を上げて \fBcdrw\fR を実行する例です (ルートのみ)。
+
+.sp
+.in +2
+.nf
+example# \fBpriocntl -e -p 60 cdrw -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRマルチセッションディスクの作成
+.sp
+.LP
+以下は、1 番目のセッションイメージを \fBmkisofs\fR で作成し、ディスクに記録した後、そのディスクを開いたままにしておく例です。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -O -i /home/foo/iso-image\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+オープンしたままのディスクには、\fBmkisofs\fR でイメージを作成する際に、\fBcdrw\fR が報告するセッション開始アドレスおよび次の書き込み可能なアドレスを使用して、ソフトウェアを追加することができます。
+
+.sp
+.in +2
+.nf
+example% \fBcdrw -M\fR
+
+Track No. |Type    |Start address
+----------+--------+-------------
+ 1        |Data    | 0
+Leadout   |Data    | 166564
+
+Last session start address: 162140
+Next writable address: 173464
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+example% \fBmkisofs -o /tmp/image2 -r -C 0,173464 -M \e
+   /dev/rdsk/c0t2d0s2 /home/foo\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件media/cdrw
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBaudioconvert\fR(1), \fBpriocntl\fR(1), \fBpolicy.conf\fR(4), \fBattributes\fR(5), \fBrbac\fR(5), \fBscsa2usb\fR(7D), \fBsd\fR(7D)
+.sp
+.LP
+SUNWfsman パッケージ内の \fBmkisofs\fR(8) (\fB/usr/share/man/man8/mkisofs.8\fR)
+.sp
+.LP
+\fI『Oracle Solaris Administration: Devices and File Systems』\fR
+.SH 注意事項
+.sp
+.LP
+CD 書き込み中、システムは一定の転送速度でドライブにデータを供給し続ける必要があります。CD 作成中は I/O 処理を最小限にし、不要なアプリケーションは終了しておくことをお勧めします。
+.sp
+.LP
+コピーの作成や音楽トラックの取り出しには MMC 準拠のソース CD-ROM ドライブの使用をお勧めします。CD ライターはこの目的のために使用できます。
+.sp
+.LP
+CD に書き込む前に、\fB-M\fR オプションを使用して、メディアが空であることを確認します。\fB-S\fR オプションの疑似モードを使用すると、システムが要求された書き込み速度でデータを提供できるかどうかをテストできます。ドライブがバッファアンダーラン保護をサポートする場合、\fBcdrw\fR はその保護を有効にして、ほとんどの機能停止から回復できます。システムが一定の速度でデータを提供できず、頻繁に機能停止する場合には、\fB-p\fR オプションを使用して、書き込み速度を落としてください。\fBpriocntl\fR(1) コマンドを使用すると、優先順位を上げて \fBcdrw\fR を実行できます。
+.sp
+.LP
+\fB-p\fR オプションを使用するのは、CD-R/RW ドライブの書き込み速度を変更できることが判明している場合だけです。一般に普及しているドライブでは、ドライブによって書き込み速度の設定コマンドの扱いが異なるため、注意してこのオプションを使用してください。
+.sp
+.LP
+\fBcdrw\fR コマンドは、\fBrbac\fR(5) を使用してデバイスに対するユーザーのアクセスを制御しています。デフォルトでは、\fBcdrw\fR にアクセスできるユーザーに制限はありませんが、特定のユーザーしかアクセスできないように設定することもできます。詳細は、\fI『Oracle Solaris Administration: Devices and File Systems』\fR を参照してください。
+.sp
+.LP
+CD を root 以外のユーザーで作成するには、\fBhal\fR を有効にして、ユーザーがコンソールにログインしている必要があります。\fBhal\fR (\fBsvc:/system/hal\fR SMF サービス) はデフォルトで有効になっているため、通常は特に操作する必要はありません。  
+.sp
+.LP
+ユーザーはコンソールにログインしている必要があります。\fB/dev/console\fR でもかまいません。以前は、ユーザーは \fBtelnet\fR や \fBssh\fR を使用してリモートでログインし、CD を作成できました。管理者がデフォルト構成を変更して \fBsolaris.device.cdrw\fR 承認していないかぎり、この操作は有効です。\fBpolicy.conf\fR(4) を参照してください。

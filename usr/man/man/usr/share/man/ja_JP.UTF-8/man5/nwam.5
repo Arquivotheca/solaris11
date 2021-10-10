@@ -1,0 +1,169 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nwam 5 "2011 年 6 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+nwam \- network auto-magic 構成の管理
+.SH 機能説明
+.sp
+.LP
+ネットワーク構成は、システムによって定義されたデフォルトポリシー規則またはユーザー定義のポリシー規則に従って、自動的に管理できます。この管理は \fBnwamd\fR デーモンによって実行されます。
+.sp
+.LP
+NWAM 機能は \fBnetwork/physical:default\fR SMF サービスによって提供されます。\fBnetcfg/active_ncp\fR プロパティーが NWAM NCP の名前に設定されている場合、NWAM 構成管理が有効になっています。一方、\fBnetcfg/active_ncp\fR プロパティーが \fBDefaultFixed\fR に設定されている場合は従来のネットワーク構成が実行されます。
+.SS "操作"
+.sp
+.LP
+自動 NCP で実装されているデフォルトの構成ポリシーでは、物理的に接続されている Ethernet リンクがすべてアクティブになり、使用可能な Ethernet リンクがない場合は 1 つの無線リンクがアクティブになります。アクティブなリンクの IP アドレスはすべて DHCP を使用して取得されます。このデフォルトポリシーは、代替のネットワーク構成プロファイル (NCP) を作成することによって変更できます。NCP を作成および変更するには、nwam-manager GUI ツールまたは \fBnwamd\fR(1M) コマンドを使用できます。
+.sp
+.LP
+以前のバージョンの NWAM サービスを使用していた場合は、\fB/etc/nwam/llp\fR 構成ファイルが作成されています。現在のバージョンの NWAM サービスにアップグレードしたときに、そのファイル内にある構成が User NCP に自動的に組み込まれます。
+.sp
+.LP
+NWAM 機能の自動動作を行うには、ネットワーク構成の管理を NWAM サービスに任せる必要があります。ネットワーク構成を手動で変更すると、新しいプロファイルがアクティブになったときや NWAM サービスが再起動されたときなど、条件が変化した場合に変更内容が失われる可能性があります。永続的に変更を加える場合は、外部ネットワーク修飾子 (ENM) を作成する方法をお勧めします。この修飾子は、必要に応じて NWAM サービスでアクティブ化または非アクティブ化することができます。
+.SS "サービスのプロパティー"
+.sp
+.LP
+形式は次のようになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIproperty_group/property_name\fR \fIproperty_type\fR \fIdefault_value\fR\fR
+.ad
+.sp .6
+.RS 4n
+機能説明
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/debug\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdaemon.debug\fR を使用したデバッグログを有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/autoconf\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+より適切な (より優先順位の高い) 選択肢がない場合に、オープンな WLAN に自動的に接続するかどうかを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/ncu_wait_time\fR count \fB60\fR\fR
+.ad
+.sp .6
+.RS 4n
+NCU (場合によっては、リンクとインタフェースの NCU ペア) が起動するのを待つ秒数。この時間が経過すると、次の使用可能な NCU を試します。起動操作は取り消されないため、最終的に成功する場合があります。その時点で、指定されている構成の条件に応じて、より優先順位の高い NCU がアクティブになり、他方は無効になることがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/condition_check_interval\fR count \fB120\fR\fR
+.ad
+.sp .6
+.RS 4n
+条件に応じてアクティブになるオブジェクトの条件確認を定期的に行う間隔 (秒単位)。最小値は 30 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/scan_interval\fR count \fB120\fR\fR
+.ad
+.sp .6
+.RS 4n
+無線スキャンを定期的に行う間隔 (秒単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/scan_level\fR astring \fBweak\fR\fR
+.ad
+.sp .6
+.RS 4n
+信号強度のしきい値。現在接続している AP がこの信号レベルより低下した場合、より信号の強い同等の AP (同じ ESSID を持つ) が使用可能であれば、現在の接続は切断され、より信号の強い AP に接続されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/strict_bssid\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+true の場合、以前接続した WLAN に接続するには、ESSID と BSSID が一致する必要があります。false の場合、一致する必要があるのは ESSID だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetcfg/active_ncp\fR astring \fBAutomatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在アクティブな NCP。ユーザーはこのプロパティーを設定しないようにしてください。再起動後も持続されるように NWAM サービスの内部で使用されます。現在アクティブな NCP を変更するための適切なユーザーインタフェースは、\fBnwam-manager\fR GUI または \fBnetadm\fR コマンドの \fBenable\fR サブコマンドです。
+.RE
+
+.sp
+.LP
+予約されている NCP 名 \fBDefaultFixed\fR を有効化すると、NWAM 自動構成管理が無効化され、従来の固定ネットワーク構成が有効化されます。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性「流動的」
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBnetcfgd\fR(1M), \fBnwamd\fR(1M), \fBsvadm\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+JDS/GNOME マニュアルページコレクションで利用可能な \fBnwam-manager(1M)\fR も参照してください。
+.SH 注意事項
+.sp
+.LP
+ネットワークサービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/network/physical:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvadm\fR(1M) を使用して実行できます。サービスステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。

@@ -1,0 +1,225 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nfsmapid 1M "22 Mar 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+nfsmapid \- NFS user and group id mapping daemon
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/nfs/nfsmapid\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnfsmapid\fR daemon maps to and from NFS version 4 \fBowner\fR and \fBowner_group\fR identification attributes and local \fBUID\fR and \fBGID\fR numbers used by both the NFS version 4 client and server.
+.sp
+.LP
+\fBnfsmapid\fR uses the \fBpasswd\fR and \fBgroup\fR entries in the \fB/etc/nsswitch.conf\fR file to direct how it performs the mappings.
+.sp
+.LP
+The \fBnfsmapid\fR daemon has no external, customer-accessible interfaces. You can, however, administratively configure \fBnfsmapid\fR in one of the following ways:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Specify the \fBnfsmapid_domain\fR parameter in the SMF for NFS using the \fBsharectl\fR(1M) command.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Specify the \fB_nfsv4idmapdomain\fR DNS resource record.
+.RE
+.sp
+.LP
+The currently selected NFSv4 domain is available in the file \fB/var/run/nfs4_domain\fR.
+.sp
+.LP
+Please refer to the \fISystem Administration Guide: Network Services\fR\fI\fR for further details.
+.SS "SMF Management"
+.sp
+.LP
+The \fBnfsmapid\fR service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/network/nfs/mapid
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.
+.sp
+.LP
+If it is disabled, it will be enabled by \fBmount_nfs\fR(1M), \fBshare_nfs\fR(1M), and \fBautomountd\fR(1M), unless its \fBapplication/auto_enable\fR property is set to \fBfalse\fR.
+.sp
+.LP
+\fBnfsmapid\fR caches a user's UID and GID. If a user subsequently changes a UID or GID, using one of the utilities listed below, the \fBnfsmapid\fR cache becomes stale. At this point, any NFS operation that gets or set attributes will result in the exchange of this stale information. To resolve this situation, restart \fBnfsmapid\fR, as follows:
+.sp
+.in +2
+.nf
+# \fBsvcadm restart svc:/network/nfs/mapid:default\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The startup SMF parameter designating a domain name (\fBnfsmapid_domain\fR) can be manipulated with the \fBsharectl\fR(1M) command.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnfsmapid_domain\fR\fR
+.ad
+.sp .6
+.RS 4n
+The setting for the NFS SMF parameter \fBnfsmapid_domain\fR overrides the domain used by \fBnfsmapid\fR for building and comparing outbound and inbound attribute strings, respectively. Also, this setting overrides any other mechanism for setting the NFSv4 domain. In the absence of a \fBnfsmapid_domain\fR setting, the \fBnfsmapid\fR daemon determines the NFSv4 domain as follows:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If a properly configured \fB/etc/resolv.conf\fR (see \fBresolv.conf\fR(4)) exists, \fBnfsmapid\fR queries specified nameserver(s) for the domain.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If a properly configured \fB/etc/resolv.conf\fR (see \fBresolv.conf\fR(4)) exists, but the queried name server does not have a proper record of the domain name, \fBnfsmapid\fR attempts to obtain the domain name through the \fBBIND\fR interface (see \fBresolver\fR(3RESOLV)).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If no \fB/etc/resolv.conf\fR exists, \fBnfsmapid\fR falls back on using the configured domain name (see \fBdomainname\fR(1M)), which is returned with the leading domain suffix removed. For example, for \fBwidgets.sales.acme.com\fR, \fBsales.acme.com\fR is returned.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If \fB/etc/resolv.conf\fR does not exist, no domain name has been configured (or no \fB/etc/defaultdomain\fR exists), \fBnfsmapid\fR falls back on obtaining the domain name from the host name, if the host name contains a fully qualified domain name (FQDN).
+.RE
+.RE
+
+.sp
+.LP
+If a domain name is still not obtained following all of the preceding steps, \fBnfsmapid\fR will have no domain configured. This results in the following behavior:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Outbound \fBowner\fR and \fBowner_group\fR attribute strings are encoded as literal ID's. For example, the UID 12345 is encoded as \fB12345\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnfsmapid\fR ignores the \fBdomain\fR portion of the inbound attribute string and performs name service lookups only for the user or group. If the user/group exists in the local system name service databases, then the proper UID/GID will be mapped even when no domain has been configured.
+.RE
+.sp
+.LP
+This behavior implies that the same administrative user/group domain exists between NFSv4 client and server (that is, the same UID/GIDs for users/groups on both client and server). In the case of overlapping ID spaces, the inbound attribute string could potentially be mapped to the wrong id. However, this is not functionally different from mapping the inbound string to \fBnobody\fR, yet provides greater flexibility. See \fBEXAMPLES\fR, below.
+.sp
+.LP
+The utilities that allow you to change UID and GID are:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusermod\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBuserdel\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgroupmod\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgroupdel\fR(1M)
+.RE
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/nfs4_domain\fR\fR
+.ad
+.RS 24n
+.rt  
+Contains the domain name currently used by NFSv4.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSetting Domain Name
+.sp
+.LP
+The following command uses \fBsharectl\fR to set the domain name.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p nfsmapid_domain=sun.com nfs\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fBnfsmapid_domain\fR property is described under \fBNOTES\fR, below.
+
+.LP
+\fBExample 2 \fRObtaining Domain Name
+.sp
+.LP
+The following command uses \fBsharectl\fR to obtain the current domain name.
+
+.sp
+.in +2
+.nf
+# \fBsharectl get -p nfsmapid_domain nfs\fR
+nfsmapid_domain=sun.com
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/nfs
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBautomountd\fR(1M), \fBdomainname\fR(1M), \fBgroupdel\fR(1M), \fBgroupmod\fR(1M), \fBmount_nfs\fR(1M), \fBsvcadm\fR(1M), \fBshare_nfs\fR(1M), \fBsharectl\fR(1M), \fBuserdel\fR(1M), \fBusermod\fR(1M), \fBresolver\fR(3RESOLV), \fBnfs\fR(4), \fBresolv.conf\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fISystem Administration Guide: Network Services\fR
+.SH NOTES
+.sp
+.LP
+The \fBnfsmapid\fR daemon might not exist in a future release of Solaris.

@@ -1,0 +1,387 @@
+#!/bin/ksh93 -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+PATH=/usr/bin:/usr/sbin
+export PATH
+
+DEFAULTONURI="http://ipkg.us.oracle.com/internal/solaris11/on/nightly"
+DEFAULTONPUB="on-nightly"
+DEFAULTONEXTRAURI="http://ipkg.us.oracle.com/internal/solaris11/on/extra"
+DEFAULTONEXTRAPUB="on-extra"
+
+usage()
+{
+	echo "usage: $0 [opts] [-s beName] -t beName"
+	echo "usage: $0 [opts] -r"
+	echo
+	echo "\t-d repodir : directory for repositories"
+	echo "\t-e uri : origin URI for extra repository"
+	echo "\t-E prefix : prefix for extra repository"
+	echo "\t-O : open mode, no extra repository will be used"
+	echo "\t-r : start repository servers only"
+	echo "\t-s : source BE to clone"
+	echo "\t-t : new BE name"
+	echo "\t-u uri : origin URI for redist repository"
+	echo "\t-U prefix:  prefix for redist repository"
+	echo "\t-v : verbose"
+	echo "\t-Z : skip updating zones"
+	echo
+	echo "Update to an ON build:"
+	echo "\tonu -t newbe -d /path/to/my/ws/packages/\`uname -p\`/nightly"
+	echo
+	echo "Update to the nightly build:"
+	echo "\tonu -t newbe"
+	echo
+	echo "Configure the publishers in the current BE:"
+	echo "\tonu -r -d /path/to/my/ws/packages/\`uname -p\`/nightly"
+	exit 1
+}
+
+exit_error()
+{
+	echo $*
+	cleanup
+	exit 2
+}
+
+cleanup()
+{
+	[ -d $tmpdir ] && beadm unmount -f $targetbe
+}
+
+do_cmd()
+{
+	[ $verbose -gt 0 ] && echo "$@"
+	"$@"
+	exit_code=$?
+	[ $exit_code -eq 0 ] && return
+	# pkg(1) returns 4 if "nothing to do", which is safe to ignore
+	[ $1 = "pkg" -a $exit_code -eq 4 ] && return
+	exit_error "$*" failed: exit code $exit_code
+}
+
+get_publisher_from_uri()
+{
+	local_uri=$1
+
+	publisher=
+
+	if [[ -x /usr/bin/pkgrepo ]]; then
+		publisher=`pkgrepo -s $local_uri get -F tsv \
+		    -H publisher/prefix | awk '{ print $3 }'`
+	fi
+
+	return $publisher
+}
+
+zonelist()
+{
+	typeset root=$1
+	typeset -i i=0
+	zoneadm -R "$root" list -ip | \
+	    while IFS=: read zid zname zstate zpath zuuid zbrand ziptype; do
+		typeset zroot=${zpath}
+		if [ "$zname" != global ]; then
+			zroot=${zpath}/root
+			[ "$no_zones" == 1 ] && continue
+
+			#
+			# Support before and after "ipkg" brand rename to
+			# "solaris"
+			#
+			[ "$zbrand" != ipkg -a "$zbrand" != solaris -a \
+			    "$zbrand" != sn1 ] && continue
+		fi
+		((i = $i + 1))
+		echo $i:$zname:"$zroot"
+	done
+}
+
+check_sysrepo()
+{
+	typeset root=$1
+
+	# no linked images means no sysrepo
+	[ -z "$lipkg" ] && return 1
+
+	susrepo_prop=$(pkg -R "$root" property -H use-system-repo |
+	    nawk '{print $2}')
+
+	#
+	# we should always get output unless the pkg command failed (in
+	# which case it should have generated an error message.)
+	#
+	[ -z "$susrepo_prop" ] && exit 1
+
+	echo $susrepo_prop | grep -i true >/dev/null
+	return $?
+}
+
+configure_publishers()
+{
+	typeset root=$1
+
+	# The publisher has changed from opensolaris.org to solaris, but
+	# we want to support both old clients and clients in transition
+	# between the two which have both publishers configured.  Thus,
+	# a failure of either of these shouldn't stop the onu.
+	pkg -R "$root" set-publisher --no-refresh --non-sticky \
+	    solaris > /dev/null 2>&1
+	pkg -R "$root" set-publisher --no-refresh --non-sticky \
+	    opensolaris.org > /dev/null 2>&1
+
+	# detect if the image is configured to use the sysrepo
+	sysrepo=""
+	check_sysrepo "$root" && sysrepo=true
+
+	if [ -z "$sysrepo" ]; then
+		# We'd use set-publisher -g, but we need to override even if
+		# there are current settings, so -O is the only real option.
+		do_cmd pkg -R "$root" set-publisher --no-refresh \
+		    -e -P -O $uri $redistpub
+
+		[ $open -eq 0 ] &&
+		    do_cmd pkg -R "$root" set-publisher --no-refresh \
+			-e --search-after=$redistpub -O $extrauri $extrapub
+	else
+		#
+		# we can't enable or change the ranking of syspub
+		# publishers, so just delete any old origins or mirrors.
+		# we ignore errors because these publishers might not be
+		# configured yet.
+		#
+		pkg -R "$root" set-publisher --no-refresh \
+		    -G '*' -M '*' $redistpub >/dev/null 2>&1
+
+		[ $open -eq 0 ] &&
+		    pkg -R "$root" set-publisher --no-refresh \
+		        -G '*' -M '*' $extrapub >/dev/null 2>&1
+	fi
+	do_cmd pkg -R "$root" refresh
+}
+
+uninstall_entire()
+{
+	typeset root=$1
+
+	pkg -R "$root" list pkg:/entire > /dev/null 2>&1 ||
+		return
+
+	#
+	# uninstall entire
+	#
+	# Here we ignore all child images because we don't want to
+	# recurse into them and try and sync them now.  We'll recurse
+	# into them when we do the update.
+	#
+	typeset ignore_children=""
+	[ -n "$lipkg" ] && ignore_children="-I"
+
+	do_cmd pkg -R "$root" uninstall $ignore_children -q pkg:/entire
+}
+
+update()
+{
+	typeset root=$1
+
+	#
+	# When updating we always ignore all children because the
+	# sysrepo configuration for those children reflects the current
+	# global zone configuration, and not the alternate root
+	# configuration that we've updated.  (once we have sysrepo
+	# support for images in alternate roots we should stop ignoring
+	# children and update all the images at once.)
+	#
+	ignore_children=""
+	[ -n "$lipkg" ] && ignore_children="-I"
+
+	do_cmd pkg -R "$root" image-update $ignore_children --accept
+}
+
+sourcebe=""
+targetbe=""
+uri=""
+extrauri=""
+repodir=""
+verbose=0
+open=0
+no_zones=0
+zone_warned=0
+reposonly=0
+
+trap cleanup 1 2 3 15
+
+while getopts :d:E:e:Ors:t:U:u:vZ i ; do
+	case $i in
+	d)
+		repodir=$OPTARG
+		;;
+	E)
+		extrapub=$OPTARG
+		;;
+	e)
+		extrauri=$OPTARG
+		;;
+	O)
+		open=1
+		;;
+	r)
+		reposonly=1
+		;;
+	s)
+		sourcebe=$OPTARG
+		;;
+	t)
+		targetbe=$OPTARG
+		;;
+	U)
+		redistpub=$OPTARG
+		;;
+	u)
+		uri=$OPTARG
+		;;
+	v)
+		verbose=1
+		;;
+	Z)
+		no_zones=1
+		;;
+	*)
+		usage
+	esac
+done
+shift `expr $OPTIND - 1`
+
+[ -n "$1" ] && usage
+
+if [ "$reposonly" -eq 1 ]; then
+	[ -n "$sourcebe" ] && usage
+	[ -n "$targetbe" ] && usage
+	[ "$no_zones" -eq 1 ] && usage
+else
+	[ -z "$targetbe" ] && usage
+fi
+[ -z "$uri" ] && uri=$ONURI
+[ -z "$uri" ] && uri=$DEFAULTONURI
+[ -z "$redistpub" ] && redistpub=$ONPUB
+[ -z "$extrauri" ] && extrauri=$ONEXTRAURI
+[ -z "$extrauri" ] && extrauri=$DEFAULTONEXTRAURI
+[ -z "$extrapub" ] && extrapub=$ONEXTRAPUB
+
+if [[ -n "$repodir" ]]; then
+	redistdir=$repodir/repo.redist
+	[ -d $redistdir ] || exit_error "$redistdir not found"
+	uri="file://$redistdir"
+	if [ $open -eq 0 ]; then
+		extradir=$repodir/repo.extra
+		[ -d $extradir ] || exit_error "$extradir not found"
+		extrauri="file://$extradir"
+	fi
+fi
+
+# If -U or ONPUB were not explicitly set, use the repository's
+# settings.  If that doesn't work, use the default.
+if [[ -z $redistpub ]]; then
+	redistpub=`get_publisher_from_uri $uri`
+	[ -z $redistpub ] && redistpub=$DEFAULTONPUB
+fi
+
+# If -E or ONEXTRAPUB were not explicitly set, use the repository's
+# settings.  If that doesn't work use the default.
+if [[ $open -eq 0 && -z $extrapub ]]; then
+	extrapub=`get_publisher_from_uri $extrauri`
+	[ -z $extrapub ] && extrapub=$DEFAULTONEXTRAPUB
+fi
+
+if [ "$reposonly" -eq 1 ]; then
+	configure_publishers /
+	exit 0
+fi
+
+createargs=""
+[ -n "$sourcebe" ] && createargs="-e $sourcebe"
+
+# ksh seems to have its own mktemp with slightly different semantics
+tmpdir=`/usr/bin/mktemp -d /tmp/onu.XXXXXX`
+[ -z "$tmpdir" ] && exit_error "mktemp failed"
+
+# create a new BE to update
+do_cmd beadm create $createargs $targetbe
+do_cmd beadm mount $targetbe $tmpdir
+
+# figure out how many zones we have
+zc=$(zonelist "$tmpdir" | tail -1 | nawk -F: '{print $1}')
+
+# check if we have a linked image aware version of pkg
+lipkg=""
+pkg list-linked --help >/dev/null 2>&1
+[ $? = 0 ] && lipkg=1
+
+if (( $zc > 1 )) && [ -n "$lipkg" ]; then
+	#
+	# we need to enable the sysrepo because we're going to be
+	# updating zones publisher config and telling zones to refresh
+	# their catalogs.  this requires that the sysrepo be up and
+	# running.
+	#
+	svcadm enable -s svc:/application/pkg/system-repository
+	svcadm enable -s svc:/system/zones-proxyd
+fi
+
+# update publishers and uninstall entire for all zones (including global)
+zonelist "$tmpdir" | while IFS=: read zi zname zroot; do
+	echo "Preparing zone: $zname ($zi/$zc)"
+	configure_publishers "$zroot"
+	uninstall_entire "$zroot"
+done
+
+if [ -n "$lipkg" ]; then
+	# only update the global zone.
+	echo "Updating"
+	update "$tmpdir"
+else
+	# update all zones (including global)
+	zonelist "$tmpdir" | while IFS=: read zi zname zroot; do
+		echo "Updating zone: $zname ($zi/$zc)"
+		update "$zroot"
+	done
+fi
+
+# finalize the new BE
+do_cmd bootadm update-archive -R $tmpdir
+do_cmd beadm activate $targetbe
+
+if (( $zc > 1 )) && [ -n "$lipkg" ]; then
+	echo
+	echo "ATTN: This system has zones on it.  The software in those"
+	echo "zones has not been updated.  After booting the new"
+	echo "BE ($targetbe) you must detach and attach -u all your zones."
+	echo "The attach -u will update the software in those zones."
+	echo
+fi
+
+cleanup
+exit 0

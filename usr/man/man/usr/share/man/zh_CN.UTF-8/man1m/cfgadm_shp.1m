@@ -1,0 +1,860 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH cfgadm_shp 1M "2009 年 8 月 25 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_shp \- 特定于 PCI Express 和标准 PCI 热插拔硬件的 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR]
+     [\fB-o\fR \fIhardware_options\fR] \fB-c\fR \fIfunction\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR]
+     [\fB-o\fR \fIhardware_options\fR] \fB-x\fR \fIhardware_function\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-s\fR \fIlisting_options\fR]
+     [\fB-o\fR \fIhardware_options\fR] \fB-x\fR \fIhardware_function\fR \fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-t\fR\fIap_id\fR [\fIap_id\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_function\fR]\fB-h\fR [\fIap_id\fR | \fIap_type\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+将 PCI Express 和标准 PCI 热插拔适配卡热插到允许热插拔系统中的相应可热插拔插槽中时，特定于 PCI Express 和标准 PCI 热插拔硬件的库 \fB/usr/lib/cfgadm/shp.so.1\fR 可通过 \fBcfgadm\fR 命令（请参见 \fBcfgadm\fR(1M)）提供相关支持。\fBcfgadm_pci\fR 库（请参见 \fBcfgadm_pci\fR(1M)）提供对其他 PCI 热插拔适配卡（除 PCI Express 和标准 PCI 热插拔卡之外的其他卡）的支持。除了本手册页中标注的以外，介于 PCI Express 热插拔和标准 PCI 热插拔之间的热插拔管理模型仍是相同的。
+.sp
+.LP
+对于 PCI 热插拔，特定 PCI 总线上的每个热插拔槽均可由该 PCI 总线的一个挂接点来表示。
+.sp
+.LP
+一个挂接点由一个插口和一个插卡组成。PCI 热插拔下的插口通常指物理可热插拔槽；插卡通常指插入插槽的 PCI 适配卡。
+.sp
+.LP
+挂接点通过 \fBap_id\fR 命名。\fBap_id\fR 包括逻辑 ap_id 和物理 ap_id。物理 \fBap_id\fR 基于物理路径名，例如：
+.sp
+.in +2
+.nf
+/devices/pci@7c,0/pci10de,5d@d:pcie2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+而逻辑 \fBap_id\fR 是更为简短、更加用户友好的名称，例如 \fBpcie2\fR。热插拔 PCI 的 \fBap_type\fR 为 \fBpci\fR。
+.sp
+.LP
+请注意，\fBap_type\fR 与 \fBType\fR（类型）字段中的信息不同。
+.SS "PCI Express ap_id 命名"
+.sp
+.LP
+对于位于 PCI Express 分层结构（也就是说，父或祖先为 PCI Express 设备）中的挂接点（包括本身不属于 PCI Express 设备的挂接点），将使用下面显示的命名模式。
+.sp
+.LP
+语法：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAPID\fR : \fIabsolute-slot-path\fR\fR
+.ad
+.sp .6
+.RS 4n
+基本术语。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIabsolute-slot-path\fR : \fIslot-path\fR[:\fIslot-path\fR[:\fIslotpath\fR ...]]\fR
+.ad
+.sp .6
+.RS 4n
+\&...其中 \fIfru-id\fR 表示包含 \fIslot-id\fR 的机箱 FRU（如果有）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfru-id\fR : \fIfru-type\fR[\fIserialid#\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\&...其中 \fIfru-type\fR 为 PCI Express 扩展机箱的 "iob"，后接序列号 \fIserialid#\fR（如果提供）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR : \fIslot-name\fR | \fIdevice-type\fR \fIphysical-slot#\fR | \e\fR
+.ad
+.br
+.na
+\fB\fInexus-driver-name\fR \fInexus-driver-instance\fR.\e\fR
+.ad
+.br
+.na
+\fB\fIdevice-type\fR \fIpci-device-number\fR\fR
+.ad
+.sp .6
+.RS 4n
+\&...其中 \fIslot-name\fR 为平台或硬件自行分配的名称。\fIdevice-type\fR 为 \fBpcie\fR（对于 PCI Express 设备）或 \fBpci\fR（对于 PCI 设备）。\fInexus-driver-name\fR 为设备组件的驱动程序名称，\fIphysical-slot#\fR 为硬件槽号，而 \fIpci-device-number\fR 为按标准 PCI 命名规则命名的 PCI 设备编号。
+.RE
+
+.sp
+.LP
+首先将构造 \fIabsolute-slot-path\fR，以便使用在用户看来更易于实际确认的术语来描述挂接点的拓扑位置。此 \fIabsolute-slot-path\fR 包含由 \fB:\fR（冒号）分隔的 \fIslot-path\fR 组件。叶或最左侧的 \fIslot-path\fR 组件描述的是挂接点设备本身，而其右侧相邻的 \fIslot-path\fR 组件直至最右侧或最顶端的 \fIslot-path\fR 组件分别描述从父设备到根设备的各种设备。
+.sp
+.LP
+每个 \fIslot-path\fR 均含 \fIslot-id\fR（可选择性地在前面添加 \fIfru-id\fR，该 ID 用于标识内含 \fIslot-id\fR（详见下）所描述设备的扩展机箱）。\fIfru-id\fR 包含 \fIfru-type\fR，后跟可选的 \fIserialid#\fR。PCI Express 扩展机箱类型的 \fIfru-type\fR 为 "iob"，而 \fIserialid#\fR 既可以是从扩展机箱硬件中获取的 64 位十六进制数（表示原始序列号），也可以是大写的适用于 Sun 品牌扩展机箱的 ASCII 四字符序列。
+.sp
+.LP
+每个 slot-id 均包含下述三个可能的格式之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR 格式 (1)\fR
+.ad
+.sp .6
+.RS 4n
+\fIslot-names\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR 格式 (2)\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice-type\fR \fIphysical-slot#\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIslot-id\fR 格式 (3)\fR
+.ad
+.sp .6
+.RS 4n
+\fInexus-driver-name\fR \fInexus-driver-instance\fR \fIdevice-type\fR \fIpci-device-number\fR
+.RE
+
+.sp
+.LP
+在选择具体格式时，将按照格式编号从最低到最高的优先顺序进行选择，也可以自上而下地进行选择（如上所述）。如果无法成功构造某个格式，则会尝试下一个编号较高的格式。
+.sp
+.LP
+\fIslot-id\fR 格式 (1) 中的 \fIslot-names\fR 是从设备树中对应节点的 \fBslot-names\fR 属性获取的，是由硬件或平台分配的名称。此格式尚未预定义或建立。
+.sp
+.LP
+在 \fIslot-id\fR 格式 (2) 中，\fIdevice-type\fR 表示组件插槽的设备类型，其值为 \fBpcie\fR（对于 PCI Express）或 \fBpci\fR（对于 PCI），而从对应设备节点的 \fBphysical-slot#\fR 属性获取的 \fIphysical-slot#\fR 表示组件的硬件槽号。
+.sp
+.LP
+当其他所有格式均无法成功构造时，将使用 \fIslot-id\fR 格式 (3)，并被认为是缺省格式。\fInexus-driver-name\fR 是组件的驱动程序名称；\fInexus-driver-instance\fR 是该驱动程序的实例；\fIdevice-type\fR 与格式 (2) 中描述的相同；\fIpci-device-number\fR 是所述的 PCI 设备编号，用于按照标准 PCI 命名规则命名的设备配置循环。
+.sp
+.LP
+在对 \fIslot-path\fR 组件进行总结时，我们会发现该组件是对可选 FRU 组件（可能位于该组件之前）的扩展，具体说来，\fIslot-path\fR 将包含以下按顺序排列的格式之一：
+.sp
+.ne 2
+.mk
+.na
+\fB(1) [ iob[\fIserialid#\fR]. ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIslot-names\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2) [ iob[\fIserialid#\fR]. ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice_type\fR \fIphysical_slot#\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(2) [ iob[\fIserialid#\fR]. ]\fR
+.ad
+.sp .6
+.RS 4n
+\fInexus-driver-name\fR \fInexus-driver-instance\fR.
+.sp
+\fIdevice_type\fR \fIpci-device-number\fR
+.RE
+
+.sp
+.LP
+最后，在 \fBcfgadm\fR 中实际使用的 \fBap_id\fR 名称的最终格式确定如下（按优先级顺序指定）：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBap_id\fR 格式 (1)\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fIabsolute-slot-path\fR 的长度在 \fBcfgadm\fR 的 \fBap_id\fR 字段的固定长度限制之内，则只需使用 \fIabsolute-slot-path\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBap_id\fR 格式 (2)\fR
+.ad
+.sp .6
+.RS 4n
+（\fIabsolute-slot-path\fR 的长度超过 \fBap_id\fR 的长度限制）如果最后一个 \fIslot_path\fR 组件包含在扩展机箱中，且该组件包含 \fIserialid#\fR，则使用这最后一个 \fIslot_path\fR 组件。此格式要求使用 \fIserialid#\fR 是为了确保 \fBap_id\fR 在全局范围内都是唯一的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBap_id\fR 格式 (3)\fR
+.ad
+.sp .6
+.RS 4n
+（\fIabsolute-slot-path\fR 的长度超过 \fBap_id\fR 的长度限制）将使用最后一个 \fIslot_path\fR 组件的缺省格式，即 \fIslot-id\fR 格式 (3)。
+.RE
+
+.sp
+.LP
+不管使用哪一个最终的 \fBap_id\fR 名称，\fIabsolute-slot-path\fR 都将存储在能够使用 \fB-s\fR 或 \fB-v\fR 选项显示的 "Information"（信息）(\fBinfo\fR) 字段中。此信息可用来对任何使用 \fBap_id\fR 格式 (2) 或 \fBap_id\fR 格式 (3) 命名的 \fBap_id\fR 进行物理定位。将 \fIabsolute-slot-path\fR 存储在信息字段中时会进行稍许变换，即使用正斜杠 (\fB/\fR) 替换冒号 (\fB:\fR)，以便更准确地指示拓扑上下文。\fIabsolute-slot-path\fR 可能包括叶或最右侧 \fIslot-path\fR 组件（直至板载主机槽）上面不属于热插拔组件的 \fIslot-path\fR 组件。
+.sp
+.LP
+有关可热插拔组件的示例列表，请参见"示例"部分。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+以下函数可用于 PCI 可热插拔插槽：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure（配置）\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 PCI 设备配置在 Solaris 使用的插槽中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+将插槽与 PCI 总线相连。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+断开插槽与 PCI 总线之间的连接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert\fR\fR
+.ad
+.sp .6
+.RS 4n
+不支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR\fR
+.ad
+.sp .6
+.RS 4n
+不支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 PCI 设备的资源从系统中逻辑移除。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+不支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR | \fIap_type\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示特定于 PCI 热插拔的帮助消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出 PCI 热插拔插槽的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前没有定义任何硬件专用选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+与通用的 \fBcfgadm\fR(1M) 相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+此命令只适用于支持插槽测试功能的平台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+在详细模式下执行。
+.sp
+如果 \fB-v\fR 选项与 \fB-l\fR 选项一起使用，\fBcfgadm\fR 命令输出有关挂接点的信息。对 PCI Express 分层结构中的挂接点，"Information"（信息）字段将包含挂接点的绝对插槽路径位置，包括插槽路径中每个组件的任何特定于硬件或平台的标记信息。插槽路径中的每个组件将通过 \fB/\fR（正斜杠）分隔。请参见上面的"PCI Express \fBap_id\fR 命名"。有关不在 PCI Express 分层结构中的 PCI 热插拔挂接点的内容，请参见 \fBcfgadm_pci\fR(1M)。\fBType\fR（类型）字段中的信息可使用 \fB-v\fR 选项列出，也可不使用该选项列出。插卡的 \fBType\fR（类型）字段描述有关插槽的信息。有两个可能的值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown（未知）\fR\fR
+.ad
+.sp .6
+.RS 4n
+该插槽为空。如果该插槽中安装了卡，表明该卡未配置或卡上的设备未安装驱动程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsubclass\fR/\fIboard\fR\fR
+.ad
+.sp .6
+.RS 4n
+该插槽中的卡是一个单功能或多功能设备。
+.sp
+\fIsubclass\fR 是表示设备子类代码的字符串，例如 \fBSCSI\fR、\fBethernet\fR、\fBpci-isa\fR 等。如果该卡为多功能设备，则将改为显示 \fBMULT\fR。
+.sp
+\fIboard\fR 是表示设备的板类型的字符串。例如，\fBhp\fR 是用于 PCI 热插拔适配器的字符串。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行特定于硬件的函数。这些特定于硬件的函数通常不会更改插口或插卡的状态。
+.sp
+支持以下 \fIhardware_function\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled\fR=[\fIled_sub_arg\fR],\fBmode\fR=[\fImode_sub_arg\fR]\fR
+.ad
+.sp .6
+.RS 4n
+在没有子参数的情况下，将显示当前 LED 指示灯设置的列表。在有子参数的情况下，将为插槽设置特定 LED 指示灯的模式。
+.sp
+将 \fIled_sub_arg\fR 指定为 \fBfault\fR、\fBpower\fR、\fBattn\fR 或 \fBactive\fR。
+.sp
+将 \fImode_sub_arg\fR 指定为 \fBon\fR、\fBoff\fR 或 \fBblink\fR。
+.sp
+对于 PCI Express，只有 \fBpower\fR 和 \fBattn\fR LED 指示灯是有效的，只有 \fBattn\fR LED 指示灯的状态可以更改。
+.sp
+更改 LED 指示灯的状态不会更改插口或插卡的状态。通常，LED 指示灯由热插拔控制器控制，无需用户干预。使用该命令用于测试目的。
+.LP
+注意 - 
+.sp
+.RS 2
+更改 LED 指示灯的状态可能导致插卡或插口的状态显示错误。
+.RE
+以下命令可显示 LED 指示灯的值：
+.sp
+.in +2
+.nf
+example# \fBcfgadm -x led pcie2\fR
+Ap_Id             Led
+pcie2     power=on,fault=off,active=off,attn=off
+.fi
+.in -2
+.sp
+
+以下命令将 \fBattn\fR LED 指示灯设置为 blink，以指示插槽的位置：
+.sp
+.in +2
+.nf
+example# \fBcfgadm -x led=attn,mode=blink pcie2\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR显示每个插槽的值
+.sp
+.LP
+以下命令可显示每个插槽的值：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -l\fR
+Ap_Id            Type         Receptacle   Occupant       Condition
+c0               scsi-bus     connected    configured     unknown
+c1               scsi-bus     connected    unconfigured   unknown
+c2               scsi-bus     connected    unconfigured   unknown
+pcie7            etherne/hp   connected    configured     ok
+pcie8            unknown      empty        unconfigured   unknown
+pcie9            fibre/hp     connected    configured     ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR替换卡
+.sp
+.LP
+以下命令列出所有支持 DR 的挂接点：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm\fR
+Type             Receptacle   Occupant     Condition
+c0               scsi-bus     connected    configured     unknown
+c1               scsi-bus     connected    unconfigured   unknown
+c2               scsi-bus     connected    unconfigured   unknown
+pcie7            etherne/hp   connected    configured     ok
+pcie8            unknown      empty        unconfigured   unknown
+pcie9            fibre/hp     connected    configured     ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令可取消对 \fBpcie7\fR 所标识的卡的配置并以电子方式断开其连接：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c disconnect pcie7\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+该更改可通过输入以下命令验证：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm pcie7\fR
+Ap_Id     Type         Receptacle   Occupant     Condition
+pcie7     unknown      disconnected unconfigured unknown
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此时可换卡。以下命令可通过电子方式连接并配置替换卡：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -c configure pcie7\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+该更改可通过输入以下命令验证：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm pcie7\fR
+Ap_Id     Type         Receptacle   Occupant     Condition
+pcie7     etherne/hp   connected    configured   ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR解释 PCI Express 拓扑中的 ApId
+.sp
+.LP
+以下命令显示了 I/O 扩展机箱在连接到主机级可热插拔插槽后，其中的 PCI Express 和 PCI 挂接点的拓扑列表：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+iou#0-pci#0                    Location: iou#0-pci#0
+iou#0-pci#1                    Location: iou#0-pci#1
+iou#0-pci#1:iob.pci3           Location: iou#0-pci#1/iob.pci3
+iou#0-pci#1:iob.pci4           Location: iou#0-pci#1/iob.pci4
+iou#0-pci#2                    Location: iou#0-pci#2
+iou#0-pci#2:iob58071.pcie1     Location: iou#0-pci#2/iob58071.pcie1
+iou#0-pci#2:iob58071.special   Location: iou#0-pci#2/iob58071.special
+iou#0-pci#3                    Location: iou#0-pci#3
+iou#0-pci#3:iobBADF.pcie1      Location: iou#0-pci#3/iobBADF.pcie1
+iou#0-pci#3:iobBADF.pcie2      Location: iou#0-pci#3/iobBADF.pcie2
+iou#0-pci#3:iobBADF.pcie3      Location: iou#0-pci#3/iobBADF.pcie3
+iou#0-pci#3:iobBADF.pci1       Location: iou#0-pci#3/iobBADF.pci1
+iou#0-pci#3:iobBADF.pci2       Location: iou#0-pci#3/iobBADF.pci2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本示例中，\fBiou#0-pci#[0-3]\fR 项表示系统中最顶端的可热插拔插槽。由于 \fBiou#\fR\fIn\fR-\fBpci#\fR\fIn\fR 格式与上述语法规范部分中描述的任何一种格式都不匹配，因此我们可以推断，此热插拔拓扑中基本组件的这种名称是通过 \fBslot-names\fR 属性由平台指定的。
+
+.sp
+.LP
+上述输出中的插槽描述如下：
+
+.sp
+.ne 2
+.mk
+.na
+\fB插槽 \fBiou#0-pci#0\fR\fR
+.ad
+.sp .6
+.RS 4n
+此插槽为空或其插卡未配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB插槽 \fBiou#0-pci#1\fR\fR
+.ad
+.sp .6
+.RS 4n
+此插槽包含一个带两个可热插拔插槽（\fBpci3\fR 和 \fBpci4\fR）的扩展机箱。\fBpci3\fR 和 \fBpci4\fR 表示两个包含在该扩展机箱内的 PCI 插槽，其物理槽号分别为 \fB3\fR 和 \fB4\fR。此处的扩展机箱既没有也不导出 serial-id（序列号）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB插槽 \fBiou#0-pci#2\fR\fR
+.ad
+.sp .6
+.RS 4n
+此插槽包含一个十六进制 serial-id（序列号）为 \fB58071\fR 的第三方扩展机箱。该扩展机箱内有两个可热插拔插槽 \fBpcie1\fR 和 \fBspecial\fR。\fBpcie1\fR 表示 PCI Express 插槽，其物理槽号为 \fB1\fR。插槽 \fBspecial\fR 带有一个源自平台、硬件或固件的标签。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB插槽 \fBiou#0-pci#3\fR\fR
+.ad
+.sp .6
+.RS 4n
+此插槽包含一个 FRU 标识符为 \fBBADF\fR 的 Sun 扩展机箱。此扩展机箱包含三个 PCI Express 插槽 \fBpcie1\fR、\fBpcie2\fR 和 \fBpcie3\fR，物理槽号分别为 \fB1\fR、\fB2\fR、\fB3\fR，以及两个 PCI 插槽 \fBpci1\fR 和 \fBpci2\fR，物理槽号分别为 1 和 2。
+.RE
+
+.sp
+.LP
+以下命令显示了 I/O 扩展机箱（带连接的可热插拔和非热插拔主机槽）中的 PCI Express 和 PCI 挂接点的拓扑列表：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+Slot1                          Location: Slot1
+Slot2:iob4ffa56.pcie1          Location: Slot2/iob4ffa56.pcie1
+Slot2:iob4ffa56.pcie2          Location: Slot2/iob4ffa56.pcie2
+Slot5:iob3901.pci1             Location: Slot2/iob3901.pci1
+Slot5:iob3901.pci2             Location: Slot2/iob3901.pci2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本示例中，主机系统只有一个可热插拔插槽 \fBSlot1\fR。我们可以推断 \fBSlot2\fR 和 \fBSlot5\fR 不属于可热插拔插槽，因为这两个插槽在 \fBcfgadm\fR 中没有自行显示为挂接点。不过，\fBSlot2\fR 和 \fBSlot5\fR 都包含带可热插拔插槽的第三方扩展机箱。
+
+.sp
+.LP
+以下命令显示了缺少特定设备属性的挂接点的拓扑列表：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+px_pci7.pcie0                  Location: px_pci7.pcie0
+px_pci11.pcie0                 Location: px_pci11.pcie0
+px_pci11.pcie0:iob.pcie1       Location: px_pci11.pcie0/iob.pcie1
+px_pci11.pcie0:iob.pcie2       Location: px_pci11.pcie0/iob.pcie2
+px_pci11.pcie0:iob.pcie3       Location: px_pci11.pcie0/iob.pcie3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本示例中，主机系统包含两个可热插拔插槽 \fBpx_pci7.pcie0\fR 和 \fBpx_pci11.pcie0\fR。在这种情况下，系统会将 \fBslot-id\fR 格式 (3)（缺省格式）用于 \fIabsolute-slot-path\fR 中的 \fIslot-path\fR 基本组件，因为框架无法获取足够的信息以生成其他优先级更高的、更具描述性的格式。
+
+.sp
+.LP
+自右至左进行解释时，挂接点 \fBpx_pci7.pcie0\fR 表示 PCI 设备编号为 \fB0\fR（这并不表示物理槽号也是这一编号）且已绑定到结点驱动程序 \fBpx_pci\fR 实例 \fB7\fR 上的 PCI Express 插槽。类似地，挂接点 \fBpx_pci11.pcie0\fR 表示 PCI 设备编号为 \fB0\fR 且已绑定到 \fBpx_pci\fR 的驱动程序实例 \fB11\fR 上的 PCI Express 插槽。
+
+.sp
+.LP
+在 \fBpx_pci11.pcie0\fR 下是带三个可热插拔 PCI Express 插槽但没有 serial-id 的第三方扩展机箱。
+
+.sp
+.LP
+以下命令显示了超过 \fBApId\fR 字段长度限制的挂接点路径的拓扑列表：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+pcie4                          Location: pcie4
+pcie4:iobSUNW.pcie1            Location: pcie4/iobSUNW.pcie1
+pcie4:iobSUNW.pcie2            Location: pcie4/iobSUNW.pcie2
+iob8879c3f3.pci1
+                 Location: pcie4/iobSUNW.pcie2/iob8879c3f3.pci1
+iob8879c3f3.pci2
+                 Location: pcie4/iobSUNW.pcie2/iob8879c3f3.pci2
+iob8879c3f3.pci3
+                 Location: pcie4/iobSUNW.pcie2/iob8879c3f3.pci3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本示例中，主机中只有一个可热插拔插槽 \fBpcie4\fR。在 \fBpcie4\fR 下连接的是一个 FRU 标识符为 \fBSUNW\fR 的 Sun 扩展机箱。嵌套在该扩展机箱 (\fBApId\fR \fBpcie4:iobSUNW.pcie2\fR) PCI Express 插槽 \fBpcie2\fR 下的是另一个带三个可热插拔 PCI 插槽的扩展机箱。
+
+.sp
+.LP
+对于以下项的 absolute-slot-path 格式：
+
+.sp
+.in +2
+.nf
+pcie4/iobSUNW.pcie2/iob8879c3f3.pci1...3
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+由于其长度超过 \fBApId\fR 字段的长度限制，且叶 slot-path 组件是全局唯一的，因此将使用 \fBap_id\fR 格式 (2)，其中，\fIabsolute-slot-path\fR 中的叶 \fIslot-path\fR 组件将用作最终 \fBApId\fR。
+
+.sp
+.LP
+以下命令显示了挂接点路径的拓扑列表，其中的挂接点路径超过 \fBApId\fR 字段的长度限制，且缺少自行对叶 \fIslot-id\fR 进行唯一标识所需的足够信息（例如，缺少 serial-id（序列号））：
+
+.sp
+.in +2
+.nf
+example# \fBcfgadm -s cols=ap_id:info\fR
+Ap_Id                          Information
+pcie4                          Location: pcie4
+pcie4:iob4567812345678.pcie3   Location: pcie4/iob4567812345678.pcie3
+px_pci20.pcie0
+                Location: pcie4/iob4567812345678.pcie3/iob.pcie1
+px_pci21.pcie0
+                Location: pcie4/iob4567812345678.pcie3/iob.pcie2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在本示例中，主机中只有一个可热插拔插槽 \fBpcie4\fR。在 \fBpcie4\fR 下连接的是十六进制 serial-id（序列号）为 \fB4567812345678\fR 的第三方扩展机箱。嵌套在该扩展机箱 (\fBApId\fR \fBpcie4:iob4567812345678.pcie3\fR) PCI Express 插槽 \fBpcie3\fR 下的是另一个带两个可热插拔 PCI Express 插槽但没有 serial-id（序列号）的第三方扩展机箱。
+
+.sp
+.LP
+对于以下项的 absolute-slot-path 格式：
+
+.sp
+.in +2
+.nf
+pcie4/iob4567812345678.pcie3/iob.pcie1...2
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+由于其长度超过 \fBApId\fR 字段的长度限制，且叶 \fIslot-path\fR 组件不是全局唯一的，因此将使用 \fBap_id\fR 格式 (3)。在 \fBap_id\fR 格式 (2) 中，将使用 \fIabsolute-slot-path\fR 中叶 \fIslot-path\fR 组件的 \fIslot-id\fR 格式 (3)（缺省格式）作为最终 \fBApId\fR。
+
+.sp
+.LP
+叶组件 \fB\&.../iob.pcie1\fR 的缺省格式或 \fBslot-id\fR 格式 (3) 表示设备编号为 \fB0\fR 且已绑定到 \fBpx_pci\fR 的驱动程序实例 \fB20\fR 的 PCI Express 插槽。类似地，叶组件 \fB\&.../iob.pcie2\fR 的缺省格式表示设备编号为 \fB0\fR 且已绑定到 \fBpx_pci\fR 的驱动程序实例 \fB21\fR 的 PCI Express 插槽。
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/shp.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+适用于 PCI Express 和标准 PCI 热插拔的特定于硬件的库。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBcfgadm_pci\fR(1M)、\fBhotplugd\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBlibcfgadm\fR(3LIB)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+\fBcfgadm_shp\fR 库依赖于 \fBhotplug\fR 服务，而该服务由 \fBsmf\fR(5) 进行管理，其 FMRI（故障管理资源标识符）如下：
+.sp
+.in +2
+.nf
+svc:/system/hotplug:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要想正常运行 \fBcfgadm_shp\fR 库，必须启用该服务。有关详细信息，请参见 \fBhotplugd\fR(1M)。

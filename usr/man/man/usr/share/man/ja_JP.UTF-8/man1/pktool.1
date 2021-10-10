@@ -1,0 +1,1360 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pktool 1 "2011 年 6 月 9 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+pktool \- 証明書と鍵の管理
+.SH 形式
+.LP
+.nf
+\fBpktool\fR [\fB-f\fR \fIoption_file\fR] [\fB-i\fR] \fIsubcommand\fR \fIsubcommand_options\fR ...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpktool\fR コマンドを使用すると、PKCS#11 トークン (暗号化フレームワーク)、Netscape Security Services (NSS) トークン、および OpenSSL の標準的なファイルベースのキーストアを含む、複数のキーストア内の証明書と鍵を管理できます。
+.sp
+.LP
+\fBpktool\fR は、証明書失効リスト (Certificate Revocation List、CRL) の一覧表示、削除、およびインポートもサポートしています。\fBpktool\fR は、CRL の作成、CRL への署名の追加、および CRL のエクスポートはサポートしていません。PKCS#11 キーストアの CRL サポートはファイルベースです。
+.SH オプション
+.sp
+.LP
+次のコマンドオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIoption_file\fR\fR
+.ad
+.RS 18n
+.rt  
+コマンド行にオプションを入力する代わりに、ファイルにオプションを設定できます。 
+.sp
+\fBpktool\fR では多数のサブコマンドと関連オプションをコマンド行で指定する可能性があるため、ユーザーの利便性を高めるためにこのオプションが用意されています。
+.sp
+\fIoption_file\fR は、1 行に 1 つのオプションまたは値のペアという形式になります。 
+.sp
+\fIoption_file\fR の例を次に示します。
+.sp
+.in +2
+.nf
+list
+keystore=nss
+dir=/export/foo
+objtype=key
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBgencert\fR サブコマンドおよび \fBgencsr\fR サブコマンドの \fBsubject-DN\fR を対話形式で指定できます。\fB-i\fR を指定すると、\fBsubject-DN\fR を作成するためのデータを入力するよう求めるプロンプトが表示されます。
+.sp
+\fB-i\fR オプションの使用例を次に示します。 
+.sp
+.in +2
+.nf
+Country Name (2 letter code) [US]:US
+State or Province Name (full name) [Some-State]:CA
+Locality Name (eg, city) []:Menlo Park
+Organization Name (eg, company):Sun Microsystems Inc.
+Organizational Unit Name (eg, section):OPG
+Common Name (eg, YOUR name):John Smith
+ Email Address []: john.smith@sun.com
+.fi
+.in -2
+.sp
+
+その結果作成される \fBsubject-DN\fR は次のとおりです。
+.sp
+.in +2
+.nf
+"C=US, ST=CA, L=Menlo Park, O=Sun Microsystems Inc.,\e
+   OU=OPG, emailAddress=john.smith@sun.com, \e
+   CN=John Smith"
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+サポートされているサブコマンドは次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdelete\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool delete [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [objtype=private|public|both]
+              [label=\fIobject-label\fR]
+
+pktool delete keystore=pkcs11
+              objtype=cert[:public | private | both]]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [label=\fIcert-label\fR]
+              [serial=\fIhex-serial-number\fR]
+              [issuer=\fIissuer-DN\fR]
+              [subject=\fIsubject-DN\fR]
+
+pktool delete keystore=nss
+              objtype=cert
+              [subject=\fIsubject-DN\fR]
+              [issuer=\fIissuer-DN\fR]
+              [serial=\fIhex-serial-number\fR]
+              [nickname=\fIcert-nickname\fR]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool delete keystore=nss
+              objtype=crl
+              [nickname=\fIcert-nickname\fR]
+              [subject=\fIsubject-DN\fR]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool delete keystore=pkcs11
+              objtype=key[:public | private | both]]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [label=\fIkey-label\fR]
+
+pktool delete keystore=pkcs11
+              objtype=crl
+              infile=\fIinput-fn\fR
+
+
+pktool delete keystore=file
+              objtype=cert
+              [infile=\fIinput-fn\fR]
+              [dir=\fIdirectory-path\fR]
+              [serial=\fIhex-serial-number\fR]
+              [issuer=\fIissuer-DN\fR]
+              [subject=\fIsubject-DN\fR]
+
+pktool delete keystore=file
+              objtype=key
+              [infile=\fIinput-fn\fR]
+              [dir=\fIdirectory-path\fR]
+
+pktool delete keystore=file
+              objtype=crl
+              infile=\fIinput-fn\fR
+              
+.fi
+.in -2
+.sp
+
+証明書、鍵、または証明書失効リスト (CRL) を削除します。 
+.sp
+PKCS#11 トークンから個人証明書または秘密鍵を削除する場合は、正しい個人識別番号 (Personal Identification Number、PIN) を入力して PKCS#11 に対する認証を行うよう求めるプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdownload\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdownload\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+ pktool download url=\fIurl_str\fR 
+                 [objtype=crl|cert]
+                 [http_proxy=\fIproxy_str\fR]
+                 [outfile=\fIoutput-fn\fR]
+                 [dir=\fIdirectory-path\fR]
+.fi
+.in -2
+.sp
+
+指定された URL の場所から CRL ファイルまたは証明書ファイルをダウンロードします。ファイルが正常にダウンロードされると、ダウンロードした CRL または証明書ファイルの有効性が確認されます。CRL または証明書の期限が切れている場合、\fBdownload\fR は警告を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBexport\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool export [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              outfile=\fIoutput-fn\fR
+
+pktool export keystore=pkcs11
+              outfile=\fIoutput-fn\fR
+              [objtype=cert|key]
+              [label=\fIlabel\fR]
+              [subject=\fIsubject-DN\fR]
+              [issuer=\fIissuer-DN\fR]
+              [serial=\fIhex-serial-number\fR]
+              [outformat=pem|der|pkcs12|raw]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+
+pktool export keystore=nss
+              outfile=\fIoutput-fn\fR
+              [subject=\fIsubject-DN\fR]
+              [issuer=\fIissuer-DN\fR]
+              [serial=\fIhex-serial-number\fR]
+              [nickname=\fIcert-nickname\fR]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [outformat=pem|der|pkcs12]
+
+pktool export keystore=file
+              certfile=\fIcert-input-fn\fR
+              keyfile=\fIkey-input-fn\fR
+              outfile=\fIoutput-pkcs12-fn\fR
+.fi
+.in -2
+.sp
+
+PKCS#11 トークンの内容、あるいは NSS トークンまたはファイルベースのキーストアに含まれる証明書を、指定されたファイルに保存します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgencert\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencert\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool gencert [-i] keystore=nss
+              label=\fIcert-nickname\fR
+              subject=\fIsubject-DN\fR
+              serial=\fIhex_serial_number\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [keytype=rsa | ec [curve=ECC Curve Name] \
+                 [hash= md5 | sha1 | sha256 | sha384 | sha512]
+              [keytype=dsa [hash=sha1 ]
+              [keylen=\fIkey-size\fR]
+              [trust=\fItrust-value\fR]
+              [eku=[critical:]\fIEKU_name,...\fR]
+                 [listcurves ]
+                 [lifetime=number-hour|number-day|number-year]
+
+pktool gencert [-i] [ keystore=pkcs11]
+              label=\fIkey/cert-label\fR
+              subject=\fIsubject-DN\fR
+              serial=\fIhex_serial_number\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [ keytype=rsa | ec [curve=ECC Curve Name] \
+                  [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [ keytype=dsa [hash=sha1 | sha256 ]]
+              [keylen=\fIkey-size\fR]
+              [eku=[critical:]\fIEKU_name,...\fR]
+              [listcurves]
+              [lifetime=number-hour|number-day|number-year]
+
+pktool gencert [-i] keystore=file
+              outcert=\fIcert-fn\fR
+              outkey=\fIkey-fn\fR
+              subject=\fIsubject-DN\fR
+              serial=\fIhex_serial_number\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [format=der|pem]
+              [ keytype=rsa [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [ keytype=dsa [hash=sha1 | sha256 ]]
+              [keylen=\fIkey-size\fR]
+              [eku=[critical:]\fIEKU_name,...\fR]
+                [lifetime=number-hour|number-day|number-year]
+.fi
+.in -2
+.sp
+
+自己署名付き証明書を生成し、証明書とそれに関連付けられた秘密鍵を指定のキーストアにインストールします。 
+.sp
+\fBgencert\fR を実行すると、トークンベースのキーストア用の PIN を入力するよう求めるプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgencsr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencsr\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool gencsr [-i] keystore=nss
+              nickname=\fIkey-nickname\fR
+              outcsr=\fIcsr-fn\fR
+              subject=\fIsubject-DN\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [keytype=rsa | ec [curve=ECC Curve Name] \
+                 [hash= md5 | sha1 | sha256 | sha384 | sha512]
+              [keytype=dsa [hash=sha1 ]
+              [keylen=\fIkey-size\fR]
+              [format=pem|der]
+              [eku=[critical:]\fIEKU_name,...\fR]
+              [listcurves]
+
+pktool gencsr [-i] keystore=pkcs11
+              label=\fIkey-label\fR
+              outcsr=\fIcsr-fn\fR
+              subject=\fIsubject-DN\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+               [ keytype=rsa | ec [curve=ECC Curve Name] \
+                    [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [keylen=\fIkey-size\fR]
+              [format=pem|der]
+              [eku=[critical:]\fIEKU_name,...\fR]
+              [listcurves]
+
+pktool gencsr [-i] keystore=file
+              outcsr=\fIcsr-fn\fR
+              outkey=\fIkey-fn\fR
+              subject=\fIsubject-DN\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage,usage...\fR]
+              [dir=\fIdirectory-path\fR]
+              [ keytype=rsa [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [ keytype=dsa [hash=sha1 | sha256 ]]
+              [keylen=\fIkey-size\fR]
+              [format=pem|der]
+              [eku=[critical:]\fIEKU_name,...\fR]
+.fi
+.in -2
+.sp
+
+PKCS#10 の証明書署名要求 (CSR) ファイルを作成します。この CSR を承認局 (Certifying Authority、CA) に送信すると、署名を取得できます。\fBgencsr\fR サブコマンドを実行すると、トークンベースのキーストア用の PIN を入力するよう求めるプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgenkey\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgenkey\fR サブコマンドの書式は次のとおりです。
+.sp
+\fB\fR
+.sp
+.in +2
+.nf
+pktool genkey [keystore=pkcs11]
+              label=\fIkey-label\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [keylen=\fIkey-size\fR (for aes, arcfour, or \e
+                  generic keytypes only)]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [sensitive=y|n]
+              [extractable=y|n]
+              [print=y|n]
+
+pktool genkey keystore=nss
+              label=\fIkey-label\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [keylen=\fIkey-size\fR (for aes, arcfour, or \e
+                  generic keytypes only)]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool genkey keystore=file
+              outkey=\fIkey-fn\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [keylen=\fIkey-size\fR (for aes, arcfour, \e
+                   or generic keytypes only)]
+              [print=y|n]
+.fi
+.in -2
+.sp
+
+指定されたキーストアに対称鍵を生成します。\fBgenkey\fR サブコマンドを実行すると、トークンベースのキーストア用の PIN を入力するように求めるプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgenkeypair\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgenkeypair\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool genkeypair keystore=nss
+                  label=\fIkey-nickname\fR
+                  [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+                  [dir=\fIdirectory-path\fR]
+                  [prefix=\fIDBprefix\fR]
+                  [keytype=rsa|dsa|ec [curve=ECC Curve Name]]
+                  [keylen=\fIkey-size\fR]
+                  [listcurves]
+
+pktool genkeypair [keystore=pkcs11]
+                  label=\fIkey-label\fR
+                  [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+                  [keytype=rsa|dsa|ec [curve=ECC Curve Name]]
+                  [keylen=\fIkey-size\fR]
+                  [listcurves]
+
+pktool genkeypair keystore=\fIfile\fR
+                  outkey=\fIkey_filenam\fRe
+                  [format=der|pem]
+                  [keytype=rsa|dsa]
+                  [keylen=key-size]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBimport\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool import [token=\fItoken\fR>[:\fImanuf\fR>[:\fIserial\fR>]]]
+              infile=\fIinput-fn\fR
+
+pktool import [keystore=pkcs11]
+              infile=\fIinput-fn\fR
+              label=\fIobject-label\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [sensitive=y|n]
+              [extractable=y|n]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [objtype=cert|key]
+
+pktool import keystore=pkcs11
+              objtype=\fIcrl\fR
+              infile=\fIinput-fn\fR
+              outcrl=\fIoutput-crl-fn\fR
+              outformat=pem|der
+
+pktool import keystore=nss
+              objtype=\fIcert\fR
+              infile=\fIinput-fn\fR
+              label=\fIcert-label\fR
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [trust=\fItrust-value\fR]
+
+pktool import keystore=nss
+              objtype=crl
+              infile=\fIinput-fn\fR
+              [verifycrl=y|n]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool import keystore=file
+              infile=\fIinput-fn\fR
+              outkey=\fIoutput-key-fn\fR
+              outcert=\fIoutput-key-fn\fR
+              [outformat=pem|der]
+
+pktool import keystore=file
+              objtype=crl
+              infile=\fIinput-fn\fR
+              outcrl=\fIoutput-crl-fn\fR
+              outformat=pem|der
+.fi
+.in -2
+.sp
+
+証明書、鍵、または CRL を、指定の入力ファイルから指定のキーストアに読み込みます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinittoken\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinittoken\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool inittoken [ slotid=slot number ]
+                 [ currlabel=token[:manuf[:serial]]]
+                 [ newlabel=new token label ]
+.fi
+.in -2
+.sp
+
+このコマンドは、\fBC_InitToken API\fR を使用して PKCS#11 トークンを初期化します。トークンを検索するには、トークンのデフォルトラベルを指定することをお勧めします。オプションで、\fBnewlabel\fR 引数を使用すると、トークンに新しいラベルを割り当てることができます。\fBnewlabel\fR がない場合、トークンラベルは変更されません。このコマンドを続行するために、セキュリティー責任者 (Security Officer、SO) の PIN を入力するよう求めるプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlist\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool list [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [objtype=private|public|both]
+            [label=\fIlabel\fR]
+
+pktool list [keystore=pkcs11]
+            [objtype=cert[:public | private | both]]
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [label=\fIcert-label\fR]
+            [serial=\fIhex-serial-number\fR]
+            [issuer=\fIissuer-DN\fR]
+            [subject=\fIsubject-DN\fR]
+
+pktool list [keystore=pkcs11]
+            objtype=key[:public | private | both]]
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [label=\fIkey-label\fR]
+
+pktool list keystore=pkcs11
+            objtype=crl
+            infile=\fIinput-fn\fR
+            
+pktool list keystore=nss
+            objtype=cert
+            [subject=\fIsubject-DN\fR]
+            [issuer=\fIissuer-DN\fR]
+            [serial=\fIhex-serial-number\fR]
+            [nickname=\fIcert-nickname\fR]
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [dir=\fIdirectory-path\fR]
+            [prefix=\fIDBprefix\fR]
+
+pktool list keystore=nss
+            objtype=key
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [dir=\fIdirectory-path\fR]
+            [prefix=\fIDBprefix\fR]
+            
+pktool list keystore=file
+            objtype=cert
+            [infile=\fIinput-fn\fR]
+            [dir=\fIdirectory-path\fR]
+            [serial=\fIhex-serial-number\fR]
+            [issuer=\fIissuer-DN\fR]
+            [subject=\fIsubject-DN\fR]
+
+pktool list keystore=file
+            objtype=\fIkey\fR
+            [infile=\fIinput-fn\fR]
+            [dir=\fIdirectory-path\fR]
+.fi
+.in -2
+.sp
+
+証明書、鍵、または証明書失効リスト (CRL) を一覧表示します。PKCS#11 トークンの個人証明書または秘密鍵を表示すると、正しい PIN を入力して PKCS#11 トークンに対する認証を行うよう求めるプロンプトが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetpin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsetpin\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool setpin keystore=nss
+       [token=\fItoken\fR]
+       [dir=\fIdirectory-path\fR]
+       [prefix=\fIDBprefix\fR]
+
+pktool setpin [ keystore=pkcs11]
+       [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+       [usertype=user | so]
+.fi
+.in -2
+.sp
+
+PKCS#11 または NSS トークンに対してユーザーを認証するために使用されるパスフレーズを変更します。パスフレーズには、NULL 以外の 1 - 256 文字の長さの任意の文字列を指定できます。
+.sp
+古いパスフレーズがある場合、\fBsetpin\fR は、そのパスフレーズを入力するよう求めるプロンプトを表示します。古いパスフレーズが一致すると、\fBpktool\fR は、新しいパスフレーズを 2 回入力するよう求めるプロンプトを表示します。2 回入力した新しいパスフレーズが一致すると、それがトークンの最新のパスフレーズになります。 
+.sp
+Sun Software PKCS#11 ソフトトークンキーストア (デフォルト) の場合は、\fBsetpin\fR コマンドを使用してオブジェクトストアのパスフレーズを変更するときに、デフォルトのパスフレーズ \fBchangeme\fR を古いパスフレーズとして使用する必要があります。この操作は、パスフレーズを初期化して、新しく作成したトークンオブジェクトストアに設定するために必要です。
+.sp
+PKCS#11 ベースのトークンに対して \fBusertype=so\fR オプションを指定すると、通常ユーザーの PIN ではなく、セキュリティー責任者 (Security Officer、SO) ユーザーの PIN が変更されます。デフォルトでは、\fBusertype\fR は \fBuser\fR とみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsigncsr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsigncsr\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+signcsr keystore=pkcs11
+        signkey=\fIlabel\fR (label of key to use for signing)
+        csr=\fICSR_filename\fR
+        serial=\fIserial_number_hex_string_for_final_certificate\fR
+        outcert=\fIfilename_for_final_certificate\fR
+        issuer=\fIissuer-DN\fR
+        [store=y|n] (store the new cert in NSS DB, default=n)
+        [outlabel=\fIcertificate label\fR]
+        [format=pem|der] (certificate output format)
+        [subject=\fIsubject-DN\fR] (override the CSR subject name)
+        [altname=\fIsubjectAltName\fR] (add subjectAltName )
+        [keyusage=[critical:]\fIusage,...\fR] (add key usage bits)
+        [eku=[critical:]\fIEKU_Name,...\fR] (add Extended Key Usage )
+        [lifetime=\fInumber-hour\fR|\fInumber-day\fR|\fInumber-year\fR]
+        [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+signcsr keystore=\fIfile\fR
+        signkey=\fIfilename\fR
+        csr=\fICSR_filename\fR
+        serial=\fIserial_number_hex_string_for_final_certificate\fR
+        outcert=\fIfilename_for_final_certificate\fR
+        issuer=\fIissuer-DN\fR
+        [format=pem|der] (certificate output format)
+        [subject=\fIsubject-DN\fR] (override the CSR subject name)
+        [altname=\fIsubjectAltName\fR] (add a subjectAltName)
+        [keyusage=[critical:]\fIusage,...\fR] (add key usage bits)
+        [lifetime=\fInumber-hour\fR|\fInumber-day\fR|\fInumber-year\fR]
+        [eku=[critical:]\fIEKU_ Name,...\fR] (add Extended Key Usage)
+signcsr keystore=nss
+        signkey=\fIlabel\fR (label of key to use for signing)
+        csr=\fICSR_filename\fR
+        serial=\fIserial_number_hex_string_for_final_certificate\fR
+        outcert=\fIfilename_for_final_certificate\fR
+        issuer=\fIissuer-DN\fR
+        [store=y|n] (store the new cert in NSS DB, default=n)
+        [outlabel=\fIcertificate label\fR]
+        [format=pem|der] (certificate output format)
+        [subject=\fIsubject-DN\fR] (override the CSR subject name)
+        [altname=\fIsubjectAltName\fR] (add a subjectAltName)
+        [keyusage=[critical:]\fIusage,...\fR] (add key usage bits)
+        [eku=[critical:]\fIEKU_Name,...\fR] (add Extended Key Usage)
+        [lifetime=\fInumber-hour\fR|\fInumber-day\fR|\fInumber-year\fR]
+        [token=token[\fI:manuf\fR[:\fIserial\fR]]]
+        [dir=\fIdirectory-path\fR]
+        [prefix=\fIDBprefix\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtokens\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtokens\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool tokens
+.fi
+.in -2
+.sp
+
+tokens サブコマンドは、表示可能なすべての PKCS#11 トークンを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.sp .6
+.RS 4n
+この\fB\fRサブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+pktool -?
+pktool --help
+.fi
+.in -2
+.sp
+
+\fB-?\fR オプションを使用すると、使用方法やヘルプ情報を表示できます。\fB--help\fR の機能は \fB-?\fR と同じです。
+.RE
+
+.SH 使用法
+.sp
+.LP
+\fBpktool\fR サブコマンドは次のオプションをサポートします。 
+.sp
+.ne 2
+.mk
+.na
+\fBaltname=[critical:]\fIsubjectAltName\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書のサブジェクト代替名です。-A オプションのあとに指定する引数は、タグ=値の形式にします。有効なタグは、IP、DNS、EMAIL、URI、DN、KRB、UPN、および RID です。altname 文字列の直前に \fBcritical:\fR というワードを付加すると、SubjectAltName 拡張が \fBcritical\fR としてマークされます。
+.sp
+例 1: \fIsubjectAltName\fR 拡張に IP アドレスを追加する: \fBaltname="IP=1.2.3.4"\fR 例 2: \fIsubjectAltName\fR 拡張に電子メールアドレスを追加し、critical としてマークする: \fBaltname="critical:EMAIL=first.last@company.com" \fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcurrlabel=token label\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、\fBinittoken\fR コマンドとのみ使用できます。これは、初期化するデフォルトトークンを見つけるために使用します。使用するトークン名の書式についての詳細は、\fBtoken\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcurve=\fR\fIElliptic_Curve_Name\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、X.509 証明書または証明書署名要求を生成する場合、または楕円曲線の鍵ペアを生成する場合に使用される楕円曲線パラメータを指定します。 
+.sp
+次の曲線名がサポートされています。
+.sp
+.in +2
+.nf
+secp112r1, secp112r2, secp128r1, secp128r2, secp160k1
+secp160r1, secp160r2, secp192k1, secp192r1, secp224k1
+secp224r1, secp256k1, secp256r1, secp384r1, secp521r1
+sect113r1, sect113r2, sect131r1, sect131r2, sect163k1
+sect163r1, sect163r2, sect193r1, sect193r2, sect233k1
+sect233r1, sect239k1, sect283k1, sect283r1, sect409k1
+sect409r1, sect571k1, sect571r1, c2pnb163v1, c2pnb163v2
+c2pnb163v3, c2pnb176v1, c2tnb191v1, c2tnb191v2, c2tnb191v3
+c2pnb208w1, c2tnb239v1, c2tnb239v2, c2tnb239v3, c2pnb272w1
+c2pnb304w1, c2tnb359v1, c2pnb368w1, c2tnb431r1, prime192v2
+prime192v3
+.fi
+.in -2
+.sp
+
+曲線名の一覧は、\fBgencert\fR、\fBgencsr\fR、または \fBgenkeypair\fR サブコマンドで \fBlistcurves\fR オプションを使用した場合にも表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdir=\fR\fIdirectory_path\fR\fR
+.ad
+.sp .6
+.RS 4n
+要求したオブジェクトが格納されている NSS データベースディレクトリまたは OpenSSL キーストアディレクトリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeku\fR=[critical:]\fIEKU_Name\fR,[critical:]\fIEKU_Name, ...\fR]\fR
+.ad
+.sp .6
+.RS 4n
+証明書または証明書要求に追加する X.509v3 拡張の拡張鍵用途の値を指定します。 
+.sp
+\fIEKU_Name\fR には、\fBserverAuth\fR、\fBclientAuth\fR、\fBcodeSigning\fR、\fBemailProtection\fR、\fBipsecEndSystem\fR、\fBipsecTunnel\fR、\fBipsecUser\fR、\fBtimeStamping\fR、\fBOCSPSigning\fR、\fBKPClientAuth\fR、\fBKPKdc\fR、または \fBscLogon\fR のいずれかを指定します。
+.sp
+例:  
+.sp
+.in +2
+.nf
+eku=KPClientAuth,clientAuth
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextractable=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+PKCS#11 トークン内に生成される対称鍵を抽出可能にするかどうかを指定します。有効な値は \fBy\fR および \fBn\fR です。デフォルト値は \fBy\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBformat=pem | der | pkcs12\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencert\fR サブコマンドの場合、このオプションは OpenSSL などファイルベースのキーストアにのみ適用されます。このオプションは、作成される鍵ファイルまたは証明書ファイルの出力形式を指定するために使用します。有効な書式は \fBpem\fR または \fBder\fR です。デフォルトの書式は \fBpem\fR です。
+.sp
+\fBgencsr\fR サブコマンドの場合、このオプションは CSR ファイルの出力エンコード形式を指定します。有効な書式は \fBpem\fR または \fBder\fR です。デフォルトの書式は \fBpem\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhash=md5 | sha1 | sha256 | sha384 | sha512\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencert\fR および \fBgencsr\fR サブコマンドの場合、このオプションを使用すると、呼び出し側は X.509 証明書の署名を生成するために使用するハッシュアルゴリズムを指定できます。このオプションは、NSS または PKCS#11 のキーストアを使用して EC または RSA ベースの証明書を作成するときに使用できます。OpenSSL のファイルベースのキーストアを使用する場合、楕円曲線はサポートされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfile=\fR\fIinput-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlist\fR および \fBdelete\fR サブコマンドで objtype=cert および keystore=file の場合、これらのサブコマンドの証明書ファイル名を指定します。\fBimport\fR サブコマンドの場合、インポートするファイル名を指定します。\fBlist\fR、\fBdelete\fR、および \fBimport\fR サブコマンドで \fBobjtype=crl\fR の場合、これらのサブコマンドの入力 CRL ファイル名を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBissuer=\fR\fIissuer-DN\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の発行者を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeylen=\fR\fIkey-size\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成する秘密鍵または対称鍵のサイズ (ビット数) を指定します。
+.sp
+\fBgencert\fR および \fBgencsr\fR サブコマンドの場合、デフォルトの鍵長は 1024 ビットです。
+.sp
+\fBgenkey\fR サブコマンドの場合、AES アルゴリズムを使用して生成する対称鍵の最小ビット数と最大ビット数は、それぞれ \fB128\fR と \fB256\fR です。ARCFOUR アルゴリズムを使用する場合の最小ビット数と最大ビット数は、それぞれ \fB8\fR と \fB2048\fR です。一般的な秘密鍵の場合、最小ビット数は \fB8\fR で最大ビット数は任意です。AES、ARCFOUR、または一般的な秘密鍵のデフォルトの鍵長は 128 です。DES 鍵または 3DES 鍵の場合、鍵長は固定であるため、このオプションを指定しても無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkeystore=\fBnss | pkcs11 | file\fR\fR
+.ad
+.sp .6
+.RS 4n
+基本となるキーストアのタイプ (NSS トークン、PKCS#11 トークン、またはファイルベースのプラグイン) を指定します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeytype=rsa | dsa | ec | aes | arcfour | des | 3des | generic\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成する秘密鍵または対称鍵のタイプを指定します。
+.sp
+\fBgencert\fR および \fBgencsr\fR サブコマンドの場合、有効な秘密鍵のタイプは \fBrsa\fR、\fBec\fR、または \fBdsa\fR です。デフォルトの鍵のタイプは \fBrsa\fR です。
+.sp
+\fBgenkey\fR サブコマンドの場合、有効な対称鍵のタイプは \fBaes\fR、\fBarcfour\fR、\fBdes\fR、\fB3des\fR、または \fBgeneric\fR です。デフォルトの鍵のタイプは \fBaes\fR です。 
+.sp
+.in +2
+.nf
+ keyusage=[critical:]usage,usage,usage,...
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+Key Usage strings:
+* digitalSignature
+* nonRepudiation
+* keyEncipherment
+* dataEncipherment
+* keyAgreement
+* keyCertSign
+* cRLSign
+* encipherOnly
+* decipherOnly
+.fi
+.in -2
+.sp
+
+例 1: cert (または csr) を使用して証明書または CRL 以外のデータを署名および検証するため (digitalSignature)、および暗号化鍵以外のデータを暗号化および復号化するため (dataEncipherment) に使用できるように KeyUsage を設定する: keyusage=digitalSignature,dataEncipherment
+.sp
+例 2: 上記 (例 1) と同じであるが、さらに critical ビットを設定する: keyusage=critical:digitalSignature,dataEncipherment
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlabel=\fIkey-label\fR | \fIcert-label\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencert\fR サブコマンドの場合、このオプションは、PKCS#11 トークン内の秘密鍵と自己署名証明書のラベルを指定します。
+.sp
+\fBgencsr\fR サブコマンドの場合、このオプションは、PKCS#11 トークン内の秘密鍵のラベルを指定します。
+.sp
+\fBlist\fR サブコマンドの場合、このオプションは、PKCS#11 トークン内の X.509 証明書 (\fBobjtype=key\fR の場合) または秘密鍵 (\fBobjtype=cert\fR の場合) のラベルを指定して、一覧を絞り込みます。
+.sp
+\fBdelete\fR サブコマンドの場合、このオプションは、X.509 証明書 (\fBobjtype=key\fR の場合) または秘密鍵 (\fBobjtype=cert\fR の場合) のラベルを指定して、指定したオブジェクトを PKCS#11 トークンから削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistcurves\fR\fR
+.ad
+.sp .6
+.RS 4n
+サポートされている楕円曲線名の一覧を表示します。このオプションは、\fBgencert\fR、\fBgencsr\fR、または \fBgenkeypair\fR サブコマンドでのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlifetime=\fInumber\fR-hour|\fInumber\fR-day|\fInumber\fR-year\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の有効期間を指定します。証明書の有効期間は、\fInumber\fR\fB-hour\fR、\fInumber\fR\fI-day\fR、または \fInumber\fR\fB-year\fR で指定できます。指定できる書式は 1 つだけです。デフォルトは \fB1-year\fR です。たとえば、このオプションは、\fBlifetime=1-hour、lifetime=2-day、lifetime=3-year\fR のようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnewlabel=token label\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、\fBinittoken\fR コマンドとのみ使用できます。これは、初期化するトークンに割り当てられたラベルを変更するために使用します。使用するトークン名の書式についての詳細は、\fBtoken\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnickname=\fR\fIcert-nickname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencert\fR サブコマンドの場合、このオプションを使用して、NSS キーストアの証明書のニックネームを指定する必要があります。
+.sp
+\fBlist\fR サブコマンドの場合、このオプションは、内容を表示する NSS トークン内の証明書のニックネームを指定します。\fBdelete\fR サブコマンドの場合、NSS トークンから CRL を削除するには、このオプションを使用して発行者の証明書のニックネームを指定します。\fBdelete\fR サブコマンドで NSS トークンから証明書を削除する場合、このオプションは証明書のニックネームを指定します。\fBimport\fR サブコマンドの場合、指定した入力ファイルを NSS トークンにインポートするには、このオプション使用して、生成される証明書のニックネームを指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobjtype=cert | key | crl\fR\fR
+.ad
+.sp .6
+.RS 4n
+オブジェクトのクラス (\fBcert\fR、\fBkey\fR、または \fBcrl\fR) を指定します。\fBdownload\fR サブコマンドの場合、このオプションを指定しないと、デフォルトの \fBcrl\fR が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobjtype=public | private | both\fR\fR
+.ad
+.sp .6
+.RS 4n
+オブジェクトのタイプ (非公開オブジェクトまたは公開オブジェクト、あるいはその両方) を指定します。このオプションは、\fBlist\fR および \fBdelete\fR サブコマンドで \fBobjtype=key\fR と指定した場合の PKCS#11 トークンにのみ適用されます。デフォルト値は \fBpublic\fR です。
+.sp
+\fBlist\fR サブコマンドの場合、label オプションをこのオプションと組み合わせると、鍵のリストをさらに絞り込むことができます。\fBdelete\fR サブコマンドの場合、このオプションを使用すると、削除する鍵を公開鍵または秘密鍵だけに絞り込むことができます。また、label オプションを省略すると、公開または非公開、あるいはその両方のタイプの鍵をすべて削除対象として指定できます。\fBobjtype\fR パラメータに指定する \fBpublic\fR、\fBprivate\fR、および \fBboth\fR は、以前のバージョンの \fBpktool\fR コマンドとの互換性を維持するために PKCS#11 キーストアにのみ適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutcert=\fR\fIcert-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み先の出力証明書ファイル名を指定します。このオプションは、OpenSSL などファイルベースのプラグインに対して指定する必要があります。このオプションともに、\fBoutkey=\fR\fIkey-fn\fR オプションも指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutcrl=\fIoutput-crl-fn\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み先の出力 CRL ファイル名を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutcsr=\fR\fIcsr-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み先の出力 CSR ファイル名を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutfile=\fR\fIoutput-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBexport\fR サブコマンドの場合、このオプションは、作成される出力ファイル名を指定します。\fBimport\fR サブコマンドの場合、このオプションは、証明書または CRL の出力ファイル名を指定します。OpenSSL などファイルベースのプラグインにのみ適用されます。\fBdownload\fR サブコマンドの場合、このオプションを指定しないと、ダウンロードされたファイルの名前は URL 文字列のベース名になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutformat=pem | der | pkcs12\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBimport\fR サブコマンドの場合、このオプションは、指定した PKCS#12 ファイルからファイルベースのプラグインに抽出される証明書または鍵の出力形式を指定します。有効な値は \fBpem\fR または \fBder\fR です。デフォルトは \fBpem\fR です。CRL を CRL ファイルベースのキーストアにインポートする場合、このオプションは、CRL の出力形式を指定します。有効な値は \fBpem\fR または \fBder\fR です。デフォルトは \fBder\fR です。\fBexport\fR サブコマンドの場合、このオプションは、作成される指定の出力ファイルの形式を指定します。サポートされている書式は、\fBpem\fR、\fBder\fR、または \fBpkcs12\fR です。デフォルトは \fBpkcs12\fR です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutkey=\fR\fIkey-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み先の出力秘密鍵ファイル名を指定します。このオプションは、ファイルベースのキーストアを使用する場合にのみ必要です。\fB\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprefix=\fR\fIDBprefix\fR\fR
+.ad
+.sp .6
+.RS 4n
+NSS データベースの接頭辞を指定します。このオプションは NSS トークンにのみ適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprint=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは \fBgenkey\fR サブコマンドで使用され、PKCS11 キーストアとファイルベースのキーストアに適用されます。\fBprint=y\fR の場合、\fBgenkey\fR サブコマンドは、生成された鍵の鍵値を 16 進数で 1 行に出力します。デフォルト値は \fBn\fR です。PKCS11 キーストアの場合、\fBsensitive=y\fR または \fBextractable=n\fR と指定して対称鍵を作成すると、\fBprint\fR オプションを \fBy\fR に設定していても鍵値は表示されません。鍵は作成されますが、「\fBcannot reveal the key value\fR」という警告が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsensitive=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+PKCS#11 トークン内に生成される対称鍵を機密扱いするかどうかを指定します。有効な値は \fBy\fR および \fBn\fR です。デフォルト値は \fBn\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserial=\fR\fIhex-serial-number \fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書に対して一意のシリアル番号を指定します。シリアル番号は 16 進数値で指定する必要があります。例: \fB0x0102030405060708090a0b0c0d0e0f\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubject=\fR\fIsubject-DN \fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書または証明書要求に対して特定の証明書所有者を指定します。\fBsubject=\fR の設定例を次に示します。 
+.sp
+.in +2
+.nf
+subject=O=Sun Microsystems Inc., \e 
+OU=Solaris Security Technologies Group, \e
+L=Ashburn, ST=VA, C=US, CN=John Smith
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+トークンラベルの末尾にスペースがある場合でも、このオプションではユーザーがスペースを入力する必要はありません。 
+.sp
+コロンで区切られたトークン識別文字列です (\fB\fItoken\fR:\fImanuf\fR:\fIserial\fR\fR)。いずれかの部分に文字として \fB:\fR を含める場合、バックスラッシュ (\fB\e\fR) を使用してエスケープする必要があります。\fB:\fR がない場合、文字列全体 (最大 32 文字) がトークンラベルとみなされます。\fB:\fR が 1 つだけある場合、文字列はトークンラベルと作成者となります。\fBkeystore=nss\fR と指定した場合、このオプションを指定しないと、デフォルトで NSS 内部トークンが使用されます。\fBkeystore=pkcs11\fR と指定した場合、このオプションを指定しないと、デフォルトで \fBpkcs11_softtoken\fR が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrust=\fItrust\fR-\fIvalue\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の信頼属性を指定します。これは NSS 証明書専用であり、標準の NSS 構文が適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusertype=user | so\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsetpin\fR コマンドの実行対象となるユーザーのタイプを指定します。デフォルトは標準ユーザーですが、\fBso\fR を指定すると、トークンのセキュリティー責任者の PIN を設定できます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBurl=\fR\fIurl_string\fR\fR
+.ad
+.sp .6
+.RS 4n
+CRL または証明書ファイルをダウンロードするための URL を指定します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverifycrl=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+CRL を NSS キーストアにインポートする場合、このオプションは、CRL の検証を実行するかどうかを指定します。有効な値は \fBy\fR および \fBn\fR です。デフォルト値は \fBn\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp_proxy=\fR\fIproxy_str\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロキシサーバーのホスト名とポート番号を指定します。書式は \fIhttp\fR\fB://\fIhostname\fR[:\fIport\fR]\fR または \fIhostname\fR\fB[:\fIport\fR]\fR です。このオプションを指定しないと、\fBdownload\fR サブコマンドは \fBhttp_proxy\fR 環境変数をチェックします。コマンド行オプションが環境変数よりも優先されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR自己署名証明書を生成する
+.sp
+.LP
+次の例では、証明書を作成し、コマンドで指定したキーストアに格納しています。
+
+.sp
+.in +2
+.nf
+ $ pktool gencert keystore=nss nickname=WebServerCert \e
+       subject="O=Sun Microsystems Inc., OU=Solaris Security Technologies Group, \e
+       L=Ashburn, ST=VA, C=US, CN=John Smith" dir=/etc/certs \e
+       keytype=rsa keylen=2048 hash=sha512
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR証明書署名要求を生成する
+.sp
+.LP
+次の例では、CSR を作成し、コマンドで指定したキーストアに格納しています。
+
+.sp
+.in +2
+.nf
+ $ pktool gencsr keystore=nss subject="O=Sun Microsystems Inc., \e
+       OU=Solaris Security Technologies Group, L=Ashburn, ST=VA, C=US, \e
+       CN=John Smith" keytype=rsa keylen=2048 hash=sha256 outcsr=csr.dat
+ 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR証明書をインポートする
+.sp
+.LP
+次の例では、証明書オブジェクトを指定の入力ファイルからコマンドで指定したキーストアにインポートしています。
+
+.sp
+.in +2
+.nf
+ $ pktool import keystore=nss objtype=cert infile=mycert.pem \e
+       nickname=mycert
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBattributes\fR(5), \fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+RSA PKCS#11 v2.11 http://www.rsasecurity.com
+.sp
+.LP
+RSA PKCS#12 v1.0 http://www.rsasecurity.com
+.sp
+.LP
+SECG Recommended Elliptic Curve Domain Parameters http://www.secg.org

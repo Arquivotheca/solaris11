@@ -1,0 +1,839 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH profiles 1 "24 May 2011" "SunOS 5.11" "User Commands"
+.SH NAME
+profiles \- list and manage rights profiles
+.SH SYNOPSIS
+.LP
+.nf
+\fBprofiles\fR [\fB-l\fR] [\fB-a\fR | \fIuser\fR ...] [\fB-S\fR \fIrepository\fR]
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR]
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR] \fIsubcommand\fR
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fB-p\fR \fIprofiles\fR [\fB-S\fR \fIrepository\fR] \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBprofiles\fR \fBhelp\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBprofiles\fR utility creates and modifies the configuration of a rights profile in the \fBprof_attr\fR(4) or \fBexec_attr\fR(4) databases in the local files name service or LDAP name service. A rights profile configuration consists of a profile name and a number of properties.
+.sp
+.LP
+The following synopsis of the profiles subcommand is for interactive usage:
+.sp
+.in +2
+.nf
+profiles \fB-p\fR \fIprofile\fR [\fB-S\fR \fIrepository\fR] [\fIsubcommand\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fBprofiles\fR command prints on standard output the names of the rights profiles that have been assigned to you or to the optionally-specified user or role name. Profiles are a bundling mechanism used to enumerate the commands and authorizations needed to perform a specific function. Along with each listed executable are the process attributes, such as the effective user and group \fBID\fRs, with which the process runs when started by a privileged command interpreter. See the \fBpfexec\fR(1) man page. Profiles can contain other profiles defined in \fBprof_attr\fR(4).
+.sp
+.LP
+Multiple profiles can be combined to construct the appropriate access control. When profiles are assigned, the authorizations are added to the existing set. If the same command appears in multiple profiles, the first occurrence, as determined by the ordering of the profiles is used for process-attribute settings. For convenience, a wildcard can be specified to match all commands.
+.sp
+.LP
+The special profile "Stop" shortcuts the evaluations of further profiles. Profiles seen after the "Stop" profile are not evaluated nor are they used to find additional commands. This profile can be used to sidestep profiles listed in \fB/etc/security/policy.conf\fR with the \fBPROF_GRANTED\fR key and the authorizations listed with \fBAUTH_GRANTED\fR in that file.
+.sp
+.LP
+When profiles are interpreted, the profile list is loaded from \fBuser_attr\fR(4). If any default profiles are defined in \fB/etc/security/policy.conf\fR (see \fBpolicy.conf\fR(4)), the list of default profiles are added to the list loaded from \fBuser_attr\fR(4). Matching entries in \fBprof_attr\fR(4) provide the authorizations list, and matching entries in \fBexec_attr\fR(4) provide the commands list.
+.SS "Properties"
+.sp
+.LP
+When invoked with the \fB-p\fR option, the properties of the specified profile, as well as the properties of its associated executable files can be managed. However, to maintain system integrity, those profiles that are maintained by Solaris can not modified by this command. Such profiles can only be modified via the pkg(1) command during a system update. 
+.sp
+.LP
+Optionally, other profiles can also be delivered by the pkg(1) command as not modifiable. 
+.sp
+.LP
+To prevent privilege escalation, the property values are restricted based on the user's authorizations. At a minimum, an administrator needs to be granted the Rights Management profile. Additionally, to modify security-related properties controlled by delegate authorizations, an administrator must be granted Rights Delegation profile. See \fBexec_attr\fR(4), \fBprof_attr\fR(4), and the following summary for details.
+.sp
+.LP
+Property values can be simple strings, or comma-separated lists of simple strings. Simple strings containing white space must be double quoted. 
+.sp
+.LP
+The profiles command operates in both \fBprofile\fR and \fBcommand\fR contexts. The \fBprofile\fR context is the initial state, in which the various profile properties can be managed. The following table summarizes the properties in the \fBprofile\fR context:
+.sp
+.in +2
+.nf
+Property Name   Value Type         Required Authorizations
+
+name            simple             none
+auths           list of simple     solaris.auth.{assign/delegate}
+profiles        list of simple     solaris.profile.{assign/delegate}
+privs           list of simple     solaris.privilege.{assign/delegate}
+limitpriv       list of simple     solaris.privilege.{assign/delegate}
+defaultpriv     list of simple     solaris.privilege.{assign/delegate}
+always_audit    list of simple     solaris.audit.assign
+never_audit     list of simple     solaris.audit.assign
+desc            simple             none
+help            simple             none
+cmd             simple/new context none
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The command context is entered by specifying the \fBcmd\fR property. While in the \fBcommand\fR context, the properties of the current command can be managed. 
+.sp
+.LP
+The following table summarizes the properties in the \fBcommand\fR context: 
+.sp
+.in +2
+.nf
+Property Name   Value Type         Required Authorizations
+
+id              simple             none
+privs           list of simple     solaris.privilege.{assign/delegate}
+limitprivs      list of simple     solaris.privilege.{assign/delegate}
+euid            simple             solaris.profile.cmd.setuid
+uid             simple             solaris.profile.cmd.setuid
+egid            simple             solaris.group.{assign/delegate}
+gid             simple             solaris.group.{assign/deleg
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The values that can be specified in the \fBprofile\fR context properties are described in the following list. . An equal sign (\fB=\fR) is required between the property and its values as specified in the following list.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalways_audit\fR\fR
+.ad
+.RS 16n
+.rt  
+The audit flags specifying event classes to always audit. Only the first occurrence of this property, either in the user's \fBuser_attr\fR(4) entry, or in the ordered list of assigned profiles is applied at login and \fBsu\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauths\fR\fR
+.ad
+.RS 16n
+.rt  
+One or more comma-separated authorizations to be added to the new profile. If the wildcard character (\fB*\fR) is use in an authorization name, the name must be enclosed in double quotes (\fB"\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcmd\fR\fR
+.ad
+.RS 16n
+.rt  
+The fully qualified path to an executable file or the asterisk (\fB*\fR) symbol, which is used to specify all commands. An asterisk that replaces the filename component in a pathname indicates all files in a particular directory.
+.sp
+This is a special property that is used to enter the \fBcommand\fR context to manage the security properties of a command.
+.sp
+Either numeric IDs and names can be used for these IDs. 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBid\fR\fR
+.ad
+.RS 14n
+.rt  
+This property is initially set to the value that was specified by the previous \fBcmd\fR property, but can be modified. When used in conjunction with the select subcommand, the properties of an existing command can be cloned for subsequent editing.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivs\fR\fR
+.ad
+.RS 14n
+.rt  
+The set of privileges to be applied to the inheritable set of the executable process. The default is basic. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimitprivs\fR\fR
+.ad
+.RS 14n
+.rt  
+The set of privileges to be applied to the limit set of the executable process. The default is all. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeuid\fR\fR
+.ad
+.RS 14n
+.rt  
+The effective user ID of the process that executes with the command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid\fR\fR
+.ad
+.RS 14n
+.rt  
+The real user ID of the process that executes with the command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBegid\fR\fR
+.ad
+.RS 14n
+.rt  
+The effective group ID of the process that executes with the command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid\fR\fR
+.ad
+.RS 14n
+.rt  
+The real group ID of the process that executes with the command. 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaultpriv\fR\fR
+.ad
+.RS 16n
+.rt  
+The default set of privileges assigned to a user's set of processes. Only the first occurrence of this property, either in the user's \fBuser_attr\fR(4) entry, or in the ordered list of assigned profiles is applied at login and \fBsu\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdesc\fR\fR
+.ad
+.RS 16n
+.rt  
+The description of the new profile. The text must be enclosed in quotation marks.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.RS 16n
+.rt  
+The help file name for the new profile. The help file is copied to the \fB/usr/lib/help/profiles/locale/<locale>\fR directory. Where \fB<locale>\fR is the value of the user's language locale, or \fBC\fR if none is specified. Specifying this property is only applicable in the files repository.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimitpriv\fR\fR
+.ad
+.RS 16n
+.rt  
+The maximum set of privileges a user or any process started by the user, whether through \fBsu\fR(1M) or any other means, can obtain. Only the first occurrence of this property, either in the user's \fBuser_attr\fR(4) entry, or in the ordered list of assigned profiles is applied at login and \fBsu\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 16n
+.rt  
+The name of the profile. The initial value for the name is specified using \fB-p\fR option on the command line. If the name is changed, the current profile properties are applied to the newly named profile. In this way an existing profile can be cloned for subsequent editing. The name must not match an existing profile.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnever_audit\fR\fR
+.ad
+.RS 16n
+.rt  
+The audit flags specifying event classes to never audit. Only the first occurrence of this property, either in the user's \fBuser_attr\fR(4) entry, or in the ordered list of assigned profiles is applied at login and \fBsu\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivs\fR\fR
+.ad
+.RS 16n
+.rt  
+The set of privileges that can be specified using the \fBP\fR option of the \fBpfexec\fR(1) command. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofiles\fR\fR
+.ad
+.RS 16n
+.rt  
+One or more comma-separated supplementary profiles to be added to the new profile. 
+.RE
+
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 19n
+.rt  
+Lists all the profile names in the specified repository. If no repository is specified, it follows whatever is configured for \fBprof_attr\fR in \fBnsswitch.conf\fR(4).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.RS 19n
+.rt  
+Specifies the name of profiles command file. \fIcommand_file\fR is a text file of profiles subcommands, one per line.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 19n
+.rt  
+Provides information about the Rights Profile and lists the commands and their special process attributes such as user and group \fBID\fRs.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprofile\fR\fR
+.ad
+.RS 19n
+.rt  
+Specifies the profile name.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIrepository\fR\fR
+.ad
+.RS 19n
+.rt  
+The valid repositories are \fBfiles\fR and \fBldap\fR. \fIrepository\fR specifies which name service is updated. The default \fIrepository\fR is files. 
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+When invoked with the \fB-p\fR option, subcommands can be provided on the command line or interactively. Multiple subcommands, separated by semicolons can be specified on the command line by enclosing the entire set in quotation marks. The lack of subcommands implies an interactive session, during which auto-completion of subcommands can be invoked by using the TAB key.
+.sp
+.LP
+The \fBadd\fR and \fBselect\fR subcommands can be used to select a specific command, at which point the context changes to that of the command. During an interactive session, the \fBcommand\fR context is identified by the command basename in the prompt string. The \fBend\fR and \fBcancel\fR subcommands are used to complete the command specification, at which time the context is reverted to the \fBprofile\fR context.
+.sp
+.LP
+Subcommands that can result in destructive actions or loss of work have a \fB-F\fR option to force the action. If input is from a terminal device, the user is prompted when appropriate. This could occur if a subcommand is given without the \fB-F\fR option. Otherwise, the action is disallowed, with a diagnostic message written to standard error.
+.sp
+.LP
+The property-value can be a simple value, or a list of simple values for those properties which accept lists. The following subcommands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd cmd=\fR\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+In the \fBprofile\fR context, begins the specification for a given command. The context is changed to the \fBcommand\fRtype.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Adds the specified values to the current property values. This subcommand can only be applied to properties that accept lists.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+End the command specification and reset context to \fBprofile\fR. Abandons any partially specified resources. cancel is only applicable in the \fBcommand\fR context.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIproperty name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Clear the value for the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+Commit the current configuration from memory to stable storage. The configuration must be committed for the changes to take effect. Until the in-memory configuration is committed, you can remove changes with the \fBrevert\fR subcommand. The \fBcommit\fR operation is attempted automatically upon completion of a \fBprofiles\fR session. Since a configuration must be correct to be committed, this operation automatically does a \fBverify\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Delete the specified profile from memory and stable storage. This operation is not permitted if the profile is included as a subprofile of another profile in the same repository. Instead, a list of profiles which include this profile is supplied from which the user must manually remove this profile prior to deleting it. Specify the \fB-F\fR option to force the action. If the deletion is allowed, its action is instantaneous and the session is terminated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+End the command specification. This subcommand is only applicable in the \fBcommand\fR context. The \fBprofiles\fR command verifies that the current command is completely specified. If so, it is added to the in-memory configuration (see \fBcommit\fR for saving this to stable storage) and the context reverts to the \fBprofile\fR context. If the specification is incomplete, it issues an appropriate error message. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Exit the profiles session. A \fBcommit\fR is automatically attempted if needed. You can also use an \fBEOF\fR character to exit profiles. The \fB-F\fR option can be used to force the action.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-f\fR \fIoutput-fle\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Print configuration to standard output. Use the \fB-f\fR option to print the configuration to output-file. This option produces output in a form suitable for use in a command file option. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fIusage\fR] [\fIsubcommands\fR] [\fIproperties\fR] [\fI<subcommand.\fR] [\fI<properties>\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Print general help or help about specific topic. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfo\fR [\fIproperty-name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Display information about the current profile or the specified property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fBcmd=\fR\fIfullpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes the specified command from the profile. This subcommand is only valid in the \fBprofile\fR context.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-F\fR] \fBcmd\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes all the commands from the profile. A confirmation is required, unless you use the \fB-F\fR option. This subcommand is only valid in the \fBprofile\fR context.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Remove the specified values from the property. This can only be applied to properties that accept lists.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fB-F\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Revert the configuration back to the last committed state. The \fB-F\fR option can be used to force the action. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect cmd=\fR\fIfullpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select the command which matches the given pathname criteria, for modification. This subcommand is applicable only in the \fBprofile\fR context. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset property-name=\fR\fIproperty-value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set a given property name to the given value. Some properties (for example, \fBname\fR and \fBdesc\fR) are only valid in the \fBprofile\fR context, while others are only valid in the \fBcommand\fR context. This subcommand is applicable in both the \fBprofile\fR and \fBcommand\fR contexts.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verify the current configuration for correctness:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The required properties are specified.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The values are valid for each keyword.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The user is authorized to specify the values.
+.RE
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUsing the \fBprofiles\fR Command
+.sp
+.LP
+The output of the \fBprofiles\fR command has the following form:
+
+.sp
+.in +2
+.nf
+example% profiles tester01 tester02
+tester01 : Audit Management, All Commands
+tester02 : Device Management, All Commands
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRUsing the \fBlist\fR Option
+.sp
+.in +2
+.nf
+example% profiles -l tester01 tester02
+tester01 :
+    Audit Management:
+      /usr/sbin/audit          euid=root
+      /usr/sbin/auditconfig    euid=root    egid=sys
+    All Commands:
+      *
+tester02 :
+    Device Management:
+      /usr/bin/allocate:       euid=root
+      /usr/bin/deallocate:     euid=root
+    All Commands
+      *
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRCreating a New Profile
+.sp
+.LP
+The following creates a new User Manager profile in LDAP. new profile description is Manage users and groups, and the authorization assigned is \fBsolaris.user.manage\fR. The supplementary profile assigned is Mail Management. The help file name is \fBRtUserMgmt.html\fR.
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> set desc="Manage users and groups"
+profiles:User Manager> set help=RtUserMgmt.html
+profiles:User Manager> set auths=solaris.user.manage
+profiles:User Manager> set profiles="Mail Management"
+profiles:User Manager> exit
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRDisplaying Information Regarding the Current Configuration
+.sp
+.LP
+The following command displays information regarding the User Manager profile:
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap info
+name=User Manager
+desc=Manage users and  groups
+auths=solaris.user.manage
+profiles=Mail Management
+help=RtUserMgmt.html
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRDeleting a Profile
+.sp
+.LP
+The following command deletes the User Manager profile from LDAP:
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap delete -F
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRModifying a Profile
+.sp
+.LP
+The following modifies the User Manager profile in LDAP. The new profile description is \fBManage world\fR, the new authorization assignment is \fBsolaris.user.*\fR authorizations, and the new supplementary profile assignment is \fBAll\fR.
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> set desc="Manage world"
+profiles:User Manager> set auths="solaris.user.*"
+profiles:User Manager> set profiles=All
+profiles:User Manager> exit
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 7 \fRCreating an \fBexec_attr\fR Database Entry
+.sp
+.LP
+The following command creates a new \fBexec_attr\fR entry for the User Manager profile in LDAP. The \fB/usr/bin/cp\fR entry is added. The command has an effective user ID of \fB0\fR and an effective group ID of \fB0\fR. 
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> add cmd=/usr/bin/cp
+profiles:User Manager:cp> set euid=0
+profiles:User Manager:cp> set egid=0
+profiles:User Manager:cp> end
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fRDeleting an \fBexec_attr\fR Database Entry
+.sp
+.LP
+The following example deletes an \fBexec_attr\fR database entry for the User Manager profile from LDAP. The entry designated for the command \fB/usr/bin/cp\fR is deleted.
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> remove cmd=/usr/bin/cp
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 9 \fRModifying an \fBexec_attr\fR Database Entry
+.sp
+.LP
+The following modifies the attributes of the \fBexec_attr\fR database entry for the User Manager profile in LDAP. The \fB/usr/bin/cp\fR entry is modified to execute with the real user ID of \fB0\fR and the real group ID of \fB0\fR.
+
+.sp
+.in +2
+.nf
+example% profiles -p "User Manager" -S ldap
+profiles:User Manager> select cmd=/usr/bin/cp
+profiles:User Manager:cp> clear euid
+profiles:User Manager:cp> clear egid
+profiles:User Manager:cp> set uid=0
+profiles:User Manager:cp> set gid=0
+profiles:User Manager:cp> end
+profiles:User Manager> exit
+example%
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+An error occurred.
+.RE
+
+.SH FILES
+.sp
+.LP
+\fB/etc/security/exec_attr\fR
+.sp
+.LP
+\fB/etc/security/prof_attr\fR
+.sp
+.LP
+\fB/etc/user_attr\fR
+.sp
+.LP
+\fB/etc/security/policy.conf\fR
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBauths\fR(1), \fBpfexec\fR(1), \fBpkg\fR(1), \fBroles\fR(1), \fBgetprofattr\fR(3C), \fBauth_attr\fR(4), \fBexec_attr\fR(4), \fBnsswitch.conf\fR(4), \fBpolicy.conf\fR(4), \fBprof_attr\fR(4), \fBuser_attr\fR(4), \fBaudit_flags\fR(5), \fBattributes\fR(5), \fBprivileges\fR(5)

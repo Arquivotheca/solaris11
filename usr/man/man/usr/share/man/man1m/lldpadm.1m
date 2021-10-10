@@ -1,0 +1,1671 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH lldpadm 1M "28 Jul 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+lldpadm \- Link Layer Discovery Protocol administration tool
+.SH SYNOPSIS
+.LP
+.nf
+\fBlldpadm\fR \fBset-agentprop\fR \fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...] \fIlldp_agent\fR
+\fBlldpadm\fR \fBreset-agentprop\fR \fB-p\fR \fIprop\fR[,...] \fIlldp_agent\fR
+\fBlldpadm\fR \fBshow-agentprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR,...] \fB-p\fR \fIprop\fR[,...] [\fIlldp_agent\fR]
+.fi
+
+.LP
+.nf
+\fBlldpadm\fR \fBset-tlvprop\fR \fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...] \fItlv_name\fR
+\fBlldpadm\fR \fBreset-tlvprop\fR \fB-p\fR \fIprop\fR[,...] \fItlv_name\fR
+\fBlldpadm\fR \fBshow-tlvprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR,...] \fB-p\fR \fIprop\fR[,...] [\fItlv_name\fR]
+.fi
+
+.LP
+.nf
+\fBlldpadm\fR \fBset-agenttlvprop\fR \fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...] \fB-a\fR \fIlldp_agent\fR
+     \fItlv_name\fR
+\fBlldpadm\fR \fBreset-agenttlvprop\fR \fB-p\fR \fIprop\fR[,...] \fB-a\fR \fIlldp_agent\fR \fItlv_name\fR
+\fBlldpadm\fR \fBshow-agenttlvprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR,...] \fB-p\fR \fIprop\fR[,...]
+     [\fB-a\fR \fIlldp_agent\fR] [\fItlv_name\fR]
+.fi
+
+.LP
+.nf
+\fBlldpadm\fR \fBshow-agent\fR [\fB-c\fR] [\fB-s\fR] [\fB-v\fR] \fB-o\fR \fIfield\fR,...] [\fB-l\fR|\fB-r\fR] [\fIlldp_agent\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBlldpadm\fR command is used to enable or disable a Link Layer Discovery Protocol (LLDP) agent on a physical datalink. \fBlldpadm\fR is also used to configure the behavior of an LLDP agent. The LLDP agent implements the LLDP protocol for a given physical datalink. LLDP is a one-way link layer protocol that allows an IEEE 802 LAN station to advertise the capabilities and current status of the system to other stations attached to the same LAN. The LLDP agent can also receive information about the capabilities and current status of the system associated with a remote station. LLDP agent can either be enabled for transmission only, for reception only, or for both.
+.sp
+.LP
+Information to be exchanged is packed as a sequence of type, length, and value (TLVs), wherein the type field identifies the type of information, the length field indicates the length of the information field in octets, and the value field contains the information itself.
+.SH OPERANDS
+.sp
+.LP
+Each \fBlldpadm\fR subcommand operates on one of the following objects:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIlldp_agent\fR\fR
+.ad
+.sp .6
+.RS 4n
+An LLDP agent implements the LLDP protocol for a given physical datalink that is connected to IEEE 802 LAN. The only supported physical links are the ones of media type Ethernet. Thus, LLDP can be enabled on all the links displayed in \fBdladm show-phys\fR output that are of media type Ethernet. The name of the \fIlldp_agent\fR is the name of the datalink itself.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItlv_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Name of the TLV whose value can be modified. The supported modifiable TLVs are:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsyscapab\fR and \fBmgmtaddr\fR. These form Global TLVs that are common to all the LLDP agents on the system.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpfc\fR and \fBappln\fR. Per-LLDP agent TLVs.
+.RE
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+\fBlldpadm\fR supports the following subcommands.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm set-agentprop\fR|\fBset-ap\fR \fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...] \fIlldp_agent\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the value of one or more LLDP agent properties to the value specified. If the property takes multiple values then the value should be specified with a comma as the delimiter. The value is always made persistent and thus will be reapplied on system reboot or \fBlldpd\fR(1M) daemon restart. The list of properties supported and each property's possible values can be retrieved using \fBshow-agentprop\fR subcommand.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...], \fB--prop\fR \fIprop\fR[+|-]=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to be set to the specified values. It also provides the following qualifiers to perform add and delete operations in addition to assignment.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.RS 5n
+.rt  
+Adds the given value to the current list of value(s).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.RS 5n
+.rt  
+Removes the given value from the current list of value(s).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.RS 5n
+.rt  
+Makes a new assignment and removes all the current value(s).
+.RE
+
+See \fBEXAMPLES\fR for more information on how to use the qualifiers.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm reset-agentprop\fR|\fBreset-ap\fR \fB-p\fR \fIprop\fR[,...] \fIlldp_agent\fR\fR
+.ad
+.sp .6
+.RS 4n
+Resets one or more properties to their default values. The default values for properties can be retrieved using \fBshow-agentprop\fR subcommand.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR \fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to reset.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm show-agentprop\fR|\fBshow-ap\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR,...] \fB-p\fR \fIprop\fR[,...] [\fIlldp_agent\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the current value of one or more properties, either for  all of the LLDP agents or for the specified LLDP agent. Several properties of interest can be retrieved at a time by providing comma-separated property names to \fB-p\fR option. If the \fB-p\fR option is not specified, all available properties are displayed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The field name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each LLDP agent, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAGENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the LLDP agent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The read/write permissions of the property. The value shown will be \fBr\fR (read only), \fBw\fR (write only) or \fBrw\fR (read/write).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current value of the property. If the value is not set, it is shown as \fB--\fR. If it is unknown, the value is shown as \fB?\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default value of the property. If the property has no default value, \fB--\fR is shown.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of the values the property can have. If the values span a numeric range, \fImin\fR - \fImax\fR might be shown as shorthand. If the possible values are unknown or unbounded, \fB--\fR is shown.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR \fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display.
+.RE
+
+For the supported list of agent properties, see "Agent Properties" section below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm set-tlvprop\fR|\fBset-tp\fR \fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...] \fItlv_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the value of one or more TLV properties to the value specified. If the property takes multiple values, the value should be specified with a comma as the delimiter. The value is always persisted and will be reapplied on system reboot or \fBlldpd\fR(1M) daemon restart. The list of properties supported and each property's possible values can be retrieved using \fBshow-tlvprop\fR subcommand.
+.LP
+Note - 
+.sp
+.RS 2
+The TLVs modified using this subcommand apply to all the LLDP agents running on the system.
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...], \fB--prop\fR \fIprop\fR[+|-]=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+See the description of this option under the \fBset-agentprop\fR subcommand, above.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm reset-tlvprop\fR|\fBreset-tp\fR \fB-p\fR \fIprop\fR[,...] \fItlv_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Resets one or more properties to their default values. The default values for properties can be retrieved using \fBshow-tlvprop\fR subcommand.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR \fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to reset.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm show-tlvprop\fR|\fBshow-tp\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR,...] \fB-p\fR \fIprop\fR[,...] [\fIlldp_agent\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the current value of one or more properties, either for all the TLVs or for a specified TLV. Several properties of interest can be retrieved at a time by providing comma-separated property names to \fB-p\fR option. If the \fB-p\fR option is not specified, all available properties are displayed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The field name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each TLV, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTLVNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the TLV.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The read/write permissions of the property. The value shown will be \fBr\fR (read only), \fBw\fR (write only) or \fBrw\fR (read/write).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current value of the property. If the value is not set, it is shown as \fB--\fR. If it is unknown, the value is shown as \fB?\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default value of the property. If the property has no default value, \fB--\fR is shown.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of the values the property can have. If the values span a numeric range, \fImin\fR - \fImax\fR might be shown as shorthand. If the possible values are unknown or unbounded, \fB--\fR is shown.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR \fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm set-agenttlvprop\fR|\fBset-atp\fR \fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...] \fB-a\fR \fIlldp_agent\fR \fItlv_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the value of one or more TLV properties to the value specified. The \fB-a\fR option is mandatory and identifies the name of the agent for which the TLV property needs to be set. In this way, the TLV property modification is reflected only on the specified agent. If the property takes multiple values then the value should be specified with a comma as the delimiter. The value is always made persistent and will be reapplied on system reboot or \fBlldpd\fR(1M) daemon restart. The list of properties supported and each property's possible values can be retrieved using \fBshow-agenttlvprop\fR subcommand.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[+|-]=\fIvalue\fR[,...], \fB--prop\fR \fIprop\fR[+|-]=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+See the description of this option under the \fBset-agentprop\fR subcommand, above.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIlldp_agent\fR, \fB--agent\fR=\fIlldp_agent\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the LLDP agent for which TLV properties need to be displayed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm reset-agenttlvprop\fR|\fBreset-atp\fR \fB-p\fR \fIprop\fR[,...]=\fIvalue\fR[,...] \fB-a\fR \fIlldp_agent\fR \fItlv_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Resets one or more properties to their default values. The \fB-a\fR option is mandatory and identifies the name of the agent for which the TLV property needs to be reset. The default values for properties can be retrieved using \fBshow-agenttlvprop\fR subcommand.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR \fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIlldp_agent\fR, \fB--agent\fR=\fIlldp_agent\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the LLDP agent for which TLV properties need to be displayed.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm show-agenttlvprop\fR|\fBshow-atp\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR,...] \fB-p\fR \fIprop\fR[,...] [\fB-a\fR \fIlldp_agent\fR] [\fItlv_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the current value of one or more properties, either for all of the TLVs or for a specified TLV. If a single LLDP agent is not specified (using \fB-a\fR), TLV properties for all LLDP agents are displayed. Several properties of interest can be retrieved at a time by providing comma-separated property names to the \fB-p\fR option. If the \fB-p\fR option is not specified, all available properties are displayed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The field name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each LLDP agent, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAGENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the LLDP agent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTLVNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the TLV.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the property.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The read/write permissions of the property. The value shown will be \fBr\fR (read only), \fBw\fR (write only) or \fBrw\fR (read/write).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current value of the property. If the value is not set, it is shown as \fB--\fR. If it is unknown, the value is shown as \fB?\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default value of the property. If the property has no default value, \fB--\fR is shown.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of the values the property can have. If the values span a numeric range, \fImin\fR - \fImax\fR might be shown as shorthand. If the possible values are unknown or unbounded, \fB--\fR is shown.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR \fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A comma-separated list of properties to display.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIlldp_agent\fR, \fB--agent\fR=\fIlldp_agent\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the LLDP agent for which TLV properties need to be displayed.
+.RE
+
+For the supported list of TLV properties that apply on a per-LLDP agent basis, see the "Per-LLDP agent TLV properties" section, below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlldpadm show-agent\fR   [\fB-c\fR] [\fB-s\fR] [\fB-v\fR] \fB-o\fR \fIfield\fR,...] [\fB-l\fR | \fB-r\fR] [\fIlldp_agent\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Show the information advertised by the specified LLDP agent or information advertised by the adjacent neighbors to the specified LLDP agent. If no LLDP agent is specified, then the local or remote information will be displayed for all the LLDP agents. The information is displayed as a multi-line output, with each line containing information about a single TLV in the following format:
+.sp
+.in +2
+.nf
+\fI<Name of the TLV>\fR : \fI<TLV Information expressed as a string>\fR
+.fi
+.in -2
+.sp
+
+The following lines can be displayed:
+.sp
+.in +2
+.nf
+                     Agent:
+        Chassis ID Subtype:
+                Chassis ID:
+           Port ID Subtype:
+                   Port ID:
+          Port Description:
+              Time to Live:
+               System Name:
+        System Description:
+    Supported Capabilities:
+      Enabled Capabilities:
+        Management Address:
+        Maximum Frame Size:
+              Port VLAN ID:
+              VLAN Name/ID:
+       VNIC PortID/VLAN ID:
+   Aggregation Information:
+               PFC Willing:
+                   PFC Cap:
+                   PFC MBC:
+                PFC Enable:
+Application(s)(ID/Sel/Pri):
+  Next Packet Transmission:  [\fIdisplayed only when -l is used\fR] 
+   Information Valid Until:  [\fIdisplayed only when -r is used\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display using a stable machine-parsable format. The \fB-o\fR option is required with this option. See "Parsable Output Format", below.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR, \fB--local\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays information advertised by the local LLDP agent. This option is mutually exclusive of the \fB-r\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR, \fB--remote\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays information advertised by the adjacent neighbors. This option is mutually exclusive of the \fB-l\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+Show the statistics for the specified LLDP agents or for all the LLDP agents on the system. Every LLDP agent maintains statistical counters that are used to count significant events in the transmit and receive state machines. These counters are defined to be 32-bit unsigned integers.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The field name must be one of the fields listed below, or the special value \fBall\fR to display all fields. For each TLV, the following fields can be displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAGENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the LLDP agent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFRAMES\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of all LLDP frames received by \fBAGENT\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIERR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of all LLDPDUs received with one or more detectable errors.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDISCARD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of all LLDPDUs received and then discarded for any of the following reasons:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+incorrectly formed LLDPDUs with respect to the first three mandatory TLVs
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+insufficient space to store the incoming LLDPDU
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFRAMES\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of all LLDP frames transmitted by \fBAGENT\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOLENERR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of times the outgoing LLDPDU exceeded the length restrictions of 1500 bytes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTLVDISCARD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of all TLVs received and then discarded because the TLVs did not adhere to the TLV usage rules as specified by the standard.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTLVUNRECOG\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of all TLVs received that are not recognized by the LLDP agent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAGEOUT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Count of the times that a neighbor's information has been deleted because of aging.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR, \fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays detailed information.
+.RE
+
+.RE
+
+.SS "Parsable Output Format"
+.sp
+.LP
+The \fBlldpadm\fR \fBshow\fR subcommands have a \fB-c\fR option that displays output in a machine-parsable format. The output format is one or more lines of colon (:)-delimited fields. The fields displayed are specific to the subcommand used and are listed under the entry for the \fB-o\fR option for a given subcommand. Output includes only those fields requested by means of the -\fB-o\fR option, in the order requested. Note that the \fB-o\fR \fBall\fR option, which displays all the fields for a given subcommand, cannot be used with the parsable output option.
+.sp
+.LP
+When you request multiple fields, any literal colon characters are escaped by a backslash (\fB\\fR) before being output. Similarly, literal backslash characters are also escaped with a backslash. This escape format is parsable by using shell \fBread\fR(1) functions with the environment variable set as \fBIFS=\fR: Note that escaping is not done when you request only a single field.
+.SS "Agent Properties"
+.sp
+.LP
+The following LLDP agent properties are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmode\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures the operation mode of the LLDP agent. Possible values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtxonly\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables LLDP for transmission only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrxonly\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables LLDP for receiving only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBboth\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables LLDP for both transmission and receiving.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Disables LLDP on the LLDP agent.
+.RE
+
+Every LLDP packet (LLDPDU) transmitted by an LLDP agent contains multiple TLVs. The following four TLVs are mandatory and therefore included in all the LLDPDUs transmitted by an agent configured in the \fBtxonly\fR or both mode:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCHASSIS ID\fR\fR
+.ad
+.sp .6
+.RS 4n
+The value transmitted in the Chassis ID TLV is:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+subtype = 7 (locally assigned)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Chassis ID = \fBhostid\fR(1)
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPORT ID\fR\fR
+.ad
+.sp .6
+.RS 4n
+The value transmitted in the Port ID TLV is:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+subtype = 3 (MAC address)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Port ID = primary MAC address of the agent
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTTL\fR\fR
+.ad
+.sp .6
+.RS 4n
+The duration for which this packet is valid. The default value is 30 seconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEnd of PDU TLV\fR\fR
+.ad
+.sp .6
+.RS 4n
+End of PDU indicator.
+.RE
+
+.RE
+
+.sp
+.LP
+Optional TLVs that can be advertised are configured using the following properties:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbasic-tlv\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures the Basic Management TLVs that should be advertised by the LLDP agent. The possible values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBportdesc\fR\fR
+.ad
+.sp .6
+.RS 4n
+Alphanumeric string that identifies the datalink. Value set to the linkname.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsysname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Alphanumeric string that identifies the system. Value set to the output of \fB\&'uname -n'\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsysdesc\fR\fR
+.ad
+.sp .6
+.RS 4n
+Alphanumeric string that describes the system. Value set to the output of \fB\&'uname -a'\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsyscapab\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the systems supported and enabled capabilities.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmgmtaddr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the IP address of the system that can be used by network management.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdot1-tlv\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures the IEEE 802.1 Organizationally Specific TLVs that should be advertised by the LLDP agent. The possible values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlanname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the names and IDs of all the VLANS configured on the datalink.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpvid\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the default VLAN ID associated with the given datalink. It corresponds to the \fBdefault_tag\fR datalink property that is managed by means of the \fBdladm\fR(1M) utility.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinkaggr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates whether underlying datalink is in an aggregation or is capable of being part of an aggregation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpfc\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates whether underlying datalink supports PFC (Priority Flow Control) and the priorities for which the PFC pause frame is enabled. Also indicates whether the local endpoint is willing to negotiate the PFC configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBappln\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the priority that will be used by an application.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdot3-tlv\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures the IEEE 802.3 Organizationally Specific TLVs that should be advertised by the LLDP agent. The possible values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-framesize\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the maximum supported frame size for the underlying datalink.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvirt-tlv\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures the Solaris's Virtualization Specific TLVs that should be advertised by the LLDP agent. The possible values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvnic\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the MAC address of the Virtual NIC created on top of the underlying physical link. Also indicates any VLAN id associated with the VNIC. See \fBdladm\fR(1M) for more information on VNIC.
+.RE
+
+.RE
+
+.SS "Global TLVs and Their Properties"
+.sp
+.LP
+The following Global TLV properties are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsyscapab\fR (TLV name)\fR
+.ad
+.sp .6
+.RS 4n
+This property can one of the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsupported\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the supported capabilities on the system. The default supported capabilities are: \fBbridge\fR, \fBrouter\fR, and \fBstation\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates the enabled capabilities on the system. The enabled capabilities must be a subset of the supported capabilities.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmgmtaddr\fR (TLV name)\fR
+.ad
+.sp .6
+.RS 4n
+This property can have the following value:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipaddr\fR\fR
+.ad
+.sp .6
+.RS 4n
+The IP address(es), either IPv4 or IPv6, associated with the local LLDP agent that will be used to reach higher layer entities to assist discovery by network management.
+.RE
+
+.RE
+
+.SS "Per-Agent TLVs and Their Properties"
+.sp
+.LP
+The following Agent TLV properties are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBappln\fR (TLV name)\fR
+.ad
+.sp .6
+.RS 4n
+This property can have the following value:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapt\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configures the Application Priority Table for an Application TLV. One can add or remove entries from this table using the \fB+\fR and \fB-\fR qualifiers. Each entry in the table indicates the application and the priority that will be used for that application. Its value is of the form:
+.sp
+.in +2
+.nf
+\fIid\fR/\fIselector\fR/\fIpriority\fR
+.fi
+.in -2
+.sp
+
+The meaning of the \fIid\fR is determined by the \fIselector\fR field. The \fIselector\fR field can be any one of the following:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB1\fR \(em \fIid\fR indicates an Ethertype (an L2 protocol), therefore \fIid\fR's value should be greater than 1536
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB2\fR \(em \fIid\fR indicates a port number over TCP or SCTP
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB3\fR \(em \fIid\fR indicates a port number over UDP or DCCP
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB4\fR \(em \fIid\fR indicates a port number over TCP, SCTP, UDP, or DCCP
+.RE
+The \fIpriority\fR indicates the priority value (0-7) that will be used for given application.
+.RE
+
+.RE
+
+.SS "Authorizations"
+.sp
+.LP
+The following subcommands require solaris.network.lldp \fB\fRauthorization:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBset-agentprop\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBreset-agentprop\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBset-tlvprop\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBreset-tlvprop\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBset-agenttlvprop\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBreset-agenttlvprop\fR
+.RE
+.sp
+.LP
+The various \fBshow-*\fR subcommands do not need any authorization.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fREnabling LLDP Protocol on an LLDP Agent
+.sp
+.LP
+The following command enables the LLDP protocol on an LLDP agent for both transmission and reception of LLDPDUs.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p mode=both net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDisabling LLDP Protocol on an LLDP Agent
+.sp
+.LP
+The following command disables the LLDP protocol on an LLDP agent.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p mode=disable net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRConfiguring TLVs
+.sp
+.LP
+The following command configures transmission of the Port Description and System Name TLV.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p basic-tlv=portdesc,sysname net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command configures transmission of a VLAN Name TLV and a Link Aggregation TLV.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p dot1-tlv=vlanname net0\fR
+# \fBlldpadm set-agentprop -p dot1-tlv+=linkaggr net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command configures transmission of all \fBdot3-tlv\fRs.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p dot3-tlv=all net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+All the above \fBlldpadm\fR invocations can be combined into the following, single invocation.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p basic-tlv=portdesc,sysname,\e\fR
+\fBdot1-tlv=vlanname,linkaggr,dot3-tlv=all net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRDisabling Transmission
+.sp
+.LP
+The following command disables the transmission of all \fBdot1-tlv\fRs out of an LLDP agent.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agentprop -p dot1-tlv=none net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command is equivalent to the preceding.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm reset-agentprop -p dot1-tlv net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRConfiguring Enabled Capabilities
+.sp
+.LP
+The following command configures the enabled capabilities on a system.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-tlvprop -p enabled=router syscapab\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+With this configuration, when an LLDP agent is enabled for advertising a System Capabilities TLV, the adjacent neighbors would learn of the local system's capabilities.
+
+.LP
+\fBExample 6 \fRConfiguring a Management Address for Subsequent Advertising
+.sp
+.LP
+The following command configures the management address that will be advertised by means of the Management Address TLV.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-tlvprop -p ipaddr=192.168.1.2 mgmtaddr\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Note that this address would be identified as an address associated with the local LLDP agent that will be used to reach higher layer entities to assist discovery by network management.
+
+.LP
+\fBExample 7 \fRConfiguring an Application TLV
+.sp
+.LP
+The following sequence of commands configures the application TLV to advertise the priority that will be used by FCoE.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm set-agenttlvprop -p apt=8906/1/4 -a net0 appln\fR
+# \fBlldpadm show-agenttlvprop -a net0 appln\fR
+AGENT    TLVNAME PROPERTY  PERM VALUE        DEFAULT        POSSIBLE
+net0     appln   apt         rw 8906/1/4     --             --
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fRShow Local Information Advertised by LLDP Agent
+.sp
+.LP
+The following commands show, respectively, brief and detailed local information advertised by an LLDP agent.
+
+.sp
+.LP
+Brief information:
+
+.sp
+.in +2
+.nf
+# \fBlldpadm show-agent -l net0\fR
+AGENT               CHASSISID           PORTID
+net0                004bb87f            00:14:4f:01:77:5d
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Detailed information:
+
+.sp
+.in +2
+.nf
+# \fBlldpadm show-agent -lv net0\fR
+                     Agent: net0
+        Chassis ID Subtype: Local(7)
+                Chassis ID: 004bb87f
+           Port ID Subtype: MacAddress(3)
+                   Port ID: 00:14:4f:01:77:5d
+          Port Description: net0
+              Time to Live: 81 (seconds)
+               System Name: hosta.example.com
+        System Description: SunOS 5.11 dcb-clone-x-01-19-11 i86pc
+    Supported Capabilities: bridge, router, station
+      Enabled Capabilities: router
+        Management Address: 192.168.1.2
+        Maximum Frame Size: 3000
+              Port VLAN ID: --
+              VLAN Name/ID: vlan25/25
+      VNIC PortID/VLAN ID : --
+   Aggregation Information: Capable, Not Aggregated
+               PFC Willing: --
+                   PFC Cap: --
+                   PFC MBC: --
+                PFC Enable: --
+Application(s)(ID/Sel/Pri): --
+  Next Packet Transmission: 18 (seconds)
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 9 \fRShow Remote Information about Adjacent Devices for an LLDP Agent
+.sp
+.LP
+The following commands show, respectively, brief and detailed remote information about adjacent devices for a given LLDP agent.
+
+.sp
+.LP
+Brief information:
+
+.sp
+.in +2
+.nf
+# \fBlldpadm show-agent -r net0\fR
+AGENT      SYSNAME      CHASSISID       PORTID
+net0       hostb        0083b390        00:14:4f:01:59:ab
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Detailed information:
+
+.sp
+.in +2
+.nf
+# \fBlldpadm show-agent -rv net0\fR
+                     Agent: net0
+        Chassis ID Subtype: Local(7)
+                Chassis ID: 0083b390
+           Port ID Subtype: MacAddress(3)
+                   Port ID: 00:14:4f:01:59:ab
+          Port Description: net0
+              Time to Live: 121 (seconds)
+               System Name: hostb.example.com
+        System Description: SunOS 5.11 dcb-clone-x-01-19-11 i86pc
+    Supported Capabilities: bridge, router, station
+      Enabled Capabilities: router
+        Management Address: 192.168.1.3
+        Maximum Frame Size: 3000
+              Port VLAN ID: --
+              VLAN Name/ID: vlan25/25
+      VNIC PortID/VLAN ID : 02:08:20:72:71:31
+   Aggregation Information: Capable, Not Aggregated
+               PFC Willing: --
+                   PFC Cap: --
+                   PFC MBC: --
+                PFC Enable: --
+Application(s)(ID/Sel/Pri): --
+   Information Valid Until: 117 (seconds)
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 10 \fRShow LLDP Agent Statistics
+.sp
+.LP
+The following command displays LLDP agent statistics.
+
+.sp
+.in +2
+.nf
+# \fBlldpadm show-agent -s net0\fR
+AGENT IFRAMES IERR IDISCARD OFRAMES OLENERR TLVDISCARD TLVUNRECOG AGEOUT
+net0       44    0        0      57       0          0          0      0
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+.LP
+\fB/sbin\fR
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilityservice/network/lldp
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBhostid\fR(1), \fBread\fR(1), \fBuname\fR(1), \fBdladm\fR(1M), \fBlldpd\fR(1M), \fBsvcadm\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+IEEE Std 802.1AB-2009, \fIIEEE Standard for Local and Metropolitan Area Networks: Station and Media Access Control Connectivity Discovery\fR
+.sp
+.LP
+IEEE Draft 802.1Qbb, \fIVirtual Bridged Local Area Networks - Amendment : Priority-based Flow Control\fR
+.sp
+.LP
+IEEE Draft 802.1Qaz, \fIVirtual Bridged Local Area Networks - Amendment XX: Enhanced Transmission Selection for Bandwidth Sharing between Traffic Classes\fR
+.SH NOTES
+.sp
+.LP
+The \fBlldpd\fR(1M) daemon that implements the LLDP protocol must be first enabled before using the \fBlldpadm\fR command. The \fBlldpd\fR daemon is controlled through the service management facility (SMF) service instance:
+.sp
+.in +2
+.nf
+svc:/network/lldp:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Use \fBsvcadm\fR(1M) to enable this service.

@@ -1,0 +1,563 @@
+'\" te
+.\" 版权所有 (c) 2008，2011，Oracle 和/或其附属公司。保留所有权利。
+.\" 部分版权所有 2008 Chad Mynhier
+.TH proc 1 "2011 年 3 月 1 日" "SunOS 5.11" "用户命令"
+.SH 名称
+proc, pflags, pcred, pldd, psig, pstack, pfiles, pwdx, pstop, prun, pwait, ptime \- proc 工具
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/pflags\fR [\fB-r\fR] \fIpid\fR | \fIcore\fR [/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pcred\fR [\fIpid\fR | \fIcore\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pcred\fR [\fB-u\fR \fIuser/uid\fR] [\fB-g\fR \fIgroup/gid\fR] [\fB-G\fR \fIgrouplist\fR] pid...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pcred\fR \fB-l\fR \fIlogin\fR \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pldd\fR [\fB-Fl\fR] [\fIpid\fR | \fIcore\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/psig\fR [\fB-n\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pstack\fR [\fB-F\fR] \fIpid\fR | \fIcore\fR [/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pfiles\fR [\fB-Fn\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pwdx\fR \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pstop\fR \fIpid\fR[/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/prun\fR \fIpid\fR[/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pwait\fR [\fB-v\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/ptime\fR [\fB-Fm\fR] [\fB-p\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/ptime\fR [\fB-m\fR]\fIcommand\fR [\fIarg\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+proc 工具是用于执行 \fB/proc\fR 的功能的实用程序（请参见 \fBproc\fR(4)）。其中大多数工具都接受进程 ID (\fIpid\fR) 的列表。确实接受进程 ID 的工具还可以接受 \fB/proc/\fR\fInnn\fR 作为进程 ID，因此可以使用 shell 扩展 \fB/proc/*\fR 来指定系统中的所有进程。
+.sp
+.LP
+某些 proc 工具还可应用于核心文件（请参见 \fBcore\fR(4)）。应用于核心文件的工具可以接受进程 \fBID\fR 和（或）核心文件的名称的列表。
+.sp
+.LP
+某些 \fBproc\fR 工具可在各个线程上执行。用户可以仅检查通过将 \fI/thread-id\fR 附加到进程 ID 或核心文件名称而选定的线程。可使用 \fB-\fR 和 \fB,\fR 分隔符选择多个线程。例如，\fB/1,2,7-9\fR 将检查线程 \fB1\fR、\fB2\fR、\fB7\fR、\fB8\fR 和 \fB9\fR。
+.sp
+.LP
+请参见\fB警告\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpflags\fR\fR
+.ad
+.RS 10n
+.rt  
+为每个进程或每个进程中的指定 lwp 输出 \fB/proc\fR 跟踪标志、暂挂的和保留的信号以及其他 \fB/proc\fR 状态信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcred\fR\fR
+.ad
+.RS 10n
+.rt  
+输出或设置每个进程的凭证（有效的、实际的、已保存的 \fBUID\fR 和 \fBGID\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpldd\fR\fR
+.ad
+.RS 10n
+.rt  
+列出链接到每个进程的动态库，包括使用 \fBdlopen\fR(3C) 显式连接的共享对象。另请参见 \fBldd\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsig\fR\fR
+.ad
+.RS 10n
+.rt  
+列出每个进程的信号操作和处理程序。请参见 \fBsignal.h\fR(3HEAD)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpstack\fR\fR
+.ad
+.RS 10n
+.rt  
+为每个进程或每个进程中的指定 lwp 输出十六进制符号栈跟踪。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpfiles\fR\fR
+.ad
+.RS 10n
+.rt  
+报告每个进程中所有打开的文件的 \fBfstat\fR(2) 和 \fBfcntl\fR(2)信息。对于网络端点，还会提供本地的（及对等方的，如果已连接）地址信息。对于套接字，还会提供套接字类型、套接字选项以及接收和发送缓冲区大小。此外，如果可从 \fB/proc/pid/path\fR 中获取文件路径信息，则还会报告该信息。这不一定是用来打开文件的同一名称。有关更多信息，请参见 \fBproc\fR(4)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpwdx\fR\fR
+.ad
+.RS 10n
+.rt  
+输出每个进程的当前工作目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpstop\fR\fR
+.ad
+.RS 10n
+.rt  
+停止每个进程或指定的 lwp（\fBPR_REQUESTED\fR 停止）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprun\fR\fR
+.ad
+.RS 10n
+.rt  
+设置正在运行的每个进程或指定的 lwp（与 \fBpstop\fR 相反）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpwait\fR\fR
+.ad
+.RS 10n
+.rt  
+等待所有指定的进程终止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBptime\fR\fR
+.ad
+.RS 10n
+.rt  
+与 \fBtime\fR(1) 一样，对\fI命令\fR进行计时，但使用微观状态计数以获得可复现的精度。与 \fBtime\fR(1) 不同的是，不会对命令的子代进行计时。
+.sp
+如果使用 \fB-p\fR \fIpid\fR 版本，将显示指定 \fIpid\fR 的计时统计信息的快照。
+.RE
+
+.SH 选项
+.sp
+.LP
+支持以下常规选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+强制。抓取目标进程，即使另一进程已掌握了控制权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+（仅限 \fBpsig\fR 和 \fBpfiles\fR）设置非详细模式。\fBpsig\fR 显示信号处理程序地址，而不是名称。\fBpfiles\fR 不显示每个文件描述符的详细信息。相反，\fBpfiles\fR 将其输出限制为在进程向其每个文件描述符应用了 \fBfstat\fR(2) 的情况下将检索到的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+（仅限 \fBpflags\fR）如果进程已停止，将显示其计算机寄存器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+（仅限 \fBpwait\fR）详细。将结果报告到标准输出。
+.RE
+
+.sp
+.LP
+除了常规选项外，\fBpcred\fR 还支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgroup/gid\fR\fR
+.ad
+.RS 16n
+.rt  
+将目标进程的实际的、有效的和已保存的组 ID (\fBGID\fR) 设置为指定值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIgrouplist\fR\fR
+.ad
+.RS 16n
+.rt  
+将目标进程的辅助 \fBGID\fR 设置为指定的组列表。应当以组名称 ID 的逗号分隔的列表形式指定辅助组。空列表将清除目标进程的辅助组列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlogin\fR\fR
+.ad
+.RS 16n
+.rt  
+将目标进程的实际的、有效的和已保存的 \fBUID\fR 设置为指定登录的 \fBUID\fR。将目标进程的实际的、有效的和已保存的 \fBGID\fR 设置为指定登录的 \fBGID\fR。将辅助组列表设置为指定登录的辅助组列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuser/uid\fR\fR
+.ad
+.RS 16n
+.rt  
+将目标进程的实际的、有效的和已保存的用户 ID (\fBUID\fR) 设置为指定值。
+.RE
+
+.sp
+.LP
+除了常规选项外，\fBpldd\fR 还支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+显示未解析的动态链接程序映射名称。
+.RE
+
+.sp
+.LP
+除了常规选项外，\fBptime\fR 还支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 10n
+.rt  
+显示整套微观状态计数统计信息。
+.sp
+显示的字段如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreal\fR\fR
+.ad
+.RS 8n
+.rt  
+挂钟时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.RS 8n
+.rt  
+用户级 CPU 时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsys\fR\fR
+.ad
+.RS 8n
+.rt  
+系统调用 CPU 时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrap\fR\fR
+.ad
+.RS 8n
+.rt  
+其他系统陷阱 CPU 时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtflt\fR\fR
+.ad
+.RS 8n
+.rt  
+文本页面错误休眠时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdflt\fR\fR
+.ad
+.RS 8n
+.rt  
+数据页面错误休眠时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkflt\fR\fR
+.ad
+.RS 8n
+.rt  
+内核页面错误休眠时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlock\fR\fR
+.ad
+.RS 8n
+.rt  
+用户锁等待休眠时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslp\fR\fR
+.ad
+.RS 8n
+.rt  
+所有其他休眠时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlat\fR\fR
+.ad
+.RS 8n
+.rt  
+CPU 延迟（等待）时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.RS 8n
+.rt  
+停止时间。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.RS 10n
+.rt  
+显示指定 \fIpid\fR 的计时统计信息的快照。
+.RE
+
+.sp
+.LP
+要设置其他进程的凭证，某个进程必须具有足够的特权，以将其用户和组 ID 更改为根据 \fBsetuid\fR(2) 中制定的规则指定的用户和组 ID，且还必须具有足够的特权以控制目标进程。
+.SH 用法
+.sp
+.LP
+以下 proc 工具在检查其目标进程并报告结果时会停止目标进程：\fBpfiles\fR、\fBpldd\fR 和 \fBpstack\fR。进程被停止后将无法执行任何操作。因此，如果对 X 服务器进行检查的某个 \fBproc\fR 工具是在由 X 服务器控制的窗口中运行，则整个窗口系统将进入死锁状态，因为该 \fBproc\fR 工具将试图将其结果输出到一个无法刷新的窗口。在这种情况下，使用 \fBssh\fR(1) 从其他系统登录并终止违例的 \fBproc\fR 工具将会消除死锁。
+.sp
+.LP
+请参见\fB警告\fR。
+.sp
+.LP
+使用 \fB-F\fR 标志时应谨慎。在一个被调试的进程上施加两个控制进程可能会导致混乱。仅当主控制进程（通常是调试器）已停止了被调试的进程，并且在应用 \fBproc\fR 工具的可疑时刻主控制进程未在执行任何操作，才能保证安全。
+.sp
+.LP
+某些 proc 工具还可应用于核心文件，如上面的概要中所示。核心文件是进程状态的快照，由内核在使用信号终止进程之前生成，或者由 \fBgcore\fR(1) 实用程序生成。某些 proc 工具可能需要派生出与对内核进行了转储的进程对应的可执行程序的名称，或者与该进程相关联的共享库的名称。例如，\fBpstack\fR(1) 需要使用这些文件来提供符号表信息。如果该 proc 工具无法找到所需的可执行程序或共享库，某些符号信息将无法显示。同样，如果在一个操作系统发行版上检查另一个不同的操作系统发行版中的核心文件，运行时链接编辑器调试接口 (\fBlibrtld_db\fR) 将无法初始化。在这种情况下，将无法获取共享库的符号信息。
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB非零值\fR
+.ad
+.RS 13n
+.rt  
+出现错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR\fR
+.ad
+.RS 11n
+.rt  
+进程文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+人类可读的输出是 "Uncommitted"（未确定）。选项为 "Committed"（已确定）。
+.SH 另请参见
+.sp
+.LP
+\fBgcore\fR(1)、\fBldd\fR(1)、\fBpargs\fR(1)、\fBpgrep\fR(1)、\fBpkill\fR(1)、\fBplimit\fR(1)、\fBpmap\fR(1)、\fBpreap\fR(1)、\fBps\fR(1)、\fBptree\fR(1)、\fBppgsz\fR(1)、\fBpwd\fR(1)、\fBrlogin\fR(1)、\fBssh\fR(1)、\fBtime\fR(1)、\fBtruss\fR(1)、\fBwait\fR(1)、\fBfcntl\fR(2)、\fBfstat\fR(2)、\fBsetuid\fR(2)、\fBdlopen\fR(3C)、\fBsignal.h\fR(3HEAD)、\fBcore\fR(4)、\fBproc\fR(4)、\fBprocess\fR(4)、\fBattributes\fR(5)、\fBzones\fR(5)
+.SH 警告
+.sp
+.LP
+以下 \fBproc\fR 工具在检查其目标进程并报告结果时将停止目标进程：\fBpfiles\fR、\fBpldd\fR 和 \fBpstack\fR。不过，\fBpstack\fR 将停止整个进程，即使它是在单个线程上执行操作。
+.sp
+.LP
+进程或线程被停止后将无法执行任何操作。在生产环境中停止某个频繁使用的进程或线程（即使仅停止很短时间）可能会导致严重的瓶颈，甚至导致这些进程或线程挂起，使得用户无法使用这些进程。某些数据库可能还会异常终止。因此，当使用上述 \fBproc\fR 工具跟踪一个数据库进程或线程时，负载过重的数据库服务器可能会挂起。因此，应避免在生产环境中停止 UNIX 进程或线程。
+.sp
+.LP
+可通过发出 \fB/usr/bin/ps\fR \fB-eflL\fR 并在第一列中查找 "\fBT\fR" 来识别这些工具停止的进程或线程。请注意，某些进程（如 \fBsched\fR）缺省情况下大多数时候可显示 "\fBT\fR" 状态。
+.sp
+.LP
+为网络文件系统上的锁定文件返回的进程 ID 可能没有意义。

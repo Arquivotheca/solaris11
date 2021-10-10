@@ -1,0 +1,231 @@
+'\" te
+.\" Copyright 2007, Sun Microsystems, Inc. All Rights Reserved 
+.TH mac 1 "2007 年 3 月 21 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+mac \- 入力のメッセージ認証コードの計算
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/mac\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/mac\fR [\fB-v\fR] \fB-a\fR \fIalgorithm\fR
+   [\fB-k\fR \fIkeyfile\fR | \fB-K\fR \fIkey_label\fR [\fB-T\fR \fItoken_spec\fR]] [\fIfile\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmac\fR ユーティリティーは、指定のアルゴリズムを使用して、特定の 1 つ以上のファイルまたは \fBstdin\fR のメッセージ認証コード (\fBMAC\fR) を計算します。
+.sp
+.LP
+複数のファイルが指定された場合、出力の各行は単一ファイルの \fBMAC\fR となります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIalgorithm\fR\fR
+.ad
+.RS 17n
+.rt  
+暗号化または復号化プロセスで使用するアルゴリズムの名前を指定します。詳細については「使用法」、「アルゴリズム」を参照してください。\fB\fR\fB注: \fR一般的な長さの \fBMAC\fR を生成するアルゴリズムはサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIkeyfile\fR\fR
+.ad
+.RS 17n
+.rt  
+暗号化アルゴリズムのキー値を含むファイルを指定します。PKCS#11 仕様で規定されているように、各アルゴリズムには固有のキー素材要件があります。\fB-k\fR が指定されていない場合、\fBmac\fR は、\fBgetpassphrase\fR(3C) を使用してキー素材の入力を要求します。
+.sp
+キーファイルの生成については、\fBpktool\fR(1)、\fBdd\fR(1M)、または\fI『Oracle Solaris Administration: Security Services』\fRを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIkey_label\fR\fR
+.ad
+.RS 17n
+.rt  
+PKCS#11 トークン内で対称トークンキーのラベルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 17n
+.rt  
+システムで利用可能なアルゴリズムの一覧を表示します。この一覧は、暗号化フレームワークの構成によって変わります。キーサイズはビット単位で表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItoken_spec\fR\fR
+.ad
+.RS 17n
+.rt  
+\fB-K\fR が指定されている場合に、デフォルトのソフトトークンオブジェクトストア以外の PKCS#11 トークンを指定します。
+.sp
+\fItoken_spec\fR は次の形式になります。
+.sp
+.in +2
+.nf
+\fItoken_name\fR \fB[:\fR\fImanuf_id\fR \fB[:\fR\fIserial_no\fR\fB]]\fR
+.fi
+.in -2
+.sp
+
+トークンラベルの末尾にスペースがある場合、このオプションではユーザーがスペースを入力する必要はありません。 
+.sp
+トークン識別文字列はコロンで区切ります。いずれかの部分に文字としてコロン (\fB:\fR) を含める場合、そのコロンをバックスラッシュで (\fB\e\fR) でエスケープする必要があります。コロン (\fB:\fR) がない場合、文字列全体が (最大 32 文字) がトークンラベルと見なされます。コロンが (\fB:\fR) 1 つだけある場合、文字列はトークンラベルと作成者となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+詳細な情報を表示します。
+.RE
+
+.SH 使用法
+.SS "アルゴリズム"
+.sp
+.LP
+サポートされているアルゴリズムは、\fB-l\fR オプションで表示されます。これらのアルゴリズムは、暗号化フレームワークによって提供されます。サポートされている各アルゴリズムは、もっともよく使用され、もっとも制限が少ない特定のアルゴリズムタイプの別名です。たとえば、\fBmd5_hmac\fR は、\fBCKM_MD5_HMAC\fR の別名です。
+.sp
+.LP
+これらの別名は \fB-a\fR オプションとともに使用され、大文字と小文字が区別されます。
+.SS "パスフレーズ"
+.sp
+.LP
+\fB-k\fR オプションが暗号化および復号化タスクで使用されない場合、ユーザーはパスフレーズの入力を求められます。パスフレーズは、PKCS #5 で指定されている \fBPBKDF2\fR アルゴリズムを使用して処理され、より安全なキーに変換されます。
+.SH 使用例
+.LP
+\fB例 1 \fR使用できるアルゴリズムの一覧表示
+.sp
+.LP
+次の例では、使用できるアルゴリムが一覧表示されます。
+
+.sp
+.in +2
+.nf
+example$ mac -l
+Algorithm       Keysize:  Min   Max
+-----------------------------------
+des_mac                    64    64
+sha1_hmac                   8   512
+md5_hmac                    8   512
+sha256_hmac                 8   512
+sha384_hmac                 8  1024
+sha512_hmac                 8  1024
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRメッセージ認証コードの取得
+.sp
+.LP
+次の例では、ファイル用のメッセージ認証コードを取得します。
+
+.sp
+.in +2
+.nf
+example$ mac -v -k mykey -a sha1_hmac /export/foo
+sha1_hmac (/export/foo) = 913ced311df10f1708d9848641ca8992f4718057
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRトークンキー付きのメッセージ認証コードの取得
+.sp
+.LP
+次の例では、ソフトトークンキーストア内で汎用トークンキー付きのメッセージ認証コードを取得します。汎用トークンキーは \fBpktool\fR(1) で生成できます。
+
+.sp
+.in +2
+.nf
+encrypt -v -a sha1_hmac -K my_generic_key \e
+     -T "Sun Software PKCS#11 softtoken" /export/foo
+Enter pin for Sun Software PKCS#11 softtoken:
+     sha1_hmac (/etc/foo) = c2ba5c38458c092a68940081240d22b670182968
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdigest\fR(1), \fBpktool\fR(1), \fBdd\fR(1M), \fBgetpassphrase\fR(3C), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5), \fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+\fI『Oracle Solaris Administration: Security Services』\fR
+.sp
+.LP
+RSA PKCS#11 v2.20 and RSA PKCS#5 v2.0, http://www.rsasecurity.com

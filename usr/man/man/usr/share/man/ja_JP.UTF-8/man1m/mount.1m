@@ -1,0 +1,416 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH mount 1M "2010 年 10 月 26 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+mount, umount \- ファイルシステムとリモートリソースのマウントおよびマウント解除
+.SH 形式
+.LP
+.nf
+\fBmount\fR [\fB-p\fR | \fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBmount\fR [\fB-F\fR \fIFSType\fR] [\fIgeneric_options\fR] [\fB-o\fR \fIspecific_options\fR] 
+     [\fB-O\fR] \fIspecial\fR | \fImount_point\fR
+.fi
+
+.LP
+.nf
+\fBmount\fR [\fB-F\fR \fIFSType\fR] [\fIgeneric_options\fR] [\fB-o\fR \fIspecific_options\fR] 
+     [\fB-O\fR] \fIspecial\fR \fImount_point\fR
+.fi
+
+.LP
+.nf
+\fBmount\fR \fB-a\fR [\fB-F\fR \fIFSType\fR] [\fB-V\fR] [\fIcurrent_options\fR] 
+     [\fB-o\fR \fIspecific_options\fR] [\fImount_point\fR]...
+.fi
+
+.LP
+.nf
+\fBumount\fR [\fB-f\fR] [\fB-V\fR] [\fB-o\fR \fIspecific_options\fR] \fIspecial\fR | \fImount_point\fR
+.fi
+
+.LP
+.nf
+\fBumount\fR \fB-a\fR [\fB-f\fR] [\fB-V\fR] [\fB-o\fR \fIspecific_options\fR] [\fImount_point\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmount\fR は、ファイルシステムをファイルシステム階層内の \fImount_point\fR (ディレクトリのパス名) に継ぎ足します。マウント操作を実行する前に \fImount_point\fR の下に存在したファイルとディレクトリは、ファイルシステムのマウントを解除するまで見えなくなります。\fB\fR
+.sp
+.LP
+\fBumount\fR は、現在マウントされているファイルシステムをマウント解除します。マウントを解除するファイルシステムは \fImount_point\fR または \fIspecial\fR (ファイルシステムが存在しているデバイス) のどちらかで指定できます。
+.sp
+.LP
+現在マウントされているファイルシステムのテーブルは、マウント済みファイルシステム情報ファイルにあります。このファイルは通常、\fB/etc/mnttab\fR 上にマウントされているファイルシステムによって提供されます。マウント済のファイルシステムについての情報は、\fBmnttab\fR(4) に格納されています。ファイルシステムをマウントすると、マウントテーブルにエントリが追加されます。(\fBumount\fR で) ファイルシステムをマウント解除すると、テーブルからエントリが削除されます。
+.sp
+.LP
+\fIspecial\fR および \fImount_point\fR 両方の引数と \fB-F\fR オプションを指定した場合、\fBmount\fR は \fIspecial\fR 以外のすべての引数の妥当性を検査し、適切な \fIFSType\fR に固有な \fBmount\fR モジュールを呼び出します。引数なしで呼び出した場合、\fBmount\fR は、マウントテーブル \fB/etc/mnttab\fR に記録されているすべてのマウント済みファイルシステムをリストします。引数を一部だけ、たとえば、\fIspecial\fR か \fImount_point\fR のどちらか 1 つだけを指定した場合や、\fIspecial\fR と \fImount_point\fR の両方を指定したが、\fIFSType\fR は指定しない場合、\fBmount\fR は \fB/etc/vfstab\fR を調べて、指定されていない引数を補完するエントリを探します。そのようなエントリが見つからず、また、special 引数が \fB/\fR で始まる場合、\fB/etc/default/fs\fR に指定されているデフォルトのローカルのファイルシステムタイプが使用されます。それ以外の場合、デフォルトのリモートファイルシステムタイプが使用されます。デフォルトのリモートファイルシステムタイプは、\fB/etc/dfs/fstypes\fR ファイルの最初のエントリによって決定されます。指定されていない引数を補完した後、\fBmount\fR は \fIFSType\fR に固有な \fBmount\fR モジュールを呼び出します。
+.sp
+.LP
+サポートしているファイルシステムタイプの場合は、special 引数にファイルのフルパスを指定することで、ファイルをファイルシステムとして直接マウントできます。このような場合は、\fBnosuid\fR オプションが必要になります。この種のループバックファイルマウントをサポートするファイルシステムが存在しない場合でも、\fBlofiadm\fR(1M) を使用するとファイルシステムイメージをマウントできます。この場合、special オプションは不要です。
+.sp
+.LP
+\fBmount\fR や \fBumount\fR を使用してファイルシステムのマウントやマウント解除を行えるのは、十分な特権 (\fBPRIV_SYS_MOUNT\fR 以上) を持つユーザーだけです。ただし、マウントされているファイルシステムとリソースを一覧表示するだけであれば、だれでも \fBmount\fR コマンドを使用することができます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIFSType\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作の対象となる \fIFSType\fR を指定します。\fIFSType\fR は、明示的に指定するか、あるいは、\fB/etc/vfstab\fR から決定できるか、\fB/etc/default/fs\fR または \fB/etc/dfs/fstypes\fR を調べることで決定できるものでなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR [ \fImount_points\fR. . . ]\fR
+.ad
+.sp .6
+.RS 4n
+可能であれば、複数の mount または umount 操作を同時に実行します。
+.sp
+マウントポイントを指定しないと、\fBmount\fR は \fB/etc/vfstab\fR において mount at boot フィールドが \fByes\fR に設定されているすべてのファイルシステムをマウントします。マウントポイントを指定すると、\fB/etc/vfstab\fR の mount at boot フィールドは無視されます。
+.sp
+マウントポイントを指定すると、\fBumount\fR は指定されたマウントポイントだけをマウント解除します。\fB\fRマウントポイントを指定しないと、\fBumount\fR は \fB/etc/mnttab\fR にあるすべてのファイルシステムのマウントを解除します。ただし、次に挙げる、システムに必須のファイルシステムは除きます。\fB/\fR、\fB/usr\fR、\fB/var\fR、\fB/var/adm\fR、\fB/var/run\fR、\fB/proc\fR、\fB/dev/fd\fR、および \fB/tmp\fR です。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムのマウントを強制的に解除します。 
+.sp
+このオプションを指定しないと、\fBumount\fR は、ファイルシステム上のファイルがビジー状態である場合、ファイルシステムをマウント解除しません。このオプションを指定すると、オープンしているファイルのデータが失われる可能性があります。ファイルシステムをマウント解除した後にプログラムがファイルにアクセスしようとすると、エラー (\fBEIO\fR) が返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+マウントされているファイルシステムの一覧を \fB/etc/vfstab\fR 形式で表示します。このオプションを指定するときは他のオプションを指定してはいけません。「使用上の留意点」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+マウントされているファイルシステムの一覧を詳細形式で表示します。このオプションを指定するときは他のオプションを指定してはいけません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド行全体をエコーしますが、コマンドは実行しません。エコーされたコマンドには、ユーザーが指定したオプションと引数、さらに、\fB/etc/mnttab\fR から得られた情報が追加されます。\fB\fRこのオプションは、コマンド行を確認および検証するときに使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgeneric_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+ほとんどの \fIFSType\fR に固有なコマンドモジュールでサポートされている共通のオプションです。次のオプションを指定できます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムをマウントしますが、\fB/etc/mnttab\fR にエントリを作成しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムを広域的にマウントします。クラスタ化されているシステムでは、クラスタ内にあるすべてのノード上でファイルシステムを広域的にマウントします。クラスタ化されていないシステムでは、このオプションは何の効果もありません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+サブオプションとキーワード属性の組の並を、スペースを入れずにコンマで区切った形式で、\fIFSType\fR 固有のオプションを指定します。これらのオプションはコマンドの \fIFSType\fR に固有なモジュールによって解釈されます (\fBmount_ufs\fR(1M) を参照)。\fB/etc/vfstab\fR にエントリがあるファイルシステムで \fB-o\fR オプションを指定すると、\fB/etc/vfstab\fR 内でそのファイルシステムに指定されている \fBmount\fR コマンドのオプションはすべて無視されます。
+.sp
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevices | nodevices\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス固有ファイルを開くことを許可または禁止します。デフォルトは \fBdevices\fR です。
+.sp
+\fBdevices\fR と一緒に \fBnosuid\fR を使用すると、その動作は \fBnosuid\fR と同等になります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexec | noexec\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムでプログラムを実行することを許可または禁止します。ファイルシステム内のファイルに対して、\fBPROT_EXEC\fR 付きの \fBmmap\fR(2) を許可または禁止します。デフォルトは \fBexec\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBloop\fR\fR
+.ad
+.sp .6
+.RS 4n
+互換性のために無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnbmand | nonbmand\fR\fR
+.ad
+.sp .6
+.RS 4n
+当該ファイルシステムに対して、非ブロック必須ロック意味論を許可または禁止します。デフォルトでは、非ブロック必須ロックは無効です。
+.sp
+ファイルシステムが \fBnbmand\fR オプションでマウントされている場合、アプリケーションは \fBfcntl\fR(2) インタフェースを使用して、非ブロック必須ロックをファイルにかけることができます。すると、システムは非ブロック必須ロック意味論を実施します。このオプションを有効にした場合、標準に適合するアプリケーションに予期せぬエラーが発生する可能性があります。 
+.sp
+システムファイルへの強制ロックを取得しないようにするため、次のファイルシステムでは \fBnbmand\fR オプションを使用しないでください。
+.sp
+.in +2
+.nf
+/
+/usr
+/etc
+/var
+/proc
+/dev
+/devices
+/system/contract
+/system/object
+/etc/mnttab
+/etc/dfs/sharetab
+.fi
+.in -2
+.sp
+
+\fBremount\fR オプションを使用して、ファイルシステムの \fBnbmand\fR 設定を変更しないでください。\fBnbmand\fR オプションはグローバルオプションとは相互排他的です。\fB-g\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro | rw\fR\fR
+.ad
+.sp .6
+.RS 4n
+読み取り専用または読み書きを指定します。デフォルトは \fBrw\fR です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetuid | nosetuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsetuid\fR または \fBsetgid\fR の実行を許可または禁止します。デフォルトは \fBsetuid\fR です。 
+.sp
+\fBsetuid\fR と一緒に \fBnosuid\fR を使用すると、その動作は \fBnosuid\fR と同等になります。 
+.sp
+\fBnosuid\fR は、\fBnosetuid\fR と \fBnodevices\fR と同等です。\fBsuid\fR または \fBnosuid\fR を \fBsetuid\fR または \fBnosetuid\fR および \fBdevices\fR または \fBnodevices\fR と一緒に組み合わせた場合、ほとんどの制限オプションが有効になります。
+.sp
+\fBroot=\fR オプションを指定した NFS を使用して、ファイルシステムを共有している場合、このオプションを指定することを強く推奨します。このオプションを設定しないと、NFS クライアントは \fBsetuid\fR プログラムをサーバーに追加したり、セキュリティホールを開けるデバイスを作成する可能性があります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsuid | nosuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsetuid\fR または \fBsetgid\fR の実行を許可または禁止します。デフォルトは \fBsuid\fR です。このオプションは、また、ファイルシステム内にあらわれる任意のデバイス固有エントリを開くことを許可または禁止します。
+.sp
+\fBnosuid\fR は、\fBnosetuid\fR と \fBnodevices\fR と同等です。\fBsuid\fR または \fBnosuid\fR を \fBsetuid\fR または \fBnosetuid\fR および \fBdevices\fR または \fBnodevices\fR と一緒に組み合わせた場合、ほとんどの制限オプションが有効になります。
+.sp
+\fBroot=\fI オプション\fR\fRを設定した NFS を使用して、ファイルシステムを共有している場合、このオプションを設定することを強く推奨します。このオプションを設定しないと、NFS クライアントは \fBsetuid\fR プログラムをサーバーに追加したり、セキュリティホールを開けるデバイスを作成する可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrstchown\fR | \fBnorstchown\fR\fR
+.ad
+.sp .6
+.RS 4n
+制限付き \fBchown\fR を許可または禁止します。ファイルシステムのマウント時に \fBrstchown\fR が指定される場合、ファイルの所有者はそのファイルの所有者 ID を変更できません。ファイルシステムのマウント時に \fBnorstchown\fR が指定される場合、ユーザーは所有するファイルの所有権変更を許可できます。スーパーユーザーまたは適切な特権を持つユーザーだけが、所有者 ID を変更できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.sp .6
+.RS 4n
+オーバーレイマウント。既存のマウントポイント上にファイルシステムをマウントできます。これより既存のマウントポイントのファイルシステムにはアクセスできなくなります。このフラグを設定せずに既存のマウントポイント上にファイルシステムをマウントしようとすると、マウントは失敗して、device busy というエラーメッセージが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムを読み取り専用でマウントします。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRDVD イメージを直接マウントおよびマウント解除する
+.sp
+.LP
+次のコマンドでは、DVD イメージのマウントとマウント解除を行います。
+
+.sp
+.in +2
+.nf
+# \fBmount -F hsfs /images/solaris.iso /mnt/solaris-image\fR
+# \fBumount /mnt/solaris-image\fR
+.fi
+.in -2
+.sp
+
+.SH 使用法
+.sp
+.LP
+2G バイト (2^31 バイト) 以上のファイルを検出した場合の \fBmount\fR と \fBumount\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mnttab\fR\fR
+.ad
+.sp .6
+.RS 4n
+マウントされているファイルシステムのテーブル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/fs\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのローカルのファイルシステムタイプ。デフォルト値は、\fB/etc/default/fs\fR 内で次のように設定されています。例:  \fBLOCAL=ufs\fR 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLOCAL:\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIFSType\fR を指定しない場合に、コマンドがデフォルトで使用するパーティション
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+各ファイルシステム用のデフォルトのパラメータリスト
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBlofiadm\fR(1M), \fBmount_hsfs\fR(1M), \fBmount_nfs\fR(1M), \fBmount_pcfs\fR(1M), \fBmount_smbfs\fR(1M), \fBmount_tmpfs\fR(1M), \fBmount_udfs\fR(1M), \fBmount_ufs\fR(1M), \fBmountall\fR(1M), \fBumountall\fR(1M), \fBfcntl\fR(2), \fBmmap\fR(2 ), \fBmnttab\fR(4), \fBvfstab\fR(4), \fBattributes\fR( 5), \fBlargefile\fR(5), \fBprivileges\fR(5), \fBlofs\fR(7FS), \fBpcfs\fR(7FS)
+.SH 注意事項
+.sp
+.LP
+ファイルシステムがマウントされるディレクトリがシンボリックリンクの場合、ファイルシステムは、シンボリックリンク自身ではなく、シンボリックリンクが参照するディレクトリ上にマウントされます。
+.SH 使用上の留意点
+.sp
+.LP
+\fBmount\fR \fB-p\fR の出力は、\fBcachefs\fR については正しくありません。

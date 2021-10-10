@@ -1,0 +1,179 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH intrstat 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+intrstat \- 割り込み統計の報告
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/intrstat\fR [\fB-c\fR \fIcpulist\fR | \fB-C\fR \fIprocessor_set_id\fR] [\fB-T\fR u | d ]
+     [\fB-x\fR \fIopt\fR[=\fIval\fR]] [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBintrstat\fR ユーティリティーは、実行時の割り込み統計を収集して表示します。出力はデバイス名と CPU ID から成るテーブルで、テーブルの各行はデバイス、各列は CPU を表します。テーブルの各セルには、特定のデバイスと CPU に関連する実際の割り込み数と、そのデバイスの割り込みハンドラがその CPU 上で消費した絶対時間の割合 (パーセント) が表示されます。
+.sp
+.LP
+デバイス名は \fB{\fR\fIname\fR}\fI#\fR\fB{\fR\fIinstance\fR\fB}\fR という形式で表されます。name は正規化されたドライバ名で、通常は、ドライバを実装しているモジュールの名前に対応します。\fBddi_driver_name\fR(9F) を参照してください。Sun から提供されているドライバの多くには、独自のマニュアルページがあります。\fBIntro\fR(7) を参照してください。
+.sp
+.LP
+標準出力が端末の場合、テーブルには端末の幅に収まるだけの列数のデータが表示されます。標準出力が端末でない場合、テーブルには最大 4 列のデータが表示されます。デフォルトでは、すべての CPU のデータが収集され、表示されます。データが 1 つのテーブルに収まらない場合は、複数のテーブルに出力されます。データを表示する CPU のセットを \fB-c\fR または \fB-C\fR オプションで指定することもできます。
+.sp
+.LP
+デフォルトでは、\fBintrstat\fR は 1 秒に 1 回データを表示し、無期限に実行を続けます。どちらの動作も、それぞれ interval パラメータと count パラメータで必要に応じて制御できます。「オペランド」の項を参照してください。\fB\fR
+.sp
+.LP
+\fBintrstat\fR では、動的発見が使用されているため、コマンドの実行中に割り込みを上げたデバイスだけが報告されます。\fBintrstat\fR の実行中に割り込みを上げなかったデバイスは表示されません。
+.sp
+.LP
+\fBintrstat\fR を実行すると、システム全体のパフォーマンスが多少低下します。結果として、デフォルトではスーパーユーザーだけが \fBintrstat\fR を実行できます。『\fISolaris 動的トレースガイド\fR』には、管理者がほかのユーザーに特権を付与して \fBintrstat\fR の実行を許可する方法が説明されています。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcpulist\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIcpulist\fR で指定された CPU のデータを表示します。
+.sp
+\fIcpulist\fR に指定できるのは、単一のプロセッサ ID (例: \fB4\fR)、プロセッサ ID の範囲 (例: \fB4-6\fR)、あるいはプロセッサ ID またはプロセッサ ID の範囲をコンマで区切ったリスト (例: \fB4,5,6\fR または \fB4,6-8\fR) です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIprocessor_set_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIprocessor_set_id\fR で指定されたプロセッサセット内の CPU のデータを表示します。 
+.sp
+\fBintrstat\fR の出力には、指定されたプロセッサセットの CPU が常に反映されます。セットに CPU が追加されると、\fBintrstat\fR は出力を変更してその CPU を含めます。セットから CPU が削除されると、\fBintrstat\fR は出力を変更してその CPU を除外します。指定できるプロセッサセットは最大 1 つです。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBu\fR | \fBd\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイムスタンプを表示します。
+.sp
+時刻の内部表現の出力表現に \fBu\fR  を指定します。\fBtime\fR(2) を参照してください。標準の日付フォーマットに \fBd\fR を指定します。\fBdate\fR(1) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIopt\fR[=\fIval\fR]\fR
+.ad
+.sp .6
+.RS 4n
+DTrace の実行時オプションまたは D コンパイラオプションを有効化または変更します。オプションのリストは、『\fI『Solaris 動的トレースガイド』\fR』に記載されています。ブール型のオプションを有効にするときは、その名前を指定します。値を持つオプションを設定するには、オプションの名前と値を等号 (\fB=\fR) で分離します
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBintrstat\fR が終了前にその出力を表示する回数を表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBintrstat\fR 出力を表示する間隔を秒数で表します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRオプションを指定せずに \fBintrstat\fR を使用する
+.sp
+.LP
+オプションを指定せずに \fBintrstat\fR を実行すると、トラップタイプと CPU のテーブルが表示されます。デフォルトの端末幅に収まるのは最大 4 列です。5 つ以上の CPU がある場合は、複数のテーブルが表示されます。 
+
+.sp
+.LP
+単一プロセッサ Intel IA/32 ベースのノートパソコンで \fBintrstat\fR を実行する例を次に示します。
+
+.sp
+.in +2
+.nf
+example# intrstat
+               device |      cpu0 %tim
+     -----------------+---------------
+                ata#0 |       166  0.4
+                ata#1 |         0  0.0
+          audioi810#0 |         6  0.0
+              i8042#0 |       281  0.7
+               iprb#0 |         6  0.0
+               uhci#1 |         6  0.0
+               uhci#2 |         6  0.0
+
+               device |      cpu0 %tim
+     -----------------+---------------
+                ata#0 |       161  0.5
+                ata#1 |         0  0.0
+          audioi810#0 |         6  0.0
+              i8042#0 |       303  0.6
+               iprb#0 |         6  0.0
+               uhci#1 |         6  0.0
+               uhci#2 |         6  0.0
+     ...
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/dtrace
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド行の構文は「確実」です。人間が読める形式の出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBdtrace\fR(1M), \fBtrapstat\fR(1M), \fBattributes\fR(5), \fBIntro\fR(7), \fBddi_driver_name\fR(9F)
+.sp
+.LP
+『\fISolaris 動的トレースガイド\fR』

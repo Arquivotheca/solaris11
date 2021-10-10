@@ -1,0 +1,284 @@
+'\" te
+.\" Copyright 1989 AT&T 
+.\" Copyright (c) 1996, Sun Microsystems, Inc. All Rights Reserved
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH pack 1 "2008 年 3 月 13 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+pack, pcat, unpack \- ファイルの圧縮および復元
+.SH 形式
+.LP
+.nf
+\fBpack\fR [\fB-f/\fR] [\fB-\fR] \fIfile\fR...
+.fi
+
+.LP
+.nf
+\fBpcat\fR \fIfile\fR...
+.fi
+
+.LP
+.nf
+\fBunpack\fR [\fB-/\fR] \fIfile\fR...
+.fi
+
+.SH 機能説明
+.SS "pack"
+.sp
+.LP
+\fBpack\fR コマンドは、指定されたファイルを圧縮した形で保存します。可能であれば (そして便利ならば)、\fBfile\fR という入力ファイルは、\fBfile\fR と同じアクセスモード、同じアクセスの日付や変更した日付、同じ所有者を持つ \fBfile\fR\fB\&.z\fR という圧縮されたファイルに置き換えられます。\fBpack\fR の実行が正常に終了すると、\fBfile\fR は削除されます。
+.sp
+.LP
+圧縮の総量は、入力ファイルのサイズおよび文字度数分布によります。デコード用ツリーがそれぞれの \fB\&.z\fR ファイルの最初の部分を形成しているので、3 ブロック未満のファイルを圧縮することは、あまり意味がありません。ただし、プリンタプロットや図形の場合に起こるように、文字度数分布が非常に偏っているものは例外です。
+.sp
+.LP
+一般的にテキストファイルを元のサイズの 60% から 75% に圧縮します。大きい文字セットを使用し、文字分布が一様なロードモジュールは、元のサイズのおよそ 90% にしか圧縮されません。
+.sp
+.LP
+\fBpack\fR ユーティリティーは、圧縮できなかったファイルの数を示す値を返します。この数値が \fB255\fR を超えた場合は、\fB255\fR が返されます。
+.sp
+.LP
+次の場合は、圧縮が発生しません。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルがすでに圧縮されている場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイル名が長すぎて、接尾辞 \fB\&.z\fR を付加できない場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルにリンクがある場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルがディレクトリの場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルをオープンできない場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルが空の場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+圧縮によってディスクブロックを減らせない場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfile\fR\fB\&.z\fR というファイルがすでに存在している場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB\&.z\fR ファイルを作成することができない場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+処理中に、入出力エラーが発生した場合
+.RE
+.sp
+.LP
+ファイル名の最後のセグメントは、\fB\&.z\fR 拡張子を付加する余裕を確保するために十分に短くする必要があります。ディレクトリは圧縮できません。
+.SS "pcat"
+.sp
+.LP
+\fBpcat\fR コマンドは、\fBcat\fR(1) が通常ファイルに対して行うことを、圧縮したファイルに対して行います。ただし \fBpcat\fR をフィルタとして使うことはできません。指定したファイルは、復元され、標準出力に書き込まれます。
+.sp
+.LP
+\fBpcat\fR は、復元できなかったファイルの数を返します。次の場合にはエラーとなります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルがオープンできなかった
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルが、\fBpack\fR の出力ファイルと認識できなかった
+.RE
+.SS "unpack"
+.sp
+.LP
+\fBunpack\fR コマンドは、\fBpack\fR で作成したファイルを復元します。コマンドで指定したファイル \fBfile\fR に対して、\fBfile\fR\fB\&.z\fR というファイル (あるいは \fBfile\fR が \fB\&.z\fR で終わる場合は単に \fBfile\fR) を検索します。このファイルが圧縮されたファイルである場合は、復元したファイルに置き換えます。新たなファイル名は \fB\&.z\fR 接頭辞が取り除かれ、アクセスモード、アクセス日付や変更日付および所有者名は圧縮されたファイルと同じです。
+.sp
+.LP
+\fBunpack\fR は、復元できなかったファイルの数を示す値を返します。\fBpcat\fR で述べた理由のほかに、次のような場合には復元できません。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+復元されたときのファイル名がすでに存在する場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+復元したファイルを作成できない場合
+.RE
+.SH オプション
+.sp
+.LP
+\fBpack\fR では次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fR
+.ad
+.RS 7n
+.rt  
+\fBfile\fR の強制圧縮。ディレクトリ全体を圧縮するのに有効です。ただし、中には圧縮しても小さくならないファイルがあります。\fBunpack\fR または \fBpcat\fR は、圧縮したファイルを元の形式に復元できます。
+.RE
+
+.sp
+.LP
+\fBpack\fR および \fBunpack\fR では次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-/\fR\fR
+.ad
+.RS 6n
+.rt  
+圧縮または復元時に、ソースファイルに関連付けられた ACL および拡張システム属性がターゲットファイルにコピーされます。ACL または拡張システム属性をコピーできない場合は、元のファイルが保持され、診断メッセージが標準エラー出力に書き込まれ、最終的な終了ステータスがゼロ以外になります。\fB\fR\fB\fR 
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR \fR
+.ad
+.RS 9n
+.rt  
+pack、unpack、または pcat するファイルのパス名。\fBfile\fR には拡張子 \fB\&.z\fR を指定しても省略してもかまいません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\fR \fR
+.ad
+.RS 9n
+.rt  
+\fBpack\fR は、1 バイトごとに Huffman (最小冗長度) コードを使用します。\fB-\fR 引数を使用すると、それぞれのバイトの使用回数、相対頻度およびバイトのコードを標準出力に出力するように内部フラグが設定されます。\fBfile\fR の代わりに \fB\(mi\fR を追加すると、内部フラグを設定し、リセットします。
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBpack\fR、\fBpcat\fR、\fBunpack\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fR圧縮ファイルを表示する
+.sp
+.LP
+\fBfile.z\fR という名前の圧縮ファイルを見るには、次のようにします。
+
+.sp
+.LP
+\fBexample%\fR \fBpcat\fR \fBfile.z\fR
+
+.sp
+.LP
+あるいは、単に次のようにします。
+
+.sp
+.LP
+\fBexample%\fR \fBpcat\fR \fBfile\fR
+
+.LP
+\fB例 2 \fR圧縮ファイルの復元コピーを作成する
+.sp
+.LP
+\fBfile.z\fR という名前の圧縮ファイルの復元コピー \fBnnn\fR を \fBfile.z\fR を破壊せずに作成するには、次を使用します。
+
+.sp
+.LP
+\fBexample%\fR \fBpcat\fR \fBfile\fR \fB>nnn\fR
+
+.SH 環境
+.sp
+.LP
+\fBpack\fR、\fBpcat\fR、および \fBunpack\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。圧縮または復元できなかったファイルの数が返される。失敗の数が \fB255\fR を超えた場合は、\fB255\fR が返されます。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+\fB属性タイプ\fR\fB属性値\fR
+_
+使用条件system/core-os
+_
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcat\fR(1), \fBcompress\fR(1), \fBzcat\fR(1), \fBfgetattr\fR(3C), \fBfsetattr\fR(3C)\fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5)

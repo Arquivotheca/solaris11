@@ -1,0 +1,1306 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH netcfg 1M "2011 年 6 月 30 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+netcfg \- 创建和修改网络配置文件
+.SH 用法概要
+.LP
+.nf
+\fBnetcfg\fR
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR \fIsubcommand\fR [\fIoptions\fR...]
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR [\fB-d\fR] \fB-f\fR \fIcommand-file\fR
+.fi
+
+.LP
+.nf
+\fBnetcfg\fR help [\fIsubcommand\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnetcfg\fR 实用程序处理系统网络配置文件。可以通过单个子命令或通过指定一个包含一系列子命令的命令文件，以交互方式调用 \fBnetcfg\fR。
+.sp
+.LP
+\fBnetcfg\fR 实用程序可对几种不同类型的配置文件进行操作：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+网络配置文件 (NCP)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+位置
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+外部网络修饰符 (ENM)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+已知的 WLAN
+.RE
+.sp
+.LP
+有关这些配置文件类型的更多详细信息，请参阅"配置文件"部分。
+.sp
+.LP
+\fBnetcfg\fR 命令在作用域内执行。作用域有以下三种：全局、配置文件和 NCP。如果不带任何参数调用 \fBnetcfg\fR，则会在全局作用域内开始编辑会话。在全局作用域内，NCP、位置和 ENM 配置文件以及已知的 WLAN 项均可用于操作。选择 NCP 将使编辑会话移到 NCP 作用域；在该作用域中，可以创建或选择单个 NCU 以移到配置文件作用域。此外，如果在全局作用域中选择或创建位置、ENM 或已知的 WLAN，将使编辑会话移到配置文件作用域。
+.sp
+.LP
+在给定的配置文件作用域中，可查看和修改配置文件属性。
+.sp
+.LP
+在交互模式下，调用提交之前不会将更改存储到持久性存储器。提交会在"结束"或"退出"时隐式调用，也可由用户显式调用。在调用提交时，将提交整个配置文件。为了维护持久性存储器的一致性，提交操作中加入了一个验证步骤；如果验证失败，则提交也会失败。如果隐式提交失败，则将为用户提供结束或退出的选项而不提交当前更改，或者保留在当前作用域内进行进一步更改。
+.SH 配置文件
+.sp
+.LP
+NWAM 服务将所需的属性值存储在配置文件中，以此管理网络配置。接着，该服务根据当前网络条件确定应在给定时间激活哪个配置文件，然后激活该配置文件。除了上一节中所讨论的网络配置文件 (NCP) 之外，\fBnwamd\fR 还管理位置和 ENM 配置文件。
+.SS "网络配置文件 (NCP)"
+.sp
+.LP
+NCP 指定本地网络组件（包括物理链路、IP 隧道链路和 IP 接口）的配置。IP 接口必须与任意类型的基础链路相关联。这些组件统称为网络配置单元 (Network Configuration Unit, NCU)。
+.sp
+.LP
+可在系统上配置任意数量的 NCP。自动 NCP 由 \fBnwamd\fR 创建和管理，不能由用户修改。此 NCP 由一个链路 NCU 和一个接口 NCU 组成，它们均表示系统中的每个物理链路。当在系统中添加或删除链路时，也将在自动 NCP 中添加或删除它们的相应 NCU。通过此 NCP 实现的策略将选择有线链路而不是无线链路，并检查所有已连接有线链路上的 IP；如果未连接有线链路，该策略将选择一个无线链路。
+.sp
+.LP
+在从早期版本的 NWAM 服务升级后，系统还会根据旧 \fB/etc/nwam/llp\fR 文件中找到的配置创建用户 NCP。在大多数情况下，如果 NWAM 服务在升级时处于活动状态，则最初是自动 NCP 处于活动状态（即使已创建用户 NCP）。但是，如果在旧配置中检测到显式更改（如静态 IP 地址更改），则最初是用户 NCP 处于活动状态。
+.sp
+.LP
+最后，用户可以创建任意数量的附加 NCP。这些 NCP 完全由用户管理；必须显式添加或删除 NCU，可以添加未映射到当前已安装到系统中的任何链路的 NCU，也可以删除映射到系统中的链路的 NCU。用户可以确定适用于这些 NCP 的策略。
+.sp
+.LP
+在进行初始 NCP 选择后，系统不会更改活动 NCP。用户可以随时使用 GUI 或 \fBnetadm\fR(1M) 命令执行此操作。
+.SS "位置"
+.sp
+.LP
+位置指定系统范围的网络配置，包括名称服务、域、IP 过滤器和 IPsec 配置。
+.SS "外部网络修饰符 (ENM)"
+.sp
+.LP
+顾名思义，外部网络修饰符是 NWAM 服务的外部应用程序，可用于修改和/或创建网络配置。\fBnwamd\fR 可根据 ENM 配置文件中指定的条件来激活或取消激活 ENM。或者，用户可根据需要选择手动激活/取消激活 ENM。
+.sp
+.LP
+当位置配置文件允许根据当前网络条件自动配置一组特定的网络相关服务的同时，也限制了该组服务。ENM 提供附加的灵活性，允许用户指定对 SMF 服务属性和/或状态或要在特定条件下应用的任何其他系统设置的更改。
+.SH 属性
+.sp
+.LP
+\fBnetcfg\fR 支持以下类型的属性：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NCU 属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+接口 NCU 的属性　
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+所有链路 NCU 的通用属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+位置属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ENM 属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+已知的 WLAN 属性
+.RE
+.sp
+.LP
+以下小节中将介绍这些属性。
+.SS "NCU 属性"
+.sp
+.LP
+以下属性是所有 NCU 的通用属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR：枚举值：\fIlink\fR | \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 NCU 类型（\fIlink\fR 或 \fIinterface\fR）。根据指定的类隐式确定值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclass\fR：枚举值：\fIphys\fR（适用于链路 NCU）；\fIip\fR（适用于接口 NCU）\fR
+.ad
+.sp .6
+.RS 4n
+指定 NCU 类。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparent\fR：字符串：\fIname of parent NCP\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此 NCU 所属的 NCP。
+.RE
+
+.sp
+.LP
+\fBtype\fR、\fBclass\fR 和 \fBparent\fR 属性是在创建 NCU 时设置的，并且以后无法更改。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR：布尔值：\fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 activation-mode 是 \fBmanual\fR，则 enabled 属性将反映 NCU 的当前状态。此属性是只读属性；通过使用 \fBnetadm\fR(1M) 启用或禁用 NCU，可间接更改此属性。
+.sp
+缺省值为 \fBtrue\fR。
+.RE
+
+.SS "接口 NCU 的属性"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip-version\fR：枚举值列表：\fBipv4\fR | \fBipv6\fR\fR
+.ad
+.sp .6
+.RS 4n
+在此 NCU 上应使用的 IP 版本。
+.sp
+缺省值为 \fBipv4,ipv6\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-addrsrc\fR：枚举值列表：\fBdhcp\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识分配给此 NCU 的 IPv4 地址的源；可分配多个值。如果分配的值之一是 \fBstatic\fR，则 \fBipv4-addr\fR 属性必须包括至少一个要分配给 NCU 的 IPv4 地址。
+.sp
+缺省值为 \fBdhcp\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-addr\fR：IPv4 地址列表\fR
+.ad
+.sp .6
+.RS 4n
+一个或多个要分配给此 NCU 的 IPv4 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv4-default-route\fR:\fIIPv4 address\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省路由器的 IPv4 地址；如果设置了此属性，则在启动此接口时，IPv4 通信的缺省路由将与此接口关联。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-addrsrc\fR：枚举值列表：\fBdhcp\fR | \fBautoconf\fR | \fBstatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识分配给此 NCU 的 IPv6 地址的源；可分配多个值。如果分配的值之一是 \fBstatic\fR，则 \fBipv6-addr\fR 属性必须包括至少一个要分配给 NCU 的 IPv6 地址。
+.sp
+缺省值为 \fBdhcp,autoconf\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-addr\fR：IPv6 地址列表\fR
+.ad
+.sp .6
+.RS 4n
+一个或多个要分配给此 NCU 的 IPv6 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6-default-route\fR: \fIIPv6 address\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省路由器的 IPv6 地址；如果设置了此属性，则在启动此接口时，IPv6 通信的缺省路由将与此接口关联。
+.RE
+
+.SS "所有链路 NCU 的通用属性"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR：枚举值：\fBmanual\fR | \fBprioritized\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于自动激活此 NCU 的触发器类型。
+.sp
+缺省值为 \fBmanual\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority-group\fR: \fBuint64\fR: \fIgroup\fR \fIpriority\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBactivation-mode\fR 设置为 \fBprioritized\fR，该属性将指定此 NCU 所属的优先级组。组由一个或多个 NCU 组成；数字越小，优先级越高。确定为可用的最高优先级组将通过 \fBnwamd\fR(1M) 激活，并且一直保持到不再可用为止，或保持到更高优先级组变为可用为止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority-mode\fR：枚举值：\fBexclusive\fR | \fBshared\fR | \fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBactivation-mode\fR 设置为 prioritized，此属性将指定用于确定优先级组的可用性和激活行为的模式。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexclusive\fR\fR
+.ad
+.sp .6
+.RS 4n
+至少必须有一个 NCU 可用，才能使组可用，并且只会激活一个 NCU。如果有多个成员 NCU 可用，\fBnwamd\fR(1M) 将随机选择一个进行激活。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshared\fR\fR
+.ad
+.sp .6
+.RS 4n
+至少必须有一个 NCU 可用，才能使组可用；将激活所有可用的 NCU。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.sp .6
+.RS 4n
+所有组成员 NCU 均必须可用，才能使组可用；将激活所有成员 NCU。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-mac-addr\fR：字符串：48 位 MAC 地址\fR
+.ad
+.sp .6
+.RS 4n
+分配给此链路的 MAC 地址。缺省情况下，NWAM 将要求链路的出厂分配 MAC 地址或缺省 MAC 地址；在此设置一个不同的值可覆盖该选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-autopush\fR：字符串列表：要在链路上推动的模块\fR
+.ad
+.sp .6
+.RS 4n
+标识链路打开时应在其上自动推动的一列模块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-mtu\fR: \fBuint64\fR：此链路的 MTU 大小\fR
+.ad
+.sp .6
+.RS 4n
+此属性将被自动设置为物理链路的缺省 MTU；将此属性设置为不同的值可覆盖该值。
+.sp
+请注意，允许的 MTU 值的范围取决于底层硬件。由于在提供附带有驱动程序的底层硬件之前可以创建 NCU，因此无法验证在编辑 NCU 时设置的值。如果由于 MTU 大小无效而未能激活 NCU，则会在系统日志中指明这种情况，并且 NCU 将被置于维护状态。
+.RE
+
+.SS "位置属性"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR：枚举值：\fBmanual\fR | \fBsystem\fR | \fBconditional-all\fR | \fBconditional-any\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于自动激活此位置的触发器类型。
+.sp
+缺省值为 \fBmanual\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR：布尔值：\fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 activation-mode 是 \fBmanual\fR，则 enabled 属性将反映位置的当前状态。此属性是只读属性；通过使用 \fBnetadm\fR(1M) 启用或禁用位置，可间接更改此属性。
+.sp
+缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconditions\fR：字符串列表：\fIconditional expressions\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBactivation-mode\fR 设置为 \fBconditional-all\fR 或 \fBconditional-any\fR，则此属性会指定测试来确定是否应激活此位置。条件表达式由可赋予布尔值的一系列条件组成，例如 "advertised-domain is sun.com" 或 "ip:bge0 is-not active"。下面的"条件表达式"一节中定义了这些表达式的格式。如果指定了多个条件，则要满足激活要求，要么所有条件均为真（当 \fBactivation-mode\fR 是 \fBconditional-all\fR 时），要么任何一个条件为真（当 \fBactivation-mode\fR 是 \fBconditional-any\fR 时）。
+.sp
+注意 \fBadvertised-domain\fR 与 \fBsystem-domain\fR 之间的区别。声明域可通过外部通信方式了解，例如 DHCP 服务器声明的 \fBDNSdmain\fR 或 \fBNISdmain\fR。此属性适用于位置的条件激活；例如，如果声明域是 \fBmycompany.com\fR，则激活"工作"位置。系统域是当前分配给系统的域，即由 \fBdomainname\fR(1M) 命令返回的值。此属性适用于 ENM 的条件激活，因为只有在激活位置并且为该特定域配置系统后，条件才会变为真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-domain\fR：字符串：\fIsystem domain name\fR\fR
+.ad
+.sp .6
+.RS 4n
+应适用于系统的域名；此域名将由 NIS 和 LDAP 使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnameservices\fR：枚举值列表：\fBfiles\fR | \fBdns\fR | \fBnis\fR | \fBldap\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应配置的名称服务，例如 DNS、NIS 和 LDAP。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnameservices-config-file\fR：字符串：\fIpath to\fR \fBnsswitch.conf\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要使用的 \fBnsswitch.conf\fR 文件。此属性必须始终具有一个值。如果 \fBnameservices\fR 属性指定单个名称服务，则此属性缺省情况下将包含 \fBnameservices\fR 属性中指定的名称服务的 \fB/etc/nsswitch.\fR\fInameservice\fR；用户可更改该值。如果 \fBnameservices\fR 属性标识多个名称服务，则用户必须为此属性另外指定一个值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdns-nameservice-configsrc\fR：枚举值列表：\fBmanual\fR | \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应该用来获取 DNS 名称服务的配置信息的源。如果带有 \fBmanual\fR，则将使用其余的 \fBdns-nameservice-*\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdns-nameservice-domain\fR：字符串：\fIdomain name\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-servers\fR：字符串列表：\fIname server address(es)\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-search\fR：字符串列表：\fI domain search string\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-sortlist\fR：字符串列表：\fIIP address\fR, \fInetmask pair(s)\fR\fR
+.ad
+.br
+.na
+\fB\fBdns-nameservice-options\fR：字符串列表：\fIresolver variable(s) to be modified\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 DNS 是已配置的名称服务之一，并且 \fBmanual\fR 是其配置源之一，则这些属性可指定其配置参数。只有 \fBservers\fR 是必需属性；\fBsearch\fR 和 \fBdomain\fR 是互斥的，因此只能指定其中一项，如果同时使用了 \fBdhcp\fR，则会覆盖 DHCP 服务器提供的域。这些值的格式与 \fBresolv.conf \fR(4) 中的各个选项相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnis-nameservice-configsrc\fR：枚举值列表：\fBmanual\fR | \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应该用来获取 NIS 名称服务的配置信息的源。如果带有 \fBmanual\fR，则将使用其余的 \fBnis-nameservice-*\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnis-nameservice-servers\fR：字符串列表：\fIname server address(es)\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 NIS 是已配置的名称服务之一，并且 \fBmanual\fR 是其配置源之一，则此属性可指定其服务器地址。如果未指定此属性，则会以广播模式启动 NIS 客户机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap-nameservice-configsrc\fR：枚举值列表：\fBmanual\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应该用来获取 LDAP 名称服务的配置信息的源。\fBmanual\fR 当前是 LDAP 的唯一选项；因此必须提供 \fBldap-nameservice-*\fR 属性才能完成 LDAP 配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap-nameservice-servers\fR：字符串列表：\fIname server address(es)\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 LDAP 是已配置的名称服务之一，则此属性可指定其服务器地址。此属性为必需属性，并且预计指定的服务器将具有用于完成客户机配置的客户机配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnfsv4-domain\fR：字符串：\fIdomain name to be used for NVSv4\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要使用的 NVSv4 域。如果不指定此值，则将使用名称服务域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipfilter-config-file\fR：字符串：\fIpath to ipfilter IPv4 configuration file\fR\fR
+.ad
+.br
+.na
+\fB\fBipfilter-v6-config-file\fR：字符串：\fIpath to ipfilter IPv6\fR\fR
+.ad
+.br
+.na
+\fB\fBipnat-config-file\fR：字符串：\fIpath to\fR \fBipnat\fR \fIconfiguration file\fR\fR
+.ad
+.br
+.na
+\fB\fBippool-config-file\fR：字符串：\fIpath to\fR \fBippool\fR \fIconfiguration file\fR\fR
+.ad
+.sp .6
+.RS 4n
+这些属性分别为 \fBipfilter\fR(5) 配置的组件指定规则文件的路径。如果设置了给定的 \fBconfig-file\fR 属性，则将启用对应的 IP 过滤器组件，并从指定的文件读取配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBike-config-file\fR：字符串：\fIpath to IKE configuration file\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 IKE 配置文件。如果指定了一个值，则将启用 \fBsvc:/network/ipsec/ike\fR 服务，并从指定的文件读取配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipsecpolicy-config-file\fR：字符串：\fIpath to IPsec policy configuration file\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 IPsec 策略配置文件。如果指定了一个值，则将启用 \fBsvc:/network/ipsec/policy\fR 服务，并从指定的文件读取配置。
+.RE
+
+.SS "ENM 属性"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactivation-mode\fR：枚举值：\fBmanual\fR | \fBconditional-all\fR | \fBconditional-any\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于自动激活此 ENM 的触发器类型。
+.sp
+缺省值为 \fBmanual\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR：布尔值：\fBtrue\fR | \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 activation-mode 是 \fBmanual\fR，则 enabled 属性将反映 ENM 的当前状态。此属性是只读属性；通过使用 \fBnetadm\fR(1M) 启用或禁用 ENM，可间接更改此属性。
+.sp
+缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconditions\fR：字符串列表：\fIconditional expressions\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 activation-mode 设置为 \fBconditional-all\fR 或 \fBconditional-any\fR，则此属性会指定测试来确定是否应激活此 ENM。条件表达式由可赋予布尔值的一系列条件组成，例如 "system-domain is sun.com" 或 "ip:bge0 is-not active"。下面的"条件表达式"一节中定义了这些表达式的格式。如果指定了多个条件，则要满足激活要求，要么所有条件均为真（当 \fBactivation-mode\fR 是 \fBconditional-all\fR 时），要么任何一个条件为真（当 \fBactivation-mode\fR 是 \fBconditional-any\fR 时）。
+.sp
+注意 \fBadvertised-domain\fR 与 \fBsystem-domain\fR 之间的区别。声明域可通过外部通信方式了解，例如 DHCP 服务器声明的 \fBDNSdmain\fR 或 \fBNISdmain\fR。此属性适用于位置的条件激活；例如，如果声明域是 \fBmycompany.com\fR，则激活"工作"位置。系统域是当前分配给系统的域，即由 |domainname|(1M) 命令返回的值。此属性适用于 ENM 的条件激活，因为只有在激活位置并且为该特定域配置系统后，条件才会变为真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfmri\fR：字符串：\fIservice FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果此 ENM 已作为 SMF 服务执行，则此属性会标识该服务。如果指定了此属性，则将通过启用服务来激活 ENM，通过禁用服务来取消激活 ENM。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR：字符串：\fIstart command\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果此 ENM 未作为 SMF 服务执行，则此属性会标识应执行以启动或激活 ENM 的命令。如果已设置 FMRI 属性，则将忽略此属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR：字符串：\fIstop command\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果此 ENM 未作为 SMF 服务执行，则此属性会标识应执行以停止/取消激活 ENM 的命令。如果已设置 FMRI 属性，则将忽略此属性。
+.RE
+
+.SS "已知的 WLAN 属性"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbssids\fR：字符串列表：WLAN BSSID（AP MAC 地址）\fR
+.ad
+.sp .6
+.RS 4n
+如果一个特定访问点的优先级高于具有相同名称/ESSID 的其他访问点，则此属性允许指定 AP 的 BSSID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority\fR: \fBuint64\fR：一个数字优先级值\fR
+.ad
+.sp .6
+.RS 4n
+此 WLAN 的相对优先级；数字越小表示优先级越高。
+.sp
+请注意，可以更改该数字，前提是对已知 WLAN 对象的设置的后续更改需要进行此类更改。以配置有两个已知的 WLAN 对象 \fBwlanA\fR 和 \fBwlanB\fR 的系统为例。\fBwlanA\fR 优先级为 1，\fBwlanB\fR 优先级为 2。创建一个新的已知 WLAN \fBwlanC\fR，并且分配的优先级为 2。在此情况下，整个列表将被更新，使 \fBwlanA\fR 的优先级为 1，\fBwlanC\fR 的优先级为 2，而 \fBwlanB\fR 的优先级为 3。任何两个 WLAN 都不得具有相同的优先级值，因此增加优先级为 2 的 \fBwlanC\fR 会强制 \fBwlanB\fR 的优先级下降。如果存在优先级低于 \fBwlanB\fR 的任何其他 WLAN，则它们的优先级也会相应地改变。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyslot\fR: \fBuint64\fR：要用于此 WLAN 的密钥插槽\fR
+.ad
+.sp .6
+.RS 4n
+如果 WLAN 使用支持多个密钥插槽的加密模式，则可在此属性中指定放置密钥的插槽。如果未指定，缺省情况下将使用插槽 1。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyname\fR：字符串列表：安全对象名称\fR
+.ad
+.sp .6
+.RS 4n
+允许用户将使用 \fBdladm\fR(1M) 创建的安全对象与已知的 WLAN 进行关联。
+.RE
+
+.SS "条件表达式"
+.sp
+.LP
+可根据用户指定的一组条件激活位置和 ENM。下表概述了这些条件表达式的语法。
+.sp
+
+.sp
+.TS
+tab();
+cw(1.83i) cw(1.83i) cw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+对象类型对象条件
+_
+ncp|ncu|enm|locnameis/is-not active
+.TE
+
+.sp
+.in +2
+.nf
+Object Type       Condition                           Object
+------------------------------------------------------------
+essid             is/is-not/contains/does-not-contain name string
+bssid             is/is-not                           bssid string
+ip-address        is/is-not                           IPv4 or IPv6 
+                                                      address
+ip-address        is-in-range/is-not-in-range         IPv4 or IPv6 
+                                                      address plus
+                                                      netmask/prefixlen
+advertised-domain is/is-not/contains/does-not-contain name string
+system-domain     is/is-not/contains/does-not-contain name string
+.fi
+.in -2
+.sp
+
+.SH 选项
+.sp
+.LP
+以下选项与任何特定的 \fBnetcfg\fR 子命令无关联：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+在从命令文件（参见以下选项）读取子命令之前删除所有配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+读取并执行 \fIcommand_file\fR 中的 \fBnetcfg\fR 子命令。
+.RE
+
+.SH 子命令
+.sp
+.LP
+所支持的子命令如下。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+结束当前配置文件指定，而不向持久性存储器提交当前所做的更改，然后进入下一更高级别的作用域。
+.sp
+此子命令在 NCP 和配置文件作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIprop-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+清除指定属性的值。
+.sp
+此子命令在配置文件作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前配置文件提交至持久性存储器。由于待提交的配置必须正确，因此该操作还会在对象上自动执行验证。在离开当前作用域（使用 \fBend\fR 或 \fBexit\fR 子命令）时，会自动尝试执行提交操作。
+.sp
+此子命令在配置文件作用域中有效。
+.sp
+请注意，在非交互模式中不需要进行提交，这是由于更改值的任何子命令均采用隐式提交。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate\fR [ \fB-t\fR \fItemplate\fR ] \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建指定类型和名称的内存中配置文件。\fB-t\fR \fItemplate\fR 选项指定新对象应与 \fItemplate\fR 完全相同，其中 \fItemplate\fR 是相同类型的现有对象的名称。如果不使用 \fB-t\fR 选项，则用缺省值创建新对象。对于 NCP，只可创建一个"用户"NCP。
+.sp
+此子命令在全局和 NCP 作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdestroy\fR { \fB-a\fR | \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR }\fR
+.ad
+.sp .6
+.RS 4n
+从内存和持久性存储器中删除所有配置文件或指定的配置文件。此操作是即时操作，不需要提交。已销毁的对象无法进行恢复。
+.sp
+如果指定了特定对象，此子命令将在全局和 NCP 作用域中有效；\fB-a\fR 选项仅在全局作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+结束当前配置文件指定，然后进入下一更高级别的作用域。在结束前将验证并提交当前对象；如果验证或提交失败，则会发出一条相应的错误消息，并为用户提供结束机会，而不提交当前所做的更改，或者保留在当前作用域中继续进行编辑。
+.sp
+此子命令在任何作用域中均有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR\fR
+.ad
+.sp .6
+.RS 4n
+退出 \fBnetcfg\fR 会话。在结束前将验证并提交当前配置文件；如果验证或提交失败，则会发出一条相应的错误消息，并为用户提供退出机会，而不提交当前所做的更改，或者保留在当前作用域中继续进行编辑。
+.sp
+此子命令在任何作用域中均有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [ \fB-d\fR ] [ \fB-f\fR \fIoutput-file\fR ] [ \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+将当前作用域或指定作用域中的当前配置输出到标准输出，或输出到使用 \fB-f\fR 选项指定的文件。\fB-d\fR 选项生成 \fBdestroy\fR \fB-a\fR 作为首行输出。此子命令以适用于命令文件的格式生成输出。无法导出系统创建的对象（包括 Automatic NCP 和 Automatic、NoNet 以及 User 位置）。
+.sp
+此子命令在任何作用域中均有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [ \fB-V\fR ] \fIprop-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取指定属性的当前（内存中）值。缺省情况下，将会同时输出属性名称和属性值；如果指定了 \fB-V\fR 选项，则只会显示属性值。
+.sp
+此子命令在配置文件作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [ \fIsubcommand\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+显示一般帮助或有关特定子命令的帮助。
+.sp
+此子命令在任何作用域中均有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [ \fB-a\fR ] [ \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列出当前作用域或指定作用域中的所有配置文件、属性值对和资源。在列出对象的属性时，缺省行为是仅列出适用于所指定配置的属性。也就是说，如果列出 \fBipv4-addrsrc\fR 是 \fBdhcp\fR 的 IP NCU，则不会列出 \fBipv4-addr\fR 属性。包含 \fB-a\fR 选项将导致列出所有属性，无论这些属性是否适用于当前设置。
+.sp
+此子命令在任何作用域中均有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除对当前配置文件所做的任何当前更改，并从持久性存储器中恢复值。
+.sp
+此子命令在配置文件作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR \fIobject-type\fR [ \fIclass\fR ] \fIobject-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择当前作用域级别中可用的配置文件之一，向下跳转到该对象的作用域中。所选对象将从持久性存储器装入到内存中。
+.sp
+此子命令在全局和 NCP 作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIprop-name\fR=\fIvalue1\fR[,\fIvalue2\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+设置指定属性的当前（内存中）值。如果在非交互模式下执行，则会同时将所做的更改提交到持久性存储器。
+.sp
+用于分隔多值属性的值的分隔符是 "\fB,\fR"（逗号）。如果此类属性中的任何单个值包含逗号，则必须对其进行转义（即表示为 \fB\,\fR）。如果属性只有一个值，其中的逗号不会被解释为分隔符，因此无需进行转义。
+.sp
+此子命令在配置文件作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+验证当前的内存中对象的配置是否有效。
+.sp
+此子命令在配置文件作用域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwalkprop\fR [ \fB-a\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+遍历与当前配置文件关联的每个属性。对于每个属性，均会显示名称和当前值，并给出提示以便用户更改当前值。
+.sp
+用于分隔多值属性的值的分隔符是 ","（逗号）。如果此类属性中的任何单个值包含逗号，则必须对其进行转义（即表示为 \fB\,\fR）。如果属性只有一个值，其中的逗号不会被解释为分隔符，因此无需进行转义。
+.sp
+缺省情况下，只会遍历对于已设置的属性而言所需要的属性；也就是说，如果将 \fBipv4-addrsrc\fR 设置为 \fBdhcp\fR，则不会遍历 \fBipv4-addr\fR。包含 \fB-a\fR 选项将导致遍历所有可用的属性。
+.sp
+此子命令在配置文件作用域中有效。
+.sp
+此子命令仅在交互模式下有意义。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR设置 NCU 属性
+.sp
+.LP
+以下命令从命令行（即在非交互模式下）设置 NCU 属性。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg "select ncp User; select ncu phys net1; set link-mtu=1492"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR列出顶层配置文件
+.sp
+.LP
+以下命令从命令行列出所有顶层配置文件。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg list\fR
+NCPs:
+        Automatic
+        User
+Locations:
+        Automatic
+        home
+        NoNet
+        office
+ENMs:
+        enmtest
+        myenm
+WLANs:
+        sunwifi
+        coffeeshop
+        linksys
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR销毁位置配置文件
+.sp
+.LP
+以下命令从命令行销毁位置配置文件。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg destroy loc home\fR
+Destroyed loc 'home'
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR创建 NCU 配置文件
+.sp
+.LP
+以下命令序列以交互方式创建 NCU 配置文件。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg> \fBselect ncp user\fR
+netcfg:ncp:User> \fBcreate ncu ip net1\fR
+Created ncu 'net1'.  Walking properties ...
+ip-version (ipv4,ipv6) [ipv4|ipv6]> \fBipv4\fR
+ipv4-addrsrc (dhcp) [dhcp|static]> \fBstatic\fR
+ipv4-addr> \fB168.1.2.3\fR
+netcfg:ncp:User:ncu:net1> \fBlist\fR
+ncu:net1
+        type:             interface
+        class:            ip
+        parent:           "User"
+        enabled           true
+        ip version:       ipv4
+        ipv4-addrsrc:     static
+        ipv4-addr:        "168.1.2.3"
+        ipv6-addrsrc      dhcp,autoconf
+netcfg:ncp:User:ncu:net1> \fBcommit\fR
+Committed changes
+netcfg:ncp:User:ncu:net1> \fBend\fR
+netcfg:ncp:User> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR处理 ENM
+.sp
+.LP
+以下命令序列选择现有的 ENM、显示其内容并更改属性值。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg>\fBselect enm myenm\fR
+netcfg:enm:myenm>\fBlist\fR
+ENM:myenm
+        activation-mode manual
+        enabled         true
+        start           "/usr/local/bin/myenm start"
+        stop            "/usr/local/bin/myenm stop"
+netcfg:enm:myenm>\fBset stop="/bin/alt_stop"\fR
+netcfg:enm:myenm>\fBlist\fR
+ENM:myenm
+        activation-mode manual
+        enabled         true
+        start           "/usr/local/bin/myenm start"
+        stop            "/bin/alt_stop"
+netcfg:enm:myenm>\fBexit\fR
+Committed changes
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR配置静态地址
+.sp
+.LP
+以下命令序列使用 Home NCP 在接口 \fBbge0\fR 上配置静态地址 192.168.2.12/24。在激活 Home NCP 时，缺省情况下会启用此接口。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg\fR
+netcfg> \fBcreate ncp Home\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+首先配置 phys NCU：
+
+.sp
+.in +2
+.nf
+netcfg:ncp:Home> \fBcreate ncu phys bge0\fR
+Created ncu 'bge0'.  Walking properties ...
+activation-mode (manual) [manual|prioritized]>
+link-mac-addr>
+link-autopush>
+link-mtu>
+netcfg:ncp:Home:ncu:bge0> \fBend\fR
+Committed changes
+netcfg:ncp:Home>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+然后配置 IP NCU：
+
+.sp
+.in +2
+.nf
+netcfg:ncp:Home> \fBcreate ncu ip bge0\fR
+Created ncu 'bge0'.  Walking properties ...
+ip-version (ipv4,ipv6) [ipv4|ipv6]>
+ipv4-addrsrc (dhcp) [dhcp|static]> \fBstatic\fR
+ipv4-addr> \fB192.168.2.10/24\fR
+ipv4-default-route>
+ipv6-addrsrc (dhcp,autoconf) [dhcp|autoconf|static]>
+ipv6-default-route>
+netcfg:ncp:Home:ncu:bge0> \fBlist\fR
+ncu:bge0
+    type                interface
+    class               ip
+    parent              "Home"
+    enabled             true
+    ip-version          ipv4,ipv6
+    ipv4-addrsrc        static
+    ipv4-addr           "192.168.2.10/24"
+    ipv6-addrsrc        dhcp,autoconf
+netcfg:ncp:Home:ncu:bge0> \fBexit\fR
+Committed changes
+#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用 \fBnetadm\fR(1M) 切换到 Home NCP。
+
+.LP
+\fB示例 7 \fR根据条件配置位置
+.sp
+.LP
+以下命令序列根据条件配置位置。只要 IP 地址位于 10.0.8.0/24 子网中，就会激活此位置。此外，在此位置也会配置 NIS。
+
+.sp
+.in +2
+.nf
+netcfg> \fBselect loc office\fR
+netcfg:loc:office> \fBlist\fR
+loc:office
+       activation-mode                 conditional-any
+       conditions                      "ip-address is 10.0.8.0/24"
+       enabled                         false
+       nameservices                    dns,nis
+       nameservices-config-file        "/etc/nsswitch.nis"
+       dns-nameservice-configsrc       dhcp
+       nis-nameservice-configsrc       manual
+       nis-nameservice-servers         "10.2.18.24"
+       default-domain                  "labs.east.sun.com"
+netcfg:loc:office>
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR创建已知的 WLAN
+.sp
+.LP
+以下命令序列使用 WEP 密钥建立一个名为 \fBcoffeeshop\fR 的已知 WLAN。
+
+.sp
+.in +2
+.nf
+netcfg> \fBselect wlan coffeeshop\fR
+netcfg:wlan:coffeeshop> \fBlist\fR
+known wlan:coffeeshop
+       priority                2
+       keyname                 "foo"
+       security-mode           wep
+netcfg:wlan:coffeeshop> \fBset priority=1\fR
+netcfg:wlan:coffeeshop> \fBend\fR
+Committed changes
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR将当前配置导出到文件
+.sp
+.LP
+以下命令将当前配置导出到文件。
+
+.sp
+.in +2
+.nf
+netcfg> \fBexport -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+或者，从 Unix 命令行执行同样的任务：
+
+.sp
+.in +2
+.nf
+# \fBnetcfg export -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR从文件中导入当前配置
+.sp
+.LP
+以下命令从文件中导入当前配置。
+
+.sp
+.in +2
+.nf
+# \fBnetcfg -f /tmp/nwam.config\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdladm\fR(1M)、\fBdomainname\fR(1M)、\fBnetadm\fR(1M)、\fBnetcfgd\fR(1M)、\fBnwamd\fR(1M)、\fBresolv.conf\fR(4)、\fBattributes\fR(5)、\fBipfilter\fR(5)
+.sp
+.LP
+另请参见 JDS/GNOME 手册页集合中的 \fBnwam-manager(1M)\fR。

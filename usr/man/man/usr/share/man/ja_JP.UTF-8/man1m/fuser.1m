@@ -1,0 +1,282 @@
+'\" te
+.\" Copyright (c) 1989, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH fuser 1M "2010 年 8 月 27 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fuser \- ファイルまたはファイル構造を使用しているプロセスの特定
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/fuser\fR [\fB-c\fR | \fB-d\fR | \fB-f\fR] [\fB-nu\fR] [\fB-k\fR | \fB-s\fR \fIsig\fR] \fIfiles\fR 
+     [ [\fB- \fR] [\fB-c\fR | \fB-d\fR | \fB-f\fR] [\fB-nu\fR] [\fB-k\fR | \fB-s\fR \fIsig\fR] \fIfiles\fR] ...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfuser\fR は、引数として指定された \fIfiles\fR を使用しているプロセスのプロセス \fBID\fR を表示します。
+.sp
+.LP
+各プロセス \fBID\fR には文字修飾詞が続きます。文字修飾詞には以下のような意味があり、プロセスがファイルをどのように使用しているかを示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 5n
+.rt  
+カレントディレクトリとしてファイルを使用している
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBmmap\fR(2) によってマップされたファイルを使用している。詳細は \fBmmap\fR(2) を参照
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBn\fR\fR
+.ad
+.RS 5n
+.rt  
+そのファイルに対して、非ブロッキング強制ロックを保持している
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+オープンファイルとしてファイルを使用している
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 5n
+.rt  
+ルートディレクトリとしてファイルを使用している
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+テキストファイルとしてファイルを使用している
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBy\fR\fR
+.ad
+.RS 5n
+.rt  
+制御端末としてファイルを使用している
+.RE
+
+.sp
+.LP
+ファイルシステムがマウントされているブロック型特殊デバイスについては、そのデバイス上のファイルを使用しているすべてのプロセスが表示されます。その他のタイプのファイル (テキストファイル、実行可能ファイル、ディレクトリ、デバイスなど) については、そのファイルを使用しているプロセスだけが報告されます。
+.sp
+.LP
+\fBfuser\fR は、すべてのタイプのデバイスに対して、デバイスを開いている既知のカーネル消費者も表示します。カーネル消費者は、次のうちの 1 つの形式で表示されます。
+.sp
+.in +2
+.nf
+[\fImodule_name\fR]
+[\fImodule_name\fR,dev_path=\fIpath\fR]
+[\fImodule_name\fR,dev=(\fImajor\fR,\fIminor\fR)]
+[\fImodule_name\fR,dev=(\fImajor\fR,\fIminor\fR),dev_path=\fIpath\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+複数のファイルグループを指定する場合は、ファイルグループごとにオプションを指定できます。現在使用中のオプションを取り消す場合は、単独のダッシュを使用します。
+.sp
+.LP
+プロセス ID は、スペースで区切られた単一行として標準出力に出力されます。末尾の単一の改行など、その他の出力はすべて標準エラーに書き込まれます。
+.sp
+.LP
+fuser はだれでも実行できますが、他のユーザーのプロセスを終了させることができるのは、スーパーユーザーだけです。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 10n
+.rt  
+ファイルシステムのマウントポイントであるファイル、およびマウントされているファイルシステム内のすべてのファイルについて報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 10n
+.rt  
+指定したマイナーノードと同じデバイスノードに関連するすべてのマイナーノードについて、デバイス使用状況を報告します。このオプションは、マウントされているファイルシステム内にあるファイルについてのファイル使用状況は報告しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 10n
+.rt  
+マウントされているファイルシステム内のファイルではなく、指定したファイルについて報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスに  \fBSIGKILL\fR シグナルを送ります。このオプションは各プロセスに kill コマンドを発行するので、強制終了メッセージがすぐに表示されないことがあります (\fBkill\fR(2) を参照)。カーネルファイル消費者にはシグナルは送られません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 10n
+.rt  
+ファイルに対して非ブロッキング強制ロックを保持しているプロセスだけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsig\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスにシグナルを送ります。\fIsig\fR オプション引数には、\fB<signal.h>\fR ヘッダーで定義されている記号名の 1 つを指定するか、または 10 進整数のシグナル番号を指定します。\fIsig\fR が記号名で、\fBSIG\fR 接頭辞を付けずに、大文字小文字の区別なしで認識されます。\fB-k\fR オプションは \fB-s\fR \fBKILL\fR または \fB-s\fR \fB9\fR と同等です。カーネルファイル消費者にはシグナルは送られません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.RS 10n
+.rt  
+プロセス \fBID\fR の後に、括弧で囲んだユーザーのログイン名を表示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRマウントポイントおよびファイルについて報告する
+.sp
+.LP
+次の例は、マウントポイントおよびマウントされているファイルシステム内のファイルについて報告します。
+
+.sp
+.in +2
+.nf
+example% \fBfuser -c /export/foo\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRマウントポイントおよびファイルについて報告するときの出力を制限する
+.sp
+.LP
+次の例は、マウントポイントおよびマウントされているファイルシステム内のファイルについて報告し、その出力を非ブロッキング強制ロックを保持しているプロセスに限定します。
+
+.sp
+.in +2
+.nf
+example% \fBfuser -cn /export/foo\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR非ブロッキング強制ロックを保持しているプロセスへ SIGTERM を送信する
+.sp
+.LP
+次のコマンドは、ファイル \fB/export/foo/my_file\fR に対して非ブロッキング強制ロックを保持しているすべてのプロセスに、\fBSIGTERM\fR を送ります。
+
+.sp
+.in +2
+.nf
+example% \fBfuser -fn -s term /export/foo/my_file\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBfuser\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR \fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBps\fR(1), \fBmount\fR(1M), \fBkill\fR(2), \fBmmap\fR(2), \fBsignal\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBfuser\fR はシステムイメージのスナップショットで動作するため、\fBfuser\fR の実行中にファイルを使用し始めたプロセスを見逃してしまうことがあります。また、ファイルを使用していると報告されたプロセスが、\fBfuser\fR の実行中にファイルの使用を中止していることもあります。このような理由から、\fB-k\fR オプションの使用は勧められません。

@@ -1,0 +1,1770 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ilbadm 1M "2010 年 7 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ilbadm \- 負荷分散規則の確立と操作
+.SH 形式
+.LP
+.nf
+\fBilbadm\fR create-rule [\fB-e\fR] [\fB-p\fR] \fB-i\fR vip=\fIvalue\fR,port=\fIvalue\fR[,protocol=\fIvalue\fR]
+     \fB-m\fR lbalg=\fIvalue\fR,type=\fIvalue\fR[,proxy-src=\fIip-range\fR][,pmask=\fImask\fR]
+     [\fB-h\fR hc-name=\fIvalue\fR[,hc-port=\fIvalue\fR]]
+     [\fB-t\fR [conn-drain=\fIN\fR][,nat-timeout=\fIN\fR],[persist-timeout=\fIN\fR]]
+     -o servergroup=\fIvalue\fR \fIname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-rule [\fB-e\fR|\fB-d\fR] [\fB-f\fR |[\fB-p\fR] \fB-o\fR \fIkey\fR[,\fIkey\fR ...]] [\fIname\fR ...]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR delete-rule \fB-a\fR | \fIname\fR ...
+.fi
+
+.LP
+.nf
+\fBilbadm\fR enable-rule [\fIname\fR ...]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR disable-rule [\fIname\fR ...]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-statistics [\fB-p\fR] \fB-o\fR \fIfield\fR[,\fIfield\fR] [\fB-thAdvi\fR]
+     [\fB-r\fR \fIrulename\fR] | [\fB-s\fR \fIservername\fR] [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR create-servergroup [\fB-s\fR \fIserver\fR=\fIhostspec\fR[:\fIportspec\fR...]] \fIgroupname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR delete-servergroup \fIgroupname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-servergroup [\fB-s\fR|\fB-f\fR|[\fB-p\fR] \fB-o\fR \fIfield\fR[,\fIfield\fR]] [[\fB-v\fR] \fIname\fR]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR enable-server \fIserver\fR ...
+.fi
+
+.LP
+.nf
+\fBilbadm\fR disable-server \fIserver\fR ...
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-server [[\fB-p\fR] \fB-o\fR \fIfield\fR[,\fIfield\fR...]] [\fIrulename\fR...]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR add-server \fB-s\fR \fIserver\fR=\fIvalue\fR[,\fIvalue\fR ... ] \fIname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR remove-server \fB-s\fR \fIserver\fR=\fIvalue\fR[,\fIvalue\fR ... ] \fIname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR create-healthcheck [\fB-n\fR] \fB-h\fR hc-test=\fIvalue\fR
+     [,hc-timeout=\fIvalue\fR][,hc-count=\fIvalue\fR][,hc-interval=\fIvalue\fR] \fIhcname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR delete-healthcheck \fIhcname\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-healthcheck [\fIhcname\fR ...]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-hc-result [\fIrule-name\fR]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-nat [\fIcount\fR]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR show-persist [\fIcount\fR]
+.fi
+
+.LP
+.nf
+\fBilbadm\fR export-config \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBilbadm\fR import-config [\fB-p\fR] \fIfilename\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBilbadm\fR コマンドは、後述のサブコマンドを使用して、統合ロードバランサ (ILB) の規則の操作および情報の表示を行います。
+.sp
+.LP
+規則名の大文字と小文字は区別されませんが、入力したとおりに保持されます。規則名の長さは 19 文字に制限されます。サーバー名は 14 文字を超えることはできません。
+.sp
+.LP
+\fB-p\fR オプションで呼び出す機械可読な出力では、どの場合も、出力または表示するフィールドを \fB-o\fR オプションで指定する必要があります。フィールドは、コマンド行に現れたとおりの順序で表示されます。複数のフィールドを指定する場合は、コロン (\fB:\fR) 文字で区切ります。表示された文字列自体にコロンまたはバックスラッシュ (\fB\e\fR) が含まれる場合は、その前にバックスラッシュが付きます。機械可読な出力の場合、ヘッダーは表示されません。
+.sp
+.LP
+サーバー ID は、\fBcreate-servergroup\fR または \fBadd-server\fR サブコマンドでサーバーが追加されるときに、システムによって生成されます。
+.sp
+.LP
+サーバー ID はサーバーグループ内で一意であることが保証されます。規則は 1 つのサーバーグループのみに結びつけることができるため、サーバー ID は規則ごとにも一意になります。同じサーバーグループに複数の規則を結びつけることができるため、サーバー ID 単独では規則を識別するのに不十分です。
+.sp
+.LP
+サーバー ID とホスト名を区別できるように、サーバー ID の前には下線 (\fB_\fR) が付加されます。
+.sp
+.LP
+後述のとおり、サーバーグループおよび健全性検査のエンティティーは、\fBcreate-rule\fR サブコマンドで使用する前に定義しておく必要があります。
+.SH サブコマンド
+.sp
+.LP
+\fBilbadm\fR のサブコマンドおよび関連するオプションとオペランドは次のとおりです。サブコマンドには \fBcreate-rule\fR と \fBcreate-rl\fR のように通常形式と短形式があり、数文字分の入力を省略できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-rule\fR|\fBcreate-rl\fR [\fB-e\fR] [\fB-p\fR] \fB-i\fR \fIincoming\fR \fB-m\fR \fImethod_attributes\fR \fB-o\fR \fIoutgoing_spec\fR [\fB- h\fR \fIhealthcheck\fR] [\fB-t\fR \fItimers\fR] \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された一連の特性を使用して、規則 \fIname\fR を作成します。\fIincoming\fR と \fImethod_attributes\fR は、一連の \fIkey\fR=\fIvalue\fR ペアで指定します。\fI name\fR がすでに存在している場合、このコマンドは失敗します。ある特定の組 (仮想 IP アドレス、ポート、およびプロトコル) が別の規則に一致する場合も、このコマンドは失敗します。\fBcreate-rule\fR の次のオプションは、コマンドの全体的な効果を制御します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 6n
+.rt  
+\fBcreate-rule\fR 機能を有効にします。デフォルトでは、\fBcreate-rule\fR は無効になっています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+規則を永続的 (スティッキー) なものとして作成します。デフォルトでは、規則が存続するのは現在のセッションの間のみです。
+.RE
+
+キーと値は 1 文字の識別子によって指定します。このような識別子および関連するキーと設定可能な値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+受信パケットの一致条件を指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvip\fR\fR
+.ad
+.sp .6
+.RS 4n
+(仮想) 着信先 IP アドレス
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR[-\fBport\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ポートの番号または名前。\fBtelnet\fR、\fBdns\fR など。ポートは、ポート番号または記号名 (\fB/etc/services\fR の記述どおり) で指定できます。ポート番号の範囲もサポートされています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTCP\fR (デフォルト) または \fBUDP\fR (\fB/etc/services\fR を参照)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットの処理方法を記述するキーを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlbalg\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトは \fBroundrobin\fR (短形式: \fBrr\fR) です。ほかに指定できる値は、\fBhash-ip\fR (短形式: \fBhip\fR)、\fBhash-ip-port\fR (短形式: \fBhipp\fR)、\fBhash-ip-vip\fR (短形式: \fBhipv\fR) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークのトポロジを指します。指定できる値は、\fBDSR\fR (\fBdsr\fR または \fBd\fR も可)、\fBNAT\fR (\fBn\fR または \fBnat\fR も可)、\fBHALF-NAT\fR (\fBh\fR または \fBhalf-nat\fR も可) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproxy-src\fR\fR
+.ad
+.sp .6
+.RS 4n
+フル NAT の場合のみ必要です。プロキシの発信元アドレスの範囲として使用する IP アドレスの範囲を指定します。範囲は 10 個の IP アドレスに制限されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpmask\fR\fR
+.ad
+.sp .6
+.RS 4n
+省略可能。\fBstickiness\fR という別名があります。この規則を永続的なものとして指定します。引数は CIDR 表記の接頭辞の長さです。つまり、IPv4 の場合は 0-32、IPv6 の場合は 0-128 です。このキーワードを指定するには、\fB-p\fR オプションを使用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-i\fR 節で指定された条件に一致するパケットの着信先を指定します。この識別子には 1 つの既知の引数があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIservergroup\fR\fR
+.ad
+.RS 15n
+.rt  
+単一のサーバーグループをターゲットとして指定します。サーバーグループはすでに作成されている必要があります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+健全性検査のオプションには 2 つの引数があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義済みの健全性検査方法の名前を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-port\fR\fR
+.ad
+.sp .6
+.RS 4n
+HC テストプログラムで検査するポートを指定します。値には、キーワード \fBALL\fR または \fBANY\fR、あるいはサーバーグループのポート範囲内にある特定のポート番号を指定できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+カスタマイズされたタイマーを秒単位で指定します。値 \fB0\fR は、システムのデフォルト値を使用することを意味します。\fB-t\fR に使用できる修飾子は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconn-drain\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバーの \fBtype\fR が \fBNAT\fR または \fBHALF-TYPE\fR の場合、規則からのサーバーの削除に続いて、\fBconn-drain\fR がタイムアウトすると、サーバーの接続状態が削除されます。この削除は、サーバーがアイドル状態でない場合でも実行されます。
+.sp
+TCP のデフォルトでは、接続が正常にシャットダウンされるまで、接続状態は安定のままです。UDP のデフォルトでは、接続のアイドル状態が \fBnat-timeout\fR の期間に達するまでは、接続状態は安定のままです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnat-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+NAT およびハーフ NAT タイプの接続だけに適用されます。接続のアイドル状態が \fBnat-timeout\fR の期間に達すると、接続状態が削除されます。デフォルトは、TCP の場合は \fB120\fR、UDP の場合は \fB60\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpersist-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+永続的マッピングが有効になっている場合、数値のみのマッピングは、使用されていない状態が \fBpersist-timeout\fR 秒間続くと削除されます。デフォルトは 60 です。
+.RE
+
+.RE
+
+サーバーグループおよび健全性検査は、\fBcreate-rule\fR で使用する前に定義しておく必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-rule\fR|\fBdelete-rl\fR \fB-a\fR \fIname\fR[...]\fR
+.ad
+.sp .6
+.RS 4n
+規則 \fIname\fR に関連するすべての情報を削除します。\fIname\fR が存在しない場合、このコマンドは失敗します。\fBdelete-rule\fR には 1 つのオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての規則を削除します。(\fIname\fR は無視されます。)
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-rule\fR|\fBenable-rl\fR \fIname\fR[...]\fR
+.ad
+.sp .6
+.RS 4n
+指定された規則を有効にします。名前が指定されていない場合はすべての規則を有効にします。 すでに有効になっている規則には影響はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-rule\fR|\fBdisable-rl\fR \fIname\fR[...]\fR
+.ad
+.sp .6
+.RS 4n
+規則名が指定されている場合はその規則を、指定されていない場合はすべての規則を無効にします。すでに無効になっている規則を有効にしても、影響はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-statistics\fR|\fBshow-stats\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-tv\fR] [\fB-A\fR | \fB-d\fR] [[\fB-i\fR] \fB-r\fR \fIrulename\fR | \fB- s\fR \fIservername\fR] [\fIinterval\fR [\fIcount\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+統計を表示します。統計の出力は、次に示すオプションで制御されます。このサブコマンドの構文とセマンティクスは、\fBvmstat\fR(1M) に基づいています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべてのサンプルの前にタイムスタンプを付加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+全期間にわたる差分を表示します。デフォルトは、1 秒あたりの変化です。\fB-a\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+絶対的な数値を表示します。つまり、モジュールの初期化、規則の作成、およびサーバーの追加以降の数値です。\fB-d\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIrulename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIrulename\fR のみに関する統計を表示します。\fB-i\fR オプションと組み合わせると、サーバーごとに 1 行が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIservername\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIserver\fR のみに関する統計を表示します。\fB-i\fR オプションと組み合わせると、規則ごとに 1 行が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-r\fR オプションと \fB-s\fR オプションで表示される情報を項目化します。\fB-i\fR はこれらのオプションとの組み合わせでのみ有効です。\fB-v\fR オプションと同時には機能しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドロップに関するより詳細な情報を表示します。規則名が指定されている場合、ドロップはサーバーごとではなく規則ごとにカウントされます。\fB-i\fR オプションと同時には機能しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+機械可読な形式を表示します。\fB-o\fR オプションを使用する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のリストから 1 つまたは複数を指定できます。\fIfield\fR は大文字でも小文字でもかまいません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPKT_P\fR\fR
+.ad
+.RS 14n
+.rt  
+処理されたパケット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBYTES_P\fR\fR
+.ad
+.RS 14n
+.rt  
+処理されたバイト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPKT_U\fR\fR
+.ad
+.RS 14n
+.rt  
+未処理のパケット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBYTES_U\fR\fR
+.ad
+.RS 14n
+.rt  
+未処理のバイト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPKT_D\fR\fR
+.ad
+.RS 14n
+.rt  
+ドロップされたパケット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBYTES_D\fR\fR
+.ad
+.RS 14n
+.rt  
+ドロップされたバイト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBICMP_P\fR\fR
+.ad
+.RS 14n
+.rt  
+処理された ICMP エコー要求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBICMP_D\fR\fR
+.ad
+.RS 14n
+.rt  
+ドロップされた ICMP エコー要求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBICMP2BIG_P\fR\fR
+.ad
+.RS 14n
+.rt  
+ICMP 断片化が必要 (処理されたメッセージ)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBICMP2BIG_D\fR\fR
+.ad
+.RS 14n
+.rt  
+断片化が必要 (ドロップされたメッセージ)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNOMEMP_D\fR\fR
+.ad
+.RS 14n
+.rt  
+メモリー不足状態のためドロップされたパケット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNOPORTP_D\fR\fR
+.ad
+.RS 14n
+.rt  
+使用可能な発信元ポートがなかったため NAT モードでドロップされたパケット。
+.RE
+
+疑問符 (?) が列のエントリとして表示される場合は、正しい値を判定できないことを示しています。その多くは、規則またはサーバーが追加または削除されたことが原因で発生します。
+.RE
+
+ヘッダーは 10 サンプルごとに 1 回表示されます。タイムスタンプの形式は、C ロケールの \fBdate\fR(1) 形式に従います。規則の追加や削除は検出されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-rule\fR|\fBshow-rl\fR [\fB-d\fR|\fB-e\fR] [\fB-f\fR| [\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIname\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+規則が指定されている場合はそれらの規則の特性を、指定されていない場合はすべての規則の特性を表示します。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効になっている規則だけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効になっている規則だけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+完全なリストを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+\fIfield\fR の出力を表示します。\fB-f\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+「機能説明」で説明されている形式で、解析可能な出力を表示します。\fB-o\fR オプションが必要です。
+.RE
+
+(\fB-p\fR の有無にかかわらず) \fB-o\fR オプションと \fB-f\fR オプションを同時に指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-nat\fR \fIcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+NAT テーブルの情報を表示します。\fIcount\fR が指定されている場合は、NAT テーブルから \fIcount\fR 件のエントリを表示します。count が指定されていない場合は、NAT テーブル全体を表示します。
+.sp
+\fIcount\fR
+.sp
+このコマンドを連続して実行した場合の要素の相対位置については想定を設けないでください。たとえば、\fBshow-nat 10\fR を 2 回実行したときに、2 回とも同じ 10 項目が表示される保証はありません。処理量の多いシステムでは特にそうです。
+.sp
+表示形式:
+.sp
+.in +2
+.nf
+T: IP1 > IP2 >>> IP3 > IP4
+.fi
+.in -2
+.sp
+
+これらの項目について、次に説明します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBT\fR\fR
+.ad
+.RS 7n
+.rt  
+このエントリで使用されているトランスポートプロトコル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP1\fR\fR
+.ad
+.RS 7n
+.rt  
+クライアントの IP アドレスとポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP2\fR\fR
+.ad
+.RS 7n
+.rt  
+VIP とポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP3\fR\fR
+.ad
+.RS 7n
+.rt  
+ハーフ NAT モードの場合は、クライアントの IP アドレスとポート。フル NAT モードの場合は、NAT 処理されたクライアントの IP アドレスとポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP4\fR\fR
+.ad
+.RS 7n
+.rt  
+バックエンドサーバーの IP アドレスとポート。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-persist\fR|\fBshow-pt\fR \fIcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+持続性テーブルの情報を表示します。\fIcount\fR が指定されている場合は、テーブルから \fIcount\fR 件のエントリを表示します。count が指定されていない場合は、持続性テーブル全体を表示します。
+.sp
+このコマンドを連続して実行した場合の要素の相対位置については想定を設けないでください。たとえば、\fBshow-persist 10\fR を 2 回実行したときに、2 回とも同じ 10 項目が表示される保証はありません。処理量の多いシステムでは特にそうです。
+.sp
+表示形式:
+.sp
+.in +2
+.nf
+R: IP1 --> IP2
+.fi
+.in -2
+.sp
+
+これらの項目について、次に説明します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBR\fR\fR
+.ad
+.sp .6
+.RS 4n
+この持続性エントリが関連付けられている規則。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP1\fR\fR
+.ad
+.sp .6
+.RS 4n
+クライアントの IP アドレスとポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIP2\fR\fR
+.ad
+.sp .6
+.RS 4n
+バックエンドサーバーの IP アドレス。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport-config\fR|\fBexport-cf\fR [\fIfilename\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成を \fBilbadm import\fR による再インポートに適した形式でエクスポートします。ファイル名が指定されていない場合、このサブコマンドは標準出力に書き出します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport-config\fR|\fBimport-cf\fR [\fB-p\fR] [\fIfilename\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ファイルから構成の内容を読み込みます。デフォルトでは、この操作によって既存の構成は上書きされます。ファイル名が指定されていない場合、このサブコマンドは標準入力から読み込みます。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存の構成を維持し、増分インポートを実行します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-servergroup\fR|\fBcreate-sg\fR [\fB-s\fR \fIserver\fR=\fIhostspec\fR[:\fIportspec\fR...]] \fIgroupname\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバーグループを作成します。あとで \fBadd-server\fR サブコマンドを使用するとサーバーを追加できます。規則の作成時にバックエンドサーバーを指定するために使用できるエンティティーはサーバーグループだけです。指定されたサーバーグループが 1 つ以上の規則に関連付けられている場合、サーバーは追加されたときに有効になります。このサブコマンドには、次のオプションとオペランドがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIserver\fR=\fIhostspec\fR[:\fIportspec\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+サーバーグループに追加するサーバーのリストを指定します。
+.sp
+\fIhostspec\fR はホスト名または IP アドレスです。IPv6 アドレスは、「:\fIportspec\fR」と区別するために角括弧 (\fB[]\fR) で囲む必要があります。 
+.sp
+\fIportspec\fR はサービス名またはポート番号です。ポート番号が指定されていない場合は、1-65535 の範囲内の数が使用されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-server\fR|\fBdisable-srv\fR \fIserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つまたは複数のサーバーを無効にします。つまり、このサーバーにトラフィックを転送しないようカーネルに指示します。\fBdisable-server\fR は、このサーバーが属しているサーバーグループに割り当てられているすべての規則に適用されます。
+.sp
+\fIserver\fR はサーバー ID です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-server\fR|\fBenable-srv\fR \fIserver\fR...\fR
+.ad
+.sp .6
+.RS 4n
+無効になっているサーバーを再度有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-server\fR|\fBshow-srv\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,\fIfield\fR...]] [\fIrulename\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+指定された規則に関連付けられているサーバーを表示します。規則名が指定されていない場合はすべてのサーバーを表示します。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,\fIfield\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたフィールドだけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+フィールドを解析可能な形式で表示します。\fB-o\fR オプションが必要です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-servergroup\fR|\fBdelete-sg\fR \fIgroupname\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバーグループを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-servergroup\fR|\fBshow-sg\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIname\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR が指定されている場合はそのサーバーグループを、指定されていない場合はすべてのサーバーグループを表示します。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+\fIfield\fR の出力を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+「機能説明」で説明されている形式で、解析可能な出力を表示します。\fB-o\fR オプションが必要です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-server\fR|\fBadd-srv\fR \fB-s\fR \fIserver\fR=\fIvalue\fR[, \fIvalue\fR...] \fIservergroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたサーバーを \fIservergroup\fR に追加します。\fIvalue\fR の定義については、\fBcreate-servergroup\fR の説明を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcreate-servergroup\fR を参照してください。
+.RE
+
+サーバーグループに対して \fBremove-server\fR を実行した直後は、接続のドレインが完了していないため、そのサーバーグループに対して \fBadd-server\fR を実行すると失敗することがあります。この失敗を防ぐ方法については、\fBremove-server\fR サブコマンドの説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-server\fR|\fBremove-srv\fR \fB-s\fR \fIserver\fR=\fIvalue\fR[, \fIvalue\fR...] \fIservergroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたサーバーを \fIservergroup\fR から削除します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つまたは複数のサーバー ID。
+.RE
+
+サーバーが NAT またはハーフ NAT 規則で使用されている場合は、サーバーを削除する前に、\fBdisable-server\fR を使用してサーバーを無効にすることをお勧めします。サーバーを無効にすると、サーバーは接続ドレイン状態になります。すべての接続のドレインが完了したあと、\fBremove-server\fR でサーバーを削除できます。\fBconn-drain\fR タイムアウト値が設定されている場合は、このタイムアウト期間が完了すると接続ドレイン状態は終了します。デフォルトの \fBconn-drain\fR タイムアウト値は 0 で、接続が正常にシャットダウンされるまで待つことを意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-healthcheck\fR|\fBcreate-hc\fR [\fB-n\fR] \fB-h\fR hc-test=\fIvalue\fR,hc-timeout=\fIvalue\fR, hc-count=\fInum_value\fR,hc-interval=\fIvalue\fR \fI hcname\fR\fR
+.ad
+.sp .6
+.RS 4n
+規則で使用する健全性検査オブジェクトを設定します。規則に関連付けられているすべてのサーバーが、同じテストを使用して検査されます。サーバーの健全性検査イベントでは、1 回から \fBhc-count\fR 回まで \fBhc-test\fR が実行されます。ある \fBhc-test\fR の結果、サーバーが応答していない場合は、さらに \fBhc-test\fR 検査が実行され、呼び出しが \fBhc-count\fR 回に達するとサーバーはダウンしているとみなされます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBhc-test\fR は、成功するか \fBhc-timeout\fR のタイムアウトまで、最大 \fBhc-count\fR 回実行されます。ある特定の規則で、そのすべてのサーバーが同じテストを使用して検査されます。テストは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-test\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBPING\fR、\fBTCP\fR、外部メソッド (スクリプトまたはバイナリ)。外部メソッドはフルパス名で指定するようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBhc-test\fR の一時的な失敗のあとにこのしきい値に達すると、テストは失敗とみなされます。\fBhc-test\fR テストを強制終了すると、結果は失敗とみなされます。デフォルト値は 5 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-count\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBhc-test\fR の実行を試みる最大回数。この回数に達すると、サーバーはダウンしているとみなされます。デフォルト値は 3 回です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhc-interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBhc-test\fR の呼び出し間隔。この値は、\fBhc-timeout\fR x \fBhc-count\fR よりも大きくする必要があります。デフォルト値は 30 秒です。 
+.RE
+
+外部メソッドには次の引数が渡されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$1\fR\fR
+.ad
+.sp .6
+.RS 4n
+VIP (IPv4 または IPv6 リテラルアドレス)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$2\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバー IP (IPv4 または IPv6 リテラルアドレス)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$3\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロトコル (文字列で \fBUDP\fR、\fBTCP\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$4\fR\fR
+.ad
+.sp .6
+.RS 4n
+負荷分散モード、\fBDSR\fR、\fBNAT\fR、\fBHALF_NAT\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$5\fR\fR
+.ad
+.sp .6
+.RS 4n
+数値のポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$6\fR\fR
+.ad
+.sp .6
+.RS 4n
+メソッドが失敗を返すまでに待機する最大時間 (秒単位)。これを超えて実行し続けると、メソッドは強制終了されることがあります。その場合、テストは失敗とみなされます。
+.RE
+
+外部メソッドでは、成功の場合は \fB0\fR (またはバックエンドサーバーまでの往復時間をマイクロ秒で表した値) を返し、サーバーがダウンしているとみなされる場合は \fB-1\fR を返すようにしてください。
+.sp
+より上のレイヤーの健全性検査、TCP、UDP、および外部テストを開始する前に、デフォルトの \fBping\fR テストが実行されます。\fBping\fR が失敗した場合は、上のレイヤーのテストは実行されません。これらの上のレイヤーの健全性検査でデフォルトの \fBping\fR 検査を無効にするには、\fB-n\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+上のレイヤーの健全性検査でデフォルトの \fBping\fR テストを無効にします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-healthcheck\fR|\fBdelete-hc\fR \fIhcname\fR...\fR
+.ad
+.sp .6
+.RS 4n
+指定された健全性検査オブジェクト (\fIhcname\fR) を削除します。指定された健全性検査オブジェクトが有効になっている規則に関連付けられている場合、オブジェクトの削除は失敗します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-healthcheck\fR|\fBshow-hc\fR [\fIhcname\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+指定された健全性検査 (\fIhcname\fR) の健全性検査情報を一覧表示します。健全性検査が指定されていない場合は、既存のすべての健全性検査に関する情報が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-hc-result\fR|\fBshow-hc-res\fR [\fIrule-name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIrule-name\fR に関連付けられているサーバーの健全性検査結果を一覧表示します。\fIrule-name\fR が指定されていない場合は、すべてのサーバーの健全性検査結果が表示されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRNAT モードの構成
+.sp
+.LP
+次のコマンドは、健全性検査とタイマーを設定して規則を作成します (ポート範囲のシフトとセッションの持続性)。
+
+.sp
+.in +2
+.nf
+# \fBilbadm create-healthcheck -h hc-test=tcp,hc-timeout=2,hc-count=3, \e\fR
+     \fBhc-interval=10 hc1\fR
+# \fBilbadm create-servergroup -s \e\fR
+     \fBserver=60.0.0.10:6000-6009,60.0.0.11:7000-7009 sg1\fR
+# \fBilbadm create-rule -e -i vip=81.0.0.10,port=5000-5009,protocol=tcp \e\fR
+\fB-m lbalg=rr,type=NAT,proxy-src=60.0.0.101-60.0.0.104, \e\fR
+     \fBpmask=24 \e\fR
+\fB-h hc-name=hc1 \e\fR
+\fB-t conn-drain=180,nat-timeout=180,persist-timeout=180 \e\fR
+\fB-o servergroup=sg1 rule1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、健全性検査は設定せずに、デフォルトのタイマー値で規則を作成します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm create-servergroup -s server=60.0.0.10 sg1\fR
+ # \fBlbadm create-rule -e -i vip=81.0.0.10,port=5000 \e\fR
+     \fB-m lbalg=rr,type=NAT,proxy-src=60.0.0.105 \e\fR
+     \fB-o servergroup=sg1 rule1\fR
+# \fBilbadm add-server -e -s server=60.0.0.11sg1\fR
+# \fBilbadm enable-rule rule1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRハーフ NAT モードの構成
+.sp
+.LP
+次のコマンドは、ハーフ NAT モードを構成し、ポート範囲を短縮します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm create-servergroup sg1\fR
+# \fBilbadm create-rule -e -i vip=81.0.0.10,port=5000-5009 \e\fR
+     \fB-m lbalg=rr,type=h -o servergroup=sg1 rule1\fR
+# \fBilbadm add-server -s server=60.0.0.10:6000,60.0.0.11:7000 sg1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRDSR モードの構成と 2 つの規則セットの準備
+.sp
+.LP
+次のコマンドは、HTTP と FTP トラフィックの間の負荷分散を有効にする 2 つの規則セットを確立します。どちらのタイプのトラフィックもインタフェース \fB60.0.0.10\fR を通ります。
+
+.sp
+.in +2
+.nf
+# \fBilbadm create-servergroup -s servers=60.0.0.9,60.0.0.10 websg\fR
+# \fBilbadm create-servergroup -s servers=60.0.0.10,60.0.0.11 ftpgroup\fR
+
+# \fBilbadm create-rule -e -i vip=81.0.0.10,port=80 \e\fR
+     \fB-m lbalg=hash-ip-port,type=DSR \e\fR
+     \fB-o servergroup=websg webrule\fR
+# \fBilbadm create-rule -e -i vip=81.0.0.10,port=ftp \e\fR
+     \fB-m lbalg=hash-ip-port,type=DSR,pmask=24 \e\fR
+     \fB-o servergroup=ftpgroup ftprule\fR
+# \fBilbadm create-rule -e -p -i vip=81.0.0.10,port=ftp-data \e\fR
+     \fB-m lbalg=hash-ip-port,type=DSR,pmask=24 \e\fR
+     \fB-o servergroup=ftpgroup ftpdatarule\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR規則、サーバーグループ、および健全性検査の削除
+.sp
+.LP
+次のコマンドは、最初の例で確立された規則、サーバーグループ、および健全性検査を削除します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm ilbadm delete-rule -a\fR
+# \fBilbadm delete-servergroup sg1\fR
+# \fBilbadm delete-healthcheck hc1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR規則の一覧表示
+.sp
+.LP
+次のコマンドは、規則の一覧を表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-rule\fR
+RULENAME            STATUS LBALG      TYPE    PROTOCOL VIP  PORT
+r2                  E     hash-ip     NAT     TCP 45.0.0.10 81
+r1                  E     hash-ip     NAT     TCP 45.0.0.10 80
+
+# \fBilbadm show-rule -f\fR
+       RULENAME: rule1
+         STATUS: E
+           PORT: 80
+       PROTOCOL: TCP
+          LBALG: roundrobin
+           TYPE: HALF-NAT
+      PROXY-SRC: --
+        PERSIST: --
+        HC-NAME: hc1
+        HC-PORT: ANY
+     CONN-DRAIN: 0
+    NAT-TIMEOUT: 120
+PERSIST-TIMEOUT: 60
+    SERVERGROUP: sg1
+            VIP: 80.0.0.2
+        SERVERS: _sg1.0,_sg1.1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR規則のエクスポートとインポート
+.sp
+.LP
+次の各コマンドは、標準出力を対象にした規則のエクスポートとインポート、およびファイルを対象にした規則のエクスポートとインポートの方法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBilbadm export-config\fR
+
+create-servergroup ftpgroup
+add-server -s server=10.1.1.3:21 ftpgroup
+add-server -s server=10.1.1.4:21 ftpgroup
+create-servergroup webgroup_v6
+add-server -s server=[2000::ff]:80 webgroup_v6
+create-rule -e protocol=tcp,VIP=1.2.3.4,port=ftp \e
+        -m lbalg=roundrobin,type=DSR \e
+        -o servergroup=ftpgroup rule4
+create-rule protocol=tcp,VIP=2003::1,port=ftp \e
+        -m lbalg=roundrobin,type=DSR \e
+        -o servergroup=ftpgroup6 rule3
+create-rule -e protocol=tcp,VIP=2002::1,port=http \e
+        -m lbalg=roundrobin,type=DSR \e
+        -o serverrgroup=webgrp_v6 RULE-all
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、規則をファイルにエクスポートします。
+
+.sp
+.in +2
+.nf
+# \fBilbadm export-config /tmp/ilbrules\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドのあと、\fB/tmp/ilbrules\fR には、1 つ前のコマンドで表示される出力が保存されています。
+
+.sp
+.LP
+次のコマンドは、規則をファイルからインポートします。
+
+.sp
+.in +2
+.nf
+# \fBilbadm import-config /tmp/ilbrules\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドを実行すると、配置されているすべての規則が \fB/tmp/ilbrules\fR の内容で置き換えられます。
+
+.sp
+.LP
+次のコマンドは、規則を標準入力からインポートします。\fB\fR
+
+.sp
+.in +2
+.nf
+# \fBcat /tmp/ilbrules | ilbadm import-config\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドの効果は、1 つ前のコマンドの効果と同じです。
+
+.LP
+\fB例 7 \fR単一の健全性検査の作成
+.sp
+.LP
+次のコマンドは、単一の健全性検査を作成します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm create-healthcheck -h hc-timeout=3,hc-count=2,hc-interval=8,\e\fR
+     \fBhc-test=tcp hc1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRすべての健全性検査の一覧表示
+.sp
+.LP
+次のコマンドは、既存のすべての健全性検査を一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-healthcheck\fR
+HCNAME        TIMEOUT COUNT   INTERVAL DEF_PING TEST
+hc1           2       1       10       Y        tcp
+hc2           2       1       10       N        /usr/local/bin/probe
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR単一の健全性検査の削除
+.sp
+.LP
+次のコマンドは、単一の健全性検査を削除します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm delete-healthcheck hc1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR統計情報の表示
+.sp
+.LP
+次のコマンドは、統計情報を 1 秒間隔で合計 3 回表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-stats -A 1 3\fR
+ PKT_P   BYTES_P   PKT_U   BYTES_U   PKT_D   BYTES_D
+0       0         0       0         4       196
+0       0         0       0         4       196
+0       0         0       0         4       196
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+統計情報を詳細モードで 1 秒間隔で表示する場合は、次のようなコマンドを使用します。出力の幅が大きすぎてページの境界に収まりません。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-stats -v 1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、規則 \fBr1\fR の統計情報を 1 秒間隔で合計 3 回表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-stats -A -r r1 1 3\fR
+PKT_P   BYTES_P   PKT_U   BYTES_U   PKT_D   BYTES_D
+0       0         0       0         4       196
+0       0         0       0         4       196
+0       0         0       0         4       196
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、規則 \fBr1\fR の統計情報をそのサーバーごとに項目化し、1 秒間隔で合計 3 回表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-stats -A -r r1 -i 1 3\fR
+SERVERNAME          PKT_P   BYTES_P
+_sg1.0              0       0
+_sg1.1              0       0
+_sg1.2              0       0
+_sg1.0              0       0
+_sg1.1              0       0
+_sg1.2              0       0
+_sg1.0              0       0
+_sg1.1              0       0
+_sg1.2              0       0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、サーバー \fB_sg1.0\fR の統計情報を項目化し、タイムスタンプを付加して、1 秒間隔で合計 \fB3\fR 回表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-stats -A -s _sg1.0 -it 1 3\fR
+RULENAME            PKT_P   BYTES_P   TIME
+r1                  0       0         2009-07-20:16.10.20
+r1                  0       0         2009-07-20:16.10.21
+r1                  0       0         2009-07-20:16.10.22
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、特定のオプションフィールドを指定して、統計情報を 1 秒間隔で合計 \fB3\fR 回表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-stats -o BYTES_D,TIME 1 3\fR
+BYTES_D   TIME
+196       2009-07-20:16.14.25
+0         2009-07-20:16.14.26
+0         2009-07-20:16.14.27
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fR健全性検査結果の表示
+.sp
+.LP
+次のコマンドは、健全性検査の結果を表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-hc-result rule1\fR
+RULENAME   HCNAME     SERVERID   STATUS   FAIL LAST     NEXT     RTT
+rule1      hc1        _sg1.0     dead     6    04:45:17 04:45:30 698
+rule1      hc1        _sg1.1     alive    0    04:45:11 04:45:25 260
+rule1      hc1        _sg1.2     unreach  6    04:45:17 04:45:30 0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRNAT テーブルの表示
+.sp
+.LP
+次のコマンドは、NAT テーブルを表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-nat 5\fR
+UDP: 124.106.235.150.53688>85.0.0.1.1024>>>82.0.0.39.4127>82.0.0.56.1024
+UDP: 71.159.95.31.61528> 85.0.0.1.1024>>> 82.0.0.39.4146> 82.0.0.55.1024
+UDP: 9.213.106.54.19787> 85.0.0.1.1024>>> 82.0.0.40.4114> 82.0.0.55.1024
+UDP: 118.148.25.17.26676> 85.0.0.1.1024>>>82.0.0.40.4112> 82.0.0.56.1024
+UDP: 69.219.132.153.56132>85.0.0.1.1024>>>82.0.0.39.4134> 82.0.0.55.1024
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBilbadm\fR の実際の出力では、読みやすくするためにスペースが挿入されます。
+
+.LP
+\fB例 13 \fR持続性テーブルの表示
+.sp
+.LP
+次のコマンドは、持続性テーブルを表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-persist 5\fR
+rule2: 124.106.235.150 --> 82.0.0.56
+rule3: 71.159.95.31 --> 82.0.0.55
+rule3: 9.213.106.54 --> 82.0.0.55
+rule1: 118.148.25.17 --> 82.0.0.56
+rule2: 69.219.132.153 --> 82.0.0.55
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 14 \fRサーバーグループの表示
+.sp
+.LP
+次のコマンドは、サーバーグループに関する基本情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-servergroup\fR
+sg1: id:sg1.2 35.0.0.4:80
+sg1: id:sg1.1 35.0.0.3:80
+sg1: id:sg1.0 35.0.0.2:80
+sg2: id:sg2.3 35.0.0.5:81
+sg2: id:sg2.2 35.0.0.4:81
+sg2: id:sg2.1 35.0.0.3:81
+sg2: id:sg2.0 35.0.0.2:81
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、サーバーグループに関する利用可能なすべての情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-servergroup -o all\fR
+sgname         serverID            minport maxport IP_address
+sg1            _sg1.0              --      --      1.1.1.1
+sg2            _sg2.1              --      --      1.1.1.6
+sg3            _sg3.0              9001  9001      1.1.1.1
+sg3            _sg3.1              9001  9001      1.1.1.2
+sg3            _sg3.2              9001  9001      1.1.1.3
+sg3            _sg3.3              9001  9001      1.1.1.4
+sg3            _sg3.4              9001  9001      1.1.1.5
+sg3            _sg3.5              9001  9001      1.1.1.6
+sg3            _sg3.6              9001  9001      1.1.1.11
+sg3            _sg3.7              9001  9001      1.1.1.12
+sg3            _sg3.8              9001  9001      1.1.1.13
+sg3            _sg3.9              9001  9001      1.1.1.14
+sg3            _sg3.10             9001  9001      1.1.1.15
+sg3            _sg3.11             9001  9001      1.1.1.16
+sg4            _sg4.0              9001  9006      1.1.1.1
+sg4            _sg4.1              9001  9006      1.1.1.6
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 15 \fR規則に関連付けられたサーバーの一覧表示
+.sp
+.LP
+次のコマンドは、規則に関連付けられているサーバーを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBilbadm show-server r1\fR
+SERVERID            ADDRESS         PORT RULENAME     STATUS SERVERGROUP
+_sg1.0              35.0.0.10       80   rule1        E      sg1
+_sg1.1              35.0.0.11       80   rule1        E      sg1
+_sg1.2              35.0.0.12       80   rule1        D      sg1
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/load-balancer/ilb
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBilbd\fR(1M), \fBvmstat\fR(1M), \fBattributes\fR(5)

@@ -1,0 +1,1076 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH stmfadm 1M "2011 年 8 月 22 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+stmfadm \- SCSI 目标模式框架命令行接口
+.SH 用法概要
+.LP
+.nf
+\fBstmfadm\fR \fBadd-hg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBadd-tg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBadd-view\fR [\fB-n\fR, \fB--lun\fR \fIlogical-unit-number\fR
+     \fB-t\fR, \fB--target-group\fR \fIgroup-name\fR \fB-h\fR, \fB--host-group\fR \fIgroup-name\fR] \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBcreate-hg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBcreate-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR
+     \fB-s\fR, \fB--size\fR \fIsize\fR] \fIlu-file\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBcreate-tg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBdelete-hg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBdelete-lu\fR \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBdelete-tg\fR \fIgroup-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBimport-lu\fR \fIlu-file\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-hg\fR [\fB-v\fR] [\fIhost-group-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-tg\fR [\fB-v\fR] [\fItarget-group-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-lu\fR [\fB-v\fR] [\fIlu-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-target\fR [\fB-v\fR] [\fItarget-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-view\fR \fB-l\fR, \fB--lu-name\fR \fIlu-name\fR [\fIentry-name\fR...]
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBlist-state\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBmodify-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR
+     \fB-s\fR, \fB--size\fR \fIsize\fR, \fB-f\fR, \fB--file\fR] \fIlu-name\fR|\fIlu-file\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBonline-lu\fR \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBoffline-lu\fR \fIlu-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBonline-lu\fR \fItarget-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBoffline-lu\fR \fItarget-name\fR
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBremove-hg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBremove-tg-member\fR \fB-g\fR, \fB--group-name\fR \fIgroup-name\fR \fIgroup-member\fR...
+.fi
+
+.LP
+.nf
+\fBstmfadm\fR \fBremove-view\fR \fB-l\fR, \fB--lu-name\fR \fIlu-name\fR \fIentry-name\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBstmfadm\fR 命令用于在 SCSI 目标模式框架 (SCSI Target Mode Framework, STMF) 内配置逻辑单元。该框架与本手册页使用以下术语：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB启动器\fR\fR
+.ad
+.sp .6
+.RS 4n
+负责向 SCSI 目标和逻辑单元发出 SCSI I/O 命令的设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget\fR\fR
+.ad
+.sp .6
+.RS 4n
+负责为逻辑单元接收 SCSI I/O 命令的设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB逻辑单元\fR\fR
+.ad
+.sp .6
+.RS 4n
+目标内负责执行 SCSI I/O 命令的设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB逻辑单元号\fR\fR
+.ad
+.sp .6
+.RS 4n
+目标内的逻辑单元的标识符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB启动器组\fR\fR
+.ad
+.sp .6
+.RS 4n
+启动器组是指一个或多个可组合用于同一\fB视图\fR（请参见下文）的启动器的集合。一个启动器不能充当多个启动器组的成员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB目标组\fR\fR
+.ad
+.sp .6
+.RS 4n
+目标组是指一个或多个在创建\fB视图\fR（请参见下文）时可采用相同方式进行处理的 SCSI 目标端口的集合。一个特定 SCSI 启动器可以看到的逻辑单元集是由视图的组合集确定的。
+.sp
+每个逻辑单元都具有一组视图条目，每个视图条目指定一个目标组、主机组和一个 LUN。在通过该目标组进行连接时，来自该主机组的启动器能够识别并连接到使用指定 LUN 的该逻辑单元。您可以使用视图来限制特定启动器可以看到的逻辑单元集，并分配将使用的 LUN 集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB视图\fR\fR
+.ad
+.sp .6
+.RS 4n
+视图定义了启动器组、目标组和逻辑单元号与指定逻辑单元的关联关系。添加到逻辑单元的任何视图条目不能与该逻辑单元中现有的视图条目相冲突。尝试复制任何指定启动器、目标与逻辑单元号的关联关系时，系统会将视图条目视为冲突条目。例如，逻辑单元 \fBLU_0\fR 包含与之关联的以下视图条目：
+.sp
+.in +2
+.nf
+Logical Unit: LU_0
+			View Entry: 0	
+				initiator group: HostA
+				target group: All targets
+				logical unit number: 32
+.fi
+.in -2
+.sp
+
+如果您尝试了以下操作：
+.sp
+.in +2
+.nf
+# \fBstmf add-view -n 31 -h HostA LU_0\fR
+.fi
+.in -2
+.sp
+
+\&...此操作将返回一个错误并显示一条消息，指出视图条目与一个或多个现有视图条目相冲突。之所以会产生此冲突，是因为现有视图条目 \fB0\fR 已经为启动器组 \fBHostA\fR 将 \fBLU_0\fR 映射到了逻辑单元号 32。
+.RE
+
+.SH 子命令
+.sp
+.LP
+\fBstmfadm\fR 命令支持下列子命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-view\fR [\fB-n\fR, \fB--lun\fR \fIlogical-unit-number\fR \fB-t\fR, \fB--target-group\fR \fIgroup-name\fR \fB-h\fR, \fB--host-group\fR \fIgroup-name\fR] \fI lu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+将一个逻辑单元视图条目添加到逻辑单元 \fIlu-name\fR，其中 \fIlu-name\fR 是逻辑单元的 STMF 名称，如 \fBlist-lu\fR 子命令所示。\fBadd-view\fR 子命令为用户提供了针对逻辑单元的访问控制实施机制，并为包含启动器和目标的给定集合的逻辑单元提供了逻辑单元号的分配方法。必须至少有一个应用的视图，然后才能将逻辑单元提供给启动器使用。每个视图条目都将分配一个条目名称，在 \fBremove-view\fR 和 \fBlist-view\fR 子命令中可使用该名称来引用条目。
+.sp
+\fBadd-view\fR 支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR, \fB--lun\fR \fIlogical-unit-number\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIlogical-unit-number\fR 是为此视图条目分配给逻辑单元的一个整数，其范围是 0-16383。如果未指定此选项，则将由 STMF 框架来分配逻辑单元号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--target-group\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR 是之前使用 STMF \fBcreate-tg\fR 子命令创建的目标组的名称。如果未指定此选项，将可通过所有目标使用此逻辑单元。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB-host-group\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup-name\fR 是之前使用 STMF \fBcreate-hg\fR 子命令创建的主机组的名称。如果未指定此选项，此逻辑单元将可供登录到 STMF 框架的所有启动器使用。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-hg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR...\fR
+.ad
+.sp .6
+.RS 4n
+向主机组添加主机组成员。\fIgroup-name\fR 必须是使用 \fBcreate-hg\fR 子命令创建的一个现有组。\fIgroup member\fR 可以指定为 \fIname_type\fR.\fIname_value\fR，其中 \fIname_type\fR 可以为下列项之一：
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+\&...\fIname_value\fR 是启动器名称的值。例如，要向主机组 \fBHostA\fR 添加光纤通道启动器端口全局名称 \fB200000e08b909221\fR，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm add-hg-member -g HostA wwn.200000e08b909221\fR
+.fi
+.in -2
+.sp
+
+要向 \fBHostA\fR 添加名为 \fBiqn.1986-03.com.sun:01.46f7e262\fR 的 ISCSI 启动器节点成员，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm add-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+此外，还可以使用成员的 SCSI 名称字符串标识符来指定成员。要使用 SCSI 名称字符串标识符添加上述两个启动器，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm add-hg-member -g HostA eui.200000e08b909221\fR
+# \fBstmfadm add-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+一个主机组的成员不能充当多个主机组的成员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-tg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR...\fR
+.ad
+.sp .6
+.RS 4n
+向目标组添加目标组成员。\fIgroup-name\fR 必须是使用 \fBcreate-tg\fR 子命令创建的一个现有组。\fIgroup member\fR 可以指定为 \fIname_type\fR.\fIname_value\fR，其中 \fIname_type\fR 可以为下列项之一：
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+\&...\fIname_value\fR 是目标名称的值。例如，要向目标组 \fBTG0\fR 添加光纤通道目标端口全局名称 \fB501000e092376af7\fR，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm add-tg-member -g TG0 wwn.501000e092376af7\fR
+.fi
+.in -2
+.sp
+
+要向 \fBTG0\fR 添加名为 \fBiqn.1986-03.com.sun:target.01.01110\fR 的 ISCSI 目标成员，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm add-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+此外，还可以使用成员的 SCSI 名称字符串标识符来指定成员。要使用 SCSI 名称字符串标识符添加上述两个目标，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm add-tg-member -g TG0 eui.501000e092376af7\fR
+# \fBstmfadm add-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+一个目标组的成员不能充当多个目标组的成员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-hg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建名为 \fIgroup-name\fR 的启动器组。\fIgroup-name\fR 是最大长度为 255 个 Unicode 字符的字符串。组名在 STMF 系统内必须是唯一的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR \fB--s\fR, \fB--size\fR \fIsize\fR] \fIlu-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个可以向 STMF 注册的逻辑单元。对于 \fB-p\fR 选项，\fIlogical-unit-property\fR 可以是以下属性之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+最多为 255 个字符，表示设备的用户自定义名称。缺省值为后备存储的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBblk\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定设备的块大小。缺省值为 512，但是不要将该值设置为高于 4096 KB。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBguid\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示有效的 NAA 注册扩展标识符，为三十二位十六进制 ASCII 字符。缺省值由 STMF 设置为一个生成的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示分配的主机 ID 的八位十六进制 ASCII 字符。这将用来为逻辑单元生成全局唯一标识符 (Globally Unique Identifier, GUID)。缺省值是由 \fBhostid\fR(1) 返回的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmeta\fR\fR
+.ad
+.sp .6
+.RS 4n
+元数据文件名。该属性在指定后将用于保存逻辑单元的 SCSI 元数据。无缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmgmt-url\fR\fR
+.ad
+.sp .6
+.RS 4n
+最多为 1024 个字符，表示管理网络地址 URL。通过在一对引号 (\fB"\fR) 内包含以空格分隔的 URL，可将多个 URL 作为一个参数进行传递。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoui\fR\fR
+.ad
+.sp .6
+.RS 4n
+组织唯一标识符。表示分配的 IEEE OUI 公司 ID 的六位十六进制 ASCII 字符。这将用来生成设备标识符 (GUID)。缺省值为 \fB00144F\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+符合 SCSI SPC-3 规范的十六字符产品标识。此值将反映在为设备返回的标准 \fBINQUIRY\fR 数据中。缺省值为 \fBCOMSTAR\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserial\fR\fR
+.ad
+.sp .6
+.RS 4n
+序列号. 指定 SCSI 重要产品数据序列号（第 \fB80h\fR 页）。这是一个最大长度为 252 字节的字符值。没有缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvid\fR\fR
+.ad
+.sp .6
+.RS 4n
+符合 SCSI SPC-3 规范的八字符供应商标识。此值将反映在为设备返回的标准 \fBINQUIRY\fR 数据中。缺省值为 \fBSUN\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwcd\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用回写高速缓存。指定 \fBtrue\fR 或 \fBfalse\fR 以确定回写高速缓存禁用行为。缺省值是由 \fIlu-file\fR 参数指定的后备存储设备的回写高速缓存设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwp\fR\fR
+.ad
+.sp .6
+.RS 4n
+写保护位。指定 \fBtrue\fR 或 \fBfalse\fR 以确定设备是否报告为有写保护。缺省值是 \fB/\fR。
+.RE
+
+对于 \fB-s\fR 选项，\fIsize\fR 是一个整数，后跟下列字母之一，表示大小的单位：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBk\fR\fR
+.ad
+.RS 5n
+.rt  
+千字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 5n
+.rt  
+千兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+兆兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+千兆兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+艾字节
+.RE
+
+\fIlu-file\fR 是用作逻辑单元的后备存储的文件。如果未指定 \fB-s\fR 选项，将使用指定的 \fIlu-file\fR 的大小作为逻辑单元的大小。向 STMF 注册的逻辑单元需要空间来存储元数据。当将 \fBzvol\fR 指定为后备存储设备时，缺省情况下将使用 \fBzvol\fR 的一个特殊属性来包含元数据。对于所有其他设备，缺省行为是使用设备的前 64k 空间。另一种替代方法是在 \fBcreate-lu\fR 命令中使用 \fBmeta\fR 属性指定其他文件来包含元数据。建议使用可为逻辑单元元数据提供足够空间的文件，最好为 64k。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-tg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建名为 \fIgroup-name\fR 的目标组。\fIgroup-name\fR 是最大长度为 255 个 Unicode 字符的字符串。组名在 STMF 系统内必须是唯一的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-hg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除由 \fIgroup-name\fR 标识的主机组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-lu\fR \fIlu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除使用 \fBstmfadm create-lu\fR 创建的现有逻辑单元。这可以有效地从 STMF 框架中卸载逻辑单元。逻辑单元上的任何现有数据将保持不变。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-tg\fR \fIgroup-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除由 \fIgroup-name\fR 标识的目标组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport-lu\fR \fIlu-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+将之前使用 \fBstmfadm create-lu\fR 创建且后来又使用 \fBstmfadm delete-lu\fR 从 STMF 中删除的逻辑单元导入并装入到 STMF 中。成功后，该逻辑单元将重新可供 STMF 使用。\fIlu-file\fR 是在 \fBstmfadm create-lu\fR 命令中使用的文件名。如果此逻辑单元使用一个单独的元数据文件，则在此处必须使用在 \fBstmfadm create-lu\fR 命令中使用的 \fBmeta\fR 属性值中的文件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-hg\fR [\fB-v\fR,\fB--verbose\fR] [\fIhost-group-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+列出系统中 \fIhost-group-name\fR 所指的主机组的相关信息。如果未指定 \fIhost-group-name\fR，则会列出系统中的所有主机组。如果指定了 \fB--v\fR 或 \fB--verbose\fR 选项，则会显示主机组内的所有成员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-lu\fR [\fB-v\fR,\fB--verbose\fR] [\fIlu-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+列出系统中 \fIlu-name\fR 所指的逻辑单元的相关信息。如果未指定 \fIlu-name\fR，则会列出系统中的所有逻辑单元。如果指定了 \fB-v\fR 或 \fB--verbose\fR 选项，则会显示关于逻辑单元的更多信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-target\fR [\fB-v\fR,\fB--verbose\fR] [\fItarget-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+列出系统中 \fItarget-name\fR 所指的目标端口的相关信息。如果未指定目标名称，则会列出系统中的所有目标端口。如果指定了 \fB-v\fR 或 \fB--verbose\fR 选项，则会显示关于目标的更多信息以及已登录启动器的 SCSI 会话信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-tg\fR [\fB-v\fR,\fB--verbose\fR] [\fItarget-group-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+列出系统中 \fItarget-group-name\fR 所指的目标组的相关信息。如果未指定 \fItarget-group-name\fR，则会列出系统中的所有目标组。如果指定了 \fB--v\fR 或 \fB--verbose\fR 选项，则会显示目标组内的所有成员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-view\fR \fB--l\fR, \fB--lu-name\fR \fIlu-name\fR [\fIentry-name\fR...]\fR
+.ad
+.sp .6
+.RS 4n
+为 \fIlu-name\fR 所指的逻辑单元列出视图条目。如果未指定 \fIentry-name\fR，则会为指定的逻辑单元列出所有视图条目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify-lu\fR [\fB-p\fR, \fB--lu-prop\fR \fIlogical-unit-property\fR=\fIval\fR \fB--s\fR, \fB--size\fR \fIsize\fR, \fB-f\fR, \fB--file\fR] \fI lu-name\fR|\fIlu-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改使用 \fBstmfadm create-lu\fR 命令创建的逻辑单元的属性。对于 \fB-p\fR 选项，\fIlogical-unit-property\fR 可以是以下属性之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+最多为 255 个字符，表示设备的用户自定义名称。缺省值为后备存储的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmgmt-url\fR\fR
+.ad
+.sp .6
+.RS 4n
+最多为 1024 个字符，表示管理网络地址 URL。通过在一对引号 (\fB"\fR) 内包含以空格分隔的 URL，可将多个 URL 作为一个参数进行传递。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwcd\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用回写高速缓存。指定 \fBtrue\fR 或 \fBfalse\fR 以确定回写高速缓存禁用行为。缺省值是由 \fIlu-file\fR 参数指定的后备存储设备的回写高速缓存设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwp\fR\fR
+.ad
+.sp .6
+.RS 4n
+写保护位。指定 \fBtrue\fR 或 \fBfalse\fR 以确定设备是否报告为有写保护。缺省值是 \fB/\fR。
+.RE
+
+对于 \fB-s\fR 选项，\fIsize\fR 是一个整数，后跟下列字母之一，表示大小的单位：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBk\fR\fR
+.ad
+.RS 5n
+.rt  
+千字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 5n
+.rt  
+千兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+兆兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+千兆兆字节
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+艾字节
+.RE
+
+\fIlu-name\fR 是要修改的逻辑单元的 \fBguid\fR。如果指定了 \fB-f\fR 选项，此操作数将解释为文件名。这提供了修改当前未导入到 STMF 中的逻辑单元的功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline-lu\fR \fIlu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+使当前已向 STMF 注册的某个逻辑单元联机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline-target\fR \fItarget-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+使指定的目标联机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline-lu\fR \fIlu-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+使当前已向 STMF 注册的某个逻辑单元脱机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline-target\fR \fItarget-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+使指定的目标脱机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-state\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出 STMF 的运行状态和配置状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-hg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR\fR
+.ad
+.sp .6
+.RS 4n
+从主机组中删除主机组成员。\fIgroup-name\fR 必须是使用 \fBcreate-hg\fR 子命令创建的一个现有组。\fIgroup member\fR 可以指定为 \fIname_type\fR.\fIname_value\fR，其中 \fIname_type\fR 可以为下列项之一：
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+\&...\fIname_value\fR 是启动器名称的值。例如，要从 \fBHostA\fR 主机组中删除光纤通道启动器端口全局名称 \fB200000e08b909221\fR，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-hg-member -g HostA wwn.200000e08b909221\fR
+.fi
+.in -2
+.sp
+
+要从 \fBHostA\fR 删除名为 \fBiqn.1986-03.com.sun:01.46f7e262\fR 的 ISCSI 启动器节点成员，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+此外，还可以使用成员的 SCSI 名称字符串标识符来指定成员。要使用 SCSI 名称字符串标识符删除上述两个启动器，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-hg-member -g HostA eui.200000e08b909221\fR
+# \fBstmfadm remove-hg-member -g HostA iqn.1986-03.com.sun:01.46f7e262\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-tg-member\fR \fB-g\fR \fIgroup-name\fR \fIgroup member\fR\fR
+.ad
+.sp .6
+.RS 4n
+从目标组中删除目标组成员。\fIgroup-name\fR 必须是使用 \fBcreate-tg\fR 子命令创建的一个现有组。\fIgroup member\fR 可以指定为 \fIname_type\fR.\fIname_value\fR，其中 \fIname_type\fR 可以为下列项之一：
+.sp
+.in +2
+.nf
+wwn
+iqn
+eui
+.fi
+.in -2
+.sp
+
+\&...\fIname_value\fR 是目标名称的值。例如，要从目标组 \fBTG0\fR 中删除光纤通道目标端口全局名称 \fB501000e092376af7\fR，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-tg-member -g TG0 wwn.501000e092376af7\fR
+.fi
+.in -2
+.sp
+
+要从 \fBTG0\fR 中删除名为 \fBiqn.1986-03.com.sun:target.01.01110\fR 的 ISCSI 目标成员，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+此外，还可以使用成员的 SCSI 名称字符串标识符来指定成员。要使用 SCSI 名称字符串标识符删除上述两个目标，应使用的命令为：
+.sp
+.in +2
+.nf
+# \fBstmfadm remove-tg-member -g TG0 eui.501000e092376af7\fR
+# \fBstmfadm remove-tg-member -g TG0 iqn.1986-03.com.sun:target.01.01110\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-view\fR \fB--l\fR, \fB--lu-name\fR \fIlu-name\fR \fIentry-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+从逻辑单元中删除一个或多个逻辑单元视图条目。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建具有两个启动器端口的主机组
+.sp
+.LP
+以下命令使用 \fBcreate-hg\fR 和 \fBadd-hg-member\fR 子命令创建一个主机组并向该主机组添加两个启动器端口。
+
+.sp
+.in +2
+.nf
+# \fBstmfadm create-hg host-group-a\fR
+# \fBstmfadm add-hg-member -g host-group-a wwn.210105b0000d92d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR向逻辑单元添加视图条目
+.sp
+.LP
+以下命令使用了 \fBadd-view\fR 子命令，因此可以从 \fBhost-group-a\fR 访问某个逻辑单元。
+
+.sp
+.in +2
+.nf
+# \fBstmfadm add-view -h host-group-a 6000AE40C5000000000046FC4FEA001C\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR列出视图条目
+.sp
+.LP
+以下命令使用 \fBlist-view\fR 子命令为指定的逻辑单元列出所有视图条目。
+
+.sp
+.in +2
+.nf
+# \fBstmfadm list-view -l 6000AE40C5000000000046FC4FEA001C\fR
+View Entry: 0 
+    			Host group      : host-group-a
+    			Target group   : All 
+    			LUN               : 0 
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性T{
+system/storage/scsi-target-mode-framework
+T}
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBhostid\fR(1)、\fBsbdadm\fR(1M)、\fBattributes\fR(5)

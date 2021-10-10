@@ -1,0 +1,247 @@
+'\" te
+.\" 版权所有 (c) 1999, 2010, Oracle 和/或其附属公司。保留所有权利。
+.TH apptrace 1 "2010 年 7 月 14 日" "SunOS 5.11" "用户命令"
+.SH 名称
+apptrace \- 跟踪对 Solaris 共享库的应用函数调用
+.SH 用法概要
+.LP
+.nf
+\fBapptrace\fR [\fB-f\fR] [\fB-F\fR [!] \fItracefromlist\fR] [\fB-T\fR [!] \fItracetolist\fR] 
+     [\fB-o\fR \fIoutputfile\fR] [ [\fB-tv\fR] [!] \fIcall\fR ,...] \fIcommand\fR 
+     [\fIcommand\fR \fIarguments\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBapptrace\fR 实用程序运行 \fIcommand\fR 所指定的可执行程序，并跟踪程序 \fIcommand \fR 对 Solaris 共享库所进行的所有函数调用。对于可跟踪的每个函数调用，\fBapptrace\fR 会报告所调用的库接口的名称、所传递的参数值以及返回值。
+.sp
+.LP
+缺省情况下，\fBapptrace\fR 跟踪从可执行对象到所依赖的任何共享对象的直接调用。缺省情况下不报告间接调用（即可执行对象所依赖的共享对象之间的调用）。
+.sp
+.LP
+可以使用 \fB-F\fR 或 \fB-T\fR 选项（请见下文）跟踪更多共享对象之间的调用。
+.sp
+.LP
+缺省报告格式为每个调用一行，且不提供通过引用传递的参数以及数据结构的格式化输出。
+.sp
+.LP
+可使用 \fB-v\fR 选项（请见下文）获得提供更多参数详细信息的格式化输出。
+.sp
+.LP
+缺省情况下，会跟踪共享对象所提供的每个接口（如果已调用）。但是，可以使用 \fB-t\fR 和/或 \fB-v\fR 选项限制要跟踪的接口组。
+.sp
+.LP
+由于一般情况下可以跟踪在运行时链接的任何动态对象（可执行对象以及所依赖的任何共享对象）之间的调用，因此所跟踪的每个调用的报告将提供发出调用的对象名称。
+.sp
+.LP
+\fBapptrace\fR 会跟踪动态对象之间通过过程链接表发生的所有过程调用，因此仅跟踪通过该表绑定的那些过程调用。请参见\fI《Linker and Libraries Guide》\fR。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fR
+.ad
+.RS 24n
+.rt  
+追踪 \fBfork\fR(2) 所创建的所有子项。此选项还将在每行的开头输出进程 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fB[!]\fR\fItracefromlist\fR \fR
+.ad
+.RS 24n
+.rt  
+跟踪从一个逗号分隔的共享对象列表发出的调用。仅跟踪从这些共享对象发出的调用。缺省值为仅跟踪从主可执行对象发出的调用。仅要求提供共享对象的根基名称。例如，\fIlibc\fR 将匹配 \fI/usr/lib/libc.so.1\fR。此外，还支持 shell 样式通配符（如\fBfnmatch\fR(5) 中所述）。列表前面带有 "!" 表示不应跟踪从列表中对象发出的调用。如果要求跟踪从 \fIcommand\fR 发出的调用，则 \fIcommand\fR 必须是 \fItracefromlist\fR 的成员。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutputfile\fR \fR
+.ad
+.RS 24n
+.rt  
+\fBapptrace\fR 输出将定向到 \fIoutputfile\fR。缺省情况下，\fBapptrace\fR 输出放置在所跟踪的进程的标准错误流上。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [\fB!\fR]\fIcall,\|.\|.\|.\fR\fR
+.ad
+.RS 24n
+.rt  
+跟踪或排除函数调用。将跟踪逗号分隔列表 \fIcall\fR 中指定的调用。如果列表以 ! 开头，将从跟踪输出中排除指定的函数调用。缺省值为 \fB-t\fR \fB*\fR。允许使用 shell 样式通配符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fB[!]\fR\fItracetolist\fR \fR
+.ad
+.RS 24n
+.rt  
+跟踪对逗号分隔的共享对象列表的调用。缺省值为跟踪对所有共享对象的调用。如上所述，只需提供根基名称，且允许使用通配符。列表前面带有 "!" 表示不应跟踪对列表中对象的调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR [\fB!\fR]\fIcall,\|.\|.\|.\fR\fR
+.ad
+.RS 24n
+.rt  
+提供详细的格式化的参数输出，以及所指定的函数调用的返回值（如上面的 \fB-t\fR 选项中所述）。与 \fBtruss\fR(1) 不同，\fB-v\fR 选项指定的调用无需再由 \fB-t\fR 选项指定。例如，\fBapptrace\fR \fB-v\fR \fBopen\fR 等同于 \fBtruss\fR \fB-t\fR \fBopen\fR \fB-v\fR \fBopen\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR跟踪日期命令
+.sp
+.in +2
+.nf
+% \fBapptrace date\fR
+-> date     -> libc.so.1:atexit(0xff3bf9ac, 0x22000, 0x0) ** NR
+-> date     -> libc.so.1:atexit(0x11550, 0xfefeef80, 0xab268) ** NR
+-> date     -> libc.so.1:setlocale(0x6, 0x11560, 0x0) ** NR
+-> date     -> libc.so.1:textdomain(0x11564, 0xfefce156, 0xff160200) ** NR
+-> date     -> libc.so.1:int getopt(int = 0x1,
+                        const char * * = 0xffbffa5c,
+                        const char * = 0x11574 "a:u")
+<- date     -> libc.so.1:getopt() = 0xffffffff
+-> date     -> libc.so.1:time_t time(time_t * = 0x225c0)
+<- date     -> libc.so.1:time() = 0x41ab6e82
+-> date     -> libc.so.1:char * nl_langinfo(nl_item = 0x3a)
+<- date     -> libc.so.1:nl_langinfo() = 0xfefd3e10
+-> date     -> libc.so.1:struct tm * localtime(const time_t * = 0x225c0)
+<- date     -> libc.so.1:localtime() = 0xff160240
+-> date     -> libc.so.1:memcpy(0xffbff9cc, 0xff160240, 0x24) ** NR
+-> date     -> libc.so.1:size_t strftime(char * = 0x225c4 "",
+                        size_t = 0x400,
+                        const char * = 0xfefd3e10 "%a %b %e %T %Z %Y",
+                        const struct tm * = 0xffbff9cc)
+<- date     -> libc.so.1:strftime() = 0x1c
+-> date     -> libc.so.1:int puts(const char * = 0x225c4
+                        "Mon Nov 29 10:46:26 PST 2004")
+                        Mon Nov 29 10:46:26 PST 2004
+<- date     -> libc.so.1:puts() = 0x1d
+-> date     -> libc.so.1:exit(0x0, 0x22400, 0x0) ** NR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR跟踪设置了详细级别的特定接口组
+.sp
+.in +2
+.nf
+% \fBapptrace -v localtime,strftime,puts date\fR
+-> date     -> libc.so.1:struct tm * localtime(const time_t * = 0x225c0)
+        arg0 = (const time_t *) 0x225c0
+        return = (struct tm *) 0xff160280 (struct tm) {
+        tm_sec: (int) 0x4
+        tm_min: (int) 0x34
+        tm_hour: (int) 0xa
+        tm_mday: (int) 0x1d
+        tm_mon: (int) 0xa
+        tm_year: (int) 0x68
+        tm_wday: (int) 0x1
+        tm_yday: (int) 0x14d
+        tm_isdst: (int) 0
+        }
+<- date     -> libc.so.1:localtime() = 0xff160280
+-> date     -> libc.so.1:size_t strftime(char * = 0x225c4 "",
+                        size_t = 0x400,
+                        const char * = 0xfefd3e10 "%a %b %e %T %Z %Y",
+                        const struct tm * = 0xffbff99c)
+        arg0 = (char *) 0x225c4 ""
+        arg1 = (size_t) 0x400
+        arg2 = (const char *) 0xfefd3e10 "%a %b %e %T %Z %Y"
+        arg3 = (const struct tm *) 0xffbff99c (struct tm) {
+        tm_sec: (int) 0x4
+        tm_min: (int) 0x34
+        tm_hour: (int) 0xa
+        tm_mday: (int) 0x1d
+        tm_mon: (int) 0xa
+        tm_year: (int) 0x68
+        tm_wday: (int) 0x1
+        tm_yday: (int) 0x14d
+        tm_isdst: (int) 0
+        }
+        return = (size_t) 0x1c
+<- date     -> libc.so.1:strftime() = 0x1c
+-> date     -> libc.so.1:int puts(const char * = 0x225c4
+                        "Mon Nov 29 10:52:04 PST 2004")
+        arg0 = (const char *) 0x225c4 "Mon Nov 29 10:52:04 PST 2004"
+                        Mon Nov 29 10:52:04 PST 2004
+        return = (int) 0x1d
+<- date     -> libc.so.1:puts() = 0x1d
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+** NR－不跟踪函数调用的返回值。
+.SH 文件
+.sp
+.LP
+Solaris 运行时链接程序 (\fBld.so.1\fR(1)) 的链接审计功能提供了对 \fBapptrace\fR 的基本运行时支持，并且此工具对 \fBapptrace\fR 命令的使用依赖于保存在 \fB/usr/lib/abi\fR 中的一个审计对象 (\fBapptrace.so.1\fR)。
+.SH 限制
+.sp
+.LP
+通常，\fBapptrace\fR 无法跟踪对接受变量参数列表的函数的调用。在某些情况下，可通过一些巧妙的编码来解决此问题，尤其是在 \fBprintf\fR 和 \fBscanf\fR 系列中。
+.sp
+.LP
+\fBapptrace\fR 实用程序无法跟踪返回类型为 \fBstruct\fR 或 \fBunion\fR 的函数调用的返回值。
+.sp
+.LP
+无法跟踪试图探测栈或提取调用者相关信息的函数。例如，\fB[gs]etcontext()\fR、\fB[sig]longjmp()\fR、\fB[sig]setjmp()\fR 和 \fBvfork()\fR。
+.sp
+.LP
+对于 \fBexit\fR(2) 等不会返回的函数，不会跟踪其返回值。
+.sp
+.LP
+为安全起见，只有具有相应特权的进程可以使用 \fBapptrace\fR 跟踪 \fBsetuid\fR/\fBsetgid\fR 程序。
+.sp
+.LP
+在跟踪需要包含 <\fBvarargs.h\fR> 才能使用的函数（例如 \fBvwprintw\fR(3XCURSES) 和 \fBvwscanw\fR(3XCURSES)）时，将不会提供参数的格式化输出。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性developer/appcert
+SUNWcstlx（64 位）
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBld.so.1\fR(1)、\fBtruss\fR(1)、\fBvwprintw\fR(3XCURSES)、\fBvwscanw\fR(3XCURSES)、\fBattributes\fR(5)、\fBfnmatch\fR(5) 
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR 

@@ -1,0 +1,554 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH lari 1 "2011 年 6 月 8 日" "SunOS 5.11" "用户命令"
+.SH 名称
+lari \- 运行时接口的链接分析
+.SH 用法概要
+.LP
+.nf
+\fBlari\fR [\fB-bCDsVv\fR] [\fB-a\fR | \fB-i\fR | \fB-o\fR] \fIfile\fR | \fIdirectory\fR...
+.fi
+
+.LP
+.nf
+\fBlari\fR [\fB-CDosv\fR] [\fB-m\fR [\fB-d\fR \fImapdir\fR]] \fIfile\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBlari\fR 实用程序分析动态 \fBELF\fR 对象的接口要求。有两种基本操作模式可用。第一种模式显示运行时接口信息。第二种模式生成接口定义。
+.sp
+.LP
+动态对象提供符号定义，表示对象为外部使用者提供的接口。在运行时，会建立从一个对象的符号引用到另一个对象的符号定义的绑定。\fBlari\fR 分析指定对象的接口定义和运行时绑定。
+.sp
+.LP
+显示运行时接口信息时，\fBlari\fR 可分析许多文件和/或目录。\fBlari\fR 分析在命令行上指定的每个 \fIfile\fR。\fBlari\fR 以递归方式向下派生到在命令行上指定的每个 \fIdirectory\fR 中，处理找到的每个文件。
+.sp
+.LP
+生成接口定义时，\fBlari\fR 只能处理在命令行上指定的单个 \fIfile\fR。
+.sp
+.LP
+如果不使用 \fB-D\fR 选项，\fBlari\fR 可通过使用 \fBldd\fR(1) 将文件作为动态 \fBELF\fR 对象进行处理。此处理使用以下选项：
+.sp
+.in +2
+.nf
+\fB-r\fR and \fB-e\fR \fBLD_DEBUG=files,bindings,detail\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+这些选项提供有关作为载入对象的一部分建立的所有绑定的信息。请注意，通过使用 \fBldd\fR，将不会执行指定对象，因此不会发生用户控制的对象装入（例如，通过使用 \fBdlopen\fR(3C)）。要捕获来自执行进程的所有绑定信息，可直接将以下环境变量传递到运行时链接程序 \fBld.so.1\fR(1)：
+.sp
+.in +2
+.nf
+\fBLD_DEBUG=files,bindings,detail LD_DEBUG_OUTPUT=lari.dbg \ 
+LD_BIND_NOW=yes\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBlari\fR 可使用 \fB-D\fR 选项处理所生成的调试输出 \fBlari.dbg.\fIpid\fR\fR。\fB注意：\fR\fBlari\fR 尝试分析已使用调试输出中定义的路径名进行处理的每个对象。因此，\fBlari\fR 必须可访问每个对象，才能提供完整和准确的分析。调试输出文件必须在 \fBC\fR 语言环境中生成。
+.sp
+.LP
+显示接口信息时，\fBlari\fR 将分析已处理动态对象的接口，而且在缺省情况下，会显示所有需要关注的信息。请参见"扩展说明"下的"\fB需要关注的信息\fR"。显示的信息还适合管道传输到其他工具。此功能可帮助开发者分析进程绑定或调试复杂绑定方案。
+.sp
+.LP
+\fBlari\fR 的接口定义生产操作可用于完善所处理的动态对象的接口要求。创建动态对象时，您应定义一个显式、标明版本号的接口。此定义控制外部用户可使用的符号定义。此外，此定义经常会减少对象的整体运行时执行成本。在链接编辑器创建对象时，可使用 \fB-M\fR 选项以及相关联的\fI映射文件\fR指令将接口定义分配给此对象。有关将\fI映射文件\fR用于版本化对象的更多详细信息，请参见\fI《Linker and Libraries Guide》\fR。\fBlari\fR 可创建这些\fI映射文件\fR的初始版本。
+.SH 选项
+.sp
+.LP
+支持下列选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 13n
+.rt  
+显示已分析对象的所有接口信息。\fB注意：\fR该选项的输出会非常多，但经常用于管道传输到其他分析工具。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 13n
+.rt  
+将接口信息限制为已显式绑定的那些符号。\fB注意：\fR可能已从定义对象内绑定到定义为受保护的符号。此绑定会在链接编辑时间得到满足，因此对运行时环境是不可见的。受保护符号会与此选项一起显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 13n
+.rt  
+取消重整 C++ 符号名。此选项可用于增加运行时接口信息。生成接口定义时，取消重整的名称会作为注释添加到\fI映射文件\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fImapdir\fR\fR
+.ad
+.RS 13n
+.rt  
+定义目录 \fImapdir\fR，会在其中创建\fI映射文件\fR。缺省情况下会使用当前的工作目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 13n
+.rt  
+将任何输入\fI文件\fR解释为调试信息而不是动态对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 13n
+.rt  
+显示需要关注的接口绑定信息。如果没有提供其他输出控制选项，则此模式为缺省模式。请参见"扩展说明"下的"\fB需要关注的信息\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 13n
+.rt  
+为处理的每个动态对象创建\fI映射文件\fR。这些\fI映射文件\fR会反映正在处理的输入文件所需的每个对象的接口要求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 13n
+.rt  
+将接口信息限制为被视为系统开销的那些符号。创建\fI映射文件\fR时，会将任何系统开销符号列出为局部符号。请参见"扩展说明"下的"\fB系统开销信息\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 13n
+.rt  
+保存从 \fBldd\fR(1) 生成的绑定信息以便进一步分析。请参见"文件"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.RS 13n
+.rt  
+附加需要关注的符号的可见性。可使用此选项标识定义为\fB单件\fR或定义为\fB受保护\fR的符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 13n
+.rt  
+忽略任何已标明版本号的对象。标明版本号的对象已定义其接口，但会增加显示的接口信息。例如，标明版本号的共享对象可能显示某个特定进程的系统开销符号。共享对象通常旨在供多个进程使用，因此这些对象提供的接口可扩展超出任何一个进程的要求。因此，\fB-v\fR 选项可在显示接口信息时减少无用数据。
+.RE
+
+.sp
+.LP
+从 \fBlari\fR 生成的运行时接口信息具有以下格式：
+.sp
+.in +2
+.nf
+[information]: \fIsymbol-name\fR [demangled-name]: \fIobject-name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+每一行描述接口符号（即 \fBsymbol-name\fR）以及对象（即 \fBobject-name\fR），在该对象中定义符号。如果符号代表一个函数，符号名称之后会带有 \fB()\fR。如果符号代表一个数据对象，符号名称之后会带有符号大小，括在 \fB[]\fR 中。如果使用 \fB-C\fR 选项，符号名称会附带符号取消重整的名称，即 \fBdemangled-name\fR。信息字段提供下列一个或多个标记，描述符号的使用：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcnt\fR:\fIbnd\fR\fR
+.ad
+.RS 11n
+.rt  
+两个十进制值表示符号计数 \fBcnt\fR 以及到此对象的绑定数 \fBbnd\fR。符号计数是指在分析的对象中已发现此符号定义的出现次数。大于 \fB1\fR 的计数表示符号定义的多个实例。绑定数表示已由运行时链接程序绑定到此符号定义的对象数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBM\fR\fR
+.ad
+.RS 11n
+.rt  
+已从外部对象绑定到此符号定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR\fR
+.ad
+.RS 11n
+.rt  
+已从相同对象绑定到此符号定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 11n
+.rt  
+已直接绑定到此符号定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBI\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义为插入项而提供。将自身显式标识为插入项的对象会将所有全局符号定义为插入项。请参见\fBld\fR(1) 的 \fB-z\fR \fBinterpose\fR 选项以及 \fBld.so.1\fR(1) 的 \fBLD_PRELOAD\fR 变量。通过使用\fB插入\fR\fB映射文件\fR指令可将动态可执行文件中的单个符号定义为插入项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBC\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义是复制重定位的引用数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBF\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义位于 filtee 中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义为受保护。此符号可能具有来自声明此符号所在对象的内部绑定。其他符号定义不能插入具有该属性的任何内部绑定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBA\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义是动态可执行文件中过程链接表项的地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBU\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号查找是源自用户请求，例如 \fBdlsym\fR(3C)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBR\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义充当过滤器，并为重定向到过滤器而提供。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 11n
+.rt  
+符号搜索过程中的某个时刻拒绝了到此符号的绑定。当直接绑定请求发现某个符号已标记为阻止直接绑定时会发生拒绝。在此情况下，会使用缺省搜索模型重复符号搜索。绑定仍然可以解析为原始、被拒绝的符号。非缺省符号搜索发现某个符号被标识为\fB单件\fR时，也可能发生拒绝。同样，使用缺省搜索模型重复符号搜索。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBN\fR\fR
+.ad
+.RS 11n
+.rt  
+此符号定义将显式禁止直接绑定到定义。
+.RE
+
+.sp
+.LP
+有关这些符号分类的更多详细信息，请参见\fI《Linker and Libraries Guide》\fR。
+.SH 扩展描述
+.SS "需要关注的信息"
+.sp
+.LP
+缺省情况下，或专门使用 \fB-i\fR 选项，\fBlari\fR 可过滤任何运行时接口信息以显示需要关注的事件。执行该过滤操作主要是为了减少大型应用程序可能生成的信息量。此外，此信息可作为调试复杂绑定情况的焦点，并且经常能突出显示存在问题的区域。但是，为任何特定应用程序分类哪些信息是需要关注的，是一门不精确的科学。您仍然可自由使用 \fB-a\fR 选项并为正调查的应用程序所独有的事件搜索绑定信息。
+.sp
+.LP
+发现需要关注的符号定义时，会输出相同符号的所有其他定义。
+.sp
+.LP
+需要关注的接口信息的焦点在于存在一个符号的多个定义。在这种情况下，一个符号通常会插入一个或多个其他符号定义。一个定义的绑定计数 \fBbnd\fR 不为零、而所有其他定义的绑定计数都为零时，可以看到这一插入操作。从编译环境或链接环境产生的插入操作不会被描述为需要关注。这些插入事件的示例包括复制重定位 (\fB[C]\fR) 以及绑定到过程链接地址 (\fB[A]\fR)。
+.sp
+.LP
+插入通常是需要的。目的在于过载或替换来自共享对象的符号定义。使用\fBld\fR(1) 的 \fB-z interpose\fR 选项，可以显式标记 (\fB[I]\fR) 插入对象。这些对象可安全插入符号，无论这些对象在进程中是以什么顺序装入的。但是，使用非显式插入时请务必谨慎，因为这种插入与构成进程的对象的装入顺序有关。
+.sp
+.LP
+用户创建的、多重定义的符号从 \fBlari\fR 输出为需要关注的符号。在此示例中，存在 \fBinterpose1()\fR 的两个定义，但只会引用 \fBmain\fR 中的定义。
+.sp
+.in +2
+.nf
+[2:1E]: interpose1(): ./main
+[2:0]: interpose1(): ./libA.so
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+插入也可能是由异常符号名称冲突导致的不需要的和意外的事件。这种插入的症状可能是虽然您知道存在对某个函数的引用，但是从来不会调用该函数。这种情况可标识为多重定义符号，如上一示例中所述。但是，当某个对象同时定义和引用特定符号时，通常会遇到更意外的情况。
+.sp
+.LP
+这种情况的一个示例为两个动态对象定义和引用相同函数 \fBinterpose2()\fR。对该符号的任何引用都会绑定到使用该进程装入的第一个动态对象。在这种情况下，对象 \fBlibA.so\fR 中 \fBinterpose2()\fR 的定义会插入对象 \fBlibB.so\fR 中的 \fBinterpose2()\fR 的定义并将其隐藏。\fBlari\fR 的输出可能为：
+.sp
+.in +2
+.nf
+[2:2ES]: interpose2(): ./libA.so
+[2:0]: interpose2(): ./libB.so
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+还可单独绑定到多重定义的符号。直接绑定生效 (\fB[D]\fR) 或由于符号具有受保护可见性 (\fB[P]\fR) 时可使用单独绑定。尽管可显式建立单独绑定，但仍可能存在异常或意外的实例。直接绑定符号和具有受保护可见性的符号会输出为需要关注的信息。
+.SS "系统开销信息"
+.sp
+.LP
+使用 \fB-o\fR 选项时，\fBlari\fR 会显示可能会被视为系统开销的符号定义。
+.sp
+.LP
+没有引用的全局符号会被视为系统开销。对象中提供的符号信息会不必要地增加对象的文本段大小。此外，符号信息会增加在运行时搜索对象内其他符号引用所需的处理操作。
+.sp
+.LP
+只从相同对象引用的全局符号具有相同的特征。对符号引用进行运行时搜索会导致绑定到造成引用的相同对象，这是一项额外系统开销。
+.sp
+.LP
+这两个符号定义都是通过定义对象接口降低到局部范围的候选。链接编辑器创建文件时，可使用 \fB-M\fR 选项以及相关联的\fI映射文件\fR指令将接口定义分配给此文件。有关\fI映射文件\fR的更多详细信息，请参见\fI《Linker and Libraries Guide》\fR。将 \fBlari\fR 与 \fB-m\fR 选项一起使用可创建这些\fI映射文件\fR的初始版本。
+.sp
+.LP
+如果 \fBlari\fR 用于生成\fI映射文件\fR，标明版本号的共享对象将创建\fI映射文件\fR，指示必须将它们的系统开销符号应降低为局部。此模型允许 \fBlari\fR 生成\fI映射文件\fR以便与现有接口定义相比较。创建\fI映射文件\fR时使用 \fB-v\fR 选项忽略标明版本号的共享对象。
+.sp
+.LP
+复制重定位也被视为系统开销，而且一般是应该避免的。被复制数据的大小是其接口的定义。此定义会限制在定义数据的较新版本共享对象中更改数据大小的能力。可通过使用功能接口引用数据来避免这种限制以及处理复制重定位的成本。对于复制重定位，\fBlari\fR 的输出可能为：
+.sp
+.in +2
+.nf
+[2:1EC]: __iob[0x140]: ./main
+[2:0]: __iob[0x140]: ./libA.so.1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，由于与系统库的历史编程交互，会存在多个小型复制重定位，例如上一示例中使用的 \fB__iob\fR。
+.sp
+.LP
+系统开销信息的另一个示例为动态对象绑定到动态可执行文件的过程链接表项。如果动态可执行文件引用外部函数，会创建过程链接表项。此结构允许将引用绑定延迟到实际进行函数调用。如果动态对象采用同一被引用函数的地址，动态对象会绑定到动态可执行文件过程链接表项。这种类型事件的示例显示以下内容：
+.sp
+.in +2
+.nf
+[2:1EA]: foo(): ./main
+[2:1E]: foo(): ./libA.so
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+少量的这种类型绑定一般不需要担心。但是，大量这样的绑定（或许是由于转移表编程技术所导致）则会增加启动系统开销。这类地址重定位绑定要求在应用程序启动时进行重定位处理，而不是在直接调用函数时使用延迟重定位处理。使用此地址还需要在运行时进行间接操作。
+.SH 示例
+.LP
+\fB示例 1 \fR分析多绑定的情况
+.sp
+.LP
+以下示例显示对于一个存在多个符号定义的进程的分析。共享对象 \fBlibX.so\fR 和 \fBlibY.so\fR 都调用函数 \fBinterpose()\fR。此函数同时存在于应用程序 \fBmain\fR 和共享对象 \fBlibA.so\fR 中。由于插入，两个引用都会绑定到 \fBmain\fR 中 \fBinterpose()\fR 的定义。
+
+.sp
+.LP
+共享对象 \fBlibX.so\fR 和 \fBlibY.so\fR 都调用函数 \fBfoo()\fR。此函数存在于应用程序 \fBmain\fR 和共享对象 \fBlibA.so\fR、\fBlibX.so\fR 与 \fBlibY.so \fR 中。由于 \fBlibX.so\fR 和 \fBlibY.so\fR 两者都是在启用直接绑定的情况下生成的，所以每个对象都会绑定到自己的定义。
+
+.sp
+.in +2
+.nf
+example% \fBlari ./main\fR
+[3:0]: foo(): ./libA.so
+[3:1SD]: foo(): ./libX.so
+[3:1SD]: foo(): ./libY.so
+[2:0]: interpose(): ./libA.so
+[2:2EP]: interpose(): ./main
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要更彻底分析绑定信息，可保存绑定数据以便进一步检查。例如，上一个输出指示函数 \fBinterpose()\fR 是从 \fBmain\fR 外部的两个对象中调用的。对绑定输出的检查显示对此函数的引用源自何处。
+
+.sp
+.in +2
+.nf
+example% \fBlari -s ./main\fR
+lari: ./main: bindings information saved as: /usr/tmp/lari.dbg.main
+\&.....
+example% \fBfgrep foo /usr/tmp/lari.dbg.main\fR
+binding file=./libX.so to file=./main: symbol `interpose'
+binding file=./libY.so to file=./main: symbol `interpose'
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB注意：\fR绑定输出一般比此处显示信息更多，因为输出还伴随有进程标识符、地址和其他绑定信息。
+
+.LP
+\fB示例 2 \fR生成接口定义
+.sp
+.LP
+以下示例会为应用程序及其相关性创建接口定义，同时忽略任何标明版本号的系统库。应用程序 \fBmain\fR 会对 \fBfoo.so\fR 中的接口 \fBone()\fR、\fBtwo()\fR 和 \fBthree()\fR 进行引用。
+
+.sp
+.in +2
+.nf
+example% \fBlari -omv ./main\fR
+example% \fBcat mapfile-foo.so\fR
+#
+# Interface Definition mapfile for:
+#       Dynamic Object: ./foo.so
+#       Process:        ./main
+#
+
+foo.so {
+        global:
+                one;
+                three;
+                two;
+        local:
+                _one;
+                _three;
+                _two;
+                *;
+};
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$TMPDIR/lari.dbg.\fIfile\fR\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBldd\fR(1) 生成的绑定输出。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性developer/base-developer-utilities
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+人类可读的输出是 "Uncommitted"（未确定）。选项为 "Committed"（已确定）。
+.SH 另请参见
+.sp
+.LP
+\fBld\fR(1)、\fBldd\fR(1)、\fBld.so.1\fR(1)、\fBdlopen\fR(3C)、\fBdlsym\fR(3C)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR

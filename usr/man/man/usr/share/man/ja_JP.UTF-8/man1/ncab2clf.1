@@ -1,0 +1,210 @@
+'\" te
+.\" Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ncab2clf 1 "2011 年 2 月 11 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+ncab2clf \- バイナリログファイルの共通ログファイル形式への変換
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/ncab2clf\fR [\fB-Dhv\fR] [\fB-i\fR \fIinput-file\fR] [\fB-o\fR \fIoutput-file\fR] 
+     [\fB-b\fR \fIsize\fR] [\fB-n\fR \fInumber\fR] [\fB-s\fR \fIdatetime\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBncab2clf\fR コマンドは、Solaris Network Cache and Accelerator (\fBNCA\fR) によって生成されたログファイルをバイナリ形式から共通ログファイル (\fBCLF\fR) 形式に変換するために使用します。\fIinput-file\fR を指定しない場合、\fBb2clf\fR は \fBstdin\fR を使用します。\fIoutput-file\fR を指定しない場合、出力は \fBstdout\fR に送られます。 
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 18n
+.rt  
+バイナリログファイルのブロック化 (K バイト単位) を指定します。デフォルトは 64K バイトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 18n
+.rt  
+ダイレクト \fBI/O\fR を無効にすることを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 18n
+.rt  
+使用法を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinput-file\fR\fR
+.ad
+.RS 18n
+.rt  
+入力ファイルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fInumber\fR\fR
+.ad
+.RS 18n
+.rt  
+\fInumber\fR 個の CLF レコードを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput-file\fR\fR
+.ad
+.RS 18n
+.rt  
+出力ファイルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdatetime\fR\fR
+.ad
+.RS 18n
+.rt  
+\fIdatetime\fR で指定した日時より前のレコードをスキップします。日時は、CLF 形式または \fBtouch\fR(1) ユーティリティーで指定された形式で指定できます。CLF 形式が優先されるため、\fBncab2clf\fR はまず \fIdatetime\fR を CLF とみなして解析します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 18n
+.rt  
+詳細な出力を表示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRバイナリファイルを共通ログファイル形式に変換する
+.sp
+.LP
+次の例では、バイナリファイル \fB/var//logs/.blf\fR を共通ログファイル形式の \fB/var//logs/.clf\fR ファイルに変換しています。
+
+.sp
+.in +2
+.nf
+example% ncab2clf -D -i /var/nca/logs/nca.blf -o /var/nca/logs/nca.clf
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR複数のログファイルを変換する
+.sp
+.LP
+次のスクリプトを使用すると、複数のログファイルを変換できます。「\fB*\fR」で指定されるディレクトリには、ログファイルだけが含まれている必要があります。 
+
+.sp
+.in +2
+.nf
+!/bin/ksh
+for filename in *
+do
+    ncab2clf -D < $filename > $filename.clf
+done
+.fi
+.in -2
+
+.LP
+\fB例 3 \fRraw デバイスで \fB-s\fR と \fB-n\fR を使用する
+.sp
+.LP
+次の例は、raw デバイスで \fBncab2clf\fR を使用する方法を示しています。\fB-n\fR オプションを使用しない場合、デフォルトでファイルの先頭から末尾までのすべてのレコードが変換されます。\fB-s\fR で指定する日時は、次のように CLF 形式にします。
+
+.sp
+.in +2
+.nf
+example% ncab2clf -s '10/Apr/2001:09:23:13' -n 100 < /dev/dsk/c2t1d0s6
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイルが正常に変換されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB>\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/network/http-cache-accelerator
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBncakmod\fR(1), \fBnca.if\fR(4), \fBncakmod.conf\fR(4), \fBncalogd.conf\fR(4), \fBattributes\fR(5), \fBnca\fR(7d)
+.sp
+.LP
+\fI『Oracle Solaris Administration: IP Services』\fR
+.SH 注意事項
+.sp
+.LP
+\fBNCA\fR によって生成されるバイナリログファイルは、サイズが非常に大きくなることがあります。サイズの大きなバイナリファイルを変換するときは、\fB-b\fR オプションを使用すると \fBncab2clf\fR コマンドのパフォーマンスが向上します。
+.sp
+.LP
+ダイレクト \fBI/O\fR は、書き込まれるデータがそれほど大きな単位にならない場合に有効です。ただし、\fB-b\fR オプションを使用して大きな単位でログファイルを変換する場合は、\fB-D\fR オプションを使用してダイレクト \fBI/O\fR を無効にするようにしてください。 

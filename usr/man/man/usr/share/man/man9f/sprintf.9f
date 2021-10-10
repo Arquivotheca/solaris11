@@ -1,0 +1,170 @@
+'\" te
+.\" Copyright (c) 2006, Sun Microsystems, Inc.
+.TH sprintf 9F "16 Jan 2006" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+sprintf, snprintf \- format characters in memory
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/ddi.h>
+
+
+
+\fBchar *\fR\fBsprintf\fR(\fBchar *\fR\fIbuf\fR, \fBconst char *\fR\fIfmt\fR...);
+.fi
+
+.LP
+.nf
+\fBsize_t\fR \fBsnprintf\fR(\fBchar *\fR\fIbuf\fR, \fBsize_t\fR \fIn\fR, \fBconst char *\fR\fIfmt\fR...);
+.fi
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris DDI specific (Solaris DDI).
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbuf\fR\fR
+.ad
+.RS 7n
+.rt  
+Pointer to a character string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfmt\fR\fR
+.ad
+.RS 7n
+.rt  
+Pointer to a character string.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsprintf()\fR function builds a string in \fIbuf\fR under the control of the format \fIfmt\fR. The format is a character string with either plain characters, which are simply copied into \fIbuf\fR, or conversion specifications, each of which converts zero or more arguments, again copied into \fIbuf\fR. The results are unpredictable if there are insufficient arguments for the format; excess arguments are simply ignored. It is the user's responsibility to ensure that enough storage is available for \fIbuf\fR.
+.sp
+.LP
+The \fBsnprintf()\fR function is identical to \fBsprintf()\fR with the addition of the argument \fIn\fR, which specifies the size of the buffer referred to by \fIbuf\fR. The buffer is always terminated with the null byte.
+.SS "Conversion Specifications"
+.sp
+.LP
+Each conversion specification is introduced by the \fB%\fR character, after which the following appear in sequence:
+.sp
+.LP
+An optional value specifying a minimum field width for numeric conversion. The converted value will be right-justified and, if it has fewer characters than the minimum, is padded with leading spaces unless the field width is an octal value, then it is padded with leading zeroes.
+.sp
+.LP
+An optional \fBl\fR (\fBll\fR) specifying that a following \fBd\fR, \fBD\fR, \fBo\fR, \fBO\fR, \fBx\fR, \fBX\fR, or \fBu\fR conversion character applies to a \fBlong\fR (\fBlong long\fR) integer argument. An \fBl\fR (\fBll\fR) before any other conversion character is ignored.
+.sp
+.LP
+A character indicating the type of conversion to be applied:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR,\fBD\fR,\fBo\fR,\fBO\fR,\fBx\fR,\fBX\fR,\fBu\fR\fR
+.ad
+.RS 17n
+.rt  
+The integer argument is converted to signed decimal (\fBd\fR, \fBD\fR), unsigned octal (\fBo\fR, \fBO\fR), unsigned hexadecimal (\fBx\fR, \fBX\fR) or unsigned decimal (\fBu\fR), respectively, and copied. The letters \fBabcdef\fR are used for \fBx\fR conversion. The letters \fBABCDEF\fR are used for \fBX\fR conversion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 17n
+.rt  
+The character value of argument is copied.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.RS 17n
+.rt  
+This conversion uses two additional arguments. The first is an integer, and is converted according to the base specified in the second argument. The second argument is a character string in the form \fB<\fR\fIbase\fR\fB>[<\fR\fIarg\fR\fB>\|.\|.\|.\|].\fR The base supplies the conversion base for the first argument as a binary value; \e10 gives octal, \e20 gives hexadecimal. Each subsequent \fI<arg>\fR is a sequence of characters, the first of which is the bit number to be tested, and subsequent characters, up to the next bit number or terminating null, supply the name of the bit.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fR
+.ad
+.RS 17n
+.rt  
+A bit number is a binary-valued character in the range 1-32. For each bit set in the first argument, and named in the second argument, the bit names are copied, separated by commas, and bracketed by \fB<\fR and \fB>\fR. Thus, the following function call would generate \fBreg=3<BitTwo,BitOne>\en\fR in \fIbuf\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fR
+.ad
+.RS 17n
+.rt  
+\fBsprintf(buf, "reg=%b\en", 3, "\e10\e2BitTwo\e1BitOne")\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 17n
+.rt  
+The argument is taken to be a pointer; the value of the pointer is displayed in unsigned hexadecimal. The display format is equivalent to \fB%lx\fR. To avoid \fBlint\fR warnings, cast pointers to type \fBvoid *\fR when using the \fB%p\fR format specifier.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 17n
+.rt  
+The argument is taken to be a string (character pointer), and characters from the string are copied until a null character is encountered. If the character pointer is \fINULL\fR, the string \fB<null string>\fR is used in its place.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fR
+.ad
+.RS 17n
+.rt  
+Copy a \fB%\fR; no argument is converted.
+.RE
+
+.SH RETURN VALUES
+.sp
+.LP
+The \fBsprintf()\fR function returns its first argument, \fIbuf\fR.
+.sp
+.LP
+The \fBsnprintf()\fR function returns the number of characters formatted, that is, the number of characters that would have been written to the buffer if it were large enough. If the value of \fIn\fR is less than or equal to \fB0\fR on a call to \fBsnprintf()\fR, the function simply returns the number of characters formatted.
+.SH CONTEXT
+.sp
+.LP
+The \fBsprintf()\fR and \fBsnprintf()\fR functions and can be called from user, interrupt, or kernel context.
+.SH SEE ALSO
+.sp
+.LP
+\fIWriting Device Drivers\fR

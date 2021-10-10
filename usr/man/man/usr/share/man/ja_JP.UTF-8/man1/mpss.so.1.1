@@ -1,0 +1,220 @@
+'\" te
+.\"  Copyright (c) 2002, Sun Microsystems, Inc. All Rights Reserved
+.TH mpss.so.1 1 "2002 年 2 月 20 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+mpss.so.1 \- 優先ページサイズを設定するための共有オブジェクト
+.SH 形式
+.LP
+.nf
+\fBmpss.so.1\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmpss.so.1\fR 共有オブジェクトは、起動されたプロセスとその子孫のスタック、ヒープ、あるいはその両方の優先ページサイズを選択的に構成する手段を提供します。\fBmpss.so.1\fR を有効にするには、次の文字列が 1 つ以上の \fBMPSS\fR (Multiple Page Size Support) 環境変数とともに環境内に存在する必要があります (\fBld.so.1\fR(1) を参照)。
+.sp
+.in +2
+.nf
+\fBLD_PRELOAD=$LD_PRELOAD:mpss.so.1\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBmpss.so.1\fR 共有オブジェクトは、事前に読み込まれると次の環境変数を読み取り、その環境変数に固有のものである可能性がある優先ページサイズ要件とプロセスを判定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMPSSHEAP\fR=\fIsize\fR \fR
+.ad
+.br
+.na
+\fB\fBMPSSSTACK\fR=\fIsize\fR\fR
+.ad
+.RS 27n
+.rt  
+\fBMPSSHEAP\fR および \fBMPSSSTACK\fR には、それぞれヒープおよびスタックの優先ページサイズを指定します。指定したページサイズは、作成されたすべてのプロセスに適用されます。
+.sp
+\fIsize\fR には、サポートされるページサイズ (\fBpagesize\fR(1) を参照) または \fB0\fR を指定する必要があります。0 を指定すると、適切なページサイズがシステムによって選択されます (\fBmemcntl\fR(2) を参照)。
+.sp
+\fIsize\fR は、\fBK\fR (K バイト)、\fBM\fR (M バイト)、\fBG\fR (G バイト)、または \fBT\fR (T バイト) で修飾できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMPSSCFGFILE\fR=\fIconfig-file\fR\fR
+.ad
+.RS 27n
+.rt  
+\fIconfig-file\fR は、次の形式の \fBmpss\fR 構成エントリを 1 つ以上含むテキストファイルです。
+.sp
+.in +2
+.nf
+\fIexec-name\fR \fIexec-args\fR:\fIheap-size\fR:\fIstack-size\fR
+.fi
+.in -2
+.sp
+
+\fIexec-name\fR には、アプリケーションまたは実行可能ファイルの名前を指定します。対応する優先ページサイズは、ファイル内で最初に見つかった \fIexec-name\fR と一致する新規作成プロセス (\fBgetexecname\fR(3C) を参照) に設定されます。
+.sp
+\fIexec-name\fR には、フルパス名、基本名、またはパターン文字列を指定できます。パターンマッチングについては、\fBsh\fR(1) の「\fBファイル名の生成\fR」を参照してください。
+.sp
+\fIexec-args\fR は、引数と照合する任意指定のパターン文字列です。\fIexec-args\fR が指定されていないか、または exec-args が \fIexec-name\fR の引数内に存在する場合にのみ、優先ページサイズは設定されます。
+.sp
+\fIheap-size\fR、\fIstack-size\fR、あるいはその両方を指定しないと、対応する優先ページサイズは設定されません。
+.sp
+\fBMPSSCFGFILE\fR は、\fBMPSSHEAP\fR および \fBMPSSSTACK\fR よりも優先されます。\fBMPSSCFGFILE\fR が設定されていない場合は、\fB/etc/mpss.conf\fR から優先ページサイズが取得されます (存在している場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMPSSERRFILE\fR=\fIpathname\fR\fR
+.ad
+.RS 27n
+.rt  
+デフォルトでは、エラーメッセージは \fBsyslog\fR(3C) の \fBLOG_ERR\fR レベルと \fBLOG_USER\fR 機能を使用してログに記録されます。\fBMPSSERRFILE\fR に有効な \fIpathname\fR (\fB/dev/stderr\fR など) が含まれている場合は、エラーメッセージがその場所に記録されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRMPSSCFGFILE を使用して優先ページサイズを構成する
+.sp
+.LP
+次の Bourne シェルコマンド (\fBsh\fR(1) を参照) は、\fBMPSSCFGFILE\fR 環境変数を使用して、\fBfoo\fR で始まる実行可能ファイル名を持つ一連のアプリケーションに優先ページサイズを構成しています。\fBMPSS\fR 構成ファイル \fBmpsscfg\fR は、\fBvi\fR(1) などのテキストエディタを使用してが事前に作成されているものとします。\fBcat\fR(1) コマンドは、内容をダンプしているだけです。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:mpss.so.1\fR
+example$ \fBMPSSCFGFILE=mpsscfg\fR
+example$ \fBexport LD_PRELOAD MPSSCFGFILE\fR
+example$ \fBcat $MPSSCFGFILE\fR
+foo*:512K:64K
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+アプリケーションの起動後、\fBpmap\fR (\fBproc\fR(1) を参照) を使用すると、構成された実際のページサイズを表示できます。
+
+.sp
+.in +2
+.nf
+example$ \fBfoobar &\fR
+example$ \fBpmap -s `pgrep foobar`\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+(\fBpmap\fR の出力に表示された) ページサイズが希望のサイズに構成されていない場合は、\fBMPSS\fR 構成ファイルまたは環境変数のエラーが原因である可能性があります。エラーログ (デフォルトでは \fB/var/adm/messages\fR) でエラーを確認してください。
+
+.sp
+.LP
+エラーが見つからない場合は、リソースまたは境界合わせの制約が原因である可能性があります。「注意事項」の節を参照してください。
+
+.LP
+\fB例 2 \fRMPSSHEAP および MPSSSTACK を使用して優先ページサイズを構成する
+.sp
+.LP
+次の Bourne シェルコマンドは、\fBMPSSHEAP\fR および \fBMPSSSTACK\fR 環境変数を使用して、すべてのアプリケーションに対して \fB512K\fR のヒープの優先ページサイズと \fB64K\fR のスタックの優先ページサイズを構成しています。
+
+.sp
+.in +2
+.nf
+example$ \fBLD_PRELOAD=$LD_PRELOAD:mpss.so.1\fR
+example$ \fBMPSSHEAP=512K\fR
+example$ \fBMPSSSTACK=64K\fR
+example$ \fBexport LD_PRELOAD MPSSHEAP MPSSSTACK\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR優先順位規則 (例 2 の続き)
+.sp
+.LP
+\fBMPSSCFGFILE\fR による優先ページサイズの構成は、\fBMPSSHEAP\fR および \fBMPSSTACK\fR よりも優先されます。\fB例 2\fR のあとに次のコマンドを追加すると、構成ファイルで指定された \fBls\fR コマンドと名前が \fBora\fR で始まり、引数として \fBora1\fR が指定されたアプリケーションを除くすべてのアプリケーションに対して、\fB512K\fR のヒープの優先ページサイズと \fB64K\fR のスタックの優先ページサイズが構成されます。
+
+.sp
+.in +2
+.nf
+example$ \fBMPSSCFGFILE=mpsscfg2\fR
+example$ \fBexport MPSSCFGFILE\fR
+example$ \fBcat $MPSSCFGFILE\fR
+ls::
+ora* ora1:4m:4m
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ld/map.bssalign\fR \fR
+.ad
+.RS 29n
+.rt  
+bss 整列用のテンプレートリンカーマップファイル (\fBmapfile\fR) (「注意事項」を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mpss.conf\fR\fR
+.ad
+.RS 29n
+.rt  
+構成ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+system/extended-system-utilities (32 ビット)
+T}
+_
+SUNWesxu (64 ビット)
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcat\fR(1), \fBld\fR(1), \fBld.so.1\fR(1), \fBpagesize\fR(1), \fBppgsz\fR(1), \fBproc\fR(1), \fBsh\fR(1), \fBvi\fR(1), \fBexec\fR(2), \fBfork\fR(2), \fBmemcntl\fR(2), \fBgetexecname\fR(3C), \fBgetpagesize\fR(3C), \fBsyslog\fR(3C), \fBproc\fR(4), \fBattributes\fR(5) 
+.SH 注意事項
+.sp
+.LP
+ヒープおよびスタックの優先ページサイズは継承されます。子プロセスには親と同じ優先ページサイズが適用されます。\fBexec\fR(2) では、\fBmpss\fR 共有オブジェクトで優先ページサイズを構成しないかぎり、優先ページサイズがデフォルトのシステムページサイズに戻されます。
+.sp
+.LP
+また、\fBppgsz\fR(1) (proc ツール) を使用すると、スタック、ヒープ、あるいはその両方のページサイズを設定できます。ただし、名前の一致に基づいて子孫のページサイズを選択して構成することはできません。
+.sp
+.LP
+\fBppgsz\fR(1) の「注意事項」も参照してください。

@@ -1,0 +1,275 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH error 1 "8 Jun 2011" "SunOS 5.11" "User Commands"
+.SH NAME
+error \- insert compiler error messages at right source lines
+.SH SYNOPSIS
+.LP
+.nf
+\fBerror\fR [\fB-n\fR] [\fB-q\fR] [\fB-s\fR] [\fB-v\fR] [\fB-t\fR \fIsuffixlist\fR] [\fB-I\fR \fIignorefile\fR] 
+     [\fIfilename\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBerror\fR analyzes error messages produced by a number of compilers and language processors.  It replaces the painful, traditional methods of scribbling abbreviations of errors on paper, and permits error messages and source code to be viewed simultaneously.
+.sp
+.LP
+\fBerror\fR looks at error messages, either from the specified file \fIfilename\fR or from the standard input, and:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Determines which language processor produced each error message.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Determines the file name and line number of the erroneous line.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Inserts the error message into the source file immediately preceding the erroneous line.
+.RE
+.sp
+.LP
+Error messages that can't be categorized by language processor or content are not inserted into any file, but are sent to the standard output. \fBerror\fR touches source files only after all input has been read.
+.sp
+.LP
+\fBerror\fR is intended to be run with its standard input connected with a pipe to the error message source.  Some language processors put error messages on their standard error file; others put their messages on the standard output. Hence, both error sources should be piped together into \fBerror.\fR For example, when using the \fBcsh\fR syntax, the following command analyzes all the error messages produced by whatever programs \fBmake\fR(1S) runs when making lint:
+.sp
+.LP
+\fBexample% make\fR \fB-s\fR \fBlint |\|& error\fR \fB-q\fR \fB-v\fR
+.sp
+.LP
+\fBerror\fR knows about the error messages produced by: \fBas\fR(1), \fBcpp\fR(1), \fBld\fR(1), \fBmake\fR(1S) and other compilers. For all languages except Pascal, error messages are restricted to one line. Some error messages refer to more than one line in more than one file, in which case \fBerror\fR duplicates the error message and inserts it in all the appropriate places.
+.SH OPTIONS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 17n
+.rt  
+Do \fInot\fR touch any files; all error messages are sent to the standard output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBerror\fR asks whether the file should be touched.  A `\fBy\fR' or `\fBn\fR' to the question is necessary to continue.  Absence of the \fB-q\fR option implies that all referenced files (except those referring to discarded error messages) are to be touched.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 17n
+.rt  
+Print out statistics regarding the error categorization.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+After all files have been touched, overlay the visual editor \fBvi\fR with it set up to edit all files touched, and positioned in the first touched file at the first error. If \fBvi\fR(1) can't be found, try \fBex\fR(1) or \fBed\fR(1) from standard places.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIsuffixlist\fR\fR
+.ad
+.RS 17n
+.rt  
+Take the following argument as a suffix list. Files whose suffices do not appear in the suffix list are not touched. The suffix list is dot separated, and `\fB*\fR' wildcards work.  Thus the suffix list: 
+.sp
+\fB\&.c.y.f*.h\fR
+.sp
+allows \fBerror\fR to touch files ending with `\fB\&.c\fR', `\fB\&.y'\fR, `\fB\&.f*\fR' and `\fB\&.h\fR'.
+.RE
+
+.sp
+.LP
+\fBerror\fR catches interrupt and terminate signals, and terminates in an orderly fashion.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUsing the \fBerror\fR Command
+.sp
+.LP
+In the following C shell  \fB(/usr/bin/csh)\fR example,  \fBerror\fR takes its input from the FORTRAN compiler:
+
+.sp
+.in +2
+.nf
+\fBexample% f77\fR \fB-c\fR \fB\fIany\fR.f |& error \fIoptions\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Here is the same example using the Korn shell \fB(/usr/bin/ksh)\fR:
+
+.sp
+.in +2
+.nf
+\fBexample% f77\fR \fB-c\fR \fB\fIany\fR.f 2>&1 | error \fIoptions\fR\fR
+.fi
+.in -2
+.sp
+
+.SH USAGE
+.sp
+.LP
+\fBerror\fR does one of six things with error messages.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsynchronize\fR\fR
+.ad
+.RS 21n
+.rt  
+Some language processors produce short errors describing which file they are processing. \fBerror\fR uses these to determine the file name for languages that do not include the file name in each error message. These synchronization messages are consumed entirely by \fBerror\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscard\fR\fR
+.ad
+.RS 21n
+.rt  
+Error messages from \fBlint\fR that refer to one of the two \fBlint\fR libraries, \fB/usr/lib/lint/llib-lc\fR and \fB/usr/lib/lint/llib-port\fR are discarded, to prevent accidentally touching these libraries. Again, these error messages are consumed entirely by \fBerror\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnullify\fR\fR
+.ad
+.RS 21n
+.rt  
+Error messages from \fBlint\fR can be nullified if they refer to a specific function, which is known to generate diagnostics which are not interesting. Nullified error messages are not inserted into the source file, but are written to the standard output. The names of functions to ignore are taken from either the file named \fB\&.errorrc\fR in the user's home directory, or from the file named by the \fB-I\fR option. If the file does not exist, no error messages are nullified. If the file does exist, there must be one function name per line.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnot\fR \fBfile\fR \fBspecific\fR\fR
+.ad
+.RS 21n
+.rt  
+Error messages that can't be intuited are grouped together, and written to the standard output before any files are touched. They are not inserted into any source file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR \fBspecific\fR\fR
+.ad
+.RS 21n
+.rt  
+Error messages that refer to a specific file but to no specific line are written to the standard output when that file is touched.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrue\fR \fBerrors\fR\fR
+.ad
+.RS 21n
+.rt  
+Error messages that can be intuited are candidates for insertion into the file to which they refer.
+.RE
+
+.sp
+.LP
+Only true error messages are inserted into source files. Other error messages are consumed entirely by \fBerror\fR or are written to the standard output. \fBerror\fR inserts the error messages into the source file on the line preceding the line number in the error message. Each error message is turned into a one line comment for the language, and is internally flagged with the string \fB###\fR at the beginning of the error, and \fB%%%\fR at the end of the error. This makes pattern searching for errors easier with an editor, and allows the messages to be easily removed. In addition, each error message contains the source line number for the line the message refers to.  A reasonably formatted source program can be recompiled with the error messages still in it, without having the error messages themselves cause future errors.  For poorly formatted source programs in free format languages, such as C or Pascal, it is possible to insert a comment into another comment, which can wreak havoc with a future compilation.  To avoid this, format the source program so there are no language statements on the same line as the end of a comment.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~/.errorrc\fR\fR
+.ad
+.RS 14n
+.rt  
+function names to ignore for \fBlint\fR error messages
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/tty\fR\fR
+.ad
+.RS 14n
+.rt  
+user's teletype
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitydeveloper/base-developer-utilities
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBas\fR(1), \fBcpp\fR(1), \fBcsh\fR(1), \fBed\fR(1), \fBex\fR(1), \fBmake\fR(1S), \fBld\fR(1), \fBvi\fR(1), \fBattributes\fR(5)
+.SH BUGS
+.sp
+.LP
+Opens the tty-device directly for user input.
+.sp
+.LP
+Source files with links make a new copy of the file with only one link to it.
+.sp
+.LP
+Changing a language processor's error message format may cause \fBerror\fR to not understand the error message.
+.sp
+.LP
+\fBerror\fR, since it is purely mechanical, will not filter out subsequent errors caused by "floodgating" initiated by one syntactically trivial error. Humans are still much better at discarding these related errors.
+.sp
+.LP
+Pascal error messages belong after the lines affected, error puts them before.  The alignment of the \fB\|`|'\|\fR marking the point of error is also disturbed by \fBerror.\fR
+.sp
+.LP
+\fBerror\fR was designed for work on \fBCRT 's\fR at reasonably high speed. It is less pleasant on slow speed terminals, and was not designed for use on hardcopy terminals.

@@ -1,0 +1,260 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH pkgmk 1 "2011 年 7 月 7 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+pkgmk \- インストール可能なパッケージの生成
+.SH 形式
+.LP
+.nf
+\fBpkgmk\fR [\fB-o\fR] [\fB-a\fR \fIarch\fR] [\fB-b\fR \fIbase_src_dir\fR] [\fB-d\fR \fIdevice\fR] 
+     [\fB-f\fR \fIprototype\fR] [\fB-l\fR \fIlimit\fR] [\fB-p\fR \fIpstamp\fR] [\fB-r\fR \fIroot_path\fR] 
+     [\fB-v\fR \fIversion\fR] [\fIvariable=value\fR]... [\fIpkginst\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpkgmk\fR ユーティリティーは、\fBpkgadd\fR(1M) コマンドへの入力として使用されるインストール可能なパッケージを生成します。パッケージの内容はディレクトリ構造形式です。
+.sp
+.LP
+このコマンドは、パッケージの \fBprototype\fR(4) ファイルを入力として使用し、\fBpkgmap\fR(4) ファイルを作成します。\fBprototype\fR ファイルの各エントリの内容は、適切な出力場所にコピーされます。内容に関する情報 (チェックサム、ファイルサイズ、変更日付) が算出され、\fBprototype\fR ファイルに指定された属性情報とともに \fBpkgmap\fR ファイルに格納されます。
+.sp
+.LP
+\fBpkgmk\fR は、次の条件に従って \fBprototype\fR(4) ファイルに一覧表示されているファイルを検索します。\fB注:\fR パッケージに含めるファイル場所が prototype ファイルで明示的に指定されている場合、検索に関する次の説明は適用されません。
+.RS +4
+.TP
+1.
+\fB-b\fR オプションも \fB-r\fR オプションも指定しなかった場合、\fBprototype\fR(4) ファイルに一覧表示されている各ファイルパスのファイル名部分は \fBprototype\fR(4) ファイルと同じディレクトリ内にあるとみなされます。
+.RE
+.RS +4
+.TP
+2.
+\fB-b\fR で (先頭に「\fB/\fR」が付かない) 相対パスを指定した場合、\fBprototype\fR(4) ファイルの相対ファイルパスの前に \fIbase_src_dir\fR が付加されます。この結果得られたパスが \fIroot_path\fR ディレクトリ内で検索されます。\fIroot_path\fR を指定しなかった場合、デフォルトの「\fB/\fR」が使用されます。
+.RE
+.RS +4
+.TP
+3.
+\fB-b\fR で (先頭に「\fB/\fR」を付けた) 絶対パスを指定した場合、\fBprototype\fR(4) ファイルの相対パスの前に \fIbase_src_dir\fR が付加され、その結果がファイルの場所になります。\fIroot_path\fR は検索\fBされません\fR。
+.RE
+.RS +4
+.TP
+4.
+\fB-r\fR を指定した場合、\fBprototype\fR(4) ファイルの完全なファイルパスが使用されます。相対パスの前には \fIbase_src_dir\fR が付加されます。\fIbase_src_dir\fR を指定しなかった場合は、デフォルトの \fB""\fR が使用されます。この結果得られたパスが \fIroot_path\fR の各ディレクトリ内で検索されます。
+.RE
+.sp
+.LP
+\fB"pkgproto a/relative/path"\fR または \fB"pkgproto a/relative/path=install/path"\fR を使用して prototype ファイルを作成した場合、\fBpkgmk\fR がソースファイルの場所を正しく特定できるように、\fB-r\fR \fIroot_path\fR オプションを使用して \fBa/relative/path\fR の場所を指定するようにしてください。
+.sp
+.LP
+\fBpkgmk\fR などのパッケージコマンドは \fBlargefile\fR(5) を認識します。これらのコマンドは、2G バイトより大きなファイルを、より小さなファイルと同様に処理します。現在の実装では、\fBpkgadd\fR(1M)、\fBpkgtrans\fR(1)、およびその他のパッケージコマンドは最大 4G バイトのデータストリームを処理できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarch\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBpkginfo\fR(4) ファイルに指定されたアーキテクチャー情報を \fIarch\fR で上書きします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIbase_src_dir\fR\fR
+.ad
+.RS 19n
+.rt  
+指定された \fIbase_src_dir\fR を先頭に付加して、ソースマシン上の再配置可能オブジェクトの場所を特定します。このオプションは、prototype ファイル内のすべてのオブジェクトを検索する場合に使用します。\fBpkgmk\fR は、/\fIbase_src_dir\fR でオブジェクトを検索したり、\fB-b\fR オプションと \fB-r\fR オプションを使用してオブジェクトの場所を特定したりします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdevice\fR\fR
+.ad
+.RS 19n
+.rt  
+\fIdevice\fR 上にパッケージを作成します。\fIdevice\fR はディレクトリの絶対パス名、または着脱式ディスクの識別子のどちらでもかまいません。デフォルトのデバイスはインストールスプールディレクトリ (\fB/var/spool/pkg\fR) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIprototype\fR\fR
+.ad
+.RS 19n
+.rt  
+コマンドへの入力として \fIprototype\fR ファイルを使用します。デフォルトの \fIprototype\fR ファイル名は [\fBPp\fR]\fBrototype\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlimit\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBlimit\fR に、出力デバイスの最大サイズを 512 バイトブロック単位で指定します。デフォルトでは、出力ファイルがディレクトリまたはマウント可能なデバイスである場合、\fBpkgmk\fR は \fBdf\fR(1M) コマンドを使用して出力デバイスの使用可能な容量を動的に計算します。このオプションを \fBpkgtrans\fR(1) と組み合わせて使用すると、パッケージをデータストリーム形式で作成できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 19n
+.rt  
+同じインスタンスを上書きします。パッケージインスタンスがすでに存在する場合は上書きされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpstamp\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBpkginfo\fR(4) ファイル内の製品スタンプ定義を \fIpstamp\fR で上書きします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIroot_path\fR\fR
+.ad
+.RS 19n
+.rt  
+指定された \fIroot_path\fR にソースパス名を付加したものを使用して、ソースマシン上のオブジェクトの場所を特定します。パス要素の区切り文字にはコンマ (\fB,\fR) を使用します。このオプションを指定した場合、指定したディレクトリごとに完全な宛先パスが検索されます。\fB-b\fR も \fB-r\fR も指定しなかった場合は、現在のディレクトリ内のリーフファイル名が検索されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIversion\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBpkginfo\fR(4) ファイルに指定されたバージョン情報を \fIversion\fR で上書きします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvariable=value\fR\fR
+.ad
+.RS 19n
+.rt  
+指定された変数をパッケージング環境に設定します。変数指定の定義については、\fBprototype\fR(4) を参照してください。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpkginst\fR\fR
+.ad
+.RS 11n
+.rt  
+インスタンスによるパッケージの指定。インスタンスはパッケージの省略形または特定のインスタンス (たとえば、\fBinst.1\fR や \fBinst.2\fR) のどちらでもかまいません。パッケージのすべてのインスタンスを要求するには、\fBinst.*\fR を使用します。シェルによっては、アスタリスク文字 (\fB*\fR) が特殊な意味を持つことがあり、* をエスケープしなければならない場合があります。C シェルでは、\fB*\fR は単一引用符 (\fB\&'\fR) で囲むか、またはバックスラッシュ (\e) を前に付ける必要があります。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpkgparam\fR(1), \fBpkgproto\fR(1), \fBpkgtrans\fR(1), \fBuname\fR(1), \fBdf\fR(1M), \fBpkgadd\fR(1M), \fBpkginfo\fR(4), \fBpkgmap\fR(4), \fBprototype\fR(4), \fBattributes\fR(5), \fBlargefile\fR(5)
+.sp
+.LP
+\fI『Application Packaging Developer\&'s Guide』\fR
+.SH 注意事項
+.sp
+.LP
+アーキテクチャー情報は、コマンド行で \fB-a\fR オプションを使用して指定するか、または \fBprototype\fR(4) ファイルに入力します。アーキテクチャー情報を指定しなかった場合は、\fBuname\fR \fB-m\fR の出力が使用されます (\fBuname\fR(1) を参照)。\fB\fR
+.sp
+.LP
+バージョン情報は、コマンド行で \fB-v\fR オプションを使用してを指定するか、または \fBpkginfo\fR(4) ファイルに入力します。バージョン情報を指定しなかった場合は、現在の日付に基づくデフォルトが指定されます。
+.sp
+.LP
+アーキテクチャーとバージョンのどちらについても、コマンド行の定義が \fBprototype\fR(4) の定義よりも優先されます。
+.sp
+.LP
+ゾーン関連パラメータを次のような無効な組み合わせで使用すると、\fBpkgmk\fR は失敗します。
+.RS +4
+.TP
+1.
+\fBSUNW_PKG_ALLZONES\fR と \fBSUNW_PKG_THISZONE\fR の両方を \fBTRUE\fR に設定します。
+.RE
+.RS +4
+.TP
+2.
+\fBSUNW_PKG_HOLLOW\fR を \fBTRUE\fR に設定し、\fBSUNW_PKG_ALLZONES\fR を \fBFALSE\fR に設定します。
+.RE
+.RS +4
+.TP
+3.
+パッケージに要求スクリプトを含め、\fBSUNW_PKG_THISZONE\fR を \fBTRUE\fR に設定します。
+.RE
+.sp
+.LP
+これらのパラメータの詳細については、\fBpkginfo\fR(4) を参照してください。

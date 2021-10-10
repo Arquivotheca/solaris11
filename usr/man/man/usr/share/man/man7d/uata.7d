@@ -1,0 +1,318 @@
+'\" te
+.\"  Copyright 2003 Sun Microsystems, Inc. All rights reserved.
+.TH uata 7D "20 April 2005" "SunOS 5.11" "Devices"
+.SH NAME
+uata \- IDE Host Bus Adapter Driver
+.SH SYNOPSIS
+.LP
+.nf
+\fBide@\fR\fIunit-address\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBuata\fR host bus adapter driver is a nexus driver that supports the \fBide\fR interface on SPARC platforms. The driver attempts to set the disk and ATAPI CD-ROM drive to maximum supported speed. The \fBuata\fR driver supports ultra DMA mode-4 (ATA66).
+.sp
+.LP
+Currently, the \fBuata\fR driver supports the CMD646U, Sil680a and Acer Southbridge M5229 IDE controllers. The \fBuata\fR driver supports two channels concurrently with two devices connected per channel.  The devices are logically numbered from 0 to 3:
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.RS 5n
+.rt  
+ Master disk on primary channel.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB1\fR
+.ad
+.RS 5n
+.rt  
+ Slave disk on primary channel.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB2\fR
+.ad
+.RS 5n
+.rt  
+ Master disk on secondary channel.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB3\fR
+.ad
+.RS 5n
+.rt  
+ Slave disk on secondary channel.
+.RE
+
+.sp
+.LP
+For ATAPI devices, an ATAPI DRIVE RESET command is issued to facilitate recovery from timeouts and errors. The BSY bit of the drive's status register is polled to check for the drive reset completion. If the drive reset fails, a warning message is displayed and the recovery process continues. This logic is subject to change.
+.sp
+.LP
+To control the maximum time spent waiting for the ATAPI drive reset to complete, the \fBatapi-device-reset-waittime\fR tunable property is available through the \fB/kernel/drv/uata.conf\fR file. The default and maximum/minimum values are shown below. Please see \fB/kernel/drv/uata.conf\fR for more info.
+.sp
+.in +2
+.nf
+Default value:    3000000
+Minimum value:    20
+Maximum value:    3000000
+.fi
+.in -2
+
+.sp
+.LP
+The \fBatapi-device-reset-waittime\fR property units are in microseconds.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB/kernel/drv/uata\fR
+.ad
+.RS 25n
+.rt  
+32-bit ELF kernel module.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB/kernel/drv/uata.conf\fR
+.ad
+.RS 25n
+.rt  
+Driver configuration file.
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBprtconf\fR(1M), \fBdriver.conf(4)\fR, attributes(5)
+.sp
+.LP
+\fIWriting Device Drivers\fR 
+.sp
+.LP
+\fIX3T10 ATA-4 specifications\fR
+.SH DIAGNOSTICS
+.sp
+.LP
+In addition to being logged, the following messages may appear on the system console:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBddi_get_iblock_cookie\fR \fBfailed.\fR \fR
+.ad
+.sp .6
+.RS 4n
+The driver could not obtain the interrupt cookie. The attach may fail.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDrive not ready before set_features.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Indicates a fatal problem. The drives are not ready to be programmed and features cannot be set. (During the driver initialization process, the driver must set the features for the drive, including \fBdma\fR and \fBpio\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBError set after issuing Set Feature command.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Indicates a fatal problem. The driver's error bit was set after the set feature command was issued. (During the driver initialization process, the driver must set the features for the drive, including dma and pio).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBInterrupt not seen after set_features.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Indicates a fatal problem with the drive. Features cannot be set. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBata_controller - set features failed.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Indicates a fatal problem with the drive. Features cannot be set. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR \fBtarget <\fInumber\fR> lun 0.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Displayed at boot up time to indicate that the target <\fInumber\fR> was identified, where <\fInumber\fR> is a decimal value.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBresid\fR\fR
+.ad
+.sp .6
+.RS 4n
+Residual number of bytes in data transfer and the I/O operation could not be finished completely.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBghd_timer_newstate: HBA reset failed.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Generally indicates a fatal condition. I/O operation cannot be  completed following reset of the channel.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout:\fR \fB<message>\fR \fBchno\fR \fB=\fR<\fInumber\fR> \fBtarget=<\fInumber\fR>.\fR\fR
+.ad
+.sp .6
+.RS 4n
+ A timeout occured because of  \fB<message>\fR on device (\fBtarget=<\fInumber\fR>\fR) on  channel (\fBchno\fR \fB=\fR<\fInumber\fR). Where  \fB<message>\fR could be either early  abort, early timeout, abort request, abort device, reset target or reset bus.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBata_controller - Drive not ready before command \fR\fB<\fInumber\fR>\fR\fB\&.\fR \fR
+.ad
+.sp .6
+.RS 4n
+The drive did not respond before issuing the command  \fB<\fInumber\fR>\fR to the controller; command \fB<\fInumber\fR>\fR will not be issued to the drive. (\fB<\fInumber\fR>\fR is the hexadecimal opcode for the sleep or standby commands, which are issued when the drive transitions between power management states).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBATAPI drive reset failed for target: <\fInumber\fR>;Continuing the recovery process.\fR\fR
+.ad
+.sp .6
+.RS 4n
+If this message is displayed after you modify \fB/kernel/drv/uata.conf\fR, try to increase the \fBatapi-device-reset-waittime\fR property value within the maximum value allowed, otherwise contact Sun support.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBata_controller - Command \fR\fB<\fInumber\fR>\fR\fB failed.\fR \fR
+.ad
+.sp .6
+.RS 4n
+Command \fB<\fInumber\fR>\fR failed on the drive. (\fB<\fInumber\fR>\fR is the hexadecimal opcode for the sleep or standby commands, which are issued when the drive transitions between power management states).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBata_controller - Command \fR\fB<\fInumber\fR>\fR\fB returned error.\fR \fR
+.ad
+.sp .6
+.RS 4n
+The command returned an error.  (\fB<\fInumber\fR>\fR is the hexadecimal opcode for the sleep or standby commands, which are issued when the drive transitions between power management states).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBata_controller - Cannot take drive <\fInumber\fR> to sleep.\fR \fR
+.ad
+.sp .6
+.RS 4n
+The disk will not transition to sleep state. (Indicates that the driver could not set the device to sleep mode while performing power management functions).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBata_controller - Cannot reset secondary/primary channel.\fR \fR
+.ad
+.sp .6
+.RS 4n
+The disk will not transition from sleep to active state. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBata_controller - Unsupported Controller Vendor 0x13d0, Device 0x43f1, Revision 0x034. \fR
+.ad
+.sp .6
+.RS 4n
+An unsupported \fBata\fR controller was found on the system and prints <\fIID\fR>, device id and revision of the controller, where <\fIID\fR> represents the hexidecimal vendor ID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBChanging the mode of targ: <\fInumber\fR> to Ultra DMA mode: <\fInumber\fR>.\fR \fR
+.ad
+.sp .6
+.RS 4n
+For the \fBtimedout\fR command, the driver attempts to recover by changing speed to lower values and retrying the command. This message indicates to which mode the driver is attempting to re-program the drive, where <\fInumber\fR> is a decimal value.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBChanging the mode of targ: <\fInumber\fR> to Multi DMA mode: <\fInumber\fR>.\fR \fR
+.ad
+.sp .6
+.RS 4n
+For the \fBtimedout\fR command, the driver attempts to recover by changing speed to lower values and retrying the command. This message indicates to which mode the driver is attempting to re-program the drive, where <\fInumber\fR> is a decimal value.
+.RE
+
+.sp
+.LP
+These messages are informational and indicate that a timeout occured for a I/O request. The  \fBuata\fR driver recovers from these states automatically unless there is a fatal error.

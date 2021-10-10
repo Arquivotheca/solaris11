@@ -1,0 +1,240 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmd 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fmd \- Fault Manager デーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/fm/fmd/fmd\fR [\fB-V\fR] [\fB-f\fR \fIfile\fR] [\fB-o\fR \fIopt\fR=\fIval\fR] [\fB-R\fR \fIdir\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfmd\fR は、各 Solaris システムのバックグラウンドで実行されるデーモンです。\fB fmd\fR は、システムソフトウェアが検出した問題に関する遠隔測定情報を受け取り、問題を診断し、障害のあるコンポーネントの無効化などの予測的自己修復操作を開始します。Fault Manager は必要に応じて、問題を検出したことを管理者に通知するために、\fBsyslogd\fR(1M) サービスへのメッセージ送信も行います。このメッセージは、Oracle の Web サイト (\fBhttps://support.oracle.com\fR) のナレッジ記事へのリンクを管理者に提供します。この記事は、問題の影響や適切な対処方法について詳しく説明しています。
+.sp
+.LP
+Fault Manager によって診断された各問題には、汎用一意識別子 (\fBUUID\fR) が割り当てられます。\fBUUID\fR は、任意の一連のシステムの中でこの特定の問題を一意に識別します。\fBfmdump\fR(1M) ユーティリティーを使用すると、Fault Manager によって診断された問題やその \fBUUID\fR、ナレッジ記事のメッセージ識別子を一覧表示できます。\fBfmadm\fR(1M) ユーティリティーを使用すると、システム上で障害があると見なされているリソースを表示できます。\fBfmstat\fR(1M) ユーティリティーを使用すると、Fault Manager にょって保持されている統計情報を報告できます。Fault Manager は Solaris の起動時に自動的に開始されるため、\fBfmd\fR コマンドを直接使用する必要はありません。Sun の Web サイトでは、Solaris の Fault Manager でどのような機能が現在使用可能になっているかについて、詳しく説明しています。
+.SS "通知サービス"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsyslog\fR (パッケージ \fBsystem/fault-management\fR)\fR
+.ad
+.sp .6
+.RS 4n
+新しい診断の標準の通知メカニズムは \fBsyslog\fR 経由での通知ですが、その際、\fBfmd\fR 自体と同じパッケージに同梱されている \fBsyslog-msgs\fR \fBfmd\fR モジュールが使用されます。
+.sp
+デフォルトでは、次の表に示すような \fBsyslog\fR の機能や重要度を使用したメッセージが \fBsyslog-msgs\fR 経由で送信されるのは、新しい問題診断に対してだけです。管理者は \fBsvccfg\fR(1M) を使用することで、問題解決のライフサイクルに含まれるその他のイベントについても \fBsyslog-msgs\fR 経由でメッセージが送信されるように要求できます。
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify \fIevent\fR syslog:{active|inactive}\fR
+.fi
+.in -2
+.sp
+
+詳細は、\fBsvccfg\fR(1M) を参照してください。
+.sp
+.in +2
+.nf
+Event                Disposition Facility        Severity
+--------------- ---------------- --------------- -------------
+problem-diagnosed       active   LOG_DAEMON      LOG_ERR
+problem-updated         inactive LOG_DAEMON      LOG_NOTICE
+problem-repaired        inactive LOG_DAEMON      LOG_NOTICE
+problem-resolved        inactive LOG_DAEMON      LOG_NOTICE
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB電子メール (パッケージ \fBsystem/fault-management/smtp-notify\fR)\fR
+.ad
+.sp .6
+.RS 4n
+電子メール経由での通知もオプションの 1 つですが、その場合は追加のパッケージをインストールする必要があります。SMF サービス \fBsvc:/system/fm/smtp-notify:default\fR はパッケージ \fBsystem/fault-management/smtp-notify\fR によって配布され、通知設定は \fBsvccfg\fR(1M) によって構成されます。詳細は、\fBsmtp-notify\fR(1M) を参照してください。\fBsvccfg\fR(1M) を使用すると、前述の問題ライフサイクルイベント (problem-diagnosed など) の通知設定を構成できるだけでなく、SMF インスタンスの状態遷移やその他のイベントを通知するようにこのメカニズムを構成することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSNMP (パッケージ \fBsystem/fault-management/snmp-notify\fR)\fR
+.ad
+.sp .6
+.RS 4n
+SNMP トラップを使用した新しいイベントの通知は、パッケージ \fBsystem/fault-management/snmp-notify\fR によって提供されるオプションです。サービス \fBsvc:/system/fm/snmp-notify:default\fR は、問題ライフサイクルの SNMP トラップや、その他の指定されたイベント (SMF インスタンス状態遷移イベントの通知が構成されている場合はそうしたイベントなど) を発行する役割を果たします。詳細は、\fBsnmp-notify\fR(1M) を参照してください。
+.RE
+
+.SS "Solaris の大域ゾーンと非大域ゾーン"
+.sp
+.LP
+Fault Manager サービス \fBsvc:/system/fmd:default\fR サービスは、Solaris の大域ゾーンと非大域ゾーンの両方で構成されます。非大域ゾーンではハードウェア指向のさまざまな Fault Manager モジュールは提供されないため、そこで実行されるのは、機能を縮小した Fault Manager です。非大域ゾーンでは、Fault Manager はソフトウェアイベントに焦点を絞ります。
+.SH オプション
+.sp
+.LP
+以下のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager の任意のデフォルト構成ファイルを検索する前に、指定された構成ファイル \fIfile\fR を読み取ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIopt\fR\fB=\fR\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された Fault Manager オプションを指定された値に設定します。Fault Manager オプションは現在「非公開」インタフェースになっています。「非公開」インタフェースについては、\fBattributes\fR(5) を参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager によって評価されるすべてのパス名で、デフォルトのルート (\fB/\fR) の代わりに指定されたルートディレクトリを使用します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+Fault Manager のバージョンを標準出力に出力して終了します。 
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+遠隔測定用トランスポートのオープン失敗など、何らかのエラーが発生したために、Fault Manager の初期化が失敗しました。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。 
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault Manager の構成ディレクトリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault Manager のライブラリディレクトリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault Manager のログディレクトリ
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/fault-management
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBfmadm\fR(1M), \fBfmdump\fR(1M), \fBfmstat\fR(1M), \fBsmtp-notify\fR(1M), \fBsnmp-notify\fR(1M), \fBsvccfg\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+http://www.sun.com/msg/
+.SH 注意事項
+.sp
+.LP
+Fault Manager はサービス管理機能 \fBsmf\fR(5) により、次のサービス識別子の下で管理されます。
+.sp
+.in +2
+.nf
+ svc:/system/fmd:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。管理者は、Fault Manager サービスを無効にするべきではありません。

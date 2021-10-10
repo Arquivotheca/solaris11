@@ -1,0 +1,169 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nwam 5 "30 Jun 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+nwam \- network auto-magic configuration management
+.SH DESCRIPTION
+.sp
+.LP
+Network configuration can be managed automatically, according to default policy rules defined by the system, or to user-defined policy rules. This management is performed by the \fBnwamd\fR daemon.
+.sp
+.LP
+The NWAM facility is provided by the \fBnetwork/physical:default\fR SMF service. NWAM configuration management is enabled if the \fBnetcfg/active_ncp\fR property is set to the name of an NWAM NCP. Alternatively, traditional network configuration is performed if the \fBnetcfg/active_ncp\fR property is set to \fBDefaultFixed\fR.
+.SS "Operation"
+.sp
+.LP
+The default configuration policy, implemented in the Automatic NCP, is to have all physically connected Ethernet links active; if no Ethernet links are available, a single wireless link is made active. DHCP is used to obtain IP addresses for all active links. This default policy can be changed by creating alternate Network Configuration Profiles (NCPs). The nwam-manager GUI tool or the \fBnwamd\fR(1M) command can be used to create and modify NCPs.
+.sp
+.LP
+If you used an earlier version of the NWAM service, which created an \fB/etc/nwam/llp\fR configuration file, configuration present in that file is automatically incorporated into the User NCP upon upgrade to the current version of the NWAM service.
+.sp
+.LP
+The automatic behavior provided by the NWAM facility requires that management of the network configuration be handed over to the NWAM service. Any manual changes to the network configuration might be lost if conditions change such that a new profile is activated, or if the NWAM service is restarted. If persistent changes are desired, the recommended approach is to create an External Network Modifier (ENM), which can be activated and deactivated as needed by the NWAM service.
+.SS "Service Properties"
+.sp
+.LP
+The following list takes the form:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIproperty_group/property_name\fR \fIproperty_type\fR \fIdefault_value\fR\fR
+.ad
+.sp .6
+.RS 4n
+Description
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/debug\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enables debug logging using \fBdaemon.debug\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/autoconf\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates whether open WLANs should be connected automatically, in the absence of a better (more preferred) choice.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/ncu_wait_time\fR count \fB60\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of seconds to wait for an NCU (or link/interface NCU pair, as appropriate) to come up before trying the next available NCU. The bringup activity is not cancelled, and might eventually succeed, at which time the more preferred NCU is activated and the alternate might be disabled, depending on the specified configuration conditions.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/condition_check_interval\fR count \fB120\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of seconds between periodic condition checks for conditionally activated objects. Minimum value is 30 seconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/scan_interval\fR count \fB120\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of seconds between periodic wireless scans.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/scan_level\fR astring \fBweak\fR\fR
+.ad
+.sp .6
+.RS 4n
+A signal strength threshold; if the currently connected AP drops below this signal level, and equivalent APs (of the same ESSID) are available at higher signal strength, the existing connection is dropped in favor of a connection to an AP with stronger signal.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwamd/strict_bssid\fR boolean \fBfalse\fR\fR
+.ad
+.sp .6
+.RS 4n
+If true, both ESSID and BSSID must be matched in order to connect to a previously connected WLAN. If false, only an ESSID match is required.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetcfg/active_ncp\fR astring \fBAutomatic\fR\fR
+.ad
+.sp .6
+.RS 4n
+The currently active NCP. This property should not be set by the user; it is used internally by the NWAM service for persistence across restarts. The appropriate user interface to change the currently active NCP is by means of the \fBnwam-manager\fR GUI or the \fBnetadm\fR command's \fBenable\fR subcommand.
+.RE
+
+.sp
+.LP
+Enabling the reserved NCP name \fBDefaultFixed\fR disables the NWAM automatic configuration management and enables traditional, fixed network configuration.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityVolatile
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBnetcfgd\fR(1M), \fBnwamd\fR(1M), \fBsvadm\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+See also \fBnwam-manager(1M)\fR, available in the JDS/GNOME man page collection.
+.SH NOTES
+.sp
+.LP
+The networking service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/network/physical:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.

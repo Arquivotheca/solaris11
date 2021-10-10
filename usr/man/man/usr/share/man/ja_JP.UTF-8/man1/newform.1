@@ -1,0 +1,284 @@
+'\" te
+.\"  Copyright 1989 AT&T Copyright (c) 1997, Sun Microsystems, Inc. All Rights Reserved
+.TH newform 1 "1997 年 7 月 21 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+newform \- テキストファイル形式の変更
+.SH 形式
+.LP
+.nf
+\fBnewform\fR [\fB-s\fR] [\fB-i\fR\fItabspec\fR] [\fB-o\fR\fItabspec\fR] [\fB-b\fR\fIn\fR] [\fB-e\fR\fIn\fR] [\fB-p\fR\fIn\fR] 
+     [\fB-a\fR\fIn\fR] [\fB-f\fR] [\fB-c\fR\fIchar\fR] [\fB-l\fR\fIn\fR] [\fIfilename\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnewform\fR は \fIfilename\fR 引数で指定されたファイルから行を読み取り、形式を変更して標準出力に書き込みます。ファイル名の指定が省略された場合には、標準入力から読み取ります。形式の変更は、コマンド行オプションの指定に従って行います。
+.sp
+.LP
+\fB-s\fR オプションを除き、コマンド行オプションは任意の順序で指定でき、また繰り返して指定することもできます。オプションとオプションの間の任意の位置にファイル名を記述することも可能です。コマンド行オプションは、指定された順序で処理されます。\fI\fRつまり、``\fB-e\fR15 \fB-l\fR60'' という指定と ``\fB-l\fR60 \fB-e\fR15'' という指定とでは、得られる結果は異なります。複数のファイル名が指定された場合、オプションはそのすべてに適用されます。\fI\fR
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fR
+.ad
+.RS 14n
+.rt  
+各行において、先頭から最初のタブまでの文字を切り捨て、切り捨てた部分の先頭から最大 8 文字を各行の終わりに付加します。この切り捨てた部分 (最初のタブ文字は含まない) の長さが 8 文字を超える場合には、 8 文字目は \fB*\fR で表され、以降の文字はすべて捨てられます。最初のタブは常に捨てられます。
+.sp
+タブを含んでいない行を持つファイルに対して このオプションを指定すると、 エラーメッセージが出力されプログラムは終了します。切り捨てられた部分の文字は、 その行に対して有効なほかのオプションがすべて処理されるまで 内部的に保持されます。その後、行の最後尾にその部分が付加されます。
+.sp
+例として、先頭に数値、次に複数のタブ、さらにその後にテキストが書かれている行からなるファイルが存在していると仮定します。このファイルを変換して、2 番目以降のタブをスペースに置き換えたものから始まり、その後にテキスト部分を置き、短ければ 72 カラムまでスペースを詰め (または長い場合には 72 カラムまでで切り捨て)、先頭にあった数値を 73 カラムから置く、という形式にする場合には、次のように指定します。
+.sp
+\fBnewform \|\fR\fB-s\fR\fB \|\fR\fB-i\fR\fB \|\fR\fB-l\fR\fB \|\fR\fB-a\fR\fB \|\fR\fB-e\fR\fB \|\fI filename\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fItabspec\fR \fR
+.ad
+.RS 14n
+.rt  
+入力タブ指定。入力行に含まれるタブのそれぞれを、tabspec 引数の指定に従って展開します。\fItabspec\fR の値としては、\fBtabs\fR(1) で説明されているすべての形式が指定できます。\fI\fRまた \fB-\fR という値も指定可能で、この場合 \fBnewform\fR は、標準入力から読み取るデータの先頭行にタブの処理方法が記述されていると見なします (\fBfspec\fR(4) を参照)。\fItabspec\fR 引数を省略すると、\fI\fRデフォルト値の \fB-8\fR が用いられます。\fItabspec\fR の値が \fB-0\fR のとき、タブは存在しないことを意味します。このときタブが検出されると、\fB-1\fR が指定されていたものとして処理されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fItabspec\fR \fR
+.ad
+.RS 14n
+.rt  
+出力タブ指定。tabspec 引数の指定に従って、スペースをタブに置き換えます。tabspec に指定できる値は、前述の \fB-i\fR\fItabspec\fR オプションと同じです。\fItabspec\fR 引数を省略すると、\fI\fRデフォルト値の \fB-8\fR が用いられます。\fItabspec\fR の値が \fB-0\fR のとき、スペースはタブに変換されずにそのまま出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fIn\fR \fR
+.ad
+.RS 14n
+.rt  
+行の長さが有効な長さ (\fB-l\fIn\fR\fR オプションの説明を参照) を超えている場合、先頭から \fIn\fR 文字分を破棄します。デフォルトとして行の長さが有効な長さと等しくなるように、必要な数の文字を切り捨てます (デフォルト値は、\fIn\fR なしで \fB-b\fR オプションを指定した場合に使用される)。このオプションの便利な使い方として、\fBCOBOL\fR プログラムの各行の行番号を削除する例を次に示します。
+.sp
+\fBnewform \|\fR\fB-l\fR\fB1 \|\fR\fB-b\fR\fB7 \|\fIfilename\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fIn\fR\fR
+.ad
+.RS 14n
+.rt  
+\fB-b\fR\fIn\fR が先頭部分を破棄するのに対し、この en は終端部分を破棄します。それ以外は bn と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fIn\fR\fR
+.ad
+.RS 14n
+.rt  
+\fI\fR行の長さが有効な長さに満たないとき、行の先頭に付加する文字の数を指定します (文字の種類は \fB-c\fR\fIchar\fR オプションの説明を参照)。n なしで p オプションを指定すると、デフォルトとして行の長さが有効な長さと等しくなるように必要な数の文字を付加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fIn\fR\fR
+.ad
+.RS 14n
+.rt  
+\fB-p\fR\fIn\fR が先頭部分に文字を付加するのに対し、この an は終端部分に文字を付加します。それ以外は pn と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 14n
+.rt  
+最初の出力行として、タブ指定形式を表す行を出力します。\fB\fRその内容は \fB-o\fR オプションの指定に対応しており、o が複数個指定されていれば最後のものに対応しています。\fB-o\fR が 1 つも指定されていなければ、デフォルトのタブ形式の \fB-8\fR が出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fIchar\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIp\fRn や an オプションで付加する文字として、char が示す文字を使用します。\fIchar\fR のデフォルト値はスペースです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fIn\fR\fR
+.ad
+.RS 14n
+.rt  
+行の有効な長さを \fIn\fR 文字とします。\fIn\fR なしで \fB-l\fR オプションを指定すると、デフォルトとして 72 が用いられます。\fB-l\fR そのものを省略すると、デフォルトとして 80 文字が有効な長さとなります。なお、個々の タブ文字およびバックスペース文字は、それぞれ 1 文字と数えられます。ただし \fB-i\fR オプションを使って、タブをいくつかのスペース文字に展開することも可能です。
+.sp
+\fB-b\fR オプションを有効に使用するために、行の有効な長さをファイル中のどの行の長さよりも短い値に設定する場合、\fB-l1\fR と指定してください。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR \fR
+.ad
+.RS 13n
+.rt  
+入力ファイル名
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR \fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) lw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+\fB属性タイプ\fR\fB属性値\fR
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsplit\fR(1), \fBtabs\fR(1), \fBfspec\fR(4), \fBattributes\fR(5)
+.SH 診断
+.sp
+.LP
+いずれの診断メッセージも致命的なエラーを表します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusage:\fR \fB \|.\|.\|.\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBnewform\fR コマンド行に不正なオプションが指定されている
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB"not \fR\fB-s\fR\fB format"\fR\fR
+.ad
+.sp .6
+.RS 4n
+タブが含まれていない行を検出した
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB"can't open file"\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルがオープンできない
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB"internal line too long"\fR\fR
+.ad
+.sp .6
+.RS 4n
+内部作業バッファー中で行を展開したら、長さが 512 文字を超えた
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB"tabspec in error" \fR\fR
+.ad
+.sp .6
+.RS 4n
+タブ指定の形式が誤り。またはタブ位置の記述が昇順になっていない
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB"tabspec indirection illegal" \fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイル (または標準入力) から読み取られた \fItabspec\fR に、ほかのファイル (または標準入力) を参照する \fItabspec\fR が含まれていた
+.RE
+
+.SH 注意事項
+.sp
+.LP
+通常 \fBnewform\fR は、物理的な文字だけを認識します。ただし \fB-i\fR および \fB-o\fR に関しては、各行を適切な論理カラム位置に合わせて出力するために、バックスペース文字も認識します。\fB\fR
+.sp
+.LP
+\fB\fR\fB-i\fR\fB-\fR または \fB\fR\fB-o\fR\fB-\fR により \fItabspec\fR を標準入力から読み取るように指定した場合でも、\fBnewform\fR はユーザーに対してプロンプトを表示しません。
+.sp
+.LP
+\fB-f\fR オプションが指定され、最後の \fB-o\fR オプションが \fB\fR\fB-o\fR\fB-\fR と記述されていて、その前に \fB\fR\fB-o\fR\fB-\fR または \fB\fR\fB-i\fR\fB-\fR という指定が記述されている場合、タブ指定形式を示す出力行の内容は不正確になります。

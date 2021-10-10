@@ -1,0 +1,262 @@
+'\" te
+.\" 版权所有 (c) 1999，Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_ac 1M "1999 年 9 月 29 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_ac \- EXX00 内存系统管理
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-c\fR configure] [\fB-f\fR] 
+     [\fB-o\fR disable-at-boot | enable-at-boot ] ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-c\fR unconfigure] 
+     [\fB-o\fR disable-at-bootp | enable-at-boot ] ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] 
+     [\fB-o\fR quick | normal | extended, [max_errors=\fI#\fR] ] \fB-t\fR ac\fI#\fR:bank\fI#\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR relocate-test ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-l\fR] \fB-o\fR disable-at-boot | enable-at-boot ac\fI#\fR:bank\fI#\fR ...
+.fi
+
+.SH 描述
+.sp
+.LP
+特定于 \fBac\fR 硬件的库 \fB/usr/platform/sun4u/lib/cfgadm/cfgadm_ac.so.1\fR 通过 \fBcfgadm_sysctrl\fR(1M) 提供在 \fBE6X00\fR、\fBE5X00\fR、\fBE4X00\fR 以及 \fBE3X00\fR 系统中配置和取消配置内存区的功能。该功能是 \fBCPU\fR/内存板动态重新配置的一部分。  
+.sp
+.LP
+内存区显示为设备树的挂接点。对于每个 \fBCPU\fR/内存板，发布两个挂接点（为板上的每个内存区提供一个）：\fBbank0\fR 和 \fBbank1\fR。如果内存区未存储任何内容，则插口状态为 empty（空）。如果内存区存储了内容，则插口状态为 connected（已连接）。内存区的插口状态永远不会为 disconnected（断开）。已连接的内存区的插卡状态可以为 configured（已配置）或 unconfigured（未配置）。如果插卡状态为 configured（已配置），表明 Solaris 正在使用内存；如果插卡状态为 unconfigured（未配置），表明 Solaris 没有使用内存。 
+.SH 选项
+.sp
+.LP
+有关命令选项的完整说明，请参见 \fBcfgadm\fR(1M)。 
+.sp
+.LP
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR configure | unconfigure\fR
+.ad
+.sp .6
+.RS 4n
+更改插卡状态。\fBconfigure\fR 参数确保内存已经初始化并将内存添加到 Solaris 内存池中。\fBunconfigure\fR 参数取消 Solaris 对内存的使用。如果 \fBCPU\fR/内存板从系统中移除，内存的两个区必须为未配置状态。  
+.sp
+如果板上的内存标记为 \fBdisabled-at-boot\fR（请参见 \fBinfo\fR 字段），\fBcfgadm\fR 将拒绝 \fBconfigure\fR 操作，除非指定 \fB-f\fR（强制）选项或"引导时启用"标志 (\fB-o\fR \fBenable-at-boot\fR)。配置操作在很短的时间内完成并且执行时间与需初始化的内存大小成正比。  
+.sp
+如果系统中没有足够的未确定内存（\fBVM viability\fR（VM 可行性）错误）或未配置的内存区中仍存在不能删除的内存（\fBnon-relocatable pages\fR 错误），\fBcfgadm\fR 将拒绝 \fBunconfigure\fR 操作。不可重定位的页面存在与否由 \fBinfo\fR 列表字段中的词 \fBpermanent\fR 指示。由于各种因素（如系统负荷以及辅助存储器所需分页的数量），取消 Solaris 对内存的使用可能需要大量时间。\fBunconfigure\fR 操作可随时取消并且可通过发出信号中断该命令的调用使内存恢复满配置状态。如果在超时期限内未能删除内存，\fBunconfigure\fR 操作会自行取消。缺省的超时期限为 \fB60\fR 秒，可通过 \fB-o\fR \fBtimeout=\fR\fI#\fR 选项更改。如果值设置为 \fB0\fR，将禁止超时。  
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制选项。在非易失的 \fBdisabled-memory-list\fR 变量中配置标记为"引导时禁用"的内存区时，使用该选项覆盖数据块。请参见\fB《Platform Notes: Sun Enterprise 6x00/5x00/4x00/3x00 Systems》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列表选项。支持此选项，如 \fBcfgadm\fR(1M) 中所述。
+.sp
+type（类型）字段始终为 \fImemory\fR（内存）。 
+.sp
+对于空的内存区，\fIinfo\fR（信息）字段包含以下信息： 
+.sp
+.in +2
+.nf
+slot# empty
+.fi
+.in -2
+.sp
+
+slot# 表示 CPU/内存板所插入的系统插槽。例如，如果为 slot11，则与 cfgadm 一起用于处理相关板的挂接点为 sysctrl0:slot11。对于连接的内存区，info（信息）字段包含以下信息：
+.sp
+.in +2
+.nf
+slot# sizeMb|sizeGb [(sizeMb|sizeGb used)] base 0x### 
+      [interleaved #-way] [disabled at boot] [permanent]
+.fi
+.in -2
+.sp
+
+根据实际需要，内存区大小可以 Mb 或 Gb 为单位表示。如果内存没有完全使用，将报告所使用的内存大小。物理基址可用十六进制表示。如果该内存区与其他某个内存区相互交错，将报告交错因子。如果板上的内存通过非易失 \fBdisabled-memory-list\fR 变量在引导时禁用，将报告这种情况。如果内存区中存在无法删除的内存，将报告该内存为永驻内存。  
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR disable-at-boot | enable-at-boot\fR
+.ad
+.sp .6
+.RS 4n
+这些选项用于修改非易失的 disabled-memory-list 变量的状态。如果不需要执行命令，这些选项可以与 \fB-c\fR 选项或显式或隐式列表命令 -l 一起使用。使用 \fB-o\fR \fBenable-at-boot\fR 与 \fBconfigure\fR 命令通过在禁用内存列表中配置板上的内存来覆盖数据块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR extended | normal | quick\fR
+.ad
+.sp .6
+.RS 4n
+该选项与 \fB-t\fR 选项一起指定测试级别。
+.sp
+\fBnormal\fR 测试级别确保每个内存单元存储 \fB0\fR 和 \fB1\fR 并且检查所有单元是否可单独寻址。\fBquick\fR 测试级别只进行 \fB0\fR 与 \fB1\fR 的测试，通常会跳过地址线问题。\fBextended\fR 测试使用模式来检测相邻单元干扰问题。缺省的测试级别为 \fBnormal\fR。请参见 \fB-t\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR max_errors=\fI#\fR\fR
+.ad
+.sp .6
+.RS 4n
+该选项与 \fB-t\fR 选项一起使用指定所允许的错误的最大数量。如果不指定该选项，则采用缺省值 \fB32\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR timeout=\fI#\fR\fR
+.ad
+.sp .6
+.RS 4n
+该选项与 \fBunconfigure\fR 命令一起使用来设置自取消超时。缺省值为 \fB60\fR，并且单位为秒。如果该选项的值为 \fB0\fR，表明无超时。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试未配置的内存区。使用 \fB-o\fR \fBquick\fR | \fBnormal\fR | \fBextended\fR 选项指定测试级别。
+.sp
+如果该\fB测试\fR能够在内存区上运行，\fBcfgadm\fR 命令返回 \fB0\fR（表明运行成功）并退出。如果存在挂接点，可获取测试结果。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细选项。将该选项与 \fB-t\fR 选项一起使用来显示详细的测试进度和结果。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR relocate-test\fR
+.ad
+.sp .6
+.RS 4n
+对于指定的内存区中使用的所有内存页，尝试执行 unconfigure 命令中所使用的重定位操作。该操作的成功并不能保证内存区为未配置的。如果该操作失败，表明内存区可能不是未配置的。该选项只用于测试目的。 
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIac#\fR:\fIbank#\fR\fR
+.ad
+.RS 13n
+.rt  
+内存区的挂接点由地址控制器 (\fBac\fR) 驱动程序 (\fIac#\fR) 的实例发布。将会为每个系统板创建一个 \fBac\fR 驱动程序实例，但只有与 \fBCPU\fR/内存板关联的实例会发布两个内存区挂接点：bank0 和 bank1。  	
+.sp
+ 这种形式符合 \fBcfgadm\fR(1M) 中给出的逻辑 \fBap_id\fR 规范。对应的物理 \fBap_id\fR 已在"文件"\fB\fR部分中列出。 
+.sp
+\fBac\fR 驱动程序实例编号与对应的板的槽号无关。完整的物理挂接点标识符中所包含的槽号是紧跟在 \fBfhc@\fR 部分后面的十六进制槽号的两倍。 
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB/devices/fhc@*,f8800000/ac@0,1000000:bank?\fR
+.ad
+.sp .6
+.RS 4n
+挂接点 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/platform/sun4u/lib/cfgadm/cfgadm_ac.so.1\fR
+.ad
+.sp .6
+.RS 4n
+特定于硬件的库文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library/platform
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBcfgadm_sysctrl\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBattributes\fR(5)
+.sp
+.LP
+\fB《Sun Enterprise 6x00, 5x00, 4x00 and 3x00 Systems Dynamic Reconfiguration User's Guide》\fR
+.sp
+.LP
+\fB《Platform Notes: Sun Enterprise 6x00/5x00/4x00/3x00 Systems》\fR
+.SH 附注
+.sp
+.LP
+有关 EXX00 系统 CPU/内存板动态重新配置的更多详细信息，请参见\fB《Sun Enterprise 6x00, 5x00, 4x00 and 3x00 Systems Dynamic Reconfiguration User's Guide》\fR。 

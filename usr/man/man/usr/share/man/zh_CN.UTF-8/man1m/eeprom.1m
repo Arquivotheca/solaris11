@@ -1,0 +1,1294 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH eeprom 1M "2011 年 6 月 28 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+eeprom \- EEPROM 显示和装载实用程序
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/eeprom\fR [\fB-\fR] [\fB-f\fR \fIdevice\fR] [\fIparameter\fR[=\fIvalue\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBeeprom\fR 显示或更改 \fBEEPROM 中的参数值。\fR它按照给定的顺序处理参数。处理带有 \fIvalue\fR 的 \fIparameter\fR 时，\fBeeprom\fR 对 \fBEEPROM 进行指定的更改；\fR否则，显示 \fIparameter\fR 的值。如果未给定任何参数说明符，\fBeeprom\fR 会显示所有 \fBEEPROM\fR 参数的值。`\|\(mi\fB\&'\fR（连字符）标志指定将从标准输入（每行一个 \fIparameter\fR 或 \fIparameter\fR\fB=\fR\fIvalue\fR）读取参数和值。
+.sp
+.LP
+仅超级用户可以更改 \fBEEPROM\fR 内容。
+.sp
+.LP
+\fBeeprom\fR 验证 \fBEEPROM\fR 校验和，如果校验和不正确，则进行报警。
+.sp
+.LP
+\fIplatform-name\fR 是平台实现的名称，可使用 \fBuname\fR(1) 的 \fB-i\fR 选项找到。
+.SS "SPARC"
+.sp
+.LP
+基于 \fBSPARC\fR 的系统通过 \fBsecurity-mode\fR、\fBsecurity-password\fR 和 \fBsecurity-#badlogins\fR 属性，来使用 \fBeeprom\fR 实现固件口令保护。
+.SS "x86"
+.sp
+.LP
+使用驻留在特定平台的引导区域中的文件模拟 \fBEEPROM\fR 存储。\fB/boot/solaris/bootenv.rc\fR 文件模拟 \fBEEPROM\fR 存储。
+.sp
+.LP
+由于基于 x86 的系统通常在系统 \fBBIOS\fR 中实现口令保护，因此 \fBeeprom\fR 程序中不提供口令保护支持。虽然可以在基于 x86 的系统上设置 \fBsecurity-mode\fR、\fBsecurity-password\fR 和 \fBsecurity-#badlogins\fR 属性，但是这些属性在基于 x86 的系统上没有任何特殊含义或行为。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fIdevice\fR 作为 \fBEEPROM\fR 设备。
+.RE
+
+.SH 操作数
+.SS "仅限于 x86"
+.sp
+.ne 2
+.mk
+.na
+\fB\fIacpi-user-options\fR\fR
+.ad
+.sp .6
+.RS 4n
+一种配置变量，用于控制电源管理规范"高级配置和电源接口 (Advanced Configuration and Power Interface, ACPI)"的使用。此变量可接受的值取决于您所使用的 Solaris 操作系统的发行版。
+.sp
+对于所有发行版的 Solaris 10 和 Solaris 11，值 \fB0x0\fR 表示如果 ACPI 在系统上可用，将尝试使用它。值 \fB0x2\fR 表示禁用 ACPI。
+.sp
+对于 Solaris 10 1/06 发行版，值 \fB0x8\fR 表示如果 ACPI 在系统中可用，将以与之前发行版的 Solaris 10 兼容的模式尝试使用它。Solaris 10 1/06 的缺省值为 \fB0x8\fR。
+.sp
+对于 1/06 发行版之后的 Solaris 10 以及 Solaris 11，缺省值为 \fB0x0\fR。
+.sp
+大多数用户可以放心接受缺省值（在可用时启用 ACPI）。如果怀疑在 Solaris 1/06 之后的 Solaris 发行版中存在与使用 ACPI 有关的问题，建议首先尝试使用值 \fB0x8\fR；如果未获得满意的结果，再使用值\fB 0x02\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIconsole\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定控制台设备。可能的值包括 \fBttya\fR、\fBttyb\fR、\fBtext\fR、\fBgraphics\fR 和 \fBforce-text\fR。在 \fBtext\fR 模式下，控制台输出进入帧缓冲区，而输入来自键盘。text 模式的变体 \fBgraphics\fR 会显示具有动画效果的图像，直到按下某个键或控制台登录（\fBsulogin\fR 或 \fBkmdb\fR）需要进行控制台交互。\fBtext\fR 的另外一个变体 \fBforce-text \fR 将通过将 VGA 适配器设置为 VGA 文本模式来避免将其用作位映射设备。如果此属性不存在，控制台设备回退到 \fBinput-device\fR 和 \fBoutput-device\fR 指定的设备。如果 \fBconsole\fR 属性以及 \fBinput-device\fR 和\fBoutput-device\fR 属性对都不存在，控制台缺省为帧缓冲区和键盘。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscreen-\fR\fI#columns\fR \fBscreen-\fR\fI#rows\fR\fR
+.ad
+.sp .6
+.RS 4n
+当 \fBscreen\fR 在位映射设备上设置为 \fBgraphics\fR 或 \fBtext\fR 时，\fBscreen-\fR\fI#columns\fR 和 \fBscreen-\fR\fI#rows\fR 允许指定所需数量的文本列和行。它们分别缺省为 \fB80\fR 和 \fB24\fR。
+.RE
+
+.SH NVRAM 配置参数
+.sp
+.LP
+并非所有 OpenBoot 系统均支持所有参数。缺省值取决于系统以及 \fBPROM\fR 修订。请参见在 \fBok\fR (OpenBoot) 提示符下输入 \fBprintenv\fR 命令时，该命令的 "Default Value"（缺省值）列中的输出，以确定系统的缺省值。
+.sp
+.ne 2
+.mk
+.na
+\fBauto-boot?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，在打开电源或重置后自动引导。缺省值为 \fBtrue\fR。在 x86 上，此参数由 grub 菜单文件控制。请参见 \fBinstallgrub\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBansi-terminal?\fR
+.ad
+.sp .6
+.RS 4n
+用于控制终端仿真程序行为的配置变量。值 \fBfalse\fR 使终端仿真程序停止解释 \fBANSI\fR 转义序列，而是将其回显至输出设备。缺省值为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-args\fR
+.ad
+.sp .6
+.RS 4n
+保存传递至引导子系统的参数字符串。例如，可以使用 \fBboot-args=' - install dhcp'\fR 请求自定义 jumpstart 安装。请参见 \fBboot\fR(1M)、\fBkmdb\fR(1) 和 \fBkernel\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-command\fR
+.ad
+.sp .6
+.RS 4n
+\fBauto-boot?\fR 为 \fBtrue\fR 时执行的命令。缺省值为 \fBboot\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-device\fR
+.ad
+.sp .6
+.RS 4n
+从其进行引导的设备。\fIboot-device\fR 可能包含 0 个或多个以空格分隔的设备说明符。每个设备说明符可以是 prom 设备别名或 prom 设备路径。从第一个设备说明符开始，引导 prom 将尝试打开列表中随后的每一个设备说明符。成功打开的第一个设备说明符将用作从中进行引导的设备。缺省值为 \fBdisk net\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-file\fR
+.ad
+.sp .6
+.RS 4n
+要进行引导的文件（空字符串会使辅助引导程序选择缺省值）。缺省值为空字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-from\fR
+.ad
+.sp .6
+.RS 4n
+引导设备和文件（仅限 OpenBoot PROM 版本 1.\fIx\fR）。缺省值为 \fBvmunix\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-from-diag\fR
+.ad
+.sp .6
+.RS 4n
+诊断引导设备和文件（仅限 OpenBoot PROM 版本 1.\fIx\fR）。缺省值为 \fBle(\|)unix\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot-ncpus\fR
+.ad
+.sp .6
+.RS 4n
+用于控制系统引导应使用的处理器数的配置变量。缺省情况下，系统引导时使用所支持的最大处理器数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcom\fIX\fR-noprobe\fR
+.ad
+.sp .6
+.RS 4n
+其中，\fIX\fR 是串行端口号，用于阻止串行端口 \fIX\fR 上的设备探测器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdiag-device\fR
+.ad
+.sp .6
+.RS 4n
+诊断引导源设备。缺省值为 \fBnet\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdiag-file\fR
+.ad
+.sp .6
+.RS 4n
+在诊断模式下从其进行引导的文件。缺省值为空字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdiag-level\fR
+.ad
+.sp .6
+.RS 4n
+诊断级别。值包括 \fBoff\fR、\fBmin\fR、\fBmax\fR 和 \fBmenus\fR。可能还具有特定平台的值。如果设置为 \fBoff\fR，则不调用 \fBPOST\fR。如果调用 \fBPOST\fR，该值可用作 \fBPOST\fR 的参数并由其进行解释。缺省值为 \fBplatform-dependent\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdiag-switch?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则在诊断模式下运行。在大多数桌面系统上，缺省值为 \fBfalse\fR；在大多数服务器上，缺省值为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBerror-reset-recovery\fR
+.ad
+.sp .6
+.RS 4n
+在错误重置陷阱后恢复。缺省值为特定平台的设置。
+.sp
+在支持此变量的平台上，它会代替 \fBwatchdog-reboot?\fR、\fBwatchdog-sync?\fR、\fBredmode-reboot?\fR、\fBredmode-sync?\fR、\fBsir-sync?\fR 和 \fBxir-sync?\fR 参数。 
+.sp
+选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fBnone\fR
+.ad
+.sp .6
+.RS 4n
+列出说明重置陷阱的消息，并转到 OpenBoot PROM 用户界面中的 \fBaka\fR \fBOK\fR 提示符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsync\fR
+.ad
+.sp .6
+.RS 4n
+在重置陷阱后，调用 OpenBoot PROM 的 \fBsync\fR 一词。在外部启动重置 (externally initiated reset, \fBXIR\fR) 陷阱后，一些平台可能会将其视为 \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBboot （引导归档文件）\fR
+.ad
+.sp .6
+.RS 4n
+在重置陷阱后重新引导。在 \fBXIR\fR 陷阱后，一些平台可能会将其视为 \fBnone\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfcode-debug?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则包含插件设备 FCode 的名称参数。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBhardware-revision\fR
+.ad
+.sp .6
+.RS 4n
+系统版本信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinput-device\fR
+.ad
+.sp .6
+.RS 4n
+打开电源时所用的输入设备（通常为 \fBkeyboard\fR、\fBttya\fR 或 \fBttyb\fR）。缺省值为 \fBkeyboard\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkeyboard-click?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则启用键盘单击。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkeyboard-layout\fR
+.ad
+.sp .6
+.RS 4n
+为非自识别键盘（7c 类型）指定布局名称的字符串。调用 \fBkbd\fR \fB-s\fR，以获取可接受的布局名称列表。请参见 \fBkbd\fR(1)。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkeymap\fR
+.ad
+.sp .6
+.RS 4n
+自定义键盘的键盘映射。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlast-hardware-update\fR
+.ad
+.sp .6
+.RS 4n
+系统更新信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBload-base\fR
+.ad
+.sp .6
+.RS 4n
+客户机程序的缺省装载地址。缺省值为 \fB16384\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlocal-mac-address?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，网络驱动程序会使用其自身的 MAC 地址，而非系统地址。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmfg-mode\fR
+.ad
+.sp .6
+.RS 4n
+\fBPOST\fR 的生产模式参数。可能值包括 \fBoff\fR 或 \fBchamber\fR。值作为参数传递至 \fBPOST\fR。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmfg-switch?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，将重复系统自检直到被 STOP-A 中断。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBnvramrc\fR
+.ad
+.sp .6
+.RS 4n
+NVRAMRC 的内容。缺省值为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBnetwork-boot-arguments\fR
+.ad
+.sp .6
+.RS 4n
+PROM 将用于进行网络引导的参数。缺省值为空字符串。\fBnetwork-boot-arguments\fR 可用于指定要使用的引导协议 (RARP/DHCP) 以及在进程中要使用的系统知识范围。
+.sp
+网络引导支持的参数的语法为：
+.sp
+.in +2
+.nf
+[\fIprotocol\fR,] [\fIkey\fR=\fIvalue\fR,]*
+.fi
+.in -2
+.sp
+
+所有参数均是可选的，显示顺序随意。除非参数位于列表末尾，否则需要使用逗号。如果进行了指定，参数将优先于任何缺省值，或者，如果使用 DHCP 进行引导，则优先于 DHCP 服务器为那些参数提供的配置信息。
+.sp
+上述的 \fIprotocol\fR 指定要使用的地址搜索协议。
+.sp
+下列配置参数被指定为 \fIkey\fR=\fIvalue\fR 属性对。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtftp-server\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP 服务器的 IP 地址
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对 WAN Boot 要使用 TFTP 或 URL 下载的文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+客户机的 IP 地址（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省路由器的 IP 地址（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.sp .6
+.RS 4n
+子网掩码（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclient-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 客户机标识符
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 事务中要使用的主机名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp-proxy\fR\fR
+.ad
+.sp .6
+.RS 4n
+HTTP 代理服务器规范 (IPADDR[:PORT])
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtftp-retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP 重试的最大次数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp-retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 重试的最大次数
+.RE
+
+如果未指定任何参数（即 \fBnetwork-boot-arguments\fR 为空字符串），PROM 将使用特定平台的缺省地址搜索协议。
+.sp
+如果在指定其他系统参数时缺少协议参数，则意味着需要手动配置。
+.sp
+手动配置要求客户机带有引导所需的所有信息。如果使用手动配置，必须在 \fBnetwork-boot-arguments\fR 中提供 PROM 装载第二阶段引导程序所需的信息，而第二阶段引导程序所需的信息可以作为 \fBboot\fR 程序的参数进行指定，也可以通过 \fBboot\fR 程序的交互式命令解释程序进行指定。
+.sp
+使用手动配置时 PROM 所需的信息包括引导客户机的 IP 地址、引导文件的名称，以及提供引导文件映像的服务器的地址。根据网络配置，可能还需要指定要使用的缺省路由器的子网掩码和地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBoem-banner\fR
+.ad
+.sp .6
+.RS 4n
+自定义 OEM 标题（通过将 \fBoem-banner?\fR 设置为 \fBtrue\fR 启用）。缺省值为空字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBoem-banner?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则使用自定义 \fBOEM\fR 标题。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBoem-logo\fR
+.ad
+.sp .6
+.RS 4n
+字节数组自定义 OEM 徽标（通过将 \fBoem-logo?\fR 设置为 \fBtrue\fR 启用）。以十六进制形式显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBoem-logo?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则使用自定义 OEM 徽标（否则，使用 Oracle 徽标）。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpci-mem64?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 true，OpenBoot PROM 会将 64 位 PCI 内存地址分配至能够支持 64 位地址的 PCI 设备。
+.sp
+此变量仅在 SPARC 平台上可用，且是可选的。一些版本的 SunOS 不支持 PCI \fBMEM64\fR 地址，且如果 OpenBoot PROM 分配 PCI \fBMEM64\fR 地址，它们会以意外的方式出现故障。
+.sp
+缺省值取决于系统。如果变量存在，缺省值适用于随特定平台提供的 SunOS 的最低版本。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBoutput-device\fR
+.ad
+.sp .6
+.RS 4n
+打开电源时所用的输出设备（通常为 \fBscreen\fR、\fBttya\fR 或 \fBttyb\fR）。缺省值为 \fBscreen\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBredmode-reboot?\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBtrue\fR，以在 redmode 重置陷阱后重新引导。缺省值为 \fBtrue\fR。（仅限 Sun Enterprise 10000。）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBredmode-sync?\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBtrue\fR，以在 redmode 重置陷阱后调用 OpenBoot PROM 的 \fBsync\fR 一词。缺省值为 \fBfalse\fR。（仅限 Sun Enterprise 10000。）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrootpath\fR
+.ad
+.sp .6
+.RS 4n
+指定操作系统的根设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsbus-probe-list\fR
+.ad
+.sp .6
+.RS 4n
+指定以何种顺序对哪些 SBus 插槽进行探测。缺省值为 \fB0123\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBscreen-#columns\fR
+.ad
+.sp .6
+.RS 4n
+屏幕列数（字符数/行）。缺省值为 \fB80\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBscreen-#rows\fR
+.ad
+.sp .6
+.RS 4n
+屏幕行数。缺省值为 \fB34\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBscsi-initiator-id\fR
+.ad
+.sp .6
+.RS 4n
+主机适配器的 \fBSCSI\fR 总线地址，范围为 0-7。缺省值为 \fB7\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsd-targets\fR
+.ad
+.sp .6
+.RS 4n
+映射 \fBSCSI\fR 磁盘单元（仅限 OpenBoot PROM 版本 1.\fIx\fR）。缺省值为 \fB31204567\fR，这表示单元 0 映射至目标 \fB3\fR，单元 1 映射至目标 \fB1\fR，依此类推。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsecurity-#badlogins\fR
+.ad
+.sp .6
+.RS 4n
+错误安全口令的尝试次数。在基于 x86 的系统上，此属性没有任何特殊含义或行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsecurity-mode\fR
+.ad
+.sp .6
+.RS 4n
+固件安全级别（选项：\fBnone\fR、\fBcommand\fR 和 \fBfull\fR）。如果设置为 \fBcommand\fR 或 \fBfull\fR，系统将提示您输入 \fBPROM\fR 安全口令。缺省值为 \fBnone\fR。在基于 x86 的系统上，此属性没有任何特殊含义或行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsecurity-password\fR
+.ad
+.sp .6
+.RS 4n
+固件安全口令（从不显示）。仅当 \fBsecurity-mode\fR 设置为 \fBcommand\fR 或 \fBfull\fR 时才可以设置此属性。在基于 x86 的系统上，此属性没有任何特殊含义或行为。
+.sp
+.in +2
+.nf
+example# eeprom security-password=
+Changing PROM password:
+New password:
+Retype new password:
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBselftest-#megs\fR
+.ad
+.sp .6
+.RS 4n
+要测试的 \fBRAM\fR 兆字节数。如果 \fBdiag-switch?\fR 为 \fBtrue\fR，则忽略此属性。缺省值为 \fB1\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsir-sync?\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBtrue\fR，以在软件启动重置 (software-initiated reset, \fBSIR\fR) 陷阱后调用 OpenBoot PROM 的 \fBsync\fR 一词。缺省值为 \fBfalse\fR。（仅限 Sun Enterprise 10000。）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBskip-vme-loopback?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，POST 将不执行 VMEbus 回送测试。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBst-targets\fR
+.ad
+.sp .6
+.RS 4n
+映射 \fBSCSI\fR 磁带单元（仅限 OpenBoot PROM 版本 1.\fIx\fR）。缺省值为 \fB45670123\fR，这表示单元 0 映射至目标 \fB4\fR，单元 1 映射至目标 \fB5\fR，依此类推。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsunmon-compat?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则显示 Restricted Monitor 提示符 (\|>)。 缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtestarea\fR
+.ad
+.sp .6
+.RS 4n
+单字节临时字段，可用于读写测试。缺省值为 \fB0\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtpe-link-test?\fR
+.ad
+.sp .6
+.RS 4n
+对于内置双绞线以太网，启用 10baseT 链接测试。缺省值为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBttya-mode\fR
+.ad
+.sp .6
+.RS 4n
+\fBTTYA\fR（波特率、数据位数、奇偶校验、停止位数、握手）。缺省值为 \fB9600、8、n、1、\(mi\fR。
+.sp
+按从左至右的顺序，这些字段为： 
+.sp
+.ne 2
+.mk
+.na
+\fB波特率:\fR
+.ad
+.sp .6
+.RS 4n
+110、300、1200、4800、9600\|.\|.\|.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBData bits（数据位数）：\fR
+.ad
+.sp .6
+.RS 4n
+5、6、7、8
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBparity:\fR
+.ad
+.sp .6
+.RS 4n
+n(none)、e(even)、o(odd)、m(mark)、s(space)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStop bits（停止位数）：\fR
+.ad
+.sp .6
+.RS 4n
+1、1.5、2
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBHandshake（握手）：\fR
+.ad
+.sp .6
+.RS 4n
+\(mi(none)、h(hardware:rts/cts)、s(software:xon/xoff)
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBttyb-mode\fR
+.ad
+.sp .6
+.RS 4n
+\fBTTYB\fR（波特率、数据位数、奇偶校验、停止位数、握手）。缺省值为 \fB9600、8、n、1、\(mi\fR。
+.sp
+按从左至右的顺序，这些字段为： 
+.sp
+.ne 2
+.mk
+.na
+\fB波特率:\fR
+.ad
+.sp .6
+.RS 4n
+110、300、1200、4800、9600\|.\|.\|.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBData bits（数据位数）：\fR
+.ad
+.sp .6
+.RS 4n
+5、6、7、8
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBStop bits（停止位数）：\fR
+.ad
+.sp .6
+.RS 4n
+1、1.5、2
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBparity:\fR
+.ad
+.sp .6
+.RS 4n
+n(none)、e(even)、o(odd)、m(mark)、s(space)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBHandshake（握手）：\fR
+.ad
+.sp .6
+.RS 4n
+\(mi(none)、h(hardware:rts/cts)、s(software:xon/xoff)
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBttya-ignore-cd\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，操作系统忽略 TTYA 上的载体检测。缺省值为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBttyb-ignore-cd\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，操作系统忽略 TTYB 上的载体检测。缺省值为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBttya-rts-dtr-off\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，操作系统不在 TTYA 上插入 DTR 和 RTS。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBttyb-rts-dtr-off\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，操作系统不在 TTYB 上插入 DTR 和 RTS。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBuse-nvramrc?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则在系统启动时执行 \fBNVRAMRC\fR 中的命令。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBverbosity\fR
+.ad
+.sp .6
+.RS 4n
+控制 PROM 消息的详细级别。值可以是 \fBdebug\fR、\fBmax\fR、\fBnormal\fR、\fBmin\fR 或 \fBnone\fR 之一。缺省值为 \fBnormal\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBversion2?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，混合 (1.\fIx\fR/2.\fIx\fR) PROM 在版本 2.\fIx\fR 中显示。缺省值为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBwatchdog-reboot?\fR
+.ad
+.sp .6
+.RS 4n
+如果为 \fBtrue\fR，则在监视程序重置后重新引导。缺省值为 \fBfalse\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBwatchdog-sync?\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBtrue\fR，以在监视程序重置陷阱后调用 OpenBoot PROM 的 \fBsync\fR 一词。缺省值为 \fBfalse\fR。（仅限 Sun Enterprise 10000。）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBxir-sync?\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBtrue\fR，以在 \fBXIR\fR 陷阱后调用 OpenBoot PROM 的 \fBsync\fR 一词。缺省值为 \fBfalse\fR。（仅限 Sun Enterprise 10000。）
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR更改 RAM 的兆字节数。
+.sp
+.LP
+以下示例演示了将系统测试的 \fBRAM\fR 兆字节数从 1 兆字节更改为 2 兆字节的方法。
+
+.sp
+.in +2
+.nf
+example# \fBeeprom selftest-#megs\fR
+selftest-#megs=1
+
+example# eeprom selftest-#megs=2
+
+example# \fBeeprom selftest-#megs\fR
+selftest-#megs=2
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR将 \fBauto-boot?\fR 参数设置为 \fBtrue\fR。
+.sp
+.LP
+以下示例演示了将 \fBauto-boot?\fR 参数设置为 \fBtrue\fR 的方法。
+
+.sp
+.in +2
+.nf
+example# \fBeeprom auto-boot?=true\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在用户模式下执行 \fBeeprom\fR 命令时，带有结尾问号 (?) 的参数需要括在双引号 (" ") 中，以免 shell 解释问号。在问号前加一个转义符 (\fB\e\fR) 也可以防止 shell 解释问号。
+
+.sp
+.in +2
+.nf
+\fBexample% eeprom "auto-boot?"=true\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用 \fBnetwork-boot-arguments\fR
+.sp
+.LP
+要使用 DHCP 作为引导协议和 \fBabcd.example.com\fR 主机名来进行网络引导，请将 \fBnetwork-boot-arguments\fR 中的这些值设置为：
+
+.sp
+.in +2
+.nf
+example# \fBeeprom network-boot-arguments="dhcp,hostname=abcd.example.com"\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...然后使用以下命令引导：
+
+.sp
+.in +2
+.nf
+ok \fBboot net\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，从 PROM 命令行指定的网络引导参数会导致 \fBnetwork-boot-arguments\fR 的内容被忽略。例如，如果将 \fBnetwork-boot-arguments\fR 设置为如上所示，则 \fBboot\fR 命令：
+
+.sp
+.in +2
+.nf
+ok \fBboot net:dhcp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...导致使用 DHCP，但是在 \fBnetwork-boot-arguments\fR 中指定的 \fBhostname\fR 在网络引导时不会使用。
+
+.LP
+\fB示例 4 \fR将系统控制台设置为辅助设备
+.sp
+.LP
+以下命令将设备 \fB/dev/term/a\fR 分配为系统控制台设备。在使用 \fBtip\fR(1) 来建立到主机的 \fBtip\fR 连接之前进行赋值。
+
+.sp
+.LP
+在 SPARC 计算机上：
+
+.sp
+.in +2
+.nf
+# \fBeeprom output-device=/dev/term/a\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在 x86 计算机上：
+
+.sp
+.in +2
+.nf
+# \fBeeprom console=ttya\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在 SPARC 计算机上，上述命令已足以用于将控制台分配至辅助设备。对于 x86 计算机，您可能还需要设置串行线的特征（请参见该计算机的 BIOS 文档）。此外，在一些 x86 计算机上，可以使用设备 \fBa\fR 以外的设备，如上所示。例如，如果存在第二个串行端口，可将控制台设置为 \fBttyb\fR。
+
+.LP
+\fB示例 5 \fR指定 SPARC 系统引导至 \fBkmdb\fR
+.sp
+.LP
+要指定 SPARC 计算机引导至 \fBkmdb\fR(1)，请输入以下命令：
+
+.sp
+.in +2
+.nf
+# \fBeeprom boot-command="boot -k"\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/boot/solaris/bootenv.rc\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于在 x86 计算机上存储 \fBeeprom\fR 值的文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/openprom\fR\fR
+.ad
+.sp .6
+.RS 4n
+设备文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/platform/\fR\fIplatform-name\fR\fB/sbin/eeprom\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定平台版本的 \fBeeprom\fR。使用 \fBuname\fR \fB-i\fR 获取 \fIplatform-name\fR。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBkmdb\fR(1)、\fBpasswd\fR(1)、\fBsh\fR(1)、\fBsvcs\fR(1)、\fBtip\fR(1)、\fBuname\fR(1)、\fBboot\fR(1M)、\fBkernel\fR(1M)、\fBinit\fR(1M)、\fBsvcadm\fR(1M)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+《\fIOpenBoot 3.x Command Reference Manual\fR》
+.sp
+.LP
+\fI\fR 

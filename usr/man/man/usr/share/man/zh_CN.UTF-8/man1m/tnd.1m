@@ -1,0 +1,201 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH tnd 1M "2010 年 4 月 9 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+tnd \- 可信网络守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/tnd\fR [\fB-p\fR \fIpoll-interval\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBtnd\fR（可信网络守护进程）使用可信的网络数据库初始化内核，还根据需要从 LDAP 服务器和本地文件重新装入数据库。\fBtnd\fR 在装入配置数据库时遵循 nsswitch.conf 文件中指定的顺序。
+.sp
+.LP
+对 \fBtnd\fR 的设计安排是，仅当系统已配置为 LDAP 客户机时，才在引导进程中通过 \fBsvc:/network/tnd\fR \fBsmf\fR(5) 服务在全局区域中启动。只以本地文件作为可信网络数据库的系统使用 \fBtnctl\fR(1M) 而不是 \fBtnd\fR。
+.sp
+.LP
+\fBtnd\fR 将以下数据库装入到内核中：远程主机数据库 \fBtnrhdb\fR 和远程主机模板数据库 \fBtnrhtp\fR。\fBtnd\fR 还定期扫描关联的 LDAP 数据库或本地数据库中的更改并相应地更新内核高速缓存。
+.sp
+.LP
+如果修改了本地可信网络数据库文件，则管理员应运行 \fBtnchkdb\fR(1M) 来检查语法，还应运行 \fBsvcadm refresh svc:/network/tnd\fR 来启动由 \fBtnd\fR 执行的即时数据库扫描。
+.sp
+.LP
+\fBtnd\fR 的设计安排是通过 \fBsmf\fR(5) 脚本启动并在全局区域中运行。以下 \fBsvcadm\fR 命令指示 \fBtnd\fR 执行特定操作：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvcadm refresh svc:/network/tnd\fR\fR
+.ad
+.sp .6
+.RS 4n
+启动对本地和 LDAP \fBtnrhdb\fR 和 \fBtnrhtp\fR 数据库的重新扫描。\fBtnd\fR 使用找到的任何更改来更新内核数据库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvcadm disable svc:/network/tnd\fR\fR
+.ad
+.sp .6
+.RS 4n
+终止 \fBtnd\fR 守护进程。不对内核数据库进行任何更改。
+.RE
+
+.sp
+.LP
+在由以下服务管理工具 (Service Management Facility, SMF) 属性的值确定的调试模式下运行 \fBtnd\fR：
+.sp
+.in +2
+.nf
+tnd/debug_level = 0
+.fi
+.in -2
+
+.sp
+.LP
+如上所示，值 \fB0\fR 阻止收集调试信息；\fB1\fR 打开调试。缺省值为 "\fB0\fR"。调试输出将发送到 \fB/var/tsol/tndlog\fR 日志文件。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpoll-interval\fR\fR
+.ad
+.RS 20n
+.rt  
+将轮询间隔设置为 \fIpoll-interval\fR 秒。\fIpoll-interval\fR 缺省值是 1800 秒（30 分钟）。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR更改轮询间隔
+.sp
+.LP
+以下命令将轮询间隔更改为 1 小时，并将此间隔放入 SMF 系统信息库中。下次引导时，\fBtnd\fR 轮询间隔将变为 1 小时。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s network/tnd setprop tnd/poll_interval=3600\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令更改轮询间隔，但是不更新系统信息库。下次引导时，\fBtnd\fR 轮询间隔保持为缺省值 30 分钟。
+
+.sp
+.in +2
+.nf
+# tnd -p 3600
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信网络远程主机数据库
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhtp\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信网络远程主机模板
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnzonecfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信区域配置数据库
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB /etc/nsswitch.conf \fR\fR
+.ad
+.sp .6
+.RS 4n
+名称服务转换器的配置文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/trusted
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令调用为 Committed（已确定）。服务是 Private（专用）。
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvcadm\fR(1M)、\fBtninfo\fR(1M)、\fBtnctl\fR(1M)、\fBtnchkdb\fR(1M)、\fBnsswitch.conf\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+\fISolaris Trusted Extensions Administrator\&'s Procedures\fR
+.SH 附注
+.sp
+.LP
+仅当系统配置有 Trusted Extensions 时，本手册页中介绍的功能才可用。
+.sp
+.LP
+\fBtnd\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/network/tnd
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcs\fR(1) 查询该服务的状态。可以使用 \fBsvcadm\fR(1M) 对该服务执行管理操作（如请求重新启动守护进程），如下所示：
+.sp
+.in +2
+.nf
+svcadm restart svc:/network/tnd
+.fi
+.in -2
+.sp
+

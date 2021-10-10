@@ -1,0 +1,468 @@
+'\" te
+.\" Copyright (c) 2008 Broadcom Corporation. All Rights Reserved. 
+.\" Portions Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH bnxe 7D "16 Aug 2011" " SunOS 5.11" "Devices"
+.SH NAME
+bnxe \- Broadcom NetXtreme II 10 Gigabit Ethernet Device Driver
+.SH SYNOPSIS
+.LP
+.nf
+/dev/bnxe*
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBbnxe\fR Ethernet driver is a multi-threaded, loadable, clonable, GLDv3-based driver supporting the Data Link Provider Interface, \fBdlpi\fR(7P), over Broadcom NetXtreme II 10 Gigabit Ethernet controllers. Multiple NetXtreme II controllers installed within the system are supported by the driver.
+.sp
+.LP
+The \fBbnxe\fR driver provides basic support for the NetXtreme II 10 Gigabit line of devices. Functions include chip initialization, frame transit and receive, multicast and promiscuous support, and error recovery and reporting. NetXtreme II 10 Gigabit devices provide  10/100/1000/10000 Mbps networking interfaces for Copper and 1000/2500/10000 Mbps for Fiber physical interfaces.
+.sp
+.LP
+The \fIIEEE 802.3\fR standard specifies an \fBauto-negotiation\fR protocol to automatically select the mode and speed of operation. The PHY device is capable of doing auto-negotiation with the remote-end of the link (Link Partner) and receives the capabilities from  the remote end. It selects the Highest Common Denominator mode of operation. It also supports forced-mode of operation where the driver can select desired mode of operation.
+.SS "Driver Configuration"
+.sp
+.LP
+There are two facilities by which the administrator can configure each NetXtreme II 10 Gigabit device in the system, the hardware configuration file and the NDD subsystem. The hardware configuration file is located at \fB/kernel/drv/bnxe.conf\fR and contains a list of options that are read when the driver is loaded. The NDD subsystem options are used as a way to modify the device's configuration at runtime. All changes made with the NDD subsystem are lost after device reset or system reboot.   The remainder of this section discusses configuration options common to both facilities.
+.SS "Link Speed and Duplex Parameters"
+.sp
+.LP
+The primary way link speed and duplex settings are configured is through the following list of options. \fBNon-zero\fR values turn them on, a value of zero disables them.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_autoneg_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_10000fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_2500fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_1000fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_100fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_100hdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_10fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBadv_10hdx_cap\fR
+.RE
+.sp
+.LP
+When the \fBadv_autoneg_cap\fR option is set to a \fBnon-zero\fR value, the remaining options control which capabilities we advertise to the link partner during auto-negotiation. When the \fBadv_autoneg_cap\fR option is set to \fBzero\fR, the driver walks down the list, from the highest speed / duplex option to the lowest, and use the first \fBnon-zero\fR option as the speed / duplex setting to force the link with.
+.SS "Flow Control Parameters"
+.sp
+.LP
+Flow control parameters configure the flow control properties of the physical link. The properties are configured through the following list of options. Like the link speed and duplex settings, \fBnon-zero\fR values turn them on, a value of \fBzero\fR disables them.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoneg_flow\fR\fR
+.ad
+.RS 16n
+.rt  
+Controls whether or not the flow control properties are auto-negotiated or forced.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtxpause_cap\fR\fR
+.ad
+.RS 16n
+.rt  
+Controls whether or not \fBTx\fR flow control can be configured.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrxpause_cap\fR\fR
+.ad
+.RS 16n
+.rt  
+Controls whether or not \fBRx\fR flow control can be configured.
+.RE
+
+.sp
+.LP
+If \fBTx\fR flow control is enabled, pause frames are sent to the link partner when \fBRx\fR resources are low. If \fBRx\fR flow control is enabled, the hardware automatically stops transmitting if pause frames are received. How \fBTx\fR and \fBRx\fR flow control are enabled depends on how the driver is configured. When the \fBautoneg_flow\fR option is \fBnon-zero\fR, the flow control capabilities become advertisement settings and the\fBauto-negotiation\fR process dictates what actual flow control settings are used. If the \fBautoneg_flow\fR option is zero, the  flow control capabilities specified are still advertised if the link is auto-negotiated, but the actual flow control settings are forced to the specified settings.
+.SS "Hardware Configuration File Options"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchecksum\fR\fR
+.ad
+.RS 22n
+.rt  
+This parameter configures checksum calculation tasks to be offloaded to the hardware. If 0 then no checksums are offloaded. If 1 then IPv4 header checksums offloaded for Rx/Tx. If 2 then TCP/UDP/IPv4 header checksums are offloaded for Rx/Tx. The default is \fB2\fR (TCP/UDP/IPv4 checksums).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR\fR
+.ad
+.RS 22n
+.rt  
+This parameter controls the MTU (Message Tranfer Unit) size of the hardware. Egress Ethernet frames larger than this size is fragmented and ingress Ethernet frames larger than this size is dropped. The valid range is from \fB60\fR to \fB9216\fR (decimal). The default value is \fB1500\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrx_descs\fR\fR
+.ad
+.br
+.na
+\fB\fBtx_descs\fR\fR
+.ad
+.RS 22n
+.rt  
+These parameters control how many packets can be in-transit within the driver. The greater the number of packets that are allowed to be in-transit, the more memory the driver requires to operate. The valid range is \fB1\fR to \fB32767\fR. The default value is \fB1280\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrx_free_reclaim\fR\fR
+.ad
+.br
+.na
+\fB\fBtx_free_reclaim\fR\fR
+.ad
+.RS 22n
+.rt  
+These parameters control the threshold of freely available packet descriptors that are allowed to be free before reposting back to the hardware so they can be reused for future packets. The valid range is 0 to the value of \fBrx_descs\fR for \fBRx\fR and \fBtx_descs\fR for \fBTx\fR. A freely available packet descriptor is, for \fBRx\fR a packet that has been received and processing finished, and for \fBTx\fR a packet that has already been sent. The default value is 1/16 of \fBrx_descs\fR for \fBRx\fR and \fBtx_descs\fR for \fBTx\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinterrupt_coalesce\fR\fR
+.ad
+.RS 22n
+.rt  
+This parameter gives the administrator the ability to allow the hardware to collect more network events before interrupting the host processor. Interrupt coalescing within the NetXtreme II 10 Gigabit hardware is quite aggressive resulting in great  sustained throughput but low latency for interactive traffic. Setting to \fB1\fR turns it on and \fB0\fR off. Default is \fBoff\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrx_copy_threshold\fR\fR
+.ad
+.br
+.na
+\fB\fBtx_copy_threshold\fR\fR
+.ad
+.RS 22n
+.rt  
+These parameters control the packet size threshold, in number of bytes, when packets are double copied before processing. A value of \fB0\fR turns off double copies. For \fBTx\fR a value of \fB1\fR means all packets are copied. For \fBRx\fR a really large value, that is, greater than the \fBmtu\fR, that means all packets are copied. The default is \fB0\fR for both \fBRx\fR and \fBTx\fR which implies that no copying is ever performed.
+.RE
+
+.SS "NDD Subsystem Configuration Options"
+.SS "Hardware Capability Parameters"
+.sp
+.LP
+The following is a read-only list of capabilities the device is capable of supporting. A value of \fB1\fR means the capability is supported. A value of \fB0\fR means the capability is not supported.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBautoneg_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB10000fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB2500fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB1000fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB1000fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB100hdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB10fdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB10hdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB10hdx_cap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBtxpause_cap\fR
+.RE
+.SS "Hardware Capability Advertisement Parameters"
+.sp
+.LP
+The auto-negotiation advertisement parameters work exactly as described in the \fBHardware Capability Parameters\fR section of this man page with the difference that they show what is actually being advertised
+.SS "Miscellaneous Link Parameters"
+.sp
+.LP
+These parameters show the other \fBphy\fR options.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBautoneg_flow\fR
+.RE
+.SS "Link Status Parameters"
+.sp
+.LP
+These parameters show the current status of the physical link.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink_status\fR\fR
+.ad
+.RS 16n
+.rt  
+Shows if the link is up or down.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink_speed\fR\fR
+.ad
+.RS 16n
+.rt  
+Shows the current speed of the link.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink_duplex\fR\fR
+.ad
+.RS 16n
+.rt  
+Shows the current duplex setting of the link.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink_txpause\fR\fR
+.ad
+.RS 16n
+.rt  
+Shows whether or not \fBTX\fR flow control is enabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink_rxpause\fR\fR
+.ad
+.RS 16n
+.rt  
+Shows whether or not \fBRX\fR flow control is enabled.
+.RE
+
+.SS "Convenience Parameters"
+.sp
+.LP
+The following parameters display multiple settings at once. They are intended for convenience.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhw_cap\fR\fR
+.ad
+.RS 11n
+.rt  
+Shows all the device hardware capabilities
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadv_cap\fR\fR
+.ad
+.RS 11n
+.rt  
+Shows all the capabilities we are advertising or have forced.
+.RE
+
+.SS "Debug"
+.sp
+.LP
+The following parameters are used to aid in debugging driver issues. These should be used in conjunction with \fBkstat\fR statistic diagnostics.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug\fR\fR
+.ad
+.RS 9n
+.rt  
+Shows the state of all the internal packet descriptor queues.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/bnx[instance]\fR\fR
+.ad
+.RS 26n
+.rt  
+\fBbnxe\fR character special device.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/bnxe.conf\fR\fR
+.ad
+.RS 26n
+.rt  
+Configuration file of the \fBbnxe\fR driver.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/bnxe\fR\fR
+.ad
+.RS 26n
+.rt  
+32-bit i386 driver binary
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/bnxe\fR\fR
+.ad
+.RS 26n
+.rt  
+64-bit i386 driver binary
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrelease.txt\fR\fR
+.ad
+.RS 26n
+.rt  
+Revision history of the driver
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) cw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+Availabilitydriver/network/ethernet/bnxe
+Architecturex86
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBndd\fR(1M), \fBattributes\fR(5), \fBdlpi\fR(7P), \fBgld\fR(7D), 
+.sp
+.LP
+\fIBroadcom NetXtreme II 10 Gigabit Adapter Driver Installation Notes\fR
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR
+.sp
+.LP
+\fINetwork Interfaces Programmer's Guide\fR

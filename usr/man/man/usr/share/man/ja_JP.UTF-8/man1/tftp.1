@@ -1,0 +1,288 @@
+'\" te
+.\"  Copyright 1989 AT&T
+.\" Copyright (C) 2007, Sun Microsystems, Inc. All Rights Reserved
+.TH tftp 1 "2007 年 5 月 7 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+tftp \- 簡易ファイル転送プログラム
+.SH 形式
+.LP
+.nf
+\fBtftp\fR [\fIhost\fR [\fIport\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtftp\fR は、ユーザーがリモートマシン間でファイルを転送できるインターネット \fBTFTP\fR (Trivial File Transfer Protocol) へのユーザーインタフェースです。リモートの \fIhost\fR およびオプションの \fIport\fR は、コマンド行で指定できます。この場合、\fBtftp\fR では今後の転送で、\fIhost\fR がデフォルトホストとして使用され、指定されていれば \fIport\fR がデフォルトポートとして使用されます。下記の \fBconnect\fR コマンドを参照してください。
+.SH 使用法
+.sp
+.LP
+\fBtftp\fR が実行されると、プロンプト \fBtftp>\fR が表示され、次のコマンドが認識されます。
+.SS "コマンド (Commands)"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR \fIhost-name\fR [ \fIport\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+転送用の \fIhost\fR および \fIport\fR (任意) を設定します。\fBTFTP\fR プロトコルは \fBFTP\fR プロトコルとは異なり、転送間で接続は保持されません。したがって、\fBconnect\fR コマンドは実際に接続を作成せずに、転送用に使用されるホストを記憶するだけです。\fBconnect\fR コマンドを使用する必要はありません。リモートホストは \fBget\fR または \fBput\fR コマンドの一部として指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmode\fR \fItransfer-mode\fR\fR
+.ad
+.sp .6
+.RS 4n
+転送モードを設定します。\fItransfer-mode\fR には、\fBascii\fR または \fBbinary\fR のいずれかを指定できます。デフォルト値は \fBascii\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBput\fR \fIfilename\fR\fR
+.ad
+.br
+.na
+\fB\fBput\fR \fIlocalfile remotefile\fR\fR
+.ad
+.br
+.na
+\fB\fBput\fR \fIfilename1 filename2 .\|.\|. filenameN remote-directory\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたリモートファイルまたはディレクトリにファイル (またはファイルセット) を転送します。転送先は次の 2 つの形式で指定できます。ホストがすでに指定されている場合はリモートホスト上のファイル名、または 
+.sp
+.in +2
+.nf
+\fIhost\fR\fB:\fR\fIfilename\fR
+.fi
+.in -2
+
+\fIhost\fR と \fIfilename\fR の両方を同時に指定する場合は文字列の形式で指定します。後者の形式を使用する場合は、指定されたホスト名が今後の転送のデフォルトになります。remote-directory 形式を使用する場合は、リモートホストで UNIX システムが実行されていると見なされます。 
+.sp
+\fIhost\fR には、ホスト名 (\fBhosts\fR(4) を参照) か、IPv4 または IPv6 アドレス文字列 (\fBinet\fR(7P) または \fBinet6\fR(7P) を参照) を指定できます。IPv6 のアドレスには「\fB:\fR」が含まれているので、IPv6 アドレスを使用するときには \fIhost\fR を角括弧で囲む必要があります。角括弧で囲まないと、最初のコロンが \fIhost\fR と \fIfilename\fR 間の区切り文字と見なされます。たとえば、次のように指定します。
+.sp
+.in +2
+.nf
+[1080::8:800:200c:417A]:myfile
+.fi
+.in -2
+
+ファイルがすでに存在し、公的に書き込み可能な場合にのみ、ファイルを書き込むことができます。\fBin.tftpd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR \fIfilename\fR\fR
+.ad
+.br
+.na
+\fB\fBget\fR \fIremotename localname\fR\fR
+.ad
+.br
+.na
+\fB\fBget\fR \fIfilename1 filename2 filename3\fR .\|.\|. \fIfilenameN\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたリモートソースからファイルまたはファイルセット (3 つ以上) を取得します。\fI\fR\fBsource\fR は次の 2 つの形式で指定できます。ホストがすでに指定されている場合はリモートホスト上のファイル名、または 
+.sp
+.in +2
+.nf
+\fIhost\fR\fB:\fR\fIfilename\fR
+.fi
+.in -2
+
+host と filename の両方を同時に指定する場合は文字列の形式で指定します。後者の形式を使用する場合は、最後に指定されたホスト名が今後の転送のデフォルトになります。\fIhost\fR の指定については、\fBput\fR コマンドを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtftp\fR を終了します。\fBEOF\fR も終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細モードを切り替えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrace\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットトレース機能を切り替えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のステータスを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrexmt\fR\fIretransmission-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットごとの転送タイムアウトを秒単位で設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout\fR\fItotal-transmission-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+合計転送タイムアウトを秒単位で設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBascii\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmode ascii\fR の省略形。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbinary\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmode binary\fR の省略形。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBblksize\fR \fItransfer-blocksize\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバーとネゴシエーションを行うための転送ブロックサイズオプションの値。値 \fB0\fR を指定すると、このオプションのネゴシエーションは無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsrexmt\fR \fIserver-retransmission-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+サーバーが使用するように要求するための転送タイムアウトオプションの値。値 0 を指定すると、このオプションのネゴシエーションは無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtsize\fR\fR
+.ad
+.sp .6
+.RS 4n
+転送サイズオプションをサーバーに送信するように切り替えます。デフォルトでは、このオプションは送信されません。\fItransfer-mode\fR が \fBascii\fR の場合は、転送サイズオプションは \fBwrite\fR 要求と同時に送信されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB? [\fR \fIcommand-name\fR .\|.\|. ]\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプ情報を出力します。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/tftp
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBin.tftpd\fR(1M), \fBhosts\fR(4), \fBattributes\fR(5),\fBinet\fR(7P), \fBinet6\fR(7P)
+.sp
+.LP
+『\fIRFC 2347, TFTP Option Extension\fR』、Malkin, G.、Harkin, A. 著。The Internet Society 発行。1998 年 3 月
+.sp
+.LP
+『\fIRFC 2348, TFTP Blocksize Option\fR』、Malkin, G.、Harkin, A. 著、The Internet Society 発行。1998 年 3 月
+.sp
+.LP
+『\fIRFC 2349, TFTP Timeout Interval and Transfer Size Options\fR』、Malkin, G.、Harkin, A. 著、The Internet Society 発行。1998 年 3 月
+.sp
+.LP
+『\fIRFC 1350, The TFTP Protocol (Revision 2)\fR』、Sollins, K.R. 著、Network Working Group 発行、1992 年 7 月
+.SH 注意事項
+.sp
+.LP
+デフォルトの \fItransfer-mode\fR は \fBascii\fR です。これは SunOS 4.0 以前および 4.3BSD 以前のシステムとは異なるため、実行可能コマンドなどの ASCII 以外のバイナリファイルを転送するときは、明示的な操作を行う必要があります。
+.sp
+.LP
+\fBTFTP\fR プロトコルにはユーザーログインや検証がないため、多くのリモートサイトがさまざまな方法でファイルアクセスを制限しています。承認されているファイルアクセス方法は各サイト固有のものであるため、このマニュアルでは説明できません。
+.sp
+.LP
+\fBget\fR コマンドを使用してリモートホストから複数のファイルを転送する場合は、3 つ以上のファイルを指定する必要があります。2 つのファイルが指定されている場合は、2 番目のファイルがローカルファイルとして使用されます。
+.sp
+.LP
+デフォルトのブロックサイズ \fB512\fR オクテットおよび \fB16\fR ビットブロック数を使用すると、一部の \fBTFTP\fR 実装において、サイズが \fB33,553,919\fR オクテット (\fB32MB\fR に \fB513\fR オクテット不足) を超えるファイルで問題が発生する可能性があります。Solaris 実装では、最大で \fB4GB\fR のサイズのファイルを転送できます。
+.sp
+.LP
+デフォルトでは、Solaris \fBTFTP\fR クライアントは \fBblocksize\fR または転送サイズオプションを有効化できません。\fBblocksize\fR オプションを高い値に設定すると、上限が \fB32MB\fR のピアを処理する際の回避方法として役立つことがあります。

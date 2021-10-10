@@ -1,0 +1,306 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH swap 1M "2011 年 6 月 8 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+swap \- スワップ管理インタフェース
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-a\fR \fIswapname\fR [\fIswaplow\fR] [\fIswaplen\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-d\fR \fIswapname\fR [\fIswaplow\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-l\fR [\fB-h\fR | \fB-k\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-s\fR [\fB-h\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBswap\fR ユーティリティーは、メモリーマネージャーが使用するシステムスワップ領域を追加、削除、および監視する方法を提供します。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIswapname\fR [\fIswaplow\fR] [\fIswaplen\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたスワップ領域を追加します。このオプションを使用できるのは、スーパーユーザーか、Primary Administrator 役割を引き受けているユーザーのみです。\fIswapname\fR はスワップ領域または通常ファイルの名前です。たとえば、UFS ルートファイルシステムを実行しているシステムでは、\fB/dev/dsk/c0t0d0s1\fR などのスライスか、通常ファイルをスワップ領域として指定します。ZFS ファイルシステムを実行しているシステムでは、\fB/dev/zvol/dsk/rpool/swap\fR などの ZFS ボリュームをスワップ領域として指定します。ZFS ファイルシステムでは、スワップに通常ファイルを使用することはできません。また、システムが ZFS ルートファイルシステムを実行しているときに、スワップ領域とダンプデバイスの両方に同じ ZFS ボリュームを使用することはできません。
+.sp
+\fIswaplow\fR は、ファイル内でスワップ領域を開始する場所のオフセット (512 バイトブロック単位) です。\fIswaplen\fR は、スワップ領域の望ましい長さ (512 バイトブロック単位) です。\fIswaplen\fR の値を \fB16\fR より小さくすることはできません。たとえば、\fIn\fR ブロックが指定された場合は、(\fIn\fR-1) ブロックが実際のスワップの長さになります。\fIswaplen\fR は、少なくとも 1 ページの長さにする必要があります。メモリーのページのサイズは、\fBpagesize\fR コマンドを使用して決定できます。\fBpagesize\fR(1) を参照してください。スワップファイルの最初のページは自動的にスキップされ、スワップファイルは少なくとも 1 ページの長さにする必要があるため、最小サイズは 2 ページサイズバイトの倍数にしてください。メモリーのページのサイズは、マシンに依存します。
+.sp
+\fIswaplow\fR + \fIswaplen\fR は、スワップファイルのサイズ以下にする必要があります。\fIswaplen\fR が指定されていない場合は、\fIswaplow\fR から始まり、指定されたファイルの最後まで拡張された領域が追加されます。\fIswaplow\fR も \fIswaplen\fR も指定されていない場合は、最初のページを除く、ファイル全体が使用されます。スワップ領域は通常、システムの起動中に \fB/usr/sbin/swapadd\fR スクリプトによって自動的に追加されます。このスクリプトは、\fB/etc/vfstab\fR ファイルで指定されたすべてのスワップ領域を追加します。これらの指定の構文については、\fBvfstab\fR(4) を参照してください。
+.sp
+\fBvfstab\fR(4) で \fBencrypted\fR オプションを指定し、ZFS ボリュームに \fBencryption\fR プロパティーを指定すると、スワップデバイスとして使用される ZFS ボリュームを暗号化できます。 \fBzfs\fR(1M) を参照してください。
+.sp
+\fBNFS\fR またはローカルファイルシステム \fIswapname\fR を使用するには、最初に \fBmkfile\fR(1M) を使用してファイルを作成することをお勧めします。ローカルファイルシステムのスワップファイルの場合は、\fBswap\fR \fB-a\fR コマンドを実行するだけで、稼働中のシステムに追加できます。\fBNFS\fR マウントされたスワップファイルの場合は、サーバーがファイルをエクスポートする必要があります。これを行うには、次の手順を実行します。
+.RS +4
+.TP
+1.
+\fB/etc/dfs/dfstab\fR に次の行を追加します。 
+.sp
+.in +2
+.nf
+share -F nfs -o \e
+rw=\fIclientname\fR,root=\fIclientname path-to-swap-file\fR
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+2.
+\fBshareall\fR(1M) を実行します。
+.RE
+.RS +4
+.TP
+3.
+クライアントに、\fB/etc/vfstab\fR に次の行を追加させます。
+.sp
+.in +2
+.nf
+\fIserver\fR:\fIpath-to-swap-file\fR -  \fIlocal-path-to-swap-file\fR nfs \e
+     -\|-\|- \fIlocal-path-to-swap-file\fR -\|- swap -\|-\|-
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+4.
+クライアントに \fBmount\fR を実行させます。
+.sp
+.in +2
+.nf
+# mount \fIlocal-path-to-swap-file\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+5.
+クライアントは次に、\fBswap\fR \fB-a\fR を実行してスワップ空間を追加できます。
+.sp
+.in +2
+.nf
+# swap -a \fIlocal-path-to-swap-file\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIswapname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたスワップ領域を削除します。このオプションは、スーパーユーザーのみが使用できます。\fIswapname\fR は、スワップファイルの名前です。たとえば、\fB/dev/dsk/c0t0d0s1\fR または通常ファイルです。\fIswaplow\fR は、削除されるスワップ領域のオフセット (512 バイトブロック単位) です。\fIswaplow\fR が指定されていない場合は、第 2 ページから領域の削除が開始されます。このコマンドが完了すると、この領域からスワップブロックを割り当てることはできなくなり、以前このスワップ領域で使用されていたすべてのスワップブロックがほかのスワップ領域に移動されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべてのサイズが人間の読める形式にスケーリングされます。縮小拡大/スケーリングは、1024 で繰り返し除算することによって行われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルサイズを 1024 バイトの単位で出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべてのスワップ領域のステータスを一覧表示します。出力には次の 5 つの列があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+スワップ領域のパス名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdev\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブロック特殊デバイスの場合は、メジャー/マイナーデバイス番号 (10 進数)。それ以外の場合は 0。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBswaplo\fR\fR
+.ad
+.sp .6
+.RS 4n
+領域の \fIswaplow\fR 値 (512 バイトブロック単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBblocks\fR\fR
+.ad
+.sp .6
+.RS 4n
+領域の \fIswaplen\fR 値 (512 バイトブロック単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfree\fR\fR
+.ad
+.sp .6
+.RS 4n
+この領域内で現在割り当てられていない 512 バイトブロックの数。
+.RE
+
+この空間は特定のスワップ領域には関連付けられていないため、このリストには物理メモリーの形式でのスワップ空間は含まれません。
+.sp
+\fIswapname\fR の (\fBswap\fR \fB-d\fR による) 削除処理中に \fBswap\fR \fB-l\fR を実行した場合は、スワップ状態の 6 番目の列に文字列 \fBINDEL\fR が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+全体のスワップ空間の使用量および利用可能量に関する要約情報を出力します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallocated\fR\fR
+.ad
+.sp .6
+.RS 4n
+バッキングストアとして使用するように現在割り当てられているスワップ空間の合計容量 (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreserved\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在は割り当てられていないが、あとから使用できるようにメモリーマッピングによって確保されているスワップ空間の合計容量 (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBused\fR\fR
+.ad
+.sp .6
+.RS 4n
+割り当て済みまたは予約済みのスワップ空間の合計容量 (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBavailable\fR\fR
+.ad
+.sp .6
+.RS 4n
+あとから予約や割り当てに使用可能な合計スワップ空間 (バイト単位)。
+.RE
+
+これらの数値には、\fB-l\fR オプションによって表示されるすべての構成済みスワップ領域のスワップ空間や、物理メモリーの形式でのスワップ空間が含まれます。
+.RE
+
+.SH 使用法
+.sp
+.LP
+32 ビットオペレーティングシステムでは、2G バイト以上のサイズのスワップデバイスには最初の 2G バイト -1 のみが使用されます。64 ビットオペレーティングシステムでは、2G バイトを超えるブロックデバイスを最大 2^63 \(mi1 バイトまでのスワップに完全に使用できます。
+.SH 環境
+.sp
+.LP
+\fBswap\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_CTYPE\fR および \fBLC_MESSAGE\fR。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpagesize\fR(1), \fBmkfile\fR(1M), \fBshareall\fR(1M), \fBzfs\fR(1M), \fBgetpagesize\fR(3C), \fBvfstab\fR(4), \fBattributes\fR(5), \fBlargefile\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBZFS\fR でのスワップ領域の設定については、『\fISolaris ZFS 管理ガイド\fR』を参照してください。
+.SH 警告
+.sp
+.LP
+追加されるスワップ領域が既存のファイルシステムとオーバーラップするかどうかかの確認は行われません。

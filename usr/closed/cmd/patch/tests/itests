@@ -1,0 +1,47 @@
+#!/bin/sh
+
+while (true)
+do
+	lines=`random_numbers 1 10 5000`
+
+
+	max_mutation=`expr 1 \* $lines`
+	max_mutation=`expr $max_mutation \/ 5`
+	mutations=`random_numbers 1 1 $max_mutation`
+
+	genfile $lines > original
+	cp original save_orig
+
+	echo testing lines=$lines  mutations=$max_mutation  
+	rm -f patch_file
+	ptype=`random_numbers 1 0 99999`
+	ptype=`expr $ptype \% 3`
+	if [ $ptype -eq 0 ]; then
+		ptype="-c"
+	else
+		ptype="  "
+	fi
+	mutatefile $max_mutation $lines original > mutant
+	echo diff $ptype original mutant
+	echo "Index:original" > patch_file
+	diff $ptype original mutant >> patch_file
+
+	cp save_orig original
+	/usr/dist/exe/patch -D XXX original < patch_file
+	cp original expected
+
+	echo Patching file...
+	cp save_orig original
+	../patch -D XXX original < patch_file
+	if [ $? -ne 0 ]; then
+		echo Patch returned $?
+		diff original expected > failure
+		exit
+	fi
+
+	diff original expected > failure
+	if [ $? -ne 0 ]; then
+		echo diff returned $?
+		exit
+	fi
+done

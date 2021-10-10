@@ -1,0 +1,4024 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH mdb 1 "2011 年 8 月 16 日" "SunOS 5.11" "用户命令"
+.SH 名称
+mdb \- 模块调试器
+.SH 用法概要
+.LP
+.nf
+\fBmdb\fR [\fB-fkmuwyAFKMSUW\fR] [\(+-o \fIoption\fR] [\fB-p\fR \fIpid\fR] [\fB-s\fR \fIdistance\fR] 
+     [\fB-I\fR \fIpath\fR] [\fB-L\fR \fIpath\fR] [\fB-P\fR \fIprompt\fR] [\fB-R\fR \fIroot\fR] 
+     [\fB-V\fR \fIdis-version\fR] [object [core] | core | suffix]
+.fi
+
+.SH 描述
+.SS "介绍"
+.sp
+.LP
+\fBmdb\fR 实用程序是针对实时操作系统、操作系统故障转储、用户进程、用户进程核心转储以及对象文件执行底层调试和编辑的可扩展实用程序。 有关 \fBmdb\fR 功能的更为详细的说明，请参阅手册\fI《Oracle Solaris Modular Debugger Guide》\fR。
+.sp
+.LP
+调试是分析软件程序的执行和状态以便消除缺陷的过程。传统的调试工具提供了用于执行控制的工具，因此，程序员可以在受控环境中重新执行程序并显示程序数据的当前状态，或者借助开发程序时使用的源语言对表达式进行求值。
+.sp
+.LP
+不幸的是，这些技术通常不适用于以下情形：调试复杂的软件系统（例如操作系统，其中出现的错误可能无法再现，并且程序状态非常多且分布在各处）、经过高度优化的程序（这些程序的调试信息已删除，或者自身即为底层调试工具）、开发人员只能访问事后分析信息的客户情况。
+.sp
+.LP
+\fBmdb\fR 提供了用于调试这些程序和方案的可完全自定义的环境，包括动态模块工具，程序员可使用该工具实现自己的调试命令，以便执行特定于程序的分析。每个 \fBmdb\fR 模块可用于在多种不同上下文中检查程序，包括实时和事后分析。
+.SS "定义"
+.sp
+.LP
+\fI目标\fR是调试器所检查的程序。\fBmdb\fR 当前提供了对以下类型目标的支持：用户进程、用户进程核心文件、实时操作系统（通过 \fB/dev/kmem\fR 和 \fB/dev/ksyms\fR）、操作系统故障转储、记录在操作系统故障转储内部的用户进程映像、\fBELF\fR 对象文件以及原始二进制文件。每个目标导出一组标准的属性，其中包括一个或多个地址空间、一个或多个符号表、一组装入对象和一组线程，这些内容均可以使用下述调试器命令检查。
+.sp
+.LP
+调试器命令在 \fBmdb\fR 术语中称为 \fIdcmd\fR（发音为 dee-command），是调试器中可以访问当前目标的任意属性的例程。\fBmdb\fR 解析标准输入中的命令，然后执行对应的 dcmd。每个 dcmd 也可以接受字符串或数字参数列表，如以下语法说明中所示。\fBmdb\fR 包含一组始终可供使用的内置 dcmd，如下所示。您也可以通过编写自己的 dcmd 来扩展 \fBmdb\fR 自身的功能，如\fI《Oracle Solaris Modular Debugger Guide》\fR中所述。
+.sp
+.LP
+\fI遍历器\fR是一组例程，用来描述如何在特定程序数据结构的元素中进行遍历或迭代。遍历器封装 dcmd 以及 \fBmdb\fR 自身中的数据结构实现。您可以按交互方式使用遍历器，也可将它们用作基元来构建其他 dcmd 或遍历器。在使用 dcmd 时，您可以将自己的遍历器作为调试器模块的一部分实现，从而扩展 \fBmdb\fR。
+.sp
+.LP
+调试器模块（即 \fIdmod\fR，发音为 dee-mod）是动态载入的库，包含一组 dcmd 和遍历器。在初始化期间，\fBmdb\fR 尝试装入与目标中存在的装入对象相对应的 dmod。接下来，在运行 \fBmdb\fR 时，您可以随时装入或卸载 dmod。 随 \fBmdb\fR 提供了一组标准 dmod，它们可用于调试 Solaris 内核。\fI《Oracle Solaris Modular Debugger Guide》\fR中包含有关开发自己的调试器模块的更多信息。
+.sp
+.LP
+\fI宏文件\fR是包含一组要执行的命令的文本文件。宏文件通常用于自动执行显示简单数据结构的进程。\fBmdb\fR 为执行针对 \fBadb\fR(1) 编写的宏文件提供了完整的向后兼容性，而 Solaris 安装包括一组用于调试 Solaris 内核的宏文件，它们可以在任意一种工具中使用。
+.SS "语法"
+.sp
+.LP
+调试器处理标准输入中的命令。如果标准输入为终端，则 \fBmdb\fR 提供终端编辑功能。\fBmdb\fR 也可以处理来自宏文件以及来自 dcmd 流水线的命令，如下所述。语言语法的设计以下面的概念为中心：计算表达式的值（通常为目标中的内存地址），然后对该地址应用 dcmd。当前地址位置称为\fI点\fR，使用 ``.'' 来引用相关值。
+.sp
+.LP
+\fI元字符\fR为以下字符之一：
+.sp
+.in +2
+.nf
+[   ]   |   !   /   \e   ?   =   >   $   :   ;   
+            \fINEWLINE\fR   \fISPACE\fR   \fITAB\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fI空白\fR为\fI制表符\fR或\fI空格\fR。\fI词\fR是由一个或多个不括起的元字符分隔的字符序列。一些元字符仅在特定上下文中起到分界符的作用，如下文所述。\fI标识符\fR是字母、数字、下划线、句点或反引号组成的序列，以字母、下划线或句点开头。标识符用作符号、变量、dcmd 和遍历器的名称。使用\fI换行\fR或分号 (\fB;\fR) 来分隔各个命令。
+.sp
+.LP
+使用以下词或元字符之一表示 dcmd：
+.sp
+.in +2
+.nf
+/   \e   ?   =   >   $character   :character  ::identifier
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用元字符命名或者使用单个 \fB$\fR 或 \fB:\fR 作为前缀的 dcmd 作为内置运算符提供，并且与旧的 \fBadb\fR(1) 实用程序的命令集实现完全兼容。dcmd 在解析之后，\fB/\fR、\fB\e\fR、\fB?\fR、\fB=\fR、\fB>\fR、\fB$\fR 和 \fB:\fR 字符在参数列表终止之前不再识别为元字符。
+.sp
+.LP
+\fI简单命令\fR是一个 dcmd，后面跟随由零个或多个以空格分隔的词组成的序列。除非在下面的\fB引用和算术扩展\fR中指定，否则词将作为参数传递到调用的 dcmd。 每个 dcmd 返回一个退出状态，指示成功、失败或者在调用时使用了无效参数。
+.sp
+.LP
+\fI流水线\fR是由 \fB|\fR 分隔的一个或多个简单命令。与 shell 不同，\fBmdb\fR 流水线中的 dcmd 不作为单独进程执行。对流水线进行解析之后，按照从左到右的顺序依次调用各个 dcmd。对每个 dcmd 的输出进行处理并存储，如下面的 \fBdcmd 流水线\fR中所述。左侧的 dcmd 完成之后，经过处理的输出将用作流水线中下一个 dcmd 的输入。如果任何 dcmd 都未返回成功的退出状态，流水线将异常中止。
+.sp
+.LP
+\fI表达式\fR是一个词序列，对该序列进行求值以计算得出 64 位的无符号整数值。词使用下面的\fB算术扩展\fR中所述的规则求值。
+.SS "命令"
+.sp
+.LP
+\fI命令\fR可以是以下内容之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpipeline\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+简单命令或流水线可以选择使用 \fB!\fR 字符作为后缀，指示调试器应打开 \fBpipe\fR(2) 并将 \fBmdb\fR 流水线中上一个 dcmd 的标准输出发送到外部进程。该外部进程是使用以下方法创建的：执行 \fB$SHELL\fR \fB-c\fR，后面跟随通过在 \fB!\fR 字符后串联词所构成的字符串。有关详细信息，请参见下面的 \fBShell 转义\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR \fIpipeline\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+可以使用一个表达式作为简单命令或流水线的前缀。 在执行流水线之前，将点的值（使用 ``\fB\&.\fR'' 表示的变量）设置为表达式的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR \fB,\fR \fIexpression\fR \fIpipeline\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+可以使用两个表达式作为简单命令或流水线的前缀。对第一个表达式求值，确定点的新值；对第二个表达式求值，确定流水线中第一个 dcmd 的重复计数。此 dcmd 将执行 \fIcount\fR 次数，然后再执行流水线中的下一个 dcmd。重复计数仅应用于流水线中的第一个 dcmd。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB,\fR \fIexpression\fR \fIpipeline\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+如果省略了第一个表达式，则不修改点，但是将根据表达式的值重复流水线中的第一个 dcmd。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+一个命令只能由一个算术表达式组成。对表达式求值并将点变量设置为表达式值，然后使用点的新值来执行上一个 dcmd 和参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR\fB,\fR \fIexpression\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+一个命令只能由一个点表达式和重复计数表达式组成。将点设置为第一个表达式的值之后，上一个 dcmd 和参数将重复执行由第二个表达式的值指定的次数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB,\fR \fIexpression\fR [\fB!\fR \fIword\fR .\|.\|.] [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+如果省略第一个表达式，则不修改点，但上一个 dcmd 和参数将重复执行由计数表达式的值指定的次数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR \fIword\fR .\|.\|. [ \fB;\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+如果命令以 \fB!\fR 字符开头，则不执行任何 dcmd，而调试器仅执行 \fB$SHELL\fR \fB-c\fR，后面跟随通过在 \fB!\fR 字符后串联词所构成的字符串。
+.RE
+
+.SS "注释"
+.sp
+.LP
+词以 \fB//\fR 开头时，将忽略该词以及后面直至\fI换行\fR之前的所有字符。
+.SS "算术扩展"
+.sp
+.LP
+当 \fBmdb\fR 命令前面为表示起始地址的可选表达式时，或者为起始地址和重复计数时，将执行算术扩展。还可以执行算术扩展来计算 dcmd 的数字参数。在参数列表中可以出现算术表达式，该表达式必须以方括号括起，前面使用美元符号 (\fB$[ expression ]\fR)。该表达式将由表达式的值取代。
+.sp
+.LP
+表达式可以包含以下任意特殊词：
+.sp
+.ne 2
+.mk
+.na
+\fB\fI整数\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的整数值。整数值可以使用以下前缀：\fB0i\fR 或 \fB0I\fR 表示二进制值；\fB0o\fR 或 \fB0O\fR 表示八进制值；\fB0t\fR 或 \fB0T\fR 表示十进制值；\fB0x\fR 或 \fB0X\fR 表示十六进制值（缺省值）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB0[tT][0-9]+.[0-9]+\fR
+.ad
+.sp .6
+.RS 4n
+转换为 \fBIEEE\fR 双精度浮点值表示法的指定十进制浮点值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\&'\fIcccccccc\fR'\fR
+.ad
+.sp .6
+.RS 4n
+通过将每个字符转换为等于 \fBASCII\fR 值的字节计算得到的整数值。在字符常量中最多可以指定八个字符。字符从最低有效字节开始，按逆序（从右到左）压缩为整数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB<\fI标识符\fR\fR
+.ad
+.sp .6
+.RS 4n
+以 \fIidentifier\fR 命名的变量的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fI标识符\fR\fR
+.ad
+.sp .6
+.RS 4n
+以 \fIidentifier\fR 命名的符号的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(\fI表达式\fR)\fR
+.ad
+.sp .6
+.RS 4n
+\fIexpression\fR 的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\&.\fR
+.ad
+.sp .6
+.RS 4n
+点的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB&\fR
+.ad
+.sp .6
+.RS 4n
+最近执行 dcmd 所用的点的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB+\fR
+.ad
+.sp .6
+.RS 4n
+使用当前增量递增的点的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^\fR
+.ad
+.sp .6
+.RS 4n
+使用当前增量递减的点的值。
+.RE
+
+.sp
+.LP
+增量为全局变量，用于存储上一个格式化 dcmd 读取的字节总数。有关增量的详细信息，请参阅下面的\fB格式化 dcmd\fR 中讨论的内容。
+.sp
+.LP
+一元运算符从右向左执行运算，优先级高于二元运算符。一元运算符包括：
+.sp
+.ne 2
+.mk
+.na
+\fB#\fI表达式\fR\fR
+.ad
+.sp .6
+.RS 4n
+逻辑否定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB~\fI表达式\fR\fR
+.ad
+.sp .6
+.RS 4n
+按位取反。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB-\fI表达式\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数否定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%\fI表达式\fR\fR
+.ad
+.sp .6
+.RS 4n
+对象文件位置的指针大小数量的值，该位置对应于目标虚拟地址空间中的虚拟地址 \fIexpression\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%/[csil]/\fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+对象文件位置的字符、短整型、整型或长整型大小数量的值，该位置对应于目标虚拟地址空间中的虚拟地址 \fIexpression\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%/[1248]/\fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+对象文件位置的单字节、双字节、四个字节或八个字节数量的值，该位置对应于目标虚拟地址空间中的虚拟地址 \fIexpression\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB*\fI表达式\fR\fR
+.ad
+.sp .6
+.RS 4n
+目标虚拟地址空间中的虚拟地址 \fIexpression\fR 处的指针大小数量的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB*/[csil]/\fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+目标虚拟地址空间中的虚拟地址 \fIexpression\fR 处的字符、短整型、长整型大小数量的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB*/[1248]/\fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+目标虚拟地址空间中的虚拟地址 \fIexpression\fR 处的单字节、双字节、四字节或八字节数量的值。
+.RE
+
+.sp
+.LP
+二元运算符从左向右执行运算，优先级低于一元运算符。二元运算符按照优先级从高到低的顺序为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB*\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数相乘。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数相除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB#\fR\fR
+.ad
+.sp .6
+.RS 4n
+将左侧向上取整到右侧的下一个倍数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数相加。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数相减。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<<\fR\fR
+.ad
+.sp .6
+.RS 4n
+左移位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>>\fR\fR
+.ad
+.sp .6
+.RS 4n
+右移位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB==\fR\fR
+.ad
+.sp .6
+.RS 4n
+逻辑等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!=\fR\fR
+.ad
+.sp .6
+.RS 4n
+逻辑不等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB&\fR\fR
+.ad
+.sp .6
+.RS 4n
+按位与。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR^\fR
+.ad
+.sp .6
+.RS 4n
+按位异或。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB|\fR\fR
+.ad
+.sp .6
+.RS 4n
+按位同或。
+.RE
+
+.SS "引用"
+.sp
+.LP
+除非括起来，否则上述各个元字符（参见\fB语法\fR）将终止词。字符可以括起来（强制 \fBmdb\fR 按原义解释各个字符，而不解释为任何特殊含义），方法是使用一对单引号 (\fB\&' '\fR) 或双引号 (\fB" "\fR) 将这些字符括起来。单引号内部不能出现单引号。在双引号内部，\fBmdb\fR 可以识别 C 编程语言字符转义序列。
+.SS "Shell 转义"
+.sp
+.LP
+\fB!\fR 字符可用于在 \fBmdb\fR 命令和用户 shell 之间创建流水线。如果 $\fBSHELL\fR 环境变量已设置，\fBmdb\fR 将为 shell 转义派生并执行此程序；否则将使用 \fB/bin/sh\fR。使用 \fB-c\fR 选项，后面跟随通过在 \fB!\fR 字符后串联词所构成的字符串，以此调用 shell。\fB!\fR 字符优先级高于除分号 (\fB;\fR) 和\fI换行\fR之外的所有其他元字符。检测到 shell 转义时，后面直到下一个分号或\fI换行\fR的其余字符将按原义传递到 shell。shell 命令的输出不能通过流水线输出到 \fBmdb\fR dcmd。由 shell 转义执行的命令将命令输出直接发送到终端，而不是发送到 \fBmdb\fR。
+.SS "变量"
+.sp
+.LP
+\fIvariable\fR 是变量名称、对应的整数值以及一组属性。变量名是由字符、数字、下划线或句点组成的序列。可以使用 \fB>\fR dcmd 或 \fB::typeset\fR dcmd 为变量赋值，变量的属性可以使用 \fB::typeset\fR dcmd 来处理。每个变量的值用一个 64 位无符号整数表示。变量可以具有以下一个或多个属性：只读（不能由用户修改）、持久（不能由用户取消设置）和已标记（用户定义的指示符）。
+.sp
+.LP
+以下变量定义为持久变量：
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fB/\fR、\fB\e\fR、\fB?\fR 或 \fB=\fR dcmd 列显的最近值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB9\fR
+.ad
+.sp .6
+.RS 4n
+用于 \fB$<\fR dcmd 的最近计数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBb\fR
+.ad
+.sp .6
+.RS 4n
+数据区的根基的虚拟地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBd\fR
+.ad
+.sp .6
+.RS 4n
+数据区大小（以字节为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBe\fR
+.ad
+.sp .6
+.RS 4n
+入口点的虚拟地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBm\fR
+.ad
+.sp .6
+.RS 4n
+目标主对象文件的初始字节数（幻数），如果尚未读取对象文件，则为零。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBt\fR
+.ad
+.sp .6
+.RS 4n
+文本区大小（以字节为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBhits\fR
+.ad
+.sp .6
+.RS 4n
+与匹配软件事件说明符匹配的次数。参见下面的\fB事件回调\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBthread\fR
+.ad
+.sp .6
+.RS 4n
+当前代表线程的线程标识符。标识符的值取决于当前目标使用的线程模型。参见下面的\fB线程支持\fR。
+.RE
+
+.sp
+.LP
+此外，\fBmdb\fR 内核和进程目标将代表线程寄存器集的当前值导出为命名变量。这些变量的名称取决于目标的平台和指令集体系结构。
+.SS "符号名称解析"
+.sp
+.LP
+按照上面的\fB语法\fR说明中的解释，表达式上下文中存在的符号标识符的计算结果为此符号的值。该值通常表示与目标虚拟地址空间中的符号关联的存储的虚拟地址。目标可以支持多个符号表，包括但不限于针对多个装入对象中每个对象（例如用户进程中的共享库或者 Solaris 内核中的内核模块）的主可执行符号表、主动态符号表、运行时链接编辑器符号表以及标准和动态符号表。目标通常先搜索主可执行符号表，然后搜索一个或多个其他符号表。请注意，\fBELF\fR 符号表只包含外部、全局和静态符号的条目；自动符号不显示在由 \fBmdb\fR 处理的符号表中。
+.sp
+.LP
+此外，\fBmdb\fR 提供了私有的用户定义符号表，该表将在搜索任何目标符号表之前进行搜索。私有符号表最初是空的，可以使用 \fB::nmadd\fR 和 \fB::nmdel\fR dcmd 处理。\fB::nm\fR \fB-P\fR 选项可用于显示私有符号表的内容。用户可以使用私有符号表为原始程序中缺少的或已删除的程序函数或数据创建符号定义。然后，只要 \fBmdb\fR 将符号名称转换为地址，或者将地址转换为最接近的符号，就会使用这些定义。
+.sp
+.LP
+由于目标包含多个符号表，并且每个符号表可以包含来自多个对象文件的符号，所以可以存在同名的不同符号。\fBmdb\fR 使用反引号 (\fB`\fR) 字符作为符号名称作用范围运算符，使程序员能够在这种情况下获取所需符号的值。程序员可以将用于解析符号名称的作用范围指定为以下值之一：\fIobject\fR\fB`\fR\fIname\fR；\fIfile\fR\fB`\fR\fIname\fR 或 \fIobject\fR\fB`\fR\fIfile\fR\fB`\fR\fIname\fR。 对象标识符指装入对象的名称。文件标识符指在指定对象的符号表中具有 \fBSTT_FILE\fR 类型的符号的源文件的根基名称。对象标识符的解释取决于目标类型。
+.sp
+.LP
+\fBmdb\fR 内核目标需要 \fIobject\fR 来指定已装入内核模块的根基名称。例如，符号名称
+.sp
+.in +2
+.nf
+specfs`_init
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+计算结果为 \fBspecfs\fR 内核模块中 \fB_init\fR 符号的值。
+.sp
+.LP
+\fBmdb\fR 进程目标需要 \fIobject\fR 来指定可执行文件的名称或者已装入共享库的名称。可以采用以下形式之一：
+.RS +4
+.TP
+1.
+完全匹配（即完整路径名）：\fB/usr/lib/libc.so.1\fR
+.RE
+.RS +4
+.TP
+2.
+精确根基名称匹配：\fBlibc.so.1\fR
+.RE
+.RS +4
+.TP
+3.
+初始根基名称，一直匹配到 ``\fB\&.\fR'' 后缀之前的内容：\fBlibc.so\fR 或 \fBlibc\fR
+.RE
+.RS +4
+.TP
+4.
+文本字符串 \fBa.out\fR 可接受作为可执行文件的别名。
+.RE
+.sp
+.LP
+进程目标也可以接受在上述四种形式中的任意一种前面添加可选的链接图 ID (lmid)。可以在初始的 "\fBLM\fR" 后面跟随十六进制的链接图 ID，然后再跟随一个反引号，以此指定 lmid 前缀。例如，符号名称
+.sp
+.in +2
+.nf
+LM0`libc.so.1`_init
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+计算结果为 \fB_init\fR 符号的值，该符号位于在链接图 0 (\fBLM_ID_BASE\fR) 上装入的 \fBlibc.so.1\fR 库中。如果相同库在多个链接图上装入，则链接图说明符对于解决符号命名冲突是必需的。有关链接图的更多信息，请参阅\fI《Linker and Libraries Guide》\fR和 \fBdlopen\fR(3C)。在根据 \fBshowlmid\fR 选项的设置列显符号时，将显示链接图标识符，如"选项"下的内容所述。
+.sp
+.LP
+如果符号与十六进制整数值之间出现命名冲突，\fBmdb\fR 在将不确定的标记求值为整数值之前，将先尝试将该标记求值为符号。例如，标记 \fBf\fR 可以引用在十六进制（缺省基数）中指定的十进制整数值 \fB15\fR，也可以引用目标符号表中名为 \fBf\fR 的全局变量。如果存在具有不确定名称的符号，则可以使用显式 \fB0x\fR 或 \fB0X\fR 前缀来指定整数值。
+.SS "dcmd 和遍历器名称解析"
+.sp
+.LP
+如前面所述，每个 \fBmdb\fR dmod 提供了一组 dcmd 和遍历器。dcmd 和遍历器是在两个不同的全局名称空间中跟踪的。\fBmdb\fR 还会跟踪与每个 dmod 关联的 dcmd 和遍历器名称空间。在一个指定的 dmod 中不允许具有同名的 dcmd 或遍历器：存在此类命名冲突的 dmod 无法装入。在全局名称空间中，允许来自不同 dmod 的 dcmd 或遍历器之间的名称冲突。出现冲突时，要装入的第一个具有该特定名称的 dcmd 或遍历器将在全局名称空间中优先。备用定义按照装入顺序保存在列表中。反引号字符 (\fB`\fR) 可以在 dcmd 或遍历器名称中用作作用范围运算符来选择备用定义。例如，如果 dmod \fBm1\fR 和 \fBm2\fR 均提供了一个 dcmd \fBd\fR，并且 \fBm1\fR 在 \fBm2\fR 之前装入，则：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::d\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行 \fBm1\fR 的 \fBd\fR 定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::m1`d\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行 \fBm1\fR 的 \fBd\fR 定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::m2`d\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行 \fBm2\fR 的 \fBd\fR 定义。
+.RE
+
+.sp
+.LP
+如果模块 \fBm1\fR 现在已卸载，则全局定义列表中的下一个 dcmd (\fBm2`d\fR) 将提升为具有全局可见性。使用下面所述的 \fB::which\fR dcmd 可以确定 dcmd 或遍历器的当前定义。使用 \fB::which\fR \fB-v\fR 选项可以显示全局定义列表。
+.SS "dcmd 流水线"
+.sp
+.LP
+使用 \fB|\fR 运算符可以将 dcmd 组合成为流水线。流水线的作用是从一个 dcmd 或遍历器向另一个 dcmd 或遍历器传递值列表，通常为虚拟地址。流水线阶段可用于将指针从一种类型的数据结构映射到对应数据结构的指针，以便对地址列表进行排序或者选择具有特定属性的结构地址。
+.sp
+.LP
+\fBmdb\fR 按照从左到右的顺序执行流水线中的各个 dcmd。最左侧的 dcmd 使用点的当前值执行，或者使用在命令开头由显式表达式指定的值执行。遇到 \fB|\fR 运算符时，\fBmdb\fR 在左侧的 dcmd 输出与 \fBmdb\fR 解析器之间创建流水线（共享缓冲区），并创建空的值列表。当 dcmd 执行时，相应的标准输出将放在流水线中，然后由解析器使用和求值，等同于 \fBmdb\fR 从标准输入读取了此数据。每一行必须包含使用\fI换行\fR或分号 (\fB;\fR) 终止的算术表达式。表达式的值将附加到与流水线关联的值列表中。如果检测到语法错误，流水线将异常中止。
+.sp
+.LP
+当位于 \fB|\fR 运算符左侧的 dcmd 完成时，将使用与流水线关联的值列表来调用位于 \fB|\fR 运算符右侧的 dcmd。对于列表中的每个值，点将设置为该值，并且执行右侧的 dcmd。只有流水线中最右侧的 dcmd 会将输出列显到标准输出中。如果流水线中的任何 dcmd 向标准错误生成了输出，这些消息将直接列显到标准错误，而不作为流水线的一部分进行处理。
+.SS "信号处理"
+.sp
+.LP
+调试器忽略 \fBPIPE\fR 和 \fBQUIT\fR 信号。\fBINT\fR 信号用于异常中止当前正在执行的命令。调试器拦截 \fBILL\fR、\fBTRAP\fR、\fB EMT\fR、\fBFPE\fR、\fBBUS\fR 和 \fBSEGV\fR 信号并提供对这些信号的特殊处理。如果异步生成了这些信号中的任意一个（即从其他使用 \fBkill\fR(2) 的进程传送的信号），\fBmdb\fR 会将信号恢复到缺省处理和转储核心。但是，如果这些信号中的任意一个由调试器进程本身同步生成，并且来自外部装入 dmod 的 dcmd 当前正在执行，并且标准输入为终端，则 \fBmdb\fR 提供了一个选项菜单，允许用户选择强制执行核心转储、退出而不生成核心转储、停止以便由调试器附加或者尝试恢复。恢复选项将异常中止所有活动命令并卸载出现故障时相应的 dcmd 处于活动状态的 dmod。 随后，它可由用户重新装入。恢复选项可以为错误频发的 dcmd 提供有限的保护。有关与恢复选项相关的风险的信息，请参阅下面的警告\fB使用错误恢复机制\fR。
+.SS "命令重新输入"
+.sp
+.LP
+从终端设备输入的最后一个 \fBHISTSIZE\fR（缺省值为 128）命令的文本保存在内存中。接下来介绍的内嵌编辑工具提供了用于从历史记录列表中搜索和提取元素的键映射。
+.SS "内嵌编辑"
+.sp
+.LP
+如果标准输入为终端设备，则 \fBmdb\fR 提供了一些简单的 emacs 风格的工具，这些工具可用于编辑命令行。编辑模式下的 \fBsearch\fR、\fBprevious\fR 和 \fBnext\fR 命令提供了对历史记录列表的访问。在搜索时，只匹配字符串，不匹配模式。在下表中，控制字符的表示法为在插入记号 (\fB^\fR) 后面跟随以大写形式显示的字符。转义序列的表示法为后跟有字符的 \fBM-\fR。例如，\fBM-f\fR（发音为 meta-eff）的输入方法为：按下 ESC，然后按下 '\fBf\fR'；在支持 \fBMeta\fR 键的键盘上则按下 Meta，然后按下 '\fBf\fR'。使用\fI回车\fR或\fI换行\fR来提交和执行命令行。编辑命令包括：
+.sp
+.ne 2
+.mk
+.na
+\fB^F\fR
+.ad
+.sp .6
+.RS 4n
+将光标向前（向右）移动一个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM-f\fR
+.ad
+.sp .6
+.RS 4n
+将光标向前移动一个词。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^B\fR
+.ad
+.sp .6
+.RS 4n
+将光标向后（向左）移动一个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM-b\fR
+.ad
+.sp .6
+.RS 4n
+将光标向后移动一个词。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^A\fR
+.ad
+.sp .6
+.RS 4n
+将光标移到行的开头。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^M\fR
+.ad
+.sp .6
+.RS 4n
+将光标移到行的结尾。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^D\fR
+.ad
+.sp .6
+.RS 4n
+如果当前行不为空，则删除当前字符。如果当前行为空，则 \fB^D\fR 将指示 \fBEOF\fR，并且调试器将退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM-^H\fR
+.ad
+.sp .6
+.RS 4n
+（Meta 退格）删除上一个词。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^K\fR
+.ad
+.sp .6
+.RS 4n
+删除光标至行尾之间的内容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^L\fR
+.ad
+.sp .6
+.RS 4n
+清除屏幕并重新列显当前行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^T\fR
+.ad
+.sp .6
+.RS 4n
+将当前字符与下一个字符换位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^N\fR
+.ad
+.sp .6
+.RS 4n
+从历史记录中提取下一个命令。每次输入 \fB^N\fR 时，将按时间检索下一个命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^P\fR
+.ad
+.sp .6
+.RS 4n
+从历史记录中提取上一个命令。每次输入 \fB^P\fR 时，将按时间检索上一个命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB^R[\fIstring\fR]\fR
+.ad
+.sp .6
+.RS 4n
+在历史记录中反向搜索包含 \fIstring\fR 的上一个命令行。字符串应使用\fI回车\fR或\fI换行\fR终止。如果省略 \fIstring\fR，则检索包含最近使用的字符串的上一个历史记录元素。
+.RE
+
+.sp
+.LP
+编辑模式还会将以下用户定义的序列解释为编辑命令。用户定义的序列可以使用 \fBstty\fR(1) 命令读取或修改。
+.sp
+.ne 2
+.mk
+.na
+\fBerase\fR
+.ad
+.sp .6
+.RS 4n
+用户定义的删除字符（通常为 \fB^H\fR 或 \fB^?\fR）。删除上一字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBintr\fR
+.ad
+.sp .6
+.RS 4n
+用户定义的中断字符（通常为 \fB^C\fR）。异常中止当前命令并列显新的提示符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkill\fR
+.ad
+.sp .6
+.RS 4n
+用户定义的中止字符（通常为 \fB^U\fR）。中止当前整个命令行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBquit\fR
+.ad
+.sp .6
+.RS 4n
+用户定义的退出字符（通常为 \fB^\e\fR）。退出调试器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsuspend\fR
+.ad
+.sp .6
+.RS 4n
+用户定义的暂停字符（通常为 \fB^Z\fR）。暂停调试器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBwerase\fR
+.ad
+.sp .6
+.RS 4n
+用户定义的词删除字符（通常为 \fB^W\fR）。删除前面的词。
+.RE
+
+.sp
+.LP
+如果键盘支持带有方向键的小键盘，\fBmdb\fR 会将以下击键解释为编辑命令：
+.sp
+.ne 2
+.mk
+.na
+\fB向上箭头\fR
+.ad
+.sp .6
+.RS 4n
+从历史记录中提取上一个命令（与 \fB^P\fR 相同）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB向下箭头\fR
+.ad
+.sp .6
+.RS 4n
+从历史记录中提取下一个命令（与 \fB^N\fR 相同）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB左箭头\fR
+.ad
+.sp .6
+.RS 4n
+将光标向后移动一个字符（与 \fB^B\fR 相同）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB右箭头\fR
+.ad
+.sp .6
+.RS 4n
+将光标向前移动一个字符（与 \fB^F\fR 相同）。
+.RE
+
+.SS "输出页面调度程序"
+.sp
+.LP
+\fBmdb\fR 提供了内置的输出页面调度程序。如果调试器的标准输出是终端设备，将启用输出页面调度程序。每次执行命令时，\fBmdb\fR 在生成了满屏输出后将暂停，并显示页面调度程序提示符：
+.sp
+.in +2
+.nf
+ >> More [<space>, <cr>, q, n, c, a] ?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+页面调度程序识别以下键序：
+.sp
+.ne 2
+.mk
+.na
+\fB\fI空格\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示下一个满屏输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBa，A\fR
+.ad
+.sp .6
+.RS 4n
+中止当前顶级命令并返回到提示符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBc，C\fR
+.ad
+.sp .6
+.RS 4n
+继续显示输出，不在每次满屏时停止，直至当前顶级命令完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBn，N，\fI换行\fR，\fI回车\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示下一行输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBq，Q，^C，^\e\fR
+.ad
+.sp .6
+.RS 4n
+仅退出（异常中止）当前 dcmd。
+.RE
+
+.SS "格式化 dcmd"
+.sp
+.LP
+\fB/\fR、\fB\e\fR、\fB?\fR 和 \fB=\fR 元字符用于表示特殊输出格式的 dcmd。这些 dcmd 中的每一个可接受由一个或多个格式字符、重复计数或括起字符串组成的参数列表。格式字符是下表中显示的 \fBASCII\fR 字符之一。格式字符用于从目标中读取并格式化数据。重复计数是在格式字符之前的正整数，始终按照 Base 10（十进制）来解释。重复计数也可以指定为使用方括号括起的表达式，前面带有美元符号 (\fB$[ ]\fR)。字符串参数必须使用双引号括起来 (\fB" "\fR)。格式参数之间不必留有空格。
+.sp
+.LP
+格式化 dcmd 包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/\fR\fR
+.ad
+.sp .6
+.RS 4n
+从由点指定的虚拟地址开始，显示来自目标的虚拟地址空间的数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\e\fR\fR
+.ad
+.sp .6
+.RS 4n
+从由点指定的物理地址开始，显示来自目标的物理地址空间的数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+从与由点指定的虚拟地址对应的对象文件位置开始，显示来自目标的主对象文件的数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.sp .6
+.RS 4n
+以各个指定的数据格式显示点本身的值。因此，\fB=\fR dcmd 在基数之间转换和执行算术运算时非常有用。
+.RE
+
+.sp
+.LP
+除了点之外，\fBmdb\fR 还可以跟踪另一种称为\fI增量\fR的全局值。增量表示点与上一个格式化 dcmd 读取的所有数据后面的地址之间的距离。例如，如果执行了点等于地址 A 的格式化 dcmd，并且显示 4 个字节的整数，则在此 dcmd 完成后，点仍旧为 A，但增量设置为 \fB4\fR。\fB+\fR 字符（在上面的\fB算术扩展\fR中介绍）现在的计算结果为值 \fBA + 4\fR，可用于将点重置为后续 dcmd 的下一个数据对象的地址。
+.sp
+.LP
+大部分格式字符将增大增量的值，增加的大小为与数据格式大小对应的字节数，如表中所示。格式字符的表可以使用 \fB::formats\fR dcmd 在 \fBmdb\fR 中显示。格式字符包括：
+.sp
+
+.sp
+.TS
+tab();
+lw(.69i) lw(4.81i) 
+lw(.69i) lw(4.81i) 
+.
+\fB+\fR将点增加计数值（可变大小）
+\fB-\fR将点减少计数值（可变大小）
+B十六进制整数（1 个字节）
+CT{
+使用 C 字符表示法的字符（1 个字节）
+T}
+DT{
+十进制有符号整数（4 个字节）
+T}
+MT{
+十进制无符号长整数（8 个字节）
+T}
+F双精度数（8 个字节）
+GT{
+八进制无符号长整数（8 个字节）
+T}
+HT{
+交换字节，短整数（4 个字节）
+T}
+IT{
+地址和反汇编指令（可变大小）
+T}
+JT{
+十六进制无符号长整数（8 个字节）
+T}
+KT{
+十六进制 uintptr_t（4 个或 8 个字节）
+T}
+N新行
+OT{
+八进制无符号整数（4 个字节）
+T}
+P符号（4 个或 8 个字节）
+QT{
+八进制有符号整数（4 个字节）
+T}
+R二进制整数（8 个字节）
+ST{
+使用 C 字符串表示法的字符串（可变大小）
+T}
+T水平制表符
+UT{
+十进制无符号整数（4 个字节）
+T}
+VT{
+十进制无符号整数（1 个字节）
+T}
+WT{
+缺省基数无符号整数（4 个字节）
+T}
+X十六进制整数（4 个字节）
+Y已解码的 time32_t（4 个字节）
+ZT{
+十六进制无符号长整数（8 个字节）
+T}
+^T{
+将点减少增量*计数值（可变大小）
+T}
+a将点作为符号+偏移
+bT{
+八进制无符号整数（1 个字节）
+T}
+c字符（1 个字节）
+dT{
+十进制有符号短整数（2 个字节）
+T}
+eT{
+十进制有符号长整数（8 个字节）
+T}
+f浮点数（4 个字节）
+gT{
+八进制有符号长整数（8 个字节）
+T}
+h交换字节（2 个字节）
+i反汇编指令（可变大小）
+n新行
+oT{
+八进制无符号短整数（2 个字节）
+T}
+p符号（4 个或 8 个字节）
+qT{
+八进制有符号短整数（2 个字节）
+T}
+r空格
+s原始字符串（可变大小）
+t水平制表符
+uT{
+十进制无符号短整数（2 个字节）
+T}
+vT{
+十进制有符号整数（1 个字节）
+T}
+wT{
+缺省基数无符号短整数（2 个字节）
+T}
+x十六进制短整数（2 个字节）
+y已解码的 time64_t（8 个字节）
+.TE
+
+.sp
+.LP
+\fB/\fR、\fB\e\fR 和 \fB?\fR 格式化 dcmd 也可用于写入目标的虚拟地址空间、物理地址空间或对象文件，方法是将以下修饰符之一指定为第一个格式字符，然后指定词列表，该词列表可以直接为值，也可以为用方括号括起的表达式，前面带有美元符号 (\fB$[ ]\fR)。
+.sp
+.LP
+写入修饰符包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBv\fR\fR
+.ad
+.sp .6
+.RS 4n
+将每个表达式值的最低字节写入从点所指定的位置开始的目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.sp .6
+.RS 4n
+将每个表达式值的最低 2 个字节写入从点所指定的位置开始的目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBW\fR\fR
+.ad
+.sp .6
+.RS 4n
+将每个表达式值的最低 4 个字节写入从点所指定的位置开始的目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+将每个表达式值的全部 8 个字节写入从点所指定的位置开始的目标。
+.RE
+
+.sp
+.LP
+\fB/\fR、\fB\e\fR 和 \fB?\fR 格式化 dcmd 也可分别用于搜索目标虚拟地址空间、物理地址空间和对象文件中的特定整数值，方法是将以下修饰符之一指定为第一个格式字符，然后指定值和可选的掩码。值和掩码均可以直接指定为值，也可以指定为使用方括号括起的表达式，在前面使用美元符号。如果只指定了值，\fBmdb\fR 将读取合适大小的整数，并在包含匹配值的地址处停止。如果指定了值 \fBV\fR 和掩码 \fBM\fR，\fBmdb\fR 将读取合适大小的整数，并在包含值 \fBX\fR（其中 \fB(X & M) == V\fR）的地址处停止。dcmd 完成之后，点将更新为包含匹配项的地址。如果找不到匹配项，点将保留为最后一个读取的地址。
+.sp
+.LP
+搜索修饰符包括：
+.sp
+
+.sp
+.TS
+tab();
+lw(.69i) lw(4.81i) 
+lw(.69i) lw(4.81i) 
+.
+l搜索指定的 2 字节值。
+L搜索指定的 4 字节值。
+M搜索指定的 8 字节值。
+.TE
+
+.sp
+.LP
+请注意，对于用户和内核目标而言，地址空间通常由一组不连续的段组成。从没有对应段的地址进行读取是非法的。如果搜索到达段边界但没有找到匹配项，将在由于读取超出段边界结尾而失败时异常中止。
+.SS "执行控制"
+.sp
+.LP
+\fBmdb\fR 提供了用于控制和跟踪实时运行程序的执行的工具。目前，只有用户进程目标提供对执行控制的支持。\fBmdb\fR 提供了简单的执行控制模型：目标进程可以使用 \fB::run\fR 从调试器内部启动，\fBmdb\fR 也可以使用 \fB:A\fR、\fB::attach\fR 或 \fB-p\fR 命令行选项附加到现有进程，如下文所述。用户可以指定跟踪的软件事件列表。每次目标进程中发生跟踪的事件时，目标中的所有线程将停止，触发事件的线程将被选定作为代表线程，同时控制权将返回给调试器。将目标程序设置为运行之后，可以通过键入用户定义的中断字符（通常为 \fB^C\fR）将控制权异步返回给调试器。
+.sp
+.LP
+\fB软件事件\fR是目标程序中由调试器观察的状态转换。例如，调试器可以观察程序计数器寄存器到关注值（断点）的转换或发出特殊信号。
+.sp
+.LP
+\fB软件事件说明符\fR是对软件事件类的说明，由调试器用于对目标程序进行校验，以便观察这些事件。\fB::events\fR dcmd 用于列出软件事件说明符。每个事件说明符有一组标准属性与之关联，如下文 \fB::events\fR 中所述。
+.sp
+.LP
+调试器可以观察大量不同的软件事件，包括断点、监视点、信号、计算机故障和系统调用。可以使用 \fB::bp\fR、\fB::fltbp\fR、\fB::sigbp\fR、\fB::sysbp\fR 或 \fB::wp\fR 创建新说明符。每个说明符都具有关联的回调（要执行的 \fBmdb\fR 命令字符串，就像在命令提示符中键入了这些内容）和属性集合，如下文所述。可以为同一个事件创建任意数量的说明符，每个说明符可以具有不同的回调和属性。可以使用 \fB::events\fR dcmd 显示跟踪事件和对应事件说明符属性的当前列表。事件说明符属性在下面的 \fB::events\fR 和 \fB::evset \fR dcmd 说明中定义。
+.sp
+.LP
+执行控制内置 dcmd（在下面介绍）始终可用，但当应用于不支持执行控制的目标时，将发出一条错误消息，指示不受支持。有关执行、附加、释放及作业控制与调试器执行控制进行交互的详细信息，请参阅下面的"备注"。
+.SS "事件回调"
+.sp
+.LP
+使用 \fB::evset\fR dcmd 和事件跟踪 dcmd 可以将事件回调（使用 \fB-c\fR 选项）与各个事件说明符关联。事件回调是表示 \fBmdb\fR 命令的字符串，在目标中出现对应事件时执行。这些命令的执行与在命令提示符中键入这些内容时相同。在执行各个回调之前，点变量设置为代表线程的程序计数器的值，而 "\fBhits\fR" 变量设置为此说明符匹配的次数（包括当前匹配）。
+.sp
+.LP
+如果事件回调本身包含一个或多个继续在目标中执行的命令（例如，\fB::cont\fR 或 \fB::step\fR），则这些命令不立即在目标中执行，而是等待再次停止。相反，在事件回调内部，继续 dcmd 将注意到继续操作当前处于暂挂状态，然后立即返回。 因此，如果一个事件回调中包含了多个 dcmd，则步骤或继续 dcmd 应为最后一个指定的命令。在执行\fB所有\fR事件回调之后，如果\fB所有\fR匹配事件回调请求了继续，目标将立即恢复执行。如果请求了冲突的继续操作，具有最高优先级的操作将确定要发生的继续操作类型。优先级的顺序从高到低依次为：单步执行，步过（下一步），步出，继续。
+.SS "线程支持"
+.sp
+.LP
+\fBmdb\fR 提供了用于检查与目标关联的各个线程的栈和寄存器的工具。持久性 "\fBthread\fR" 变量包含当前代表线程标识符。线程标识符的格式取决于目标。\fB::regs\fR 和 \fB::fpregs\fR dcmd 可用于检查代表线程的寄存器集，如果其他线程的寄存器集当前可用，也可进行检查。此外，代表线程的寄存器集将导出为一组命名变量。用户可以将 \fB>\fR dcmd 应用于对应的命名变量，从而修改一个或多个寄存器的值。
+.sp
+.LP
+\fBmdb\fR 内核目标将导出对应内部线程结构的虚拟地址，作为指定线程的标识符。\fI《Oracle Solaris Modular Debugger Guide》\fR提供了有关 Solaris 内核中线程调试支持的更多信息。\fBmdb\fR 进程目标提供了相应的支持，可以检查使用本机 \fBlwp_*\fR 接口、\fB/usr/lib/libthread.so\fR 或 \fB/usr/lib/lwp/libthread.so\fR 的多线程用户进程。调试实时用户进程时，\fBmdb\fR 将检测是单线程进程 \fBdlopen\fR 还是关闭 \fBlibthread\fR，并自动即时调整线程模型的视图。根据应用程序使用的线程模型，进程目标线程标识符分别对应于代表线程的 \fBlwpid_t\fR、\fBthread_t\fR 或 \fBpthread_t\fR。
+.sp
+.LP
+如果 \fBmdb\fR 在调试用户进程目标并且目标使用了编译器支持的线程局部存储，则 \fBmdb\fR 自动将引用线程局部存储的符号名称求值为与当前代表线程对应的存储的地址。\fB::tls\fR 内置 dcmd 可用于显示除代表线程之外的其他线程的符号值。
+.SS "内置 dcmd"
+.sp
+.LP
+\fBmdb\fR 提供了一组已定义的内置 dcmd。其中一些 dcmd 仅适用于特定目标：如果 dcmd 不适用于当前目标，则将失败并列显消息，指示 "command is not supported by current target"。在许多情况下，\fBmdb\fR 为旧的 \fBadb\fR(1) dcmd 名称提供了等效助记符 (\fB::identifier\fR)。例如，提供的 \fB::quit\fR 与 \fB$q\fR 等同。有经验的 \fBadb\fR(1) 程序员，或者喜欢简洁或崇尚高深莫测编程的程序员，会偏好使用内置的 \fB$\fR 或 \fB:\fR 形式。而刚开始接触 \fBmdb\fR 的程序员可能会偏好使用更详细的 \fB::\fR 形式。内置形式按字母顺序排列。如果 \fB$\fR 或 \fB:\fR 形式具有等效的 \fB::identifier\fR，则将在 \fB::identifier\fR 形式下方显示。 内置 dcmd 包括：
+.sp
+.ne 2
+.mk
+.na
+\fB> \fIvariable-name\fR\fR
+.ad
+.br
+.na
+\fB\fB>\fR/\fImodifier\fR/\fIvariable-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+将点值赋值给指定的命名变量。一些变量为只读，无法修改。如果 \fB>\fR 后面跟随前后带有 \fB/ /\fR 的修饰符字符，则该值将作为赋值的一部分进行修改。修饰符字符包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.sp .6
+.RS 4n
+无符号字符值（1 个字节）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+无符号短整数值（2 个字节）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.sp .6
+.RS 4n
+无符号整数值（4 个字节）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+无符号长整数值（32 位系统下为 4 个字节，64 位系统下为 8 个字节）
+.RE
+
+请注意，这些运算符不执行类型转换，而是提取指定数量的低位字节（在小端字节序体系结构上）或高位字节（在大端字节序体系结构上）。提供修饰符是为了实现向后兼容性；应改为使用 \fBmdb\fR */\fImodifier\fR/ 和 %/\fImodifier\fR/ 语法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$<\fR \fImacro-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+从指定的宏文件读取和执行命令。可以按绝对路径或相对路径提供文件名。如果文件名是简单名称（即，其中不包含 '\fB/\fR'），\fBmdb\fR 将在宏文件头文件路径中搜索文件。如果当前在处理另一个宏文件，则此文件将关闭，并使用新文件替换。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$<<\fR \fImacro-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+从指定的宏文件读取和执行命令（与使用 \fB$<\fR 一样），但不关闭当前打开的宏文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$?\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果是用户进程或核心文件，则列显进程 \fBID\fR 和当前信号，然后列显代表线程的常规寄存器集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB$C\fR [ \fIcount\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列显 C 栈回溯，包括栈帧指针信息。如果 dcmd 前面是显式\fI地址\fR，将显示在此虚拟内存地址开始的回溯。否则，将显示代表线程的栈。如果将可选计数值指定为参数，则在输出中为每个栈帧显示不超过 \fIcount\fR 个参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIbase\fR ] \fB$d\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取或设置缺省输出基数。如果 dcmd 的前面为显式表达式，则缺省输出基数将设置为指定的 \fIbase\fR；否则当前基数将按照 Base 10（十进制）列显。缺省基数为 Base 16（十六进制）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$e\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显所有类型为对象或函数的已知外部（全局）符号、符号的值以及存储在目标虚拟地址空间中此位置的前 4 个（32 位 \fBmdb\fR）或 8 个（64 位 \fBmdb\fR）字节。\fB::nm\fR dcmd 提供了更多灵活选项来显示符号表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$P\fR \fIprompt-string\fR\fR
+.ad
+.sp .6
+.RS 4n
+将提示符设置为指定的 \fIprompt-string\fR。缺省提示符为 '\fB>\fR\&'。提示符也可以使用 \fB::set\fR \fB-P\fR 或 \fB-P\fR 命令行选项来设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdistance\fR \fB$s\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取或设置与地址到符号名称转换的 \fIdistance\fR 匹配的符号。与距离匹配的符号模式将在"选项"下随 \fB-s\fR 命令行选项一起介绍。与距离匹配的符号也可以使用 \fB::set\fR \fB-s\fR 选项修改。如果未指定距离，则显示当前设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$v\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显具有非零值的命名变量的列表。\fB::vars\fR dcmd 提供了用于列出变量的其他选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIwidth\fR \fB$w\fR\fR
+.ad
+.sp .6
+.RS 4n
+将输出页的 \fIwidth\fR 设置为指定值。通常，此命令并不是必需的，因为 \fBmdb\fR 会向终端查询其宽度并处理大小调整事件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$W\fR\fR
+.ad
+.sp .6
+.RS 4n
+重新打开目标以便执行写入，等同于在命令行上使用 \fB-w\fR 选项执行 \fBmdb\fR。写入模式也可以使用 \fB::set\fR \fB-w\fR 选项启用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIpid\fR ] \fB::attach\fR [ \fIcore\fR | \fIpid\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fIpid\fR ] \fB:A\fR [ \fIcore\fR | \fIpid\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+如果用户进程目标处于活动状态，则附加到指定的进程 \fBID\fR 或\fI核心\fR文件并进行调试。核心文件路径名应以字符串参数形式指定。进程 \fBID\fR 可以按字符串参数形式指定，也可以指定为 dcmd 前面的表达式的值。请记住，缺省基数为十六进制，因此将使用 \fBpgrep\fR(1) 或 \fBps\fR(1) 获取的十进制 \fBPID\fR 指定为表达式时，应该在前面加上 "\fB0t\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIaddress\fR] \fB::bp\fR [\fB-/\fR\fB-dDesT\fR] [\fB-c\fR \fIcmd\fR] [\fB-n\fR \fIcount\fR] \fIsym\fR ...\fR
+.ad
+.br
+.na
+\fB\fIaddress\fR \fB :b\fR [\fIcmd\fR ...]\fR
+.ad
+.sp .6
+.RS 4n
+在指定位置设置断点。\fB::bp\fR dcmd 在每个指定的地址或符号处设置断点，包括 dcmd 前某个显式表达式指定的可选位置，以及 dcmd 之后的每个字符串或即时值。该参数可以为符号名称，也可以是表示所需特定虚拟地址的直接值。 如果指定了符号名称，则它可以引用目标进程中目前无法求值的符号。 即，它可以由尚未打开的装入对象的对象名和其中的函数名组成。在这种情况下，断点将延迟，在目标中不活动，直至装入了与指定名称匹配的对象。打开装入对象时会自动启用断点。在共享库中定义的符号上的断点应始终使用符号名称设置，而不能使用地址表达式，因为地址可以引用对应的过程链接表 (\fBPLT\fR) 条目而非实际符号定义。如果 \fBPLT\fR 条目随后解析为实际符号定义，则可以使用运行时链接编辑器覆盖在 \fBPLT\fR 条目上设置的断点。\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项的含义与在 \fB::evset\fR dcmd 中相同，如下文所述。如果使用了 dcmd 的 \fB:b\fR 形式，则仅在由 dcmd 前面的表达式指定的虚拟地址上设置断点。\fB:b\fR dcmd 之后的参数会串联在一起形成回调字符串。如果此字符串包含元字符，必须引用该字符串。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::cat\fR \fIfilename\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+串联并显示文件。可以按相对路径名或绝对路径名指定各个文件名。文件内容将列显到标准输出，但无法传递到输出页面调度程序。此 dcmd 旨在随 \fB|\fR 运算符一起使用；程序员可以使用存储在外部文件中的地址列表来启动流水线。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::cont\fR [ \fISIG\fR ]\fR
+.ad
+.br
+.na
+\fB\fB:c\fR [ \fISIG\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+暂停调试器，继续执行目标程序，并等待直至出现所关注的软件事件之后终止或停止。如果由于调试器已附加到正在运行的程序并且启用了 \fB-o\fR \fBnostop\fR 选项，从而导致目标已在运行，此 dcmd 将等待目标在出现所关注事件后终止或停止。如果将可选的信号名称或编号（参见 \fBsignal.h\fR(3HEAD)）指定为参数，则该信号将在恢复执行过程中立即传输到目标。如果跟踪了 \fBSIGINT\fR 信号，可以键入用户定义的中断字符（通常为 \fB^C\fR），将控制权异步返回给调试器。 此 \fBSIGINT\fR 信号将自动清除，下次继续时目标将观察不到该信号。如果当前没有目标程序在运行，\fB::cont\fR 将启动新的程序开始运行，如同使用 \fB::run\fR 一样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress\fR \fB::context\fR\fR
+.ad
+.br
+.na
+\fB\fIaddress\fR \fB$p\fR\fR
+.ad
+.sp .6
+.RS 4n
+到指定进程的上下文切换。上下文切换操作仅在使用内核目标时有效。进程上下文使用它在内核虚拟地址空间中的 proc 结构的 \fIaddress\fR 来指定。使用特殊上下文地址 "\fB0\fR" 来表示内核本身的上下文。在检查故障转储期间，只有当转储中包含指定用户进程的物理内存页（与只有内核页相对）时，\fBmdb\fR 才能执行上下文切换。可以使用 \fBdumpadm\fR(1M) 配置内核故障转储工具，以便转储所有页或当前用户进程的页。\fB::status\fR dcmd 可用于显示当前故障转储的内容。
+.sp
+用户请求从内核目标进行上下文切换时，\fBmdb\fR 构建表示指定用户进程的新目标。进行切换之后，新目标在全局级别插入 dcmd：因此，\fB/\fR dcmd 现在将格式化并显示来自用户进程虚拟地址空间的数据，\fB::mappings\fR dcmd 将显示用户进程地址空间中的映射等等。内核目标可以通过执行 \fB0::context\fR 来还原。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::dcmds\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出可用 dcmd 并列显每个 dcmd 的简要说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::delete\fR [ \fIid\fR | \fBall\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fIaddress\fR ] \fB:d\fR [ \fIid\fR | \fBall\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+删除具有指定 ID 号的事件说明符。ID 号参数在缺省情况下按照十进制解释。如果在 dcmd 前面指定了可选的地址，将删除与指定虚拟地址关联的所有事件说明符（例如，所有影响该地址的断点或监视点）。如果指定了特殊参数 "\fBall\fR"，将删除所有事件说明符，但标记为粘滞（\fBT\fR 标记）的说明符除外。\fB::events\fR dcmd 显示当前事件说明符列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::dis\fR [ \fB-fw\fR ] [ \fB-n\fR \fIcount\fR ] [ \fIaddress\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+在由最后一个参数指定的 \fIaddress\fR 处或周围，或者在点的当前值处开始反汇编。如果地址与已知函数的开头匹配，则将反汇编整个函数。否则，将列显指定地址前后的指令"窗口"以便提供上下文。缺省情况下，从目标的虚拟地址空间读取指令。如果存在 \fB-f\fR 选项，则改为从目标的对象文件读取指令。如果调试器当前未附加到实时进程、核心文件或故障转储，缺省情况下将启用 \fB-f\fR 选项。\fB-w\fR 选项可用于强制"窗口"模式，即使地址是已知函数的开头也是如此。 窗口大小的缺省值为十个指令，可以使用 \fB-n\fR 选项显式指定指令数量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::disasms\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出可用的反汇编程序模式。初始化目标时，\fBmdb\fR 尝试选择合适的反汇编程序模式。用户可以使用 \fB::dismode\fR dcmd 将模式更改为列出的任意模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::dismode\fR [ \fImode\fR ]\fR
+.ad
+.br
+.na
+\fB\fB$V\fR [ \fImode\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+获取或设置反汇编程序模式。如果未指定参数，将列显当前反汇编程序模式。如果指定了 \fImode\fR 参数，会将反汇编程序切换到指定的模式。可以使用 \fB::disasms \fR dcmd 显示可用反汇编程序的列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::dmods\fR [ \fB-l\fR ] [ \fImodule-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列出已装入的调试器模块。如果指定了 \fB-l\fR 选项，将在各个 dmod 名称下列显相关联的 dcmd 和遍历器的列表。可以通过将特定 dmod 名称指定为附加参数，将输出限制为该 dmod。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::dump\fR [ \fB-eqrstu\fR ] [ \fB-f\fR|\fB-p\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fB-g\fR \fIbytes\fR ] [ \fB-w\fR \fIparagraphs\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+对于包含由点指定的地址的内存，列显内存的 16 字节对齐区域的十六进制和 ASCII 内存转储。如果为 \fB::dump\fR 指定了重复计数，这将解释为要转储的字节数而非重复次数。\fB::dump\fR dcmd 还可以识别以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+字节存储顺序的调整。\fB-e\fR 选项采用 4 字节词。\fB-g\fR 选项可用于更改缺省词大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+从与指定虚拟地址对应的对象文件位置读取数据，而不是从目标的虚拟地址空间读取。如果调试器当前未附加到实时进程、核心文件或故障转储，缺省情况下将启用 \fB-f\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIbytes\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fIbytes\fR 组中的字节。缺省组大小为 4 个字节。组大小必须为除以行宽的 2 的幂。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIaddress\fR 解释为目标地址空间中的物理地址位置而非虚拟地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+不列显数据的 ASCII 解码。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+相对于开始地址对行进行编号，而不是使用每一行的显式地址。此选项暗含 \fB-u\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+省略重复行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+只读取并显示指定地址的内容，而不是读取和列显整行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消对齐输出而不是将输出在段落边界对齐。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIparagraphs\fR\fR
+.ad
+.sp .6
+.RS 4n
+按每行 16 字节的段落来显示段落。\fIparagraphs\fR 的缺省数量为 1。\fB-w\fR 可接受的最大值为 \fB16\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::echo\fR [ \fIstring\fR | \fIvalue\fR ...]\fR
+.ad
+.sp .6
+.RS 4n
+将参数列显到标准输出，以空格分隔，并且以\fI换行\fR终止。用 \fB$[ ]\fR 括起的表达式将计算得出某个值，并按照缺省基数列显。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::eval\fR \fIcommand\fR\fR
+.ad
+.sp .6
+.RS 4n
+对指定的字符串求值并作为命令执行。如果命令包含元字符或空格，则应括在双引号或单引号中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::events\fR [ \fB-av\fR ]\fR
+.ad
+.br
+.na
+\fB\fB$b\fR [ \fB-av\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+显示软件事件说明符的列表。每个事件说明符都分配有一个唯一的 \fBID\fR 号，可用于在以后删除或修改事件说明符。调试器也可以针对自己的内部事件启用跟踪。这些事件只有在存在 \fB-a\fR 选项时才显示。如果存在 \fB-v\fR 选项，将显示包括任何说明符不活动原因在内的更为详细的内容。以下为示例输出：
+.sp
+.in +2
+.nf
+> ::events
+   ID S TA HT LM Description                      Action
+----- - -- -- -- -------------------------------- ------
+[ 1 ] - T   1  0 stop on SIGINT                   -                    
+[ 2 ] - T   0  0 stop on SIGQUIT                  -                    
+[ 3 ] - T   0  0 stop on SIGILL                   -                    
+ ...
+[ 11] - T   0  0 stop on SIGXCPU                  -                    
+[ 12] - T   0  0 stop on SIGXFSZ                  -                    
+[ 13] -     2  0 stop at libc`printf              ::echo printf        
+>
+.fi
+.in -2
+.sp
+
+下表说明了每一列的含义。使用 \fB::help\fR \fBevents\fR 可以获取有关此信息的汇总。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBID\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符标识符。如果启用了说明符，标识符将显示在方括号 \fB[ ]\fR 中；如果禁用了说明符，标识符将显示在圆括号 \fB( )\fR 中；如果目标程序当前已由于与指定说明符匹配的事件而停止，标识符将显示在尖括号 \fB< >\fR 中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符状态。状态为以下符号之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符处于空闲状态。未运行任何目标程序时，所有说明符都处于空闲状态。目标程序正在运行时，如果无法对某个说明符求值，则该说明符处于空闲状态（例如，尚未装入的共享对象中的延迟断点）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符处于活动状态。目标继续执行时，调试器将检测到此类型的事件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB*\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符已设置。此状态表示目标当前正在运行用于该事件类型的测试设备。只有在调试器使用 \fB-o\fR \fBnostop\fR 选项附加到正在运行的程序时，此状态才可见。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fR
+.ad
+.sp .6
+.RS 4n
+由于操作系统错误，事件说明符未设置。\fB::events\fR \fB-v\fR 选项可用于显示有关测试设备失败原因的更多信息。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTA\fR\fR
+.ad
+.sp .6
+.RS 4n
+临时、粘滞和自动事件说明符属性。可以显示以下一个或多个符号：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符为临时，下次目标停止时将被删除（无论是否匹配）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBT\fR\fR
+.ad
+.sp .6
+.RS 4n
+事件说明符为粘滞状态，不会由 \fB::delete\fR \fBall\fR 或 \fB:z\fR 删除。该说明符可以通过在 \fB::delete\fR 中显式指定 ID 号来删除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.sp .6
+.RS 4n
+命中计数等于命中限制时，将自动禁用事件说明符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.sp .6
+.RS 4n
+命中计数等于命中限制时，将自动删除事件说明符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+命中计数等于命中限制时，将自动停止目标。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHT\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前命中计数。此列显示自该事件说明符创建以来，对应的软件事件在目标中出现的次数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLM\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前命中限制。此列显示使自动禁用、自动删除或自动停止行为生效的命中计数限制。这些行为可以使用 \fB::evset\fR dcmd 配置，如下文所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB说明\fR\fR
+.ad
+.sp .6
+.RS 4n
+与指定说明符匹配的软件事件类型的说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB操作\fR\fR
+.ad
+.sp .6
+.RS 4n
+要在发生对应的软件事件时执行的回调字符串。此回调的执行与在命令提示符中键入该内容相同。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIid\fR] \fB::evset\fR [\fB-/\fR\fB-dDestT\fR] [\fB-c\fR \fIcmd\fR] [\fB-n\fR \fIcount\fR] \fIid\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+修改一个或多个软件事件说明符的属性。对于通过在 dcmd 前面的可选表达式以及在 dcmd 后面的可选参数列表进行标识的说明符，每个说明符都设置了属性。除非指定了显式基数，否则参数列表将解释为十进制整数列表。\fB::evset\fR dcmd 可以识别以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+命中计数达到命中限制时，禁用事件说明符。如果指定了 \fB-d\fR 形式的选项，将禁用此行为。禁用某个事件说明符之后，调试器将删除任何对应的测试设备，并忽略对应的软件事件，直至随后重新启用了该说明符。如果没有 \fB-n\fR 选项，将立即禁用说明符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+命中计数达到命中限制时，删除事件说明符。如果指定了 \fB-D\fR 形式的选项，将禁用此行为。\fB-D\fR 选项优先级高于 \fB-d\fR 选项。命中限制可以使用 \fB-n\fR 选项配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用事件说明符。如果指定了 \fB-e\fR 形式的选项，将禁用该说明符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+命中计数达到命中限制时，停止目标程序。如果指定了 \fB-s\fR 形式的选项，将禁用此行为。\fB-s\fR 行为可以通知调试器：其操作与每次执行说明符回调后发布 \fB::cont\fR 相同，但第 \fIN\fR 次执行除外，\fIN\fR 是说明符命中限制的当前值。\fB-s\fR 选项优先级高于 \fB-D\fR 选项和 \fB-d\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+将事件说明符标记为临时。临时标识符在目标下次停止时将自动删除，不论是否是由于与指定说明符对应的软件事件而造成目标停止。 如果指定了 \fB-t\fR 形式的选项，将删除临时标记。\fB-t\fR 选项优先级高于 \fB-T\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+将事件说明符标记为粘滞。\fB::delete\fR \fBall\fR 或 \fB:z\fR 不删除粘滞说明符。将对应的说明符 \fBID\fR 指定为 \fB::delete\fR 的显式参数，可以删除粘滞说明符。如果指定了 \fB-T\fR 形式的选项，将删除粘滞属性。缺省事件说明符集在最初均标记为粘滞。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+每次目标程序中发生对应的软件事件时，执行指定的 \fIcmd\fR 字符串。当前回调字符串可以使用 \fB::events\fR 显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前的命中限制值设置为 \fIcount\fR。如果当前未设置命中限制，并且 \fB-n\fR 选项没有使用 \fB-s\fR 或 D，则将命中限制设置为 1。
+.RE
+
+使用 \fB::help\fR \fBevset\fR 可以获取有关此信息的汇总。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::files\fR\fR
+.ad
+.br
+.na
+\fB\fB$f\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显已知源文件的列表（类型为 \fISTT_FILE\fR 的符号显示在各种目标符号表中）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIflt\fR] \fB::fltbp\fR [\fB-/\fR\fB-dDestT\fR] [\fB-c\fR \fIcmd\fR] [\fB-n\fR \fIcount\fR] \fIflt\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+跟踪指定的计算机故障。可以在 dcmd 前面使用可选的故障号来标识故障，也可以在 dcmd 后面使用故障名称或编号的列表来标识（参见 \fB<sys/fault.h>\fR）。\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项具有与用于 \fB::evset\fR dcmd 时的相同意义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fB\fIthread\fR\fR ] \fB::fpregs\fR\fR
+.ad
+.br
+.na
+\fB[ \fB\fIthread\fR\fR ] \fB$x\fR, \fB$X\fR, \fB$y\fR, \fB$Y\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显代表线程的浮点寄存器集。如果指定了线程，将显示该线程的浮点寄存器。线程表达式应为上面的\fB线程支持\fR中所述的线程标识符之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::formats\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出可用于 \fB/\fR、\fB\e\fR、\fB?\fR 和 \fB=\fR 格式化 dcmd 的输出格式字符。格式及这些字符的用法在上面的\fB格式化 dcmd\fR 中介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::grep\fR \fIcommand\fR\fR
+.ad
+.sp .6
+.RS 4n
+对指定的命令字符串求值，如果点的新值非零，将列显点的旧值。如果 \fIcommand\fR 包含空格或元字符，则必须括起来。\fB::grep\fR dcmd 可在流水线中用于过滤地址列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::help\fR [ \fIdcmd-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+不带参数时，\fB::help\fR dcmd 将列显 \fBmdb\fR 中可用的帮助工具的简短说明。如果指定了 \fIdcmd-name\fR，\fBmdb\fR 将列显该 dcmd 的用法汇总。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsignal\fR \fB:i\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果目标是实时用户进程，将忽略指定的信号并允许将它透明地传送到目标。从跟踪事件列表中删除跟踪指定信号传送的所有事件说明符。缺省情况下，忽略的信号集初始化为补充的信号集合，这些信号集合在缺省情况下导致进程转储核心（参见 \fBsignal.h\fR(3HEAD)），但在缺省情况下跟踪的 \fBSIGINT\fR 除外。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$i\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示调试器忽略并由目标直接处理的信号的列表。可以使用 \fB::events\fR dcmd 获取跟踪的信号的更多信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::kill\fR\fR
+.ad
+.br
+.na
+\fB\fB:k\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果目标为实时用户进程，则强制终止目标。存在调试器时，如果目标是由调试器使用 \fB::run\fR 创建的，也将强制终止该目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$l\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果目标是用户进程，将列显代表线程的 \fBLWPID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$L\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果目标是用户进程，将列显目标中各个 \fBLWP\fR 的 \fBLWPID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::list\fR \fItype\fR \fImember\fR [ \fIvariable-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+遍历链接列表数据结构中的元素，并列显列表中每个元素的地址。可以使用可选的地址指定列表中第一个元素的地址。否则，列表将采用点的当前值作为开头。 类型参数必须命名 C 结构或联合类型，并且该参数用于说明列表元素的类型，以便 \fBmdb\fR 可以在合适大小的对象中读取。member 参数用于命名 \fItype\fR 类型的 \fImember\fR，其中包含指向下一个列表元素的指针。\fB::list\fR dcmd 继续重复执行，直至遇到 \fBNULL\fR 指针、再次达到第一个元素（循环列表）或在读取元素时出错。如果指定了可选的 \fIvariable-name\fR，将为指定的变量分配在 \fBmdb\fR 调用流水线的下一阶段时遍历的每一步骤所返回的值。\fB::list\fR dcmd 只能用于包含旨在用于 mdb 的符号调试信息的对象。有关详细信息，请参阅下面的"注释"中的\fB符号调试信息\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::load\fR [ \fB-s\fR ] \fImodule-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+装入指定的 dmod。可以按绝对路径或相对路径提供模块名称。如果 \fImodule-name\fR 是简单名称（即不包含 '\fB/\fR'），\fBmdb\fR 将在模块库路径中搜索该名称。不能装入存在名称冲突的模块，必须先卸载现有模块。如果存在 \fB-s\fR 选项，\fBmdb\fR 将保持无提示运行，在找不到模块或无法装入模块时不发出任何错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::log\fR [ \fB-d\fR | [ \fB-e\fR ] \fIfilename\fR ]\fR
+.ad
+.br
+.na
+\fB\fB$>\fR [ \fIfilename\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+启用或禁用输出记录。\fBmdb\fR 提供了交互式日志工具，可以将输入命令和标准输出记录到文件，同时仍与用户交互。\fB-e\fR 选项允许记录到指定文件，如果未指定文件名，将重新允许记录到以前的日志文件。\fB-d\fR 选项可以禁用日志。如果使用 \fB$>\fR dcmd，则在指定了文件名参数时启用日志；否则将禁用日志。如果指定的日志文件已存在，\fBmdb\fR 会将任意新日志输出附加到文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::map\fR \fIcommand\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用指定为字符串参数的 \fIcommand\fR，将点的值映射到对应值，然后列显点的新值。如果 command 包含空格或元字符，则必须括起来。\fB::map\fR dcmd 可在流水线中用于将地址列表转换为新的地址列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::mappings\fR [ \fIname\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fIaddress\fR ] \fB$m\fR [ \fIname\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+在目标的虚拟地址空间中列显各个映射的列表，包括各个映射的地址、大小和说明。如果 dcmd 的前面为 \fIaddress\fR，\fBmdb\fR 将只显示包含指定地址的映射。如果指定了字符串 \fIname\fR 参数，\fBmdb\fR 将只显示与该说明匹配的映射。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::next\fR [ \fISIG\fR ]\fR
+.ad
+.br
+.na
+\fB\fB:e\fR [ \fISIG\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+单步执行目标程序的一个指令，但步过子例程调用。如果将可选的信号名称或编号（参见 \fBsignal.h\fR(3HEAD)）指定为参数，则该信号将在恢复执行过程中立即传输到目标。如果当前没有目标程序在运行，\fB::next\fR 将启动新的程序开始运行，如同使用 \fB::run\fR 一样，并在第一个指令处停止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::nm\fR [ \fB-DPdghnopuvx\fR ] [ \fB-t\fR \fItypes\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fB-f\fR \fIformat\fR ] [ \fIobject\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列显与当前目标关联的符号表。如果在 dcmd 前面指定了可选的地址，将只显示与 \fIaddress\fR 对应的符号的符号表条目。如果指定了 \fIobject\fR，将只显示此装入对象的符号表。\fB::nm\fR dcmd 还可以识别以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显 \fB\&.dynsym\fR（动态符号表）而非 \fB\&.symtab\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显私有符号表而非 \fB\&.symtab\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+以十进制列显值和大小字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅列显全局符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+隐藏标题行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+按名称对符号进行排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+以八进制列显值和大小字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+以一系列 \fB::nmadd\fR 命令形式列显符号。此操作可以与 \fB-P\fR 一起使用以便生成宏文件，该文件随后可以使用 \fB$<\fR 读入调试器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅列显未定义的符号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+按值对符号进行排序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+以十六进制列显值和大小字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItype\fR[,\fItype\fR ... ]\fR
+.ad
+.sp .6
+.RS 4n
+仅列显指定类型的符号。有效的 \fItype\fR 参数字符串为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoty\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_NOTYPE\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobjt\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_OBJECT\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfunc\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_FUNC\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsect\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_SECTION\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_FILE\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcomm\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_COMMON\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtls\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_TLS\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBregi\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fISTT_SPARC_REGISTER\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIformat\fR[,\fIformat\fR ... ]\fR
+.ad
+.sp .6
+.RS 4n
+仅列显指定符号信息。有效 \fIformat\fR 参数字符串为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBndx\fR\fR
+.ad
+.sp .6
+.RS 4n
+符号表索引
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBval\fR\fR
+.ad
+.sp .6
+.RS 4n
+符号值
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsize\fR\fR
+.ad
+.sp .6
+.RS 4n
+大小，以字节为单位
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR\fR
+.ad
+.sp .6
+.RS 4n
+符号类型
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbind\fR\fR
+.ad
+.sp .6
+.RS 4n
+移动绑定
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoth\fR\fR
+.ad
+.sp .6
+.RS 4n
+其它
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshndx\fR\fR
+.ad
+.sp .6
+.RS 4n
+区段索引
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.sp .6
+.RS 4n
+符号名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBctype\fR\fR
+.ad
+.sp .6
+.RS 4n
+符号的 C 类型（如果已知）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义符号的对象
+.RE
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvalue\fR \fB::nmadd\fR [ \fB-fo\fR ] [ \fB-e\fR \fIend\fR ] [ \fB-s\fR \fIsize\fR ] \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的符号 \fIname\fR 添加到私有符号表。\fBmdb\fR 提供了私有的可配置符号表，可用于在目标的符号表上插入，如上面的\fB符号名称解析\fR中所述。\fB::nmadd\fR dcmd 还可以识别以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+将符号的大小设置为 \fIend\fR - \fIvalue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+将符号的类型设置为 \fBSTT_FUNC\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+将符号的类型设置为 \fBSTT_OBJECT\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+将符号的大小设置为 \fIsize\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::nmdel\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+从私有符号表中删除指定的符号 \fIname\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::objects\fR [ \fB-v\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列显目标的虚拟地址空间的映射，只显示与每个已知装入对象的主映射（通常为文本区段）相对应的那些映射。\fB-v\fR 选项显示各个装入对象的版本。版本信息并非对所有装入对象都可用。对于没有版本信息的装入对象，在 \fB-v\fR 信息的输出中，将作为 "\fBUnknown\fR" 版本列出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::offsetof\fR \fItype member\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显指定 \fItype\fR 的指定 \fImember\fR 的偏移。\fItype\fR 应为 C 结构的名称。偏移按字节列显，除非 member 是位字段，在这种情况下将按位列显偏移。为了清楚起见，输出始终使用合适的单位作为后缀。类型名称可以使用反引号 (\fB`\fR) 作用范围运算符，如上面的\fB符号名称解析\fR中所述。\fB::offsetof\fR dcmd 只能用于包含旨在用于 \fBmdb\fR 的符号调试信息的对象。有关详细信息，请参阅下面的"注释"中的\fB符号调试信息\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress\fR \fB::print\fR [ \fB-aCdiLptx\fR ] [ \fB-c\fR \fIlim\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fB-l\fR \fIlim\fR ] [ \fItype\fR [ \fImember\fR ... ] ]\fR
+.ad
+.sp .6
+.RS 4n
+使用指定的 \fItype\fR 信息列显位于指定虚拟 \fIaddress\fR 的数据结构。\fItype\fR 参数可以命名 C 结构、联合、枚举、基本整数类型或者指向任意这些类型的指针。如果类型名称包含空格（例如，"\fBstruct foo\fR"），则必须使用单引号或双引号括起来。类型名称可以使用反引号 (\fB`\fR) 作用范围运算符，如上面的\fB符号名称解析\fR中所述。如果类型为结构化类型，\fB::print\fR dcmd 将递归列显结构或联合的每个成员。如果不存在 \fItype\fR 参数，并且静态或全局 \fISTT_OBJECT\fR 符号与该地址匹配，\fB::print\fR 将自动推理合适的类型。如果指定了 \fItype\fR 参数，则后面可以跟随可选的 \fImember\fR 表达式列表，在这种情况下只显示指定 \fItype\fR 的成员和子成员。如果 \fItype\fR 包含其他结构化类型，每个成员字符串可以通过生成使用句点 ('\fB\&.\fR') 分界符分隔的成员名称列表来引用子结构元素。\fB::print\fR dcmd 只能用于包含旨在用于 \fBmdb\fR 的符号调试信息的对象。有关详细信息，请参阅下面的"注释"中的\fB符号调试信息\fR。显示数据结构之后，\fB::print\fR 会将点增加 \fItype\fR 的大小（以字节为单位）。
+.sp
+如果存在 \fB-a\fR 选项，将显示每个成员的地址。如果存在 \fB-p\fR 选项，\fB::print\fR 会将 \fIaddress\fR 解释为物理内存地址而非虚拟内存地址。如果存在 \fB-t\fR 选项，将显示每个成员的类型。如果存在 \fB-d\fR 或 \fB-x\fR 选项，将以十进制 (\fB-d\fR) 或十六进制 (\fB-x\fR) 显示所有整数。缺省情况下，使用试探式方法来确定应以十进制还是十六进制显示值。可以使用 \fB-c\fR 选项来限制在字符数组中读取并显示为字符串的字符数。如果存在 \fB-C\fR 选项，将不强制任何限制。可以使用 \fB-l\fR 选项来限制在标准数组中读取并显示的元素数。如果存在 \fB-L\fR 选项，将不强制任何限制，并且显示所有数组元素。\fB-c\fR 和 \fB-l\fR 的缺省值可以使用 \fB::set\fR 或 \fB-o\fR 命令行选项修改，如下面的"选项"中所述。
+.sp
+如果指定了 \fB-i\fR 选项，地址值将解释为要列显的直接值。必须指定用于解释值的类型。如果类型小于 64 位，该直接值将作为类型的大小进行解释。\fB-i\fR 选项不能与 \fB-p\fR 选项一起使用。如果指定了 \fB-a\fR 选项，则显示的地址为从零开始的字节偏移。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::quit\fR\fR
+.ad
+.br
+.na
+\fB\fB$q\fR\fR
+.ad
+.sp .6
+.RS 4n
+退出调试器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIthread\fR ] \fB::regs\fR\fR
+.ad
+.br
+.na
+\fB[ \fIthread\fR ] \fB$r\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显代表线程的通用寄存器集。如果指定了线程，将显示该线程的通用寄存器集合。线程表达式应为上面的\fB线程支持\fR中所述的线程标识符之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::release\fR [ \fB-a\fR ]\fR
+.ad
+.br
+.na
+\fB\fB:R\fR [ \fB-a\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+释放以前附加的进程或核心文件。如果存在 \fB-a\fR 选项，则将释放进程，并且该进程将保留停止状态且被放弃。然后，可以通过 \fBprun\fR(1)（参见 \fBproc\fR(1)）继续执行，也可以通过应用 \fBmdb\fR 或其他调试器来恢复。缺省情况下，如果释放的进程是由 \fBmdb\fR 使用 \fB::run\fR 创建的，将强制终止该进程；如果该进程是由 \fBmdb\fR 使用 \fB-p\fR 选项、使用 \fB::attach\fR 或 \fB:A\fR dcmd 附加的，将释放该进程并设置为正在运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::run\fR [ \fIargs\fR . . . ]\fR
+.ad
+.br
+.na
+\fB\fB:r\fR [ \fIargs\fR . . . ]\fR
+.ad
+.sp .6
+.RS 4n
+启动新的目标程序，使用指定的参数运行并附加到该程序。参数不由 shell 解释。如果调试器已在检查实时运行的程序，它会先与此程序分离，如同使用 \fB::release\fR 一样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::set\fR [ \fB-wF\fR ] [ \fB-/\fR\fB-o\fR \fIoption\fR ] [ \fB-s\fR \fIdistance\fR ] [ \fB-I\fR \fIpath\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fB-L\fR \fI path\fR ] [ \fB-P\fR \fIprompt\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+获取或设置其他调试器属性。如果未指定任何选项，将显示当前调试器属性集合。\fB::set\fR dcmd 可以识别以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制接管 \fB::attach\fR 应用到的下一个用户进程，等同于在命令行上使用 \fB-F\fR 选项执行 \fBmdb\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置用于定位宏文件的缺省路径。路径参数可以包含任意特殊标记，这些标记在"选项"下针对 \fB-I\fR 命令行选项进行介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置用于定位调试器模块的缺省路径。路径参数可以包含任意特殊标记，这些标记在"选项"下针对 \fB-I\fR 命令行选项进行介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用指定的调试器选项。如果使用了 \fB-o\fR 形式，将禁用选项。选项字符串在"选项"下随 \fB-o\fR 命令行选项一起介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+将命令提示符设置为指定的提示字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+将符号匹配距离设置为指定的距离。有关详细信息，请参阅"选项"下的 \fB-s\fR 命令行选项的说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+重新打开目标以便执行写入，等同于在命令行上使用 \fB-w\fR 选项执行 \fBmdb\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::showrev\fR [ \fB-pv\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+显示硬件和软件的修订信息。未指定任何选项时，将显示一般系统信息。\fB-v\fR 选项显示所有装入对象的版本信息，而 \fB-p\fR 选项仅显示已作为修补程序的一部分安装在系统上的装入对象的版本信息。版本信息并非对所有装入对象都可用。没有版本信息的装入对象将在 \fB-p\fR 选项的输出中省略，而在 \fB-v\fR 选项的输出中作为 "\fBUnknown\fR" 版本列出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIsignal\fR] \fB::sigbp\fR [\fB-/\fR\fB-dDestT\fR] [\fB-c\fR \fIcmd\fR] [\fB-n\fR \fIcount\fR] \fISIG\fR ...\fR
+.ad
+.br
+.na
+\fB[\fIsignal\fR] \fB :t\fR [\fB-/\fR\fB-dDestT\fR] [\fB-c\fR \fIcmd\fR] [\fB-n\fR \fIcount\fR] \fISIG\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+跟踪指定信号的传送。可以在 dcmd 前面使用可选的信号编号来标识信号，也可以在 dcmd 后面使用信号名称或编号的列表来标识（参见 \fBsignal.h\fR(3HEAD)）。\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项具有与用于 \fB::evset\fR dcmd 时的相同意义。最初，对缺省情况下导致进程转储核心的信号集（参见 \fBsignal.h\fR(3HEAD)) 和 \fBSIGINT\fR 进行跟踪。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::sizeof\fR \fItype\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显指定 \fItype\fR 的大小（以字节为单位）。\fItype\fR 参数可以命名 C 结构、联合、枚举、基本整数类型或者指向任意这些类型的指针。类型名称可以使用反引号 (\fB`\fR) 作用范围运算符，如上面的\fB符号名称解析\fR中所述。\fB::sizeof\fR dcmd 只能用于包含旨在用于 \fBmdb\fR 的符号调试信息的对象。有关详细信息，请参阅下面的"注释"中的\fB符号调试信息\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::stack\fR [ \fIcount\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fIaddress\fR ] \fB$c\fR [ \fIcount\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+列显 C 栈回溯。如果 dcmd 前面是显式\fI地址\fR，将显示在此虚拟内存地址开始的回溯。否则，将显示代表线程的栈。如果将可选计数值指定为参数，则在输出中为每个栈帧显示不超过 \fIcount\fR 个参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::status\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显与当前目标相关的信息汇总。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::step\fR [ \fBover\fR | \fBout\fR ] [ \fISIG\fR ]\fR
+.ad
+.br
+.na
+\fB\fB:s\fR [ \fISIG\fR ]\fR
+.ad
+.br
+.na
+\fB\fB:u\fR [ \fISIG\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+单步执行目标程序的一个指令。如果将可选的信号名称或编号（参见 \fBsignal.h\fR(3HEAD)）指定为参数，则该信号将在恢复执行过程中立即传输到目标。如果指定了可选的 "\fBover\fR" 参数，\fB::step\fR 将步出子例程调用。\fB::step\fR \fBover\fR 参数与 \fB::next \fR dcmd 相同。如果指定了可选的 "\fBout\fR" 参数，目标程序将继续执行，直至代表线程从当前函数返回。如果当前没有目标程序在运行，\fB::step\fR \fBout\fR 将启动新的程序开始运行，如同使用 \fB::run\fR 一样，并在第一个指令处停止。\fB:s\fR dcmd 与 \fB::step\fR 相同。\fB:u\fR dcmd 与 \fB::step\fR \fBout\fR 相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIsyscall\fR ] \fB::sysbp\fR [ \fB-/\fR\fB-dDestT\fR ] [ \fB-io\fR ] [ \fB-c\fR \fIcmd\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fB-n\fR \fIcount\fR ] \fIsyscall\fR... \fR
+.ad
+.sp .6
+.RS 4n
+跟踪指定系统调用的进入或退出。可以在 dcmd 前面使用可选的系统调用号来标识系统调用，也可以在 dcmd 后面使用系统调用名称或编号的列表来标识（参见 \fB<sys/syscall.h>\fR）。如果指定了 \fB-i\fR 选项（缺省值），事件说明符将在进入每个系统调用的内核时触发。如果指定了 \fB-o\fR 选项，事件说明符将在从内核中退出时触发。\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项具有与用于 \fB::evset\fR dcmd 时的相同意义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIthread\fR \fB::tls\fR \fIsymbol\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显指定线程局部存储 (\fBTLS\fR) 符号在指定线程上下文中的存储地址。线程表达式应为上面的\fB线程支持\fR中所述的线程标识符之一。符号名称可使用上面的\fB符号名称解析\fR中所述的任何作用范围运算符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::typeset\fR [ \fB-/\fR\fB-t\fR] \fIvariable-name\fR . . .\fR
+.ad
+.sp .6
+.RS 4n
+设置命名变量的属性。如果指定了一个或多个变量名，则定义这些变量并且将它们设置为点的值。如果存在 \fB-t\fR 选项，将设置与各个变量关联的用户定义标记。如果存在 \fB-t\fR 选项，将清除标记。如果未指定变量名，将列显变量列表及其值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::unload\fR \fImodule-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载指定的 dmod。可以使用 \fB::dmods\fR dcmd 列显活动 dmod 的列表。不能卸载内置模块。不能卸载繁忙的模块（即 dcmd 正在执行）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::unset\fR \fIvariable-name\fR . . .\fR
+.ad
+.sp .6
+.RS 4n
+从已定义变量的列表中取消设置（删除）指定的变量。\fBmdb\fR 导出的一些变量已标记为持久变量，不能由用户取消设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::vars\fR [\fB-npt\fR]\fR
+.ad
+.sp .6
+.RS 4n
+列显命名变量的列表。如果存在 \fB-n\fR 选项，输出将限制为当前具有非零值的变量。如果存在 \fB-p\fR 选项，将按照适合于调试器使用 \fB$<\fR dcmd 重新处理的形式列显变量。此选项可用于将变量记录到宏文件中，然后在以后恢复这些值。如果存在 \fB-t\fR 选项，将只列显标记的变量。可以使用 \fB::typeset\fR dcmd 的 \fB-t\fR 选项来标记变量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::version\fR\fR
+.ad
+.sp .6
+.RS 4n
+列显调试器版本号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress\fR \fB::vtop\fR [\fB-a\fR \fIas\fR]\fR
+.ad
+.sp .6
+.RS 4n
+列显指定虚拟地址的物理地址映射（如果可行）。\fB::vtop\fR dcmd 仅在检查内核目标时可用，或者在检查内核故障转储内部的用户进程时可用（在发出 \fB::context\fR dcmd 之后）。
+.sp
+从内核上下文检查内核目标时，\fB-a\fR 选项可用于指定备用地址空间结构的地址 (\fIas\fR)，该地址空间结构应该用于虚拟地址到物理地址的转换。缺省情况下，使用内核的地址空间进行转换。即使转储内容只包含内核页，此选项也可用于活动地址空间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[ \fIaddress\fR ] \fB::walk\fR \fIwalker-name\fR [ \fIvariable-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+使用指定的遍历器遍历数据结构的元素。 可以使用 \fB::walkers\fR dcmd 列出可用遍历器。一些遍历器在全局数据结构上操作，不需要起始地址。例如，遍历内核中的 proc 结构列表。其他遍历器对必须显式指定地址的特定数据结构进行操作。例如，在给定指向地址空间的指针的情况下，遍历区段的列表。在交互使用时，\fB::walk\fR dcmd 以缺省基数显示数据结构中各个元素的地址。dcmd 也可用于为流水线提供地址列表。 遍历器名称可以使用反引号 (\fB`\fR) 作用范围运算符，如上面的 \fBdcmd 和遍历器名称解析\fR中所述。如果指定了可选的 \fIvariable-name\fR，将为指定的变量分配在 \fBmdb\fR 调用流水线的下一阶段时遍历的每一步骤所返回的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::walkers\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出可用遍历器并列显每个遍历器的简要说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::whence\fR [ \fB-v\fR ] \fIname\fR . . .\fR
+.ad
+.br
+.na
+\fB\fB::which\fR [ \fB-v\fR ] \fIname\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+列显导出指定的 dcmd 和遍历器的 dmod。这些 dcmd 可用于确定哪个 dmod 当前正在提供指定的 dcmd 或遍历器的全局定义。有关全局名称解析的详细信息，请参阅上面的有关 \fBdcmd 和遍历器名称解析\fR的部分。\fB-v\fR 选项使 dcmd 按照优先级顺序列显各个 dcmd 和遍历器的备用定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddr\fR [ ,\fIlen\fR ]\fB::wp\fR [ \fB-/\fR\fB-dDestT\fR ] [ \fB-rwx\fR ] [ \fB-c\fR \fIcmd\fR ]\fR
+.ad
+.br
+.na
+\fB[ \fB-n\fR \fIcount\fR ] \fR
+.ad
+.br
+.na
+\fB\fIaddr\fR [ ,\fIlen\fR ] \fB:a\fR [ \fIcmd\fR . . . ]\fR
+.ad
+.br
+.na
+\fB\fIaddr\fR [ ,\fIlen\fR ] \fB:p\fR [ \fIcmd\fR . . . ]\fR
+.ad
+.br
+.na
+\fB\fI addr\fR [ ,\fIlen\fR ] \fB:w\fR [ \fIcmd\fR . . . ]\fR
+.ad
+.sp .6
+.RS 4n
+在指定地址设置监视点。可通过在 dcmd 之前指定可选的重复计数来设置被监视区域的长度（以字节为单位）。如果没有显式设置长度，缺省值为一个字节。\fB::wp\fR dcmd 允许将监视点配置为在存在任何读取（\fB-r\fR 选项）、写入（\fB-w\fR 选项）或执行（\fB-x\fR 选项）访问的组合时触发。\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项具有与用于 \fB::evset\fR dcmd 时的相同意义。\fB:a\fR dcmd 可在指定地址处设置读取访问监视点。\fB:p\fR dcmd 可在指定地址处设置执行访问监视点。\fB:w\fR dcmd 可在指定地址处设置写入访问监视点。\fB:a\fR、\fB:p\fR 和 \fB:w\fR dcmd 之后的参数会串联在一起形成回调字符串。如果此字符串包含元字符，必须引用该字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::xdata\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出由当前目标导出的外部数据缓冲区。 外部数据缓冲区表示与无法通过标准目标工具访问的目标相关联的信息（即地址空间、符号表或寄存器集合）。这些缓冲区可以由 dcmd 使用；有关详细信息，请参阅\fI《Oracle Solaris Modular Debugger Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB:z\fR\fR
+.ad
+.sp .6
+.RS 4n
+从跟踪的软件事件列表中删除所有事件说明符。事件说明符也可以使用 \fB::delete\fR 删除。
+.RE
+
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁止自动装入 \fBmdb\fR 模块。缺省情况下，\fBmdb\fR 尝试装入与用户进程或核心文件中的活动共享库对应的调试器模块，或者尝试装入与实时操作系统或操作系统故障转储中的已装入内核模块对应的调试器模块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制原始文件调试模式。缺省情况下，\fBmdb\fR 尝试推断对象和核心文件操作数是引用了用户可执行文件和核心转储，还是引用了成对的操作系统故障转储文件。如果无法推断文件类型，则缺省情况下，调试器将文件作为纯二进制数据进行检查。 \fB-f\fR 选项强制 \fBmdb\fR 将参数作为一组原始文件解释以进行检查。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果需要，强制接管指定的用户进程。 缺省情况下，\fBmdb\fR 拒绝附加到已处于其他调试工具（例如 \fBtruss\fR(1)）控制下的用户进程。使用 \fB-F\fR 选项，\fBmdb\fR 会强制附加到这些进程。这可能会在 \fBmdb\fR 和其他尝试控制进程的工具之间造成意外的交互。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置用于定位宏文件的缺省路径。宏文件使用 \fB$<\fR 或 \fB$<<\fR dcmd 读取。路径是使用冒号 (\fB:\fR) 字符分界的目录名称序列。\fB-I\fR \fBinclude\fR 路径和 \fB-L\fR \fBlibrary\fR 路径（参见下文）也可以包含以下任意标记：
+.sp
+.ne 2
+.mk
+.na
+\fB%i\fR
+.ad
+.sp .6
+.RS 4n
+展开到当前的指令集合体系结构 (\fBISA\fR) 名称（'sparc'、'sparcv9' 或 'i386'）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%o\fR
+.ad
+.sp .6
+.RS 4n
+展开到要修改的路径的旧值。要将目录附加到现有路径之前或之后时，这非常有用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%p\fR
+.ad
+.sp .6
+.RS 4n
+展开到当前平台字符串（可以为 \fBuname\fR \fB-i\fR，或者为存储在进程核心文件或故障转储中的平台字符串）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%r\fR
+.ad
+.sp .6
+.RS 4n
+展开到根目录的路径名。可以使用 \fB-R\fR 选项指定备用根目录。如果不存在 \fB-R\fR 选项，将从指向 \fBmdb\fR 可执行文件自身的路径动态派生根目录。例如，如果执行 \fB/bin/mdb\fR，根目录将为 \fB/\fR。如果执行 \fB/net/hostname/bin/mdb\fR，根目录将派生为 \fB/net/hostname\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%t\fR
+.ad
+.sp .6
+.RS 4n
+展开到当前目标的名称。这可以为文本字符串 '\fBproc\fR'（用户进程或用户进程核心文件）、'\fBkvm\fR'（内核故障转储或实时操作系统）或 '\fBraw\fR'（原始文件）。
+.RE
+
+32 位 \fBmdb\fR 的缺省包含文件路径为：
+.sp
+.in +2
+.nf
+%r/usr/platform/%p/lib/adb:%r/usr/lib/adb
+.fi
+.in -2
+.sp
+
+64 位 \fBmdb\fR 的缺省包含文件路径为：
+.sp
+.in +2
+.nf
+%r/usr/platform/%p/lib/adb/%i:%r/usr/lib/adb/%i
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制内核调试模式。缺省情况下，\fBmdb\fR 尝试推断对象和核心文件操作数是引用了用户可执行文件和核心转储，还是引用了成对的操作系统故障转储文件。\fB-k\fR 选项强制 \fBmdb\fR 假定这些文件为操作系统故障转储文件。如果未指定对象或核心操作数，但指定了 \fB-k\fR 选项，\fBmdb\fR 将缺省使用对象文件 \fB/dev/ksyms\fR 和核心文件 \fB/dev/kmem\fR。限制只有组 sys 可以对 \fB/dev/kmem\fR 执行读取访问。写入访问需要 ALL 权限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+装入 \fBkmdb\fR，停止实时运行的操作系统内核，并继续到 \fBkmdb\fR 调试器提示符。此选项只应在系统控制台上使用，因为后续的 \fBkmdb\fR 提示符将显示在系统控制台上。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置用于定位调试器模块的缺省路径。模块在启动时自动装入，或者使用 \fB::load\fR dcmd 装入。路径是使用冒号 (\fB:\fR) 字符分界的目录名称序列。\fB-L\fR 库路径也可以包含为上面的 \fB-I\fR 显示的任何标记。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁止按需装入内核模块符号。缺省情况下，\fBmdb\fR 处理已装入内核模块的列表并执行每模块符号表的按需装入。如果指定了 \fB-m\fR 选项，\fBmdb\fR 将不尝试处理内核模块列表或提供每模块符号表。因此，在启动时不装入与活动内核模块对应的 \fBmdb\fR 模块。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.sp .6
+.RS 4n
+预装所有内核模块符号。缺省情况下，\fBmdb\fR 执行内核模块符号的按需装入：当地址为该模块的文本或者引用了数据区时，将读取模块的完整符号表。使用 \fB-M\fR 选项时，\fBmdb\fR 将在启动期间装入所有内核模块的完整符号表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoption\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用指定的调试器选项。如果使用了 \fB-o\fR 形式的选项，将禁用指定的 \fIoption\fR。除非在下面另有说明，否则缺省情况下将禁用所有选项。\fBmdb\fR 可以识别以下 \fIoption\fR 参数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadb\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用更严格的 \fBadb\fR(1) 兼容性。提示符设置为空字符串，并且禁用诸如输出页面调度程序等多种 \fBmdb\fR 功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBarray_mem_limit=\fR\fIlimit\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fB::print\fR 显示的数组成员数设置缺省限制。如果 \fIlimit\fR 是特殊标记 \fBnone\fR，缺省情况下将显示所有数组成员。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBarray_str_limit=\fR\fIlimit\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fB::print\fR 在列显字符数组时尝试作为 ASCII 字符串显示的字符数设置缺省限制。 如果 \fIlimit\fR 是特殊标记 \fBnone\fR，缺省情况下将整个字符数组显示为字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfollow_exec_mode=\fR\fImode\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置调试器跟踪 \fBexec\fR(2) 系统调用的行为。\fImode\fR 应为以下命令常量之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBask\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 stdout 是终端设备，调试器将在 \fBexec\fR(2) 系统调用返回后停止，然后提示用户决定跟踪 exec 还是停止。如果 stdout 不是终端设备，\fBask\fR 模式将缺省为 \fBstop\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfollow\fR\fR
+.ad
+.sp .6
+.RS 4n
+调试器将通过自动继续执行目标进程来跟踪 exec，并根据新的可执行文件重置所有映射和符号表。\fBfollow\fR 行为在下面的"注释"的\fB与 Exec 交互\fR中进行了详细介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.sp .6
+.RS 4n
+调试器将停止从 exec 系统调用返回的内容。\fBstop\fR 行为在下面的"注释"的\fB与 Exec 交互\fR中进行了详细介绍。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfollow_fork_mode=\fR\fImode\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置调试器跟踪 \fBfork\fR(2)、\fBfork1\fR(2) 或 \fBvfork\fR(2) 系统调用的行为。\fImode\fR 应为以下命令常量之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBask\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 stdout 是终端设备，调试器将在 \fBfork\fR(2) 系统调用返回后停止，然后提示用户决定跟踪父进程还是子进程。如果 stdout 不是终端设备，\fBask\fR 模式将缺省为 \fBparent\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparent\fR\fR
+.ad
+.sp .6
+.RS 4n
+调试器跟踪父进程，与子进程分离并将它设置为正在运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchild\fR\fR
+.ad
+.sp .6
+.RS 4n
+调试器跟踪子进程，与父进程分离并将它设置为正在运行。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignoreeof\fR\fR
+.ad
+.sp .6
+.RS 4n
+终端中输入 \fBEOF\fR 序列 (\fB^D\fR) 时，调试器不退出。必须使用 \fB::quit\fR dcmd 退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnostop\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定了 \fB-p\fR 选项或者应用了 \fB::attach\fR 或 \fB:A\fR dcmd 时，在附加到用户进程时不停止该进程。\fBnostop\fR 行为在下面的"注释"的\fB进程附加和释放\fR中进行详细介绍。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpager\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用输出页面调度程序（缺省）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrepeatlast\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果在终端输入了\fI换行\fR作为完整命令时，\fBmdb\fR 将使用点的当前值重复上一个命令。\fB-o\fR \fBadb\fR 暗含此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshowlmid\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于使用链接图而非 \fILM_ID_BASE\fR 和 \fILM_ID_LDSO\fR 的用户应用程序，\fBmdb\fR 为用户应用程序中的符号命名和标识提供了支持，如上面的\fB符号名称解析\fR中所述。链接图上除 \fILM_ID_BASE\fR 或 \fILM_ID_LDSO\fR 之外的符号显示为 \fBLMlmid`library`symbol\fR，其中 \fBlmid\fR 是以缺省输出基数 (16) 显示的链接图 \fBID\fR。用户可以选择通过启用 \fBshowlmid\fR 选项来配置 \fBmdb\fR，以便显示所有符号和对象的链接图 \fBID\fR 范围，包括与 \fILM_ID_BASE\fR 和 \fILM_ID_LDSO\fR 关联的那些内容。处理对象文件名的内置 dcmd 根据上面的 \fBshowlmid\fR 值显示链接图 \fBID\fR，包括 \fB::nm\fR、\fB::mappings\fR、\fB$m\fR 和 \fB::objects\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+附加到指定的进程 ID 并停止该进程。\fBmdb\fR 使用 \fB/proc/\fIpid\fR/object/a.out\fR 文件作为可执行文件路径名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置命令提示符。缺省提示符为 '\fB>\fR\&'。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置路径名扩展的根目录。缺省情况下，从 \fBmdb\fR 可执行文件自身的路径名派生根目录。根目录在路径名扩展期间替换 \fB%r\fR 标记。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdistance\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置地址到符号名称的转换到指定 \fIdistance\fR 的符号匹配距离。缺省情况下，\fBmdb\fR 将距离设置为零，这将启用智能匹配模式。每个 \fBELF\fR 符号表条目包括值 V 和大小 S，表示函数或数据对象的大小（以字节为单位）。在智能模式中，如果 A 在范围 [V, V + S) 中，\fBmdb\fR 会将地址 A 与指定符号匹配。如果指定了任意非零距离，将使用相同的算法，但上面的表达式中的 S 始终为指定的绝对距离，并且忽略符号大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+抑制用户的 \fB~/.mdbrc\fR 文件的处理。缺省情况下，如果由 $\fBHOME\fR 定义的用户起始目录中存在宏文件 \fB\&.mdbrc\fR，\fBmdb\fR 将读取和处理宏文件。如果存在 \fB-S\fR 选项，将不读取此文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制用户调试模式。缺省情况下，\fBmdb\fR 尝试推断对象和核心文件操作数是引用了用户可执行文件和核心转储，还是引用了成对的操作系统故障转储文件。\fB-u\fR 选项强制 \fBmdb\fR 假定这些文件不是操作系统故障转储文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBkmdb\fR 已装入，则将它卸载。如果不在使用 \fBkmdb\fR，则应将它卸载，以便将内核调试器所使用的内存释放回可供操作系统使用的空闲内存。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR \fIversion\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置反汇编程序版本。缺省情况下，\fBmdb\fR 将尝试推断调试目标的适当反汇编程序版本。反汇编程序可以使用 \fB-V\fR 选项显式设置。\fB::disasms\fR dcmd 列出可用的反汇编程序版本。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+打开指定的对象和核心文件进行写入。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-W\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许对映射到 I/O 设备的内存地址的访问。缺省情况下，\fBmdb\fR 不允许此类访问，因为许多设备不会针对无效的软件处理提供硬件保护。请仅在调试设备驱动程序时谨慎使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+发送用于 tty 模式的显式终端初始化序列。某些终端（例如 \fBcmdtool\fR(1)）需要显式初始化序列以便切换到 tty 模式。如果没有此初始化序列，诸如 standout 模式这样的终端功能将无法供 \fBmdb\fR 使用。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIobject\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要检查的 \fBELF\fR 格式对象文件。\fBmdb\fR 提供了检查和编辑 \fBELF\fR 格式可执行文件 (\fBET_EXEC\fR)、\fBELF\fR 动态库文件 (\fBET_DYN\fR)、\fBELF\fR 可重定位对象文件 (\fBET_REL\fR) 和操作系统 unix.X 符号表文件的功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcore\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fBELF\fR 进程核心文件 (\fBET_CORE\fR) 或操作系统故障转储 vmcore.X 文件。如果提供的 \fBELF\fR 核心文件操作数没有对应的对象文件，\fBmdb\fR 将尝试使用不同算法推断生成核心的可执行文件的名称。如果找不到可执行文件，\fBmdb\fR 仍将执行，但某些符号信息可能会不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsuffix\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定表示一对操作系统故障转储文件的数字后缀。例如，如果后缀为 '\fB3\fR'，\fBmdb\fR 推断应检查文件 '\fBunix.3\fR' 和 '\fBvmcore.3\fR'。如果这些文件不存在，但 '\fBvmdump.3\fR' 存在，将列显一条消息，指示必须先运行 \fBsavecore -f vmdump.3\fR 以便解压缩转储文件。如果当前目录中存在具有相同名称的实际文件，数字字符串将不解释为后缀。
+.RE
+
+.SH 用法
+.sp
+.LP
+\fBmdb\fR 以大文件感知方式处理所有输入文件（包括脚本、对象文件、核心文件和原始数据文件）。有关处理大于等于 2 GB（2^31 字节）的大文件的详细信息，请参见 \fBlargefile\fR(5)。
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+调试器成功完成执行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+发生了致命错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的命令行选项无效。
+.RE
+
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHISTSIZE\fR\fR
+.ad
+.sp .6
+.RS 4n
+此变量用于确定命令历史记录列表的最大长度。如果不存在此变量，缺省长度将为 \fB128\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.sp .6
+.RS 4n
+此变量用于确定 \fB\&.mdbrc\fR 文件可以驻留在其中的用户起始目录的路径名。如果不存在此变量，不会发生 \fB\&.mdbrc\fR 处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.sp .6
+.RS 4n
+此变量用于确定用来处理通过 \fB!\fR 元字符请求的 shell 转义的 shell 路径名。如果不存在此变量，将使用 \fB/bin/sh\fR。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.mdbrc\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户 \fBmdb\fR 初始化文件。在初始化调试目标之后、但在执行模块自动装入或从标准输入中读取任何命令之前处理 \fB\&.mdbrc\fR 文件（如果存在）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/kmem\fR\fR
+.ad
+.sp .6
+.RS 4n
+内核虚拟内存映像设备。此设备特殊文件在检查实时操作系统时用作核心文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/ksyms\fR\fR
+.ad
+.sp .6
+.RS 4n
+内核符号表设备。此设备特殊文件在检查实时操作系统时用作对象文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/\fIpid\fR/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+在检查和控制用户进程时读取的进程信息文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/adb\fR\fR
+.ad
+.br
+.na
+\fB\fB/usr/platform/\fIplatform-name\fR/lib/adb\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fB$<\fR 和 \fB$<<\fR dcmd 读取的宏文件的缺省目录。\fIplatform-name\fR 是平台的名称，该名称从核心文件或故障转储中的信息派生，也可从当前计算机派生，就像由 \fBuname\fR \fB-i\fR 派生一样（参见 \fBuname\fR(1)）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/mdb\fR\fR
+.ad
+.br
+.na
+\fB\fB/usr/platform/\fIplatform-name\fR/lib/mdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fB::load\fR dcmd 装入的调试器模块的缺省目录。\fIplatform-name\fR 是平台的名称，该名称从核心文件或故障转储中的信息派生，也可从当前计算机派生，就像由 \fBuname\fR \fB-i\fR 派生一样（参见 \fBuname\fR(1)）。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性developer/debug/mdb
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBadb\fR(1)、\fBcmdtool\fR(1)、\fBgcore\fR(1)、\fBproc\fR(1)、\fBpgrep\fR(1)、\fBps\fR(1)、\fBstty\fR(1)、\fBtruss\fR(1)、\fBuname\fR(1)、\fBcoreadm\fR(1M)、\fBdumpadm\fR(1M)、\fBlargefile\fR(5)、\fBsavecore\fR(1M)、\fBexec\fR(2)、\fBfork\fR(2)、\fB_lwp_self\fR(2)、\fBpipe\fR(2)、\fBvfork\fR(2)、\fBdlopen\fR(3C)、\fBelf\fR(3ELF)、\fBlibc_db\fR(3LIB)、\fBlibkvm\fR(3LIB)、\fBlibthread\fR(3LIB)、\fBsignal\fR(3C)、\fBsignal.h\fR(3HEAD)、\fBthr_self\fR(3C)、\fBcore\fR(4)、\fBproc\fR(4)、\fBattributes\fR(5)、\fBlargefile\fR(5)、\fBthreads\fR(5)、\fBksyms\fR(7D)、\fBmem\fR(7D)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR
+.sp
+.LP
+\fI《Oracle Solaris Modular Debugger Guide》\fR
+.SH 警告
+.SS "使用错误恢复机制"
+.sp
+.LP
+调试器及其 dmod 在相同地址空间中执行，因此有错误的 dmod 很可能会导致 \fBmdb\fR 转储核心或者发生错误的行为。\fBmdb\fR 恢复功能（如上面的\fB信号处理\fR中所述）为这些情况提供了有限的恢复机制。但是，\fBmdb\fR 不可能明确了解有问题的 dmod 是仅破坏了自身的状态，还是破坏了调试器的全局状态。因此，无法确保恢复操作安全，也无法保证调试器接下来不会出现故障。在恢复之后，最安全的操作过程是保存所有重要调试信息，然后退出并重新启动调试器。
+.SS "使用调试器修改实时操作系统"
+.sp
+.LP
+使用调试器修改（即写入到）实时运行操作系统的地址空间中是极度危险的，在用户损坏了核心数据结构的情况下，可能会导致系统故障。
+.SH 附注
+.SS "检查进程核心文件的限制"
+.sp
+.LP
+\fBmdb\fR 不支持检查由 Solaris 2.6 之前的 Solaris 版本生成的进程核心文件。调试由 Solaris 9 或更早版本生成的核心文件时，符号信息可能不可用。由于这些核心文件中不存在文本区段和只读数据，符号信息可能与转储核心时进程中存在的数据不匹配。在早于 Solaris 9 的发行版中，文本区段和只读数据在缺省情况下包括在核心文件中。用户可以使用 \fBcoreadm\fR(1M) 配置用户进程，从核心文件中排除该信息。因此，\fBmdb\fR 为这些核心文件提供的信息无法与进程转储核心时存在的数据匹配。Solaris x86 系统中的核心文件无法在 Solaris SPARC 系统上进行检查，反之亦然。
+.SS "检查故障转储文件的限制"
+.sp
+.LP
+Solaris 7 和更早发行版的故障转储只能在使用与操作系统发行版相对应的 libkvm 时才能进行检查。如果使用不同操作系统发行版的 dmod 检查某个操作系统发行版的故障转储，内核实现中的更改可能会导致某些 dcmd 或遍历器无法正常工作。\fBmdb\fR 在检测到这种情况时将发出警告消息。Solaris x86 系统中的故障转储无法在 Solaris SPARC 系统上进行检查，反之亦然。
+.SS "32 位和 64 位调试器之间的关系"
+.sp
+.LP
+\fBmdb\fR 支持对 32 位和 64 位程序进行调试。在检查目标并确定数据模型之后，\fBmdb\fR 在必要时会自动重新执行与目标具有相同数据模型的 \fBmdb\fR 二进制文件。这种方法简化了编写调试器模块的任务，因为装入的模块使用与主要目标相同的数据模型。只能将 64 位调试器用于调试 64 位目标程序。64 位调试器只能在运行 64 位操作环境的系统中使用。
+.sp
+.LP
+执行 64 位进程的调试器在调试 32 位进程时，可能需要重新执行自身，反之亦然。这种情况的处理在下面的\fB与 Exec 交互\fR中进行详细介绍。
+.SS "与 Exec 交互"
+.sp
+.LP
+受控进程执行成功的 \fBexec\fR(2) 时，调试器的行为由 \fB::set\fR \fB-o\fR \fBfollow_exec_mode\fR 选项控制，如上文所述。如果调试器和被调试的进程具有相同的数据模型，"\fBstop\fR" 和 "\fBfollow\fR" 模式将确定 \fBmdb\fR 是自动继续执行目标还是在 exec 之后返回调试器提示符。如果调试器和被调试的进程具有不同的数据模型，"\fBfollow\fR" 行为将导致 \fBmdb\fR 使用合适的数据模型自动重新执行 \fBmdb\fR 二进制文件并重新附加到进程，仍然在从 exec 返回时停止。并非所有调试器状态在此重新执行过程中均会保留。
+.sp
+.LP
+如果 32 位被调试进程执行了 64 位程序，"\fBstop\fR" 将返回到命令提示符，但调试器不再能够检查进程，因为它现在使用 64 位数据模型。要恢复调试，请执行 \fB::release\fR \fB- a\fR dcmd，退出 \fBmdb\fR，然后执行 \fBmdb\fR \fB-p\fR \fIpid\fR 以便将 64 位调试器重新附加到进程。
+.sp
+.LP
+如果 64 位被调试进程执行 32 位程序，"\fBstop\fR" 将返回到命令提示符，但调试器只提供有限的功能用于检查新进程。所有内置 dcmd 均按预期工作，但可以装入的 dcmd 并非如此，因为它们不执行数据模型结构转换。用户应按上文所述，将调试器释放并重新附加到进程，以便恢复完整的调试功能。
+.SS "与作业控制交互"
+.sp
+.LP
+如果调试器附加到由作业控制停止的进程（即，为了响应 \fBSIGTSTP\fR、\fBSIGTTIN\fR 或 \fBSIGTTOU\fR 而停止），则在由继续 dcmd 继续执行时，进程无法重新设置为正在运行。如果被调试进程是相同会话的成员（即与 \fBmdb\fR 共享相同的控制终端），\fBmdb\fR 会尝试将关联的进程组提升到前台，并使用 \fBSIGCONT\fR 继续执行进程，以便将进程从作业控制停止中恢复。将 \fBmdb\fR 与此类进程分离时，它在退出前会将进程组还原到后台。如果被调试进程不是相同会话的成员，\fBmdb\fR 将无法安全地将进程组提升到前台，因此它会针对调试器继续执行进程，但进程仍由作业控制停止。\fBmdb\fR 在这种情况下将列显警告，用户必须从合适的 shell 发出 "\fBfg\fR" 命令以便恢复进程。
+.SS "进程附加和释放"
+.sp
+.LP
+\fBmdb\fR 附加到正在运行的进程时，进程将停止并保持停止状态，直至应用了继续 dcmd 之一或者调试器退出。如果在使用 \fB-p\fR 将调试器附加到进程之前，或者在发出 \fB::attach\fR 或 \fB:A\fR 命令之前，\fB-o\fR \fBnostop\fR 选项已启用，则 \fBmdb\fR 将附加到进程，但不停止进程。虽然进程仍在运行，它可以检测为正常（尽管带有不一致的结果），并且可能会启用断点或其他跟踪标志。如果 \fB:c\fR 或 \fB::cont\fR dcmd 在进程运行的时候执行，调试器将等待进程停止。如果没有发生跟踪的软件事件，用户可以在 \fB:c\fR 或 \fB::cont\fR 之后发送中断 (\fB^C\fR)，以便强制进程停止并将控制权返回给调试器。
+.sp
+.LP
+在执行 \fB:R\fR、\fB::release\fR、\fB:r\fR、\fB::run\fR、\fB$q\fR 或 \fB::quit\fR dcmd 时，或者调试器由于 \fBEOF\fR 或信号而终止时，\fBmdb\fR 将释放当前正在运行的进程（如果有）。如果进程最初是由调试器使用 \fB:r\fR 或 \fB::run\fR 创建的，则会在释放时强制终止，就如使用 \fBSIGKILL\fR 一样。如果在将 \fBmdb\fR 附加到进程之前进程已在运行，该进程在释放时将再次设置为正在运行。进程可以使用 \fB::release\fR \fB-a\fR 选项释放、保持停止或者被放弃。
+.SS "符号调试信息"
+.sp
+.LP
+\fB::list\fR、\fB::offsetof\fR、\fB::print\fR 和 \fB::sizeof\fR dcmd 要求一个或多个装入对象包含适用于 \fBmdb\fR 的压缩符号调试信息。此信息当前只能用于某些 Solaris 内核模块。
+.SS "开发者信息"
+.sp
+.LP
+\fI《Oracle Solaris Modular Debugger Guide》\fR提供了有关 \fBmdb\fR 功能的更为详细的说明，以及面向调试器模块开发者的信息。
+.sp
+.LP
+头文件 \fB<sys/mdb_modapi.h>\fR 包含 MDB 模块 \fBAPI\fR 中函数的原型，而 \fB/source/demo/mdb-examples\fR 软件包在目录 \fB/usr/demo/mdb\fR 中提供了示例模块的源代码。

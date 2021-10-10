@@ -1,0 +1,618 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH dtrace 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+dtrace \- DTrace 動的トレースコンパイラおよびトレースユーティリティー
+.SH 形式
+.LP
+.nf
+\fBdtrace\fR [\fB-32\fR | \fB-64\fR] [\fB-aACeFGHhlqSvVwZ\fR] [\fB-b\fR \fIbufsz\fR] [\fB-c\fR \fIcmd\fR] 
+     [\fB-D\fR \fIname\fR [\fI=value\fR]] [\fB-I\fR \fIpath\fR] [\fB-L\fR \fIpath\fR] [\fB-o\fR \fIoutput\fR] 
+     [\fB-s\fR \fIscript\fR] [\fB-U\fR \fIname\fR] [\fB-x\fR \fIarg\fR [\fI=val\fR]] 
+     [\fB-X\fR a | c | s | t] [\fB-p\fR \fIpid\fR] 
+     [\fB-P\fR \fIprovider\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-m\fR [\fIprovider:\fR] \fImodule\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-f\fR [[\fIprovider:\fR] \fImodule:\fR] \fIfunction\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-n\fR [[[\fIprovider:\fR] \fImodule:\fR] \fIfunction:\fR] \fIname\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-i\fR \fIprobe-id\fR [[\fIpredicate\fR] \fIaction\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+DTrace は、Solaris オペレーティングシステム用の総合的な動的トレースフレームワークです。DTrace が提供する強力なインフラストラクチャーを使えば、管理者、開発者、およびサービス担当者は、オペレーティングシステムやユーザープログラムの動作に関するさまざまな質問に対して、簡潔に答えることができるようになります。 
+.sp
+.LP
+『\fI『Solaris 動的トレースガイド』\fR』では、DTrace を使用してシステムの動作を監視、デバッグ、およびチューニングする方法について説明します。バンドルされている DTrace の監視ツール、計測プロバイダ、D プログラミング言語など、DTrace の各種機能の詳細については、このマニュアルを参照してください。
+.sp
+.LP
+\fBdtrace\fR コマンドは、DTrace 機能が提供する基本サービスに対する汎用インタフェースを提供します。それらを次に示します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+DTrace によって現在公開されている一連のプローブやプロバイダを一覧表示するためのオプション
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+任意のプローブ記述指定子 (provider、module、function、name) を使ってプローブを直接有効にするためのオプション
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+D コンパイラを実行し、1 つ以上の D プログラムファイルまたはコマンド行に直接記述されたプログラムをコンパイルするためのオプション
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+匿名トレースプログラムを生成するためのオプション
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+プログラム安定性レポートを生成するためのオプション
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+DTrace のトレース動作やバッファリング動作を変更したり、追加の D コンパイラ機能を有効化したりするためのオプション
+.RE
+.sp
+.LP
+\fBdtrace\fR を使えば、D スクリプトを作成できます。それには、\fB#!\fR 宣言内にこの dtrace を指定してインタプリタファイルを作成します。また、\fBdtrace\fR を使えば、実際に \fB-e\fR オプションを使用してトレースを有効化することなく D プログラムのコンパイルを試行し、そのプロパティーを決定することもできます。詳しくは「オプション」の節を参照してください。\fB\fR\fBdtrace\fR ユーティリティーを使ってこれらのタスクを実行する方法に関する詳しい例については、『\fI『Solaris 動的トレースガイド』\fR』を参照してください。
+.SH オプション
+.sp
+.LP
+\fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR、および \fB-i\fR オプションが受け入れる引数には、1 つの D 言語 \fIpredicate\fR をスラッシュ \fB//\fR で囲んだものと、一連の D 言語 \fIaction\fR 文を中括弧 \fB{}\fR で囲んだものを、オプションで含めることができます。コマンド行で指定される D プログラムのコードは、メタ文字がシェルによって解釈されてしまわないように、適切に引用符で囲む必要があります。 
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-32\fR | \fB-64\fR\fR
+.ad
+.sp .6
+.RS 4n
+D コンパイラは、オペレーティングシステムカーネルのネイティブデータモデルを使ってプログラムを生成します。\fBisainfo\fR \fB-b\fR コマンドを使えば、現在のオペレーティングシステムのデータモデルを確認できます。\fB-32\fR オプションが指定された場合、\fBdtrace\fR は、32 ビットデータモデルを使って D プログラムをコンパイルするよう、D コンパイラに指示します。\fB-64\fR オプションが指定された場合、\fBdtrace\fR は、64 ビットデータモデルを使って D プログラムをコンパイルするよう、D コンパイラに指示します。通常、これらのオプションを指定する必要はありません。オプションを省略しても、\fBdtrace\fR は、自動的にネイティブデータモデルを選択します。データモデルは、整数型のサイズとその他の言語プロパティに影響を及ぼします。いずれかのデータモデル用にコンパイルされた D プログラムは、32 ビットカーネル上でも、64 ビットカーネル上でも実行できます。オプション \fB-32\fR と \fB-64\fR では、\fB-G\fR オプションを指定したとき生成される ELF ファイルの形式 (ELF32 または ELF64) も指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+匿名トレース状態を要求し、トレースされたデータを表示します。\fB-a\fR オプションと \fB-e\fR オプションを併用した場合、\fBdtrace\fR は、匿名トレース状態の終了後、新しいデータを待たずにただちに終了します。匿名トレースの詳細については、『\fI『Solaris 動的トレースガイド』\fR』を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+匿名トレース用の \fBdriver.conf\fR(4) 指令を生成します。このオプションは、指定されたプローブが匿名トレース用に有効化されてから終了するまでの一連の \fBdtrace\fR(7D) 構成ファイル指令を作成します。デフォルトでは、\fBdtrace\fR は、指令を \fB/kernel/drv/dtrace.conf\fR ファイルに格納します。\fB-o\fR オプションを使って別の出力ファイルを指定すれば、この動作を変更できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIbufsz\fR\fR
+.ad
+.sp .6
+.RS 4n
+主トレースバッファーサイズ (\fIbufsz\fR) を設定します。このトレースバッファーサイズには、サイズサフィックス \fBk\fR、\fBm\fR、\fBg\fR、\fBt\fR のいずれかを含めることができます。\fBdtrace\fR は、バッファー領域の割り当てに失敗すると、バッファーサイズを減らそうとするか、終了します。どちらになるかは、\fBbufresize\fR プロパティーの設定によります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcmd\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたコマンド \fIcmd\fR を実行し、その実行が完了したら終了します。コマンド行に \fB-c\fR オプションが複数指定されている場合、\fBdtrace\fR は、すべてのコマンドの終了後に終了しますが、それぞれの子プロセスが終了するたびにその終了ステータスを報告します。最初のコマンドのプロセス ID は、マクロ変数 \fB$target\fR により、コマンド行または \fB-s\fR オプションを使って指定された任意のプログラムに渡されます。マクロ変数の詳細については、『\fI『Solaris 動的トレースガイド』\fR』を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+D プログラムをコンパイルする前に、それらのプログラムに対して C プリプロセッサ \fBcpp\fR(1) を実行します。\fB-D\fR、\fB-U\fR、\fB-I\fR、\fB-H\fR の各オプションを使えば、C プリプロセッサにオプションを渡すことができます。\fB-X\fR オプションを使えば、C 標準への準拠レベルを選択できます。C プリプロセッサの呼び出し時に D コンパイラによって定義される一連のトークンについては、\fB-X\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIname\fR \fB[=\fR\fIvalue\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-C\fR オプションで有効化された \fBcpp\fR(1) を呼び出す際に、\fIname\fR を定義します。等号 (\fB=\fR) と追加の \fIvalue\fR を指定した場合、名前に対応する値が代入されます。このオプションは、\fBcpp\fR が呼び出されるたびに、それに \fB-D\fR オプションを渡します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての要求をコンパイルし、匿名トレース状態を消費し終わったあと (\fB-a\fR オプション)、プローブを有効化する前に終了します。このオプションを \fB-a\fR オプションと組み合わせれば、匿名トレースデータを出力してから終了させることができます。このオプションを D コンパイラのオプションと組み合わせることもできます。この組み合わせを使用した場合、プログラムがコンパイルされるかどうかの検証は行われますが、それらのプログラムが実際に実行されたり対応する計測機能が有効化されたりすることはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fB[[\fR\fIprovider\fR\fB:]\fR\fImodule\fR\fB:]\fR\fIfunction\fR\fB[[\fR\fIpredicate\fR\fB]\fR\fIaction\fR\fB ]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+トレースまたは一覧表示 (\fB-l\fR オプション) の対象となる関数名を指定します。対応する引数には、プローブ記述形式 \fIprovider:module:function\fR、\fImodule:function\fR、\fIfunction\fR のいずれかを含めることができます。指定しなかったプローブ記述フィールドは空になります。この場合、これらのフィールドの値とは関係なくすべてのプローブが選択されます。\fIfunction\fR 以外の修飾子を指定しなかった場合、対応する \fIfunction\fR を持つすべてのプローブが選択されます。\fB-f\fR の引数の後にはオプションで、D プローブ節を付加することもできます。\fB-f\fR オプションは、コマンド行で一度に複数指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+関数の開始 (entry) と終了 (return) を識別することにより、トレース出力をひとつにまとめます。関数の entry プローブの報告はインデントされ、\fB ->\fR の後ろに出力されます。関数終了プローブのレポートはインデント解除され、\fB<-\fR の後ろに出力されます。システムコール開始プローブのレポートはインデントされ、\fB=>\fR の後ろに出力されます。システムコール終了プローブのレポートはインデント解除され、\fB<=\fR の後ろに出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.sp .6
+.RS 4n
+埋め込まれた DTrace プログラムを含む ELF ファイルを生成します。プログラム内に指定された DTrace プローブは、ELF オブジェクトの内側に保存されます。このオブジェクトは再配置可能であり、別のプログラムにリンクできます。\fB-o\fR オプションが指定されている場合、ELF ファイルは、このオペランドの引数として指定されたパス名で保存されます。\fB-o\fR オプションが存在しておらず、かつ \fB\fIfilename\fR.d\fR という名前のファイルに DTrace プログラムが格納されている場合、ELF ファイルは、\fB\fI filename\fR.o\fR という名前で保存されます。それ以外の場合、ELF ファイルは名前 \fBd.out\fR として保存されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-C\fR オプションで有効化された \fBcpp\fR(1) を呼び出す際に、インクルードされたファイルのパス名を出力します。このオプションは、\fBcpp\fR が呼び出されるたびに、それに \fB-H\fR オプションを渡します。その結果、一連のパス名が 1 行に 1 つずつ、標準エラー出力に出力されます。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したプロバイダ定義内のプローブに対応するマクロを格納するヘッダーファイルを生成します。このオプションは、あとで \fB-G\fR オプションとともに使用するほかのソースファイルによってインクルードされるヘッダーファイルを生成する場合に使用してください。\fB-o\fR オプションが存在している場合、ヘッダーファイルはこのオプションの引数として指定されたパス名を使って保存されます。\fB-o\fR オプションが存在せず、かつ DTrace プログラムが \fIfilename\fR\fB\&.d\fR というファイルに格納されている場合、ヘッダーファイルは名前 \fIfilename\fR\fB\&.h\fR として保存されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIprobe-id\fR\fB[[\fR\fIpredicate\fR] \fIaction\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+トレースまたは一覧表示 (\fB-l\fR オプション) の対象となるプローブ ID (\fIprobe-id\fR) を指定します。プローブ ID を指定する際には、\fBdtrace\fR \fB-l\fR で表示される 10 進整数を使用します。\fB-i\fR の引数には、後ろに任意の D プローブ節を 1 つ付加できます。\fB-i\fR オプションは一度に複数指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-C\fR オプションで有効化された \fBcpp\fR(1) を呼び出す際に、指定されたディレクトリ \fIpath\fR を \fB#include\fR ファイルの検索パスに追加します。このオプションは、\fBcpp\fR の呼び出しのたびに \fB-I\fR オプションを渡します。指定された \fIpath\fR は、検索パス内のデフォルトディレクトリリストの前に挿入されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたディレクトリ \fIpath\fR を、DTrace ライブラリの検索パスに追加します。DTrace ライブラリは、D プログラムを記述する際に使用可能な共通定義を格納する目的で使用されます。このオプションで指定された \fIpath\fR は、デフォルトのライブラリ検索パスの後ろに追加されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+プローブを有効化しないで一覧表示します。\fB-l\fR オプションが指定された場合、\fBdtrace\fR は、\fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR、\fB-i\fR、\fB-s\fR の各オプションを使って指定された記述に一致するプローブのレポートを生成します。これらのオプションが 1 つも指定されなかった場合、このオプションはすべてのプローブを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR [[\fIprovider:\fR] \fImodule:\fR [[\fIpredicate\fR] \fIaction\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+トレースまたは一覧表示 (\fB-l\fR オプション) の対象となるモジュール名を指定します。対応する引数には、プローブ記述形式 \fIprovider:module\fR、\fImodule\fR のいずれかを含めることができます。指定しなかったプローブ記述フィールドは空になります。この場合、これらのフィールドの値とは関係なくすべてのプローブが選択されます。\fImodule\fR 以外の修飾子を指定しなかった場合、対応する \fImodule\fR を持つすべてのプローブが選択されます。\fB-m\fR の引数には、後ろに任意の D プローブ節を 1 つ付加できます。\fB-m\fR オプションは、コマンド行で一度に複数指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR [[[\fIprovider:\fR] \fImodule:\fR] \fIfunction:\fR] \fIname\fR [[\fIpredicate\fR] \fIaction\fR]\fR
+.ad
+.sp .6
+.RS 4n
+トレースまたは一覧表示 (\fB-l\fR オプション) の対象となるプローブ名を指定します。対応する引数には、プローブ記述形式 \fIprovider:module:function:name\fR、\fImodule:function:name\fR、\fIfunction:name\fR、\fIname\fR のいずれかを含めることができます。指定しなかったプローブ記述フィールドは空になります。この場合、これらのフィールドの値とは関係なくすべてのプローブが選択されます。\fIname\fR 以外の修飾子を指定しなかった場合、対応する \fIname\fR を持つすべてのプローブが選択されます。\fB-n\fR の引数には、後ろに任意の D プローブ節を 1 つ付加できます。\fB-n\fR オプションは、コマンド行で一度に複数指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-A\fR、\fB-G\fR、\fB-h\fR、および \fB-l\fR オプション、またはトレースされたデータ自体に対する \fIoutput\fR ファイルを指定します。\fB-A\fR オプションが指定されていて \fB-o\fR オプションが指定されていない場合、デフォルトの出力ファイルは \fB/kernel/drv/dtrace.conf\fR になります。\fB-G\fR オプションが存在していて \fB-s\fR オプションの引数が \fB\fIfilename\fR.d\fR の形式であり、かつ \fB-o\fR が存在していない場合、デフォルトの出力ファイルは \fB\fIfilename\fR.o\fR になります。それ以外の場合、デフォルトの出力ファイルは \fBd.out\fR になります。
+.sp
+\fB-o\fR オプションを使って \fBdtrace\fR を連続して呼び出すと、\fBdtrace\fR は上書きするのではなく、出力ファイルに追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセス ID \fIpid\fR を獲得し、そのシンボルテーブルをキャッシュし、その実行が完了したら終了します。コマンド行に \fB-p\fR オプションを 2 つ以上指定した場合、\fBdtrace\fR は、プロセスが終了するたびに終了ステータスを報告し、すべてのコマンドが終了した時点で終了します。最初のプロセス ID は、マクロ変数 \fB$target\fR により、コマンド行または \fB-s\fR オプションを使って指定された任意の D プログラムに渡されます。マクロ変数の詳細については、『\fI『Solaris 動的トレースガイド』\fR』を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIprovider\fR \fB[[\fR\fIpredicate\fR\fB]\fR \fIaction\fR]\fR
+.ad
+.sp .6
+.RS 4n
+トレースまたは一覧表示 (\fB-l\fR オプション) の対象となるプロバイダ名を指定します。残りのプローブ記述フィールド (module、function、name) は空になります。したがって、これらのフィールドの値とは関係なく、すべてのプローブが選択されます。\fB-P\fR の引数には、後ろに任意の D プローブ節を 1 つ付加できます。\fB-P\fR オプションは、コマンド行で一度に複数指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+非出力モードを設定します。\fBdtrace\fR は、指定されたオプションや D プログラムの条件に一致するプローブ数などのメッセージを抑制し、列ヘッダーの CPU ID や プローブ ID を出力しなくなるほか、出力に改行を挿入しなくなります。\fBtrace()\fR や \fBprintf()\fR といった D プログラム文によってトレースおよび書式設定されたデータのみが、標準出力に表示されます。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された D プログラムのソースファイルをコンパイルします。\fB-e\fR オプションが存在している場合、プログラムのコンパイルは行われますが、計測機能は有効化されません。\fB-l\fR オプションが存在している場合、プログラムのコンパイルと一致するプローブの一覧表示は行われますが、計測機能は有効化されません。\fB-e\fR、\fB-l\fR、\fB-G\fR、\fB-A\fR のいずれも存在しない場合には、D プログラムによって指定された計測機能が有効化され、トレースが開始されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+D コンパイラの中間コードを表示します。D コンパイラは、個々の D プログラムごとに生成された中間コードに関するレポートを生成し、標準エラー出力に出力します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-C\fR オプションで有効化された \fBcpp\fR(1) を呼び出す際に、指定された \fIname\fR を未定義にします。このオプションは、\fBcpp\fR が呼び出されるたびに、それに \fB-U\fR オプションを渡します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モードを設定します。\fB-v\fR オプションを指定すると、\fBdtrace\fR はプログラム安定性レポートを生成します。このレポートには、指定された D プログラムについて最低限のインタフェースの安定性レベルと依存性レベルが示されます。DTrace の安定性レベルについては、『\fI『Solaris 動的トレースガイド』\fR』に詳しく記載されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdtrace\fR がサポートする D プログラミングインタフェースのバージョンのうち、もっとも高いバージョンを報告します。このバージョン情報が標準出力に出力されたあと、\fBdtrace\fR コマンドは終了します。\fB\fRDTrace のバージョン管理機能の詳細については、『\fI『Solaris 動的トレースガイド』\fR』を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-s\fR、\fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR、\fB-i\fR のいずれかのオプションで指定された D プログラム内で、破壊アクションを使用できるようにします。\fB-w\fR オプションが指定されなかった場合、\fBdtrace\fR は、破壊アクションを含む D プログラムのコンパイルや有効化を許可しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIarg\fR [\fI=val\fR]\fR
+.ad
+.sp .6
+.RS 4n
+DTrace の実行時オプションまたは D コンパイラオプションを有効化または変更します。オプションのリストは、『\fI『Solaris 動的トレースガイド』\fR』に記載されています。ブール型のオプションを有効にするときは、その名前を指定します。値を持つオプションを設定するには、オプションの名前と値を等号 (\fB=\fR) で分離します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-X\fR \fBa | c | s | t\fR\fR
+.ad
+.sp .6
+.RS 4n
+オプション \fB-C\fR オプションで有効化された \fBcpp\fR(1) を呼び出すとき、ISO C 標準にどの程度まで準拠させるかを指定します。\fB-X\fR オプションの引数は、\fB__STDC__\fR マクロの値やその存在有無に影響を与えますが、具体的にどのような影響を与えるかは、この引数の文字の値によります。
+.sp
+\fB-X\fR オプションでサポートされる引数は、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.RS 5n
+.rt  
+デフォルト。ISO C + K&R 互換性拡張。ISO C が必要とするセマンティック変更を含みます。\fB-X\fR が指定されなかった場合、これがデフォルトのモードになります。\fB-Xa\fR オプションが指定されている場合、\fBcpp\fR を呼び出したときの定義済みマクロ \fB__STDC__\fR の値はゼロになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 5n
+.rt  
+準拠。ISO C に完全準拠。K&R C 互換性拡張機能はありません。\fBcpp\fR 呼び出し時に \fB-Xc\fR オプションが指定された場合、定義済みマクロ \fB__STDC__\fR の値は 1 になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 5n
+.rt  
+K&R C のみ。\fBcpp\fR 呼び出し時に \fB-Xs\fR オプションが指定された場合、マクロ \fB__STDC__\fR は未定義になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+移行。ISO C + K&R C 互換性拡張。ISO C が必要とするセマンティック変更は含みません。\fBcpp\fR 呼び出し時に \fB-Xt\fR オプションが指定された場合、定義済みマクロ \fB__STDC__\fR の値は 0 になります。
+.RE
+
+\fB-X\fR オプションは D コンパイラが C プリプロセッサを呼び出す方法にのみ影響を与えるため、\fB-Xa\fR オプションと \fB-Xt\fR オプションは、D から見れば等価です。それでもその両方が提供されているのは、C 構築環境の設定を再利用しやすくするためです。
+.sp
+次の追加 C プリプロセッサ定義は、\fB-X\fR モードの内容にかかわらず、すべてのモードで常に指定され、有効になります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__sun\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__unix\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__SVR4\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__sparc\fR (SPARC システム上でのみ)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__sparcv9\fR (SPARC システム上で 64 ビットプログラムをコンパイルする場合のみ)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__i386\fR (x86 システム上で 32 ビットプログラムをコンパイルする場合のみ)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__amd64\fR (x86 システム上で 64 ビットプログラムをコンパイルする場合のみ)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__\fI`uname -s`\fR_\fI`uname -r`\fR\fR (例: \fB__SunOS_5_10\fR)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__SUNW_D=1\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__SUNW_D_VERSION=0x\fIMMmmmuuu\fR\fR
+.sp
+ここで、\fIMM\fR は 16 進のメジャーリリース値、\fImmm\fR は 16 進のマイナーリリース値、\fIuuu\fR は 16 進のマイクロリリース値です。DTrace のバージョン管理の詳細については、『\fI『Solaris 動的トレースガイド』\fR』を参照してください。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR\fR
+.ad
+.sp .6
+.RS 4n
+一致するプローブが 1 つも見つからないようなプローブ記述を許可します。\fB-Z\fR オプションが指定されない場合、D プログラムファイル内で指定されたプローブ記述 (\fB-s\fR オプション) またはコマンド行で指定されたプローブ記述 (\fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR、または \fB-i\fR オプション) の中で、既知のどのプローブにも一致しないような記述を含むプローブ記述が見つかると、\fBdtrace\fR はエラーを報告し、処理を終了します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+\fBdtrace\fR コマンド行に 0 個以上の追加引数を指定し、一連のマクロ変数 (\fB$1\fR や \fB$2\fR など) を定義することができます。これらの追加引数は、\fB-s\fR オプションを使って指定された D プログラム内またはコマンド行から指定された D プログラム内で使用できます。マクロ変数の使用については、『\fI『Solaris 動的トレースガイド』\fR』に詳しく記載されています。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.RS 5n
+.rt  
+正常終了。 
+.sp
+D プログラム要求の場合、終了ステータス \fB0\fR は、プログラムのコンパイル、プローブの有効化、匿名ステータスの取得、のいずれかが成功したことを示します。指定されたトレース要求でエラーや欠落が発生した場合でも、\fBdtrace\fR は \fB0\fR を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+エラーが発生しました。
+.sp
+D プログラム要求の場合、終了ステータス \fB1\fR は、プログラムのコンパイルが失敗したか、指定された要求に応じられなかったことを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+コマンド行に無効なオプションまたは引数が指定されました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/dtrace
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド行の構文は「確実」です。人間が読める形式の出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBcpp\fR(1), \fBisainfo\fR(1), \fBssh\fR(1), \fBlibdtrace\fR(3LIB), \fBdriver.conf\fR(4), \fBattributes\fR(5), \fBdtrace\fR(7D)
+.sp
+.LP
+\fI『Solaris Dynamic Tracing Guide』\fR
+.SH 使用法
+.sp
+.LP
+\fB-p\fR フラグを使用している場合、ターゲットプロセスを検査し、結果を報告している間、\fBdtrace\fR はターゲットプロセスを停止します。停止中のプロセスは何も実行できません。つまり、たとえば X サーバーが、X サーバーの制御下にあるウィンドウで実行されている \fBdtrace\fR によって検査される場合、\fBproc\fR ツールは更新できないウィンドウに結果を表示しようとするため、ウィンドウシステム全体がデッドロックになる可能性があります。このような場合は、\fBssh\fR(1) を使用して別のシステムからログインし、問題のある \fBproc\fR ツールを強制終了すると、デッドロックが解消されます。

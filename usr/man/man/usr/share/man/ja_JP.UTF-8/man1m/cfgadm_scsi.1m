@@ -1,0 +1,816 @@
+'\" te
+.\" Copyright (c) 2009 Sun Microsystems, Inc. All Rights Reserved.
+.TH cfgadm_scsi 1M "2009 年 5 月 13 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_scsi \- cfgadm の SCSI ハードウェア固有のコマンド
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_option\fR] [\fB-o\fR \fIhardware_option\fR]
+     [\fB-l\fR [\fIap_id\fR | \fIap_type ...\fR ]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR] \fB-t\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_option\fR] \fB-h\fR [\fIap_id\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBSCSI\fR ハードウェア固有ライブラリ \fB/usr/lib/cfgadm/scsi.so.1\fR は、\fBcfgadm\fR(1M) コマンドによる \fBSCSI\fR ホットプラグ操作のための機能を提供します。\fBcfgadm\fR は、接続点で実行されます。接続点とは、ハードウェアリソースを動的に再構成できるシステム上の場所です。接続点については、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+\fBSCSI\fR ホットプラグ操作では、各 \fBSCSI\fR コントローラは、デバイスツリー上で接続点によって表されます。また、各 \fBSCSI\fR デバイスは、動的接続点によって表されます。接続点には、\fBap_id\fR を通じて名前が付けられます。論理 ap_id と物理 ap_id の 2 種類の \fBap_id\fR が定義されます。物理 \fBap_id\fR が物理パス名に基づいているのに対し、論理 \fBap_id\fR は、より短く、ユーザーにわかりやすい名前です。\fBSCSI\fR コントローラの場合、論理 \fBap_id\fR は、通常は対応するディスクコントローラ番号です。たとえば、一般的な論理 \fBap_id\fR は \fBc0\fR となります。 
+.sp
+.LP
+\fBSCSI\fR デバイスには、コントローラの \fBap_id\fR を基準として名前が付けられます。したがって、ディスクデバイスがコントローラ \fBc0\fR に接続されている場合、その \fBap_id\fR は次のようになります。 
+.sp
+.in +2
+.nf
+c0::dsk/c0t0d0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、\fBdsk/c0t0d0\fR は、特定のデバイスを識別します。一般的に、デバイスの識別子は、\fB/dev\fR 内のデバイスの対応する論理リンクから生成されます。たとえば、\fBSCSI\fR テープドライブの論理 \fBap_id\fR は \fB c0::rmt/0\fR となります。ここで、\fBc0\fR は、\fBSCSI\fR コントローラの論理 \fBap_id\fR であり、\fBrmt/0\fR は、\fB/dev/rmt\fR 内のテープドライブの論理リンクから生成されます。識別子を \fB/dev\fR 内のリンクから生成できない場合は、一意の識別子が割り当てられます。たとえば、テープデバイスが \fB/dev\fR 内にリンクを持たない場合、\fBc0::st3\fR 形式の \fBap_id\fR が割り当てられます。ここで、\fBst3\fR は、内部で生成された一意の識別子です。
+.sp
+.LP
+コントローラが Solaris I/O マルチパス機能 (旧名 MPxIO または the Sun StorEdge Traffic Manager [STMS]) をサポートしていて、その機能が有効になっている場合は、コントローラによって、\fBscsi_vhci\fR(7D) マルチパスデバイスへのパスが提供されます。このようなコントローラに接続されているデバイスが \fBscsi_vhci\fR(7D) によってサポートされている場合、その \fBap_id\fR は次のようになります。
+.sp
+.in +2
+.nf
+c0::0,0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、\fB0,0\fR は、ターゲットおよび論理ユニットの情報を一意に識別します。このような \fBap_id\fR のパスの \fBType\fR フィールドでは、そのパスが \fBscsi_vhci \fR(7D) マルチパスデバイスへのパスを表しているかどうかが、そのパスを通じて接続されているデバイスのタイプとともに示されます。
+.sp
+.LP
+システム上の接続点の単純な一覧には、\fBSCSI\fR コントローラ上の接続点は含まれますが、\fBSCSI\fR デバイス上の接続点は含まれません。一覧表示オプション (\fB-l\fR) に \fB-a\fR フラグを使用すると、\fBSCSI\fR デバイスも一覧表示されます。例:  
+.sp
+.in +2
+.nf
+# \fBcfgadm -l\fR
+  Ap_Id             Type        Receptacle     Occupant     Condition
+  c0                scsi-bus    connected      configured   unknown
+  sysctrl0:slot0    cpu/mem     connected      configured   ok
+  sysctrl0:slot1    sbus-upa    connected      configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBSCSI\fR コントローラに加えて \fBSCSI\fR デバイスも一覧表示するには、次のように指定します。
+.sp
+.in +2
+.nf
+# \fBcfgadm -al\fR
+
+Ap_Id                Type         Receptacle   Occupant     Condition
+c0                   scsi-bus     connected    configured   unknown
+c0::dsk/c0t14d0      disk         connected    configured   unknown
+c0::dsk/c0t11d0      disk         connected    configured   unknown
+c0::dsk/c0t8d0       disk         connected    configured   unknown
+c0::dsk/c0t0d0       disk         connected    configured   unknown
+c0::rmt/0            tape         connected    configured   unknown
+sysctrl0:slot0       cpu/mem      connected    configured   ok
+sysctrl0:slot1       sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+コントローラ \fBc0\fR で Solaris I/O マルチパス機能が有効になっていて、接続されているディスクデバイスおよびテープデバイスが Solaris I/O マルチパス機能でサポートされている場合、出力は次のようになります。
+.sp
+.in +2
+.nf
+# \fBcfgadm -al\fR
+
+Ap_Id               Type         Receptacle   Occupant     Condition
+c0                  scsi-bus     connected    configured   unknown
+c0::11,0            disk-path    connected    configured   unknown
+c0::14,0            disk-path    connected    configured   unknown
+c0::8,0             disk-path    connected    configured   unknown
+c0::0,0             disk-path    connected    configured   unknown
+c0::a.0             tape-path    connected    configured   unknown
+sysctrl0:slot0      cpu/mem      connected    configured   ok
+sysctrl0:slot1      sbus-upa     connected    configured   ok
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+接続点の一覧表示については、\fBcfgadm\fR(1M) を参照してください。\fBSCSI\fR コントローラ上の接続ポイントの受容体と占有装置の状態は、次の意味を持ちます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty\fR\fR
+.ad
+.sp .6
+.RS 4n
+該当しません
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+バスは休止しています (バスでの \fBI/O\fR 処理が停止しています)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+バスはアクティブです
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigured\fR\fR
+.ad
+.sp .6
+.RS 4n
+バス上に 1 つ以上のデバイスが構成されています 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigured\fR\fR
+.ad
+.sp .6
+.RS 4n
+バス上にデバイスは構成されていません
+.RE
+
+.sp
+.LP
+個々の \fBSCSI\fR デバイスの対応する状態は次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBempty\fR\fR
+.ad
+.sp .6
+.RS 4n
+該当しません
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが接続されているバスは休止しています
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが接続されているバスはアクティブです
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigured\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス、またはマルチパス SCSI デバイスへのパスが構成されています 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigured\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス、またはマルチパス SCSI デバイスへのパスは構成されていません
+.RE
+
+.SH オプション
+.sp
+.LP
+\fBcfgadm\fR では、一覧表示 (\fB-l\fR) のほかに数種類の操作が定義されています。これらの操作には、テスト (\fB-t\fR)、構成状態の変更の開始 (\fB-c\fR)、ハードウェア固有の機能の実行 (\fB-x\fR)、および構成管理のヘルプ情報の表示 (\fB-h\fR) が含まれます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSCSI\fR ハードウェア固有ライブラリでは、次の汎用コマンドが定義されています。 
+.sp
+\fBSCSI\fR コントローラの接続点では、次の構成状態の変更操作がサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSCSI\fR バスを休止解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+バスを休止します (バスでの \fBI/O\fR 処理を停止します)。
+.sp
+このコマンドの使用法を誤ると、システムがハングアップする場合があります。「\fB注意事項\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBSCSI\fR バス上に新しいデバイスを構成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+バスに接続されているすべてのデバイスを構成解除します。
+.RE
+
+\fBSCSI\fR デバイスおよびマルチパス SCSI デバイスへのパスでは、次の汎用コマンドが定義されています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のデバイス、またはマルチパス SCSI デバイスへの特定のパスを構成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のデバイス、またはマルチパス SCSI デバイスへの特定のパスを構成解除します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdisconnect\fR とともに使用すると、ハードウェアでサポートされている場合に、\fBSCSI\fR バスの休止が強制されます。
+.sp
+このコマンドの使用法を誤ると、システムがハングアップする場合があります。「\fB注意事項\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプオプションと任意の SCSI 接続点を組み合わせて使用して、SCSI 固有のヘルプを表示できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIhardware_option\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在定義されているハードウェア固有のオプションはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIlisting_option\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBselect\fR サブオプションを使用すると、クラス \fBscsi\fR の接続点を一覧表示できます。詳細は、\fBcfgadm\fR(1M) のマニュアルページを参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+現時点では、使用できるテストコマンドはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のコマンドには、SCSI コントローラでのみ使用できるコマンドと、SCSI デバイスでのみ使用できるコマンドがあります。 
+.sp
+次の \fIcontroller_ap_id\fR は、\fBc0\fR などの SCSI コントローラの \fBap_id\fR を指します。\fIdevice_ap_id\fR は、\fB c0::dsk/c0dt3d0\fR などの \fBSCSI\fR デバイスの \fBap_id\fR を指します。
+.sp
+次のハードウェア固有の機能が定義されています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert_device\fR \fIcontroller_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+SCSI コントローラ \fIcontroller_ap_id\fR に新しいデバイスを追加します。
+.sp
+このコマンドは、対話形式でのみ使用するように設計されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove_device\fR \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス \fIdevice_ap_id\fR を削除します。
+.sp
+このコマンドは、対話形式でのみ使用するように設計されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreplace_device\fR \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス \fIdevice_ap_id\fR を削除し、同じタイプの別のデバイスと交換します。
+.sp
+このコマンドは、対話形式でのみ使用するように設計されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset_device\fR \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice_ap_id\fR をリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset_bus\fR \fIcontroller_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+バス \fIcontroller_ap_id\fR をリセットします。ただし、そのバスに接続されているデバイスはリセットしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset_all\fR \fIcontroller_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+バス \fIcontroller_ap_id\fR と、そのバス上のすべてのデバイスをリセットします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocator\fR [=\fBon\fR|\fBoff\fR] \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+プラットフォームによって提供されている場合に、ハードディスクロケータ \fBLED\fR を設定または取得します。[on|off] サブオプションが設定されていない場合、ハードディスクロケータの状態が出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBled\fR[=\fBLED\fR,\fBmode\fR=\fBon\fR|\fBoff\fR|\fBblink\fR] \fIdevice_ap_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+サブ引数が設定されていない場合、この機能によって、現在の \fBLED\fR 設定の一覧が出力されます。サブ引数が設定されている場合、この機能によって、スロットの特定の \fBLED\fR のモードが設定されます。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRディスクの構成
+.sp
+.LP
+次のコマンドは、コントローラ \fBc0\fR に接続されているディスクを構成します。 
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c configure c0::dsk/c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRディスクの構成解除
+.sp
+.LP
+次のコマンドは、コントローラ \fBc0\fR に接続されているディスクを構成解除します。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c unconfigure c0::dsk/c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR新しいデバイスの追加
+.sp
+.LP
+次のコマンドは、コントローラ \fBc0\fR に新しいデバイスを追加します。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -x insert_device c0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。 
+
+.sp
+.in +2
+.nf
+Adding device to SCSI HBA: /devices/sbus@1f,0/SUNW,fas@e,8800000
+This operation will suspend activity on SCSI bus c0
+Continue (yes/no)? 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次を入力します。 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。 
+
+.sp
+.in +2
+.nf
+SCSI bus quiesced successfully. 
+It is now safe to proceed with hotplug operation.
+Enter y if operation is complete or n to abort (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次を入力します。 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRデバイスの交換
+.sp
+.LP
+次のコマンドは、コントローラ \fBc0\fR に接続されているデバイスを交換します。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm\fR \fB-x\fR \fBreplace_device c0::dsk/c0t3d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。 
+
+.sp
+.in +2
+.nf
+Replacing SCSI device: /devices/sbus@1f,0/SUNW,fas@e,8800000/sd@3,0
+This operation will suspend activity on SCSI bus: c0
+Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次を入力します。 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。 
+
+.sp
+.in +2
+.nf
+SCSI bus quiesced successfully. 
+It is now safe to proceed with hotplug operation.
+Enter y if operation is complete or n to abort (yes/no)?
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次を入力します。 
+
+.sp
+.in +2
+.nf
+\fBy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRマウントされたファイルシステムがディスクの構成解除中に検出された場合
+.sp
+.LP
+次のコマンドは、マウントされたファイルシステムがディスクの構成解除中に検出された場合を示しています。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c unconfigure c1::dsk/c1t0d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。
+
+.sp
+.in +2
+.nf
+cfgadm: Component system is busy, try again: failed to offline:
+/devices/pci@1f,4000/scsi@3,1/sd@1,0
+     Resource              Information
+------------------  --------------------------
+/dev/dsk/c1t0d0s0   mounted filesystem "/mnt"
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRディスクのロケータの値の表示
+.sp
+.LP
+次のコマンドは、ディスクのロケータの値を表示します。この例は、\fBSPARC\fR Enterprise Server ファミリ固有のものです。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -x locator c0::dsk/c0t6d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムは次のように応答します。
+
+.sp
+.in +2
+.nf
+Disk                    Led
+c0t6d0                  locator=on
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRディスクのロケータの値の設定
+.sp
+.LP
+次のコマンドは、ディスクのロケータの値を設定します。この例は、\fBSPARC\fR Enterprise Server ファミリ固有のものです。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -x locator=off c0::dsk/c0t6d0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+システムからは何も出力されません。
+
+.LP
+\fB例 8 \fRマルチパス SCSI ディスクへのパスの構成
+.sp
+.LP
+次のコマンドは、コントローラ \fBc0\fR を通じて接続されているパスを構成します。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c configure c0::2,0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRマルチパス SCSI ディスクへのパスの構成解除
+.sp
+.LP
+次のコマンドは、コントローラ \fBc0\fR を通じて接続されているパスを構成解除します。
+
+.sp
+.in +2
+.nf
+# \fBcfgadm -c unconfigure c0::2,0\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cfgadm/scsi.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+汎用的な \fBSCSI\fR ホットプラグ操作のためのハードウェア固有ライブラリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/platform/SPARC-Enterprise/lib/cfgadm/scsi.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+汎用的な \fBSCSI\fR ホットプラグ操作のためのプラットフォーム固有ライブラリ
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBluxadm\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBlibcfgadm\fR(3LIB), \fBattributes\fR(5), \fBscsi_vhci\fR(7D)
+.SH 注意事項
+.sp
+.LP
+\fBdisconnect\fR (休止) 操作は、\fBroot\fR (\fB/\fR)、\fB/usr\fR、\fBswap\fR、\fB/var\fR などの重要なパーティションが含まれるディスクを制御するコントローラではサポートされていません。このようなコントローラでは、\fBdisconnect\fR 操作を実行しないでください。使用法を誤ると、システムがハングアップし、リブートが必要になる場合があります。
+.sp
+.LP
+コントローラが disconnected (休止) 状態の場合、システムでデッドロックが発生する可能性があります。\fBdisconnect\fR 操作を使用するときは、注意するようにしてください。コントローラを disconnected 状態にするのは、\fBDR\fR 操作を実行するために必要な最低限の期間にすることをお勧めします。\fBdisconnect\fR コマンドは、システムの実行中に \fBSCSI\fR ケーブルを交換できるようにするためだけに提供されています。このコマンドをほかの目的で使用しないでください。デッドロックが発生した場合の唯一の解決方法は、システムをリブートすることです。
+.sp
+.LP
+ホットプラグ操作は、すべての \fBSCSI\fR コントローラでサポートされているわけではありません。
+.SH 警告
+.sp
+.LP
+一部の \fBSCSI\fR デバイスのコネクタは、\fBSCSI\fR ホットプラグの仕様に準拠していません。このようなデバイスでホットプラグ操作を実行すると、\fBSCSI\fR バス上のハードウェアに障害を与える場合があります。詳細は、ハードウェアのマニュアルを参照してください。

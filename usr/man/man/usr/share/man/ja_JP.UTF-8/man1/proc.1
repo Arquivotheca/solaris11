@@ -1,0 +1,563 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright 2008 Chad Mynhier
+.TH proc 1 "2011 年 3 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+proc, pflags, pcred, pldd, psig, pstack, pfiles, pwdx, pstop, prun, pwait, ptime \- proc ツール
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/pflags\fR [\fB-r\fR] \fIpid\fR | \fIcore\fR [/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pcred\fR [\fIpid\fR | \fIcore\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pcred\fR [\fB-u\fR \fIuser/uid\fR] [\fB-g\fR \fIgroup/gid\fR] [\fB-G\fR \fIgrouplist\fR] pid...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pcred\fR \fB-l\fR \fIlogin\fR \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pldd\fR [\fB-Fl\fR] [\fIpid\fR | \fIcore\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/psig\fR [\fB-n\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pstack\fR [\fB-F\fR] \fIpid\fR | \fIcore\fR [/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pfiles\fR [\fB-Fn\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pwdx\fR \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pstop\fR \fIpid\fR[/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/prun\fR \fIpid\fR[/\fIlwp\fR] ...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/pwait\fR [\fB-v\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/ptime\fR [\fB-Fm\fR] [\fB-p\fR] \fIpid\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/ptime\fR [\fB-m\fR]\fIcommand\fR [\fIarg\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+proc ツールは、\fB/proc\fR (\fBproc\fR(4) を参照) の機能を使用するユーティリティーです。これらのツールのほとんどには、プロセス ID (\fIpid\fR) のリストを指定できます。プロセス ID を指定できるツールでは、\fB/proc/\fR\fInnn\fR もプロセス ID として認識されるため、シェル展開 \fB/proc/*\fR を使用するとシステム内のすべてのプロセスを指定できます。
+.sp
+.LP
+一部の proc ツールは、コアファイルに適用することもできます (\fBcore\fR(4) を参照)。コアファイルに適用されるツールは、プロセス \fBID\fR またはコアファイルの名前あるいはその両方のリストを認識します。
+.sp
+.LP
+一部の \fBproc\fR ツールは、個別のスレッドに対して動作できます。ユーザーは、選択した (つまり、\fI/thread-id\fR をプロセス ID またはコアに追加した) スレッドだけを検査できます。複数のスレッドを選択するには、区切り文字「\fB-\fR」と「\fB,\fR」を使用します。たとえば、「\fB/1,2,7-9\fR」は、スレッド \fB1\fR、\fB2\fR、\fB7\fR、\fB8\fR、および \fB9\fR を検査します。
+.sp
+.LP
+「警告」を参照してください。\fB\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpflags\fR\fR
+.ad
+.RS 10n
+.rt  
+\fB/proc\fR 追跡フラグ (保留および維持シグナル)、およびその他の \fB/proc\fR ステータス情報をプロセスごとまたは各プロセスの指定された lwp ごとに表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcred\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスの資格情報 (実効 UID、実 UID、保存された UID、実効 GID、実 GID、保存された GID) を表示または設定します。\fB\fR\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpldd\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスにリンクされている (\fBdlopen\fR(3C) を使用して明示的に接続されている共有オブジェクトを含む) 動的ライブラリを表示します。\fBldd\fR(1) も参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsig\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスのシグナルの動作とハンドラを表示します。\fBsignal.h\fR(3HEAD) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpstack\fR\fR
+.ad
+.RS 10n
+.rt  
+16 進数とシンボリックのスタックトレースをプロセスごとまたは各プロセスの指定された lwp ごとに出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpfiles\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスで開かれているすべてのファイルに関する \fBfstat\fR(2) および \fBfcntl\fR(2) 情報を報告します。ネットワークエンドポイントの場合は、ローカル (および接続されている場合はピア) のアドレス情報も提供されます。ソケットの場合は、ソケットタイプ、ソケットオプション、および送信と受信のバッファーサイズも提供されます。また、\fB/proc/pid/path\fR から情報を使用できる場合は、ファイルへのパスが報告されます。これは、ファイルを開くときに使用された名前と必ずしも同じではありません。詳細については、\fBproc\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpwdx\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスの現在の作業用ディレクトリを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpstop\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスまたは指定された lwp を停止します (\fBPR_REQUESTED\fR 停止)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprun\fR\fR
+.ad
+.RS 10n
+.rt  
+各プロセスまたは指定された lwp を実行するように設定します (\fBpstop\fR の逆)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpwait\fR\fR
+.ad
+.RS 10n
+.rt  
+指定したすべてのプロセスの終了を待機します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBptime\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBtime\fR(1) と同様に、コマンドの時間を計測しますが、再現性のある精度を得るためにマイクロステートアカウンティングを使用します。\fI\fR\fBtime\fR(1) とは異なり、コマンドの子の時間は計測されません。
+.sp
+\fB-p\fR \fIpid\fR バージョンが使用された場合、指定された \fIpid\fR の時間統計のスナップショットを表示します。
+.RE
+
+.SH オプション
+.sp
+.LP
+次の一般的なオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+制御を強制します。別のプロセスが制御していても、ターゲットプロセスを捕捉します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+(\fBpsig\fR および \fBpfiles\fR のみ) 非冗長モードを設定します。\fBpsig\fR は、名前ではなく、シグナルハンドラアドレスを表示します。\fBpfiles\fR は、各ファイル記述子の冗長情報を表示しません。代わりに、\fBpfiles\fR は、プロセスが \fBfstat\fR(2) を各ファイル記述子に適用した場合に取得される情報に出力を制限します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+(\fBpflags\fR のみ) プロセスが停止された場合、プロセスのマシンレジスタを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+(\fBpwait\fR のみ) 冗長。終了を標準出力に報告します。
+.RE
+
+.sp
+.LP
+一般的なオプションのほかに、\fBpcred\fR は次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgroup/gid\fR\fR
+.ad
+.RS 16n
+.rt  
+ターゲットプロセスの実グループ ID (\fBGID\fR)、実効グループ ID、保存されたグループ ID を、指定した値に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIgrouplist\fR\fR
+.ad
+.RS 16n
+.rt  
+ターゲットプロセスの補助 \fBGID\fR を、指定したグループリストに設定します。補助グループは、グループ名 ID のコンマ区切りリストで指定します。空のリストは、ターゲットプロセスの補助グループリストを消去します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlogin\fR\fR
+.ad
+.RS 16n
+.rt  
+ターゲットプロセスの実 UID、実効 UID、保存された UID を、指定したログインの UID に設定します。\fB\fR\fB\fRターゲットプロセスの実 GID、実効 GID、保存された GID を、指定したログインの GID に設定します。\fB\fR\fB\fR補助グループリストを、指定したログインの補助グループリストに設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuser/uid\fR\fR
+.ad
+.RS 16n
+.rt  
+ターゲットプロセスの実ユーザー ID (\fBUID\fR)、実効ユーザー ID、保存されたユーザー ID を、指定した値に設定します。
+.RE
+
+.sp
+.LP
+一般的なオプションのほかに、\fBpldd\fR は次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+未解決の動的リンカーマップ名を表示します。
+.RE
+
+.sp
+.LP
+一般的なオプションのほかに、\fBptime\fR は次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 10n
+.rt  
+マイクロステートアカウンティング統計をすべて表示します。
+.sp
+表示されるフィールドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreal\fR\fR
+.ad
+.RS 9n
+.rt  
+時計時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.RS 9n
+.rt  
+ユーザーレベルの CPU 時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsys\fR\fR
+.ad
+.RS 9n
+.rt  
+システムコールの CPU 時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrap\fR\fR
+.ad
+.RS 9n
+.rt  
+その他のシステムトラップの CPU 時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtflt\fR\fR
+.ad
+.RS 9n
+.rt  
+テキストページフォルトのスリープ時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdflt\fR\fR
+.ad
+.RS 9n
+.rt  
+データページフォルトのスリープ時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkflt\fR\fR
+.ad
+.RS 9n
+.rt  
+カーネルページフォルトのスリープ時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlock\fR \fR
+.ad
+.RS 9n
+.rt  
+ユーザーロック待機のスリープ時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslp\fR\fR
+.ad
+.RS 9n
+.rt  
+その他すべてのスリープ時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlat\fR\fR
+.ad
+.RS 9n
+.rt  
+CPU 遅延 (待機) 時間。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.RS 9n
+.rt  
+停止時間。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.RS 10n
+.rt  
+指定された \fIpid\fR の時間統計情報のスナップショットを表示します。
+.RE
+
+.sp
+.LP
+別のプロセスの資格情報を設定するには、\fBsetuid\fR(2) で説明されている規則に従って、ユーザー ID およびグループ ID を指定した値に変更するための十分な特権がプロセスに必要です。また、ターゲットプロセスを制御するための十分な特権がプロセスに必要です。
+.SH 使用法
+.sp
+.LP
+次の proc ツールは、ターゲットプロセスの検査時および結果の報告時にターゲットプロセスを停止します。\fBpfiles\fR、\fBpldd\fR、および \fBpstack\fR。停止中のプロセスは何も実行できません。したがって、たとえば、X サーバーが、X サーバーの制御下のウィンドウで実行されているこれらのいずれかの \fBproc\fR ツールによって検査される場合、\fBproc\fR ツールは更新できないウィンドウに結果を表示しようとするため、ウィンドウシステム全体がデッドロックになる可能性があります。この場合、\fBssh\fR(1) を使用して別のシステムからログインし、問題のある \fBproc\fR ツールを終了すると、デッドロックが解決されます。
+.sp
+.LP
+「警告」を参照してください。\fB\fR
+.sp
+.LP
+\fB-F\fR フラグを使用するときは注意してください。1 つの犠牲プロセスに 2 つの制御プロセスを強要すると、混乱を引き起こす可能性があります。第一制御プロセス (通常は、デバッガ) が犠牲プロセスを停止していて、かつその \fBproc\fR ツールの使用時に第一制御プロセスが何も行わない場合にのみ安全が保証されます。
+.sp
+.LP
+一部の proc ツールは、前述の形式で示されているように、コアファイルにも適用できます。コアファイルは、プロセスの状態のスナップショットで、シグナルでプロセスを終了する前にカーネルによって、または \fBgcore\fR(1) ユーティリティーによって生成されます。一部の proc ツールでは、コアをダンプしたプロセスに対応する実行可能ファイルの名前またはプロセスに関連付けられている共有ライブラリの名前を得ることが必要になる場合があります。これらのファイルは、たとえば、\fBpstack\fR(1) のシンボルテーブル情報を提供するために必要です。その proc ツールで必要な実行可能ファイルまたは共有ライブラリを検出できない場合、一部のシンボル情報を表示できないことがあります。同様に、あるオペレーティングシステムリリースのコアファイルが別のオペレーティングシステムリリース上で検査される場合は、ランタイムリンクエディタデバッギングインタフェース (\fBlibrtld_db\fR) を初期化できません。この場合、共有ライブラリのシンボル情報は使用できません。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB0 以外\fR
+.ad
+.RS 12n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR\fR
+.ad
+.RS 11n
+.rt  
+プロセスファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+人間が読める形式の出力は「不確実」です。オプションは「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBgcore\fR(1), \fBldd\fR(1), \fBpargs\fR(1), \fBpgrep\fR(1), \fBpkill\fR(1), \fBplimit\fR(1), \fBpmap\fR(1), \fBpreap\fR(1), \fBps\fR(1), \fBptree\fR(1), \fBppgsz\fR(1), \fBpwd\fR(1), \fBrlogin\fR(1), \fBssh\fR(1), \fBtime\fR(1), \fBtruss\fR(1), \fBwait\fR(1), \fBfcntl\fR(2), \fBfstat\fR(2), \fBsetuid\fR(2), \fBdlopen\fR(3C), \fBsignal.h\fR(3HEAD), \fBcore\fR(4), \fBproc\fR(4), \fBprocess\fR(4), \fBattributes\fR(5), \fBzones\fR(5)
+.SH 警告
+.sp
+.LP
+次の \fBproc\fR ツールは、ターゲットプロセスの検査中および結果の報告中にターゲットプロセスを停止します。\fBpfiles\fR、\fBpldd\fR、および \fBpstack\fR。ただし、\fBpstack\fR は、個々のスレッドに対して実行されていても、プロセス全体が停止します。
+.sp
+.LP
+停止中のプロセスまたはスレッドは何も実行できません。本稼働環境で頻繁に使用されるプロセスまたはスレッドを短時間でも停止すると、これらのプロセスまたはスレッドが深刻なボトルネックになったりハングアップしたりする可能性があり、ユーザーがプロセスまたはスレッドを使用できなくなることがあります。一部のデータベースも異常終了する可能性があります。したがって、たとえば、前述の \fBproc\fR ツールを使用していずれかのデータベースプロセスまたはスレッドが追跡されるときに、大きな負荷のかかるデータベースサーバーはハングアップする可能性があります。このため、本稼働環境で UNIX プロセスまたはスレッドを停止することは避けてください。
+.sp
+.LP
+これらのツールによって停止されているプロセスまたはスレッドは、\fB/usr/bin/ps\fR \fB-eflL\fR を実行し、最初の列で「\fBT\fR」を検索すると、識別できます。ただし、「\fBsched\fR」などの特定のプロセスは、ほとんどの場合デフォルトで「\fBT\fR」ステータスを表示する可能性があります。
+.sp
+.LP
+ネットワークファイルシステムでロックされたファイルに返されたプロセス ID には意味がない場合があります。

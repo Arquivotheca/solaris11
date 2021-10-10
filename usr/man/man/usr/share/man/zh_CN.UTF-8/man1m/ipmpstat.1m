@@ -1,0 +1,888 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH ipmpstat 1M "2011 年 3 月 31 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ipmpstat \- 显示 IPMP 子系统状态
+.SH 用法概要
+.LP
+.nf
+\fBipmpstat\fR [\fB-n\fR] [\fB-o\fR \fIfield\fR[,...] [\fB-P\fR]] \fB-a\fR|\fB-g\fR|\fB-i\fR|\fB-p\fR|\fB-t\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBipmpstat\fR 命令简要显示有关 IPMP 子系统的信息。如下所述，它支持五种不同的输出模式，每种模式都提供 IPMP 子系统的不同视图（地址、组、接口、探测器和目标）。每次调用至多可以指定一种输出模式，并且确保显示的信息前后一致。该命令还提供一种可解析输出格式，脚本可使用该格式来检查 IPMP 子系统的状态。仅需基本特权来调用 \fBipmpstat\fR，但是探测模式需要所有特权。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 IPMP 数据地址信息（"地址"输出模式）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 IPMP 组信息（"组"输出模式）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 IP 接口信息（"接口"输出模式）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+以数字形式显示 IP 地址，而不尝试将其解析为主机名。此选项可在任何输出模式下使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+仅按顺序显示指定的输出字段。字段名称列表不区分大小写，以逗号分隔字段名称。如下所述，支持的字段名称取决于选定的输出模式。特殊字段名称 \fBall\fR 可用于显示给定输出模式的所有字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 IPMP 探测器信息（"探测器"输出模式）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 IPMP 目标信息（"目标"输出模式）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+如下所述，使用机器可解析格式显示。如果指定此选项，则必须使用 \fB-o\fR 选项指定明确的字段列表。
+.RE
+
+.SH 输出模式
+.sp
+.LP
+\fBipmpstat\fR 实用程序支持下面列出的输出模式。请注意，这些模式映射至上述部分选项。
+.sp
+.ne 2
+.mk
+.na
+\fB地址模式\fR
+.ad
+.sp .6
+.RS 4n
+地址模式会显示系统上所有 IPMP 数据地址的状态。支持以下输出字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDRESS\fR\fR
+.ad
+.sp .6
+.RS 4n
+与信息相关联的主机名（或 IP 地址）。请注意，由于可能存在重复的停用地址，因此必须将地址与 \fBGROUP\fR 组合在一起才能构成唯一的标识。对于给定 IPMP 组，如果存在重复地址，至多会显示一个地址，且始终优先活动地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址的状态。如果地址是 \fBIFF_UP\fR，则状态为 \fBup\fR（活动）（请参见 \fBifconfig\fR(1M)），如果地址不是 \fBIFF_UP\fR，则状态为 \fBdown\fR（不活动）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBGROUP\fR\fR
+.ad
+.sp .6
+.RS 4n
+托管地址的 IPMP IP 接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINBOUND\fR\fR
+.ad
+.sp .6
+.RS 4n
+将接收此地址的数据包的底层 IP 接口。这种情况会因为响应 IP 接口故障等外部事件而变化。如果此字段为空，系统将不接受发送至此地址的 IP 数据包（例如，由于地址停用或 IPMP 组中没有活动的 IP 接口）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOUTBOUND\fR\fR
+.ad
+.sp .6
+.RS 4n
+将使用此源地址发送数据包的底层 IP 接口。这种情况会因为响应 IP 接口故障等外部事件而变化。如果此字段为空，系统将不会将此地址作为源来发送数据包（例如，由于地址停用或 IPMP 组中没有活动的 IP 接口）。
+.RE
+
+如果未指定 \fB-o\fR，则将显示所有输出字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB组模式\fR
+.ad
+.sp .6
+.RS 4n
+组模式会显示系统中所有 IPMP 组的状态。支持以下输出字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBGROUP\fR\fR
+.ad
+.sp .6
+.RS 4n
+与信息相关联的 IPMP IP 接口名称。对于匿名组（请参见 \fBin.mpathd\fR(1M)），此字段将为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBGROUPNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP 组名。对于匿名组，此字段将为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+组的状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fR
+.ad
+.RS 24n
+.rt  
+组中的所有接口均可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdegraded（降级）\fR\fR
+.ad
+.RS 24n
+.rt  
+组中的部分（并非全部）接口可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed（失败）\fR\fR
+.ad
+.RS 24n
+.rt  
+组中无任何接口可用。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFDT\fR\fR
+.ad
+.sp .6
+.RS 4n
+基于探测器的故障检测时间。如果禁用基于探测器的故障检测，此字段将为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINTERFACES\fR\fR
+.ad
+.sp .6
+.RS 4n
+组中底层 IP 接口的列表。此列表分为三个部分：
+.RS +4
+.TP
+1.
+活动接口会首先列出，并且不用任何方括号或圆括号括起来。活动接口是指系统正用来发送或接收数据流量的那些接口。
+.RE
+.RS +4
+.TP
+2.
+随后会列出 \fBINACTIVE\fR 接口，并用圆括号括起来。\fBINACTIVE\fR 接口是那些正在工作但根据管理策略未在使用的接口。
+.RE
+.RS +4
+.TP
+3.
+最后会列出不可用的接口并用方括号括起来。不可用接口是在当前配置中根本无法使用的那些接口（例如 \fBFAILED\fR 或 \fBOFFLINE\fR）。
+.RE
+.RE
+
+如果未指定 \fB-o\fR，则将显示所有输出字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB接口模式\fR
+.ad
+.sp .6
+.RS 4n
+接口模式会显示系统中由 \fBin.mpathd\fR 跟踪的所有 IP 接口的状态。支持以下输出字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINTERFACE\fR\fR
+.ad
+.sp .6
+.RS 4n
+与信息相关联的 IP 接口名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBACTIVE\fR\fR
+.ad
+.sp .6
+.RS 4n
+此值为 \fByes\fR 或 \fBno\fR，具体取决于系统是否正在使用此 IP 接口传输 IP 数据通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBGROUP\fR\fR
+.ad
+.sp .6
+.RS 4n
+与 IP 接口相关联的 IPMP IP 接口。对于匿名组中的 IP 接口（请参见 \fBin.mpathd\fR(1M)），此字段将为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFLAGS\fR\fR
+.ad
+.sp .6
+.RS 4n
+关于 IP 接口的各种信息：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+由于处于 \fBINACTIVE\fR（非活动）状态而不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 5n
+.rt  
+标记为 \fBSTANDBY\fR（备用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+指定为其 IPMP 组发送/接收 IPv4 多播。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.RS 5n
+.rt  
+指定为其 IPMP 组发送/接收 IPv4 广播。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBM\fR\fR
+.ad
+.RS 5n
+.rt  
+指定为其 IPMP 组发送/接收 IPv6 多播。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 5n
+.rt  
+由于处于 \fBdown\fR（关闭）状态而不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.RS 5n
+.rt  
+由于存在重复硬件地址时 \fBin.mpathd\fR 将状态转为 \fBOFFLINE\fR（脱机）而不可用。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK\fR\fR
+.ad
+.sp .6
+.RS 4n
+基于链接的故障检测状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBup（活动）\fR\fR
+.ad
+.sp .6
+.RS 4n
+链接处于活动状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown（不活动）\fR\fR
+.ad
+.sp .6
+.RS 4n
+链接处于不活动状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown（未知）\fR\fR
+.ad
+.sp .6
+.RS 4n
+网络驱动程序未报告链接状态更改。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+基于探测器的故障检测状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fR
+.ad
+.sp .6
+.RS 4n
+探测器没有检测到问题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed（失败）\fR\fR
+.ad
+.sp .6
+.RS 4n
+探测器检测到故障。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown（未知）\fR\fR
+.ad
+.sp .6
+.RS 4n
+由于适合的探测器目标未知，因此无法发送探测器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled（禁用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+由于尚未配置唯一的 IP 测试地址，已禁用探测器。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口的整体状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口已联机并且正基于配置的故障检测方法正常工作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed（失败）\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口已联机，但链接状态为 \fBdown\fR（不活动），或探测器状态为 \fBfailed\fR（失败）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline（脱机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口已脱机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunknown（未知）\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口已联机，但可能在工作，也可能未在工作，原因是配置的故障检测方法处于 \fBunknown\fR（未知）状态。
+.RE
+
+.RE
+
+如果未指定 \fB-o\fR，则将显示所有输出字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB探测器模式\fR
+.ad
+.sp .6
+.RS 4n
+探测器模式会显示有关 \fBin.mpathd\fR 正发送的探测器的信息。与其他输出模式不同，此模式会一直运行，直到使用 \fBCtrl-C\fR 明确终止。支持以下输出字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+发送探测器的时间，此时间相对于启动 \fBipmpstat\fR 的时间。如果探测器是在启动 \fBipmpstat\fR 之前发送的，此时间将为负值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+代表探测器的标识符。此标识符嵌入了指示探测器类型的前缀，后跟探测器的数字标识符。探测器类型的允许值包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+ICMP 探测器
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+过渡探测器
+.RE
+
+从活动接口发送 ICMP 探测器；对于由 \fBin.mpathd\fR 通过给定活动接口发送的每个 IP 探测器，其数字标识符会递增。此数字标识符与 ICMP 探测器数据包的 \fBicmp_seq\fR 字段相匹配，可供数据包监视工具用来进行更为详细的分析。
+.sp
+当 IPMP 组未在组中的任何接口上配置任何 \fBNOFAILOVER\fR 测试地址时，将从当前未用于接收数据包的所有接口发送过渡探测器。对于从给定接口发送的每个过渡探测器，其数据标识符会递增。探测器数据包的格式是实现的内部格式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINTERFACE\fR\fR
+.ad
+.sp .6
+.RS 4n
+发送探测器的 IP 接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTARGET\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 ICMP 探测器从活动接口发送到的目标的主机名（或 IP 地址），或者将过渡探测器发送到的 IP 接口的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNETRTT\fR\fR
+.ad
+.sp .6
+.RS 4n
+探测器的网络往返时间。这是从 IP 模块发送探测器到 IP 模块接收确认的时间。如果 \fBin.mpathd\fR 给出的结果是探测器已丢失，则此字段将为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRTT\fR\fR
+.ad
+.sp .6
+.RS 4n
+探测器的总往返时间。这是从 \fBin.mpathd\fR 开始执行发送探测器的代码到处理完 \fBack\fR 的时间。如果 \fBin.mpathd\fR 给出的结果是探测器已丢失，则此字段将为空。如果总往返时间中的峰值在网络往返时间中未出现，则表示本地系统自身已过载。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRTTAVG\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过 \fBINTERFACE\fR 到 \fBTARGET\fR 的平均往返时间。这样有助于识别较慢的目标。如果没有足够的数据来计算平均值，则此字段将为空。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRTTDEV\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过 \fBINTERFACE\fR 到 \fBTARGET\fR 的往返时间的标准偏差。这样有助于识别较为紧凑的目标。如果没有足够的数据来计算标准偏差，则此字段将为空。
+.RE
+
+如果未指定 \fB-o\fR，则会显示除 \fBRTTAVG\fR 和 \fBRTTDEV\fR 之外的所有字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB目标模式\fR
+.ad
+.sp .6
+.RS 4n
+目标模式会显示 IPMP 探测器目标信息。支持以下输出字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINTERFACE\fR\fR
+.ad
+.sp .6
+.RS 4n
+与信息相关联的 IP 接口名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMODE\fR\fR
+.ad
+.sp .6
+.RS 4n
+探测器目标搜索模式：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBroutes\fR\fR
+.ad
+.RS 14n
+.rt  
+通过路由表发现的探测器目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmulticast\fR\fR
+.ad
+.RS 14n
+.rt  
+通过多播 ICMP 探测器发现的探测器目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.RS 14n
+.rt  
+禁用所有基于探测器的故障检测。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransitive\fR\fR
+.ad
+.RS 14n
+.rt  
+故障检测通过过渡探测来实现，其中 IP 接口的运行状况通过探测组中的其他活动接口来确定。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTESTADDR\fR\fR
+.ad
+.sp .6
+.RS 4n
+外出探测器中使用的源地址。正用于数据流量的活动接口和已明确配置了 \fBNOFAILOVER\fR 测试地址的接口将包含用于发送和接收 ICMP 探测器的主机名（或 IP 地址）。组中的其他所有接口将会显示发送探测器的接口的名称。请注意，如果活动 IP 接口同时配置了 IPv4 和 IPv6 测试地址，则会为每个测试地址分别显示探测器目标信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTARGETS\fR\fR
+.ad
+.sp .6
+.RS 4n
+ICMP 探测器的探测器目标主机名（或 IP 地址）的空格分隔列表，或者过渡探测器的目标接口的空格分隔列表。IP 目标将按照启动顺序列出，如果找不到任何探测器目标，此字段将为空。
+.RE
+
+如果未指定 \fB-o\fR，则将显示所有输出字段。
+.RE
+
+.SH 输出格式
+.sp
+.LP
+缺省情况下，\fBipmpstat\fR 会为其输出模式使用用户友好型表格格式，其中每行包含有关给定对象的一个或多个信息字段，而此对象也由这些字段中的一个或多个字段来唯一标识。在这种格式中，标识这些字段的标题显示在表上方（以及满屏信息后面），这些字段以空格分隔，空字段使用 \fB--\fR（双连字符）表示，还将使用其他视觉辅助。如果某个字段的值无法确定，其值将显示为 "\fB?\fR"，并且会在标准错误中输出诊断消息。
+.sp
+.LP
+机器可解析格式也使用表格格式，但此格式设计用于有效执行编程解析。具体来说，机器可解析格式与用户友好型格式的不同体现在以下方面：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+未显示标题。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+具有空值的字段不会生成输出，而不是显示 \fB--\fR。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+字段以单个冒号 (\fB:\fR) 分隔，而不是不定数量的空格。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果请求了多个字段，并且字段值中出现了字符 \fB:\fR 或反斜杠 (\fB\e\fR)，则通过在字段前面添加 \fB\e\fR 前缀对其进行转义。
+.RE
+.SH 示例
+.LP
+\fB示例 1 \fR获取特定接口的故障检测时间
+.sp
+.LP
+以下代码使用机器可解析输出格式创建 \fBksh\fR 函数，此函数可输出给定 IPMP IP 接口的故障检测时间：
+
+.sp
+.in +2
+.nf
+     getfdt() {
+         ipmpstat -gP -o group,fdt | while IFS=: read group fdt; do
+             [[ "$group" = "$1" ]] && { echo "$fdt"; return; }
+         done
+     }
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+.LP
+\fB/usr/sbin/ipmpstat\fR：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+_
+机器可解析格式Committed（已确定）
+_
+用户友好型格式Not-an-Interface（不是接口）
+.TE
+
+.sp
+.LP
+\fB/usr/sbin/ipmpstat\fR 不是 Committed（已确定）接口。
+.SH 另请参见
+.sp
+.LP
+\fBif_mpadm\fR(1M)、\fBifconfig\fR(1M)、\fBin.mpathd\fR(1M)、\fBattributes\fR(5)

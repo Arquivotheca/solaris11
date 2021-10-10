@@ -1,0 +1,210 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH lockd 1M "20 Aug 2010" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+lockd \- network lock daemon
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/nfs/lockd\fR [\fB-g\fR \fIgraceperiod\fR] [\fB-l\fR \fIlisten_min_backlog\fR] 
+     [\fB-t\fR \fItimeout\fR] [\fInthreads\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBlockd\fR utility is part of the NFS lock manager, which supports record locking operations on NFS files. See \fBfcntl\fR(2) and \fBlockf\fR(3C). The lock manager provides the following two functions:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+It forwards \fBfcntl\fR(2) locking requests for NFS mounted file systems to the lock manager on the NFS server.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+It generates local file locking operations in response to requests forwarded from lock managers running on NFS client machines.
+.RE
+.sp
+.LP
+State information kept by the lock manager about these locking requests can be lost if the \fBlockd\fR is killed or the operating system is rebooted. Some of this information can be recovered as follows. When the server lock manager restarts, it waits for a grace period for all client-site lock managers to submit reclaim requests. Client-site lock managers, on the other hand, are notified by the status monitor daemon, \fBstatd\fR(1M), of the restart and promptly resubmit previously granted lock requests. If the lock daemon fails to secure a previously granted lock at the server site, then it sends \fBSIGLOST\fR to a process.
+.sp
+.LP
+Administrators can make changes to the startup parameters for \fBlockd\fR by logging in as root and using the \fBsharectl\fR(1M) command.
+.SS "SMF Management"
+.sp
+.LP
+The \fBlockd\fR service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/network/nfs/nlockmgr
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.
+.sp
+.LP
+If it is disabled, it will be enabled by \fBmount_nfs\fR(1M), \fBshare_nfs\fR(1M), and \fBautomountd\fR(1M) unless its \fBapplication/auto_enable\fR property is set to \fBfalse\fR.
+.sp
+.LP
+The \fBsharectl\fR(1M) command is used to manipulate the startup SMF parameters for \fBlockd\fR. Currently supported parameters are as follows:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlockd_listen_backlog\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set connection queue length for \fBlockd\fR over a connection-oriented transport. The default and minimum value is \fB32\fR. Equivalent to \fB-l\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlockd_servers\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Maximum number of concurrent \fBlockd\fR requests. The default is \fB1024\fR. Equivalent to the \fInthreads\fR operand.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlockd_retransmit_timeout\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Retransmit timeout, in seconds, before \fBlockd\fR retries. The default is \fB5\fR. Equivalent to \fB-t\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgrace_period\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Grace period, in seconds, that all clients (both NLM and NFSv4) have to reclaim locks after a server reboot. This parameter also controls the NFSv4 lease interval. The default is \fB90\fR. Equivalent to \fB-g\fR option.
+.RE
+
+.sp
+.LP
+See \fBEXAMPLES\fR, below.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgraceperiod\fR\fR
+.ad
+.sp .6
+.RS 4n
+Deprecated in favor of \fBgrace_period\fR. Specify the number of seconds that all clients (both \fBNLM\fR and \fBNFSv4\fR) have to reclaim locks after the server reboots. It also controls the \fBNFSv4\fR lease interval. This option is equivalent to the \fBgrace_period\fR property described above.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlisten_min_backlog\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify the listener backlog (\fIlisten_min_backlog\fR). \fIlisten_min_backlog\fR is the number connect requests that are queued and waiting to be processed before new connect requests start to get dropped. Equivalent of the \fBlockd_listen_backlog\fR property described above.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItimeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify the number of seconds to wait before retransmitting a lock request to the remote server. The default value is 5 seconds. Equivalent of the \fBlockd_retransmit_timeout\fR property described above.
+.RE
+
+.SH OPERANDS
+.sp
+.ne 2
+.mk
+.na
+\fB\fInthreads\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify the maximum number of concurrent threads that the server can handle. This concurrency is achieved by up to \fInthreads\fR threads created as needed in the kernel. \fInthreads\fR should be based on the load expected on this server. If \fInthreads\fR is not specified, the maximum number of concurrent threads will default to 1024. Equivalent of the \fBlockd_servers\fR property described above.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSetting a \fBlockd\fR Property
+.sp
+.LP
+The following command sets \fBlockd_listen_backlog\fR to a new value:
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p lockd_listen_backlog=40 nfs\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fBlockd_listen_backlog\fR and other \fBlockd\fR properties are described under \fBNOTES\fR, below.
+
+.LP
+\fBExample 2 \fRGetting a \fBlockd\fR Property Value
+.sp
+.LP
+The following command retrieves the value of the  \fBlockd_listen_backlog\fR property.
+
+.sp
+.in +2
+.nf
+% \fBsharectl get -p lockd_listen_backlog nfs\fR
+lockd_listen_backlog=40
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/nfs
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBautomountd\fR(1M), \fBclear_locks\fR(1M), \fBmount_nfs\fR(1M), \fBshare\fR(1M), \fBshare_nfs\fR(1M), \fBsharectl\fR(1M), \fBstatd\fR(1M), \fBsvcadm\fR(1M), \fBfcntl\fR(2), \fBlockf\fR(3C), \fBattributes\fR(5), \fBsmf\fR(5)
+.SH NOTES
+.sp
+.LP
+The \fBlockd\fR daemon might not exist in a future release of Solaris.

@@ -1,0 +1,893 @@
+'\" te
+.\"  版权所有 (c) 1980 Regents of the University of California。 保留所有权利。Berkeley 软件许可协议规定了重新分发的条款和条件。版权所有 (c) 2001，Oracle 和/或其附属公司。保留所有权利
+.TH tip 1 "2001 年 11 月 28 日" "SunOS 5.11" "用户命令"
+.SH 名称
+tip \- 连接至远程系统
+.SH 用法概要
+.LP
+.nf
+\fBtip\fR [\fB-v\fR] [\fB-speed-entry\fR] {\fIhostname\fR | \fIphone-number\fR | \fIdevice\fR}
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBtip\fR 实用程序可建立到远程主机的全双工终端连接。建立连接后，使用 \fBtip\fR 的远程会话行为将类似本地终端上的交互式会话。
+.sp
+.LP
+\fBremote\fR 文件包含描述 \fBtip\fR 使用的远程系统和线速的条目。
+.sp
+.LP
+每个主机都具有缺省连接波特率，或者可以使用 \fB-\fR\fIspeed-entry\fR 命令行参数指定一个速度。
+.sp
+.LP
+指定了 \fIphone-number\fR 后，\fBtip\fR 将在 \fBremote\fR 文件中查找以下格式的条目：
+.sp
+.in +2
+.nf
+tip -\fIspeed-entry\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBtip\fR 找到此类条目时，其将设置相应的连接速度。如果未找到此类条目，\fBtip\fR 会将 \fB-\fR\fIspeed-entry\fR 当做系统名进行解释，从而导致错误消息。
+.sp
+.LP
+如果省略 \fB-\fR\fIspeed-entry\fR，\fBtip\fR 将使用 \fBtip0\fR 条目设置连接速度。
+.sp
+.LP
+指定了 \fIdevice\fR 后，\fBtip\fR 将尝试使用用户的访问特权打开该设备，而不是通过 \fBtip\fR 的常用访问特权 (\fBsetuid uucp\fR)。 用户必须对此设备具有读取/写入权限。\fBtip\fR 实用程序会将任何以反斜杠字符 (\|\fB/\fR\|) 开头的字符串解释为设备名。
+.sp
+.LP
+建立连接时，\fBtip\fR 将向远程系统发送连接消息。该消息的缺省值位于 \fBremote\fR 文件中。
+.sp
+.LP
+\fBtip\fR 尝试连接至远程系统时，其将使用以独占方式打开的 \fBioctl\fR(2) 调用打开关联设备。 因此，一次仅能一位用户访问设备。这可以防止多个进程对终端线抽样。此外，\fBtip\fR 遵循 \fBuucp\fR(1C) 使用的锁定协议。
+.sp
+.LP
+\fBtip\fR 启动后，其将从主目录中的文件 \fB\&.tiprc\fR 读取命令。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+随着执行 \fB\&.tiprc\fR 文件的命令来显示这些命令。
+.RE
+
+.SH 用法
+.sp
+.LP
+键入的字符通常会直接传输至远程计算机，此计算机也会执行回显操作。
+.sp
+.LP
+无论何时 \fBtip\fR 提示需要参数（例如，文件传输设置期间），都可以使用标准清除和删除字符对键入的行进行编辑。对提示做出响应的空行或中断都将中止对话并将您返回至远程计算机。
+.SS "命令"
+.sp
+.LP
+作为某行的第一个字符显示的波浪号 (\fB~\fR) 是转义信号，其将指示 \fBtip\fR 执行一些特殊操作。\fBtip\fR 可识别以下转义序列：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^D\fR\fR
+.ad
+.br
+.na
+\fB\fB~.\fR\fR
+.ad
+.RS 18n
+.rt  
+丢弃连接并退出（您可能仍登录在远程计算机上）。\fB请注意：\fR如果执行 rlogin，然后在远程主机上运行 \fBtip\fR，必须键入 \fB~~.\fR（波浪线波浪线点）以结束 \fBtip\fR 会话。如果键入 \fB~.\fR（波浪线点），其将终止 rlogin。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~c\fR [\fIname\fR]\fR
+.ad
+.RS 18n
+.rt  
+将目录更改为 \fIname\fR。 无参数表示更改至主目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~!\fR\fR
+.ad
+.RS 18n
+.rt  
+退回到本地计算机上的交互式 shell。退出 shell 会将您返回至 \fBtip\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~>\fR\fR
+.ad
+.RS 18n
+.rt  
+将文件从本地复制到远程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~<\fR\fR
+.ad
+.RS 18n
+.rt  
+将文件从远程复制到本地。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~p\fR\fI from\fR [\fI to \fR]\fR
+.ad
+.RS 18n
+.rt  
+将文件发送到运行 UNIX 系统的远程主机。使用 put 命令时，远程系统将在
+.sp
+.in +2
+.nf
+\fBcat > \fR\fIto\fR
+.fi
+.in -2
+.sp
+
+\fBtip\fR 向其发送 \fIfrom\fR 文件时运行该命令字符串。 如果未指定 \fIto\fR 文件，将使用 \fIfrom\fR 文件名。该命令实际是一个 UNIX 系统特定版本的 "\fB~>\fR" 命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~t\fR\fI from\fR [\fI to \fR]\fR
+.ad
+.RS 18n
+.rt  
+从运行 UNIX 系统的远程主机获取文件。如在 put 命令中一样，如果未指定 \fIto\fR 文件，其缺省为 \fIfrom\fR 文件名。远程主机将执行以下命令字符串 
+.sp
+.in +2
+.nf
+\fBcat \fR\fIfrom\fR\fB\|;  echo ^A\fR
+.fi
+.in -2
+.sp
+
+以将文件发送至 \fBtip\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~|\fR\fR
+.ad
+.RS 18n
+.rt  
+将输出从远程命令管道传输至本地进程。发送至本地系统的命令字符串由 shell 进行处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~C\fR\fR
+.ad
+.RS 18n
+.rt  
+将程序连接至远程计算机。发送至该程序的命令字符串由 shell 进行处理。程序将文件描述符 0 继承为远程行输入，将 1 继承为远程行输出，将 2 继承为 tty 标准错误输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~$\fR\fR
+.ad
+.RS 18n
+.rt  
+将输出从本地进程管道传输至远程主机。发送至本地系统的命令字符串由 shell 进行处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~#\fR\fR
+.ad
+.RS 18n
+.rt  
+将 \fBBREAK\fR 发送至远程系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~s\fR\fR
+.ad
+.RS 18n
+.rt  
+设置变量（请参见以下讨论）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^Z\fR\fR
+.ad
+.RS 18n
+.rt  
+停止 \fBtip\fR。 只有在支持作业控制的 shell（如 C shell）下运行时才可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^Y\fR\fR
+.ad
+.RS 18n
+.rt  
+仅停止 \fBtip\fR 的"本地端"。 只有在支持作业控制的 shell（如 C shell）下运行时才可用。保留运行 \fBtip\fR 的"远程端"，即显示来自远程主机的输出的一端。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~?\fR\fR
+.ad
+.RS 18n
+.rt  
+获取波浪线转义符的摘要。
+.RE
+
+.sp
+.LP
+复制文件需要远程主机提供一些协作。当使用 \fB~>\fR 或 \fB~<\fR 转义符发送文件时，\fBtip\fR 将提示输入（要传输或接收的）文件名，如果正从远程系统传输文件，则将向远程系统发送一条命令。\fBtip\fR 传输文件时，已传输的行数将持续显示在屏幕上。文件传输可以因为中断而中止。
+.SS "自动呼叫单元"
+.sp
+.LP
+通过一些自动呼叫单元 (auto-call unit, \fBACU\fR)，可使用 \fBtip\fR 对远程系统进行拨号。 远程系统说明包含 \fBdu\fR 功能时，\fBtip\fR 使用呼叫单元 (\fBcu\fR)、\fBACU\fR 类型 (\fBat\fR) 和提供的电话号码 (\fBpn\fR)。通常情况下，\fBtip\fR 将在其拨号时显示详细的消息。
+.sp
+.LP
+根据用于建立连接的自动拨号程序的类型，远程主机可能会在连接时向其发送一些乱码。请始终不要认为向外部主机键入的第一个字符就是显示给其的第一个字符。推荐的做法是在建立连接时立即键入一个 \fBkill\fR 字符（大多数 UNIX 系统既支持 \fB@\fR 也支持 Control-U 作为初始 kill 字符）。
+.sp
+.LP
+\fBtip\fR 当前支持 Ventel MD-212+ 调制解调器和 DC Hayes 兼容的调制解调器。
+.sp
+.LP
+\fBtip\fR 初始化 Hayes 兼容的调制解调器以进行拨号时，其会将该调制解调器设置为自动应答。通常情况下，会话完成后，\fBtip\fR 将丢弃 \fBDTR\fR，这将导致该调制解调器"挂起"。
+.sp
+.LP
+大多数调制解调器可进行配置，以便在 \fBDTR\fR 丢弃时，这些调制解调器可以将自身重新初始化为预编程状态。这可用于重置调制解调器并禁用自动应答（如果需要）。
+.sp
+.LP
+此外，可以使用 Hayes \fBS\fR 命令启动电话号码，以便可以在拨号前配置调制解调器。例如，要禁用自动应答，可使用诸如 \fBpn=S0=0DT5551212\fR 的设置在 \fB/etc/remote\fR 中设置所有电话号码。\fBS0=0\fR 将禁用自动应答。
+.SS "远程主机描述"
+.sp
+.LP
+远程主机的描述通常位于系统范围文件 \fB/etc/remote\fR 中。 然而，用户可以通过定义和导出 \fBREMOTE\fR shell 变量维护个人描述文件（和电话号码）。\fBremote\fR 文件必须可由 \fBtip\fR 读取，但描述电话号码的辅助文件则可以保持仅可由用户读取。该辅助电话号码文件是 \fB/etc/phones\fR，除非定义并导出了 shell 变量 \fBPHONES\fR。该电话号码文件包含以下格式的行：
+.sp
+.in +2
+.nf
+\fIsystem-name phone-number\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+针对系统找到的每个电话号码都会进行试拨，直至建立连接，或到达文件结尾。电话号码构造自 `\fB0123456789\(mi=*\fR'，其中 `\fB=\fR' 和 `\fB*\fR' 用于指示应等待的第二个拨号音（取决于 \fBACU\fR）。
+.SS "tip 内部变量"
+.sp
+.LP
+\fBtip\fR 维护一组用于正常运行的变量。其中一些变量对于普通用户是只读的（root 用户可以根据需要更改任何变量）。可以通过 \fB~s\fR 转义符显示和设置变量。变量的语法仿效 \fBvi\fR(1) 和 \fBmail\fR(1)。 将 \fBall\fR 作为参数提供给 \fB~s\fR 转义符将显示用户可以读取的所有变量。或者，用户可以通过将 \fB?\fR 附加到末尾请求显示特定变量。例如，`\fB~s escape?\fR' 将显示当前转义符。
+.sp
+.LP
+变量可以是数字 (num)、字符串 (str)、字符 (char) 或布尔 (bool) 值。布尔变量只能通过指定其名称进行设置。它们可以通过在名称前加上 \fB!\fR 进行重置。其他变量类型通过附加 \fB=\fR 和值进行设置。整个赋值中不得包含任何空白。可使用单个 set 命令询问以及设置一些变量。
+.sp
+.LP
+通过将 set 命令（没有 \fB~s\fR 前缀）放入某人的主目录中的 \fB\&.tiprc\fR 文件中，可以在运行时初始化变量。通过 \fB-v\fR 选项，\fBtip\fR 可以随着进行设置而显示这些设置。前面有 \fB#\fR 符号的注释可显示在 \fB\&.tiprc\fR 文件中。
+.sp
+.LP
+最后，必须指定完整的变量名或者可以提供缩写。下表详细列出了对于 \fBtip\fR 已知的变量。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeautify\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 编写会话脚本时废弃不可打印的字符；缩写为 \fBbe\fR。 如果提供了 \fBnb\fR 功能，则 \fBbeautify\fR 初始设置为 \fBoff\fR。 否则，\fBbeautify\fR 初始设置为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbaudrate\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) 建立连接所用的波特率；缩写为 \fBba\fR。 如果在命令行上指定了波特率，则 \fBbaudrate\fR 初始设置为该指定值。或者，如果提供了 \fBbr\fR 功能，则 \fBbaudrate\fR 初始设置为该功能的值。否则，将 \fBbaudrate\fR 设置为 300 波特。启动 \fBtip\fR 后，\fBbaudrate\fR 只可由超级用户更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdialtimeout\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) 拨电话号码时，等待连接建立的时间（以秒为单位）；缩写为 \fBdial\fR。 \fBdialtimeout\fR 初始设置为 60 秒，并只可由超级用户更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 发送至远程主机以从其断开连接的字符串；缩写为 \fBdi\fR。 如果提供了 \fBdi\fR 功能，则 \fBdisconnect\fR 初始设置为该功能的值。否则，将 \fBdisconnect\fR 设置为空字符串 (\fB""\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBechocheck\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 通过等待传输的最后一个字符的回显，在文件传输期间与远程主机同步；缩写为 \fBec\fR。 如果提供了 \fBec\fR 功能，则 \fBechocheck\fR 初始设置为 \fBon\fR。 否则，\fBechocheck\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeofread\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 表示 \fB~<\fR 文件传输命令期间传输结束的字符集合；缩写为 \fBeofr\fR。 如果提供了 \fBie\fR 功能，则 \fBeofread\fR 初始设置为该功能的值。否则，将 \fBeofread\fR 设置为空字符串 (\fB""\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeofwrite\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 发送以指示 \fB~>\fR 文件传输命令期间传输结束的字符串；缩写为 \fBeofw\fR。如果提供了 \fBoe\fR 功能，则 \fBeofread\fR 初始设置为该功能的值。否则，将 \fBeofread\fR 设置为空字符串 (\fB""\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeol\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 指示行结束的字符集合。\fBtip\fR 仅识别行结束之后的转义符。如果提供了 \fBel\fR 功能，则 \fBeol\fR 初始设置为该功能的值。否则，将 \fBeol\fR 设置为空字符串 (\fB""\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBescape\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) 命令前缀（转义）字符；缩写为 \fBes\fR。 如果提供了 \fBes\fR 功能，则 \fBescape\fR 初始设置为该功能的值。否则，将 \fBescape\fR 设置为 `\fB\|~\|\fR\&'。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBetimeout\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) 设置了 \fBechocheck\fR 后，\fBtip\fR 应等待回显检查响应的时间量（以秒为单位）；缩写为 \fBet\fR。 如果提供了 \fBet\fR 功能，则 \fBetimeout\fR 初始设置为该功能的值。否则，将 \fBetimeout\fR 设置为 10 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexceptions\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 由于美化开关而不应丢弃的字符集合；缩写为 \fBex\fR。 如果提供了 \fBex\fR 功能，则 \fBexceptions\fR 初始设置为该功能的值。否则，将 \fBexceptions\fR 设置为 `\fB\et\en\ef\eb\fR\&'。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforce\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) 用于强制执行文字数据传输的字符；缩写为 \fBfo\fR。 如果提供了 \fBfo\fR 功能，则 \fBforce\fR 初始设置为该功能的值。否则，将 \fBforce\fR 设置为 \fB\e377\fR（这将禁用该项）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBframesize\fR\fR
+.ad
+.RS 16n
+.rt  
+(num) 接收文件时，文件系统写入操作之间要缓冲的数据量（以字节为单位）；缩写为 \fBfr\fR。 如果提供了 \fBfs\fR 功能，则 \fBframesize\fR 初始设置为该功能的值。否则，将 \fBframesize\fR 设置为 \fB1024\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhalfduplex\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 因为主机是半双工而执行本地回显；缩写为 \fBhdx\fR。 如果提供了 \fBhd\fR 功能，则 \fBhalfduplex\fR 初始设置为 \fBon\fR。 否则，\fBhalfduplex\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhardwareflow\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 执行硬件流控制；缩写为 \fBhf\fR。如果提供了 \fBhf\fR 功能，则 \fBhardwareflow\fR 初始设置为 \fBon\fR。 否则，\fBhardwareflowcontrol\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 连接到的主机名；缩写为 \fBho\fR。 \fBhost\fR 永久设置为命令行上或 \fBHOST\fR 环境变量中给定的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocalecho\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) \fBhalfduplex\fR  的同义词；缩写为 \fBle\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlog\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 向其中记录有关外拨电话呼叫信息的文件的名称。\fBlog\fR 初始设置为 \fB/var/adm/aculog\fR，且只能由超级用户检查或更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparity\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 与远程主机对话时要生成和校验的奇偶；缩写为 \fBpar\fR。 可能值有：  
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnone\fR>\fR
+.ad
+.br
+.na
+\fB\fBzero\fR\fR
+.ad
+.RS 9n
+.rt  
+不对输入校验奇偶，输出上的奇偶位设置为零。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBone\fR\fR
+.ad
+.RS 9n
+.rt  
+不对输入校验奇偶，输出上的奇偶位设置为一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeven\fR\fR
+.ad
+.RS 9n
+.rt  
+对输入校验偶数奇偶并在输出上生成偶数奇偶。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBodd\fR\fR
+.ad
+.RS 9n
+.rt  
+对输入校验奇数奇偶并在输出上生成奇数奇偶。
+.RE
+
+如果提供了 \fBpa\fR 功能，则 \fBparity\fR 初始设置为该功能的值；否则，将 \fBparity\fR 设置为 \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBphones\fR\fR
+.ad
+.RS 16n
+.rt  
+要在其中查找隐藏的电话号码的文件。如果设置了环境变量 \fBPHONES\fR，则将 \fBphones\fR 设置为 \fBPHONES\fR 的值。否则，将 \fBphones\fR 设置为 \fB/etc/phones\fR。 \fBphones\fR 的值不能从 \fBtip\fR 内进行更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) 指示远程主机上行结束的字符；缩写为 \fBpr\fR。 该值用于数据传输期间的同步。文件传输命令期间传输的行计数基于该字符的接收。如果提供了 \fBpr\fR 功能，则 \fBprompt\fR 初始设置为该功能的值。否则，将 \fBprompt\fR 设置为 \fB\en\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBraise\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 大写映射模式；缩写为 \fBra\fR。 启用该模式后，所有小写字母都将由 \fBtip\fR 映射为大写，以便传输至远程计算机。如果提供了 \fBra\fR 功能，则 \fBraise\fR 初始设置为 \fBon\fR。 否则，\fBraise\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBraisechar\fR\fR
+.ad
+.RS 16n
+.rt  
+(char) 用于切换大写映射模式的输入字符；缩写为 \fBrc\fR。 如果提供了 \fBrc\fR 功能，则 \fBraisechar\fR 初始设置为该功能的值。否则，将 \fBraisechar\fR 设置为 \fB\e377\fR（这将禁用该项）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrawftp\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 文件传输期间发送所有字符；不过滤非可打印字符，不执行诸如从 \fB\en\fR 到 \fB\er\fR 的转换。缩写为 \fBraw\fR。 如果提供了 \fBrw\fR 功能，则 \fBrawftp\fR 初始设置为 \fBon\fR。 否则，\fBrawftp\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecord\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 其中记录了会话脚本的文件的名称；缩写为 \fBrec\fR。 如果提供了 \fBre\fR 功能，则 \fBrecord\fR 初始设置为该功能的值。否则，将 \fBrecord\fR 设置为 \fBtip.record\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremote\fR\fR
+.ad
+.RS 16n
+.rt  
+要在其中查找远程系统描述的文件。如果设置了环境变量 \fBREMOTE\fR，则将 \fBremote\fR 设置为 \fBREMOTE\fR 的值。否则，将 \fBremote\fR 设置为 \fB/etc/remote\fR。 \fBremote\fR 的值不能从 \fBtip\fR 内进行更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscript\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 会话脚本编写模式；缩写为 \fBsc\fR。 \fBscript\fR 为 \fBon\fR 时，\fBtip\fR 将在 \fBrecord\fR 中指定的脚本记录文件中记录远程计算机传输的所有内容。如果 \fBbeautify\fR 开关为开启，脚本文件中将仅包括可打印 \fBASCII\fR 字符（这些字符介于 040 与 0177 之间）。变量 \fBexceptions\fR 用于指示对于一般美化规则而言是例外的字符。如果提供了 \fBsc\fR 功能，则 \fBscript\fR 初始设置为 \fBon\fR。 否则，\fBscript\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtabexpand\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 在文件传输期间，将 \fBTAB\fR 字符扩展至 \fBSPACE\fR 字符；缩写为 \fBtab\fR。 \fBtabexpand\fR 为 \fBon\fR 时，每个 tab 都将扩展至八个 SPACE 字符。如果提供了 \fBtb\fR 功能，\fBtabexpand\fR 初始设置为 \fBon\fR。 否则，\fBtabexpand\fR 初始设置为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtandem\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 使用 \fBXON\fR/\fBXOFF\fR 流控制来限制远程主机发送数据的速率；缩写为 \fBta\fR。 如果提供了 \fBnt\fR 功能，则 \fBtandem\fR 初始设置为 \fBoff\fR。否则，\fBtandem\fR 初始设置为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose\fR\fR
+.ad
+.RS 16n
+.rt  
+(bool) 详细模式；缩写为 \fBverb\fR；启用详细模式后，\fBtip\fR 将在拨号时打印消息，显示文件传输运行期间传输的当前行数等等。如果提供了 \fBnv\fR 功能，则 \fBverbose\fR 初始设置为 \fBoff\fR。 否则，\fBverbose\fR 初始设置为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 用于 \fB~!\fR 命令的 shell 名称；缺省值是 \fB/bin/sh\fR，或从环境中获取。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.RS 16n
+.rt  
+(str) 用于 \fB~c\fR 命令的主目录。缺省值从环境中获取。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 tip 命令
+.sp
+.LP
+以下是一个用于传输文件的对话框示例。
+
+.sp
+.in +2
+.nf
+arpa% \fBtip monet\fR
+[connected]
+\&...(assume we are talking to a UNIX system)...
+ucbmonet login: sam
+Password:
+monet% cat  sylvester.c
+~> Filename: sylvester.c
+32 lines transferred in 1 minute 3 seconds
+monet%
+monet% ~< Filename: reply.c
+List command for remote host: cat reply.c
+65 lines transferred in 2 minutes
+monet%
+\&...(or, equivalently)...
+monet% ~p sylvester.c
+\&...(actually echoes as ~[put] sylvester.c)...
+32 lines transferred in 1 minute 3 seconds
+monet%
+monet% ~t reply.c
+\&...(actually echoes as ~[take] reply.c)...
+65 lines transferred in 2 minutes
+monet%
+\&...(to print a file locally)...
+monet% ~|Local command: pr h sylvester.c | lpr
+List command for remote host: cat sylvester.c
+monet% ~^D
+[EOT]
+\&...(back on the local system)... 
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+以下环境变量由 \fBtip\fR 读取。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBREMOTE\fR\fR
+.ad
+.RS 10n
+.rt  
+\fBremote\fR 文件的位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPHONES\fR\fR
+.ad
+.RS 10n
+.rt  
+包含私人电话号码的文件的位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOST\fR\fR
+.ad
+.RS 10n
+.rt  
+要连接的缺省主机。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHOME\fR\fR
+.ad
+.RS 10n
+.rt  
+某人的登录目录（针对 chdirs）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.RS 10n
+.rt  
+在 `\fB~!\fR' 转义符上分叉的 shell。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/phones\fR\fR
+.ad
+.RS 29n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/remote\fR\fR
+.ad
+.RS 29n
+.rt  
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/spool/locks/LCK.\|.*\fR\fR
+.ad
+.RS 29n
+.rt  
+锁定文件以避免与 \fBUUCP\fR 冲突
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/aculog\fR\fR
+.ad
+.RS 29n
+.rt  
+在其中记录外拨呼叫的文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~/.tiprc\fR\fR
+.ad
+.RS 29n
+.rt  
+初始化文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcu\fR(1C)、\fBmail\fR(1)、\fBuucp\fR(1C)、\fBvi\fR(1)、\fBioctl\fR(2)、\fBattributes\fR(5)
+.SH 已知问题
+.sp
+.LP
+有两个当前未实现的其他变量：\fBchardelay\fR 和 \fBlinedelay\fR。

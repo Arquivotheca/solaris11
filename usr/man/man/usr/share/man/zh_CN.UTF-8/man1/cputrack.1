@@ -1,0 +1,358 @@
+'\" te
+.\" 版权所有 (c) 2004，Oracle 和/或其附属公司。
+.TH cputrack 1 "2004 年 4 月 19 日" "SunOS 5.11" "用户命令"
+.SH 名称
+cputrack \- 使用 CPU 性能计数器监视进程和 LWP 行为
+.SH 用法概要
+.LP
+.nf
+\fBcputrack\fR \fB-c\fR \fIeventspec\fR [\fB-c\fR \fIeventspec\fR]... [\fB-efntvD\fR] 
+     [\fB-N\fR \fIcount\fR] [\fB-o\fR \fIpathname\fR] [\fB-T\fR \fIinterval\fR] \fIcommand\fR [\fIargs\fR]
+.fi
+
+.LP
+.nf
+\fBcputrack\fR \fB-c\fR \fIeventspec\fR [\fB-c\fR \fIeventspec\fR]... \fB-p\fR \fIpid\fR [\fB-efntvD\fR] 
+     [\fB-N\fR \fIcount\fR] [\fB-o\fR \fIpathname\fR] [\fB-T\fR \fIinterval\fR]
+.fi
+
+.LP
+.nf
+\fBcputrack\fR \fB-h\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+通过 \fBcputrack\fR 实用程序，可使用 \fBCPU\fR 性能计数器监视系统上运行的一个或一系列进程的行为。如果使用 \fB-T\fR 选项指定 \fIinterval\fR，\fBcputrack\fR 会每隔 \fIinterval\fR 秒对活动进行一次抽样并一直重复。如果使用 \fB-N\fR 选项指定 \fIcount\fR，则会对跟踪的每个进程重复统计 \fIcount\fR 次信息。如果未指定任何参数，将使用一秒钟的间隔。如果指定 \fIcommand\fR 和可选 \fIargs\fR，\fBcputrack\fR 会在监视指定的 \fBCPU\fR 性能事件时运行带有给定参数的命令。此外，可以使用 \fB-p\fR 选项指定现有进程的进程 \fBID\fR。
+.sp
+.LP
+因为 \fBcputrack\fR 是非特权程序，所以它遵循适用于 \fBtruss\fR(1) 的相同限制。例如，无法跟踪 \fBsetuid\fR(2) 可执行程序。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIeventspec\fR\fR
+.ad
+.RS 16n
+.rt  
+指定一组 \fBCPU\fR 性能计数器要监视的事件。这些事件规范的语法为：
+.sp
+.in +2
+.nf
+[picn=]\fIeventn\fR[,attr[\fIn\fR][=\fIval\fR]][,[picn=]\fIeventn\fR
+     [,attr[n][=\fIval\fR]],...,]
+.fi
+.in -2
+.sp
+
+您可以使用 \fB-h\fR 选项获取可用事件和属性的列表。这会导致生成用法消息。可以不必显式分配计数器，这时 \fBcpustat\fR 会自动尝试选择适用的计数器。 
+.sp
+可以按适合 \fBstrtoll\fR(3C) 的格式以十六进制、八进制或十进制表示法表示属性值。事件规范中存在的没有显式值的属性会收到缺省值 \fB1\fR。没有相应计数器编号的属性将应用到规范中的所有计数器。
+.sp
+可通过阅读 \fBCPU\fR 制造商的事件文档来确定这些事件规范的语义。 
+.sp
+可以指定多个 \fB-c\fR 选项，这时 \fBcputrack\fR 会在每个样例上的不同事件设置之间循环。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 16n
+.rt  
+启用调试模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 16n
+.rt  
+执行所有 \fBexec\fR(2) 或 \fBexecve\fR(2) 系统调用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 16n
+.rt  
+执行 \fBfork\fR(2)、\fBfork1\fR(2) 或 \fBvfork\fR(2) 系统调用创建的所有子项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 16n
+.rt  
+显示一条详细帮助消息，说明如何使用实用程序、如何对依赖处理器的计数器进行编程以及从何处可以找到更多详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 16n
+.rt  
+省略所有文件头输出（在 \fBcputrack\fR 位于流水线的开头时很有用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fIcount\fR\fR
+.ad
+.RS 16n
+.rt  
+指定在退出之前可以采集的最大 \fBCPU\fR 性能计数器样例数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutfile\fR\fR
+.ad
+.RS 16n
+.rt  
+指定要用于 \fBcputrack\fR 输出的文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.RS 16n
+.rt  
+将该参数解释为应附加和监视进程计数器上下文的现有进程的进程 \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 16n
+.rt  
+显示处理器周期计数的附加列（如果在当前体系结构中可用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIinterval\fR\fR
+.ad
+.RS 16n
+.rt  
+指定 \fBCPU\fR 性能计数器抽样之间的间隔（以秒为单位）。间隔太小可能会导致某些样例被跳过。请参见"警告"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 16n
+.rt  
+启用更详细的输出。
+.RE
+
+.SH 用法
+.sp
+.LP
+操作系统会在跟踪进程时强制使用某些限制。特别是，用户无法跟踪自己无法读取其对象文件的命令；set-uid 和 set-gid 命令仅可由特权用户进行跟踪。除非由特权用户运行，否则 \fBcputrack\fR 会失去对 set-id 或不可读对象文件执行 \fBexec()\fR 的任何进程的控制权。此类进程通常会从 \fBexec()\fR 出发继续执行，而不考虑 \fBcputrack\fR。
+.sp
+.LP
+在使用 \fB-f\fR 选项时，系统可能用完每个用户的进程槽，因为 \fBcputrack\fR 会为每个被跟踪的进程运行一个控制进程。
+.sp
+.LP
+当硬件计数器是实际样例时，\fBcputrack\fR 所显示的时间对应于墙上时钟时间。从与 \fBgethrtime\fR(3C) 相同的时基派生时间。
+.sp
+.LP
+\fBcputrack\fR 实用程序会将性能计数器上下文附加到它所检查的每个进程。通过此上下文，可在系统上的不同进程之间复用性能计数器，但不能将其与 \fBcpustat\fR(1M) 实用程序同时使用。
+.sp
+.LP
+若 \fBcpustat\fR 实用程序的某个实例正在运行中，则进一步运行 \fBcputrack\fR 的尝试将失败，直到所有 \fBcpustat\fR 实例终止为止。
+.sp
+.LP
+有时，\fBcputrack\fR 会非常灵活并显示足够的统计信息，如此可不必将监测代码添加到应用程序中。但是，有时需要更多控制。因为应用程序本身和由 \fBcputrack\fR 注入到应用程序中的代理 LWP 使用相同的性能计数器上下文，所以应用程序可能会与计数器上下文进行交互以实现某些值得关注的功能。请参见 \fBcpc_enable\fR(3CPC)。
+.sp
+.LP
+通过 \fB-t\fR 选项启用的处理器周期计数始终适用于用户模式和系统模式，无论应用于性能计数器寄存器的设置为何。
+.sp
+.LP
+根据设计，通过 \fBnawk\fR(1) 和 \fBperl\fR(1) 可以很容易地解析 \fBcputrack\fR 的输出，从而允许通过在脚本中嵌入 \fBcputrack\fR 来构建性能工具。此外，也可以使用构建 \fBcputrack\fR 所依据的同一 \fBAPI\fR 或使用 \fBlibcpc\fR(3LIB) 和 \fBlibpctx\fR(3LIB) 的功能直接构造这些工具。请参见 \fBcpc\fR(3CPC)。
+.sp
+.LP
+虽然 \fBcputrack\fR 使用性能计数器上下文来维护每个 LWP 的各个性能计数器值，但某些可以计数的事件会不可避免地受到系统上发生的其他活动的影响，尤其是进程间共享的受限资源（例如，高速缓存未命中率）。对于此类事件，使用 \fBcpustat\fR(1M) 监测整体系统行为也可能会很值得关注。
+.sp
+.LP
+对于 \fB-T\fR \fIinterval\fR 选项，如果将 \fIinterval\fR 指定为零，则不会执行定期抽样。仅当进程创建或销毁 \fBLWP\fR 或者调用 \fBfork\fR(2)、\fBexec\fR(2) 或 \fBexit\fR(2) 时，才对性能计数器进行抽样。
+.SH 示例
+.SS "SPARC"
+.LP
+\fB示例 1 \fR使用性能计数器对时钟周期进行计数
+.sp
+.LP
+在本示例中，将在包含 UltraSPARC-III+ 处理器的计算机上使用该实用程序。计数器被设置为对处理器时钟周期和运行 \fBsleep\fR(1) 命令时在用户模式中分发的指令进行计数。
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -c pic0=Cycle_cnt,pic1=Instr_cnt sleep 10\fR
+   
+
+  time lwp      event      pic0      pic1
+ 1.007   1       tick    765308    219233
+ 2.007   1       tick         0         0
+ 4.017   1       tick         0         0
+ 6.007   1       tick         0         0
+ 8.007   1       tick         0         0
+10.007   1       tick         0         0
+10.017   1       exit    844703    228058
+  
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR对外部高速缓存引用和未命中进行计数
+.sp
+.LP
+本示例显示了在 UltraSPARC 计算机上执行简单 shell 脚本的 \fBfork()\fR 和 \fBexec()\fR 时的更详细输出。计数器正在测量外部高速缓存引用和外部高速缓存未命中的数量。请注意，在没有歧义的情况下可以不必显式指定 \fBpic0\fR 和 \fBpic1\fR 名称。
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -fev -c EC_ref,EC_hit /bin/ulimit -c\fR
+   
+
+time    pid lwp      event      pic0      pic1
+0.007 101142   1   init_lwp    805286     20023 
+0.023 101142   1       fork                     # 101143
+0.026 101143   1   init_lwp   1015382     24461 
+0.029 101143   1   fini_lwp   1025546     25074 
+0.029 101143   1       exec   1025546     25074 
+0.000 101143   1       exec                     \e
+                                      # '/usr/bin/sh /usr/bin/basename\e 
+                                         /bin/ulimit'
+0.039 101143   1   init_lwp   1025546     25074 
+0.050 101143   1   fini_lwp   1140482     27806 
+0.050 101143   1       exec   1140482     27806 
+0.000 101143   1       exec                     # '/usr/bin/expr \e
+   //bin/ulimit : \(.*[^/]\)/*$ : .*/\(..*\) : \(.*\)$ | //bin/ulimi'
+0.059 101143   1   init_lwp   1140482     27806 
+0.075 101143   1   fini_lwp   1237647     30207 
+0.075 101143   1       exit   1237647     30207 
+unlimited
+0.081 101142   1   fini_lwp    953383     23814 
+0.081 101142   1       exit    953383     23814 
+.fi
+.in -2
+.sp
+
+.SS "x86"
+.LP
+\fB示例 3 \fR对指令进行计数
+.sp
+.LP
+本示例显示了为了在 Pentium III 计算机上输出日期在应用程序中和内核中执行的指令数：
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -c inst_retired,inst_retired,nouser1,sys1 date\fR
+   
+
+   time lwp      event      pic0      pic1
+Fri Aug 20 20:03:08 PDT 1999
+  0.072   1       exit    246725    339666
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR对 TLB 命中进行计数
+.sp
+.LP
+本示例显示了如何在 Pentium 4 计算机上使用特定于处理器的属性对 TLB 命中进行计数：
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -c ITLB_reference,emask=1 date\fR
+   
+
+    time lwp      event      pic0
+      Fri Aug 20 20:03:08 PDT 1999
+   0.072   1       exit    246725
+.fi
+.in -2
+.sp
+
+.SH 警告
+.sp
+.LP
+通过运行 \fBcpustat\fR(1M) 实用程序的任何实例，强行使计算机上的所有现有性能计数器上下文无效。这可能会导致 \fBcputrack\fR 命令的所有调用因未知错误而过早退出。
+.sp
+.LP
+如果在其 \fBCPU\fR 性能计数器不受 Solaris 支持的系统上调用 \fBcpustat\fR，将显示以下消息：
+.sp
+.in +2
+.nf
+cputrack: cannot access performance counters - Operation not applicable
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此错误消息表明 \fBcpc_open()\fR 已失败且已记录在 \fBcpc_open\fR(3CPC) 中。查看此文档以获取有关该问题及其可能的解决方案的更多信息。
+.sp
+.LP
+如果请求的时间间隔较短，\fBcputrack\fR 可能无法达到所需的抽样率。在这种情况下，可能会丢弃某些样例。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性diagnostic/cpu-counters
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBnawk\fR(1)、\fBperl\fR(1)、\fBproc\fR(1)、\fBtruss\fR(1)、\fBprstat\fR(1M)、\fBcpustat\fR(1M)、\fBexec\fR(2)、\fBexit\fR(2)、\fBfork\fR(2)、\fBsetuid\fR(2)、\fBvfork\fR(2)、\fBgethrtime\fR(3C)、\fBstrtoll\fR(3C)、\fBcpc\fR(3CPC)、\fBcpc_bind_pctx\fR(3CPC)、\fBcpc_enable\fR(3CPC)、\fBcpc_open\fR(3CPC)、\fBlibcpc\fR(3LIB)、\fBlibpctx\fR(3LIB)、\fBproc\fR(4)、\fBattributes\fR(5) 

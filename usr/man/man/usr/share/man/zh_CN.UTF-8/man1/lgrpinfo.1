@@ -1,0 +1,551 @@
+'\" te
+.\" 版权所有 (c) 2006，Oracle 和/或其附属公司。保留所有权利。
+.TH lgrpinfo 1 "2006 年 9 月 11 日" "SunOS 5.11" "用户命令"
+.SH 名称
+lgrpinfo \- 显示有关地址组的信息
+.SH 用法概要
+.LP
+.nf
+\fBlgrpinfo\fR [\fB-aceGlLmrt\fR] [\fB-u \fR\fIunit\fR] [\fB-C\fR | \fB-P\fR] \fIlgrp\fR ...
+.fi
+
+.LP
+.nf
+\fBlgrpinfo\fR \fB-h\fR
+.fi
+
+.LP
+.nf
+\fBlgrpinfo\fR \fB-I\fR [\fB-c\fR] [\fB-G\fR] [\fB-C\fR | \fB-P\fR] \fIlgrp\fR ...
+.fi
+
+.LP
+.nf
+\fBlgrpinfo\fR [\fB-T\fR] [\fB-aceGlLmr\fR] [\fB-u \fR\fIunit\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBlgrpinfo\fR 输出有关地址组 (\fBlgroup\fR) 分层结构及其内容的信息。
+.sp
+.LP
+lgroup 表示彼此之间最多相隔某个间隔（等待时间）的 CPU 和内存之类的硬件设备的集合。系统中的每个 lgroup 都由一个唯一的整数（即 \fBlgroup ID\fR）进行标识。
+.sp
+.LP
+各个 lgroup 组织到分层结构中来将所发现的最近的资源关联起来。每个叶 lgroup 包含一组彼此之间最近的（本地的）资源。层次结构中的每个父 lgroup 包含其子 lgroup 的资源以及它们的次近资源。最后，\fB根\fR lgroup 包含域中位于最大等待时间范围内的所有资源。
+.sp
+.LP
+一个统一内存访问 (Uniform Memory Access, UMA) 计算机由根 lgroup 来简明地表示。非统一内存访问 (Non Uniform Memory Access, NUMA) 计算机由一个 lgroup 层次结构表示以显示地址的相应级别。例如，具有两个等待时间（本地和远程）的 NUMA 计算机具有由叶和根两个级别组成的 \fBlgroup\fR 层次结构。
+.sp
+.LP
+每个应用程序线程都分配有一个\fB主\fR lgroup。当系统需要为线程分配 CPU 或内存资源时，它将从线程的主 lgroup 中搜索 lgroup 分层结构以查找离线程的主 lgroup 最近的可用资源。有关详细信息，请参见 \fBplgrp\fR(1)。
+.sp
+.LP
+不使用参数时，\fBlgrpinfo\fR 将输出关于系统中的所有 lgroup 的常规信息。如果在命令行上指定了任何 lgroup ID，该命令仅输出有关指定的 lgroup 的信息。各个选项用于控制显示哪些 lgroup 以及为每个 lgroup 输出的确切信息。
+.sp
+.LP
+可以在命令行上通过 lgroup ID 或使用特定的关键字指定 lgroup。请参见 \fBOPERANDS\fR（操作数）。
+.SH 选项
+.sp
+.LP
+可以组合使用这些选项，指定选项时的顺序不重要。小写字母选项指定应输出关于 lgroup 的什么信息。 
+.sp
+.LP
+不带参数调用 \fBlgrpinfo\fR 等效于以下命令：
+.sp
+.in +2
+.nf
+lgrpinfo -c -e -l -m -r -t all
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 12n
+.rt  
+输出拓扑、CPU、内存、负荷和等待时间信息。 
+.sp
+此选项是以下内容的简略表达方法 
+.sp
+.in +2
+.nf
+lgrpinfo -t -c -e -m -r -l -L
+.fi
+.in -2
+.sp
+
+除非还指定了 \fB-T\fR。如果指定了 \fB-T\fR，将不包括 \fB-t\fR 选项。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 12n
+.rt  
+输出 CPU 信息。 
+.sp
+这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 12n
+.rt  
+将列表中的每个 lgroup 替换为其子代。
+.sp
+此选项不能与 \fB-P\fR 或 \fB-T\fR 选项一起使用。如果未指定任何参数，则此选项应用于缺省情况下显示的 lgroup。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 12n
+.rt  
+输出 lgroup 平均负荷值。只会为叶 lgroup 显示 lgroup 平均负荷值。
+.sp
+这是缺省值。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.RS 12n
+.rt  
+输出 lgroup 层次结构的操作系统视图。 
+.sp
+缺省情况下，会显示调用者的 lgroup 层次结构视图，其中仅包括调用者可以使用的内容，例如，仅显示调用者的处理器集合中的 CPU。有关操作系统和调用者的视图，请参见 \fBlgrp_init\fR(3LGRP)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 12n
+.rt  
+输出简短帮助消息并退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.RS 12n
+.rt  
+仅输出匹配的 ID。 
+.sp
+此选项用于脚本，并可以与 \fB-c\fR、\fB-G\fR 以及 \fB-C\fR 或 \fB-P\fR 一起使用。如果指定了 \fB-c\fR，将输出所有匹配 lgroup 中包含的 CPU 的列表。否则，将显示匹配的 lgroup 的 ID。请参见\fB示例\fR。
+.sp
+如果未指定任何参数，则此选项应用于缺省情况下显示的 lgroup（即所有 lgroup）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 12n
+.rt  
+输出有关 lgroup 等待时间的信息。 
+.sp
+为每个 lgroup 指定的等待时间值是由操作系统定义的，并特定于平台。它只能用于在正在运行的系统上对 lgroup 进行相对比较。它不一定表示硬件设备之间的实际等待时间，可能不适合跨平台使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 12n
+.rt  
+输出 lgroup 等待时间表。lgroup 等待时间表显示每个 lgroup 相对于其他各个 lgroup（包括本身）的相对等待时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 12n
+.rt  
+输出内存信息。 
+.sp
+除非还指定了 \fB-u\fR 选项，否则将根据情况对内存大小的单位进行调整，使最后生成的值为 \fB0\fR 到 \fB1023\fR 之间的整数。只会为小于 \fB10\fR 的值显示数字的小数部分。此行为类似于使用 \fBls\fR(1) 或 \fBdf\fR(1M) 的 \fB-h\fR 选项显示人类可阅读的格式。
+.sp
+这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.RS 12n
+.rt  
+将列表中的每个 lgroup 替换为其父代。 
+.sp
+此选项无法与 \fB-C\fR 或 \fB-T\fR 选项一起使用。如果未指定任何参数，则此选项应用于缺省情况下显示的 lgroup（即所有 lgroup）。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 12n
+.rt  
+输出有关 lgroup 资源的信息。 
+.sp
+资源由一组 lgroup 来表示，其中每个成员 lgroup 直接包含 CPU 和内存资源。如果还指定了 \fB-T\fR，则只会显示有关中间 lgroup 的资源的信息。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 12n
+.rt  
+输出有关 lgroup 拓扑的信息。
+.sp
+这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.RS 12n
+.rt  
+以图形方式将系统的 lgroup 拓扑输出为树的形式。此选项只能与 \fB-a\fR、\fB-c\fR、\fB-e\fR、\fB-G\fR、\fB-l\fR、\fB-L\fR、\fB-m\fR、\fB-r\fR 和 \fB-u\fR 选项一起使用。当与 \fB-r\fR 一起使用时，它只会输出中间 lgroup 的 lgroup 资源。当 \fB-T\fR 与 \fB-a\fR 一起使用时，\fB-t\fR 选项会被忽略。不会输出\fB根\fR lgroup 的任何信息，除非它是唯一的 lgroup。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIunits\fR\fR
+.ad
+.RS 12n
+.rt  
+指定内存单位。单位应该为 b、k、m、g、t、p 或 e，分别表示字节、千字节、兆字节、千兆字节、兆兆字节、千兆兆字节、艾字节。只会为小于 10 的值显示数字的小数部分。此行为类似于使用 \fBls\fR(1) 或 \fBdf\fR(1M) 的 \fB-h\fR 选项显示人类可阅读的格式。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIlgrp\fR\fR
+.ad
+.RS 8n
+.rt  
+可以在命令行上通过 lgroup ID 或使用以下关键字之一来指定 lgroup：
+.sp
+.ne 2
+.mk
+.na
+\fBall\fR
+.ad
+.RS 16n
+.rt  
+所有 lgroup。
+.sp
+这是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBintermediate\fR
+.ad
+.RS 16n
+.rt  
+所有中间 lgroup。中间 lgroup 是具有父代和子代的 lgroup。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBleaves\fR
+.ad
+.RS 16n
+.rt  
+所有叶 lgroup。叶 lgroup 是在 lgroup 层次结构中没有子代的 lgroup。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB根\fR
+.ad
+.RS 16n
+.rt  
+根 lgroup。根 lgroup 包含域中位于最大等待时间范围内的所有资源，且没有父 lgroup。
+.RE
+
+.RE
+
+.sp
+.LP
+如果指定的 lgroup 无效，lgrpinfo 命令将在标准错误上输出一条显示有无效 ID 的消息，然后继续处理命令行中指定的其他 lgroup。如果指定的所有 lgroup 均无效，\fBlgrpinfo\fR 将退出且退出状态为 \fB2\fR。
+.SH 示例
+.LP
+\fB示例 1 \fR输出有关 lgroup 的信息
+.sp
+.LP
+以下示例输出关于系统中的 lgroup 的常规信息。 
+
+.sp
+.LP
+在此示例中，系统为具有两个节点的 2 CPU AMD Opteron 计算机，每个节点具有一个 CPU 和 2 千兆字节的内存。每个节点由一个叶 lgroup 来表示。根 lgroup 包含计算机中的所有资源：
+
+.sp
+.in +2
+.nf
+$ lgrpinfo
+  lgroup 0 (root):
+          Children: 1 2
+          CPUs: 0 1
+          Memory: installed 4.0G, allocated 2.2G, free 1.8G
+          Lgroup resources: 1 2 (CPU); 1 2 (memory)
+          Latency: 83
+  lgroup 1 (leaf):
+          Children: none, Parent: 0
+          CPU: 0
+          Memory: installed 2.0G, allocated 1.2G, free 788M
+          Lgroup resources: 1 (CPU); 1 (memory)
+          Load: 0.793
+          Latency: 56
+  lgroup 2 (leaf):
+          Children: none, Parent: 0
+          CPU: 1
+          Memory: installed 2.0G, allocated 1017M, free 1.0G
+          Lgroup resources: 2 (CPU); 2 (memory)
+          Load: 0.817
+          Latency: 56
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR输出 lgroup 拓扑
+.sp
+.LP
+以下示例输出了 4 CPU AMD Opteron 计算机上的 lgroup 拓扑树：
+
+.sp
+.in +2
+.nf
+$ lgrpinfo -T
+  0
+  |-- 5
+  |   `-- 1
+  |-- 6
+  |   `-- 2
+  |-- 7
+  |   `-- 3
+  `-- 8
+      `-- 4
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR输出 lgroup 拓扑
+.sp
+.LP
+以下示例输出了 2 CPU AMD Opteron 计算机上的 lgroup 拓扑树、资源、内存和 CPU 信息：
+
+.sp
+.in +2
+.nf
+$ lgrpinfo -Ta
+  0
+  |-- 1
+  |   CPU: 0
+  |   Memory: installed 2.0G, allocated 1.2G, free 790M
+  |   Load: 0.274
+  |   Latency: 56
+  `-- 2
+      CPU: 1
+      Memory: installed 2.0G, allocated 1019M, free 1.0G
+      Load: 0.937
+      Latency: 56
+
+Lgroup latencies:
+
+------------
+    |  0  1  2
+  ------------
+  0 | 83 83 83
+  1 | 83 56 83
+  2 | 83 83 56
+  ------------
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR输出 lgroup ID
+.sp
+.LP
+以下示例输出了根 lgroup 的子代的 lgroup ID： 
+
+.sp
+.in +2
+.nf
+$ lgrpinfo -I -C root
+  1 2
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR输出 CPU ID
+.sp
+.LP
+以下示例输出了 lgroup 1 中的所有 CPU 的 CPU ID：
+
+.sp
+.in +2
+.nf
+$ lgrpinfo -c -I 1
+  0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR输出有关 lgroup 等待时间的信息
+.sp
+.LP
+以下示例输出了有关 lgroup 等待时间的信息： 
+
+.sp
+.in +2
+.nf
+ $ lgrpinfo -l
+  lgroup 0 (root):
+          Latency: 83
+  lgroup 1 (leaf):
+          Latency: 56
+  lgroup 2 (leaf):
+          Latency: 5
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+无法从系统获取 lgroup 信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的所有 lgroup 均无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+语法无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+人类可读的输出是 "Uncommitted"（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBls\fR(1)、\fBplgrp\fR(1)、\fBpmap\fR(1)、\fBproc\fR(1)、\fBps\fR(1)、\fBdf\fR(1M)、\fBprstat\fR(1M)、\fBlgrp_init\fR(3LGRP)、\fBliblgrp\fR(3LIB)、\fBproc\fR(4)、\fBattributes\fR(5)

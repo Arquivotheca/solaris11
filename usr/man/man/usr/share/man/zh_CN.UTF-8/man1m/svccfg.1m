@@ -1,0 +1,1047 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH svccfg 1M "2011 年 6 月 6 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+svccfg \- 导入、导出和修改服务配置
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR] \fIsubcommand\fR [\fBargs\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svccfg\fR [\fB-v\fR] [\fB-s\fR \fIFMRI\fR] \fB-f\fR \fIcommand-file\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsvccfg\fR 命令处理服务配置系统信息库中的数据。\fBsvccfg\fR 可以通过单个子命令或指定一个包含一系列子命令的命令文件以交互方式调用。
+.sp
+.LP
+对系统信息库中现有服务所做的更改通常在下次刷新服务实例之后才会对该服务生效。有关更多详细信息，请参见 \fBsvcadm\fR(1M) 手册页上的 \fBrefresh\fR 子命令。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+读取并执行 \fIcommand-file\fR 中的 \fBsvccfg\fR 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+在执行任何子命令之前选择 \fIFMRI\fR（fault management resource identifier，故障管理资源标识符）所表示的实体。请参见 \fBsmf\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。
+.RE
+
+.SH 子命令
+.sp
+.LP
+子命令分为几类，如以下各小节所述。
+.sp
+.LP
+所有接受 \fIFMRI\fR 的子命令还接受缩写或 glob 模式。可以通过指定实例名称或服务名称的结尾部分使用实例或服务的缩写形式。例如，对于以下 \fIFMRI\fR：
+.sp
+.in +2
+.nf
+svc:/network/smtp:sendmail
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下列各项都是有效的缩写： 
+.sp
+.in +2
+.nf
+sendmail 
+:sendmail 
+smtp 
+smtp:sendmail 
+network/smtp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+而下列项则无效：
+.sp
+.in +2
+.nf
+mail
+network
+network/smt
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIFMRI\fR 的缩写形式不稳定，不应在脚本或其他永久性工具中使用。如果模式与多个实例或服务匹配，则会输出一条错误消息并且不采取任何操作。
+.SS "常见子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.br
+.na
+\fB\fBexit\fR\fR
+.ad
+.br
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+立即退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrepository\fR [\fB-p\fR \fIprefix\fR] \fIrepfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIrepfile\fR 用作系统信息库。缺省情况下，\fBsvccfg\fR(1M) 使用系统信息库。
+.sp
+仅将系统信息库用于您当前正在运行的相同版本的 Solaris 中的文件（包括修补程序）。不要将该子命令用于系统信息库 \fB/etc/svc/repository.db\fR。
+.sp
+如果在部署时间之前使用 \fBsvccfg repository\fR 预填充 SMF 系统信息库，则使用 \fB-p\fR 选项为使用 \fBimport\fR 导入的清单的系统标准位置指定根前缀。系统信息库位于活动系统上后，该前缀将被 \fB/lib/svc/manifest\fR 和 \fB/var/svc/manifest\fR 替换。如果运行时 \fB-p\fR 目录的清单未显示在系统标准位置中，将删除与它们关联的服务。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR [\fB-v\fR|\fB-V\fR]\fR
+.ad
+.sp .6
+.RS 4n
+设置可选行为。如果未指定选项，设置会显示当前有效的选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用详细模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用详细模式。
+.RE
+
+.RE
+
+.SS "服务清单和配置文件子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapply\fR [\fB-n\fR] [\fB-v\fR] \fIfile\fR | \fIdirectory\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果参数是服务配置文件或清单，则将配置应用到 SMF 系统信息库的管理层。将根据需要创建服务、实例、属性组和属性。
+.sp
+如果未指定属性或属性组的类型特性，将尝试从现有的类型设置或服务模板确定类型。如果无法确定类型，将显示一条警告并跳过服务，这样就不会在服务和实例中引入不一致的数据。忽略不存在的服务和实例。
+.sp
+要使用配置文件中的宽松元素定义，需要将以下定义添加到 \fBDOCTYPE\fR 条目中：
+.sp
+.in +2
+.nf
+<!ENTITY % profile "INCLUDE">
+<!ENTITY % manifest "IGNORE">
+.fi
+.in -2
+.sp
+
+将刷新配置文件修改的服务和实例。如果指定了 \fB-n\fR，将处理配置文件并且不对 SMF 系统信息库应用更改。将在标准错误中报告已找到的任何语法错误并返回退出代码 \fB1\fR。有关服务配置文件的说明，请参见 \fBsmf\fR(5)。该命令需要具有修改服务和实例中的属性的特权。有关修改属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.sp
+将针对清单和系统信息库中的模板数据验证清单或配置文件中的服务和实例，并发出所有违反模板的警告。有关模板说明，请参见 \fBsmf_template\fR(5)。如果指定了 \fB-V\fR 选项，将无法导入违反已定义模板的清单。在交互式调用 \fBsvccfg\fR 时，\fB-V\fR 是缺省行为。
+.sp
+如果要\fB应用\fR的参数是一个目录，则会按照以上所述应用在该目录树下找到的所有配置文件。如果指定文件或在指定目录下找到的任何文件不是服务配置文件，该子命令将失败。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextract\fR [\fB-a\fR] [\fB-l\fR \fIlayer\fR] [\fI> file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+在系统上输出表示本地定制的服务配置文件。
+.sp
+如果提供 \fB-l\fR，则可以选择从中导出值的层列表。\fB-l\fR 选项需要层名称，并使用以下参数：\fBmanifest\fR、\fBsystem-profile\fR、\fBsite-profile\fR、\fBadmin\fR、\fBcurrent\fR、\fBall\fR。\fBcurrent\fR 和 \fBall\fR 是同义词，表示最高层值。提供这两者以实现与 \fBlistprop\fR 子命令的一致性。多个层可以以逗号分隔，或使用多个 \fB-l\fR 选项指定。
+.sp
+如果未提供 \fB-l\fR，则缺省值为 \fB-l\fR \fBadmin,site-profile\fR。
+.sp
+如果在多个选定层中定义属性，则在配置文件中仅导出最高层。
+.sp
+如果没有 \fB-a\fR 选项，将提取包含受保护信息（由存在的 \fBread_authorization\fR 属性标识，请参见 \fBsmf_security\fR(5)）的属性组，但不提取它们的属性值。指定 \fB-a\fR 选项时，将提取所有的值。如果没有读取这些值的足够特权，则会生成错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-a\fR] \fIservice_FMRI\fR [\fI>file\fR]\fR
+.ad
+.sp .6
+.RS 4n
+运行 \fBsvccfg export\fR 等效于：
+.sp
+.in +2
+.nf
+svccfg extract -l current [-a] \fIservice_FMRI\fR [>\fIfile\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR [\fB-V\fR] [\fIfile\fR | \fIdirectory\fR]\fR
+.ad
+.sp .6
+.RS 4n
+系统管理的文件系统位置（\fB/lib/svc/manifest\fR 和 \fB/var/svc/manifest\fR 的子目录）中的文件上的 \fBsvccfg import\fR 调用：\fBsvcadm restart manifest-import\fR。
+.sp
+推荐的做法是将清单放置在系统管理的位置，并调用 \fBsvcadm restart manifest-import\fR 来导入它们。
+.sp
+位于其他位置的文件上的 \fBsvccfg import\fR 将其属性作为管理定制导入到管理层。这等效于：
+.sp
+.in +2
+.nf
+svccfg apply [\fIfile\fR | \fIdirectory\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinventory\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fIfile\fR 确定为服务清单或配置文件，则会输出 \fIfile\fR 说明的服务和实例的 \fBFMRI\fR。对于每个服务，在服务的 \fBFMRI\fR 之前会显示其实例的 \fBFMRI\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalidate\fR [\fIfile\fR | \fIfmri\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBvalidate\fR 子命令可以针对清单文件、实例 FMRI、当前实例或快照实体选择运行。指定参数后，\fBsvccfg\fR 将检查是否存在指定的文件。如果该文件存在，将对其进行验证。如果指定名称的文件不存在，则将该参数视为 FMRI 模式。如果文件名与 FMRI 之间存在冲突，请使用 \fBsvc:\fR 和 \fBfile:\fR 前缀指示 \fBsvccfg\fR 如何解释参数。
+.sp
+指定文件时，将按照与 \fBimport\fR \fB-V\fR 相似的方式处理该文件，但不对系统信息库执行任何更改。如果检测到任何错误，\fBsvccfg\fR 会显示错误并以非零退出状态退出。
+.sp
+对于实例 \fIfmri\fR、实例实体选择或快照实体选择，将针对系统信息库中的模板数据验证复合格式的指定实例（请参见 \fBsmf\fR(5) 中的"属性和属性组"）。实例 FMRI 和实例实体选择使用"正在运行的"快照进行验证。将发出所有违反模板的警告。有关模板说明，请参见 \fBsmf_template\fR(5)。
+.sp
+如果服务或实例由清单或配置文件支持，则它被屏蔽。请参见 \fBsmf\fR(5)。
+.RE
+
+.SS "实体选择、修改和导航子命令"
+.sp
+.LP
+"实体"表示作用域、服务或服务实例。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+将创建具有指定名称的新实体作为当前选择的子实体。有关创建实体所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [\fB-f\fR] \fB{\fIname\fR | \fIfmri\fR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除当前选择的命名子实体或 \fIfmri\fR 指定的实体。除非指定 \fB-f\fR 标志，否则尝试删除"联机"或"降级"状态的服务实例会失败。如果服务或服务实例具有类型为 "framework" 的 "dependents" 属性组，则对于其中类型为 "astring" 或 "fmri" 的每个属性，当属性包含用于命名服务或服务实例的单个值时，将删除指定服务或服务实例中与该属性同名的相关项属性组。有关删除服务配置所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示其名称与 glob 模式 \fIpattern\fR 匹配的当前选择的子实体（请参见 \fBfnmatch\fR(5)）。还为具有属性的实体（即服务和服务实例）列出 ':properties'。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR {\fIname\fR | \fIfmri\fR}\fR
+.ad
+.sp .6
+.RS 4n
+如果参数指定当前所选内容的子级，它将成为当前所选内容。否则，参数将被解释为 \fBFMRI\fR，参数指定的实体成为当前所选内容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunselect\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前所选内容的父级成为当前所选内容。 
+.RE
+
+.SS "属性检查和修改子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddpg\fR \fIname\fR \fItype\fR [\fIflags\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将具有指定 \fIname\fR 和类型的属性组添加到当前所选内容。\fIflags\fR 是一个字符串，用于指定创建属性组所使用的标志。'P' 表示 \fBSCF_PG_FLAG_NONPERSISTENT\fR（请参见 \fBscf_service_add_pg\fR(3SCF)）。有关创建属性组所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddpropvalue\fR \fIpg\fR\fI/name\fR [\fItype:\fR] \fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定值添加到属性。如果 \fItype\fR 已指定并且属性存在，则当 \fItype\fR 与属性的 \fItype\fR 不一致时，子命令将失败。这些值可以用双引号引住。包含双引号或反斜杠的字符串值必须用双引号引住，包含的双引号和反斜杠必须用反斜杠引住。创建不存在的属性，在这种情况下必须提供 \fItype\fR 说明符。有关可用属性类型的列表，请参见 \fBscf_value_create\fR(3SCF)。有关修改属性所需的特权，请参见 \fBsmf_security\fR(5)。新值将附加到与属性相关的属性值列表末尾处。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelcust\fR [\fB-M\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+删除当前选择的任何管理定制。如果提供参数，将作为 glob 模式获取并仅删除名称与参数匹配的属性组和属性。
+.sp
+如果提供 \fB-M\fR，则仅删除屏蔽的实体。
+.sp
+要查看 \fBdelcust\fR 将删除的定制，请使用 \fBlistcust\fR 和相同的选项。因为 \fBdelcust\fR 可能删除所有管理定制，所以始终首先运行 \fBlistcust\fR 来确定您要删除所需的内容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelpg\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除当前选择的属性组 \fIname\fR。有关删除属性组所需的特权，请参见 \fBsmf_security\fR(5)。
+.sp
+如果属性组由清单或配置文件支持，则它被屏蔽。请参见 \fBsmf\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelprop\fR \fIpg\fR[\fI/name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+删除当前选择的命名属性组或属性。有关删除属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelpropvalue\fR \fIpg/name\fR \fIglobpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除与命名属性中的指定 \fIglob\fR 模式匹配的所有值。即使没有值与之匹配也会成功。有关修改属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdescribe\fR [\fB-v\fR] [\fB-t\fR] [\fIpropertygroup\fR/\fIproperty\fR]\fR
+.ad
+.sp .6
+.RS 4n
+说明当前或可能的设置。
+.sp
+不使用参数调用时，\fBdescribe\fR 会提供当前所选实体及其所有当前设置的属性组和属性的基本说明（如果有）。通过指定属性组名称或者属性组名称和属性名称（用斜杠 (\fB/\fR) 隔开），可以将属性组或具体属性作为参数查询。
+.sp
+\fB-v\fR 选项提供所有的可用信息，包括当前设置、约束及其他可能的设置选择的说明。
+.sp
+\fB-t\fR 选项仅显示选择的模板数据（请参见 \fBsmf_template\fR(5)），不显示属性组和属性的当前设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeditprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于重现当前选择的属性组和属性的命令的注释，将放置在临时文件中，调用 \fBEDITOR\fR 环境变量指定的程序对其进行编辑。完成后执行临时文件中的命令。缺省编辑器是 \fBvi\fR(1)。有关创建、修改或删除属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistpg\fR [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示当前选择的属性组的名称、类型和标志。如果指定了某个参数，将作为 glob 模式获取并仅列出名称与该参数匹配的属性组。
+.sp
+在交互模式下，还提供属性组的基本说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistprop\fR [\fB-l\fR \fIlayer\fR...] [\fB-f\fR | \fB-o\fR \fIformat\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+列出当前选择的属性组和属性。对于属性组，列出其名称、类型和标志。对于属性，列出其名称（前面会加上属性组名称和斜杠 (/)）、类型和值。有关可用属性类型的列表，请参见 \fBscf_value_create\fR(3SCF)。如果提供参数，将作为 glob 模式获取并仅列出名称与参数匹配的属性组和属性。
+.sp
+使用 \fB-l\fR 选项，输出值来自的层。\fB-l\fR 选项需要层，并使用以下参数：\fBmanifest\fR、\fBsystem-profile\fR、\fBsite-profile\fR、\fBadmin\fR、\fBcurrent\fR、\fBall\fR。\fBcurrent\fR 输出与 \fBlistprop\fR 相同的属性值（不使用 \fB-l\fR），以及在其中定义值的层。
+.sp
+\fB-f\fR 和 \fB-o\fR 选项是互斥的。\fB-f\fR 输出属性来自的文件（如果有）。\fB-o\fR 允许字段选择。可选择的字段包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpropname\fR\fR
+.ad
+.RS 15n
+.rt  
+属性名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpgname\fR\fR
+.ad
+.RS 15n
+.rt  
+属性组名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstname\fR\fR
+.ad
+.RS 15n
+.rt  
+实例名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBservicename\fR\fR
+.ad
+.RS 15n
+.rt  
+服务名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlayer\fR\fR
+.ad
+.RS 15n
+.rt  
+层
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproptype\fR\fR
+.ad
+.RS 15n
+.rt  
+属性类型
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalue\fR\fR
+.ad
+.RS 15n
+.rt  
+属性值
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.RS 15n
+.rt  
+源文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmasked\fR\fR
+.ad
+.RS 15n
+.rt  
+属性组或属性当前是否被屏蔽
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtime\fR\fR
+.ad
+.RS 15n
+.rt  
+上次更改该属性的时间
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistcust\fR [\fB-L\fR] [\fB-M\fR] [\fIpattern\fR]\fR
+.ad
+.sp .6
+.RS 4n
+为当前选择输出任何站点配置文件和管理层定制以及屏蔽实体。如果提供参数，将作为 glob 模式获取并仅列出名称与参数匹配的属性组和属性。如果没有当前选择，则列出所有服务的所有定制。
+.sp
+如果提供 \fB-M\fR，则仅输出屏蔽的实体。
+.sp
+如果提供 \fB-L\fR，则显示所有本地定制，包括同时位于管理层和站点配置文件层内的定制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetenv\fR [\fB-i\fR | \fB-s\fR] [\fB-m\fR \fImethod_name\fR] \fIenvvar value\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fImethod_name\fR 属性组具有类型 "method"，则通过更改该属性组中的 "environment" 属性设置服务或实例的方法环境变量。如果未指定 \fImethod_name\fR 并且使用 \fB-i\fR 选项，则当前选择实例时将使用 "method_context" 属性组。如果使用 \fB-s\fR 选项并且当前选择了服务，则会使用其 "method_context" 属性组。如果使用 \fB-s\fR 选项并且当前选择了实例，则会使用其父级的 "method_context" 属性组。如果既不使用 \fB-i\fR 选项也不使用 \fB-s\fR 选项，将在当前选择的实体中搜索 "start" 属性组，如果当前选择了实例，则还会搜索其父级。如果未找到 "inetd_start" 属性组，将以类似方式进行搜索。
+.sp
+找到属性后，将删除所有以 \fIenvvar\fR 开始并且后跟 "=" 的值，同时添加值 "\fIenvvar\fR=\fIvalue\fR"。有关修改属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetprop\fR \fIpg/name\fR = [\fItype:\fR] \fIvalue\fR\fR
+.ad
+.br
+.na
+\fBsetprop \fIpg/name\fR = [\fItype:\fR] ([\fIvalues ...\fR])\fR
+.ad
+.sp .6
+.RS 4n
+将当前选择的 \fIpg\fR 属性组的 \fIname\fR 属性设置为类型 \fItype\fR 的指定值。有关可用属性类型的列表，请参见 \fBscf_value_create\fR(3SCF)。如果属性已经存在并且 \fItype\fR 与属性中的现有 \fItype\fR 不一致，子命令将失败。值可能用双引号引住。包含双引号或反斜杠的字符串值必须用双引号引住，包含的双引号和反斜杠必须用反斜杠引住。如果命名属性不存在，只要指定类型，即创建属性。有关创建或修改属性所需的特权，请参见 \fBsmf_security\fR(5)。多个值将按照它们的指定顺序存储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunsetenv\fR [\fB-i\fR | \fB-s\fR] [\fB-m\fR \fImethod_name\fR] \fIenvvar value\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fImethod_name\fR 属性组具有类型 "method"，则通过更改该属性组中的 "environment" 属性删除服务或实例的方法环境变量。如果未指定 \fImethod_name\fR 并且使用 \fB-i\fR 选项，则当前选择实例时将使用 "method_context" 属性组。如果使用 \fB-s\fR 选项并且当前选择了服务，则会使用其 "method_context" 属性组。如果使用 \fB-s\fR 选项并且当前选择了实例，则会使用其父级的 "method_context" 属性组。如果既不使用 \fB-i\fR 选项也不使用 \fB-s\fR 选项，将在当前选择的实体中搜索 "start" 属性组，如果当前选择了实例，则还会搜索其父级。如果未找到 "inetd_start" 属性组，将以类似方式进行搜索。
+.sp
+找到属性后，将删除所有以 \fIenvvar\fR 开始并且后跟 "=" 的值。有关修改属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.SS "通知参数子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetnotify\fR {[\fB-g\fR] \fItset\fR | \fIclass\fR} \fInotification_parameters\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 SMF 系统信息库中的软件事件和故障管理问题生命周期事件设置通知参数。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于设置 SMF 状态转换的系统范围的通知参数。请参见 \fBsmf\fR(5)。这些通知参数是在 \fBsvc:/system/svc/global:default \fR 中设置的，与当前选择的 \fBsvccfg\fR 无关。该子命令会刷新其所修改的全部实例。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+FMA 事件类或别名的逗号分隔列表。请参见 \fBsmf\fR(5) 通知参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItset\fR\fR
+.ad
+.sp .6
+.RS 4n
+SMF 状态转换的逗号分隔列表。请参见 \fBsmf\fR(5) 通知参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInotification_parameters\fR\fR
+.ad
+.sp .6
+.RS 4n
+实施的每种通知机制的 URI 格式：对于 SMTP，使用：
+.sp
+.in +2
+.nf
+mailto:\fIaddr\fR[?\fIheader1\fR=\fIvalue1\fR[&\fIheader2\fR=\fIvalue2\fR]]
+.fi
+.in -2
+.sp
+
+\&...或者:
+.sp
+.in +2
+.nf
+mailto:{[active]|inactive}
+.fi
+.in -2
+.sp
+
+\&...对于 SNMP 陷阱，使用：
+.sp
+.in +2
+.nf
+snmp:{[active]|inactive}
+.fi
+.in -2
+.sp
+
+\fBsmtp-notify\fR(1M) 中定义的参数 \fBmsg_template\fR 可以设置为 \fB mailto\fR URI 中的头值。例如：
+.sp
+.in +2
+.nf
+mailto:root@localhost?msg_template=\fI<path to template file>\fR
+.fi
+.in -2
+.sp
+
+SNMP 陷阱指向 \fB/etc/net-snmp/snmp/snmpd.conf\fR 中的 \fBtrapsink\fR 指令定义的或 SNMP 陷阱通知守护进程指定的主机。请参见 \fBsmtp-notify \fR(1M)。
+.sp
+通知参数特定于指定的类或 tset 并覆盖预先存在的通知参数。活动/非活动表单不会覆盖以前的通知参数。它仅启用或禁用指定类或 tset 的通知机制。设置通知参数时可隐式将它们设置为活动状态。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistnotify\fR [\fB-g\fR] [\fItset\fR] | \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示指定类或 tset 的现有通知参数。使用 \fB-g\fR 选项，会显示 \fBsvc:/system/svc/global:default\fR 中的通知参数。如果省略 tset，表示使用 \fBall\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelnotify\fR [\fB-g\fR] \fItset\fR | \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除指定类或 tset 的现有通知参数。使用 \fB-g\fR 选项，会删除 \fBsvc:/system/svc/global:default\fR 中的通知参数。
+.RE
+
+.SS "快照导航和选择子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistsnap\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示用于当前所选实例的快照。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR [\fIsnapshot\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将当前所选实例及其服务的管理定制恢复到记录在命名快照中的属性。如果未提供参数，请使用当前所选的快照，然后在成功时取消选择该快照。可以通过 \fBsvcadm\fR(1M) 的 \fBrefresh\fR 子命令将已更改的属性值设置为活动状态。有关更改属性所需的特权，请参见 \fBsmf_security\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselectsnap\fR [\fIname\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将当前快照更改为 \fIname\fR 命名的快照。如果未指定 \fIname\fR，取消选择当前选择的快照。快照是只读的。
+.RE
+
+.SS "实例子命令"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR\fR
+.ad
+.sp .6
+.RS 4n
+将当前配置的值提交到正在运行的快照，并使这些值可供当前选择的实例使用。如果系统信息库子命令尚未用于选择系统信息库，则指示该实例的重启程序重新读取更新的配置。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR导入服务说明
+.sp
+.LP
+以下示例导入命令行上指定的 XML 清单中 \fBseismic\fR 服务的服务说明。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg import /var/svc/manifest/site/seismic.xml\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意清单必须遵守 \fBservice_bundle\fR(4) 中指定的格式。
+
+.LP
+\fB示例 2 \fR导出服务说明
+.sp
+.LP
+要在本地系统中导出服务说明，请执行以下命令：
+
+.sp
+.in +2
+.nf
+# \fBsvccfg export dumpadm >/tmp/dump.xml\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR删除服务实例
+.sp
+.LP
+要删除服务实例，请执行以下命令：
+
+.sp
+.in +2
+.nf
+# \fBsvccfg delete network/inetd-upgrade:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR检查备用系统信息库中的属性
+.sp
+.LP
+要在装入备用系统信息库之后检查服务的属性状态，请使用如下所示的命令序列。例如，用户可以使用此类命令确定是否在特定的系统信息库备份中启用了服务。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg\fR
+svc:> \fBrepository /etc/svc/repository-boot\fR
+svc:> \fBselect telnet:default\fR
+svc:/network/telnet:default> \fBlistprop general/enabled\fR
+general/enabled  boolean  false
+svc:/network/telnet:default> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR启用调试
+.sp
+.LP
+要修改启动方法的 \fBLD_PRELOAD\fR 并在调试功能处于活动状态的情况下启用 \fBlibumem\fR(3LIB)，请执行以下命令：
+
+.sp
+.in +2
+.nf
+$ \fBsvccfg -s system/service setenv LD_PRELOAD libumem.so\fR
+$ \fBsvccfg -s system/service setenv UMEM_DEBUG default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR使用 \fBdescribe\fR 子命令
+.sp
+.LP
+以下命令说明 \fBdescribe\fR 子命令的用法。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s console-login describe ttymon\fR
+ttymon                      application
+ttymon/device               astring  /dev/console
+   \fBterminal device to be used for the console login prompt\fR
+ttymon/label                astring  console
+   \fBappropriate entry from /etc/ttydefs\fR
+   ...
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR配置通知首选项
+.sp
+.LP
+以下命令为 SMF 服务状态转换事件配置通知首选项。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify -g from-online,to-maintenance \e\fR
+\fBmailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR启用 SNMP 通知
+.sp
+.LP
+以下命令对故障管理事件启用 SNMP 通知。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify problem-diagnosed,problem-updated \e\fR
+\fBmailto:admin@somehost.com snmp:\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR列出通知设置
+.sp
+.LP
+以下命令列出故障管理事件的通知设置。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg listnotify problem-diagnosed,problem-updated\fR
+Event: problem-diagnosed
+  Notification Type: smtp
+    active: true
+   to: admin@somehost.com
+  Notification Type: snmp
+    active: true
+
+Event: problem-updated
+  Notification Type: smtp
+    active: true
+   to: admin@somehost.com
+  Notification Type: snmp
+    active: true
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fBEDITOR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fBeditprop\fR 子命令时运行的命令。缺省编辑器是 \fBvi\fR(1)。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功执行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个或多个子命令导致失败。错误消息将写入标准错误流中。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的命令行选项无效。 
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+交互式输出为 Uncommitted（未确定）。调用和非交互式输出为 Committed（已确定）。
+.SH 另请参见
+.sp
+.LP
+\fBsvcprop\fR(1)、\fBsvcs\fR(1)、\fBsmtp-notify\fR(1M)、\fBsvcadm\fR(1M)、\fBsvc.configd\fR(1M)、\fBlibscf\fR(3LIB)、\fBlibumem\fR(3LIB)、\fBscf_service_add_pg\fR(3SCF)、\fBscf_value_create\fR(3SCF)、\fBcontract\fR(4)、\fBservice_bundle\fR(4)、\fBattributes \fR(5)、\fBfnmatch\fR(5)、\fBsmf\fR(5)、\fBsmf_method\fR(5)、\fBsmf_security\fR(5)、\fBsmf_template\fR(5)

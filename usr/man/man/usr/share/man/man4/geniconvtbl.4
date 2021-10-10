@@ -1,0 +1,1109 @@
+'\" te
+.\" Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH geniconvtbl 4 "20 May 2011" "SunOS 5.11" "File Formats"
+.SH NAME
+geniconvtbl \- geniconvtbl input file format
+.SH DESCRIPTION
+.sp
+.LP
+An input file to \fBgeniconvtbl\fR is an \fBASCII\fR text file that contains an \fBiconv\fR code conversion definition from one codeset to another codeset.
+.sp
+.LP
+The \fBgeniconvtbl\fR utility accepts the code conversion definition file(s) and writes code conversion binary table file(s) that can be used in \fBiconv\fR(1) and \fBiconv\fR(3C) to support user-defined code conversions. See \fBiconv\fR(1) and \fBiconv\fR(3C)for more detail on the iconv code conversion and \fBgeniconvtbl\fR(1) for more detail on the utility.
+.SS "The Lexical Conventions"
+.sp
+.LP
+The following lexical conventions are used in the iconv code conversion definition:
+.sp
+.ne 2
+.mk
+.na
+\fBCONVERSION_NAME\fR
+.ad
+.RS 19n
+.rt  
+A string of characters representing the name of the iconv code conversion. The iconv code conversion name should start with one or more printable \fBASCII\fR characters followed by a percentage character '\fB%\fR' followed by another one or more of printable \fBASCII\fR characters. Examples: \fBISO8859-1%ASCII\fR, \fB646%eucJP\fR, \fBCP_939%ASCII\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBNAME\fR
+.ad
+.RS 19n
+.rt  
+A string of characters starts with any one of the \fBASCII\fR alphabet characters or the underscore character, '\fB_\fR', followed by one or more \fBASCII\fR alphanumeric characters and underscore character, '\fB_\fR'. Examples: \fB_a1\fR, \fBABC_codeset\fR, \fBK1\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBHEXADECIMAL\fR
+.ad
+.RS 19n
+.rt  
+A hexadecimal number. The hexadecimal representation consists of an escape character, '\fB0\fR' followed by the constant '\fBx\fR' or '\fBX\fR' and one or more hexadecimal digits. Examples: \fB0x0\fR, \fB0x1\fR, \fB0x1a\fR, \fB0X1A\fR, \fB0x1B3\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBDECIMAL\fR
+.ad
+.RS 19n
+.rt  
+A decimal number, represented by one or more decimal digits. Examples: \fB0\fR, \fB123\fR, \fB2165\fR.
+.RE
+
+.sp
+.LP
+Each comment starts with '\fB//\fR' ends at the end of the line.
+.sp
+.LP
+The following keywords are reserved:
+.sp
+
+.sp
+.TS
+tab();
+lw(1.83i) lw(1.83i) lw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+automaticbetweenbinary
+breakconditiondefault
+densedirectiondiscard
+elseerrorescapeseq
+falseifindex
+initinputinputsize
+mapmaptypeno_change_copy
+operationoutputoutput_byte_length
+outputsizeprintchrprinthd
+printintresetreturn
+true
+.TE
+
+.sp
+.LP
+Additionally, the following symbols are also reserved as tokens:
+.sp
+.in +2
+.nf
+{  14;  14;  }  14;  14;  [  14;  14;  ]  14;  14;  (  14;  14;  )  14;  14;  ;  14;  14;  ,  14;  14;  ...
+.fi
+.in -2
+
+.SS "The precedence and associativity"
+.sp
+.LP
+The following table shows the precedence and associativity of the operators from lower precedence at the top to higher precedence at the bottom of the table allowed in the iconv code conversion definition:
+.sp
+.in +2
+.nf
+Operator (Symbol)                            Associativity
+--------------------------------------------------
+Assignment (=)                               Right
+--------------------------------------------------
+Logical OR (||)                              Left
+--------------------------------------------------
+Logical AND (&&)                             Left
+--------------------------------------------------
+Bitwise OR (|)                               Left
+--------------------------------------------------
+Exclusive OR (^)                             Left
+--------------------------------------------------
+Bitwise AND (&)                              Left
+--------------------------------------------------
+Equal-to (= =),                              Left
+   Inequality (!=)
+--------------------------------------------------
+Less-than (<),                               Left
+   Less-than-or-equal-to (<=),
+   Greater-than (>),
+   Greater-than-or-equal-to (>=)
+--------------------------------------------------
+Left-shift (<<),                             Left
+   Right-shift (>>)
+--------------------------------------------------
+Addition (+),                                Left
+   Subtraction (-)
+--------------------------------------------------
+Multiplication (*),                          Left
+   Division (/),
+   Remainder (%)
+---------------------------------------------------
+Logical negation (!),                        Right
+   Bitwise complement (~),
+   Unary minus (-)
+---------------------------------------------------
+.fi
+.in -2
+.sp
+
+.SS "The Syntax"
+.sp
+.LP
+Each iconv code conversion definition starts with \fBCONVERSION_NAME\fR followed by one or more semicolon separated code conversion definition elements:
+.sp
+.in +2
+.nf
+// a US-ASCII to ISO8859-1 iconv code conversion example:
+US-ASCII%ISO8859-1 {
+
+    // one or more code conversion definition elements here.
+
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+Each code conversion definition element can be any one of the following elements:
+.br
+.in +2
+direction
+.in -2
+.br
+.in +2
+condition
+.in -2
+.br
+.in +2
+operation
+.in -2
+.br
+.in +2
+map
+.in -2
+.sp
+.LP
+To have a meaningful code conversion, there should be at least one direction, operation, or map element in the \fBiconv\fR code conversion definition.
+.sp
+.LP
+The direction element contains one or more semicolon separated condition-action pairs that direct the code conversion:
+.sp
+.in +2
+.nf
+direction For_US-ASCII_2_ISO8859-1 {
+
+    // one or more condition-action pairs here.
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+Each condition-action pair contains a conditional code conversion that consists of a condition element and an action element.
+.sp
+.in +2
+.nf
+condition action
+.fi
+.in -2
+
+.sp
+.LP
+If the pre-defined condition is met, the corresponding action is executed. If there is no pre-defined condition met, \fBiconv\fR(3C) will return \fB-1\fR with errno set to \fBEILSEQ\fR. The condition can be a condition element, a name to a pre-defined condition element, or a condition literal value, true. The 'true' condition literal value always yields success and thus the corresponding action is always executed. The action also can be an action element or a name to a pre-defined action element.
+.sp
+.LP
+The condition element specifies one or more condition expression elements. Since each condition element can have a name and also can exist stand-alone, a pre-defined condition element can be referenced by the name at any action pairs later. To be used in that way, the corresponding condition element should be defined beforehand:
+.sp
+.in +2
+.nf
+condition For_US-ASCII_2_ISO8859-1 {
+
+    // one or more condition expression elements here.
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+The name of the condition element in the above example is \fBFor_US-ASCII_2_ISO8859-1\fR. Each condition element can have one or more condition expression elements. If there are more than one condition expression elements, the condition expression elements are checked from top to bottom to see if any one of the condition expression elements will yield a true. Any one of the following can be a condition expression element:
+.br
+.in +2
+between
+.in -2
+.br
+.in +2
+escapeseq
+.in -2
+.br
+.in +2
+expression
+.in -2
+.sp
+.LP
+The between condition expression element defines one or more comma-separated ranges:
+.sp
+.in +2
+.nf
+between 0x0...0x1f, 0x7f...0x9f ;
+between 0xa1a1...0xfefe ;
+.fi
+.in -2
+
+.sp
+.LP
+In the first expression in the example above, the covered ranges are \fB0x0\fR to \fB0x1f\fR and \fB0x7f\fR to \fB0x9f\fR inclusively. In the second expression, the covered range is the range whose first byte is \fB0xa1\fR to \fB0xfe\fR and whose second byte is between \fB0xa1\fR to \fB0xfe\fR. This means that the range is defined by each byte. In this case, the sequence \fB0xa280\fR does not meet the range.
+.sp
+.LP
+The escapeseq condition expression element defines an equal-to condition for one or more comma-separated escape sequence designators:
+.sp
+.in +2
+.nf
+  // ESC $ ) C sequence:
+  escapeseq 0x1b242943;
+
+  // ESC $ ) C sequence or ShiftOut (SO) control character code, 0x0e:
+  escapeseq 0x1b242943, 0x0e;
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The expression can be any one of the following and can be surrounded by a pair of parentheses, '(' and ')':
+.sp
+.in +2
+.nf
+// HEXADECIMAL:
+0xa1a1
+
+// DECIMAL
+12
+
+// A boolean value, true:
+true
+
+// A boolean value, false:
+false
+
+// Addition expression:
+1 + 2
+
+// Subtraction expression:
+10 - 3
+
+// Multiplication expression:
+0x20 * 10
+
+// Division expression:
+20 / 10
+
+// Remainder expression:
+17 % 3
+
+// Left-shift expression:
+1 << 4
+
+// Right-shift expression:
+0xa1 >> 2
+
+// Bitwise OR expression:
+0x2121 | 0x8080
+
+// Exclusive OR expression:
+0xa1a1 ^ 0x8080
+
+// Bitwise AND expression:
+0xa1 & 0x80
+
+// Equal-to expression:
+0x10 == 16
+
+// Inequality expression:
+0x10 != 10
+
+// Less-than expression:
+0x20 < 25
+
+// Less-than-or-equal-to expression:
+10 <= 0x10
+
+// Bigger-than expression:
+0x10 > 12
+
+// Bigger-than-or-equal-to expression:
+0x10 >= 0xa
+
+// Logical OR expression:
+0x10 || false
+
+// Logical AND expression:
+0x10 && false
+
+// Logical negation expression:
+! false
+
+// Bitwise complement expression:
+~0
+
+// Unary minus expression:
+-123
+.fi
+.in -2
+
+.sp
+.LP
+There is a single type available in this expression: integer. The boolean values are two special cases of integer values. The 'true' boolean value's integer value is \fB1\fR and the 'false' boolean value's integer value is \fB0\fR. Also, any integer value other than \fB0\fR is a true boolean value. Consequently, the integer value \fB0\fR is the false boolean value. Any boolean expression yields integer value \fB1\fR for true and integer value \fB0\fR for false as the result.
+.sp
+.LP
+Any literal value shown at the above expression examples as operands, that is, DECIMAL, HEXADECIMAL, and boolean values, can be replaced with another expression. There are a few other special operands that you can use as well in the expressions: '\fBinput\fR', '\fBinputsize\fR', \&'\fBoutputsize\fR', and variables. \fBinput\fR is a keyword pointing to the current input buffer. \fBinputsize\fR is a keyword pointing to the current input buffer size in bytes. \fBoutputsize\fR is a keyword pointing to the current output buffer size in bytes. The NAME lexical convention is used to name a variable. The initial value of a variable is \fB0\fR. The following expressions are allowed with the special operands:
+.sp
+.in +2
+.nf
+// Pointer to the third byte value of the current input buffer:
+input[2]
+
+// Equal-to expression with the 'input':
+input == 0x8020
+
+// Alternative way to write the above expression:
+0x8020 == input
+
+// The size of the current input buffer size:
+inputsize
+
+// The size of the current output buffer size:
+outputsize
+
+// A variable:
+saved_second_byte
+
+// Assignment expression with the variable:
+saved_second_byte = input[1]
+.fi
+.in -2
+
+.sp
+.LP
+The \fBinput\fR keyword without index value can be used only with the equal-to operator, '=='. When used in that way, the current input buffer is consecutively compared with another operand byte by byte. An expression can be another operand. If the \fBinput\fR keyword is used with an index value \fIn\fR, it is a pointer to the (\fIn\fR+1)th byte from the beginning of the current input buffer. An expression can be the index. Only a variable can be placed on the left hand side of an assignment expression.
+.sp
+.LP
+The action element specifies an action for a condition and can be any one of the following elements:
+.br
+.in +2
+direction
+.in -2
+.br
+.in +2
+operation
+.in -2
+.br
+.in +2
+map
+.in -2
+.sp
+.LP
+The operation element specifies one or more operation expression elements:
+.sp
+.in +2
+.nf
+operation For_US-ASCII_2_ISO8859-1 {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+If the name of the operation element, in the case of the above example, \fBFor_US -ASCII_2_ISO8859-1\fR, is either \fBinit\fR or \fBreset\fR, it defines the initial operation and the reset operation of the iconv code conversion:
+.sp
+.in +2
+.nf
+// The initial operation element:
+operation init {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+}
+
+// The reset operation element:
+operation reset {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+The initial operation element defines the operations that need to be performed in the beginning of the iconv code conversion. The reset operation element defines the operations that need to be performed when a user of the iconv(3) function requests a state reset of the iconv code conversion. For more detail on the state reset, refer to \fBiconv\fR(3C).
+.sp
+.LP
+The operation expression can be any one of the following three different expressions and each operation expression should be separated by an ending semicolon:
+.sp
+.in +2
+.nf
+if-else operation expression
+output operation expression
+control operation expression
+.fi
+.in -2
+
+.sp
+.LP
+The if-else operation expression makes a selection depend on the boolean expression result. If the boolean expression result is true, the true task that follows the 'if' is executed. If the boolean expression yields false and if a false task is supplied, the false task that follows the 'else' is executed. There are three different kinds of if-else operation expressions:
+.sp
+.in +2
+.nf
+// The if-else operation expression with only true task:
+if (expression) {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+}
+
+// The if-else operation expression with both true and false
+// tasks:
+if (expression) {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+} else {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+}
+
+// The if-else operation expression with true task and
+// another if-else operation expression as the false task:
+if (expression) {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+} else if (expression) {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+} else {
+
+    // one or more operation expression element definitions here.
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+The last if-else operation expression can have another if-else operation expression as the false task. The other if-else operation expression can be any one of above three if-else operation expressions.
+.sp
+.LP
+The output operation expression saves the right hand side expression result to the output buffer:
+.sp
+.in +2
+.nf
+// Save 0x8080 at the output buffer:
+output = 0x8080;
+.fi
+.in -2
+
+.sp
+.LP
+If the size of the output buffer left is smaller than the necessary output buffer size resulting from the right hand side expression, the iconv code conversion will stop with \fBE2BIG\fR errno and \fB(size_t)-1\fR return value to indicate that the code conversion needs more output buffer to complete. Any expression can be used for the right hand side expression. The output buffer pointer will automatically move forward appropriately once the operation is executed.
+.sp
+.LP
+The control operation expression can be any one of the following expressions:
+.sp
+.in +2
+.nf
+// Return (size_t)-1 as the return value with an EINVAL errno:
+error;
+
+// Return (size_t)-1 as the return value with an EBADF errno:
+error 9;
+
+// Discard input buffer byte operation. This discards a byte from
+// the current input buffer and move the input buffer pointer to
+// the 2'nd byte of the input buffer:
+discard;
+
+// Discard input buffer byte operation. This discards
+// 10 bytes from the current input buffer and move the input
+// buffer pointer to the 11'th byte of the input buffer:
+discard 10;
+
+// Return operation. This stops the execution of the current
+// operation:
+return;
+
+// Operation execution operation. This executes the init
+// operation defined and sets all variables to zero:
+operation init;
+
+// Operation execution operation. This executes the reset
+// operation defined and sets all variables to zero:
+operation reset;
+
+// Operation execution operation. This executes an operation
+// defined and named 'ISO8859_1_to_ISO8859_2':
+operation ISO8859_1_to_ISO8859_2;
+
+// Direction operation. This executes a direction defined and
+// named 'ISO8859_1_to_KOI8_R:
+direction ISO8859_1_to_KOI8_R;
+
+// Map execution operation. This executes a mapping defined
+// and named 'Map_ISO8859_1_to_US_ASCII':
+map Map_ISO8859_1_to_US_ASCII;
+
+// Map execution operation. This executes a mapping defined
+// and named 'Map_ISO8859_1_to_US_ASCII' after discarding
+// 10 input buffer bytes:
+map Map_ISO8859_1_to_US_ASCII 10;
+.fi
+.in -2
+
+.sp
+.LP
+In case of init and reset operations, if there is no pre-defined init and/or reset operations in the iconv code conversions, only system-defined internal init and reset operations will be executed. The execution of the system-defined internal init and reset operations will clear the system-maintained internal state.
+.sp
+.LP
+There are three special operators that can be used in the operation:
+.sp
+.in +2
+.nf
+printchr expression;
+printhd expression;
+printint expression;
+.fi
+.in -2
+
+.sp
+.LP
+The above three operators will print out the given expression as a character, a hexadecimal number, and a decimal number, respectively, at the standard error stream. These three operators are for debugging purposes only and should be removed from the final version of the iconv code conversion definition file.
+.sp
+.LP
+In addition to the above operations, any valid expression separated by a semicolon can be an operation, including an empty operation, denoted by a semicolon alone as an operation.
+.sp
+.LP
+The map element specifies a direct code conversion mapping by using one or more map pairs. When used, usually many map pairs are used to represent an iconv code conversion definition:
+.sp
+.in +2
+.nf
+map For_US-ASCII_2_ISO8859-1 {
+
+     // one or more map pairs here
+     :
+     :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+Each map element also can have one or two comma-separated map attribute elements like the following examples:
+.sp
+.in +2
+.nf
+// Map with densely encoded mapping table map type:
+map maptype = dense {
+
+     // one or more map pairs here
+     :
+     :
+
+}
+
+// Map with hash mapping table map type with hash factor 10.
+// Only hash mapping table map type can have hash factor. If
+// the hash factor is specified with other map types, it will be
+// ignored.
+map maptype = hash : 10 {
+
+    // one or more map pairs here.
+    :
+    :
+
+}
+
+// Map with binary search tree based mapping table map type:
+map maptype = binary {
+
+    // one more more map pairs here.
+    :
+    :
+}
+
+// Map with index table based mapping table map type:
+map maptype = index {
+
+    // one or more map pairs here.
+    :
+    :
+
+}
+
+// Map with automatic mapping table map type. If defined,
+// system will assign the best possible map type.
+map maptype = automatic {
+
+    // one or more map pairs here.
+    :
+    :
+
+}
+
+// Map with output_byte_length limit set to 2.
+map output_byte_length = 2 {
+
+    // one or more map pairs here.
+    :
+    :
+
+}
+
+// Map with densely encoded mapping table map type and
+// output_bute_length limit set to 2:
+map maptype = dense, output_byte_length = 2 {
+
+   // one or more map pairs here.
+    :
+    :
+
+}
+.fi
+.in -2
+
+.sp
+.LP
+If no maptype is defined, automatic is assumed. If no output_byte_length is defined, the system figures out the maximum possible output byte length for the mapping by scanning all the possible output values in the mappings. If the actual output byte length scanned is bigger than the defined output_byte_length, the \fBgeniconvtbl\fR utility issues an error and stops generating the code conversion binary table(s).
+.sp
+.LP
+The following are allowed map pairs:
+.sp
+.in +2
+.nf
+// Single mapping. This maps an input character denoted by
+// the code value 0x20 to an output character value 0x21:
+0x20        0x21
+
+// Multiple mapping. This maps 128 input characters to 128
+// output characters. In this mapping, 0x0 maps to 0x10, 0x1 maps
+// to 0x11, 0x2 maps to 0x12, ..., and, 0x7f maps to 0x8f:
+0x0...0x7f  0x10
+
+// Default mapping. If specified, every undefined input character
+// in this mapping will be converted to a specified character
+// (in the following case, a character with code value of 0x3f):
+default     0x3f;
+
+// Default mapping. If specified, every undefined input character
+// in this mapping will not be converted but directly copied to
+// the output buffer:
+default     no_change_copy;
+
+// Error mapping. If specified, during the code conversion,
+// if input buffer contains the byte value, in this case, 0x80,
+// the iconv(3) will stop and return (size_t)-1 as the return
+// value with EILSEQ set to the errno:
+0x80        error;
+.fi
+.in -2
+
+.sp
+.LP
+If no default mapping is specified, every undefined input character in the mapping will be treated as an error mapping. and thus the \fBiconv\fR(3C) will stop the code conversion and return \fB(size_t)-1\fR as the return value with \fBEILSEQ\fR set to the errno.
+.sp
+.LP
+The syntax of the iconv code conversion definition in extended \fBBNF\fR is illustrated below:
+.sp
+.in +2
+.nf
+ iconv_conversion_definition
+         : CONVERSION_NAME '{' definition_element_list '}'
+         ;
+
+ definition_element_list
+         : definition_element ';'
+         | definition_element_list definition_element ';'
+         ;
+
+ definition_element
+         : direction
+         | condition
+         | operation
+         | map
+         ;
+
+ direction
+         : 'direction' NAME '{' direction_unit_list '}'
+         | 'direction' '{' direction_unit_list '}'
+         ;
+ direction_unit_list
+         : direction_unit
+         | direction_unit_list direction_unit
+         ;
+
+ direction_unit
+         : condition action ';'
+         | condition NAME ';'
+         | NAME action ';'
+         | NAME NAME ';'
+         | 'true' action ';'
+         | 'true' NAME ';'
+         ;
+
+ action
+         : direction
+         | map
+         | operation
+         ;
+
+ condition
+         : 'condition' NAME '{' condition_list '}'
+         | 'condition' '{' condition_list '}'
+         ;
+
+ condition_list
+         : condition_expr ';'
+         | condition_list condition_expr ';'
+         ;
+
+ condition_expr
+         : 'between' range_list
+         | expr
+         | 'escapeseq' escseq_list ';'
+         ;
+
+ range_list
+         : range_pair
+         | range_list ',' range_pair
+         ;
+
+ range_pair
+         : HEXADECIMAL '...' HEXADECIMAL
+         ;
+
+ escseq_list
+         : escseq
+         | escseq_list ',' escseq
+         ;
+
+ escseq  : HEXADECIMAL
+         ;
+
+ map     : 'map' NAME '{' map_list '}'
+         | 'map' '{' map_list '}'
+         | 'map' NAME map_attribute '{' map_list '}'
+         | 'map' map_attribute '{' map_list '}'
+         ;
+
+ map_attribute
+         : map_type ',' 'output_byte_length' '=' DECIMAL
+         | map_type
+         | 'output_byte_length' '=' DECIMAL ',' map_type
+         | 'output_byte_length' '=' DECIMAL
+         ;
+
+ map_type: 'maptype' '=' map_type_name : DECIMAL
+         | 'maptype' '=' map_type_name
+         ;
+
+ map_type_name
+         : 'automatic'
+         | 'index'
+         | 'hash'
+         | 'binary'
+         | 'dense'
+         ;
+
+ map_list
+         : map_pair
+         | map_list map_pair
+         ;
+ map_pair
+         : HEXADECIMAL HEXADECIMAL
+         | HEXADECIMAL '...' HEXADECIMAL HEXADECIMAL
+         | 'default'  HEXADECIMAL
+         | 'default'  'no_change_copy'
+         | HEXADECIMAL 'error'
+         ;
+
+ operation
+         : 'operation' NAME '{' op_list '}'
+         | 'operation' '{' op_list '}'
+         | 'operation' 'init' '{' op_list '}'
+         | 'operation' 'reset' '{' op_list '}'
+         ;
+
+ op_list : op_unit
+         | op_list op_unit
+         ;
+
+ op_unit : ';'
+         | expr ';'
+         | 'error' ';'
+         | 'error' expr ';'
+         | 'discard' ';'
+         | 'discard' expr ';'
+         | 'output' '=' expr ';'
+         | 'direction' NAME ';'
+         | 'operation' NAME ';'
+         | 'operation' 'init' ';'
+         | 'operation' 'reset' ';'
+         | 'map' NAME ';'
+         | 'map' NAME expr ';'
+         | op_if_else
+         | 'return' ';'
+         | 'printchr' expr ';'
+         | 'printhd' expr ';'
+         | 'printint' expr ';'
+         ;
+
+ op_if_else
+         : 'if' '(' expr ')' '{' op_list '}'
+         | 'if' '(' expr ')' '{' op_list '}' 'else' op_if_else
+         | 'if' '(' expr ')' '{' op_list '}' 'else' '{' op_list '}'
+         ;
+
+ expr    : '(' expr ')'
+         | NAME
+         | HEXADECIMAL
+         | DECIMAL
+         | 'input' '[' expr ']'
+         | 'outputsize'
+         | 'inputsize'
+         | 'true'
+         | 'false'
+         | 'input' '==' expr
+         | expr '==' 'input'
+         | '!' expr
+         | '~' expr
+         | '-' expr
+         | expr '+' expr
+         | expr '-' expr
+         | expr '*' expr
+         | expr '/' expr
+         | expr '%' expr
+         | expr '<<' expr
+         | expr '>>' expr
+         | expr '|' expr
+         | expr '^' expr
+         | expr '&' expr
+         | expr '==' expr
+         | expr '!=' expr
+         | expr '>'  expr
+         | expr '>='  expr
+         | expr '<'  expr
+         | expr '<='  expr
+         | NAME '=' expr
+         | expr '||' expr
+         | expr '&&' expr
+         ;
+.fi
+.in -2
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCode conversion from ISO8859-1 to ISO646
+.sp
+.in +2
+.nf
+ISO8859-1%ISO646 {
+          // Use dense-encoded internal data structure.
+          map maptype = dense {
+                  default         0x3f
+                  0x0...0x7f      0x0
+          };
+  }
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRCode conversion from eucJP to ISO-2022-JP
+.sp
+.in +2
+.nf
+// Iconv code conversion from eucJP to ISO-2022-JP
+
+        #include <sys/errno.h>
+
+        eucJP%ISO-2022-JP {
+             operation init {
+                 codesetnum = 0;
+             };
+
+             operation reset {
+                 if (codesetnum != 0) {
+                      // Emit state reset sequence, ESC ( J, for
+                      // ISO-2022-JP.
+                      output = 0x1b284a;
+                 }
+                 operation init;
+             };
+
+             direction {
+                 condition {             // JIS X 0201 Latin (ASCII)
+                      between 0x00...0x7f;
+                 } operation {
+                      if (codesetnum != 0) {
+                           // We will emit four bytes.
+                           if (outputsize <= 3) {
+                                   error E2BIG;
+                           }
+                           // Emit state reset sequence, ESC ( J.
+                           output = 0x1b284a;
+                           codesetnum = 0;
+                      } else {
+                           if (outputsize <= 0) {
+                                   error E2BIG;
+                           }
+                      }
+                      output = input[0];
+
+                      // Move input buffer pointer one byte.
+                      discard;
+                 };
+
+                 condition {             // JIS X 0208
+                      between 0xa1a1...0xfefe;
+                 } operation {
+                      if (codesetnum != 1) {
+                           if (outputsize <= 4) {
+                                   error E2BIG;
+                           }
+                           // Emit JIS X 0208 sequence, ESC $ B.
+                           output = 0x1b2442;
+                           codesetnum = 1;
+                      } else {
+                           if (outputsize <= 1) {
+                                   error E2BIG;
+                           }
+                      }
+                      output = (input[0] & 0x7f);
+                      output = (input[1] & 0x7f);
+
+                      // Move input buffer pointer two bytes.
+                      discard 2;
+                 };
+
+                 condition {             // JIS X 0201 Kana
+                      between 0x8ea1...0x8edf;
+                 } operation {
+                      if (codesetnum != 2) {
+                           if (outputsize <= 3) {
+                                   error E2BIG;
+                           }
+                           // Emit JIS X 0201 Kana sequence,
+                           // ESC ( I.
+                           output = 0x1b2849;
+                           codesetnum = 2;
+                      } else {
+                           if (outputsize <= 0) {
+                                   error E2BIG;
+                           }
+                      }
+                      output = (input[1] & 127);
+
+                      // Move input buffer pointer two bytes.
+                      discard 2;
+                 };
+
+                 condition {             // JIS X 0212
+                      between 0x8fa1a1...0x8ffefe;
+                 } operation {
+                      if (codesetnum != 3) {
+                           if (outputsize <= 5) {
+                                   error E2BIG;
+                           }
+                           // Emit JIS X 0212 sequence, ESC $ ( D.
+                              output = 0x1b242844;
+                              codesetnum = 3;
+                      } else {
+                              if (outputsize <= 1) {
+                                      error E2BIG;
+                              }
+                      }
+                      output = (input[1] & 127);
+                      output = (input[2] & 127);
+                      discard 3;
+                 };
+
+                 true    operation {     // error
+                      error EILSEQ;
+                 };
+             };
+        }
+.fi
+.in -2
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/bin/geniconvtbl\fR\fR
+.ad
+.sp .6
+.RS 4n
+the utility \fBgeniconvtbl\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/iconv/geniconvtbl/binarytables/*.bt\fR\fR
+.ad
+.sp .6
+.RS 4n
+conversion binary tables
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/iconv/geniconvtbl/srcs/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+conversion source files for user reference
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBcpp\fR(1), \fBgeniconvtbl\fR(1), \fBiconv\fR(1), \fBiconv\fR(3C), \fBiconv_close\fR(3C), \fBiconv_open\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5)
+.sp
+.LP
+\fIInternational Language Environments Guide\fR
+.SH NOTES
+.sp
+.LP
+The maximum length of HEXADECIMAL and DECIMAL digit length is \fB128\fR. The maximum length of a variable is \fB255\fR. The maximum nest level is \fB16\fR.

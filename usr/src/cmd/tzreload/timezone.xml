@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+    NOTE:  This service manifest is not editable; its contents will
+    be overwritten by package or patch operations, including
+    operating system upgrade.  Make customizations in a different
+    file.
+
+-->
+
+<service_bundle type='manifest' name='system/timezone'>
+
+<service
+	name='system/timezone'
+	type='service'
+	version='1'>
+
+	<single_instance/>
+
+	<!--
+	 This service depends on /usr filesystem. 'filesystem/root'
+	 makes sure /usr is mounted.
+	-->
+	<dependency
+		name='root'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/filesystem/root' />
+	</dependency>
+
+	<!--
+	 During system configuration, explicitly wait until manifest-import
+	 is online and has imported the new profile explicitly.
+	-->
+	<dependency
+		name='timezone_manifest-import'
+		grouping='optional_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/manifest-import' />
+	</dependency>
+
+	<!--
+	 This service should be online in single-user mode.
+	-->
+	<dependent
+		name='timezone_singleuser'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/single-user' />
+	</dependent> 
+
+	<dependent
+		name='timezone_self-assembly-complete'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/self-assembly-complete' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/svc-timezone start'
+		timeout_seconds='300'>
+		<method_context>
+			<method_credential user='root'/>
+		</method_context>
+	</exec_method>
+	
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='300'>
+		<method_context>
+			<method_credential user='root'/>
+		</method_context>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec='/lib/svc/method/svc-timezone refresh'
+		timeout_seconds='300'>
+		<method_context>
+			<method_credential user='root'/>
+		</method_context>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='unconfigure'
+		exec='/lib/svc/method/svc-timezone unconfigure'
+		timeout_seconds='300'>
+		<method_context>
+			<method_credential user='root'/>
+		</method_context>
+	</exec_method>
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring' value='transient' />
+	</property_group>
+
+	<property_group name='sysconfig' type='application'>
+		<propval name='group' type='astring' value='location' />
+		<propval name='reconfigurable' type='boolean' value='false'/>
+	</property_group>
+
+	<instance name='default' enabled='true'>
+		<property_group name='timezone' type="application">
+			<propval name='localtime' type='astring'
+				value='UTC'/>
+		</property_group>
+	</instance>
+
+	<stability value='Stable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+				Timezone Reload
+			</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='tzreload' section='1M'
+				manpath='/usr/share/man' />
+		</documentation>
+		<pg_pattern name='timezone' type='application' target='this'
+			required='true'>
+			<description>
+				<loctext xml:lang='C'>
+					Properties that control the timezone of the system.
+				</loctext>
+			</description>
+			<prop_pattern name='localtime' type='astring'
+				required='true'>
+				<description>
+					<loctext xml:lang='C'>
+						Timezone property
+					</loctext>
+				</description>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+
+</service>
+
+</service_bundle>

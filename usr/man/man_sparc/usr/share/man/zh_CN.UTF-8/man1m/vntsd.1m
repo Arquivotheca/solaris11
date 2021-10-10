@@ -1,0 +1,418 @@
+'\" te
+.\" 版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.TH vntsd 1M "2009 年 3 月 31 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+vntsd \- 用于 Logical Domains 的虚拟网络终端服务器守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/ldoms/vntsd\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBvntsd\fR 守护进程是一个通过使用 \fBtelnet\fR(1) 支持到 Logical Domains (LDoms) 控制台的连接的服务器。当 \fBtelnet\fR 会话启动时，\fBvntsd\fR 会向客户机发送 \fBtelnet\fR 选项来表明要远程回显字符并抑制前进的意愿。
+.sp
+.LP
+这些控制台由 LDoms Manager 分为若干个组。每个控制台组都分配有唯一的组名和 TCP 端口号。\fBvntsd\fR 使用组的端口号来导出对该组内的控制台的访问权限。要与某个控制台或控制台组建立连接，用户需要使用对应组的端口号启动 \fBtelnet\fR(1) 会话。根据该组内控制台的数量，\fBvntsd\fR 将执行下面的两个操作之一：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果组内只有一个控制台，则 \fBvntsd\fR 将会话连接至该 LDoms 控制台。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果组内有多个控制台，则 \fBvntsd\fR 将提示用户选择要连接到的控制台，如下面的"多控制台选项"部分所示。
+.RE
+.sp
+.LP
+对于每个控制台，\fBvntsd\fR 仅向连接到该控制台的第一个用户提供写访问权限。之后连接到该控制台的用户只允许从控制台进行读取，并等待写访问权限。当第一个用户断开连接后，写特权将移交到在队列中等待的下一个用户。如果没有写特权的用户尝试向控制台进行写入，则 \fBvntsd\fR 将显示以下消息：
+.sp
+.in +2
+.nf
+You do not have write access
+.fi
+.in -2
+
+.sp
+.LP
+没有写访问权限的用户可以通过使用 \fB~w\fR 特殊控制台命令（在下面的"特殊控制台命令"部分中介绍）强行获取写访问权限。
+.sp
+.LP
+\fBvntsd\fR 只可通过超级用户特权调用，或者由具有主管理员角色的用户调用。
+.SH 选项
+.sp
+.LP
+\fBvntsd\fR 的选项分为多控制台选项和控制台命令。
+.SS "多控制台选项"
+.sp
+.LP
+当一个组中有多个 LDoms 控制台时，支持下面列出的选项。这些选项的使用语法为：
+.sp
+.in +2
+.nf
+\fI<hostname>\fR-vnts-\fI<group-name>\fR: \fI<option>\fR
+.fi
+.in -2
+
+.sp
+.LP
+例如：
+.sp
+.in +2
+.nf
+myhost-vnts-salesgroup: h
+.fi
+.in -2
+
+.sp
+.LP
+\fBh\fR 选项调用帮助，如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示以下帮助文本：
+.sp
+.in +2
+.nf
+h -- this help
+l -- list of consoles
+q -- quit
+c{id}, n{name} -- connect to console of domain {id} or domain name
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出组内的所有控制台。例如：
+.sp
+.in +2
+.nf
+DOMAIN ID       DOMAIN NAME     DOMAIN STATE
+0               ldg1            online
+1               ldg2            connected
+\&...             ...             ...
+.fi
+.in -2
+
+两个域状态及其含义为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline（联机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+无任何用户连接至该控制台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected（已连接）\fR\fR
+.ad
+.sp .6
+.RS 4n
+至少一个用户已经连接至该控制台。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 \fBvntsd\fR 断开连接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fI{id}\fR, n\fI{name}\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+连接到指定的控制台。连接时，将显示以下消息：
+.sp
+.in +2
+.nf
+Connecting to console \fI<domain-name>\fR in group \fI<group-name>\fR
+Press ~? for control options ....
+.fi
+.in -2
+
+.RE
+
+.SS "特殊控制台命令"
+.sp
+.LP
+作为行的第一个字符出现的波浪号 (\fB~\fR) 是一个转义信号，指示 \fBvntsd\fR 执行特殊控制台命令。双波浪号 (\fB~~\fR) 序列输出一个波浪号。与开头的波浪号结合使用时，\fBvntsd\fR 接受以下特殊控制台命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~.\fR\fR
+.ad
+.sp .6
+.RS 4n
+从控制台或控制台组断开连接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~w\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制获取对控制台的写访问权限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~p\fR\fR
+.ad
+.sp .6
+.RS 4n
+从该控制台断开连接，并连接到控制台列表中紧邻该控制台的前一个控制台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~n\fR\fR
+.ad
+.sp .6
+.RS 4n
+从该控制台断开连接，并连接到控制台列表中紧邻该控制台的后一个控制台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~#\fR\fR
+.ad
+.sp .6
+.RS 4n
+发送中断信号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^B\fR\fR
+.ad
+.sp .6
+.RS 4n
+发送替代中断信号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~?\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBvntsd\fR 帮助，如下所示：
+.sp
+.in +2
+.nf
+~# - Send break
+~^B - Send alternate break
+~. - Exit from this console
+~w - Force write access
+~n - Console next
+~p - Console previous
+~? - Help
+.fi
+.in -2
+
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ldoms/vntsd\fR\fR
+.ad
+.sp .6
+.RS 4n
+二进制可执行 \fBvntsd\fR 文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ldoms/vntsd.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBvntsd\fR 的服务管理工具 (\fBsmf\fR(5)) 清单文件。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/ldoms
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBtelnet\fR(1)、\fBsvccfg\fR(1M)、\fBusermod\fR(1M)、\fBauth_attr\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+\fBvntsd\fR 由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/ldoms/vntsd
+.fi
+.in -2
+
+.sp
+.LP
+可以使用 \fBsvccfg\fR(1M) 命令更改以下属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/vcc_device\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置 \fBvntsd\fR 将连接到的虚拟控制台集中器 (virtual console concentrator, \fBvcc\fR) 驱动程序的一个实例。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/listen_addr\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用以下语法设置 \fBvntsd\fR 将侦听的 IP 地址：
+.sp
+.in +2
+.nf
+vntsd/listen_addr:"\fIxxx.xxx.xxx.xxx\fR"
+.fi
+.in -2
+
+\&...其中 \fIxxx.xxx.xxx.xxx\fR 是一个有效的 IP 地址。该属性的缺省值设置是侦听 IP 地址 127.0.0.1。如果该值设置为控制域的 IP 地址，则用户可以通过网络连接到客控制台。
+.LP
+注 - 
+.sp
+.RS 2
+启用对控制台的网络访问有安全问题。任何用户都将能够连接到控制台，因此，缺省情况下它被禁用。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/timeout_minutes\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置超时（以分钟为单位）。如果控制台上没有任何活动（输入或输出），\fBvntsd\fR 将使\fBtelnet\fR 连接超时（关闭）。缺省值为 0，即禁用超时。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/authorization\fR\fR
+.ad
+.sp .6
+.RS 4n
+为正被访问的域控制台启用用户和角色的授权检查。该属性的缺省值为 \fBfalse\fR 以维护向后兼容性。要启用授权检查，可使用 \fBsvccfg\fR(1M) 命令将该属性的值设置为 \fBtrue\fR。启用该选项后，\fBvntsd\fR 将在 \fBlocalhost\fR 上侦听并接受连接。当启用了该选项时，如果 \fBlisten_addr\fR 属性指定了替代 IP 地址，则 \fBvntsd\fR 将忽略替代 IP 地址并继续在 \fBlocalhost\fR 上侦听。从其他主机启动的连接也将失败。授权可用于访问所有控制台或控制台组，或访问特定控制台或控制台组。当启用 \fBvntsd\fR 服务时，以下授权会添加到授权描述数据库 \fBauth_attr\fR(4)：
+.sp
+.in +2
+.nf
+solaris.vntsd.consoles:::Access All LDoms Guest Consoles::
+.fi
+.in -2
+.sp
+
+添加基于控制台组名称的细粒度授权。例如，如果要被授权的控制台组的名称为 \fBldg1\fR，则会将以下条目添加到 \fBauth_attr\fR(4) 文件中：
+.sp
+.in +2
+.nf
+solaris.vntsd.console-ldg1:::Access Specific LDoms Guest Console::
+.fi
+.in -2
+.sp
+
+缺省情况下，会为 root 用户或角色分配可访问所有控制台的授权。主管理员（超级用户）可以使用 \fBusermod\fR(1M) 命令为其他用户或角色分配所需的授权。
+.sp
+以下示例向用户 \fBuser1\fR 授予可访问所有域控制台的授权。
+.sp
+.in +2
+.nf
+# \fBusermod -A "solaris.vntsd.consoles" user1\fR
+.fi
+.in -2
+.sp
+
+以下示例向用户 \fBuser1\fR 授予可访问名为 \fBldg1\fR 的控制台组的授权：
+.sp
+.in +2
+.nf
+# \fBusermod -A "solaris.vntsd.console-ldg1" user1\fR
+.fi
+.in -2
+.sp
+
+.RE
+

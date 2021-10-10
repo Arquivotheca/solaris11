@@ -1,0 +1,1068 @@
+'\" te
+.\" Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH snoop 1M "2011 年 3 月 14 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+snoop \- ネットワークパケットの取得および検査
+.SH 形式
+.LP
+.nf
+\fBsnoop\fR [\fB-aqrCDINPSvV\fR] [\fB-t\fR [r | a | d]] [\fB-c\fR \fImaxcount\fR]
+ [\fB-d\fR \fIdevice\fR] [\fB-i\fR \fIfilename\fR] [\fB-n\fR \fIfilename\fR] [\fB-o\fR \fIfilename\fR]
+ [\fB-p\fR \fIfirst\fR [, \fIlast\fR]] [\fB-s\fR \fIsnaplen\fR] [\fB-x\fR \fIoffset\fR [, \fIlength\fR]]
+ [\fIexpression\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsnoop\fR は、データリンクまたは IP インタフェースからパケットを取得し、その内容を表示します。データリンクまたは IP インタフェースが指定されていない場合、\fBsnoop\fR は、使用するデータリンクを選択することで、IP トラフィックのために plumb されたデータリンクに優先順位を割り当てます。\fBsnoop\fR は、ネットワークからパケットを効率的に取得するために、\fBpfmod\fR(7M) と \fBbufmod\fR(7M) の STREAMS モジュールを使用します。取得したパケットは、受信した順に表示することも、あとで検査するためのファイル (\fIRFC 1761\fR 準拠) に保存することもできます。
+.sp
+.LP
+\fBsnoop\fR は、パケットを単一行の要約形式または詳細な複数行形式で表示できます。要約形式では、特定の VLAN パケットを除いて、もっとも高いレベルのプロトコルに関連したデータのみが表示されます。パケットに VLAN ヘッダーがあり、その VLAN ID がゼロ以外の場合、\fBsnoop\fR では、そのパケットは VLAN タグ付きとして表示されます。たとえば、\fBNFS\fR パケットでは \fBNFS\fR 情報だけが表示されます。直前に説明した条件下の VLAN 情報を除いて、基になる \fBRPC\fR、\fBUDP\fR、\fBIP\fR、および Ethernet のフレーム情報は抑制されますが、いずれかの詳細オプションを選択した場合は表示できます。
+.sp
+.LP
+LDAP や NIS などのネームサービスがない場合、\fBsnoop\fR はホスト名を数値の IP アドレスとして表示します。
+.sp
+.LP
+\fBsnoop\fR には、対話型のインタフェースが必要です。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+カーネルのパケットフィルタまたは \fBsnoop\fR 独自のフィルタのいずれかに対するフィルタ式から生成されたコードを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+要約行の取得中にドロップしたパケットの数を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR\fR
+.ad
+.sp .6
+.RS 4n
+取得ファイルから \fBIP\fR アドレスと名前の対照ファイルを作成します。これは、取得ファイルに名前を付ける \fB-i\fR オプションとともに設定する必要があります。アドレスと名前の対照ファイル名は、取得ファイル名に \fB\&.names\fR を付加したものと同じです。このファイルは、取得するサイトで \fBIP\fR アドレスからホスト名へのマッピングを記録し、取得ファイルの可搬性を高めます。取得ファイルを別の場所で分析する場合は、\fB\&.names\fR ファイルを生成します。このフラグを使用すると、パケットは表示されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIinterface\fR で指定された IP インタフェース (たとえば、\fBlo0\fR) を使用して、ネットワークから IP パケットを取得します。\fBipadm\fR(1M) コマンドを使用すると、使用可能な IP インタフェースを一覧表示できます。\fB-I\fR オプションと \fB-d\fR オプションを同時に指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロミスキュアスでないモードでパケットを取得します。ブロードキャスト、マルチキャスト、またはホストマシン宛に送られたパケットだけが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+要約行のリンクレイヤーフレーム全体のサイズをバイト単位で表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細要約モードです。詳細度は、要約モードと詳細モードの中間です。パケット内のもっとも高いレベルのプロトコルの要約行だけを表示するのではなく、パケット内のプロトコルレイヤーごとに要約行を表示します。たとえば、\fBNFS\fR パケットでは、\fBETHER\fR、\fBIP\fR、\fBUDP\fR、\fBRPC\fR、および \fBNFS\fR レイヤーごとに 1 行ずつ表示します。詳細要約モードの出力は、\fBgrep\fR でパイプすることで、目的のパケットを簡単に抽出できます。たとえば、\fBRPC\fR の要約行だけを表示するには、次のように入力します。\fBexample# \fR\fBsnoop -i rpc.cap -V | grep RPC\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットを \fB/dev/audio\fR で音声で聴きます (警告: うるさくなる可能性があります)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fImaxcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fImaxcount\fR パケットを取得したあとで終了します。そうしない場合、残りのディスク容量がなくなるまで、または Control + C で中断するまで取得し続けます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdatalink\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdatalink\fR で指定された DLPI データリンク (たとえば、\fBbge0\fR または \fBnet0\fR) を使用して、ネットワークからリンクレイヤーパケットを取得します。\fBdladm\fR(1M)\fBshow-link\fR サブコマンドを使用すると、使用可能なデータリンクを一覧表示できます。\fB-d\fR オプションと \fB-I\fR オプションを同時に指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+前に \fIfilename\fR で取得したパケットを表示します。このオプションを指定しない場合、\fBsnoop\fR はネットワークインタフェースからパケットを読み取ります。\fIfilename\fR\fB\&.names\fR ファイルが存在する場合、そのファイルは自動的に \fBsnoop\fR \fBIP\fR アドレスと名前のマッピングテーブル (\fB-N\fR フラグを参照) にロードされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIfilename\fR を \fBIP\fR アドレスと名前のマッピングテーブルとして使用します。このファイルは、\fB/etc/hosts\fR ファイル (IP アドレスの次にホスト名) と同じ形式である必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+取得したパケットを、取得したとおりに \fIfilename\fR に保存します。(この \fIfilename\fR を「取得ファイル」と呼びます。)取得ファイルの形式は RFC 1761 に準拠しています。パケットの取得中、ファイルに保存されたパケット数のカウントが表示されます。ファイルに保存せずにパケットのカウントだけを行う場合は、ファイル名を \fB/dev/null\fR とします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIfirst\fR [ , \fBlast\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+表示するパケットを取得ファイルから 1 つ以上選択します。ファイルの \fIfirst\fR パケットはパケット番号 1 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークパケットをファイルに取得するときに、パケットカウントを表示しません。これにより、パケット取得のパフォーマンスが向上する場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBIP\fR アドレスを記号名に解決しません。これにより、\fBsnoop\fR がパケットを取得および表示している間に、ネットワークトラフィックが生じなくなります。ただし、\fB-n\fR オプションを使用していて、アドレスがマッピングファイルに存在する場合は、それに対応する名前が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsnaplen\fR\fR
+.ad
+.sp .6
+.RS 4n
+各パケットの \fIsnaplen\fR バイトより後ろを切り捨てます。通常は、パケット全体が取得されます。このオプションは、特定のパケットヘッダー情報だけが必要な場合に便利です。パケットの切リ捨てはカーネル内で行われるため、ストリームパケットバッファーを効率的に利用できます。これにより、トラフィックが多い期間中のバッファーオーバーフローによってパケットがドロップされる可能性が減少します。また、大量のトレースを取得ファイルに取得するときにディスク容量を節約できます。\fBIP\fR ヘッダーのみ (オプションなし) を取得するには、34 の \fIsnaplen\fR を使用します。\fBUDP\fR では 42 を、\fBTCP\fR では 54 を使用します。\fBRPC\fR ヘッダーは 80 バイトの \fIsnaplen\fR で取得できます。\fBNFS\fR ヘッダーは 120 バイトで取得できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [ \fBr\fR | \fBa\fR | \fBd\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+タイムスタンプの表示。タイムスタンプの精度は 4 マイクロ秒以内です。デフォルトでは、\fBd\fR (デルタ) 形式 (前のパケットを受信してからの時間) で時間が表示されます。オプション \fBa\fR (絶対的) では、時計時刻になります。オプション \fBr\fR (相対的) では、最初にパケットを表示してからの相対的な時間になります。これを \fB-p\fR オプションとともに使用すると、選択した任意のパケットに対する相対的な時間を表示できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細モード。パケットヘッダーを数多くの詳細情報とともに出力します。この表示方式では 1 つのパケットについて多数の行を消費するため、選択したパケットに対してのみ使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-x\fR\fIoffset\fR [ , \fIlength\fR]\fR
+.ad
+.sp .6
+.RS 4n
+パケットデータを 16 進数および \fBASCII\fR 形式で表示します。\fIoffset\fR 値および \fIlength\fR 値によって、パケットの表示部分を選択します。パケット全体を表示するには、\fIoffset\fR として 0 を使用します。\fIlength\fR 値を指定しない場合、パケットの残りの部分が表示されます。
+.RE
+
+.SH オペランド
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットをネットワークまたは取得ファイルから選択します。式が真となるパケットのみ選択されます。式が指定されない場合は、真とみなされます。
+.sp
+フィルタ式を指定した場合、\fBsnoop\fR は、カーネルパケットフィルタ用または独自の内部フィルタ用のコードを生成します。ネットワークインタフェースでパケットを取得する場合、カーネルパケットフィルタ用のコードが生成されます。このフィルタは、バッファーモジュールのアップストリームであるストリームモジュールとして実装されます。バッファーモジュールは、いっぱいになるまでパケットを蓄積して \fBsnoop\fR に渡します。カーネルパケットフィルタは、カーネル内の不要なパケットをパケットバッファーまたは \fBsnoop\fR に到達する前に拒否するため、非常に効率的です。カーネルパケットフィルタにはその実装にいくつかの制限があり、フィルタが処理できないフィルタ式を作成することも可能です。この場合、\fBsnoop\fR はフィルタの分割を試み、カーネルで可能な限りのフィルタ処理を行います。残りのフィルタ処理は、\fBsnoop\fR 用のパケットフィルタによって行われます。\fB-C\fR フラグを使用すると、カーネルのパケットフィルタ用または \fBsnoop\fR のパケットフィルタ用に生成されたコードを表示できます。パケットが \fB-i\fR オプションを使用して取得ファイルから読み込まれた場合は、\fBsnoop\fR 用のパケットフィルタのみ使用されます。
+.sp
+フィルタの \fIexpression\fR は、1 つまたは複数のブール型プリミティブで構成されます。これらのプリミティブは、ブール型演算子 (\fBAND\fR、\fBOR\fR、および \fBNOT\fR) と組み合わせることができます。ブール型演算子の通常の優先順位規則が適用されます。これらの演算子の評価の順序は、括弧で制御できます。括弧およびその他のフィルタ式の文字はシェルによって認識されるため、多くの場合フィルタ式を引用符で囲む必要があります。より効率的なフィルタの設定については、  を参照してください。
+.sp
+次にプリミティブを示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR \fIhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+発信元アドレスまたは着信先アドレスが \fBhostname\fR のアドレスであれば真。\fIhostname\fR 引数は、アドレス表記でもかまいません。名前がほかの式のプリミティブの名前と競合しない場合は、キーワード \fBhost\fR を省略できます。たとえば、「\fBpinky\fR」では、ホスト \fBpinky\fR との間で送受信されるパケットが選択され、「\fBpinky and dinky\fR」では、ホスト pinky とホスト dinky との間で交換されるパケットが選択されます。\fB\fR 
+.sp
+使用されるアドレスのタイプは、\fBhost\fR プリミティブに先行するプリミティブに依存します。使用可能な修飾子は、\fBinet\fR、\fBinet6\fR、\fBether\fR、または修飾子なしです。以降では、これら 3 つのプリミティブについて説明します。プリミティブが 1 つもない場合は、「inet host hostname or inet6 host hostname」と同等です。言い換えると、snoop はホスト名と関連付けられた IP アドレスをすべてフィルタ処理しようとします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinet\fR または \fIinet6\fR\fR
+.ad
+.sp .6
+.RS 4n
+後続の \fBhost\fR プリミティブを変更する修飾子。\fIinet\fR の場合、\fBsnoop\fR は名前の検索によって返された IPv4 アドレスをすべてフィルタ処理しようとします。\fIinet6\fR の場合、\fBsnoop\fR は名前の検索によって返された IPv6 アドレスをすべてフィルタ処理しようとします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIipaddr\fR、\fIatalkaddr\fR、または \fIetheraddr\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレス表記、ドット区切り \fBIP\fR、ドット区切り AppleTalk、およびコロン区切り Ethernet が認識されます。次に例を示します。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「\fB172.16.40.13\fR」は、この \fBIP\fR を持つすべてのパケットと一致します。 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「\fB2::9255:a00:20ff:fe73:6e35\fR」は、発信元または着信先としてこの IPv6 アドレスを持つすべてのパケットと一致します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「\fB65281.13\fR」は、この AppleTalk アドレスを持つすべてのパケットと一致します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+「\fB8:0:20:f:b1:51\fR」は、発信元または着信先としてこの Ethernet アドレスを持つすべてのパケットと一致します。
+.RE
+文字で始まる Ethernet アドレスは、ホスト名として解釈されます。これを回避するため、アドレスを指定する場合は最初にゼロを付けます。たとえば、Ethernet アドレスが「\fBaa:0:45:23:52:44\fR」の場合は、最初に 0 を追加して「\fB0aa:0:45:23:52:44\fR」と指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfrom\fR または \fBsrc\fR\fR
+.ad
+.sp .6
+.RS 4n
+後続の \fBhost\fR、\fBnet\fR、\fIipaddr\fR、\fIatalkaddr\fR、\fIetheraddr\fR、\fBport\fR、または \fBrpc\fR プリミティブを変更して、発信元アドレス、ポート、または \fBRPC\fR 応答とのみ一致する修飾子。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBto\fR または \fBdst\fR\fR
+.ad
+.sp .6
+.RS 4n
+後続の \fBhost\fR、\fBnet\fR、\fIipaddr\fR、\fIatalkaddr\fR、\fIetheraddr\fR、\fBport\fR、または \fBrpc\fR プリミティブを変更して、着信先アドレス、ポート、または \fBRPC\fR 呼び出しとのみ一致する修飾子。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBether\fR\fR
+.ad
+.sp .6
+.RS 4n
+後続の \fBhost\fR プリミティブを変更して、名前を Ethernet アドレスに解決する修飾子。通常、\fBIP\fR アドレスのマッチングが行われます。このオプションは、IPoIB (IP over InfiniBand) などのメディアではサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBethertype\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+Ethernet タイプフィールドの値が \fInumber\fR であれば真。\fInumber\fR が 0x8100 (VLAN) ではなく、パケットが VLAN タグ付きの場合、式はカプセル化した Ethernet タイプと一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip\fR、\fBip6\fR、\fBarp\fR、\fBrarp\fR、\fBpppoed\fR、\fBpppoes\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが適切な ethertype であれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlan\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットに \fBethertype\fR VLAN があり、VLAN ID がゼロでなければ真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlan-id\fR \fIid\fR\fR
+.ad
+.sp .6
+.RS 4n
+ID が \fIid\fR の ethertype VLAN のパケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpppoe\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットの ethertype が \fBpppoed\fR または \fBpppoes\fR であれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbroadcast\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットがブロードキャストパケットであれば真。Ethernet の \fBether[2:4] = 0xffffffff\fR と同等です。このオプションは、IPoIB (IP over InfiniBand) などのメディアではサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmulticast\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットがマルチキャストパケットであれば真。Ethernet の「\fBether[0] & 1 = 1\fR」と同等です。このオプションは、IPoIB (IP over InfiniBand) などのメディアではサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbootp\fR、\fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが、\fBBOOTPS (67)\fR の発信元ポートおよび \fBBOOTPC (68)\fR の着信先ポート、または \fBBOOTPC (68)\fR の発信元ポートおよび \fBBOOTPS (67)\fR の着信先ポートのいずれかで断片化されていない IPv4 UDP パケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp6\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが、\fBDHCPV6-SERVER (547)\fR の発信元ポートおよび \fBDHCPV6-CLIENT (546)\fR の着信先ポート、または \fBDHCPV6-CLIENT (546)\fR の発信元ポートおよび \fBDHCPV6-SERVER (547)\fR の着信先ポートのいずれかで断片化されていない IPv6 UDP パケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapple\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが Apple Ethertalk パケットであれば真。「\fBethertype 0x809b or ethertype 0x80f3\fR」と同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdecnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fBDECNET\fR パケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgreater\fR \fIlength\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fIlength\fR より長ければ真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBless\fR \fIlength\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fIlength\fR より短ければ真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBudp\fR、\fBtcp\fR、\fBicmp\fR、\fBicmp6\fR、\fBah\fR、\fBesp\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBIP\fR または IPv6 プロトコルが適切なタイプであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR \fInet\fR\fR
+.ad
+.sp .6
+.RS 4n
+発信元または着信先の \fBIP\fR アドレスのネットワーク番号が \fInet\fR であれば真。\fBfrom\fR または \fBto\fR 修飾子を使用して、発信元アドレスまたは着信先アドレスでのみネットワーク番号が使われているパケットを選択できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR \fIport\fR\fR
+.ad
+.sp .6
+.RS 4n
+発信元ポートまたは着信先ポートが \fIport\fR であれば真。\fIport\fR には、ポート番号または \fB/etc/services\fR から得た名前を使用できます。\fBtcp\fR または \fBudp\fR プリミティブを使用して、\fBTCP\fR または \fBUDP\fR ポートだけを選択できます。\fBfrom\fR または \fBto\fR 修飾子を使用して、発信元または着信先としてのみ \fIport\fR が使われているパケットを選択できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrpc\fR \fIprog\fR [ , \fIvers\fR [ , \fBproc\fR ] ]\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fIprog\fR で識別されるプロトコルの \fBRPC\fR 呼び出しパケットまたは応答パケットであれば真。\fIprog\fR には、\fB/etc/rpc\fR から得た \fBRPC\fR プロトコルの名前またはプログラム番号を使用できます。\fIvers\fR および \fBproc\fR を使用して、プログラムの \fIversion\fR および \fIprocedure\fR 番号をさらに修飾できます。たとえば、\fBrpc nfs,2,0\fR では、\fBNFS\fR NULL 手続きの呼び出しと応答がすべて選択されます。\fBto\fR または \fBfrom\fR 修飾子を使用して、呼び出しパケットだけまたは応答パケットだけを選択できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzone\fR \fIzoneid\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIzoneid\fR が、\fBipnet\fR デバイス上で受信されたパケットの発信元または着信先 \fIzoneid\fR のどちらかに一致すれば、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットがポート 389 の \fBLDAP\fR パケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgateway\fR \fIhost\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットで \fIhost\fR がゲートウェイとして使用された場合、つまり Ethernet の発信元または着信先アドレスが \fBIP\fR アドレスではなく \fIhost\fR であった場合は真。「\fBether host\fR \fIhost\fR and not host \fIhost\fR」と同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnofrag\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが断片化されていないか、一連の \fBIP\fR フラグメントの最初のものであれば真。\fBip[6:2] & 0x1fff = 0\fR と同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr\fR \fIrelop\fR \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIrelop\fR が \fB>\fR、\fB<\fR、\fB>=\fR、\fB<=\fR、\fB=\fR、\fB!=\fR のいずれかで、\fBexpr\fR が数字、パケットフィールドセレクタ、\fBlength\fR プリミティブ、および算術演算子 \fB+\fR、\fB\(mi\fR、\fB*\fR、\fB&\fR、\fB|\fR、\fB^\fR、\fB%\fR で構成される算術式である関係が成立すれば真。\fBexpr\fR 内の算術演算子は関係演算子より前に評価され、通常の優先順位規則が算術演算子間で適用されます (加算する前に乗算する、など)。括弧を使用して評価の順序を制御できます。パケット内のフィールドの値を使用するには、次の構文を使用します。 
+.sp
+.in +2
+.nf
+\fIbase\fR[\fBexpr\fR [\fB:\fR \fBsize\fR ] ]
+.fi
+.in -2
+.sp
+
+ここで \fBexpr\fR は、\fIbase\fR オフセットからパケットへのオフセットの値を評価します。base オフセットには、\fBether\fR、\fBip\fR、\fBip6\fR、\fBudp\fR、\fBtcp\fR、または \fBicmp\fR を使用できます。\fBsize\fR 値は、フィールドのサイズを指定します。指定されなかった場合は、1 が使用されます。その他の有効な値は 2 と 4 です。次に例を示します。 
+.sp
+.in +2
+.nf
+ether[0] & 1 = 1
+.fi
+.in -2
+
+は、\fBmulticast\fR と同等です。
+.sp
+.in +2
+.nf
+ether[2:4] = 0xffffffff
+.fi
+.in -2
+
+は、\fBbroadcast\fR と同等です。
+.sp
+.in +2
+.nf
+ip[ip[0] & 0xf * 4 : 2] = 2049
+.fi
+.in -2
+
+は、\fBudp[0:2] = 2049\fR と同等です。
+.sp
+.in +2
+.nf
+ip[0] & 0xf > 5
+.fi
+.in -2
+
+は、オプション付きの \fBIP\fR パケットを選択します。
+.sp
+.in +2
+.nf
+ip[6:2] & 0x1fff = 0
+.fi
+.in -2
+
+は、\fBIP\fR フラグメントを排除します。
+.sp
+.in +2
+.nf
+udp and ip[6:2]&0x1fff = 0 and udp[6:2] != 0
+.fi
+.in -2
+
+は、\fBUDP\fR チェックサムのあるすべてのパケットを検索します。
+.sp
+\fBlength\fR プリミティブを使用して、パケットの長さを取得できます。たとえば、「\fBlength > 60\fR」は「\fBgreater 60\fR」と同等であり、「\fBether[length \(mi 1]\fR」では、パケット内の最後のバイトの値を取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBand\fR\fR
+.ad
+.sp .6
+.RS 4n
+2 つのブール型値の間で論理 \fBAND\fR 演算を実行します。2 つのブール型式を並べた場合は \fBAND\fR 演算の意味になります。たとえば、「\fBdinky pinky\fR」は「\fBdinky AND pinky\fR」と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBor\fR または \fB,\fR\fR
+.ad
+.sp .6
+.RS 4n
+2 つのブール型値の間で論理 \fBOR\fR 演算を実行します。代わりにコンマを使用することもできます。たとえば、「\fBdinky,pinky\fR」は「\fBdinky OR pinky\fR」と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnot\fR または \fB!\fR\fR
+.ad
+.sp .6
+.RS 4n
+後続のブール型値に対して論理 \fBNOT\fR 演算を実行します。この演算子は、\fBAND\fR または OR より前に評価されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslp\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fBSLP\fR パケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsctp\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fBSCTP\fR パケットであれば真。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBospf\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットが \fBOSPF\fR パケットであれば真。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBsnoop\fR コマンドの使用
+.sp
+.LP
+すべてのパケットを取得し、受信した順に表示します。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ホスト \fBfunky\fR が発信元または着信先であるパケットを取得し、受信した順に表示します。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop funky\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBfunky\fR と \fBpinky\fR の間のパケットを取得し、ファイルに保存します。その後、最初に取得したパケットからの相対的な時間 (秒単位) を使ってパケットを検査します。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -o cap funky pinky\fR
+example# \fBsnoop -i cap -t r | more\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+別の取得ファイル内の選択したパケットを表示するには:
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts -p 99,108\fR
+ 99   0.0027   boutique -> sunroof     NFS C GETATTR FH=8E6
+100   0.0046   sunroof -> boutique     NFS R GETATTR OK
+101   0.0080   boutique -> sunroof NFS C RENAME FH=8E6C MTra00192 to .nfs08
+102   0.0102   marmot -> viper        NFS C LOOKUP FH=561E screen.r.13.i386
+103   0.0072   viper -> marmot       NFS R LOOKUP No such file or directory
+104   0.0085   bugbomb -> sunroof    RLOGIN C PORT=1023 h
+105   0.0005   kandinsky -> sparky    RSTAT C Get Statistics
+106   0.0004   beeblebrox -> sunroof  NFS C GETATTR FH=0307
+107   0.0021   sparky -> kandinsky    RSTAT R
+108   0.0073   office -> jeremiah      NFS C READ FH=2584 at 40960 for 8192
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+パケット 101 をさらに詳細に表示するには:
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts -v -p101\fR
+ETHER:  ----- Ether Header -----
+ETHER:
+ETHER:  Packet 101 arrived at 16:09:53.59
+ETHER:  Packet size = 210 bytes
+ETHER:  Destination = 8:0:20:1:3d:94, Sun
+ETHER:  Source      = 8:0:69:1:5f:e,  Silicon Graphics
+ETHER:  Ethertype = 0800 (IP)
+ETHER:
+IP:   ----- IP Header -----
+IP:
+IP:   Version = 4, header length = 20 bytes
+IP:   Type of service = 00
+IP:         ..0. .... = routine
+IP:         ...0 .... = normal delay
+IP:         .... 0... = normal throughput
+IP:         .... .0.. = normal reliability
+IP:   Total length = 196 bytes
+IP:   Identification 19846
+IP:   Flags = 0X
+IP:   .0.. .... = may fragment
+IP:   ..0. .... = more fragments
+IP:   Fragment offset = 0 bytes
+IP:   Time to live = 255 seconds/hops
+IP:   Protocol = 17 (UDP)
+IP:   Header checksum = 18DC
+IP:   Source address = 172.16.40.222, boutique
+IP:   Destination address = 172.16.40.200, sunroof
+IP:
+UDP:  ----- UDP Header -----
+UDP:
+UDP:  Source port = 1023
+UDP:  Destination port = 2049 (Sun RPC)
+UDP:  Length = 176
+UDP:  Checksum = 0
+UDP:
+RPC:  ----- SUN RPC Header -----
+RPC:
+RPC:  Transaction id = 665905
+RPC:  Type = 0 (Call)
+RPC:  RPC version = 2
+RPC:  Program = 100003 (NFS), version = 2, procedure = 1
+RPC:  Credentials: Flavor = 1 (Unix), len = 32 bytes
+RPC:     Time = 06-Mar-90 07:26:58
+RPC:     Hostname = boutique
+RPC:     Uid = 0, Gid = 1
+RPC:     Groups = 1
+RPC:  Verifier   : Flavor = 0 (None), len = 0 bytes
+RPC:
+NFS:  ----- SUN NFS -----
+NFS:
+NFS:  Proc = 11 (Rename)
+NFS:  File handle = 000016430000000100080000305A1C47
+NFS:                597A0000000800002046314AFC450000
+NFS:  File name = MTra00192
+NFS:  File handle = 000016430000000100080000305A1C47
+NFS:                597A0000000800002046314AFC450000
+NFS:  File name = .nfs08
+NFS:  
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBsunroof\fR と \fBboutique\fR の間の \fBNFS\fR パケットだけを表示するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts rpc nfs and sunroof and boutique\fR
+1   0.0000   boutique -> sunroof    NFS C GETATTR FH=8E6C
+2   0.0046    sunroof -> boutique   NFS R GETATTR OK  
+3   0.0080   boutique -> sunroof   NFS C RENAME FH=8E6C MTra00192 to .nfs08
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これらのパケットを新規取得ファイルに保存するには:
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts -o pkts.nfs rpc nfs sunroof boutique\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+カプセル化されたパケットを表示するために、カプセル化を示す指示子があります。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop ip-in-ip\fR
+sunroof -> boutique ICMP Echo request    (1 encap)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+-V をカプセル化されたパケットに使用する場合は、次のようになります。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -V ip-in-ip\fR
+sunroof -> boutique  ETHER Type=0800 (IP), size = 118 bytes
+sunroof -> boutique  IP D=172.16.40.222 S=172.16.40.200 LEN=104, ID=27497
+sunroof -> boutique  IP  D=10.1.1.2 S=10.1.1.1 LEN=84, ID=27497
+sunroof -> boutique  ICMP Echo request
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRより効率的なフィルタの設定
+.sp
+.LP
+より効率的なフィルタを設定するには、次のフィルタを式の末尾の方で使用して、式の最初の部分をカーネルで設定できるようにしてください。\fBgreater\fR、\fBless\fR、\fBport\fR、\fBrpc\fR、\fBnofrag\fR、および \fBrelop\fR です。カーネルで設定できないこれらのプリミティブを使用すると、\fBOR\fR の存在によってフィルタ処理の分割が難しくなります。代わりに、括弧を使って、\fBOR\fR を適用すべきプリミティブを強制します。
+
+.sp
+.LP
+\fBport\fR 80 でタイプが \fBtcp\fR または \fBudp\fR の \fBfunky\fR と \fBpinky\fR の間のパケットを取得するには、次のように入力します。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop funky and pinky and port 80 and tcp or udp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+プリミティブ \fBport\fR はカーネルフィルタによって処理することができず、式には \fBOR\fR も存在するため、より効率的にフィルタ処理を行う方法は、\fBOR\fR を式の末尾に移動し、括弧を使って \fBtcp\fR と \fBudp\fR の間に \fBOR\fR を適用することです。
+
+.sp
+.in +2
+.nf
+example# \fBsnoop funky and pinky and (tcp or udp) and port 80\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/audio\fR\fR
+.ad
+.RS 17n
+.rt  
+システムの主なオーディオデバイスへのシンボリックリンク。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/null\fR\fR
+.ad
+.RS 17n
+.rt  
+NULL ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts\fR\fR
+.ad
+.RS 17n
+.rt  
+ホスト名データベース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rpc\fR\fR
+.ad
+.RS 17n
+.rt  
+RPC プログラム番号データベース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/services\fR\fR
+.ad
+.RS 17n
+.rt  
+インターネットサービスとエイリアス。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/network-clients
+_
+インタフェースの安定性 廃止 
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdladm\fR(1M), \fBipadm\fR(1M), \fBnetstat\fR(1M), \fBhosts\fR(4), \fBrpc\fR(4), \fBservices\fR(4), \fBattributes\fR(5), \fBaudio\fR(7I), \fBipnet\fR(7D), \fBbufmod\fR(7M), \fBdlpi\fR(7P), \fBpfmod\fR(7M)
+.sp
+.LP
+『\fIRFC 1761, Snoop Version 2 Packet Capture File Format\fR』、Callaghan, B. および Gilligan, R. 共著、Network Working Group 発行、1995 年 2 月。
+.SH 警告
+.sp
+.LP
+リアルタイムにパケットを解釈するための処理オーバーヘッドは非常に大きくなります。その結果、ドロップされるパケットの数も多くなる可能性があります。取得の信頼性を高めるためには、\fB-o\fR オプションを使用して raw パケットをファイルに出力し、オフラインでパケットを分析してください。
+.sp
+.LP
+フィルタ処理しないでパケットを取得すると、特に取得したパケットをリアルタイムで解釈する場合は、ホストコンピュータに大きな処理負荷がかかります。この処理負荷は、詳細オプションを使用するとさらに増加します。\fBsnoop\fR を頻繁に使用するとほかの処理に対してコンピューティングリソースが提供されない可能性があるため、本稼働サーバーでは使用しないでください。\fBsnoop\fR を頻繁に使用するのは、専用のコンピュータに限定してください。
+.sp
+.LP
+\fBsnoop\fR は \fBIP\fR フラグメントを再構成しません。上のレベルのプロトコルの解釈は、最初の \fBIP\fR フラグメントの末尾で停止します。
+.sp
+.LP
+\fBsnoop\fR を使用する際の派生的な効果として、追加のパケットが生成される場合があります。たとえば、ネットワークネームサービス (NIS) を使用して、\fBIP\fR アドレスをホスト名に変換して表示する場合があります。あとで表示するためにファイルに取得すると、取得のセッションが完了するまでアドレスと名前のマッピングを延期できます。また、NFS でマウントされたファイルへの取得によっても追加のパケットが生成される場合があります。
+.sp
+.LP
+\fBsnaplen\fR (\fB-s\fR オプション) を小さい値に設定すると、上のレベルのプロトコルの解釈に必要なヘッダー情報が削除される場合があります。切り取られる正確な値は、使用するネットワークとプロトコルによって異なります。10 Mbps の Ethernet で \fBUDP\fR を使用する \fBNFS\fR バージョン 2 トラフィックの場合は、\fBsnaplen\fR を 150 バイト未満に設定しないでください。100 Mbps の Ethernet で \fBTCP\fR を使用する \fBNFS\fR バージョン 3 トラフィックの場合は、\fBsnaplen\fR を 250 バイト以上にしてください。
+.sp
+.LP
+\fBsnoop\fR は、\fBRPC\fR 応答を完全に解釈するために、\fBRPC\fR 要求からの情報を必要とします。取得ファイルまたはパケット範囲の \fBRPC\fR 応答に、先行する要求がない場合は、\fBRPC\fR 応答のヘッダーだけが表示されます。

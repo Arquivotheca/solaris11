@@ -1,0 +1,456 @@
+
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License (the "License").
+\ You may not use this file except in compliance with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+\ Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
+\ Use is subject to license terms.
+\
+
+#ident	"%Z%%M%	%I%	%E% SMI"
+
+#include <sys/types.h>
+#include <sys/async.h>
+#include <sys/sunddi.h>
+#include <sys/ddi_impldefs.h>
+#include <sys/pci/pci_obj.h>
+
+pci_common
+
+pci
+
+cb
+
+ib
+
+pbm
+
+iommu
+
+sc
+
+config_header
+
+ecc
+
+ecc_intr_info
+
+ib_ino_info
+
+ib_ino_pil
+
+ih
+
+dvma_rec
+
+pci_dma_impl
+
+pci_dma_win
+
+forth_start
+
+: print8 ( addr -- )
+  dup (.) 8 swap - spaces drop .
+;
+
+: print4 ( addr -- )
+  dup (.) 4 swap - spaces drop .
+;
+
+: .dip_name				( dip -- )
+   [ also dev_info-words ]
+   dup . ." (" devi_binding_name .str ." )"
+   [ previous ]
+;
+
+: walk-dvma-rec ( f list-head count -- )
+   [ also dvma_rec-words ]
+   over 0 = if					( f list-head count )
+      drop 2drop exit				( )
+   then						( f list-head count )
+   0 do						( f rec )
+      I -rot 2dup 2>r -rot execute 2r>		( f rec )
+      next					( f rec' )
+   loop						( f rec' )
+   2drop					( f )
+   [ previous ]
+;
+
+: .dvma-rec ( rec I -- )
+   [ also dvma_rec-words ]
+   over dvma_addr 0= if 2drop exit then
+   [ also ddi_dma_impl-words ]
+   print4		( rec )
+   dup . " : " type	( rec )
+   dup dvma_addr .	( rec )
+   dup len print8	( rec )
+   mp dup . dmai_rdip .dip_name cr
+   [ previous ]
+   [ previous ]
+;
+
+: inst-to-state         ( &statepp inst -- statep )
+   [ also i_ddi_soft_state-words ]
+   ptrsize *		( &statepp offset )
+   swap p@ ?dup if	( offset statepp )
+      array ?dup if	( offset array )
+         + p@		( statep )
+      else drop 0 then
+   else drop 0 then
+   [ previous ]
+;
+
+: inst-to-pci_state     ( inst -- statep )
+   symbol per_pci_state ( inst &statepp )
+   swap inst-to-state   ( statep)
+;
+
+: .pci-state            ( inst -- )
+   inst-to-pci_state dup 0 = if drop exit then .pci
+;
+
+: inst-to-iommu		( inst -- iommu_p|0 )
+   inst-to-pci_state	( statep )
+   ?dup if		( statep )
+      [ also pci-words ]
+      pci_iommu_p	( iommu_p )
+      [ previous ]
+   else 0 then		( 0 )
+;
+
+: .pci-iommu            ( inst -- )
+   inst-to-iommu	( iommu_p )
+   ?dup if .iommu then
+;
+
+: walk-dvma-inst ( f inst -- )
+   inst-to-iommu		( f iommu_p )
+   ?dup if dup			( f iommu_p iommu_p )
+      [ also iommu-words ]
+      dvma_active_list swap	( f list-head iommu_p )
+      dvma_active_count		( f list-head count )
+      walk-dvma-rec
+      [ previous ]
+   else
+      drop
+   then
+;
+
+: .pci-dvma		( inst -- )
+   ['] .dvma-rec swap walk-dvma-inst
+;
+
+: .pci-dvma-array-rec		( base end+1 start -- base )
+   do I dvma_rec-sz * over +	( base base+offset )
+   I .dvma-rec loop		( base )
+;
+
+: .pci-dvma-array		( base index -- )
+   over 0= if 2drop exit then	( base index )
+   symbol pci_dvma_debug_rec	( base index &max )
+   l@ 2dup . ."  records, index at " . cr  ( base index max )
+   swap 2dup > if dup		( base max index index )
+      >r .pci-dvma-array-rec r>	( base index )
+   else	nip then		( base index )
+   0 .pci-dvma-array-rec	( base )
+   drop
+;
+
+: .pci-dvma-bind	( inst -- )
+   inst-to-iommu dup 0= if drop
+   else			( iommu_p )
+      [ also iommu-words ]
+      dup dvma_alloc_rec ( iommu_p base )
+      swap dvma_alloc_rec_index ( base index )
+      [ previous ]
+      .pci-dvma-array
+   then
+;
+
+: .pci-dvma-unbind	( inst -- )
+   inst-to-iommu dup 0= if drop
+   else			( iommu_p )
+      [ also iommu-words ]
+      dup dvma_free_rec ( iommu_p base )
+      swap dvma_free_rec_index ( base index )
+      [ previous ]
+      .pci-dvma-array
+   then
+;
+
+: .pci-node		( state_p -- )
+   ?dup if
+      [ also pci-words ]
+      pci_pbm_p		( pbm_p )
+      ?dup if
+         [ also pbm-words ]
+         pbm_nameaddr_str	( nameaddr )
+         [ previous ]
+         ?dup if
+            .str
+         then
+      then
+      [ previous ]
+   then
+;
+   
+: .pci-states		( -- )
+   [ also i_ddi_soft_state-words ]
+   ." instance pci_t*" cr
+   symbol per_pci_state p@ dup	( soft_states soft_states )
+   0= if drop exit then		( soft_states )
+   dup n_items			( soft_states n_items )
+   dup 0= if 2drop exit then	( soft_states n_items )
+   swap array swap		( array n_items )
+   0 do
+      I print8
+      dup p@ dup . .pci-node cr
+      ptrsize +
+   loop
+   drop
+   ." <instance#> .pci-state to view individual instances" cr
+   [ previous ]
+;
+
+: .ib_ino_lst ( pci_p->ib_p->ib_ino_lst -- )
+[ also ib_ino_info-words ]
+begin ?dup while
+   \ dup .ib_ino_info
+   ." ino_ino="          dup ino_ino            .
+   ." ino_mondo="	 dup ino_mondo          .
+   ." ino_slot_no="      dup ino_slot_no        .
+   ." ino_ib_p="         dup ino_ib_p           . cr
+   ." ino_clr_reg="      dup ino_clr_reg dup p@ swap >physical drop . ." =" .
+   ." ino_map_reg="      dup ino_map_reg dup p@ swap >physical drop . ." =" . cr
+   ." ino_map_reg_save=" dup ino_map_reg_save   .x
+   ." ino_unclaimed_intrs=" dup ino_unclaimed_intrs
+   ." ino_spurintr_begin=" dup ino_spurintr_begin	.x cr
+   ." ino_established="  dup ino_established    .
+   ." ino_cpuid="        dup ino_cpuid          .
+   ." ino_intr_weight="  dup ino_intr_weight    .
+   ." ino_ipil_size="    dup ino_ipil_size      .
+   ." ino_lopil="        dup ino_lopil          .
+   ." ino_claimed="      dup ino_claimed        .
+   ." ino_ipil_p="       dup ino_ipil_p         . cr
+   ." ino_next_p="       dup ino_next_p         . cr
+   cr
+   ino_next_p
+repeat
+[ previous ]
+;
+
+: .iommu-tte   ( tte -- )
+   1 << 1 >>                        ( tte-V )
+   dup 1 d# 43 << 1 - 1 d# 13 << 1 - xor and   ( tte pa ) \ pfn: bit 42-13
+   dup ." pa=" .                    ( tte pa )
+   xor                              ( tte-template )
+   dup 1 d# 59 << 1 - 1 d# 47 << 1 - xor and   ( tte-template ctx )
+   dup ." ctx=" d# 47 >> . xor      ( tte-template-ctx )
+   dup 1 d# 60 << and if ." S" 1 d# 60 << xor then ( tte-template-S )
+   dup 10 and if ." C" 10 xor then  ( tte-template-SC ) 
+   dup 2 and if ." W" 2 xor then    ( tte-template-SCW )
+   dup if ." flags=" . else drop then ( )
+;
+
+: iommu-tte?   ( tte-va -- tte-va )
+   dup x@ d# 63 >>
+;
+
+\
+\ example: e000.0000 11280000 10000 .iommu-tsb
+\          dvma_base tsb_base tsb_entries
+: .iommu-tsb   ( dma-va tsb-base-va entries -- )
+   0 do
+      iommu-tte? if
+         I print8 " : " type ( dma-va tsb-base-va )
+         over I d# 13 << +
+         ." va=" .
+         dup x@              ( dma-va tsb-base-va tte )
+         .iommu-tte          ( dma-va tsb-base-va )
+         cr
+      then
+      8 +                    ( dma-va tsb-base-va+8 )
+   loop
+   2drop 
+;
+
+: .pci-iommu-tsb	( inst )
+   inst-to-pci_state	( statep )
+   dup 0= if		( statep )
+      drop exit then	( statep )
+   [ also pci-words ]
+   pci_iommu_p
+   dup 0= if
+      drop exit then 	( iommu_p )
+   [ also iommu-words ]
+   dup iommu_dvma_base	( iommu_p base )
+   over iommu_tsb_vaddr	( iommu_p base vaddr )
+   rot iommu_tsb_entries ( base vaddr entries )
+   .iommu-tsb
+   [ previous ]
+   [ previous ]
+;
+
+: pciva>tte   ( va instance -- tte )
+   inst-to-pci_state	( va statep )
+   dup 0= if		( va statep )
+      drop exit then	( va statep )
+   [ also pci-words ]
+   pci_iommu_p tuck	( iommup va iommup )
+   [ also iommu-words ]
+   iommu_dvma_base	( iommup va dvmabase )
+   - d# 13 >> 3 <<	( iommup tsb-off )
+   dup 0 < if		( iommup tsb-off )
+      ." dvma address out of range" 2drop exit
+   then			( iommup tsb-off )
+   swap iommu_tsb_vaddr	( tsb-off tsbva )
+   + x@			( tte )
+   [ previous ]
+   [ previous ]
+;
+
+: dip>pci-inst		( dip -- inst )
+   [ also dev_info-words ]
+   begin
+      dup devi_parent	( dip pdip )
+      devi_parent	( dip gpdip )
+   while
+      devi_parent	( pdip )
+   repeat
+   devi_instance	( inst )
+   [ previous ]
+;
+
+: mp>tte   ( mp -- tte )
+   [ also ddi_dma_impl-words ]
+   dup dmai_mapping     	( mp va )
+   over dmai_winsize d# 13 >>	( mp va npages )
+   . ." page(s) from " dup . cr	( mp va )
+   swap dmai_rdip       	( va dip )
+   dip>pci-inst         	( va inst )
+   pciva>tte            	( tte )
+   [ previous ]
+;
+
+: .mp-ttes	( mp -- )
+   [ also ddi_dma_impl-words ]
+   dup dmai_mapping             ( mp va )
+   over dmai_winsize d# 13 >>	( mp va npages )
+   dup . ." page(s) from "	( mp va npages )
+   over . cr			( mp va npages )
+   swap d# 13 >> d# 13 <<	( mp npages va )
+   rot dmai_rdip		( npages va dip )
+   dip>pci-inst			( npages va inst )
+   rot 0 do			( va inst )
+      over ." va=" . ."  "	( va inst )
+      2dup pciva>tte		( va inst tte )
+      .iommu-tte cr		( va inst )
+      swap 2000 + swap		( va' inst )
+   loop				( va inst )
+   2drop
+   [ previous ]
+;
+
+0 value dip-dvma-cnt
+
+: (dip-tte1 ( dip rec I -- dip )
+   [ also dvma_rec-words ]
+   [ also ddi_dma_impl-words ]
+   drop 2dup mp dmai_rdip	( dip rec dip dip' )
+   = if				( dip rec )
+      dip-dvma-cnt dup . 1+	( dip rec cnt+1 )
+      to dip-dvma-cnt		( dip rec )
+      dvma_addr			( dip dvma-addr )
+      dup ." va=" . 0		( dip dvma-addr 0 )
+      pciva>tte .iommu-tte	( dip )
+      cr			( dip )
+   else				( dip rec )
+      drop			( dip )
+   then				( dip )
+   [ previous ]
+   [ previous ]
+;
+
+: .dip-tte1  ( dip inst -- )
+   0 to dip-dvma-cnt
+   ['] (dip-tte1 swap walk-dvma-inst drop
+;
+
+: within-dvma-rec? ( va rec I -- va )
+   [ also dvma_rec-words ]
+   to dip-dvma-cnt	( va rec )
+   2dup dvma_addr >=	( va rec va>=dvma_addr? )
+   if			( va rec )
+      dup dvma_addr	( va rec dvma_addr )
+      over len +	( va rec addr+size )
+      >r over r>	( va rec va addr+size )
+      <=		( va rec va<=addr+size? )
+      if dip-dvma-cnt	( va rec I )
+         .dvma-rec	( va )
+      else		( va rec )
+         drop		( va )
+      then		( va )
+   else			( va rec )
+      drop		( va )
+   then			( va )
+   [ previous ]
+;
+
+: locate-dvma-rec ( va inst -- )
+   ['] within-dvma-rec? swap walk-dvma-inst drop
+;
+
+: .pci-dma-win1		( win_p -- )
+   [ also pci_dma_win-words ]
+   dup win_ncookies . ." cookies "	( win_p )
+   dup ." curseg="	win_curseg .	( win_p )
+   dup ." size="	win_size .	( win_p )
+   dup ." offset="	win_offset . 	( win_p )
+   dup ." next="	win_next . cr	( win_p )
+   dup win_ncookies swap		( ncookies win_p )
+   pci_dma_win-sz +			( ncookies &cookie[0] )
+   [ also ddi_dma_cookie_t-words ]
+   swap 0 do				( cookie_p )
+      ."    cookie-" I . ." : "		( cookie_p )
+      dup ." addr=" x?			( cookie_p )
+      dup ." size=" dmac_size .	( cookie_p )
+      dup ." type=" dmac_type . cr	( cookie_p )
+      ddi_dma_cookie_t-sz +		( cookie_p' )
+   loop drop				( )
+   [ previous ]
+   [ previous ]
+;
+
+: .pci-dma-winlst	( mp -- )
+   [ also pci_dma_impl-words ]
+   [ also pci_dma_win-words ]
+   dup dmai_winlst			( mp winlst )
+   dup 0 = if				( mp winlst )
+      2drop exit			( )
+   then					( mp winlst )
+   swap dmai_nwin			( winlst nwin )
+   0 do
+      ." win-" I . ." : "		( winlst )
+      dup .pci-dma-win1			( winlst )
+      win_next				( winlst' )
+   loop drop				( )
+   [ previous ]
+   [ previous ]
+;
+
+forth_end

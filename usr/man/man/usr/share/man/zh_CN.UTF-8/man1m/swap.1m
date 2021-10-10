@@ -1,0 +1,306 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH swap 1M "2011 年 6 月 8 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+swap \- 交换管理接口
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-a\fR \fIswapname\fR [\fIswaplow\fR] [\fIswaplen\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-d\fR \fIswapname\fR [\fIswaplow\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-l\fR [\fB-h\fR | \fB-k\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/swap\fR \fB-s\fR [\fB-h\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBswap\fR 实用程序提供了一种添加、删除和监视内存管理器使用的系统交换区域的方法。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIswapname\fR [\fIswaplow\fR] [\fIswaplen\fR]\fR
+.ad
+.sp .6
+.RS 4n
+添加指定的交换区域。只有超级用户或承担主管理员角色的用户可以使用此选项。\fIswapname\fR 是交换区域或常规文件的名称。例如，在运行 UFS 根文件系统的系统上，可以指定分片（如 \fB/dev/dsk/c0t0d0s1\fR）或常规文件作为交换区域。在运行 ZFS 文件系统的系统上，可以指定 ZFS 卷（如 \fB/dev/zvol/dsk/rpool/swap\fR）作为交换区域。在 ZFS 文件系统上不支持使用常规文件作为交换区域。此外，当系统运行 ZFS 根文件系统时，不能将同一个 ZFS 卷同时用作交换区域和转储设备。
+.sp
+\fIswaplow\fR 是文件内以 512 字节块为单位的偏移量，交换区域应从此偏移量位置开始。\fIswaplen\fR 是交换区域所需的长度，以 512 字节块为单位。\fIswaplen\fR 的值不能小于 \fB16\fR。例如，如果指定了 \fIn\fR 个块，则 (\fIn\fR-1) 个块是实际的交换长度。\fIswaplen\fR 的长度必须至少为一个页面。可以使用 \fBpagesize\fR 命令确定内存页面的大小。请参见 \fBpagesize\fR(1)。由于交换文件的第一个页面会被自动跳过，并且交换文件的长度至少需要为一个页面，因此，其最小大小应该是 2 个页面大小字节的倍数。内存页面的大小取决于计算机。
+.sp
+\fIswaplow\fR + \fIswaplen\fR 必须小于等于交换文件的大小。如果未指定 \fIswaplen\fR，将添加一个始于 \fIswaplow\fR 并扩展到指定文件的末尾的区域。如果 \fIswaplow\fR 和 \fIswaplen\fR 都未指定，将使用除第一个页面外的整个文件。交换区域通常在启动系统的过程中通过 \fB/usr/sbin/swapadd\fR 脚本自动添加。该脚本会添加 \fB/etc/vfstab\fR 文件中指定的所有交换区域；有关这些规范的语法，请参见 \fBvfstab\fR(4)。
+.sp
+通过在 \fBvfstab\fR(4) 中指定 \fBencrypted\fR 选项，以及指定 ZFS 卷的 \fBencryption\fR 属性，可以对用作交换设备的 ZFS 卷进行加密。请参见 \fBzfs\fR(1M)。
+.sp
+要使用 \fBNFS\fR 或本地文件系统 \fIswapname\fR，首先应该使用 \fBmkfile\fR(1M) 来创建一个文件。现在仅通过运行 \fBswap\fR \fB-a\fR 命令即可将一个本地文件系统交换文件添加到正在运行的系统中。对于已挂载的 \fBNFS\fR 交换文件，服务器需要导出该文件。要进行导出，请执行以下步骤：
+.RS +4
+.TP
+1.
+向 \fB/etc/dfs/dfstab\fR 中添加以下行： 
+.sp
+.in +2
+.nf
+share -F nfs -o \e
+rw=\fIclientname\fR,root=\fIclientname path-to-swap-file\fR
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+2.
+运行 \fBshareall\fR(1M)。
+.RE
+.RS +4
+.TP
+3.
+使客户机向 \fB/etc/vfstab\fR 中添加以下行：
+.sp
+.in +2
+.nf
+\fIserver\fR:\fIpath-to-swap-file\fR -  \fIlocal-path-to-swap-file\fR nfs \e
+     -\|-\|- \fIlocal-path-to-swap-file\fR -\|- swap -\|-\|-
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+4.
+使客户机运行 \fBmount\fR：
+.sp
+.in +2
+.nf
+# mount \fIlocal-path-to-swap-file\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+5.
+然后，客户机可以运行 \fBswap\fR \fB-a\fR 来添加交换空间：
+.sp
+.in +2
+.nf
+# swap -a \fIlocal-path-to-swap-file\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIswapname\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除指定的交换区域。只有超级用户可以使用此选项。\fIswapname\fR 是交换文件（如 \fB/dev/dsk/c0t0d0s1\fR）或常规文件的名称。\fIswaplow\fR 是要删除的交换区域的偏移量，以 512 字节块为单位。如果未指定 \fIswaplow\fR，将从第二个页面开始删除区域。命令完成后，将无法再分配该区域中的交换块，并且该交换区域中之前正在使用的所有交换块已移动到其他交换区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+所有大小将调整为用户可阅读的格式。调整是通过反复除以 1024 完成的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.sp .6
+.RS 4n
+以 1024 字节为单位写出文件大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出所有交换区域的状态。输出包含五列：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+交换区域的路径名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdev\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果设备不是块特殊设备，则此列为十进制的主/从设备号；否则为零。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBswaplo\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的 \fIswaplow\fR 值，以 512 字节块为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBblocks\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的 \fIswaplen\fR 值，以 512 字节块为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfree\fR\fR
+.ad
+.sp .6
+.RS 4n
+此区域中当前没有分配的 512 字节块的数量。
+.RE
+
+此列表不包括物理内存形式的交换空间，因为该空间不与特定的交换区域相关。
+.sp
+如果在删除 \fIswapname\fR（通过 \fBswap\fR\fB-d\fR）的过程中运行 \fBswap\fR \fB-l\fR，则会在交换状态的第六列显示字符串 \fBINDEL\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出有关总交换空间的使用情况和可用性的摘要信息：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallocated\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前分配的用作后备存储的交换空间总量，以字节为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreserved\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前未分配但内存映射声明将来可能使用的交换空间总量，以字节为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBused\fR\fR
+.ad
+.sp .6
+.RS 4n
+分配的或保留的交换空间总量，以字节为单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBavailable\fR\fR
+.ad
+.sp .6
+.RS 4n
+当前可用于将来保留和分配的交换空间总量，以字节为单位。
+.RE
+
+这些数字包括由 \fB-l\fR 选项列出的所有已配置的交换区域中的交换空间，以及处于物理内存形式的交换空间。
+.RE
+
+.SH 用法
+.sp
+.LP
+在 32 位操作系统上，对于大于等于 2 GB 的交换设备，只会使用前 2 GB -1 的空间。在 64 位操作系统上，对于大于 2 GB 的块设备，最多可以将其 2^63 \(mi1 个字节完全用作交换空间。
+.SH 环境变量
+.sp
+.LP
+有关影响 \fBswap\fR 执行的环境变量 \fBLC_CTYPE\fR 和 \fBLC_MESSAGE\fR 的描述，请参见 \fBenviron\fR(5)。
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpagesize\fR(1)、\fBmkfile\fR(1M)、\fBshareall\fR(1M)、\fBzfs\fR(1M)、\fBgetpagesize\fR(3C)、\fBvfstab\fR(4)、\fBattributes\fR(5)、\fBlargefile\fR(5)
+.SH 附注
+.sp
+.LP
+有关使用 \fBZFS\fR 设置交换区域的信息，请参见"\fIZFS 管理指南\fR"。
+.SH 警告
+.sp
+.LP
+不会进行检查以确定要添加的交换区域是否与现有文件系统重叠。

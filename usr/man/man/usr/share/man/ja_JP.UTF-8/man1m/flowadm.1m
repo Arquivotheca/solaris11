@@ -1,0 +1,783 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH flowadm 1M "2011 年 7 月 8 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+flowadm \- プロトコル、サービス、コンテナ、および仮想マシンの帯域幅リソース制御の管理
+.SH 形式
+.LP
+.nf
+\fBflowadm show-flow\fR [\fB-P\fR] [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-l\fR \fIlink\fR] [\fIflow\fR]
+.fi
+
+.LP
+.nf
+\fBflowadm add-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-l\fR \fIlink\fR \fB-a\fR \fIattr\fR=\fIvalue\fR[,...]
+     [\fB-p\fR \fIprop\fR=\fIvalue\fR[,...]] \fIflow\fR
+\fBflowadm remove-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] {\fB-l\fR \fIlink\fR | \fIflow\fR}
+.fi
+
+.LP
+.nf
+\fBflowadm set-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-p\fR \fIprop\fR=\fIvalue\fR[,...] \fIflow\fR
+\fBflowadm reset-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] [\fB-p\fR \fIprop\fR[,...]] \fIflow\fR
+\fBflowadm show-flowprop\fR [\fB-P\fR] [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-l\fR \fIlink\fR]
+     [\fB-p\fR \fIprop\fR[,...]] [\fIflow\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBflowadm\fR コマンドは、特定リンク上のあるトラフィックタイプに対するネットワーク帯域幅とその関連リソースを作成、変更、削除、および表示するために使用されます。
+.sp
+.LP
+\fBflowadm\fR コマンドを使用すると、トランスポート、サービス、またはサブネットのネットワーク帯域幅リソースを管理できます。サービスは、トランスポートとローカルポートを組み合わせて指定します。サブネットは、その IP アドレスとサブネットマスクで指定します。このコマンドは、物理リンク、仮想 NIC、リンク集積体など、任意のタイプのデータリンクで使用できます。
+.sp
+.LP
+フローは、レイヤー 3 およびレイヤー 4 のヘッダーに基づく一連の属性として定義され、プロトコル、サービス、または仮想マシンを識別する目的で使用できます。あるフローがフロー属性に基づいて識別されると、そのフローに対するほかのトラフィックからの影響が最小限またはゼロに抑えられるように、そのフローに対してレイヤー 2、3、および 4 のキューやその処理用スレッド、その他のリソースなど、個別のカーネルリソースが一意に作成されます。
+.sp
+.LP
+パフォーマンスへの影響を最小限に抑えながら制限を適用できるように、非常に高速かつスケーラビリティーの高い方法でインバウンドおよびアウトバウンドのパケットがフローに対応付けられます。
+.sp
+.LP
+\fBflowadm\fR コマンドを使用してフローを識別する際に、帯域幅リソースの制御を課さないようにすることもできます。この場合、そのトラフィックタイプは独自のリソースやキューを取得するため、残りのネットワークトラフィックから隔離され、より監視しやすい決定性動作が実現されます。
+.sp
+.LP
+フローの作成、変更、および削除は、大域ゾーン、非大域ゾーンのどちらでも行うことができます。ゾーン管理者は、自身の大域または非大域ゾーン内でしかフローを作成できません。ただし、次の段落で説明するように、大域ゾーンで作成されたフローを非大域ゾーンに移行することは可能です。管理者がフローの変更や削除を行えるのは、そのフローの作成元となる大域または非大域ゾーン内からだけです。大域ゾーンのユーザーは、大域ゾーン内とすべての非大域ゾーン内に存在している、システム上のすべてのフローを表示できます。非大域ゾーンのユーザーが表示できるのは、そのゾーン内のフローだけです。
+.sp
+.LP
+管理者は、大域ゾーン内でのフローの作成が完了すると、そのフローに関連付けられたデータリンクを非大域ゾーンに割り当てることができます。そのような場合、関連するフローもその同じ非大域ゾーンに割り当てられます。この非大域ゾーンが停止すると、データリンクとその関連フローは大域ゾーンに戻されます。
+.sp
+.LP
+同じ名前のフローでも、ゾーン名が異なれば区別されます。たとえば、\fBfastpak\fR という名前のフローを 3 つ作成する場合、\fBfastpak\fR をそれぞれ異なるゾーン内に格納すれば可能となります。たとえば、\fBzone1\fR/\fBfastpak\fR、\fBzone2\fR/\fBfastpak\fR、および \fBzone3\fR/\fBfastpak\fR はすべて有効なゾーン名です。
+.sp
+.LP
+\fBflowadm\fR は、対応するオプションを備えた一連のサブコマンドとして実装されています。オプションについては各サブコマンドの文脈で説明します。
+.SH サブコマンド
+.sp
+.LP
+サポートされているサブコマンドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm show-flow\fR [\fB-pP\fR] [\fB-o\fR \fIfield\fR[,...]] [\fB-l\fR \fIlink\fR] [\fIflow\fR]\fR
+.ad
+.sp .6
+.RS 4n
+すべてのフロー、1 つのリンクのすべてのフロー、指定された\fIフロー\fRのいずれかに対するフロー構成情報 (デフォルト) または統計情報を表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。フィールド名は、次に示すフィールドのいずれか、またはすべてのフィールドを表示するための特殊な値 \fBall\fR にする必要があります。見つかったフローごとに、次のフィールドを表示できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローが存在するリンクの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipaddr\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローの IP アドレス。これは、フローの定義方法に応じて、ローカルかリモートのいずれかになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransport\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用されるプロトコルのレイヤーの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローのサービスのローカルポート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdsfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローの差別化サービス値、および IP ヘッダーの差別化サービスフィールドのどのビットを対象とするかを指定するために \fBDSFIELD\fR 値とともに使用されるマスク。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR、\fB--persistent\fR\fR
+.ad
+.sp .6
+.RS 4n
+永続的なフロープロパティーの情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR, \fB--link\fR=\fIlink\fR | \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたリンク上のすべてのフローの情報または指定されたフローの情報を表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm add-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-l\fR \fIlink\fR \fB-a\fR \fIattr\fR=\fIvalue\fR[,...] \fB-p\fR \fI prop\fR=\fIvalue\fR[,...] \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムにフローを追加します。フローはそのフロー属性とフロープロパティーによって識別されます。
+.sp
+特定のフローを識別するにあたり、その帯域幅リソースを制限できます。帯域幅制限を指定しない場合でも、そのトラフィックは一意のレイヤー 2、3、および 4 キューや処理用スレッドを取得するほか、NIC ハードウェアリソース (サポートされている場合) も取得します。このため、その選択されたトラフィックをほかのトラフィックから隔離することが可能となり、フローに対するほかのトラフィックからの影響を最小限に抑えることができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更は一時的なものであり、リブート後は永続しません。永続がデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR, \fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBflowadm\fR が永続的な作成を適用するべき代替ルートディレクトリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR、\fB--link\fR=\fIlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローの追加先となるリンクを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIattr\fR=\fIvalue\fR[,...]、\fB--attr\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された値に設定される属性のコンマ区切りリスト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR=\fIvalue\fR[,...], \fB--prop\fR=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+指定された値に設定するプロパティーのコンマ区切りのリスト。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm remove-flow\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-l\fR {\fIlink\fR | \fIflow\fR}\fR
+.ad
+.sp .6
+.RS 4n
+リンクまたは名前で特定された既存のフローを削除します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更は一時的なものであり、リブート後は永続しません。永続がデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR, \fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBflowadm\fR が永続的な削除を適用するべき代替ルートディレクトリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR | \fIflow\fR, \fB--link\fR=\fIlink\fR | \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+リンクが指定されている場合、そのリンクからすべてのフローを削除します。単一のフローが指定されている場合は、そのフローだけを削除します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm set-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-p\fR \fIprop\fR=\fIvalue\fR[,...] \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+名前で指定されたフローで、1 つ以上のプロパティーの値を設定します。プロパティーの完全な一覧を取得するには、\fBshow-flow\fR サブコマンドを使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更は一時的なものであり、リブート後は永続しません。永続がデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR, \fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBflowadm\fR が永続的なプロパティー設定を適用するべき代替ルートディレクトリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR=\fIvalue\fR[,...], \fB--prop\fR=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+指定された値に設定するプロパティーのコンマ区切りのリスト。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm reset-flowprop\fR [\fB-t\fR] [\fB-R\fR \fIroot-dir\fR] \fB-p\fR [\fIprop\fR=\fIvalue\fR[,...]] \fIflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたフローで、1 つ以上のプロパティーをデフォルト値にリセットします。プロパティーが指定されていない場合、すべてのプロパティーがリセットされます。デフォルト値など、プロパティーの説明については、\fBshow-flowprop\fR サブコマンドを参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+リセットを一時的なものとして指定します。一時的なリセットは、次回のリブートまで保持されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR, \fB--root-dir\fR=\fIroot-dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBflowadm\fR が永続的なプロパティー設定を適用するべき代替ルートディレクトリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR=\fIvalue\fR[,...], \fB--prop\fR=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+リセットするプロパティーのコンマ区切りのリスト。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflowadm show-flowprop\fR [\fB-cP\fR] [\fB-l\fR \fIlink\fR] [\fB-p\fR \fIprop\fR[,...]] [\fIflow\fR]\fR
+.ad
+.sp .6
+.RS 4n
+すべてのフロー、指定されたリンクのフロー、指定されたフローのいずれかに対する 1 つ以上のプロパティーの現在値または永続的な値を表示します。
+.sp
+デフォルトでは、現在の値が表示されます。プロパティーが指定されていない場合、使用可能なすべてのフロープロパティーが表示されます。プロパティーごとに、次のフィールドが表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFLOW\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の (または永続的な) プロパティー値。値は、未設定の場合は \fB--\fR (ハイフン 2 つ) として表示され、未知の場合は \fB?\fR (疑問符) として表示されます。設定されていないか、またはリセットされた永続的な値は \fB--\fR と表示され、システムの \fBDEFAULT\fR 値 (もしあれば) を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーのデフォルト値。プロパティーにデフォルト値がない場合は、\fB--\fR (ハイフン 2 つ) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーに設定できる値のコンマ区切りのリスト。値に数値の範囲がある場合は、短縮形として最小値と最大値が表示される可能性があります。指定可能な値が不明または無限の場合は、\fB--\fR (ハイフン 2 つ) が表示されます。
+.RE
+
+フロープロパティーについては「フロープロパティー」の節で説明されています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+安定したマシン解析可能な形式を使用して表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR、\fB--persistent\fR\fR
+.ad
+.sp .6
+.RS 4n
+永続的なフロープロパティーの情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR[,...], \fB--prop\fR=\fIprop\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示するプロパティーのコンマ区切りのリスト。
+.RE
+
+.RE
+
+.SS "フロー属性"
+.sp
+.LP
+\fBflowadm\fR コマンド内でフローを識別するフローオペランドは、次の一覧から選択した 1 つ以上のキーワード-値ペアのコンマ区切りのリストです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocal_ip\fR[\fB/\fR\fIprefix_len\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ローカル IP アドレスでネットワークフローを識別します。\fIvalue\fR はドット区切り 10 進表記の IPv4 アドレス、コロン区切り表記の IPv6 アドレスのいずれかでなければいけません。\fIprefix_len\fR は省略可能です。
+.sp
+\fIprefix_len\fR が指定された場合、それは、\fBifconfig\fR(1M) や \fBroute\fR(1M) のアドレスと同じ表記規則に従って、サブネットアドレスのネットマスクを記述します。これが指定されなかった場合、指定された IP アドレスはホストアドレスとみなされ、そのデフォルトプレフィックス長は、IPv4 アドレスでは \fB/32\fR、IPv6 では \fB/128\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremote_ip\fR[\fB/\fR\fIprefix_len\fR]\fR
+.ad
+.sp .6
+.RS 4n
+リモート IP アドレスでネットワークフローを識別します。その構文は \fBlocal_ip\fR 属性と同じです
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransport\fR={\fBtcp\fR|\fBudp\fR|\fBsctp\fR|\fBicmp\fR|\fBicmpv6\fR}\fR
+.ad
+.sp .6
+.RS 4n
+使用するレイヤー 4 プロトコルを識別します。これは通常、特別な注意を払う必要のあるローカルまたはリモートのサービスを識別するために、\fBlocal_port\fR または \fBremote_port\fR と組み合わせて使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocal_port\fR\fR
+.ad
+.sp .6
+.RS 4n
+ローカルポートで指定されるサービスを識別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremote_port\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートポートで指定されるサービスを識別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdsfield\fR[\fB:\fR\fIdsfield_mask\fR]\fR
+.ad
+.sp .6
+.RS 4n
+RFC 2474 で定義されているとおりに 8 ビットの差別化サービスフィールドを識別します。
+.sp
+省略可能な \fIdsfield_mask\fR は、\fBdsfield\fR 値との比較時に差別化サービスフィールドのどのビットを対象とするかを指定するために使用されます。あるビット位置の値が \fB0\fR の場合、それは、そのビットの値を無視する必要があることを示し、\fB1\fR の場合はその逆を示します。このマスクの範囲は \fB0x01\fR から \fB0xff\fR です。\fIdsfield_mask\fR が指定されていなければ、デフォルトマスク \fB0xff\fR の値が使用されます。\fBdsfield\fR 値とマスクはどちらも 16 進数値でなければいけません。
+.RE
+
+.sp
+.LP
+サポートされている属性の組み合わせの種類は、次のとおりです。
+.sp
+.in +2
+.nf
+local_ip[/\fIprefixlen\fR]=\fIaddress\fR
+remote_ip[/\fIprefixlen\fR]=\fIaddress\fR
+transport={tcp|udp|sctp|icmp|icmpv6}
+transport={tcp|udp|sctp},local_port=\fIport\fR
+transport={tcp|udp|sctp},remote_port=\fIport\fR
+dsfield=\fIval\fR[:\fIdsfield_mask\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ある特定のリンク上で、上の各組み合わせは相互に排他的です。複数の組み合わせを含むフローを作成しようとすると、失敗します。
+.SS "制限"
+.sp
+.LP
+制限には、個別のフロー制限とゾーンごとのフロー制限があります。
+.SS "個別のフロー制限"
+.sp
+.LP
+個々のフローに対する制限では、同じリンクに追加されたほかのフローを考慮する必要はありません。
+.sp
+.LP
+各フローで属性を指定できるのは、1 回だけです。たとえば、次のコマンドは有効ではありません。
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l vnic1 -a local_port=80,local_port=8080 httpflow\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBtransport\fR と \fBlocal_port\fR または \fBtransport\fR と \fBremote_port\fR:
+.sp
+.LP
+TCP、UDP、または SCTP フローの指定時には、ローカルポートまたはリモートポートを使用できます。ICMP または ICMPv6 フローではポートを指定できません。
+.sp
+.LP
+\fBlocal_port\fR、\fBremote_port\fR のいずれかを指定する場合、トランスポートは TCP、UDP、または SCTP のいずれかでなければいけません。
+.sp
+.LP
+次のコマンドは有効です。
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l e1000g0 -a transport=udp udpflow\fR
+# \fBflowadm add-flow -l e1000g0 -a transport=tcp,local_port=80 \e
+udp80flow\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは有効ではありません。
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l e1000g0 -a remote_port=25 flow25\fR
+# \fBflowadm add-flow -l e1000g0 -a transport=icmpv6,remote_port=16 \e
+flow16\fR
+.fi
+.in -2
+.sp
+
+.SS "ゾーンごとのフロー制限"
+.sp
+.LP
+あるゾーン内で同じ名前のフローを 2 つ作成することはできません。リンクを指定してフローを追加した場合、そのフローを表示、変更、または削除する際にリンクを指定する必要はありません。
+.SS "フロープロパティー"
+.sp
+.LP
+サポートされるフロープロパティーは次のとおりです。あるプロパティーを特定の値に設定できるかどうかは、ドライバやハードウェアによって異なることに注意してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxbw\fR\fR
+.ad
+.sp .6
+.RS 4n
+フローの全二重帯域幅を設定します。この帯域幅は、いずれかのスケールサフィックス (Kbps、Mbps、または Gbps を示す \fBK\fR、\fBM\fR、または \fBG\fR) が付いた整数として指定されます。単位が指定されていない場合、入力値は Mbps として読み取られます。デフォルトでは、帯域幅の制限はありません。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRミッションクリティカルポートに関するポリシーの作成
+.sp
+.LP
+次のコマンドは、HTTPS が専用の NIC ハードウェアとカーネル TCP/IP リソースを取得できるように、HTTPS サーバーのインバウンド HTTPS トラフィックに関するポリシーを作成しています。指定されている名前 \fBhttps-1\fR は、あとでポリシーの変更や削除を行う際に使用できます。
+
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l bge0 -a transport=TCP,local_port=443 https-1\fR
+# \fBflowadm show-flow -l bge0\fR
+FLOW         LINK         IP ADDR            PROTO  PORT  RPORT   DSFLD
+https1       bge0         --                 tcp    443   --      --
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR既存のポリシーの変更による帯域幅リソース制御の追加
+.sp
+.LP
+次のコマンドは、前述の例の \fBhttps-1\fR ポリシーを変更します。このコマンドは帯域幅制御を追加します。
+
+.sp
+.in +2
+.nf
+# \fBflowadm set-flowprop -p maxbw=500M https-1\fR
+# \fBflowadm show-flow https-1\fR
+FLOW         LINK         IP ADDR            PROTO  PORT  RPORT   DSFLD
+https1       bge0         --                 tcp    443   --      --
+
+# \fBflowadm show-flowprop https-1\fR
+FLOW        PROPERTY    VALUE     DEFAULT      POSSIBLE
+https-1     maxbw       500       --           --
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRUDP 帯域幅使用量の制限
+.sp
+.LP
+次のコマンドは、UDP プロトコルのポリシーを作成し、使用可能な帯域幅のうち、100 Mbps を超える量をそのプロトコルが消費できないようにしています。このフローには \fBlimit-udp-1\fR という名前が付けられています。
+
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l bge0 -a transport=UDP -p maxbw=100M, \e
+limit-udp-1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR\fBdsfield\fR 属性を使用したポリシーの設定
+.sp
+.LP
+次のコマンドは、帯域幅 500Mbps の EF PHB (RFC 2598 の DSCP 値 101110) に対するポリシーを設定します。このフローでは、\fBdsfield\fR の値が \fB0x2e\fR (101110)、\fBdsfield_mask\fR が \fB0xfc\fR になっています (下位 2 ビットを無視する必要があるため)。
+
+.sp
+.in +2
+.nf
+# \fBflowadm add-flow -l bge0 -a dsfield=0x2e:0xfc \e
+-p maxbw=500M efphb-flow\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR複数ゾーン内のフローの表示
+.sp
+.LP
+次のコマンドは、同じ名前を持つ 2 つのフローを表示しています。最初のフローは大域ゾーン内に存在し、2 番目のフローはゾーン \fBzone1\fR 内に存在しています。このコマンドは大域ゾーンから呼び出されているため、ユーザーはシステム上のすべてのフローを表示できます
+
+.sp
+.in +2
+.nf
+# \fBflowadm show-flow\fR
+FLOW        LINK        IPADDR            PROTO  LPORT   RPORT   DSFLD
+tcpflow     e1000g2     --                tcp    --      --      --
+zone1/tcpflow e1000g1   --                tcp    --      --      --
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクションはすべて正常に実行されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/network
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBacctadm\fR(1M), \fBdladm\fR(1M), \fBflowstat\fR(1M), \fBifconfig\fR(1M), \fBprstat\fR(1M), \fBroute\fR(1M), \fBattributes\fR(5), \fBdlpi\fR(7P)
+.SH 注意事項
+.sp
+.LP
+以前のリリースの \fBflowadm\fR に存在していた \fBshow-usage\fR サブコマンドは、\fBflowstat\fR(1M) \fB-h\fR コマンドで置き換えられました。

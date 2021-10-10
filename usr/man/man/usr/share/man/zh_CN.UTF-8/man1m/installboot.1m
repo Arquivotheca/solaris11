@@ -1,0 +1,141 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH installboot 1M "2011 年 4 月 6 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+installboot \- 在磁盘分区中安装引导块
+.SH 用法概要
+.LP
+.nf
+\fBinstallboot\fR [\fB-F\fR zfs|ufs|hsfs] \fIbootblk\fR \fIraw-disk-device\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBboot\fR(1M) 程序 \fBufsboot\fR 是由驻留在磁盘分区的引导区域中的引导块程序从磁盘装入的。该程序特定于文件系统，必须与要引导的磁盘上的文件系统类型匹配。
+.sp
+.LP
+引导对象依赖于平台，驻留在 \fB/usr/platform/\fR\fIplatform-name\fR\fB/lib/fs/\fR\fIfile-system\fR 目录中。可使用 \fBuname\fR(1) 的 \fB-i\fR 选项查找平台名称。可使用以下命令查找文件系统类型：
+.sp
+.in +2
+.nf
+% fstyp \fIraw-disk-device\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请参见 \fBfstyp\fR(1M)。
+.sp
+.LP
+\fBinstallboot\fR 实用程序是一个仅适用于 SPARC 的程序。它在 x86 体系结构上不受支持。x86 用户应该使用 \fBinstallgrub\fR(1M)。
+.SH 选项
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fBzfs|ufs|hsfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要安装的引导块的文件系统类型。如果希望指定 \fBzfs\fR 或 \fBhsfs\fR，则此选项是必需的。缺省值为 \fBufs\fR。
+.RE
+
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fB\fIbootblk\fR\fR
+.ad
+.sp .6
+.RS 4n
+引导块代码的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIraw-disk-device\fR\fR
+.ad
+.sp .6
+.RS 4n
+要在其上安装引导块代码的磁盘设备的名称；它必须是可读写的字符设备。\fBSCSI\fR 或 \fBIPI\fR 驱动器的命名约定为 \fBc\fR\fI?\fR\fBt\fR\fI?\fR\fBd\fR\fI?\fR\fBs\fR\fI?\fR，而 \fBIDE\fR 驱动器的命名约定为 \fBc\fR\fI?\fR\fBd\fR\fI?\fR\fBs\fR\fI?\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR安装 UFS 引导块
+.sp
+.LP
+在运行命令的平台上，要在控制器 \fB1\fR 的目标 \fB0\fR 的分片 \fB0\fR 上安装 \fBufs\fR 引导块，请使用以下命令：
+
+.sp
+.in +2
+.nf
+# \fBinstallboot /usr/platform/`uname -i`/lib/fs/ufs/bootblk \e
+	/dev/rdsk/c1t0d0s0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR安装 ZFS 引导块
+.sp
+.LP
+在运行命令的平台上，要在控制器 1 的目标 0 的分片 0 上安装 ZFS 引导块，请使用如下所示的语法：
+
+.sp
+.in +2
+.nf
+# \fBinstallboot -F zfs /usr/platform/`uname -i`/lib/fs/zfs/bootblk \e
+      /dev/rdsk/c1t1d0s0\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/platform/\fR\fIplatform-name\fR\fB/lib/fs/\fR\fR
+.ad
+.sp .6
+.RS 4n
+引导对象所驻留的目录。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBkmdb\fR(1)、\fBod\fR(1)、\fBuname\fR(1)、\fBboot\fR(1M)、\fBfstyp\fR(1M)、\fBinit\fR(1M)、\fBkernel\fR(1M)、\fBmonitor\fR(1M)、\fBreboot\fR(1M)、\fBrpc.bootparamd\fR(1M)、\fBinit.d\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Installing Oracle Solaris 11 Systems》\fR
+.SH 警告
+.sp
+.LP
+如果 \fIbootblk\fR 或 \fIopenfirmware\fR 文件不存在或者原始磁盘设备不是字符设备，\fBinstallboot\fR 实用程序将会失败。

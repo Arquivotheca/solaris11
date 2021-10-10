@@ -1,0 +1,187 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH smtp-notify 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+smtp-notify \- email notification daemon for software events
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/fm/notify/smtp-notify\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBsmtp-notify\fR is a daemon that subscribes to software events and Fault Management lifecycle events and produces email notifications based on a set of notification preferences that are stored in the SMF service configuration repository.
+.sp
+.LP
+Email notification preferences are set using \fBsvccfg\fR(1M).
+.sp
+.LP
+\fBsmtp-notify\fR is managed by the service management facility, \fBsmf\fR(5), under the service FMRI:
+.sp
+.in +2
+.nf
+svc:/system/fm/smtp-notify:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using the \fBsvcs\fR(1) command.
+.SS "Properties"
+.sp
+.LP
+The following service properties can be set:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/rootdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+This is an \fBastring\fR property that defaults to \fB/\fR. When set, the specified root directory will be used for all pathnames evaluated by \fBsmtp-notify\fR.
+.RE
+
+.sp
+.LP
+By default, the body of the email event notification will be based on a set of localized message templates that are delivered with the Oracle Solaris operating system. \fBsmtp-notify\fR will lookup the appropriate template (based on the event class) and fill in the template using elements from the event payload.
+.sp
+.LP
+A user-supplied message body template can be substituted by specifying the \fBmsg_template\fR notification preference. Refer to \fBsvccfg\fR(1M) for more information about setting notification preferences on a per-service or per-event-class basis.
+.sp
+.LP
+The message body template can contain the expansion macros listed below. These macros will be expanded by \fBsmtp-notify\fR before sending the message.
+.sp
+.in +2
+.nf
+Macro          Description
+-----          -----------
+%%              expands to a literal % character
+%<HOSTNAME>     expands to the hostname on which the event
+                occurred
+%<URL>          expands to the URL of the knowledge article
+                associated with this event
+%<CLASS>        expands to the event class
+%<UUID>         expands to the UUID of the event
+%<CODE>         expands to the knowledge article message ID
+%<SEVERITY>     expands to the severity of the event
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+For SMF service state transition events, the following additional macros can be specified in a message template:
+.sp
+.in +2
+.nf
+%<FMRI>          expands to FMRI of the affected service
+%<FROM-STATE>    expands to the previous state of the service
+%<TO-STATE>      expands to the new state of the service
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+To facilitate email filtering, \fBsmtp-notify\fR will create X-headers for the following components of the event payload for all event classes:
+.sp
+.in +2
+.nf
+Header name             Value
+-----------             -----
+X-FMEV-HOSTNAME         the name of the host on which the
+                        event occurred
+X-FMEV-CLASS            the event class
+X-FMEV-CODE             the Knowledge article message ID
+X-FMEV-SEVERITY         the severity of the event
+X-FMEV-UUID             the UUID of the event
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SMF service state transition events will also include the following additional X-headers:
+.sp
+.in +2
+.nf
+Header name             Value
+-----------             -----
+X-FMEV-FMRI             the FMRI of the affected SMF service
+X-FMEV-FROM-STATE       the previous state of the service
+X-FMEV-TO-STATE         the new state of the service
+.fi
+.in -2
+.sp
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRConfiguring Notification Preferences
+.sp
+.LP
+The following command configures notification preferences for SMF service state transition events.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/system/svc/global:default setnotify -g \e\fR
+\fBfrom-online,to-maintenance mailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fREnabling Email Notifications
+.sp
+.LP
+The following command enables email notifications for Fault Management problem diagnosis events.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify problem-diagnosed mailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRListing Notification Settings
+.sp
+.LP
+The following command lists all notification settings for Fault Management problem diagnosis events.
+
+.sp
+.in +2
+.nf
+# \fBsvccfg listnotify problem-diagnosed\fR
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/fault-management/smtp-notify
+_
+Interface StabilityUnstable
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)

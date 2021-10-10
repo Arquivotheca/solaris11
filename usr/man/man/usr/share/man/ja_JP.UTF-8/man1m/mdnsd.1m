@@ -1,0 +1,125 @@
+'\" te
+.\" Copyright (c) 2003-2004 Apple Computer, Inc. All Rights Reserved. 
+.\" Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.See the License for the specific language governing permissions and limitations under the License.
+.\" Copyright (c) 2007, 2010, Oracle and/or its affiliates.All rights reserved.
+.TH mdnsd 1M "2007 年 8 月 21 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+mdnsd \- マルチキャスト DNS デーモン
+.SH 形式
+.LP
+.nf
+mdnsd [-\fBdebug\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmdnsd\fR は、マルチキャスト DNS および DNS サービス検出用のデーモンプログラムです。
+.sp
+.LP
+\fBmdnsd\fR デーモンは、UDP ポート 5353 上でマルチキャスト DNS クエリーパケットを待機します。\fBmdnsd\fR は、応答できるクエリーを受信すると、適切なマルチキャスト DNS 応答パケットを発行します。
+.sp
+.LP
+さらに、\fBmdnsd\fR デーモンは、クライアントプロセスに代わってマルチキャスト DNS クエリーを実行し、応答のキャッシュを維持します。
+.sp
+.LP
+\fBmdnsd\fR デーモンには、ユーザーが指定可能なコマンド行引数はありません。ユーザーは \fBmdnsd\fR を手動で実行しないでください。\fBmdnsd\fR デーモンは Solaris サービス管理機能 (SMF) により管理され、その操作は \fBsvcadm\fR(1M) コマンドにより、次の障害管理リソース識別子 (FMRI) に基づいて行われます。
+.sp
+.in +2
+.nf
+svc:/network/dns/multicast:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBmdnsd\fR の内部状態をデバッグおよび診断目的で調べるには、これに SIGUSR1 信号を送信します。これで、\fBsyslog\fR(3C) 機能により、内部状態のスナップショットの要約が記録されます。\fBmdnsd\fR は、syslog 機能コードデーモンおよび情報優先度を使用します。
+.SH オプション
+.sp
+.LP
+\fBmdnsd\fR デーモンは次のオプションを認識します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-debug\fR\fR
+.ad
+.RS 10n
+.rt  
+デバッグモード。\fBmdnsd\fR デーモンは、出力を標準エラーに送信します。バックグラウンドでは実行されません。このオプションは、デーモンのデバッグ時にのみ使用します。
+.RE
+
+.SS "構成"
+.sp
+.LP
+ネームサービススイッチの構成ファイル \fB nsswitch.conf \fR(4) 内で \fBmdns\fR をホストやipnode のホストとして指定することにより、マルチキャスト \fBDNS\fR を使ってホスト名やホストアドレスを検索できます。マルチキャスト \fBDNS\fR を使用してホスト名やホストアドレスを照会する際の構成オプションは、\fBSMF\fR リポジトリに格納されます。この構成を変更するには、次の障害管理リソース識別子 (FMRI) を使用して \fBsvccfg\fR(1M) コマンドを実行します。 
+.sp
+.in +2
+.nf
+svc:/network/dns/multicast:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+マルチキャスト \fBDNS\fR を使用してホスト名やホストアドレスを照会する際の構成オプションは、「\fBnss_mdns_config\fR」という名前のプロパティーグループに格納されます。この構成オプションを構成するプロパティーは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBsearch\fR
+.ad
+.RS 10n
+.rt  
+ホスト名検索に使用する検索ドメインのリスト。デフォルトでは、検索ドメインは構成に含まれていません。現在のところ、検索リストは 6 つのドメインに制限されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBvalid\fR
+.ad
+.RS 10n
+.rt  
+有効なドメインのリスト。ドメインの有効性の確認は、マルチキャスト \fBDNS\fR を使ってドメインのホスト名やホストアドレスを検索する前に行われます。検索リストに指定されたドメインは、常に有効なリストに含まれています。現在のところ、このリストに含めることができる有効なドメインの数は 10 個に制限されています。
+.RE
+
+.sp
+.LP
+これらの構成オプションは「流動的」であり、将来のリリースで変更される可能性があります。
+.SH ファイル
+.sp
+.LP
+/usr/lib/inet/mdnsd
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/dns/mdns
+_
+インタフェースの安定性流動的
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdns-sd\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsyslog\fR(3C),\fB nsswitch.conf\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+マルチキャスト DNS については、http://www.multicastdns.org/ を参照してください。
+.sp
+.LP
+DNS サービス検出については、\fBhttp://www.dns-sd.org/\fR を参照してください。

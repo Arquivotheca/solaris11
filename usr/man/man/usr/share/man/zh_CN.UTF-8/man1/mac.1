@@ -1,0 +1,231 @@
+'\" te
+.\" 版权所有 2007，Oracle 和/或其附属公司。保留所有权利
+.TH mac 1 "2007 年 3 月 21 日" "SunOS 5.11" "用户命令"
+.SH 名称
+mac \- 计算输入的消息验证代码
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/mac\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/mac\fR [\fB-v\fR] \fB-a\fR \fIalgorithm\fR
+   [\fB-k\fR \fIkeyfile\fR | \fB-K\fR \fIkey_label\fR [\fB-T\fR \fItoken_spec\fR]] [\fIfile\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBmac\fR 实用程序可使用指定算法计算给定文件或 \fBstdin\fR 的消息验证代码 (message authentication code, \fBMAC\fR)。
+.sp
+.LP
+如果给定了多个文件，每个输出行就是单个文件的 \fBMAC\fR。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIalgorithm\fR\fR
+.ad
+.RS 17n
+.rt  
+指定加密或解密过程中要使用的算法的名称。有关详细信息，请参见"用法"下的\fB算法\fR。\fB注意：\fR不支持用于生成一般长度 \fBMAC\fR 的算法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIkeyfile\fR\fR
+.ad
+.RS 17n
+.rt  
+指定包含用于加密算法的密钥值的文件。每种算法都具有特定的密钥材料要求，如 PKCS#11 规范中所述。如果未指定 \fB-k\fR，\fBmac\fR 会使用\fBgetpassphrase\fR(3C) 提示提供密钥材料。
+.sp
+有关生成密钥文件的信息，请参见 \fBpktool\fR(1)、\fBdd\fR(1M) 或\fI《Oracle Solaris Administration: Security Services》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIkey_label\fR\fR
+.ad
+.RS 17n
+.rt  
+指定 PKCS#11 令牌中的对称令牌密钥的标签。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 17n
+.rt  
+显示系统上可用的算法列表。此列表可依加密框架的配置而变化。以位为单位显示密钥大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItoken_spec\fR\fR
+.ad
+.RS 17n
+.rt  
+指定 PKCS#11 令牌，而不使用指定 \fB-K\fR 时的缺省软令牌对象存储。
+.sp
+\fItoken_spec\fR 的格式为：
+.sp
+.in +2
+.nf
+\fItoken_name\fR \fB[:\fR\fImanuf_id\fR \fB[:\fR\fIserial_no\fR\fB]]\fR
+.fi
+.in -2
+.sp
+
+当令牌标签包含结尾空格时，为方便起见，此选项不要求用户键入这些空格。 
+.sp
+使用冒号分隔令牌标识字符串。如果任一部分中包含冒号 (\fB:\fR) 文本字符，必须使用反斜杠 (\fB\e\fR) 对其进行转义。如果未找到冒号 (\fB:\fR)，则将整个字符串（最多 32 个字符）视为令牌标签。如果仅找到一个冒号 (\fB:\fR)，则该字符串是令牌标签和生产商。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+提供详细信息。
+.RE
+
+.SH 用法
+.SS "算法"
+.sp
+.LP
+可使用 \fB-l\fR 选项显示受支持的算法。这些算法由加密框架提供。每个受支持的算法都是特定算法类型的最常用和受限最小版本的别名。例如，\fBmd5_hmac\fR 是 \fBCKM_MD5_HMAC\fR 的别名。
+.sp
+.LP
+这些别名与 \fB-a\fR 选项一起使用，并且区分大小写。
+.SS "口令短语"
+.sp
+.LP
+若在加密和解密任务期间未使用 \fB-k\fR 选项，则会提示用户提供口令短语。可使用 PKCS #5 中指定的 \fBPBKDF2\fR 算法将口令短语处理为更安全的密钥。
+.SH 示例
+.LP
+\fB示例 1 \fR列出可用算法
+.sp
+.LP
+以下示例列出了可用的算法：
+
+.sp
+.in +2
+.nf
+example$ mac -l
+Algorithm       Keysize:  Min   Max
+-----------------------------------
+des_mac                    64    64
+sha1_hmac                   8   512
+md5_hmac                    8   512
+sha256_hmac                 8   512
+sha384_hmac                 8  1024
+sha512_hmac                 8  1024
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR获取消息验证代码
+.sp
+.LP
+以下示例获取文件的消息验证代码：
+
+.sp
+.in +2
+.nf
+example$ mac -v -k mykey -a sha1_hmac /export/foo
+sha1_hmac (/export/foo) = 913ced311df10f1708d9848641ca8992f4718057
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用令牌密钥获取消息验证代码
+.sp
+.LP
+以下示例使用软令牌 keystore 中的通用令牌密钥获取消息验证代码。可使用 \fBpktool\fR(1) 生成通用令牌密钥：
+
+.sp
+.in +2
+.nf
+encrypt -v -a sha1_hmac -K my_generic_key \e
+     -T "Sun Software PKCS#11 softtoken" /export/foo
+Enter pin for Sun Software PKCS#11 softtoken:
+     sha1_hmac (/etc/foo) = c2ba5c38458c092a68940081240d22b670182968
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdigest\fR(1)、\fBpktool\fR(1)、\fBdd\fR(1M)、\fBgetpassphrase\fR(3C)、\fBlibpkcs11\fR(3LIB)、\fBattributes\fR(5)、\fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Security Services》\fR
+.sp
+.LP
+RSA PKCS#11 v2.20 与 RSA PKCS#5 v2.0，http://www.rsasecurity.com

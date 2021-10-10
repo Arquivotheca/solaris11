@@ -1,0 +1,71 @@
+#!/bin/ksh -e
+#
+# 
+#
+#
+# Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
+# 
+#ident	"%Z%%M%	%I%	%E% SMI"
+#
+MACH=`uname -p`
+PLIST=/tmp/protolist.$$
+
+usage() {
+	echo "usage: $0 <workspace>"
+	exit 1
+}
+
+OPTIND=1
+while getopts X flag
+do
+	case $flag in
+	*)	usage
+		;;
+	esac
+done
+
+shift `expr $OPTIND - 1`
+
+if [ $# = 0 -a "${CODEMGR_WS}" != "" ]; then
+	WS=${CODEMGR_WS}
+elif [ $# -ne 1 ]; then
+	usage
+else
+	WS=$1
+fi
+
+
+GUFLAG="-gu"
+if [ "${NIGHTLY_OPTIONS%o*}" != "$NIGHTLY_OPTIONS" ]; then
+	GUFLAG=
+fi
+
+if [ ! -d ${WS} ]; then
+	echo "${WS} is not a workspace"
+	exit 1
+fi
+
+if [ -z "${SRC}" ]; then
+	SRC=${WS}/usr/src
+fi
+
+PROTO=${WS}/proto/root_${MACH}
+
+rm -f $PLIST
+
+pkglocns="${SRC}/pkgdefs"
+[ -d ${SRC}/../closed/pkgdefs ] && pkglocns="$pkglocns ${SRC}/../closed/pkgdefs"
+
+exceptions=""
+pkgdefs=""
+for p in $pkglocns; do
+	efile="$p/etc/exception_list_${MACH}"
+	[ -f $efile ] && exceptions="$exceptions -e $efile"
+	pkgdefs="$pkgdefs -d $p"
+done
+
+protolist ${PROTO} > $PLIST
+protocmp ${GUFLAG} $exceptions $pkgdefs ${PLIST}
+
+rm -f $PLIST

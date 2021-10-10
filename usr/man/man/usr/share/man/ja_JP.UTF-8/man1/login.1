@@ -1,0 +1,790 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.TH login 1 "2011 年 7 月 15 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+login \- システムへのサインオン
+.SH 形式
+.LP
+.nf
+\fBlogin\fR [\fB-p\fR] [\fB-d\fR \fIdevice\fR] [\fB-R\fR \fIrepository\fR] [\fB-s\fR \fIservice\fR] 
+     [\fB-t\fR \fIterminal\fR] [\fB-u\fR \fIidentity\fR] [\fB-U\fR \fIruser\fR] 
+     [\fB-h\fR \fIhostname\fR\fI [terminal]\fR | \fB-r\fR \fIhostname\fR] 
+     [\fIname\fR [\fIenviron\fR]...]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBlogin\fR コマンドは、各端末セッションの開始時に使用するコマンドです。このコマンドを使用して、システムにユーザーの識別情報を提示します。\fBlogin\fR は、あるユーザーが \fBexit\fR コマンドを実行してログインシェルを終了させたあと、次のユーザーが最初に接続を確立するときに、システムによって呼び出されます。
+.sp
+.LP
+スーパーユーザー以外は、コマンドとして login を呼び出すことはできません。
+.sp
+.LP
+\fBlogin\fR がコマンドとして呼び出された場合には、初期コマンドインタプリタが置き換えられる必要があります。この方法で \fBlogin\fR を呼び出すには、
+.sp
+.in +2
+.nf
+\fBexec login\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+初期シェルから次のように入力します。C シェルと Korn シェルには、それぞれ独自の \fBlogin\fR の組み込みコマンドがあります。login の組み込みコマンドとその使用法については、\fBksh\fR(1)、\fBksh88\fR(1)、および \fBcsh\fR(1) を参照してください。
+.sp
+.LP
+引数としてユーザー名を指定しないと、\fBlogin\fR は、ユーザー名とユーザーパスワード (必要な場合) の入力を求めます。可能な場合、パスワードの入力中はエコーが抑止されます。このため、セッションの書き込み記録にパスワードが残ってしまうことはありません。
+.sp
+.LP
+ログイン手続きの際に入力を誤ると、次のメッセージが出力され、
+.sp
+.in +2
+.nf
+Login incorrect
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+新しいログインプロンプトが表示されます。ログイン手続きに 5 回失敗すると、これがすべて \fB/var/adm/loginlog\fR ファイルに記録され (ファイルが存在しない場合もある)、\fBTTY\fR 回線が切断されます。
+.sp
+.LP
+パスワードの有効期限を設定する機能が有効になっている場合に、パスワードが有効期限を過ぎてしまうと、ユーザーはパスワードの変更を求められます (詳細は、\fBpasswd\fR(1) を参照)。このとき、パスワードの記録場所を特定するために、\fB/etc/nsswitch.conf\fR ファイルが参照されます (\fBnsswitch.conf\fR(4) を参照)。パスワードの更新は、次の 5 つの形式でのみ実行できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: files\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: files nis\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: compat\fR (==> files nis)
+.RE
+.sp
+.LP
+いずれの形式にも合っていない場合、\fBpasswd\fR(1) は失敗するため、システムにログインできません。一定時間内に正常にログインできなかった場合は、メッセージで通知されることなく接続が解除されることがあります。
+.sp
+.LP
+正常にログインすると、アカウンティングファイルが更新されます。デバイスの所有者、グループ、アクセス権が \fB/etc/logindevperm\fR ファイルの内容に従って設定され、最終ログイン時刻が表示されます (\fBlogindevperm\fR(4) を参照)。
+.sp
+.LP
+ユーザー ID、グループ ID、補助グループリスト、作業用ディレクトリは初期化され、コマンドインタプリタ (通常 \fBksh88\fR) が起動されます。
+.sp
+.LP
+基本\fI環境\fRは、次のように初期設定されます。
+.sp
+.in +2
+.nf
+HOME=\fIyour-login-directory\fR
+LOGNAME=\fIyour-login-name\fR
+PATH=/usr/bin:
+SHELL=\fIlast-field-of-passwd-entry\fR
+MAIL=/var/mail/
+TZ=\fItimezone-specification\fR
+.fi
+.in -2
+
+.sp
+.LP
+Bourne シェルや Korn シェルでログインする場合は、それぞれ \fB/etc/profile\fR と \fB$HOME/.profile\fR が実行されます (ファイルが存在しない場合もある)。
+.sp
+.LP
+\fBksh\fR Korn シェルの場合は、対話型シェルが、\fB/etc/ksh.kshrc\fR と、\fBENV\fR 環境変数で指定されたファイルを順に実行します。\fB$ENV\fR が設定されていない場合、これはデフォルトで \fB$HOME/.kshrc\fR になります。\fBksh88\fR および \fB/usr/xpg4/bin/sh\fR Korn シェルの場合、対話型シェルが、\fB$ENV\fR (デフォルトなし) によって指定されたファイルを実行します。 
+.sp
+.LP
+一方、C シェルでログインする場合は、\fB/etc/.login\fR、\fB$HOME/.cshrc\fR、\fB$HOME/.login\fR が実行されます。デフォルトの \fB/etc/profile\fR ファイルと \fB/etc/.login\fR ファイルは、ディスク容量の確認 (\fBquota\fR(1M) 参照)、\fB/etc/motd\fR の表示、およびメールの確認を行います。\fB$HOME/.hushlogin\fR ファイルが存在する場合、メッセージは何も表示されません。コマンドインタプリタ名は、\fB\(mi\fR (ダッシュ) のあとにインタプリタのパス名の最後の構成要素を付けたものになります (例: \fB\(mish\fR)。
+.sp
+.LP
+パスワードファイルの \fIlogin-shell\fR フィールド (\fBpasswd\fR(4) を参照) が空であれば、デフォルト時のコマンドインタプリタ \fB/usr/bin/sh \fR が使用されます。このフィールドが アスタリスク (*) の場合は、指定のディレクトリがルートディレクトリになります。この時点で、独自のルート構造を持つ新しいレベルで \fBlogin\fR が再実行されます。
+.sp
+.LP
+実行時または \fBlogin\fR がログイン名を要求したときに \fBlogin\fR に引数を追加すると、環境を拡張したり変更したりできます。この引数は、\fIxxx\fR または \fIxxx=yyy\fR という形式で指定します。\fB=\fR (等号) を使用しない形式の引数は、次のように環境設定内に配置します。
+.sp
+.in +2
+.nf
+L\fIn=xxx\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このとき、\fIn\fR は \fB0\fR から始まる通し番号になります。この数値は、新しい変数名が必要になるたびに大きくなります。\fB=\fR (等号) を使用した形式の変数は、そのまま環境設定に取り込まれます。すでに設定が環境に取り込まれている場合に新しい変数を指定すると、前の値が新しい設定値に置き換えられます。
+.sp
+.LP
+ただし、例外が 2 つあります。変数 \fBPATH\fR と変数 \fBSHELL\fR は変更できません。これは、制限付きのシェル環境にログインしているユーザーが、子プロセスとして制限のない新しいシェルを生成するのを防ぐためです。\fBlogin\fR は、単純な単一文字引用規則を認識します。文字の前に \fB\e\fR\| (バックスラッシュ) を付けることにより、空白文字やタブなどの文字も使用できます。
+.sp
+.LP
+\fBlogin\fR に \fB-p\fR フラグを付けることによって、現在の環境を引き渡すこともできます。このフラグにより、現在定義されているすべての環境変数が、可能であれば新しい環境に引き渡されます。ただし、このオプションを指定しても、前述の環境変数の制限を回避することはできません。変数が両方の方法で引き渡された場合、login の引数に指定した環境変数が優先されます。
+.sp
+.LP
+ルートによるリモートログインを可能にするには、\fB/etc/default/login\fR ファイルを編集し \fBCONSOLE=/dev/console\fR エントリの前に \fB#\fR (ポンド記号) を挿入してください。「ファイル」を参照してください。
+.SH セキュリティ
+.sp
+.LP
+自動アカウントロックをサポートするネームサービスのアカウントの場合、ログインの試行が \fBRETRIES\fR 回以上連続で失敗すると、そのアカウントを自動的にロックするように構成することもできます (\fBuser_attr\fR(4) と \fBpolicy.conf\fR(4) を参照)。現在、自動アカウントロックをサポートしているのはファイルリポジトリ (\fBpasswd\fR(4) および \fBshadow\fR(4) を参照) だけです。\fBpam_unix_auth\fR(5) も参照してください。
+.sp
+.LP
+\fBlogin\fR コマンドは \fBpam\fR(3PAM) を使って、認証、アカウント管理、セッション管理、パスワード管理を行います。\fBPAM\fR 構成ポリシーは \fBlogin\fR で使用するモジュールを明記しています。このポリシーは \fB/etc/pam.conf\fR で見ることができます。次に、\fBpam.conf\fR ファイルの抜粋を示します。UNIX 認証、アカウント管理、セッション管理モジュールを使用する \fBlogin\fR コマンドのエントリが指定されています。
+.sp
+.in +2
+.nf
+login  auth       required  pam_authtok_get.so.1
+login  auth       required  pam_dhkeys.so.1
+login  auth       required  pam_unix_auth.so.1
+login  auth       required  pam_dial_auth.so.1
+
+login  account    requisite pam_roles.so.1
+login  account    required  pam_unix_account.so.1
+
+login  session    required  pam_unix_session.so.1
+.fi
+.in -2
+
+.sp
+.LP
+パスワード管理スタックは、次のようになります。
+.sp
+.in +2
+.nf
+other  password   required   pam_dhkeys.so.1
+other  password   requisite  pam_authtok_get.so.1
+other  password   requisite  pam_authtok_check.so.1
+other  password   required   pam_authtok_store.so.1
+.fi
+.in -2
+
+.sp
+.LP
+サービスに対応するエントリがない場合、\fBother\fR のサービスのエントリが使用されます。認証モジュールが複数含まれている場合は、複数のパスワードが必要になることがあります。
+.sp
+.LP
+\fBrlogind\fR や \fBtelnetd\fR で \fBlogin\fR が呼び出されるときに、\fBPAM\fR が使用するサービス名はそれぞれ \fBrlogin\fR、\fBtelnet\fR になります。
+.SH オプション
+.sp
+.LP
+次のオプションを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdevice\fR \fR
+.ad
+.RS 28n
+.rt  
+\fBlogin\fR は、デバイスオプション \fIdevice\fR を受け付けます。\fIdevice\fR は、\fBlogin\fR が動作する \fBTTY\fR ポートのパス名とみなされます。デバイスオプションを使用すると、\fBlogin\fR が \fBttyname\fR(3C) を呼び出す必要がなくなるため、\fBlogin\fR のパフォーマンスの向上が期待できます。\fB-d\fR オプションは、\fBユーザー ID\fR と実効\fBユーザー ID\fR が root であるユーザーのみが使用できます。その他から \fB-d\fR が使用されると、\fBlogin\fR は何もせずに終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhostname\fR [\fI terminal\fR ]\fR
+.ad
+.RS 28n
+.rt  
+\fBin.telnetd\fR(1M) がリモートホストと端末タイプに関する情報を渡すために使用します。
+.sp
+\fB-h\fR オプションの 2 番目の引数としての端末タイプをハイフン (\fB-\fR) で始めてはいけません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.RS 28n
+.rt  
+ログインシェルに環境変数を渡すために使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIhostname\fR \fR
+.ad
+.RS 28n
+.rt  
+\fBin.rlogind\fR(1M) がリモートホストに関する情報を渡すために使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIrepository\fR\fR
+.ad
+.RS 28n
+.rt  
+使用する \fBPAM\fR リポジトリを指定します。\fBPAM\fR リポジトリを使用するには、\fB-u\fR オプションを使用して (下記を参照)、PAM に「\fBidentity\fR」情報を伝える必要があります。「\fBidentity\fR」情報を伝えない場合、その PAM リポジトリは使用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIservice\fR\fR
+.ad
+.RS 28n
+.rt  
+使用する \fBPAM\fR サービス名を指定します。通常、この引数は必ずしも必要ではなく、代替の \fBPAM\fR サービス名を指定するときだけに使用します。たとえば、Kerberos 認証 telnet プロセスの場合は「\fBktelnet\fR」です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIidentity\fR\fR
+.ad
+.RS 28n
+.rt  
+認証の対象となるユーザーに関連する「\fBidentity\fR」文字列を指定します。通常、そのユーザーの UNIX ログイン名とは異なります。\fB\fRKerberos 認証ログインセッションの場合、そのユーザーに関連する Kerberos 主体名になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIruser\fR\fR
+.ad
+.RS 28n
+.rt  
+rlogin 接続のリモート側でログインするユーザー名を指定します。\fBin.rlogind\fR(1M) が Kerberos 認証モードで動作している場合、このデーモンは、\fBlogin\fR を呼び出す前に、端末とリモートユーザー名の情報を処理します。したがって、このコマンド行パラメータを使用して、「\fBruser\fR」データを指定する必要があります。通常、Kerberos 認証されていない \fBrlogin\fR では、リモートユーザーの情報は \fBlogin\fR デーモンがクライアントから読み取ります。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 12n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB0 以外\fR
+.ad
+.RS 12n
+.rt  
+エラー。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.cshrc\fR \fR
+.ad
+.RS 24n
+.rt  
+各 \fBcsh\fR の初期設定コマンド。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.hushlogin\fR \fR
+.ad
+.RS 24n
+.rt  
+ログインメッセージの抑制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.kshrc\fR\fR
+.ad
+.RS 24n
+.rt  
+\fB$ENV\fR が未設定の場合の、対話型の \fBksh\fR ユーザーのコマンドで、\fB/etc/ksh.kshrc\fR のあとに実行される。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.login\fR \fR
+.ad
+.RS 24n
+.rt  
+\fBcsh\fR ユーザーのログインコマンド。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.profile\fR \fR
+.ad
+.RS 24n
+.rt  
+\fBsh\fR、\fBksh88\fR、および \fBksh\fR ユーザーのログインコマンド。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.rhosts\fR\fR
+.ad
+.RS 24n
+.rt  
+信頼できるホスト名とユーザー名の組み合わせのプライベートリスト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/.login\fR \fR
+.ad
+.RS 24n
+.rt  
+システム全体の \fBcsh\fR のログインコマンド。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/issue\fR\fR
+.ad
+.RS 24n
+.rt  
+項目またはプロジェクトの識別情報。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ksh.kshrc\fR\fR
+.ad
+.RS 24n
+.rt  
+対話型の \fBksh88\fR のシステム全体のコマンド。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/logindevperm\fR\fR
+.ad
+.RS 24n
+.rt  
+ログインベースのデバイスアクセス権。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/motd\fR \fR
+.ad
+.RS 24n
+.rt  
+本日のメッセージ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nologin\fR\fR
+.ad
+.RS 24n
+.rt  
+マシンのシャットダウン中にログインしようとするユーザーへのメッセージ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 24n
+.rt  
+パスワードファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/profile\fR\fR
+.ad
+.RS 24n
+.rt  
+システム全体の \fBsh\fR、\fBksh88\fR、および \fBksh\fR のログインコマンド。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/shadow\fR\fR
+.ad
+.RS 24n
+.rt  
+ユーザーの暗号化パスワードのリスト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/bin/sh\fR\fR
+.ad
+.RS 24n
+.rt  
+ユーザーのデフォルトのコマンドインタプリタ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/lastlog\fR \fR
+.ad
+.RS 24n
+.rt  
+最後にログインした時刻。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/loginlog\fR \fR
+.ad
+.RS 24n
+.rt  
+失敗したログイン試行の記録。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/utmpx\fR\fR
+.ad
+.RS 24n
+.rt  
+アカウンティング。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/wtmpx\fR\fR
+.ad
+.RS 24n
+.rt  
+アカウンティング。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/mail/\fR\fIyour-name\fR \fR
+.ad
+.RS 24n
+.rt  
+ユーザー \fIyour-name\fR 用のメールボックス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/login\fR\fR
+.ad
+.RS 24n
+.rt  
+このファイル\fB\fR内で次のフラグのデフォルト値を設定可能。このファイルにはデフォルト値がコメントとして指定されている (たとえば、\fBTIMEZONE=EST5EDT\fR)。\fB\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTIMEZONE\fR\fR
+.ad
+.RS 24n
+.rt  
+シェルの \fBTZ\fR 環境変数を設定 (\fBenviron\fR(5) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHZ\fR \fR
+.ad
+.RS 24n
+.rt  
+シェルの \fBHZ\fR 環境変数を設定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBULIMIT\fR \fR
+.ad
+.RS 24n
+.rt  
+ログインのファイルサイズの制限を設定。設定はディスクブロック単位で、デフォルトはゼロ (制限なし)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCONSOLE\fR \fR
+.ad
+.RS 24n
+.rt  
+設定されていれば、ルートはそのデバイスにのみログイン可能。ただし、\fBrsh\fR(1) によるリモートコマンドの実行は可能。ルートでログインできるようにするには、この行をコメントにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPASSREQ\fR \fR
+.ad
+.RS 24n
+.rt  
+ログインに NULL 以外のパスワードが必要かどうかを指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBALTSHELL\fR \fR
+.ad
+.RS 24n
+.rt  
+ログイン時に \fBSHELL\fR 環境変数を設定するかどうかを指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPATH\fR \fR
+.ad
+.RS 24n
+.rt  
+初期シェルの \fBPATH\fR 変数を設定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSUPATH\fR \fR
+.ad
+.RS 24n
+.rt  
+ルート用初期シェルの \fBPATH\fR 変数を設定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTIMEOUT\fR \fR
+.ad
+.RS 24n
+.rt  
+ログインセッションを終了するまでの待ち時間を秒単位 (\fB0\fR から \fB900\fR の間) で設定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUMASK\fR \fR
+.ad
+.RS 24n
+.rt  
+初期シェルのファイル作成モードマスクを設定。\fBumask\fR(1) を参照。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSLOG\fR\fR
+.ad
+.RS 24n
+.rt  
+\fBLOG_NOTICE\fR レベルでのルートによるログインすべてと \fBLOG_CRIT\fR レベルでの失敗したログイン試行を記録するのに \fBsyslog\fR(3C) の \fBLOG_AUTH\fR を使うかどうかを指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDISABLETIME\fR \fR
+.ad
+.RS 24n
+.rt  
+存在し、かつ、ゼロより大きい場合、ログイン試行が \fBRETRIES\fR 回だけ失敗したあと、あるいは、\fBPAM\fR フレームワークが \fBPAM_ABORT\fR を戻したあとに \fBlogin\fR が待つ秒数。デフォルトは \fB20\fR 秒。最小は \fB0\fR 秒。最大はない。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSLEEPTIME\fR \fR
+.ad
+.RS 24n
+.rt  
+存在する場合、ログイン失敗メッセージを画面に表示するまでに待つ秒数を設定。これは \fBPAM_ABORT\fR 以外のログイン障害用。\fBRETRIES\fR に到達していない場合、あるいは、\fBPAM\fR フレームワークが \fBPAM_MAXTRIES\fR 回だけ戻されている場合、別のログイン試行が許可されます。デフォルトは \fB4\fR 秒。最小は \fB0\fR 秒。最大は \fB5\fR 秒。
+.sp
+\fBsu\fR(1M) と \fBsulogin\fR(1M) は両方とも \fBSLEEPTIME\fR の値の影響を受けます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRETRIES\fR \fR
+.ad
+.RS 24n
+.rt  
+ログインを再試行する回数を設定 (\fBpam\fR(3PAM) を参照)。デフォルトは 5 。最大の再試行回数は 15。自動ロックが構成されている場合 (前述の「\fBセキュリティー\fR」節を参照)、そのアカウントはロックされ、\fBlogin\fR は終了します。自動ロックが構成されていない場合、そのアカウントはロックされずに、\fBlogin\fR が終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSLOG_FAILED_LOGINS\fR\fR
+.ad
+.RS 24n
+.rt  
+何回ログインに失敗したら、\fBsyslog\fR(3C) \fBLOG_NOTICE\fR 機能によってログインに失敗したことを通知するメッセージが記録されるかを指定します。たとえば、変数の値が \fB0\fR に設定されている場合、\fBlogin\fR は失敗したログインを\fIすべて\fR記録します。
+.RE
+
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBexit\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBmail\fR(1), \fBmailx\fR(1), \fBnewgrp\fR(1), \fBpasswd\fR(1), \fBrlogin\fR(1), \fBrsh\fR(1), \fBsh\fR(1), \fBshell_builtins\fR(1), \fBtelnet\fR(1), \fBumask\fR(1), \fBin.rlogind\fR(1M), \fBin.telnetd\fR(1M), \fBlogins\fR(1M), \fBquota\fR(1M), \fBsu\fR(1M), \fBsulogin\fR(1M), \fBsyslogd\fR(1M), \fBuseradd\fR(1M), \fBuserdel\fR(1M), \fBpam\fR(3PAM), \fBrcmd\fR(3SOCKET), \fBsyslog\fR(3C), \fBttyname\fR(3C), \fBauth_attr\fR(4), \fBexec_attr\fR(4), \fBhosts.equiv\fR(4), \fBissue\fR(4), \fBlogindevperm\fR(4), \fBloginlog\fR(4), \fBnologin\fR(4), \fBnsswitch.conf\fR(4), \fBpam.conf\fR(4), \fBpasswd\fR(4), \fBpolicy.conf\fR(4), \fBprofile\fR(4), \fBshadow\fR(4), \fBuser_attr\fR(4), \fButmpx\fR(4), \fBwtmpx\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBpam_unix_account\fR(5), \fBpam_unix_auth\fR(5), \fBpam_unix_session\fR(5), \fBpam_authtok_check\fR(5), \fBpam_authtok_get\fR(5), \fBpam_authtok_store\fR(5), \fBpam_dhkeys\fR(5), \fBpam_passwd_auth\fR(5), \fBtermio\fR(7I)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLogin incorrect\fR \fR
+.ad
+.sp .6
+.RS 4n
+ユーザー名またはパスワードが一致しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNot on system console\fR \fR
+.ad
+.sp .6
+.RS 4n
+ルートでのログインが拒否されました。\fB/etc/default/login\fR の \fBCONSOLE\fR 設定を確認してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNo directory! Logging in with home=/\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBpasswd\fR(4) データベースに指定されているユーザーのホームディレクトリが見つからないか、アクセス権が正しくありません。システム管理者に問い合わせてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNo shell\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBpasswd\fR(4) データベースに指定されているシェルを実行できません。システム管理者に問い合わせてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNO LOGINS: System going down in \fR\fIN\fR \fBminutes\fR\fR
+.ad
+.sp .6
+.RS 4n
+マシンがシャットダウンの処理中であり、ログインが無効になっています。
+.RE
+
+.SH 警告
+.sp
+.LP
+\fBユーザー ID\fR が 76695844 よりも大きいユーザーには、パスワードの有効期限が適用されません。また、このユーザーの最終ログイン時刻も記録されません。
+.sp
+.LP
+ルートによるログインを不能にするために \fBCONSOLE\fR を使用する場合は、ルートによるリモートコマンドの実行も不能にする必要があります。詳細については、\fBrsh\fR(1)、\fBrcmd\fR(3SOCKET)、および \fBhosts.equiv\fR(4) を参照してください。

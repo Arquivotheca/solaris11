@@ -1,0 +1,1103 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zonestat 1 "2011 年 6 月 16 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+zonestat \- アクティブなゾーン統計の報告
+.SH 形式
+.LP
+.nf
+\fBzonestat\fR [\fB-z\fR \fIzonelist\fR] [\fB-r\fR \fIreslist\fR] [\fB-n\fR \fInamelist\fR\fB] [-T u | d | i] 
+   [\fR\fB-R\fR \fIreports\fR] [\fB-q\fR\fB\fR\fB] [-p [\fR\fB-P\fR \fIlines\fR]] 
+   [\fB-S\fR \fIcols\fR] \fIinterval\fR [\fIduration\fR [report]]\fI\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBzonestat\fR ユーティリティーは、現在実行中のゾーンの \fBcpu\fR、メモリー、ネットワーク、およびリソース制御使用率について報告します。各ゾーンの使用率は、システムのリソースとゾーンの構成済み制限の両方の割合 (パーセント) として報告されます。
+.sp
+.LP
+\fBzonestat\fR ユーティリティーは、指定された間隔で一連の間隔レポートを出力します。また、指定された間隔で 1 つ以上の要約レポートも任意で出力します。
+.sp
+.LP
+デフォルトの出力は、\fBcpu\fR、物理メモリー、仮想メモリー、ネットワークの使用率の要約です。\fB-r\fR オプションを使用すると、特定のリソースに関する詳細な出力を選択できます。
+.SS "セキュリティー"
+.sp
+.LP
+非大域ゾーン (\fBNGZ\fR) から実行すると、\fBNGZ\fR から参照可能なプロセッサセットのみが報告されます。\fBNGZ\fR の出力には、メモリーや制限などのその他のすべてのシステムリソースが含まれます。
+.sp
+.LP
+報告されるすべてのリソースについて、\fBNGZ\fR の使用量が出力されます。システム、大域ゾーン、およびその他のすべてのゾーンによる各リソースの使用量は、[system] で使用されたものとして報告されます。
+.sp
+.LP
+ネットワークリソースでは、\fBNGZ\fR の使用量のみが出力されます。\fBNGZ\fR は、ほかのゾーンのネットワークリソースと統計からは見えません。
+.sp
+.LP
+\fBzonestat\fR ユーティリティーを使用するには、\fBproc_info\fR 特権が必要です。この特権は、基本特権セットのメンバーです。 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR[\fI ,name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+報告するリストリソース名を指定します。\fBpset\fR リソースでは、これはプロセッサセットの名前です。physical-memory 、locked-memory、および virtual-memory リソースでは、名前は \fBmem_default\fR および \fBvm_default\fR のみです。ネットワークリソースでは、これはデータリンクの名前です。
+.sp
+dedicated-cpu プロセッサセットは、pset 名 (\fBSUNWtmp_zonename\fR) または単に \fBzonename\fR で指定できます。
+.sp
+\fBpsrset\fR で作成されたプロセッサセットは、プール \fBpset\fR 名 (\fB\fRSUNWlegacy_ pset id) または単に \fB\fRpset id で指定できます。
+.sp
+リソースセットについて報告するときは、コンマ区切りリストに加えて複数の \fB-n\fR オプションを指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+解析可能な出力。
+.sp
+安定した機械解析可能な形式を使用して出力します。各フィールドはコロン (\fB:\fR) で区切ります。行形式は次のとおりです。
+.sp
+.in +2
+.nf
+report type:resource:field[:field]*
+.fi
+.in -2
+.sp
+
+-T が指定されている場合は、各行に接頭辞としてタイムスタンプが付きます。
+.sp
+報告タイプは、report-total、report-average 、report-high、および interval です。
+.sp
+リソースタイプは、header、footer、summary、physical-memory、virtual-memory、locked-memory、processor-set、processes、\fBlwps\fR、\fBsysv-shared-memory\fR、\fBsysv-shmids\fR、\fBsysv-semids\fR、\fBsysv-msgids\fR、\fBlofi \fR、network です。
+.sp
+header リソースは、間隔または要約レポートの開始を示すために使用される特別なリソースです。header リソース間のすべての出力行は、同じ報告に属します。各 header (ヘッダー) には、一致する footer (フッター) があります。
+.sp
+残りのフィールドはリソースタイプに固有のものです。詳細は、\fBzonestat\fR ユーティリティーの出力を参照してください。
+.sp
+既存のすべての出力フィールドは安定しています。将来のバージョンでは、新しい報告タイプおよびリソースタイプが導入される可能性があります。さらに、将来のバージョンでは、既存の出力 n 行の末尾に新しいフィールドが追加される可能性もあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIline\fR[\fI ,line\fR]\fR
+.ad
+.sp .6
+.RS 4n
+解析可能な出力について、解析可能な出力内の出力する行を指定します。次の行のタイプから 1 つ以上を選択できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheader, footer\fR\fR
+.ad
+.RS 18n
+.rt  
+各間隔で、要約レポートに間隔情報やカウント情報などの詳細を出力する「header (ヘッダー)」が含まれます。各報告のあとには、「\fBfooter (フッター)\fR」も出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBresource\fR\fR
+.ad
+.RS 18n
+.rt  
+各リソースを記述する行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsystem\fR\fR
+.ad
+.RS 18n
+.rt  
+システムによる各リソースの使用率。これには、カーネル、および特定のゾーンに関与することのない、すべてのリソース消費が含まれます。\fBzonestat\fR が非大域ゾーン内から実行される場合、この値はシステムおよびその他のすべてのゾーンで消費される総リソースとなります。ネットワークリソースタイプの \fBsystem\fR 使用率はサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtotal\fR\fR
+.ad
+.RS 18n
+.rt  
+各リソースの合計使用率。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzones\fR\fR
+.ad
+.RS 18n
+.rt  
+各リソースのゾーンごとの使用率を詳細に示す行。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+静寂モード。要約レポートのみを出力します (\fB-R\fR オプションが必要)。すべての間隔レポートは省略されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIresource\fR[\fI ,resource\fR]\fR
+.ad
+.sp .6
+.RS 4n
+報告するリソースタイプを指定します。設定可能なリソースは、\fBphysical-memory\fR、\fBvirtual-memory\fR、\fBlocked-memory\fR、\fBprocessor-set\fR、\fBprocesses\fR、\fBlwps\fR、\fBshm-memory\fR、\fBshm-ids\fR、\fBsem-ids\fR、\fBmsg-ids\fR、\fBlofi\fR、\fBnetwork\fR です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsummary\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBcpu\fR、\fBphysical-memory\fR、\fBvirtual memory\fR、\fBnetwork\fR 使用率の要約。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmemory\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBphysical-memory\fR、\fBvirtual-memory\fR、および \fBlocked-memory\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsets\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBprocessor-set\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-pset\fR\fR
+.ad
+.RS 16n
+.rt  
+デフォルトの \fBpset\fR のみ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimits\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBprocesses\fR、\fBlwps\fR、\fBlofi\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 16n
+.rt  
+ネットワークのデータリンク 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsysv\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBshm-memory\fR、\fBshm-ids\fR、\fBsem-ids\fR、\fBmsg-ids\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 16n
+.rt  
+すべてのリソースタイプ
+.RE
+
+デフォルトでは、summary リソースが出力されます。
+.sp
+リソースタイプセットについて指定するときは、コンマ区切りリストに加えて複数の -r オプションを指定できます。 
+.sp
+システムの \fBcpu\fR は、プロセッサセット (\fBpsets\fR) にパーティション化できます。デフォルトでは、すべての \fBcpu\fR が \fBpset_default\fR という名前の単一の \fBpset\fR にあります。
+.sp
+メモリーはセットへのパーティション化には対応していません。これらのリソースに対する \fBzonestat\fR ユーティリティーの出力では、\fBmem_default\fR および \fB vm_default\fR という名前で表示されます。
+.sp
+all リソースは、すべてのリソースタイプが報告されるように指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIreport\fR[\fI ,report\fR]\fR
+.ad
+.sp .6
+.RS 4n
+要約レポートを出力します。サポートされる報告タイプについては、下記を参照してください。要約レポートセットには、コンマ区切りリストに加えて複数の -R オプションを指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtotal\fR\fR
+.ad
+.RS 11n
+.rt  
+リソースごとに、次の詳細を示す要約レポートを出力します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpsets\fR\fR
+.ad
+.RS 24n
+.rt  
+コマンド呼び出しの開始以降に使用された合計 cpu。各ゾーンで使用される割合には、ゾーンが実行されていなかった時間も含まれます。たとえば、ゾーンが実行中に 100% のcpu を使用しても、間隔の半分は停止していた場合、要約レポートにはゾーンが 50% の cpu 時間を使用したことが示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmemory, limits, sysv\fR\fR
+.ad
+.RS 24n
+.rt  
+コマンド呼び出し以降に報告されたすべての間隔で使用された平均リソース。この平均の計算には、ゾーンが実行されなかった間隔も含まれます。たとえば、ゾーンが実行中に平均で 100M の物理メモリーを使用しても、間隔の半分でしか実行していなかった場合、要約レポートにはゾーンが平均で 50M の物理メモリーを使用したことが示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 24n
+.rt  
+物理帯域幅を使用しているすべてのデータリンクによって送受信された全バイト数の合計合計はコマンドの呼び出しが開始されてから計算され、秒あたりのバイト数に標準化されます。使用された割合は、使用可能な合計帯域幅に基づいて計算されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaverage\fR\fR
+.ad
+.RS 11n
+.rt  
+total と同様ですが、ゾーンが実行されている間隔のみが計算に含まれます。たとえば、ゾーンが単一の間隔のみで実行されていて、その間隔中にゾーンが 200M の仮想メモリーを使用した場合、要約レポート前に報告された間隔の数に関係なく平均仮想メモリーは 200M になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhigh\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBzonestat\fR ユーティリティー呼び出しの間隔中に、各リソースおよびゾーンの最大使用量を詳細に示す要約レポートを出力します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIcol\fR[\fI ,col\fR]\fR
+.ad
+.sp .6
+.RS 4n
+各リソースを利用するゾーンをソートします。
+.sp
+次のソート列を指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 11n
+.rt  
+ゾーン名で英数字順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBused\fR\fR
+.ad
+.RS 11n
+.rt  
+使用されるリソースの数量でソートします。ネットワークリソースでは、これはバイトでソートした場合と同じです。
+.sp
+これはデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcap\fR\fR
+.ad
+.RS 11n
+.rt  
+設定されている上限でソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcap\fR\fR
+.ad
+.RS 11n
+.rt  
+使用されている上限の割合 (パーセント) でソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshr\fR\fR
+.ad
+.RS 11n
+.rt  
+割り当てられている共有でソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpshru\fR\fR
+.ad
+.RS 11n
+.rt  
+使用されている共有の割合 (パーセント) でソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbytes\fR\fR
+.ad
+.RS 11n
+.rt  
+送受信された合計バイト数でネットワークをソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprbyte\fR\fR
+.ad
+.RS 11n
+.rt  
+有線で受信されたバイト数の割合でネットワークをソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpobyte\fR\fR
+.ad
+.RS 11n
+.rt  
+有線で送信されたバイト数の割合でネットワークをソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxbw\fR\fR
+.ad
+.RS 11n
+.rt  
+使用された帯域幅の割合でネットワークをソートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcpu\fR\fR
+.ad
+.RS 19n
+.rt  
+要約の CPU 使用量でソートします。これはデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBphysical-memory\fR\fR
+.ad
+.RS 19n
+.rt  
+要約の物理メモリー使用量でソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvirtual-memory\fR\fR
+.ad
+.RS 19n
+.rt  
+要約の仮想メモリー使用量でソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 19n
+.rt  
+要約のネットワーク使用量でソートします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetwork\fR\fR
+.ad
+.RS 11n
+.rt  
+要約のネットワーク使用量でソートします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBu | d | i\fR\fR
+.ad
+.sp .6
+.RS 4n
+各レポートのタイムスタンプを含みます。次の形式がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR\fR
+.ad
+.RS 5n
+.rt  
+標準日付形式。\fBdate\fR(1) を参照してください。\fB--p\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+ISO 8601 に準拠する形式としてフォーマットされた時刻。
+.sp
+.in +2
+.nf
+ YYYYMMDDThhmmssZ
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR\fR
+.ad
+.RS 5n
+.rt  
+時刻の内部表現の出力表現。\fBtime\fR(2) を参照してください。 \fBUnix\fR 時刻とも呼ばれます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+拡張表示で詳細情報を表示します。たとえば、ネットワークリソースで使用した場合、拡張表示には各仮想データリンクの詳細が一覧表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzonename\fR[\fI ,zonename\fR]\fR
+.ad
+.sp .6
+.RS 4n
+報告するゾーンの一覧を指定します。デフォルトでは、すべてのゾーンが報告されます。
+.sp
+ゾーンセットについて報告するときは、コンマ区切りリストに加えて複数の -z オプションを指定できます。出力には、指定されたゾーンで使用されたリソースが含まれます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+各間隔レポート間で一時停止する長さを秒数で指定します。「デフォルト」の間隔では、ゾーン監視サービスの構成済み間隔が使用されます。\fBzonestatd\fR(1M) を参照してください。 
+.sp
+\fI間隔\fRが必要です。ゼロの\fI間隔\fRは許可されていません。\fI間隔\fRは、\fB10s\fR や \fB1m\fR のように、[\fIn\fR\fBh\fR][\fIn\fR\fBm\fR][\fIn\fR\fB s\fR] の形式で指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIduration\fR\fR
+.ad
+.sp .6
+.RS 4n
+報告する間隔の数を指定します。指定しない場合、デフォルトでは infinity に設定されます。コマンド期間は (\fIinterval  * duration\fR) です。ゼロの\fI期間\fRは無効です。値 \fBinf\fR を指定して、明示的に infinity を選択することもできます。
+.sp
+期間は、[\fIn\fR\fBh\fR][\fIn\fR\fBm\fR][\fIn\fR\fBs\fR] の形式でも指定できます。この場合、\fI期間\fRは実行時間の期間であると解釈されます。実際の\fI期間\fRは、間隔のもっとも近い倍数に切り上げられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIreport\fR\fR
+.ad
+.sp .6
+.RS 4n
+要約レポート期間を指定します。たとえば、\fB4\fR のレポートでは 4 間隔ごとに報告が生成されます。コマンド期間が報告の倍数ではない場合、最後の報告は残りの間隔に属します。
+.sp
+\fI報告\fRは、[\fIn\fR\fBh\fR][\fIn\fR\fBm\fR][\fIn\fR\fBs\fR] の形式でも指定できます。この場合、レポートは指定された期間に、もっとも近い間隔に切り上げられて出力されます。コマンド\fI期間\fRが報告の倍数ではない場合、最後の報告は残りの間隔に属します。
+.sp
+\fB-R\fR が必要です。\fB-R\fR が指定されていても、報告は指定されていない場合、報告期間はコマンド期間全体となり、指定された報告が実行の最後に生成されます。
+.RE
+
+.SH 出力
+.sp
+.LP
+次の一覧には、コマンド出力の列ヘッダーが定義されています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSTEM-MEMORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理ホストで使用可能なメモリーの合計量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSTEM-LIMIT\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理ホストで使用可能なリソースの最大量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCPUS\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセッサセットに割り当てられた \fBcpu\fR の数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBONLINE\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセッサセットに割り当てられた \fBcpu\fR のうち、プロセスを実行できる \fBcpu\fR の数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMIN/MAX\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムで設定されたプロセッサに割り当てることができる \fBcpu\fR の最大数および最小数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZONE\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースを使用しているゾーン。この列には、ゾーン名に加えて次のものを含めることができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[total]\fR\fR
+.ad
+.RS 12n
+.rt  
+システム全体で使用されるリソースの合計数量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[system]\fR\fR
+.ad
+.RS 12n
+.rt  
+カーネルで使用されるリソース、または特定のゾーンに関連付けない方法で使用されるリソースの数量。
+.sp
+\fBzonestat\fR が非大域ゾーン内で使用される場合、[system] はシステムおよびその他のすべてのゾーンで使用される総リソースを指定します。
+.sp
+ネットワークリソースの場合、ネットワークのシステム使用量は使用できません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUSED\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用されているリソースの量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%USED\fR\fR
+.ad
+.sp .6
+.RS 4n
+合計リソースの割合 (パーセント) として使用されているリソースの量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPCT\fR\fR
+.ad
+.sp .6
+.RS 4n
+合計リソースの割合 (パーセント) として使用されているリソースの量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%PART\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンがバインドされたプロセッサセットで合計 \fBcpu\fR の割合 (パーセント) として使用される \fBcpu\fR の量。大域ゾーンの場合、または \fBpsrset\fR(1M) \fBpsets\fR が使用されている場合、ゾーンには複数のプロセッサセットにバインドされたプロセスのみを含めることができます。ゾーンに複数のバインディングが見つかった場合、\fB%PART\fR はバインドされたすべての \fBpsets\fR が使用される割合になります。\fB[total]\fR および \fB[system]\fR では、\fB%PART\fR はシステム上のすべての \fBcpu\fR が使用される割合 (パーセント) になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のリソースに上限を設定するようにゾーンが構成されている場合、この列にその上限が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%CAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンの構成済み上限の割合として使用されるリソースの量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHRS\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンに割り当てられている共有の数。[total] 行では、リソースを共有するすべてのゾーンに割り当てられた共有の合計数です。共有を使用するようにゾーンが構成されていなくても、共有を使用するように構成されているその他のゾーンとリソースを共有している場合、この列にはゾーンの \fBno-fss\fR が含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%SHRS\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンに割り当てられている合計共有の割合。たとえば、2 つのゾーン (それぞれ 10 共有) が 1 つのプロセッサセットを共有する場合、各ゾーンの \fB%SHR\fR は 50% になります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%SHRU\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンに割り当てられている共有のうち、リソース 100% の割合。共有はリソースの競合がある場合にのみ強制されるため、ゾーンの \fB%SHRU\fR は 100% を超えることが可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTOBYTES\fR\fR
+.ad
+.sp .6
+.RS 4n
+データリンクまたは仮想リンクによって送受信されたバイト数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRBYTE\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理帯域幅を消費する受信バイト数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOBYTE\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理帯域幅を消費する送信バイト数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%PRBYE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBPRBYTE\fR の受信に使用できる物理帯域幅の割合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%POBYE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBPOBYTE\fR の送信に使用できる物理帯域幅の割合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%PUSE\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用可能な合計物理帯域幅の割合で表示した \fBPRBYTE\fR と \fBPOBYTE\fR の合計。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK\fR\fR
+.ad
+.sp .6
+.RS 4n
+データリンクの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAXBW\fR\fR
+.ad
+.sp .6
+.RS 4n
+データリンク上で構成された最大帯域幅
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%MAXBW\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成済みの最大帯域幅の割合で表示したすべての送受信バイト数の合計
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBzonestat\fR を使用した \fBcpu\fR およびメモリー使用率の要約の表示
+.sp
+.LP
+次のコマンドは、\fBcpu\fR およびメモリー使用率の要約を 5 秒ごとに表示します。
+
+.sp
+.in +2
+.nf
+ # zonestat 5 1
+        SUMMARY   Cpus/Online: 4/4  Physical: 8063M  Virtual: 11.8G
+                     ---CPU---   --PHYSMEM-- ---VMEM---  ---NET---
+               ZONE  USED %PART  USED %USED  USED %USED PBYTE %PUSE
+            [total]  0.23 5.76% 3211M 39.8% 4191M 34.6%  350M 18.7%     -
+           [system]  0.03 0.83% 2791M 34.6% 3890M 32.1%     -     -
+             global  0.19 4.86%  324M 4.01%  228M 1.89%  200M 10.7%
+              zoneA  0.00 0.03% 47.9M 0.59% 36.3M 0.30%  100M  5.3%
+              zoneB  0.00 0.02% 48.1M 0.59% 36.4M 0.30%   50M  2.7%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBzonestat\fR を使用した解析可能な出力の生成
+.sp
+.LP
+次のコマンドは、解析可能な出力を生成します。各 \fBpset\fR リソースを使用するゾーンごとに 1 行を 5 秒間隔で出力します。
+
+.sp
+.in +2
+.nf
+# zonestat -p -P zones -r psets 5 1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR\fBzonestat\fR を使用したデフォルトの \fBpset\fR についての報告
+.sp
+.LP
+次のコマンドは、デフォルトの \fBpset\fR について 1 秒に 1 回、1 分間を対象として報告します。
+
+.sp
+.in +2
+.nf
+# zonestat -r default-pset 1 1m
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR\fBzonestat\fR を使用した合計および最大使用率の報告
+.sp
+.LP
+次のコマンドは、10 秒に 1 回、24 時間を対象としてメッセージを表示することなく監視し、1 時間ごとに合計および最大の報告を生成します。
+
+.sp
+.in +2
+.nf
+# zonestat -q -R total,high 10s 24h 1h
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR\fBzonestat\fR を使用したデータリンク使用率の報告
+.sp
+.LP
+次のコマンドは、\fBe1000g0\fR という名前のデータリンクについて 5 秒間隔で 5 回報告します。
+
+.sp
+.in +2
+.nf
+# zonestat -r network -n e1000g0 5 5
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効な使用法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvc:system/zones_monitoring\fR: デフォルトで実行なし、または応答なし。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件\fBsystem/zones\fR
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド呼び出しおよび解析可能な出力は「確実」です。人間が読める形式の出力 (デフォルト出力) は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBdate\fR(1), \fBprctl\fR(1), \fBpooladm\fR(1M), \fBpoolcfg\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBzoneadm\fR(1M), \fBzonecfg\fR(1M), \fBzonestatd\fR(1M), \fBtime\fR(2), \fBtimezone\fR(4), \fBattributes\fR(5), \fBprivileges\fR(5), \fBresource_controls\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBzonestat\fR ユーティリティーは、ゾーン監視サービス \fBsvc/system/zonestat:default\fR に依存します。\fBzonestat\fR ユーティリティーの実行中に \fBzonestat\fR サービスが停止した場合、\fBzonestat\fR コマンド呼び出しは追加報告を出力せずに終了します。次の報告期間に達する前に \fB zonestat\fR が (CTRL/c、SIGINT によって) 中断された場合、報告 (\fB-R\fR) が出力されます。

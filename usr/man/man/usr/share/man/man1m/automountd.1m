@@ -1,0 +1,260 @@
+'\" te
+.\"  Copyright 1989 AT&T All Rights Reserved
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH automountd 1M "23 Aug 2010" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+automountd \- autofs mount/unmount daemon
+.SH SYNOPSIS
+.LP
+.nf
+\fBautomountd\fR [\fB-Tvn\fR] [\fB-D\fR \fIname=value\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBautomountd\fR is an \fBRPC\fR server that answers file system mount and unmount requests from the \fBautofs\fR file system. It uses local files or name service maps to locate file systems to be mounted. These maps are described with the \fBautomount\fR(1M) command.
+.sp
+.LP
+If \fBautomount\fR finds any non-trivial entries in either the local or distributed automount maps and if the daemon is not running already, the \fBautomountd\fR daemon is automatically invoked by \fBautomount\fR(1M). \fBautomountd\fR enables the \fBsvc:/network/nfs/nlockmgr\fR service (\fBlockd\fR(1M)), and the \fBsvc:/network/nfs/status\fR service (\fBstatd\fR(1M)), if NFS mounts need to be done.
+.SS "SMF Management"
+.sp
+.LP
+The \fBautomountd\fR service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/system/filesystem/autofs
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Administrative actions on this service, such as enabling, disabling, or requesting restart, can be performed using \fBsvcadm\fR(1M). The service's status can be queried using \fBsvcs\fR(1). If it is disabled, it is enabled by \fBautomount\fR(1M) unless the \fBapplication/auto_enable\fR property is set to \fBfalse\fR.
+.sp
+.LP
+Values for parameters for \fBautomountd\fR are stored in SMF and manipulated using \fBsharectl\fR(1M). The following are the supported parameters.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautomountd_verbose\fR=\fBTRUE\fR | \fBFALSE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Verbose mode. Causes status messages to be logged to:
+.sp
+.in +2
+.nf
+/var/svc/log/system-filesystem-autofs:default.log
+.fi
+.in -2
+.sp
+
+See \fBsmf\fR(5). The default value is \fBFALSE\fR. Equivalent to the \fB-v\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnobrowse\fR=\fBON\fR | \fBOFF\fR\fR
+.ad
+.sp .6
+.RS 4n
+Turn on or off browsing for all \fBautofs\fR mount points. The default value is \fBOFF\fR. Equivalent to the \fB-n\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrace\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+Expands each RPC call and logs it to:
+.sp
+.in +2
+.nf
+/var/svc/log/system-filesystem-autofs:default.log
+.fi
+.in -2
+.sp
+
+See \fBsmf\fR(5). The default value, \fB0\fR, turns off such tracing. Starting with \fB1\fR, with each higher value, the verbosity of trace output increases. This property is equivalent to the \fB-T\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenvironment\fR=\fIname\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Environment variables. You can specify multiple \fIname\fR=\fIvalue\fR pairs with a comma separator. If there is more than one value for a name, use the double forward slash to indicate that. See \fBEXAMPLES\fR. There are no environment variable settings supplied. This property is equivalent to the \fB-D\fR option.
+.RE
+
+.sp
+.LP
+All the above parameters can be changed using the \fBsharectl\fR(1M) command.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIname=value\fR\fR
+.ad
+.RS 17n
+.rt  
+Assign \fIvalue\fR to the indicated \fBautomount\fR map substitution variable. These assignments cannot be used to substitute variables in the master map \fBauto_master\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 17n
+.rt  
+Turn off browsing for all \fBautofs\fR mount points. This option overrides the \fB-browse\fR \fBautofs\fR map option on the local host.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.RS 17n
+.rt  
+Trace. Expand each \fBRPC\fR call and display it on the standard output.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+Verbose. Log status messages to the console.
+.RE
+
+.SH USAGE
+.sp
+.LP
+See \fBlargefile\fR(5) for the description of the behavior of \fBautomountd\fR when encountering files greater than or equal to 2 Gbyte ( 2^31 bytes).
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSetting Verbose Mode
+.sp
+.LP
+The following command turns on verbose mode, causing status messages to be logged to the location specified in "SMF Management," above. See that section for a description of the properties specified in this and following examples.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p automountd_verbose=true autofs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRTurning on Browsing for Mount Points
+.sp
+.LP
+The following command turns on browsing for all \fBautofs\fR mount points.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p nobrowse=off autofs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRSpecifying and Displaying Environment Variables
+.sp
+.LP
+The following commands set and display the value for an environment variable named \fBDAY\fR.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p environment=DAY=TUES autofs\fR
+% \fBsharectl get -p environment autofs\fR
+environment=DAY=TUES
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command sets multiple parameters for an environment variable. The subsequent command displays the result.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p environment=DAY=TUES,TIME=NOON autofs\fR
+% \fBsharectl get -p environment autofs\fR
+environment=DAY=TUES,TIME=NOON
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The following command set multiple values for name that is assigned to an environment variable. The subsequent command displays the result.
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p environment=DAY=MON\e\e,TUE,TIME=NOON autofs\fR
+% \fBsharectl get -p environment autofs\fR
+environment=DAY=MON\e,TUE,TIME=NOON
+.fi
+.in -2
+.sp
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/auto_master\fR\fR
+.ad
+.RS 20n
+.rt  
+Master map for automounter.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBautomount\fR(1M), \fBsharectl\fR(1M), \fBsvcadm\fR(1M), \fBattributes\fR(5), \fBlargefile\fR(5), \fBsmf\fR(5)

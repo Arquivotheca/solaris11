@@ -1,0 +1,2397 @@
+'\" te
+.\" Copyright (c) 1989 Carnegie Mellon University. All rights reserved.
+.\" Redistribution and use in source and binary forms are permitted provided that the above copyright notice and this paragraph are duplicated in all such forms and that any documentation, advertising materials, and other materials related to such distribution and use acknowledge that the software was developed by Carnegie Mellon University. The name of the University may not be used to endorse or promote products derived from this software without specific prior written permission. THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" Portions Copyright (c) 2008, Sun Microsystems, Inc. All Right Reserved.
+.TH pppd 1M "2001 年 11 月 21 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+pppd \- ポイントツーポイントプロトコルデーモン
+.SH 形式
+.LP
+.nf
+\fBpppd\fR [\fItty_name\fR] [\fIspeed\fR] [\fIoptions\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+ポイントツーポイントプロトコル (PPP) は、シリアルのポイントツーポイントリンク上でデータグラムを伝送する方法を提供します。PPP は、シリアルリンク上でのデータグラムのカプセル化機能、拡張可能なリンク制御プロトコル (LCP)、およびさまざまなネットワークレイヤープロトコルの確立と設定を行う一群のネットワーク制御プロトコル (NCP) の 3 つの部分から構成されています。
+.sp
+.LP
+カプセル化方式は、カーネル内のドライバコードによって提供されます。\fBpppd\fR は、基本的な LCP 認証機能、およびインターネットプロトコル (IP) と IPv6 の確立と設定を行ういくつかの NCP (IP 制御プロトコル (IPCP) および IPV6CP と呼ばれる) を提供します。
+.SH オプション
+.sp
+.LP
+ここでは、\fBpppd\fR のオプションについて説明します。
+.SS "オプションファイル"
+.sp
+.LP
+オプションは、ファイルおよびコマンド行から読み込まれます。\fBpppd\fR は、コマンド行のオプションを処理する前に、\fB/etc/ppp/options\fR、\fB$HOME/.ppprc\fR、および \fB/etc/ppp/options.\fR\fIttyname\fR ファイルからこの順にオプションを読み込みます。(\fBoptions\fR.\fIttyname\fR ファイルの読み込み前に、端末名を取得するためにコマンド行オプションがスキャンされる。)\fBoptions\fR.\fIttyname\fR ファイル名を構築するために、端末名から先頭の \fB/dev/\fR が取り除かれ、残ったスラッシュ文字 (/) がドットで置き換えられます。たとえば、シリアルデバイス \fB/dev/cua/a\fR の場合、\fB/etc/ppp/options.cua.a\fR が読み込まれます。
+.sp
+.LP
+オプションファイルの内容は、スペースで区切られた一連の文字列として構文解析されます。スペースを含む文字列は二重引用符 (") で囲むことで 1 つの文字列として解釈されるようになります。バックスラッシュ (\e) は、直後の 1 文字をクォートします。ハッシュ文字 (#) はコメントの始まりとして解釈され、行末までがコメントとみなされます。オプションファイル中での \fBfile\fR および \fBcall\fR のオプションの使用制限はありません。
+.SS "よく使われるオプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<tty_name>\fR \fR
+.ad
+.RS 23n
+.rt  
+指定したデバイスを介して通信します。必要に応じて、前に \fB/dev/\fR 文字列が追加されます。デバイス名が指定されていない場合や標準入力に接続された端末の名前が指定された場合、\fBpppd\fR はその端末を使用し、バックグラウンド実行のためのフォークを行いません。このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがそれを上書きすることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<speed>\fR \fR
+.ad
+.RS 23n
+.rt  
+ボーレートを <\fBspeed\fR> に設定します (10 進数)。デフォルトでは、ボーレートは変更されません。通常、このオプションはダイアルアウトにのみ必要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBasyncmap\fR \fB\fI<map>\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+\fBasync\fR 文字マップを \fI<map>\fR に設定します。このマップは、シリアル回線上でどの制御文字が正常に受信できないかを記述するものです。\fBpppd\fR は、これらの文字を 2 バイトのエスケープシーケンスとして送信するよう、相手に依頼します。引数は 32 ビットの 16 進数であり、各ビットがエスケープする文字を表しています。ビット 0 (00000001) は文字 0x00 を表し、ビット 31 (80000000) は文字 0x1f つまり '^_' を表します。複数の \fBasyncmap\fR オプションが指定された場合、それらの値の論理和が採用されます。\fB\fR\fBasyncmap\fR オプションが指定されていない場合、\fBpppd\fR は値 0 のネゴシエーションを試みます。相手が同意した場合、標準の制御文字はエスケープされなくなります。ネゴシエーションを無効にし、すべての制御文字をエスケープするには、\fBdefault-asyncmap\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauth\fR \fR
+.ad
+.RS 23n
+.rt  
+ネットワークパケットの送受信を許可する前に、相手に自己認証を要求します。システムにデフォルト経路が設定されている場合、このオプションはデフォルトです。\fBauth\fR または \fBnoauth\fR オプションが指定されていない場合、\fBpppd\fR は、システムでまだ経路設定されてない IP アドレスだけを使用することを相手に許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcall\fR \fB\fIname\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+ファイル \fB/etc/ppp/peers/\fR\fIname\fR からオプションを読み込みます。\fBpppd\fR が root 以外によって実行される場合でも、このファイルには \fBnoauth\fR などの特権オプションを含むことができます。文字列 \fIname\fR はスラッシュ (/) で始まってはいけません。また、パス名の一部に連続するピリオド \fB("..")\fR を含めることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcallback\fR \fB\fInumber\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+Microsoft CBCP を使用して指定の電話番号にコールバックするように要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR \fB\fIscript\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+\fIscript\fR で指定された実行可能ファイルまたはシェルコマンドを使用して、シリアル回線をセットアップします。通常、このスクリプトでは \fBchat\fR(1M) プログラムを使用してモデムにダイアルコマンドを送り、リモート \fBPPP\fR セッションを開始します。このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがそれを上書きすることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrtscts\fR \fR
+.ad
+.RS 23n
+.rt  
+シリアルポートのデータフロー制御にハードウェアフロー制御 (RTS/CTS) を使用します。\fBcrtscts\fR、\fBnocrtscts\fR、\fBcdtrcts\fR、または \fBnocdtrcts\fR オプションが指定されていない場合、シリアルポートのハードウェアフロー制御の設定は変更されずにそのままになります。一部のシリアルポートでは、実際の RTS 出力がなく、このモードを使用して単方向のフロー制御を実装します。シリアルポートは、モデムから CTS によって要求されると伝送を中断しますが、コンピュータへの送信を停止するようにモデムに要求することはできません。このモードでは、DTR をモデム制御回線として使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaultroute\fR \fR
+.ad
+.RS 23n
+.rt  
+IPCP ネゴシエーションが正常に完了すると、相手をゲートウェイとするデフォルト経路をシステムのルーティングテーブルに追加します。このエントリは、\fBPPP\fR 接続が切断された際に削除されます。\fBnodefaultroute\fR オプションが指定されている場合、このオプションは特権オプションとなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR \fB \fIscript\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+\fBpppd\fR が接続を切断したあとに、\fIscript\fR で指定された実行可能コマンドまたはシェルコマンドを実行します。通常、このスクリプトは、ハードウェアモデム制御信号を使用できない場合にモデムを切断するために使用されます。モデムがすでに切断されている場合には、\fBdisconnect\fR は実行されません。このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがそれを上書きすることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBescape\fR \fB\fIxx,yy,...\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+伝送時にエスケープする文字を指定します。相手が \fBasync\fR 制御文字マップでエスケープを要求しているかどうかには影響されません。エスケープする文字は、コンマで区切った 16 進数のリストで指定します。制御文字しか指定できない \fBasyncmap\fR オプションとは異なり、\fBescape\fR オプションではほとんどの文字を指定できます。ただし、16 進表記で 0x20 から 0x3f までと 0x5e の文字はエスケープできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR \fB\fIname\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+オプションをファイル \fIname\fR から読み込みます。このオプションをコマンド行または \fB$HOME/.ppprc\fR で使用する場合、\fBpppd\fR を起動するユーザーが読み取ることのできるファイルでなければなりません。このオプションにかかわらず常に \fBpppd\fR で読み込まれるファイルのリストについては、を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinit\fR \fB \fIscript\fR \fR \fR
+.ad
+.RS 23n
+.rt  
+\fIscript\fR で指定された実行可能コマンドまたはシェルコマンドを実行して、シリアル回線を初期化します。通常、このスクリプトでは \fBchat\fR(1M) プログラムを使用してモデムを設定し、自動応答を有効にします。このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがそれを上書きすることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlock\fR \fR
+.ad
+.RS 23n
+.rt  
+シリアルデバイスに対する排他的アクセスを確実に行うために、UUCP 形式のロックファイルを作成するよう \fBpppd\fR に指示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmru\fR \fB\fIn\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+最大受信ユニット (MRU) 値を \fIn\fR に設定します。\fBpppd\fR は、相手に \fIn\fR バイトを超えるパケットを送信しないよう要求します。最小の MRU 値は 128 です。デフォルトの MRU 値は 1500 です。低速のリンクでは 296 を推奨します (TCP/IP ヘッダー 40 バイト + データ 256 バイト)。IPv6 の場合、MRU は 1280 以上でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR \fB\fIn\fR\fR \fR
+.ad
+.RS 23n
+.rt  
+最大転送単位 (MTU) 値を \fIn\fR に設定します。相手が MRU ネゴシエーションを通じてこれより小さい値を要求してこないかぎり、\fBpppd\fR は、PPP ネットワークインタフェースを通して送信するデータパケットのサイズを \fIn\fR バイト以下にするよう、カーネルのネットワークコードに要求します。IPv6 の場合、MTU は 1280 以上でなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpassive\fR \fR
+.ad
+.RS 23n
+.rt  
+LCP で「passive」オプションを有効にします。このオプションを指定すると、接続を開始しようとしても相手から応答がない場合、\fBpppd\fR は有効な LCP パケットを受動的に待ち続けます。このオプションを指定しなければ、相手から応答がない場合に \fBpppd\fR は終了します。
+.RE
+
+.SS "オプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<local_IP_address>:<remote_IP_address>\fR \fR
+.ad
+.sp .6
+.RS 4n
+ローカルインタフェースとリモートインタフェースの IP アドレスを設定します。どちらか一方を省略することもできますが、コロンは必要です。IP アドレスは、ホスト名または 10 進数ドット表記 (例: \fB :10.1.2.3\fR) で指定します。\fBnoipdefault\fR オプションが指定された場合を除き、デフォルトのローカルアドレスは、そのシステムの最初の IP アドレスです。リモートアドレスは、オプションで指定されていない場合には相手から取得されます。したがって、単純な場合にはこのオプションは不要です。このオプションでローカルまたはリモートの IP アドレスを指定すると、IPCP ネゴシエーションで相手がこの指定と異なるアドレスを送ってきた場合、\fBpppd\fR はこれを拒否します。ただし、\fBipcp-accept-local\fR や \fBipcp-accept-remote\fR オプションが指定されている場合にはこの限りではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallow-fcs\fR \fB\fIfcs-type\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手への送信データに使用してもよい FCS タイプを設定します。\fIfcs-type\fR には、「crc16」、「crc32」、「null」、または整数をコンマで区切って指定します。デフォルトでは、既知のタイプすべてが許可されています。このオプションを指定すると、その指定に含まれていないタイプを相手が要求した場合、指定のタイプだけを要求する LCP Configure-Nak が送信されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallow-ip\fR \fB\fIaddress(es)\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手が自己認証を行わずに使用してもよい IP アドレスまたはサブネットを指定します。このパラメータの構文解析方法は、秘密情報ファイルで許可される IP アドレスのリストの各要素が構文解析される方法と同じです。詳細については、の節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbsdcomp\fR \fB\fInr,nt\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手に、BSD-Compress 方式を使用して送信パケットを最大コードサイズ \fInr\fR ビットで圧縮することを要求し、相手への送信パケットを最大コードサイズ \fInt\fR ビットで圧縮することに同意します。\fInt\fR が指定されていない場合は、デフォルトで \fInr\fR の値が使用されます。\fInr\fR と \fInt\fR には、9 から 15 の範囲の値を使用できます。より大きな値を使用すると、圧縮率は向上しますが、圧縮辞書のためにより多くのカーネルメモリーが消費されます。\fInr\fR または \fInt\fR に値 0 を指定すると、その方向の圧縮は無効になります。BSD-Compress 圧縮を完全に無効にするには、\fBnobsdcomp\fR か \fBbsdcomp 0\fR を指定してください。このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがその値を超えるコードサイズを指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcdtrcts\fR \fR
+.ad
+.sp .6
+.RS 4n
+シリアルポートのデータフロー制御に標準でないハードウェアフロー制御 (DTR/CTS など) を使用します。\fBcrtscts\fR、\fBnocrtscts\fR、\fBcdtrcts\fR、または \fBnocdtrcts\fR オプションが指定されていない場合、シリアルポートのハードウェアフロー制御の設定は変更されずにそのままになります。一部のシリアルポートには、実際の RTS 出力がありません。そのようなシリアルポートでは、このモードを使用して双方向のフロー制御を実装します。ただし、このフロー制御モードでは、DTR をモデム制御回線として使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-interval\fR \fB\fIn\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションが指定された場合、\fBpppd\fR は \fIn\fR 秒に 1 度、相手へのチャレンジを繰り返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-max-challenge\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+CHAP チャレンジの最大転送回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-restart\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+CHAP 再開の間隔 (チャレンジの再送のタイムアウト) を \fIn\fR 秒に設定します。デフォルトは 3 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect-delay\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+接続スクリプトが終了したあと、相手からの有効な PPP パケットを \fIn\fR ミリ秒まで待機します。この待機時間が経過するか、相手から有効な PPP パケットが受信されると、\fBpppd\fR は最初の LCP パケットを送信してネゴシエーションを開始します。デフォルト値は 1000 (1 秒) です。待機時間が適用されるのは、\fBconnect\fR または \fBpty\fR オプションの使用時のみです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdatarate\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBpty\fR、\fBnotty\fR、\fBrecord\fR、または \fBsocket\fR オプションの使用時の最大データ速度を \fIn\fR (バイト/秒) に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug\fR \fR
+.ad
+.sp .6
+.RS 4n
+接続のデバッグ機能を有効にします。このオプションを指定した場合、\fBpppd\fR は送受信したすべての制御パケットの内容を可読形式でログに記録します。パケットは、\fBdaemon\fR 機能を使用し、syslog を経由して \fBdebug\fR レベルで記録されます。この情報は、\fB/etc/syslog.conf\fR を適切に設定することによって、ファイルに記録できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-asyncmap\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBasyncmap\fR ネゴシエーションを無効にし、すべての制御文字を送受信両方向でエスケープさせます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-fcs\fR \fR
+.ad
+.sp .6
+.RS 4n
+FCS 代替ネゴシエーションを完全に無効にします。デフォルトでは、FCS 代替オプションは相手に送信されませんが、オプションは受け入れられます。相手がこのオプションを指定した場合は、LCP Configure-Reject が送信されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault-mru\fR \fR
+.ad
+.sp .6
+.RS 4n
+MRU (最大受信ユニット) ネゴシエーションを無効にします。このオプションを指定すると、\fBpppd\fR はデフォルトの MRU 値 1500 バイトを送受信両方向で使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeflate\fR \fB\fInr,nt,e\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手に、\fBdeflate\fR 方式を使用して送信パケットを最大ウィンドウサイズ \fI2**nr\fR バイトで圧縮することを要求し、相手への送信パケットを最大ウィンドウサイズ \fI2**nt\fR バイト、エフォートレベル \fIe\fR (1 から 9) で圧縮することに同意します。\fInt\fR が指定されていない場合は、デフォルトで \fInr\fR の値が使用されます。\fIe\fR を指定しないと、そのデフォルトは 6 になります。\fInr\fR と \fInt\fR には、9 から 15 の範囲の値を使用できます。より大きな値を使用すると、圧縮率は向上しますが、圧縮辞書のためにより多くのカーネルメモリーが消費されます。(zlib のバグのため、値 8 は使用不可。) \fInr\fR または \fInt\fR に値 0 を指定すると、その方向の圧縮は無効になります。\fBdeflate\fR 圧縮を完全に無効にするには、\fBnodeflate\fR か \fBdeflate 0\fR を指定してください。(注: 相手がどちらにも対応できる場合、\fBpppd\fR は BSD-Compress よりも deflate 圧縮を優先して要求する。)このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがその値を超えるコードサイズを指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdemand\fR \fR
+.ad
+.sp .6
+.RS 4n
+要求時のみ、つまりデータトラフィックが存在する場合のみ、リンクを開始します。このオプションを使用する場合、リモート IP アドレスを、ユーザーがコマンド行で指定するか、オプションファイルで指定する必要があります。\fBpppd\fR は、相手に接続することなく、まず IP トラフィック用にインタフェースを設定して使用可能にします。トラフィックが現れると、\fBpppd\fR は相手に接続し、ネゴシエーションや認証などの処理を実行します。これが完了すると、\fBpppd\fR はリンクを介してデータパケットの送受信を開始します。\fBdemand\fR オプションは暗黙的に \fBpersist\fR オプションを指定します。この動作が望ましくない場合、\fBdemand\fR オプションのあとに \fBnopersist\fR オプションを使用してください。\fBidle\fR および \fBholdoff\fR オプションも \fBdemand\fR オプションとともに使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdomain\fR \fB\fId\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+認証のために使用するローカルホスト名にドメイン名 \fId\fR を付加します。たとえば、\fBgethostname()\fR で \fBporsche\fR という名前が返される場合に、完全指定のドメイン名が \fBporsche.Quotron.COM\fR であれば、\fBdomain Quotron.COM\fR と指定できます。このように設定すると、\fBpppd\fR は、秘密情報ファイルの中の秘密情報を調べる場合や、相手に対して自己認証を行うときのデフォルト名として、\fBporsche.Quotron.COM\fR を使用します。このオプションは特権オプションです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBendpoint\fR \fB\fIendpoint-value\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+エンドポイント判別子を設定します (通常は RFC 1990 マルチリンク PPP 処理に使用される)。\fIendpoint-value\fR は、クラス識別子とクラスに依存する値で構成されます。クラス識別子は、「null」、「local」、「IP」、「MAC」、「magic」、「phone」、または 10 進整数のいずれかです。クラスに依存する値が存在する場合は、コロン (:) またはピリオド (.) で識別子から区切ります。この値には、「IP」クラスの場合は標準のドット区切り 10 進表記 IP アドレス、「MAC」クラスの場合は (必要に応じてコロンまたはドットで区切った) 16 進数 6 桁の Ethernet アドレス、あるいは、必要に応じてコロンまたはドットでバイトを区切った 16 進表記の任意のバイト文字列を指定できます。このオプションは使用可能ですが、この実装はマルチリンクをサポートしていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfcs\fR \fB\fIfcs-type\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手からの送信データに使用してもらいたい FCS タイプを設定します。\fIfcs-type\fR には、「\fBcrc16\fR」、「\fBcrc32\fR」、「\fBnull\fR」、または整数をコンマで区切って指定します。デフォルトでは、FCS 代替オプションは指定されず、媒体に依存する FCS タイプが使用されます。このオプションを指定した場合、相手が LCP Configure-Nak を送信したときは、指定したタイプだけが使用されます。共通のタイプがない場合、FCS 代替オプションは次の LCP Configure-Request から省略され、デフォルトに戻ります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhide-password\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は PAP パケットの内容をログに記録するときにパスワード文字列を除外します。これはデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBholdoff\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+リンクの切断から再開まで何秒待つかを指定します。\fBpersist\fR または \fBdemand\fR オプション使用時にのみ、このオプションは有効です。アイドルであったためにリンクが切断された場合は、この抑止期間は適用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBident\fR \fB\fIstring\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP 識別文字列を設定します。デフォルト値は、\fB--version\fR オプションで表示されるものに似たバージョン文字列です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidle\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+リンクのアイドル状態が \fIn\fR 秒続いた場合は切断するように \fBpppd\fR に指定します。データパケット (つまり IP パケット) の送受信が行われていないとき、リンクはアイドル状態とみなされます。\fBdemand\fR オプションを使用せずに \fBpersist\fR オプションを使用する場合は、このオプションを使用しないでください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipcp-accept-local\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、別のオプションでローカル IP アドレスが指定されている場合でも、\fBpppd\fR は相手からのローカル IP アドレスの指定を受け入れます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipcp-accept-remote\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、別のオプションでリモート IP アドレスが指定されている場合でも、\fBpppd\fR は相手からのリモート IP アドレスの指定を受け入れます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipcp-max-configure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPCP Configure-Request の最大転送回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipcp-max-failure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPCP Configure-Reject の送信を開始するまでの IPCP Configure-NAK の最大送信回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipcp-max-terminate\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPCP Terminate-Request の最大転送回数を \fIn\fR 回に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipcp-restart\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPCP 再開の間隔 (再送のタイムアウト) を \fIn\fR 秒に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipparam\fR \fB\fIstring\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+ip-up と ip-down スクリプト用に追加のパラメータを指定します。このオプションを指定すると、\fIstring\fR がこれらのスクリプトに 6 番目のパラメータとして指定されます。の節を参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6\fR \fB\fI<local_interface_identifier>\fR,\fI<remote_interface_identifier>\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+ローカルおよびリモートの 64 ビットのインタフェース識別子を設定します。どちらか一方を省略することもできます。識別子は、IPv6 アドレスの標準 ASCII 表記法で指定する必要があります (例: \fB::dead:beef\fR)。\fBipv6cp-use-ipaddr\fR オプションを指定すると、ローカル識別子とリモート識別子はそれぞれ対応する IPv4 アドレスから生成されます (前記を参照)。\fBipv6 <local>,<remote>\fR オプションの代わりに \fBipv6cp-use-persistent\fR オプションを使用することもできます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-accept-local\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手のインタフェース識別子をローカルリンク識別子として受け入れます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-max-configure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPv6CP Configure-Request の最大転送回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-max-failure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPv6CP Configure-Reject の送信を開始するまでの IPv6CP Configure-NAK の最大送信回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-max-terminate\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPv6CP Terminate-Request の最大転送回数を \fIn\fR 回に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-restart\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPv6CP 再開の間隔 (再送のタイムアウト) を \fIn\fR 秒に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-use-ipaddr\fR \fR
+.ad
+.sp .6
+.RS 4n
+ローカルまたはリモートの IPv6 アドレスが指定されていない場合、対応する構成済み IPv4 アドレスをデフォルトのインタフェース識別子として使用します。このオプションを指定すると、ネゴシエーションで取得されたアドレスではなく、構成済みのアドレスが使用されます。このオプションを使用する場合、ローカルの IPv6 識別子を指定しないときは \fBipcp-accept-local\fR オプション、リモートの IPv6 識別子を指定しないときは \fBipcp-accept-remote\fR オプションを併用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipv6cp-use-persistent\fR \fR
+.ad
+.sp .6
+.RS 4n
+一意に使用可能な永続的値をリンクローカルアドレスに使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkdebug\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+カーネルレベルの PPP ドライバのデバッグコードを有効にします。引数 \fIn\fR には、次の値のうち必要なものの合計を指定します。\fB1\fR は一般的なデバッグメッセージ出力を有効にします。\fB2\fR は受信したパケットの内容の出力を要求します。\fB4\fR は送信したパケットの内容の出力を要求します。カーネルによって出力されるメッセージは、\fB/etc/syslog.conf\fR 設定ファイルで指定されているファイルに \fBsyslogd\fR(1M) によって記録されます。障害の発生したリンクをデバッグする場合には、\fBkdebug\fR オプションを使用しないでください。代わりに、\fBdebug\fR オプションを使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcp-echo-failure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、LCP Echo-Request を \fIn\fR 回送信しても相手から有効な LCP Echo-Reply が受信されない場合、\fBpppd\fR は相手がダウンしているとみなします。このような場合、\fBpppd\fR は接続を切断します。このオプションを使用する場合は、\fBlcp-echo-interval\fR パラメータに 0 以外の値を指定する必要があります。このオプションを使用すると、ハードウェアモデム制御回線が使用できない状況で、モデムの切断などによって物理的な接続が切断されたあとに \fBpppd\fR を終了できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcp-echo-interval\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションが指定された場合、\fBpppd\fR は \fIn\fR 秒に 1 度、相手に LCP Echo-Request フレームを送信します。通常、相手は Echo-Reply を送信して Echo-Request に応答します。このオプションを \fBlcp-echo-failure\fR オプションとともに使用して、相手との接続が切断されたことを検出できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcp-max-configure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP Configure-Request の最大転送回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcp-max-failure\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP Configure-Reject の送信を開始するまでの LCP Configure-NAK の最大送信回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcp-max-terminate\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP Terminate-Request の最大送信回数を \fIn\fR 回に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcp-restart\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP 再開の間隔 (再送のタイムアウト) を \fIn\fR 秒に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinkname\fR \fB\fIname\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+リンクの論理名を \fIname\fR に設定します。\fBpppd\fR は、そのプロセス ID を含む \fBppp-\fR\fIname\fR\fB\&.pid\fR というファイルを \fB/var/run\fR 内に作成します。これは、特定の相手に対するリンクをどの \fBpppd\fR インスタンスが処理しているかを特定するのに役立ちます。これは特権オプションです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocal\fR \fR
+.ad
+.sp .6
+.RS 4n
+モデム制御回線を使用しません。このオプションを指定すると、\fBpppd\fR は、モデムからの CD (Carrier Detect) 信号の状態を無視し、DTR (Data Terminal Ready) 信号の状態を変更しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogfd\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+ログメッセージをファイル記述子 \fIn\fR に送信します。\fBpppd\fR は、ログメッセージを syslog に送るとともに、最大 1 つのファイルまたはファイル記述子に送信するため、このオプションと \fBlogfile\fR オプションを同時に指定することはできません。デフォルトでは、stdout でシリアルポートが開いている場合を除き、\fBpppd\fR はログメッセージを \fBstdout\fR (ファイル記述子 1) に送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogfile\fR \fB\fIfilename\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+ログメッセージを syslog に送るとともに、ファイル \fIfilename\fR に追加します。このファイルは追加モードで開かれ、\fBpppd\fR を起動したユーザーの特権が割り当てられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogin\fR \fR
+.ad
+.sp .6
+.RS 4n
+PAP を使用した相手の認証にシステムパスワードデータベースを使用し、ユーザーをシステムの \fBwtmp\fR ファイルに記録します。アクセスが許可されるためには、\fB/etc/ppp/pap-secrets\fR ファイルとシステムパスワードデータベースの両方に、相手のエントリが存在する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxconnect\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+ネットワークトラフィックの使用開始から \fIn\fR 秒後に (つまり、最初のネットワーク制御プロトコルの開始から \fIn\fR 秒後に) 接続を切断します。最初の NCP の開始時と、残り時間が 5 分、2 分、および 0.5 分になったときに、LCP Time-Remaining メッセージが送信されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxfail\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+接続試行が \fIn\fR 回連続して失敗すると終了します。値 0 は制限を設定しないことを意味します。デフォルト値は 10 です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodem\fR \fR
+.ad
+.sp .6
+.RS 4n
+モデム制御回線を使用します。このオプションはデフォルトです。このオプションを指定すると、\fBpppd\fR は (接続スクリプトが指定されていなければ) モデムからの CD (Carrier Detect) 信号を待ってからシリアルデバイスを開き、接続の終了時および接続スクリプトの実行前に DTR (Data Terminal Ready) 信号を短時間落とします。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBms-dns\fR \fB\fI<addr>\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBpppd\fR が Microsoft Windows クライアントのサーバーとして動作している場合、このオプションを指定すると、\fBpppd\fR は 1 つまたは 2 つの DNS (Domain Name Server) アドレスをクライアントに提供できます。このオプションの最初のインスタンスはプライマリ DNS アドレスを指定します。2 つ目のインスタンスがあれば、それはセカンダリ DNS アドレスを指定します。最初のインスタンスで指定された名前が複数の IP アドレスに解決される場合は、最初の 2 つのアドレスが使用されます。このオプションは、古いバージョンの \fBpppd\fR では \fBdns-addr\fR という名前でした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBms-lanman\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBpppd\fR が Microsoft サーバーにクライアントとして接続し、認証に MS-CHAPv1 を使用する場合、このオプションを指定すると、Microsoft NT ではなく LAN Manager のパスワード形式が使用されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBms-wins\fR \fB\fI<addr>\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBpppd\fR が Microsoft Windows クライアントまたは Samba クライアントのサーバーとして動作している場合、このオプションを指定すると、\fBpppd\fR は 1 つまたは 2 つの WINS (Windows Internet Name Services) サーバーアドレスをクライアントに提供できます。このオプションの最初のインスタンスはプライマリ WINS アドレスを指定します。2 つ目のインスタンスがあれば、それはセカンダリ WINS アドレスを指定します。\fBms-dns\fR と同様に、指定された名前が複数の IP アドレスに解決される場合は、最初の 2 つのアドレスがプライマリおよびセカンダリとして使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR \fB\fIname\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+認証のために使用するローカルシステム名を \fIname\fR に設定します。これは特権オプションです。このオプションを指定すると、\fBpppd\fR は秘密情報ファイルの第 2 フィールドが \fIname\fR である行を使用して秘密情報を探し、相手の認証に使用します。さらに、\fBuser\fR オプションで上書きされる場合を除き、ローカルシステムの認証を行うときに相手に送る名前として \fIname\fR を使用します。なお、\fBpppd\fR は \fIname\fR にドメイン名を付加しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBno-accm-test\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP Echo-Request メッセージを使用した \fBasyncmap\fR (ACCM) チェックを無効にします。\fBlcp-echo-failure\fR が非同期回線に使用されている場合、\fBpppd\fR は最初の \fIn\fR 個の LCP Echo-Request メッセージにすべての制御文字を含めます。\fBasyncmap\fR が正しく設定されていない場合、リンクはランダムな障害で動作を継続するのではなく終了します。このオプションを指定すると、この機能は無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoaccomp\fR \fR
+.ad
+.sp .6
+.RS 4n
+HDLC Address/Control 圧縮を双方向 (送受信) で無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoauth\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手に自己認証を要求しません。このオプションは特権オプションです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnobsdcomp\fR \fR
+.ad
+.sp .6
+.RS 4n
+BSD-Compresss 圧縮を無効にします。\fBpppd\fR は BSD-Compress 方式を使用したパケット圧縮を要求せず、同意もしません。\fBnoccp\fR が指定されている場合、このオプションは不要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoccp\fR \fR
+.ad
+.sp .6
+.RS 4n
+CCP (圧縮制御プロトコル) ネゴシエーションを無効にします。相手にバグがある場合や、\fBpppd\fR からの CCP ネゴシエーション要求で相手が混乱する場合にのみ、このオプションが必要です。CCP が無効になっている場合、BSD および deflate 圧縮を個別に無効にする必要はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnocrtscts\fR \fR
+.ad
+.sp .6
+.RS 4n
+シリアルポートのハードウェアフロー制御 (つまり RTS/CTS) を無効にします。\fBcrtscts\fR、\fBnocrtscts\fR、\fBcdtrcts\fR、または \fBnocdtrcts\fR オプションが指定されていない場合、シリアルポートのハードウェアフロー制御の設定は変更されずにそのままになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnocdtrcts\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションの機能は \fBnocrtscts\fR と同じです。どちらのオプションも、両方の形式のハードウェアフロー制御を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnodefaultroute\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBdefaultroute\fR オプションを無効にします。root 以外のユーザーが \fBpppd\fR でデフォルト経路を作成できないようにするには、このオプションを \fB/etc/ppp/options\fR ファイルに記述してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnodeflate\fR \fR
+.ad
+.sp .6
+.RS 4n
+deflate 圧縮を無効にします。\fBpppd\fR は deflate 方式を使用したパケット圧縮を要求せず、同意もしません。\fBnoccp\fR が指定されている場合、このオプションは不要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnodeflatedraft\fR \fR
+.ad
+.sp .6
+.RS 4n
+インターネットドラフトの (誤って割り当てられた) deflate 圧縮のアルゴリズム番号を使用しません。\fBnoccp\fR が指定されている場合、このオプションは不要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnodetach\fR \fR
+.ad
+.sp .6
+.RS 4n
+制御端末から切り離しません。このオプションを指定しないと、標準入力上の端末以外のシリアルデバイスが指定された場合、\fBpppd\fR はフォークしてバックグラウンドプロセスになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoendpoint\fR \fR
+.ad
+.sp .6
+.RS 4n
+マルチリンクエンドポイント判別子オプションを送信せず、受け入れることもありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoident\fR \fR
+.ad
+.sp .6
+.RS 4n
+LCP 識別の使用を無効にします。LCP 識別メッセージが相手に送信されることはありませんが、受信されたメッセージはログに記録されます。LCP 識別を完全に無効にするには、このオプションを 2 回指定します。この場合、\fBpppd\fR は受信した LCP 識別メッセージへの応答として LCP Code-Reject を送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoip\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPCP ネゴシエーションと IP 通信を無効にします。相手にバグがある場合や、\fBpppd\fR からの IPCP ネゴシエーション要求で相手が混乱する場合にのみ、このオプションを使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoipv6\fR \fR
+.ad
+.sp .6
+.RS 4n
+IPv6CP ネゴシエーションと IPv6 通信を無効にします。IPv6 はデフォルトでは有効になっていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoipdefault\fR \fR
+.ad
+.sp .6
+.RS 4n
+ローカル IP アドレスが指定されていない場合にデフォルトで行われる、ホスト名からローカル IP アドレスを (可能であれば) 決定する動作を無効にします。このオプションを指定した場合には、IPCP ネゴシエーション時に相手がローカル IP アドレスを指定する必要があります (明示的にコマンド行で指定されているか、オプションファイルで指定されている場合を除く)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnolog\fR \fR
+.ad
+.sp .6
+.RS 4n
+ファイルやファイル記述子にログメッセージを送りません。このオプションを指定すると、\fBlogfd\fR オプションと \fBlogfile\fR オプションが取り消されます。\fBnologfd\fR はこのオプションの別名として機能します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnomagic\fR \fR
+.ad
+.sp .6
+.RS 4n
+マジックナンバーネゴシエーションを無効にします。このオプションを指定すると、\fBpppd\fR はループバック回線を検出できません。相手にバグがある場合にのみ、このオプションを使用してください。「Serial line is looped back」というエラーメッセージを回避するためにこのオプションを使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnopam\fR \fR
+.ad
+.sp .6
+.RS 4n
+この特権オプションは、プラグイン可能な認証モジュール (PAM) の使用を無効にします。このオプションを指定すると、\fBpppd\fR は標準の認証メカニズムに戻ります。デフォルトでは、PAM は使用されません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnopcomp\fR \fR
+.ad
+.sp .6
+.RS 4n
+プロトコルフィールド圧縮ネゴシエーションを送受信両方向で無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnopersist\fR \fR
+.ad
+.sp .6
+.RS 4n
+接続が確立されたあとで切断されると、実行を終了します。\fBpersist\fR または \fBdemand\fR オプションが指定されていない場合、これはデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoplink\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は I_PLINK の代わりに I_LINK を使用します。これはデフォルトです。I_LINK を使用しているとき、システムは (SIGKILL が使用された場合でも) 終了したインタフェースをクリーンアップしますが、\fBifconfig\fR(1M) による PPP ストリームの unplumb や、モジュールの動的な挿入、削除は許可しません。\fBifconfig\fR(1M) の modinsert、modremove、または unplumb をサポートする必要がある場合は、\fBplink\fR オプションを使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnopredictor1\fR \fR
+.ad
+.sp .6
+.RS 4n
+Predictor-1 圧縮を受け入れず、同意もしません。このオプションは互換性のために受け入れられます。実装では、Predictor-1 圧縮はサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoproxyarp\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBproxyarp\fR オプションを無効にします。ユーザーが \fBpppd\fR でプロキシ ARP エントリを作成できないようにするには、このオプションを \fB/etc/ppp/options\fR ファイルに記述してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnotty\fR \fR
+.ad
+.sp .6
+.RS 4n
+通常、\fBpppd\fR は端末デバイスを必要とします。このオプションを指定すると、\fBpppd\fR は擬似 tty のマスターとスレーブのペアを自分で割り当て、スレーブを端末デバイスとして使用します。\fBpppd\fR は、擬似 tty マスターとその標準入力および標準出力の間で文字を転送するために、文字分路として機能する子プロセスを作成します。このように、\fBpppd\fR は、その標準出力や標準入力が端末デバイスではない場合でも、標準出力で文字を送信し、標準入力で文字を受信します。このオプションを使用すると、すべての文字が文字分路プロセス経由で送受信される必要があるため、PPP インタフェースでのデータ転送の遅延と CPU オーバーヘッドが増加します。このオプションを使用する場合、デバイス名を明示的に指定することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnovj\fR \fR
+.ad
+.sp .6
+.RS 4n
+Van Jacobson 形式の TCP/IP ヘッダー圧縮を送受信両方向で無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnovjccomp\fR \fR
+.ad
+.sp .6
+.RS 4n
+Van Jacobson 形式の TCP/IP ヘッダー圧縮の接続 ID 圧縮を無効にします。このオプションを指定すると、\fBpppd\fR は Van Jacobson 形式で圧縮された TCP/IP ヘッダーから接続 ID を省略せず、相手にも省略を要求しません。\fBnovj\fR が指定されている場合、このオプションは不要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpam\fR \fR
+.ad
+.sp .6
+.RS 4n
+この特権オプションは、PAM の使用を有効にします。このオプションを指定すると、\fBlogin\fR オプションと PAP 認証が使用されている場合、\fBpppd\fR は \fBpam\fR(3PAM) フレームワークを使用してサービス名「ppp」でユーザー認証を実行します。デフォルトでは、PAM は使用されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpapcrypt\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は、\fB/etc/ppp/pap-secrets\fR ファイル内の秘密情報と等しい暗号化前のパスワードを受け入れません。このオプションは、\fBpap-secrets \fR ファイル内の秘密情報が \fBcrypt\fR(3C) 形式である場合に使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpap-max-authreq\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+PAP Authenticate-Request の最大転送回数を \fIn\fR 回に設定します (デフォルト値は 10)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpap-restart\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+PAP 再開の間隔 (再送のタイムアウト) を \fIn\fR 秒に設定します (デフォルト値は 3)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpap-timeout\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手が PAP による自己認証を行うまで \fBpppd\fR が待機する最大時間を、\fIn\fR 秒に設定します (制限を設定しない場合は 0)。デフォルト値は 30 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpassword\fR \fB\fIstring\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手への認証に使用するパスワード文字列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpersist\fR \fR
+.ad
+.sp .6
+.RS 4n
+接続が切断されたときに実行を終了するのではなく、再接続を試みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBplink\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は I_LINK の代わりに I_PLINK を使用します。デフォルトでは I_LINK が使用されます。その場合、システムは (SIGKILL が使用された場合でも) 終了したインタフェースをクリーンアップしますが、\fBifconfig\fR(1M) による PPP ストリームの unplumb や、モジュールの動的な挿入、削除は許可しません。このオプションは、\fBifconfig\fR(1M) の modinsert、modremove、または unplumb をサポートする必要がある場合に使用してください。\fBplumbed\fR オプションも参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBplugin\fR \fB\fIfilename\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+共有ライブラリオブジェクトファイル \fIfilename\fR をプラグインとして読み込みます。これは特権オプションです。filename でパスが明示的に指定されている場合を除き、読み込むオブジェクトは \fB/etc/ppp/plugins \fR と \fB/usr/lib/inet/ppp\fR で (この順に) 検索されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBplumbed\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は plumb されたインタフェースを探してセッションに使用します。IPv4 アドレス、IPv6 インタフェース ID、リンク MTU は、別の方法で指定されていない場合、選択されたインタフェースからコピーされます。このモードは、以前の \fBaspppd\fR 実装に似た機能を持っているため、\fBifconfig\fR(1M) を使用する外部アプリケーションとともに \fBpppd\fR を使用する場合に役立つことがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpppmux\fR \fB\fItimer\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+PPP 多重化オプションのネゴシエーションを有効にし、転送多重化のタイムアウトを \fItimer\fR ミリ秒に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivgroup\fR \fB\fIgroup-name\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+グループ \fIgroup-name\fR のメンバーに特権オプションの使用を許可します。これは特権オプションです。\fI group-name\fR のメンバーが \fBpppd\fR を使用して root になる可能性も排除できないため、このオプションを使用するときは注意が必要です。これは \fIgroup-name\fR のメンバーを \fBroot\fR または \fBsys\fR グループに入れることに等しいとみなしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproxyarp\fR \fR
+.ad
+.sp .6
+.RS 4n
+このシステムのアドレス解決プロトコル (ARP) テーブルに、相手の IP アドレスとこのシステムの Ethernet アドレスのエントリを追加します。このオプションを使用すると、ほかのシステムには、相手がローカルの Ethernet 上にあるように見えます。PPP リンク上のリモートアドレスは、Ethernet インタフェースに割り当てられているものと同じサブネットに属している必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpty\fR \fB \fIscript\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+特定の端末デバイスではなく、コマンド \fIscript\fR をシリアル通信に使用することを指定します。\fBpppd\fR は擬似 tty のマスターとスレーブのペアを自分で割り当て、スレーブを端末デバイスとして使用します。\fIscript\fR は、擬似 tty マスターを標準入力および標準出力として子プロセス内で実行されます。このオプションを使用する場合、デバイス名を明示的に指定することはできません。(注: \fBrecord\fR オプションを \fBpty\fR オプションとともに使用すると、子プロセスの標準入力および標準出力にパイプが適用される。)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreceive-all\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は、相手からの制御文字をすべて、受信 \fBasyncmap\fR でマークされているものも含めて受け入れます。このオプションを指定しないと、\fBpppd\fR は \fIRFC 1662\fR で指定されている文字を破棄します。ダイアルバックの実装でよく見受けられるように、相手にバグがある場合にのみ、このオプションを使用するようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecord\fR \fB\fIfilename\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は送受信したすべての文字を \fIfilename\fR というファイルに記録します。\fIfilename\fR は、ユーザーのユーザー ID とアクセス権を使用して、追加モードで開かれます。このオプションでは、擬似 tty とプロセスを使用して、その擬似 tty と実際のシリアルデバイスの間で文字を転送するため、PPP インタフェースでのデータ転送の遅延と CPU オーバーヘッドが増加します。文字はタグ付き形式でタイムスタンプとともに記録され、\fBpppdump\fR(1M) プログラムを使用して可読形式で表示できます。通常、このオプションは \fBpppd\fR のカーネル部分 (特に CCP 圧縮アルゴリズム) のデバッグに使用され、接続構成の問題のデバッグには使用されません。\fBdebug\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremotename\fR \fB\fIname\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+認証のために使用する仮定のリモートシステム名を \fIname\fR に設定します。Microsoft WindowsNT は CHAP チャレンジメッセージ内にシステム名を指定しないため、その問題を回避するためにこのオプションがよく使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefuse-chap\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は、標準のチャレンジハンドシェーク認証プロトコル (CHAP) を使用して相手に対する自己認証を行うことに同意しません。(MS-CHAP には影響しない。)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefuse-mschap\fR \fR
+.ad
+.sp .6
+.RS 4n
+MS-CHAPv1 を使用して相手に対する自己認証を行うことに同意しません。このオプションが指定されている場合、相手からの MS-CHAPv1 認証の要求は LCP Configure-Nak で拒否されます。このオプションを指定しても、CHAP のほかの形式が無効になることはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefuse-mschapv2\fR \fR
+.ad
+.sp .6
+.RS 4n
+MS-CHAPv2 を使用して相手に対する自己認証を行うことに同意しません。このオプションが指定されている場合、相手からの MS-CHAPv2 認証の要求は LCP Configure-Nak で拒否されます。このオプションを指定しても、CHAP のほかの形式が無効になることはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefuse-pap\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は、パスワード認証プロトコル (PAP) を使用して相手に対する自己認証を行うことに同意しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire-chap\fR \fR
+.ad
+.sp .6
+.RS 4n
+標準の CHAP 認証を使用して自己認証を行うことを相手に要求します。MS-CHAP には影響しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire-mschap\fR \fR
+.ad
+.sp .6
+.RS 4n
+MS-CHAPv1 認証を使用して自己認証を行うことを相手に要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire-mschapv2\fR \fR
+.ad
+.sp .6
+.RS 4n
+MS-CHAPv2 認証を使用して自己認証を行うことを相手に要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire-pap\fR \fR
+.ad
+.sp .6
+.RS 4n
+PAP 認証を使用して自己認証を行うことを相手に要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-password\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は PAP パケットの内容をログに記録するときに、パスワード文字列をログメッセージに含めます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsilent\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は相手から有効な LCP パケットを受信するまで、接続を開始するための LCP パケットを送信しません。これは旧バージョンの \fBpppd\fR の passive オプションと同様のオプションで、互換性のために残されていますが、現在の \fBpassive\fR オプションをお勧めします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmall-accm-test\fR \fR
+.ad
+.sp .6
+.RS 4n
+デフォルトでは、\fBasyncmap\fR (ACCM) の設定をチェックするとき、\fBpppd\fR は使用可能な 256 個の値をすべて使用します。\fBno-accm-test\fR を参照してください。このオプションを指定すると、標準の ACCM ネゴシエーションの影響を受ける 32 個の値だけがテストに使用されます。このオプションは、非常に低速のリンクで役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsocket\fR \fB\fIhost\fR:\fIport\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+TCP を使用して指定のホストとポートに接続し、この接続上で PPP を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsync\fR \fR
+.ad
+.sp .6
+.RS 4n
+非同期ではなく同期 HDLC シリアル符号化を使用します。このオプションを指定する場合、\fBpppd\fR で使用されるデバイスに同期のサポートが組み込まれている必要があります。現在は、\fBzs\fR、\fBse\fR、および \fBhsi\fR ドライバがサポートされています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunit\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+可能であれば、PPP インタフェースのユニット番号を \fIn\fR に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBupdetach\fR \fR
+.ad
+.sp .6
+.RS 4n
+このオプションを指定すると、\fBpppd\fR は PPP 接続を確立したあと、制御端末から切り離します。このオプションが指定されている場合、接続スクリプト (通常は \fBchat\fR(1M)) によって \fBstderr\fR に送信されるメッセージと、debug オプションからのデバッグメッセージは、\fBpppd\fR の標準出力に送られます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusehostname\fR \fR
+.ad
+.sp .6
+.RS 4n
+認証のために使用するローカルシステム名として、ホスト名を (ドメイン名が指定されている場合はドメイン名を付加して) 使用することを強制します。このオプションは \fBname\fR オプションに優先します。\fBname\fR オプションは特権オプションなので、通常このオプションは不要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusepeerdns\fR \fR
+.ad
+.sp .6
+.RS 4n
+最大 2 つの DNS サーバーアドレスを相手に要求します。相手からアドレスが提供された場合、それらは環境変数 DNS1 および DNS2 で \fB/etc/ppp/ip-up\fR スクリプトに渡されます。また、\fBpppd\fR は相手から提供されたアドレスを使用して、1 つまたは 2 つの nameserver 行を含む \fB/etc/ppp/resolv.conf\fR ファイルを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR \fB\fIname\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+相手に対してローカルシステムの認証を行うときに使用する名前を \fIname\fR に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvj-max-slots\fR \fB\fIn\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+Van Jacobson の TCP/IP ヘッダー圧縮/圧縮解除コードで使用する接続スロット数を \fIn\fR に設定します。2 以上かつ 16 以下の値を指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwelcome\fR \fB\fIscript\fR\fR \fR
+.ad
+.sp .6
+.RS 4n
+PPP ネゴシエーション開始前かつ、(もしあれば) 接続スクリプトの完了後に、\fIscript\fR で指定された実行可能コマンドまたはシェルコマンドを実行します。このオプションの値が特権ソースから読み込まれた場合、非特権ユーザーがそれを上書きすることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxonxoff\fR \fR
+.ad
+.sp .6
+.RS 4n
+シリアルポートのデータフロー制御にソフトウェアフロー制御 (XON/XOFF) を使用します。
+.RE
+
+.SS "廃止されたオプション"
+.sp
+.LP
+次のオプションは廃止されました。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+ua\fR \fB\fIname\fR\fR\fR
+.ad
+.RS 14n
+.rt  
+PAP ユーザー名とパスワードをファイル \fIname\fR から読み込みます。このファイルには、名前とパスワードを表す 2 行が含まれている必要があります。相手が PAP 認証を要求したときに、この名前とパスワードが相手に送信されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+ipv6\fR \fR
+.ad
+.RS 14n
+.rt  
+インタフェース識別子を指定せずに IPv6 と IPv6CP を有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--version\fR \fR
+.ad
+.RS 14n
+.rt  
+バージョン番号を表示して終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--help\fR \fR
+.ad
+.RS 14n
+.rt  
+短いヘルプメッセージを表示して終了します。
+.RE
+
+.SH 拡張機能説明
+.sp
+.LP
+ここでは、\fBpppd\fR のその他の機能について説明します。
+.SS "セキュリティー"
+.sp
+.LP
+システム管理者は \fBpppd\fR を使用して、サーバー自体やそのサーバーが稼働しているネットワークのセキュリティーを損なうことなく、正当なユーザーにサーバーマシンへの PPP アクセスを提供できます。相手の認証済み識別情報 (存在する場合) に基づいて相手が使用できる IP アドレスを制限し、また、非特権ユーザーが使用できるオプションを制限することで、アクセス制御が提供されます。潜在的に安全でない設定を許可するオプションは、特権オプションです。特権オプションが受け入れられるのは、システム管理者の制御下にあるファイル内でのみ、または \fBpppd\fR が root によって実行されている場合のみです。
+.sp
+.LP
+デフォルトでは、\fBpppd\fR は、特定の IP アドレスへの経路がシステムに設定されていない場合に限り、認証されていない相手にその IP アドレスの使用を許可します。たとえば、より広いインターネットへの常時接続を備えたシステムの場合、通常はデフォルト経路が設定されているため、接続を確立するにはどの相手も自己認証を行う必要があります。そのようなシステムでは、\fBauth\fR オプションはデフォルトです。逆に、インターネットへの接続を 1 つだけ含む PPP リンクを備えたシステムでは、デフォルト経路が設定されていない可能性が高いため、相手は自己認証を行うことなく、実質的に任意の IP アドレスを使用できます。
+.sp
+.LP
+セキュリティーに影響するオプションは特権オプションです。非特権ユーザーが \fBpppd\fR を実行する場合、コマンド行でも、ユーザーの \fB$HOME/.ppprc\fR ファイルでも、または \fBfile\fR オプションを使用して読み込まれるオプションファイルでも、特権オプションを使用することはできません。特権オプションは、\fB/etc/ppp/options\fR ファイル内、または \fBcall\fR オプションを使用して読み込まれるオプションファイル内で使用できます。root ユーザーが \fBpppd\fR を実行する場合、特権オプションは制限なく使用できます。\fB/etc/ppp/options\fR ファイルが存在しない場合は、root だけが \fBpppd\fR を起動できます。root 以外の通常ユーザーが \fBpppd\fR にアクセスするには、\fB/etc/ppp/options\fR ファイルを作成する必要があります (ただし、空でもよい)。
+.sp
+.LP
+\fBpppd\fR はデバイスを開くとき、pppd を起動したユーザーのユーザー ID または root UID (つまり、0) を使用します。これは、デバイス名を指定したのがユーザーかシステム管理者かによって異なります。デバイス名が特権ソース (つまり、\fB/etc/ppp/options\fR または \fBcall\fR オプションで読み込まれるオプションファイル) から読み込まれた場合、\fBpppd\fR は完全な root 特権を使用してデバイスを開きます。したがって、システム管理者が適切なファイルを \fB/etc/ppp/peers\fR に作成することで、ユーザーは通常であればアクセスできないデバイスを使用して PPP 接続を確立できるようになります。それ以外の場合、\fBpppd\fR は、pppd を起動したユーザーの実 UID を使用してデバイスを開きます。
+.SS "認証"
+.sp
+.LP
+認証処理では、一方が他方に自分の名前と何らかの秘密情報を送ることにより、自分の身元を認めさせます。認証では、最初の一方が「クライアント」になり、他方が「サーバー」になります。認証用の名前にはそれぞれのインターネットホスト名を使用できますが、これは必須ではありません。
+.sp
+.LP
+\fBpppd\fR は 4 つの認証プロトコルをサポートしています。つまり、パスワード認証プロトコル (PAP) と、3 つの形式のチャレンジハンドシェーク認証プロトコル (CHAP) です。PAP プロトコルの場合、クライアントは自己認証のために、自己の名前と平文パスワードをサーバーに送ります。CHAP の場合は、サーバーがチャレンジをクライアントに送ることで認証交換を開始します。これに対してクライアントは、自己の名前、および共有シークレットとチャレンジから得られるハッシュ値で応答する必要があります。
+.sp
+.LP
+PPP プロトコルは対称的です。つまり、両者とも、他方に対する自己認証を要求される可能性があります。交換ごとに異なる認証プロトコルと名前を使用できます。
+.sp
+.LP
+デフォルトでは、\fBpppd\fR は、要求された場合に自己認証を行い、相手に自己認証を要求しません。ただし、特定のプロトコルでは、自己認証を行うための秘密情報がない場合には \fBpppd\fR は自己認証を行いません。
+.sp
+.LP
+\fBpppd\fR は認証用の秘密情報を \fB/etc/ppp/pap-secrets\fR ファイル (PAP) および \fB/etc/ppp/chap-secrets\fR ファイル (CHAP) に保存します。どちらのファイルも同じ形式を使用します。\fBpppd\fR は、ほかのシステムに対する自己認証、および自己に対するほかのシステムの認証に、秘密情報ファイルを使用します。
+.sp
+.LP
+秘密情報ファイルでは、1 行に 1 つの秘密情報が格納されます。秘密情報は、クライアントとサーバーの特定の組み合わせに固有で、そのクライアントがそのサーバーに対して自己認証を行う場合にのみ使用できます。秘密情報ファイルの各行には、少なくとも 3 つのフィールドがあり、クライアント名、サーバー名、およびそのあとに秘密情報が格納されます。多くの場合、これらの 3 つのフィールドに続き、クライアントがサーバーに接続するために使用する IP アドレスが記述されます。
+.sp
+.LP
+秘密情報ファイルは、クライアント名、サーバー名、および秘密情報が各フィールドに 1 つの文字列で記述されたものとして構文解析されます。1 つの文字列にスペース文字や特殊文字が含まれる場合は、クォートまたはエスケープする必要があります。3 つのフィールドのいずれでも、大文字と小文字は区別されます。
+.sp
+.LP
+秘密情報がアットマーク (@) で始まっている場合は、秘密情報が含まれているファイルの名前がそのあとに続きます。クライアント名またはサーバー名が単一のアスタリスク (*) で表されている場合は、任意の名前に一致します。一致する対象を選択するとき、\fBpppd\fR はワイルドカードが最小となるものを選択します。\fBpppd\fR は、同じ行の残りの文字列を、そのクライアントに許可される IP アドレスと解釈します。3 つの文字列しかない行や、最初の文字列がハイフン (-) で始まっている行には、IP アドレスを記述できません。任意のアドレスを許可するには、アスタリスク (*) を使用します。感嘆符 (!) で始まっているアドレスは、そのアドレスが受け入れられないことを示します。アドレスの後ろにスラッシュ (/) と数値 \fIn\fR が付加されている場合は、サブネット全体 (最上位 \fIn\fR ビットに同じ値を持つすべてのアドレス) を示します。この形式で、アドレスの後ろにプラス記号 (+) が付加されている場合は、使用中の PPP ネットワークインタフェースのユニット番号に基づいて、サブネットの 1 つのアドレスが承認されることを示します。この場合、アドレスのホスト部分は、そのユニット番号に 1 を加えた値に設定されます。
+.sp
+.LP
+相手を認証するとき、\fBpppd\fR は秘密情報ファイルで、最初のフィールドに相手の名前があり、2 番目のフィールドにローカルシステムの名前がある秘密情報を選択します。ローカルシステム名のデフォルトはホスト名であり、\fBdomain\fR オプションが使用されている場合はドメイン名が付加されます。\fBusehostname\fR オプションが使用されている場合を除き、\fBname\fR オプションでこのデフォルトを上書きできます。
+.sp
+.LP
+相手に対して自己認証を行うとき、\fBpppd\fR はまず、相手に対して自己の識別情報として使用する名前を決定します。この名前は \fBuser\fR オプションで指定されます。\fBuser\fR オプションが使用されていない場合、名前はデフォルトでローカルシステムのホスト名になります。次に、\fBpppd\fR は秘密情報ファイルで、最初のフィールドにローカルシステムの名前があり、2 番目のフィールドに相手の名前がある秘密情報を選択します。標準の CHAP 認証が使用される場合、相手の名前はチャレンジパケット内で送信されているため、\fBpppd\fR には相手の名前がわかります。しかし、MS-CHAP または PAP が使用される場合、\fBpppd\fR はユーザーが指定したオプションから相手の名前を決定する必要があります。ユーザーは相手の名前を直接 \fBremotename\fR オプションで指定できます。それ以外の場合、リモート IP アドレスが数値形式でなく名前で指定されたときは、その名前を相手の名前として使用します。これに失敗すると、\fBpppd\fR は相手の名前として NULL 文字列を使用します。 
+.sp
+.LP
+相手を PAP で認証するとき、提供されたパスワードは秘密情報ファイルのデータと比較されます。パスワードが秘密情報と一致しない場合、パスワードは \fBcrypt()\fR を使用して暗号化され、再度秘密情報と比較されます。\fBpapcrypt\fR オプションが指定されている場合、暗号化されていない最初の比較はセキュリティー向上のために省略されるため、エントリは暗号化された \fBcrypt\fR(3C) 形式でなければなりません。
+.sp
+.LP
+\fBlogin\fR オプションが指定されている場合は、ユーザー名とパスワードもシステムパスワードデータベースと照合されます。したがって、\fBpap-secrets\fR ファイルを設定することで、特定のユーザーだけに PPP アクセスを許可したり、ユーザーに使用を許可する IP アドレスのセットを制限したりできます。通常、\fBlogin\fR オプションを使用する場合、\fB/etc/ppp/pap-secrets\fR 内の秘密情報を "" とすることで、相手が提供する任意のパスワードに一致するようになります。これにより、同じ秘密情報を 2 か所で保持する必要がなくなります。\fBlogin\fR が使用されている場合に \fBpam\fR オプションを指定すると、\fBpam\fR(3PAM) を介したアクセス制御が有効になります。
+.sp
+.LP
+IPCP (またはほかのネットワークプロトコル) を開始するには、その前に認証が完了している必要があります。相手が自己認証を要求されている場合にそれが失敗すると、\fBpppd\fR は LCP を閉じ、リンクを切断します。IPCP ネゴシエーションで得られたリモートホストの IP アドレスが受け入れられないものだった場合、IPCP は閉じられます。IP パケットは IPCP が開いているときだけ送受信されます。
+.sp
+.LP
+自己認証できないホストに接続を許可し、制限された IP アドレスの 1 つの使用を許可するには、クライアント名と秘密情報に空の文字列を指定した 1 行を \fBpap-secrets\fR ファイルに追加します。
+.sp
+.LP
+特定の相手に関する追加の \fBpppd\fR オプションは、秘密情報エントリの後ろに 2 つのダッシュ (--) で区切って指定できます。次に例を示します。
+.sp
+.in +2
+.nf
+peername servername secret ip-address -- novj
+.fi
+.in -2
+
+.SS "ルーティング"
+.sp
+.LP
+IPCP ネゴシエーションが完了すると、\fBpppd\fR はカーネルに、PPP インタフェースで使用するローカル IP アドレスおよびリモート IP アドレスを通知します。また、リンクのリモート側へのホスト経路を作成して、IP パケットを交換できるようにします。ほかのマシンとの通信には、通常、ルーティングテーブルやアドレス解決プロトコル (ARP) テーブルをさらに変更する必要があります。ほとんどの場合、これには \fBdefaultroute\fR や \fBproxyarp\fR オプションで十分ですが、さらに操作が必要になることもあります。さらに操作が必要な場合は、\fB/etc/ppp/ip-up\fR スクリプトまたは経路指定デーモンを使用してください。
+.sp
+.LP
+リモートホスト経由のデフォルト経路を追加するには、\fBdefaultroute\fR オプションを使用します。通常、このオプションは「クライアント」システム、つまり、PPP リンクを使用して一般的なインターネットにアクセスするエンドノードに使用されます。
+.sp
+.LP
+たとえばサーバーマシンが LAN に接続されている場合など、ほかのホストがリモートホストと通信できるようにするために、プロキシ ARP の使用が望ましい場合もあります。\fBproxyarp\fR オプションを指定すると、\fBpppd\fR はリモートホストと同じサブネット上にあるネットワークインタフェースを探します。つまり、ブロードキャストと ARP をサポートし、ポイントツーポイントインタフェースやループバックインタフェースでない、現在動作中のインタフェースを探します。そのようなインタフェースが見つかった場合、\fBpppd\fR は、リモートホストの IP アドレスとその見つかったネットワークインタフェースのハードウェアアドレスを使用して、公開された永続的な ARP エントリを作成します。
+.sp
+.LP
+\fBdemand\fR オプションが使用されている場合、IPCP 開始時にインタフェースの IP アドレスは設定済みです。\fBpppd\fR は、インタフェースの設定に使用したものと同じアドレスをネゴシエーションで取得できない場合、インタフェースの IP アドレスをネゴシエーションで取得されたアドレスに変更します。これにより、既存の接続が中断される場合があります。動的 IP アドレス割り当てを実行する相手に要求時ダイアルを使用することはお勧めしません。
+.SS "スクリプト"
+.sp
+.LP
+\fBpppd\fR は処理のさまざまな段階においてスクリプトを起動し、サイト固有の補助的な処理を実行します。これらのスクリプトは、シェルスクリプトまたは実行可能プログラムです。\fBpppd\fR はスクリプトが終了するまで待機しません。スクリプトは \fBroot\fR として (実ユーザー ID および実効ユーザー ID を 0 に設定して) 実行されるため、ルーティングテーブルの更新や特権デーモンの実行などのタスクを実行できます。これらのスクリプトの内容によってシステムセキュリティーが損なわれないよう注意してください。\fBpppd\fR は標準入力、標準出力、および標準エラーを \fB/dev/null\fR にリダイレクトし、リンクの情報を指定するいくつかの環境変数を除いて環境変数を空にして、スクリプトを実行します。\fBpppd\fR の環境変数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEVICE\fR \fR
+.ad
+.RS 15n
+.rt  
+シリアル tty デバイスの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR \fR
+.ad
+.RS 15n
+.rt  
+ネットワークインタフェースの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPLOCAL\fR \fR
+.ad
+.RS 15n
+.rt  
+リンクのローカル側の IP アドレス。IPCP が開始したときにのみ設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPREMOTE\fR \fR
+.ad
+.RS 15n
+.rt  
+リンクのリモート側の IP アドレス。IPCP が開始したときにのみ設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPEERNAME\fR \fR
+.ad
+.RS 15n
+.rt  
+相手の認証された名前。相手が自己認証を行なった場合にのみ設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSPEED\fR \fR
+.ad
+.RS 15n
+.rt  
+tty デバイスのボーレート。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBORIG_UID\fR \fR
+.ad
+.RS 15n
+.rt  
+\fBpppd\fR を起動したユーザーの実ユーザー ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPPPLOGNAME\fR \fR
+.ad
+.RS 15n
+.rt  
+\fBpppd\fR を起動した実ユーザー ID のユーザー名。これは常に設定されます。
+.RE
+
+.sp
+.LP
+\fBpppd\fR は ip-down および auth-down スクリプト用に次の変数も設定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCONNECT_TIME\fR \fR
+.ad
+.RS 17n
+.rt  
+PPP ネゴシエーションの開始から接続切断までの秒数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBYTES_SENT\fR \fR
+.ad
+.RS 17n
+.rt  
+接続中にシリアルポートのレベルで送信されたバイト数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBYTES_RCVD\fR \fR
+.ad
+.RS 17n
+.rt  
+接続中にシリアルポートのレベルで受信されたバイト数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINKNAME\fR \fR
+.ad
+.RS 17n
+.rt  
+\fBlinkname\fR オプションで設定された、リンクの論理名。
+.RE
+
+.sp
+.LP
+存在する場合、\fBpppd\fR は次のスクリプトを呼び出します。存在しなくてもエラーではありません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/auth-up\fR \fR
+.ad
+.RS 23n
+.rt  
+リモートシステムの自己認証が正常に行われたあとに実行されるプログラムまたはスクリプト。5 つのコマンド行引数 \fBinterface-name peer-name user-name tty-device speed\fR を使用して実行されます。たとえば、\fBnoauth\fR オプションが使用されているときなど、相手が自己認証を行わない場合、このスクリプトは実行されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/auth-down\fR \fR
+.ad
+.RS 23n
+.rt  
+あらかじめ \fB/etc/ppp/auth-up\fR が実行された場合で、リンクがダウンしたときに実行されるプログラムまたはスクリプト。\fB/etc/ppp/auth-up\fR と同じ方法で、同じパラメータを使用して実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/ip-up\fR \fR
+.ad
+.RS 21n
+.rt  
+リンクが IP パケットの送受信に使用可能になった (つまり、IPCP が完了した) ときに実行されるプログラムまたはスクリプト。6 つのコマンド行引数 \fBinterface-name tty-device speed local-IP-address remote-IP-address ipparam\fR を使用して実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/ip-down\fR \fR
+.ad
+.RS 21n
+.rt  
+リンクが IP パケットの送受信に使用不可になったときに実行されるプログラムまたはスクリプト。このスクリプトは、\fB/etc/ppp/ip-up\fR スクリプトの影響を元に戻すために使用できます。\fBip-up\fR スクリプトと同じ方法で、同じパラメータを使用して実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/ipv6-up\fR \fR
+.ad
+.RS 21n
+.rt  
+\fB/etc/ppp/ip-up\fR と同様ですが、リンクが IPv6 パケットの送受信に使用可能になったときに実行されます。6 つのコマンド行引数 \fBinterface-name tty-device speed local-link-local-address remote-link-local-address ipparam\fR を使用して実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/ipv6-down\fR \fR
+.ad
+.RS 23n
+.rt  
+\fB/etc/ppp/ip-down\fR と同様ですが、リンクが IPv6 パケットの送受信に使用不可になったときに実行されます。ipv6-up スクリプトと同じパラメータを使用して実行されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBauth\fR オプションを使用する
+.sp
+.LP
+次の例では、\fB/etc/ppp/options\fR ファイルに \fBauth\fR オプションが含まれているものとします。
+
+.sp
+.LP
+\fBpppd\fR は一般に ISP へのダイアルアウトに使用されます。これは \fBpppd call isp\fR コマンドを使用して実行できます。\fB/etc/ppp/peers/isp\fR ファイルには次のような行が含まれています。 
+
+.sp
+.in +2
+.nf
+cua/a 19200 crtscts connect '/usr/bin/chat -f /etc/ppp/chat-isp' noauth
+.fi
+.in -2
+
+.sp
+.LP
+この例では、\fBchat\fR(1M) を使用して ISP のモデムにダイアルし、必要なログインシーケンスを処理します。\fB/etc/ppp/chat-isp\fR ファイルは \fBchat\fR によって使用され、たとえば次のような内容を含んでいます。
+
+.sp
+.in +2
+.nf
+ABORT "NO CARRIER" 
+ABORT "NO DIALTONE" 
+ABORT "ERROR" 
+ABORT "NO ANSWER" 
+ABORT "BUSY" 
+ABORT "Username/Password Incorrect" 
+"" "at" 
+OK "at&f&d2&c1" 
+OK "atdt2468135" 
+"name:" "^Umyuserid" 
+"word:" "\qmypassword" 
+"ispts" "\q^Uppp" 
+"~-^Uppp-~"
+.fi
+.in -2
+
+.sp
+.LP
+\fBchat\fR スクリプトの詳細については、\fBchat\fR(1M) のマニュアルページを参照してください。
+
+.LP
+\fB例 2 \fR\fBpppd\fR を \fBproxyarp\fR とともに使用する
+.sp
+.LP
+\fBpppd\fR では、ダイアルイン PPP サービスをユーザーに提供することもできます。ユーザーがすでにログインアカウントを持っている場合、PPP サービスを設定するもっとも簡単な方法は、ユーザーが自分のアカウントにログインして \fBpppd\fR を次の例のように実行することです。
+
+.sp
+.in +2
+.nf
+example% \fBpppd proxyarp\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRユーザーが PPP 機能を使用できるようにする
+.sp
+.LP
+ユーザーが PPP 機能を使用できるようにするには、そのユーザーのマシンに IP アドレスを割り当て、\fB/etc/ppp/pap-secrets\fR または \fB/etc/ppp/chap-secrets\fR にエントリを作成します。これにより、ユーザーのマシンは自己認証を行うことができます。たとえば、joespc というマシンを使用しているユーザー Joe が server というマシンにダイアルインし、joespc.my.net という IP アドレスを使用できるようにするには、次のエントリを \fB/etc/ppp/pap-secrets\fR または \fB/etc/ppp/chap-secrets\fR ファイルに追加します。
+
+.sp
+.in +2
+.nf
+\fBjoespc	server	"joe's secret"	joespc.my.net\fR 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+または、たとえば ppp という別のユーザー名を作成し、そのログインシェルを \fB/usr/bin/pppd\fR、ホームディレクトリを \fB/etc/ppp\fR とする方法もあります。この方法で \fBpppd\fR を実行する場合、オプションは \fB/etc/ppp/.ppprc\fR ファイルに記述します。
+
+.sp
+.LP
+複雑なシリアル接続を使用している場合は、\fBasyncmap a0000\fR を使用して、XON (^Q) や XOFF (^S) などの制御文字をエスケープすると役立つ場合があります。パスに telnet が含まれている場合は、^] をエスケープしてください (\fBasyncmap 200a0000\fR)。パスに \fBrlogin\fR コマンドが含まれている場合は、オプションに \fBescape ff\fR オプションを追加してください。これは、\fBrlogin\fR により、0xff、0xff、0x73、0x73、およびそれに続く 8 バイトで構成されるウィンドウサイズ変更シーケンスがストリームから削除されるためです。
+
+.SH 終了ステータス
+.sp
+.LP
+\fBpppd\fR の終了ステータスは、エラーやリンク切断理由を示します。終了ステータスの値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+\fBpppd\fR は切り離されたか、接続が正常に確立されたあとで相手の要求で切断されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR \fR
+.ad
+.RS 7n
+.rt  
+即時の致命的なエラーが発生しました。たとえば、重要なシステムコールが失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR \fR
+.ad
+.RS 7n
+.rt  
+指定されたオプションにエラーが検出されました。たとえば、同時に指定することのできないオプションが指定されている場合や、\fB/etc/ppp/options\fR が存在せずユーザーが root でない場合などです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR \fR
+.ad
+.RS 7n
+.rt  
+\fBpppd\fR が \fBsetuid-root\fR でなく、起動したユーザーが root ではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR \fR
+.ad
+.RS 7n
+.rt  
+カーネルが PPP をサポートしていません。たとえば、PPP カーネルドライバが含まれていないか読み込み不可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB5\fR \fR
+.ad
+.RS 7n
+.rt  
+\fBpppd\fR は SIGINT、SIGTERM、または SIGHUP 信号が送信されたため終了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR \fR
+.ad
+.RS 7n
+.rt  
+シリアルポートをロックできませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB7\fR \fR
+.ad
+.RS 7n
+.rt  
+シリアルポートを開くことができませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB8\fR \fR
+.ad
+.RS 7n
+.rt  
+接続スクリプトが失敗し、ゼロ以外の終了ステータスを返しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB9\fR \fR
+.ad
+.RS 7n
+.rt  
+\fBpty\fR オプションの引数として指定されたコマンドを実行できませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB10\fR \fR
+.ad
+.RS 7n
+.rt  
+ネットワークプロトコルを実行できなかったため、PPP ネゴシエーションが失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB11\fR \fR
+.ad
+.RS 7n
+.rt  
+相手システムが自己認証に失敗したか、自己認証を拒否しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB12\fR \fR
+.ad
+.RS 7n
+.rt  
+リンクは正常に確立されましたが、アイドルであったために切断されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB13\fR \fR
+.ad
+.RS 7n
+.rt  
+リンクは正常に確立されましたが、接続時間制限に達したために切断されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB14\fR \fR
+.ad
+.RS 7n
+.rt  
+コールバックのネゴシエーションが行われたため、まもなく着呼があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB15\fR \fR
+.ad
+.RS 7n
+.rt  
+相手がエコー要求に応答しないためリンクが切断されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB16\fR \fR
+.ad
+.RS 7n
+.rt  
+モデムの切断によってリンクが切断されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB17\fR \fR
+.ad
+.RS 7n
+.rt  
+シリアルループバックが検出されたため PPP ネゴシエーションが失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB18\fR \fR
+.ad
+.RS 7n
+.rt  
+ゼロ以外の終了ステータスが返されたため、init スクリプトが失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB19\fR \fR
+.ad
+.RS 7n
+.rt  
+相手への認証が失敗しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/sppp\fIn\fR\fR\fB\&.pid\fR \fR
+.ad
+.RS 29n
+.rt  
+PPP インタフェースユニット \fIn\fR に対応する \fBpppd\fR プロセスのプロセス ID を格納します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/ppp-\fIname\fR\fR\fB\&.pid\fR \fR
+.ad
+.RS 29n
+.rt  
+論理リンク名に対応する \fBpppd\fR プロセスのプロセス ID を格納します (\fBlinkname\fR オプションを参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/pap-secrets\fR \fR
+.ad
+.RS 29n
+.rt  
+PAP 認証で使用するユーザー名、パスワード、および IP アドレスを格納します。このファイルは root が所有し、ほかのユーザーには読み書きできないようにする必要があります。そうでない場合、\fBpppd\fR は警告をログに記録します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/chap-secrets\fR \fR
+.ad
+.RS 29n
+.rt  
+すべての形式の CHAP 認証で使用する名前、秘密情報、および IP アドレスを格納します。\fB/etc/ppp/pap-secrets\fR ファイルは \fBroot\fR が所有し、ほかのユーザーには読み書きできないようにする必要があります。そうでない場合、\fBpppd\fR は警告をログに記録します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/options\fR \fR
+.ad
+.RS 29n
+.rt  
+\fBpppd\fR のシステムデフォルトオプションを記述します。ユーザーデフォルトオプションやコマンド行オプションより前に読み込まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.ppprc\fR \fR
+.ad
+.RS 29n
+.rt  
+ユーザーのデフォルトオプションを記述します。\fB/etc/ppp/options.\fIttyname\fR\fR より前に読み込まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/options.\fIttyname\fR\fR \fR
+.ad
+.RS 29n
+.rt  
+使用中のシリアルポートのシステムデフォルトオプションを記述します。\fB$HOME/.ppprc\fR のあとで読み込まれます。このファイル名の \fIttyname\fR 部分を構築するために、ポート名から先頭の \fB/dev/\fR が取り除かれ (存在する場合)、スラッシュ文字 (/) があればドットに変換されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ppp/peers\fR \fR
+.ad
+.RS 29n
+.rt  
+このディレクトリのオプションファイルには、\fBpppd\fR が \fBroot\fR 以外のユーザーによって起動された場合でも使用できる特権オプションを指定します。システム管理者がこのディレクトリにオプションファイルを作成することにより、非特権ユーザーは、信頼できる特定の相手に限り、相手に認証を要求せずにダイアルアウトできるようになります。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/network/ppp
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBchat\fR(1M), \fBifconfig\fR(1M), \fBcrypt\fR(3C), \fBpam\fR(3PAM), \fBattributes\fR(5)
+.sp
+.LP
+『\fIRFC 2472 - IP Version 6 Over PPP\fR』、Haskin, D. および Allen, E. 著、Network Working Group 発行、1998 年 12 月
+.sp
+.LP
+『\fIRFC 1144, Compressing TCP/IP Headers for Low-Speed Serial Links\fR』、Jacobson, V. 著、Network Working Group 発行、1990 年 2 月 
+.sp
+.LP
+『\fIRFC 1334, PPP Authentication Protocols\fR』、Lloyd, B. および Simpson, W. 著、Network Working Group 発行、1992 年 10 月
+.sp
+.LP
+『\fIRFC 1332, The PPP Internet Protocol Control Protocol (IPCP)\fR』、McGregor, G. 著、Network Working Group 発行、1992 年 5 月
+.sp
+.LP
+『\fIRFC 1321, The MD5 Message-Digest Algorithm\fR』、Rivest, R. 著、Network Working Group 発行、1992 年 4 月
+.sp
+.LP
+『\fIRFC 1661, The Point-to-Point Protocol (PPP)\fR』、Simpson, W. 著、Network Working Group 発行、1994 年 7 月
+.sp
+.LP
+『\fIRFC 1662, HDLC-like Framing\fR』、Simpson, W. 著、Network Working Group 発行、1994 年 7 月
+.SH 注意事項
+.sp
+.LP
+次の信号は \fBpppd\fR の動作に影響を与えます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSIGINT、SIGTERM\fR \fR
+.ad
+.RS 21n
+.rt  
+リンクを切断し、シリアルデバイスの設定を復元してから、実行を終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSIGHUP\fR \fR
+.ad
+.RS 21n
+.rt  
+リンクを切断し、シリアルデバイスの設定を復元し、シリアルデバイスを閉じます。\fBpersist\fR または \fBdemand\fR オプションが指定されている場合、\fBpppd\fR はシリアルデバイスを再度開き、抑止期間を置いてから新しい接続を開始しようとします。それ以外の場合、\fBpppd\fR は終了します。抑止期間中に \fBSIGHUP\fR を受信すると、\fBpppd\fR は抑止期間をすぐに終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSIGUSR1\fR \fR
+.ad
+.RS 21n
+.rt  
+\fBdebug\fR オプションのステータスを切り替え、リンクのステータス情報をログに出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSIGUSR2\fR \fR
+.ad
+.RS 21n
+.rt  
+この信号を受信すると、\fBpppd\fR は圧縮のネゴシエーションを再度行います。これは、致命的な圧縮解除エラーの結果として圧縮が無効になったあとで、再度圧縮を有効にする場合に役立ちます。通常、致命的な圧縮解除エラーは実装のバグを示します。 
+.RE
+
+.SH 診断
+.sp
+.LP
+メッセージは \fBLOG_DAEMON\fR 機能を使用して syslog デーモンに送られます。エラーメッセージやデバッグメッセージを確認するには、\fB/etc/syslog.conf\fR ファイルを編集してメッセージの送り先となるデバイスやファイルを指定するか、\fBupdetach\fR または \fBlogfile\fR オプションを使用します。
+.sp
+.LP
+\fBdebug\fR オプションを指定すると、送受信されたすべての LCP、PAP、CHAP、または IPCP 制御パケットの内容がログに記録されます。これは、PPP ネゴシエーションが成功しない場合や、認証が失敗する場合に役立ちます。 
+.sp
+.LP
+\fBSIGUSR1\fR 信号を送信することによっても、デバッグを有効にしたり無効にしたりできます。この信号は、\fBpppd\fR プロセスに対するトグルとして機能します。

@@ -1,0 +1,365 @@
+'\" te
+.\" Copyright 2008, Sun Microsystems, Inc. All Rights Reserved 
+.TH encrypt 1 "2008 年 12 月 17 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+encrypt, decrypt \- ファイルの暗号化または復号化
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/encrypt\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/encrypt\fR \fB-a\fR \fIalgorithm\fR [\fB-v\fR] 
+     [\fB-k\fR \fIkey_file\fR | \fB-K\fR \fIkey_label\fR [\fB-T\fR \fItoken_spec\fR]]
+     [\fB-i\fR \fIinput_file\fR] [\fB-o\fR \fIoutput_file\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/decrypt\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/decrypt\fR \fB-a\fR \fIalgorithm\fR [\fB-v\fR] 
+     [\fB-k\fR \fIkey_file\fR | \fB-K\fR \fIkey_label\fR [\fB-T\fR \fItoken_spec\fR]]
+     [\fB-i\fR \fIinput_file\fR] [\fB-o\fR \fIoutput_file\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+このユーティリティーは、指定されたアルゴリズムを使用して、指定されたファイルまたは stdin を暗号化または復号化します。出力ファイルが指定されていない場合、標準出力に出力されます。入力と出力が同じファイルの場合、暗号化された出力が同じファイルシステム内の一時作業ファイルに書き込まれてから、元のファイルと置き換えられます。
+.sp
+.LP
+復号化時に入力と出力が同じファイルである場合は、暗号化テキストファイルが平文で置き換えられます。
+.sp
+.LP
+\fBencrypt\fR の出力ファイルと \fBdecrypt\fR の入力ファイルには、次の情報が含まれています。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+出力形式バージョン番号 (ネットワークバイトオーダーの 4 バイト)。現在のバージョンは 1 です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+鍵生成関数で使用される繰り返し (ネットワークバイトオーダーの 4 バイト)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IV (\fBivlen\fR バイト)[1]。iv データは、1 ブロックサイズと等しいランダムバイトにより生成されます。 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+鍵生成に使用される salt データ (16 バイト)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+暗号化テキストデータ。
+.RE
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIalgorithm\fR\fR
+.ad
+.RS 18n
+.rt  
+暗号化または復号化プロセスで使用するアルゴリズムの名前を指定します。詳細については、「使用法」の「\fBアルゴリズム\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinput_file\fR\fR
+.ad
+.RS 18n
+.rt  
+入力ファイルを指定します。\fIinput_file\fR が指定されていない場合、デフォルトは標準入力です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIkey_file\fR\fR
+.ad
+.RS 18n
+.rt  
+暗号化アルゴリズムのキー値を含むファイルを指定します。PKCS#11 仕様で規定されているように、各アルゴリズムには固有のキー素材要件があります。\fB-k\fR が指定されていない場合、\fBencrypt\fR は \fBgetpassphrase\fR(3C) を使用してキー素材の入力を要求します。鍵ファイルのサイズにより鍵の長さが決まります。また、可変長鍵を使用した暗号化用の 128 ビット長鍵の生成には、端末から設定されたパスフレーズが常に使用されます。
+.sp
+鍵ファイルの生成については、\fBpktool\fR(1) の \fBgenkey\fR サブコマンドを参照してください。また、\fBdd\fR(1M) を使用することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIkey_label\fR\fR
+.ad
+.RS 18n
+.rt  
+PKCS#11 トークン内で対称トークンキーのラベルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 18n
+.rt  
+システムで利用可能なアルゴリズムの一覧を表示します。この一覧は、暗号化フレームワークの構成によって変わります。鍵のサイズはビット単位で表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput_file\fR\fR
+.ad
+.RS 18n
+.rt  
+出力ファイルを指定します。\fIoutput_file\fR が指定されていない場合のデフォルトは標準出力です。ファイルへのリダイレクトなしに標準出力が使用される場合、暗号化または復号化された raw データにより端末エミュレーションが中断されるため、端末ウィンドウがハングアップしたように見える場合があります。これは、バイナリファイルを表示しているときに時折発生する状態によく似ています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItoken_spec\fR\fR
+.ad
+.RS 18n
+.rt  
+\fB-K\fR が指定されている場合に、デフォルトのソフトトークンオブジェクトストア以外の PKCS#11 トークンを指定します。
+.sp
+\fItoken_spec\fR は次の形式になります。
+.sp
+.in +2
+.nf
+\fItoken_name\fR \fB[:\fR\fImanuf_id\fR \fB[:\fR\fIserial_no\fR\fB]]\fR
+.fi
+.in -2
+.sp
+
+トークンラベルの末尾にスペースがある場合でも、このオプションではユーザーがスペースを入力する必要はありません。 
+.sp
+トークン識別文字列はコロンで区切ります。いずれかの部分に文字としてコロン (\fB:\fR) を含める場合、そのコロンをバックスラッシュで (\fB\e\fR) でエスケープする必要があります。コロン (\fB:\fR) がない場合、文字列全体が (最大 32 文字) がトークンラベルと見なされます。コロンが (\fB:\fR) 1 つだけある場合、文字列はトークンラベルと作成者となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 18n
+.rt  
+詳細な情報を表示します。\fBVerbose\fR を参照してください。
+.RE
+
+.SH 使用法
+.SS "アルゴリズム"
+.sp
+.LP
+\fB-l\fR オプションを指定すると、サポートされるアルゴリズムと、鍵の最小サイズおよび最大サイズが表示されます。これらのアルゴリズムは、暗号化フレームワークによって提供されます。サポートされる各アルゴリズムは PKCS #11 メカニズムの別名であり、特定のアルゴリズムタイプでもっともよく使用され、もっとも制限が少ないバージョンです。たとえば、\fBdes\fR は \fBCKM_DES_CBC_PAD\fR の別名、\fBarcfour\fR は \fBCKM_RC4\fR の別名です。パディングや \fBECB\fR のない派生アルゴリズムは、サポートされていません。
+.sp
+.LP
+これらの別名は \fB-a\fR オプションとともに使用され、大文字と小文字が区別されます。
+.SS "パスフレーズ"
+.sp
+.LP
+\fB-k\fR オプションが暗号化および復号化タスクで使用されない場合、ユーザーはパスフレーズの入力を求められます。パスフレーズは、PKCS #5 で指定されている PBKDF2 アルゴリズムを使用して処理され、より安全な鍵に変換されます。
+.sp
+.LP
+暗号化および復号化でパスフレーズが使用される場合、ユーザーが入力したパスフレーズが \fBPBKDF2\fR アルゴリズムを使用して暗号化鍵に変換されます。詳細は、http://www.rsasecurity.com の「\fBPKCS #5 v2.0.\fR」を参照してください。
+.SS "詳細"
+.sp
+.LP
+コマンドに入力ファイルが指定されている場合、進行状況が画面に表示されます。進行状況の表示では、25% 完了するごとにパイプ記号 (\fB|\fR) が表示されます。 標準入力からの入力の場合は、40KB 読み取られるたびにピリオド (\fB\&.\fR) が表示されます。両方の入力方法が完了すると、「\fBDone\fR」が出力されます。 
+.SH 使用例
+.LP
+\fB例 1 \fR使用できるアルゴリズムを一覧表示する
+.sp
+.LP
+次の例では、使用できるアルゴリムが一覧表示されます。
+
+.sp
+.in +2
+.nf
+example$ encrypt -l
+     Algorithm       Keysize:  Min   Max
+     -----------------------------------
+     aes                       128   128
+     arcfour                     8   128
+     des                        64    64
+     3des                      192   192
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRAES を使用して暗号化する
+.sp
+.LP
+次の例では、AES を使用して暗号化し、暗号化鍵の入力を求めます。
+
+.sp
+.in +2
+.nf
+example$ encrypt -a aes -i myfile.txt -o secretstuff
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR鍵ファイルの作成後に AES を使用して暗号化する
+.sp
+.LP
+次の例では、鍵ファイルの作成後に AES を使用して暗号化します。 
+
+.sp
+.in +2
+.nf
+example$ pktool genkey keystore=file keytype=aes keylen=128 \e
+            outkey=key
+example$ encrypt -a aes -k key -i myfile.txt -o secretstuff
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRインパイプを使用して暗号化されたテープバックアップを指定する
+.sp
+.LP
+次の例では、インパイプを使用して、暗号化されたテープバックアップを提供します。
+
+.sp
+.in +2
+.nf
+example$ ufsdump 0f - /var | encrypt -a arcfour \e
+     -k /etc/mykeys/backup.k | dd of=/dev/rmt/0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRインパイプを使用してテープバックアップを復元する
+.sp
+.LP
+次の例では、インパイプを使用してテープバックアップを復元します。
+
+.sp
+.in +2
+.nf
+example$ decrypt -a arcfour -k /etc/mykeys/backup.k \e
+     -i /dev/rmt/0 | ufsrestore xvf -
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR3DES アルゴリズムを使用して入力ファイルを暗号化する
+.sp
+.LP
+次の例では、\fBdes3key\fR ファイルに格納された 192 ビット鍵を使用して \fBinputfile\fR ファイルを暗号化します。
+
+.sp
+.in +2
+.nf
+example$ encrypt -a 3des -k des3key -i inputfile -o outputfile
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRDES トークンキーを使用して入力ファイルを暗号化する
+.sp
+.LP
+次の例では、ソフトトークンキーストア内の DES トークンキーを使用して入力ファイルを暗号化します。DES トークンキーは、\fBpktool\fR(1) で生成できます。
+
+.sp
+.in +2
+.nf
+example$ encrypt -a des -K mydeskey \e
+     -T "Sun Software PKCS#11 softtoken" -i inputfile \e
+     -o outputfile
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdigest\fR(1), \fBpktool\fR(1), \fBmac\fR(1), \fBdd\fR(1M), \fBgetpassphrase\fR(3C), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5), \fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+\fI『Oracle Solaris Administration: Security Services』\fR
+.sp
+.LP
+RSA PKCS#11 v2.11: http://www.rsasecurity.com
+.sp
+.LP
+RSA PKCS#5 v2.0: http://www.rsasecurity.com

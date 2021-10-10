@@ -1,0 +1,319 @@
+'\" te
+.\"  Copyright (c) 1996, Sun Microsystems, Inc. All Rights Reserved
+.TH bfs 1 "1996 年 5 月 20 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+bfs \- 大型ファイル用のスキャナ
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/bfs\fR [\fB-\fR] \fIfilename\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBbfs\fR コマンドは、ほとんど \fBed\fR(1) と同じですが、読み取り専用で、より大きなファイルを処理する点が異なります。ファイルは最大 1024K バイト、32K 行で、1 行あたりに復帰改行を含めて最大 512 文字 (16 ビットマシンの場合は 255 文字) を含めることができます。\fBbfs\fR ではファイルがバッファにコピーされないため、ファイルの走査は一般に \fBed\fR(1) よりも効率的です。\fBcsplit\fR(1) を使用して、大きなファイルを編集のために扱いやすい大きさのいくつかのファイルに分割できる場合、bfs は、大きなファイルの各セクションを識別するのに役立ちます。
+.sp
+.LP
+通常、\fBw\fR (write) コマンドで書き込んだファイルのサイズが出力されるのと同様に、走査しているファイルのサイズが出力されます。オプションの \fB\(mi\fR は、サイズの出力を抑制します。\fBP\fR とキャリッジリターンを入力すると、\fBed\fR(1) の場合と同様に入力を求めるプロンプトとして \fB*\fR が出力されます。プロンプトは、再度 \fBP\fR とキャリッジリターンを入力するとオフにできます。メッセージは、プロンプトがオンになっている場合には、エラーに対してメッセージが出力されることに注意してください。
+.sp
+.LP
+\fBed\fR(1) で説明されているアドレス表現式はすべてサポートされています。また、正規表現を、\fB/\fR と \fB?\fR 以外の 2 つの記号で囲むことができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>\fR\fR
+.ad
+.RS 5n
+.rt  
+折り返しのない下方検索を示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<\fR\fR
+.ad
+.RS 5n
+.rt  
+折り返しのない上方検索を示します。
+.RE
+
+.sp
+.LP
+マーク名には多少の違いがあります。つまり、\fBa\fR ～ \fBz\fR の文字だけが使用可能であり、26 のマークすべてが記憶されます。
+.SS "bfs コマンド"
+.sp
+.LP
+\fBe\fR、\fBg\fR、\fBv\fR、\fBk\fR、\fBp\fR、\fBq\fR、\fBw\fR、\fB=\fR、\fB!\fR、および NULL の各コマンドは、\fBed\fR(1) の説明どおりに動作します。\fB\(mi\(mi\(mi\fR、\fB+++\(mi\fR、\fB+++=\fR、\fB\(mi12\fR、\fB+4p\fR などのコマンドは受け入れられます。\fB1、10p\fR、および \fB1,10\fR は、いずれも最初の 10 行を出力します。\fBf\fR コマンドは、走査中のファイルの名前だけを出力します。ファイル名の記憶機能はありません。\fI\fR\fBw\fR  コマンドは、出力先の変更、切り捨て、または圧縮機能には影響されません (以下の \fBxo\fR、\fBxt\fR、および \fBxc\fR の各コマンドを参照)。次の追加コマンドを使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxf\fR\fI file\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した \fIfile\fR からコマンドを取り出します。ファイルの終わり、割り込みシグナルの受信、またはエラーの発生により、コマンドの読み取りは、\fBxf \fRを含むファイルに戻ります。\fBxf\fR コマンドは、10 の深さまでネストすることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxn\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在使用中のマークをリストします (マークは、\fBk\fR コマンドで設定されます)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxo\fR [\fIfile\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBp\fR および NULL コマンドからの出力を、指定した \fIfile\fR に送ります。このファイルは、\fBumask\fR の設定 (\fBumask\fR(1) を参照) で別の指定がされているのでなければ、必要に応じてモード 666 (だれでも読み書きが可能) で作成されます。\fIfile\fR を指定しないと、出力は標準出力に送られます。出力先の変更を行うたびに、ファイルの切り捨てや作成が行われることに注意してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB:\fR\fI label\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンドファイル内に \fIlabel\fR 定義します。\fIlabel\fR は復帰改行で終了し、\fB:\fR (コロン) と \fIlabel\fR の先頭の間にあるブランクは無視されます。ラベルは参照されなくてもよいので、このコマンドは、コマンドファイル内に注釈を挿入するためにも使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB( \fB\&.\fR, \fB\&.\fR)\fBxb\fR/\fIregular expression\fR/\fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+このコマンドが正常に実行されると、\fIlabel\fR への (上方または下方) ジャンプが行われます。次の条件のいずれかが成立すると、ジャンプは失敗します。
+.RS +4
+.TP
+1.
+アドレスが \fB1\fR と \fB$\fR の間にない。
+.RE
+.RS +4
+.TP
+2.
+2 番目のアドレスが 1 番目のアドレスよりも小さい。
+.RE
+.RS +4
+.TP
+3.
+最初と最後の行を含む指定した範囲内に、正規表現と一致する行がない。
+.RE
+正常終了すると、一致した行に \fB\&.\fR (ドット) が設定されて、\fIlabel\fR へのジャンプが行われます。このコマンドは、アドレスが間違っているときにもエラーメッセージを出さない唯一のコマンドですので、他のコマンドを実行する前にアドレスが間違っていないかを検査するために使用できます。コマンド、\fBxb/^/ label\fR は無条件ジャンプであることに注意してください。
+.sp
+\fBxb\fR コマンドは、端末以外から読み取られた場合にのみ使用できます。パイプから読み取られた場合は、下方ジャンプだけしか実行できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxt\fR\fI number\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBp\fR および NULL コマンドからの出力を、\fInumber\fR で指定した文字数まで切り捨てます。初期値は \fB255\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxv\fR [\fIdigit\fR] [\fIspaces\fR] [\fIvalue\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBxv\fR に続いて指定された \fIdigit\fR が変数名になります。コマンド \fBxv5100\fR と \fBxv5 100\fR は、どちらも値 \fB100\fR を変数 \fB5\fR に割り当てます。コマンド \fBxv61、100p\fR は、値 \fB1、100p\fR を変数 \fB6\fR に割り当てます。変数を参照するには、変数名の前に \fB%\fR を付けます。たとえば次の例は、前述の割り当てを変数 \fB5\fR と \fB6\fR に使用します。  
+.sp
+.in +2
+.nf
+1,%5p
+1,%5
+%6
+.fi
+.in -2
+.sp
+
+すべてで、最初の 100 行が出力されます。 
+.sp
+\fBg/%5/p\fR
+.sp
+前述のコマンドは、文字 \fB100\fR をグローバルに検索して、一致した各行を出力します。\fB%\fR の特殊な意味をエスケープするには、その前に \fB\e\fR を付ける必要があります。 
+.sp
+\fBg/".*\e%\fR[cds]\fB/p\fR
+.sp
+文字、10 進整数、または文字列の %c、%d、または %s 形式 (たとえば、\fBprintf\fR のような文) を照合してリストするために使用できます。\fBxv\fR コマンドの機能には、このほかに \fBUNIX\fR コマンドの出力の最初の行を変数に格納できるというものがあります。そのための条件は、\fIvalue\fR の最初の文字が \fB!\fR でなければならないということだけです。例:  
+.sp
+.in +2
+.nf
+\&.w junk
+xv5!cat junk
+!rm junk
+!echo "%5"
+xv6!expr %6 + 1
+.fi
+.in -2
+.sp
+
+前述のコマンドは、現在の行を変数 \fB35\fR に入れ、それを出力して、変数 \fB36\fR を 1 増分します。\fIvalue\fR の最初の文字としての \fB!\fR の特殊な意味をエスケープするには、その前に \fB\e\fR を付けます。 
+.sp
+\fBxv7\e!date\fR
+.sp
+前述のコマンドは、値 \fB!date\fR を変数 \fB7\fR に格納します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxbz\fR\fI label\fR\fR
+.ad
+.br
+.na
+\fB\fBxbn\fR\fI label\fR\fR
+.ad
+.sp .6
+.RS 4n
+これらの 2 つのコマンドは、\fBUNIX\fR コマンド (\fB!\fR\fB コマンド\fR) の実行で最後に保存された\fIリターンコード\fR、または 0 以外の値をそれぞれテストして、指定された label にジャンプします。次の 2 つの例はいずれも、文字列 \fBsize\fR を含む次の 5 行を検索するものです。
+.sp
+.ne 2
+.mk
+.na
+\fB例 1：\fR
+.ad
+.RS 12n
+.rt  
+.sp
+.in +2
+.nf
+xv55
+: l
+/size/
+xv5!expr %5 \(mi 1
+!if 0%5 != 0 exit 2
+xbn l
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB例 2：\fR
+.ad
+.RS 12n
+.rt  
+.sp
+.in +2
+.nf
+xv45
+: l
+/size/
+xv4!expr %4 \(mi 1
+!if 0%4 = 0 exit 2
+xbz l
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxc\fR [\fBswitch\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBswitch\fR が \fB1\fR の場合、\fBp\fR および NULL コマンドからの出力は圧縮されます。\fBswitch\fR が \fB0\fR の場合は圧縮されません。引数がない場合、\fBxc\fR は \fBswitch\fR を反転します。\fBswitch\fR は、最初は圧縮を行わないように設定されています。圧縮された出力では、タブとブランクからなる文字列は 1 つのブランクに置き換えられ、空白行は出力されません。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR\fR
+.ad
+.RS 12n
+.rt  
+最大 1024K バイト、32K 行、1 行あたりに復帰改行を含め最大 512 文字 (16 ビットマシンの場合は 255 文字) を収納するすべてのファイル。\fIfilename\fR には、\fBcsplit\fR(1) によって編集用に扱いやすい大きさに分割された大きなファイルの 1 つのセクションを指定することができます。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイルにもコマンドにもエラーはなく、正常終了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsplit\fR(1), \fBed\fR(1), \fBumask\fR(1), \fBattributes\fR(5)
+.SH 診断
+.sp
+.LP
+プロンプトがオフの場合、コマンドにエラーがあると \fB?\fR だけが表示されます。プロンプトがオン場合は、詳しいエラーメッセージが表示されます。

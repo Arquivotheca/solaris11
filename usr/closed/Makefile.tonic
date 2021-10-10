@@ -1,0 +1,88 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Makefile.tonic - overrides the install macros when performing a 
+# Tonic closedbins build. The files in $CLOSED which include this
+# Makefile only do so if $(TONICBUILD) is not set to #, so all the
+# rules here are active.
+#
+
+INS += -O
+stub stubinstall := INS= install
+MKDIR= mkdir
+
+INS.file= $(RM) $@; $(RM) $(@:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(INS) -s -m $(FILEMODE) -f $(@D) $<
+
+INS.slink3= $(RM) -r $@; $(SYMLINK) $(IMPLEMENTED_PLATFORM) $@ ; \
+	$(RM) -r $(@:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(MKDIR) -p $(@D:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(SYMLINK) $(IMPLEMENTED_PLATFORM) $(@:$(ROOT)/%=$(CLOSEDROOT)/%)
+
+INS.slink4= $(RM) -r $@; $(SYMLINK) ../$(PLATFORM)/include $@ ; \
+	$(RM) -r $(@:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(MKDIR) -p $(@D:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(SYMLINK) ../$(PLATFORM)/include $(@:$(ROOT)/%=$(CLOSEDROOT)/%)
+
+INS.slink7= $(RM) -r $@; $(SYMLINK) ../../$(PLATFORM)/sbin/$(@F) $@ ; \
+	$(RM) -r $(@:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(MKDIR) -p $(@D:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(SYMLINK) ../../$(PLATFORM)/sbin/$(@F) $(@:$(ROOT)/%=$(CLOSEDROOT)/%)
+
+INS.rename= $(INS.file) ; $(MV) $(@D)/$(<F) $@ ; \
+	$(MV) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(<F) \
+	$(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F)
+
+INSLINKTARGET= $<
+CLOSEDROOTINSLNTGT= $(INSLINKTARGET:$(ROOT)/%=$(CLOSEDROOT)/%)
+INS.link = $(RM) $@; \
+	$(LN) $(INSLINKTARGET) $@ ; \
+	$(RM) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F) ; \
+	$(MKDIR) -p $(@D:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(LN) $(CLOSEDROOTINSLNTGT) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F)
+
+INS.symlink = $(RM) $@; \
+	$(SYMLINK) $(INSLINKTARGET) $@ ; \
+	$(RM) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F) ; \
+	$(MKDIR) -p $(@D:$(ROOT)/%=$(CLOSEDROOT)/%) ; \
+	$(SYMLINK) $(CLOSEDROOTINSLNTGT) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F)
+
+# dynamic library symlink
+INS.liblink=    -$(RM) $@; \
+	$(SYMLINK) $(LIBLINKPATH)$(LIBLINKS)$(VERS) $@ ; \
+	$(RM) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F) ; \
+	$(SYMLINK) $(LIBLINKPATH)$(LIBLINKS)$(VERS) \
+	$(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F)
+
+# dynamic library 64bit symlink
+INS.liblink64=	$(INS.liblink)
+
+INS.liblinkccc=	-$(RM) $@; \
+	$(SYMLINK) $(LIBLINKPATH)$(LIBLINKSCCC)$(VERS) $@ ; \
+	$(RM) $(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F) ; \
+	$(SYMLINK) $(LIBLINKPATH)$(LIBLINKSCCC)$(VERS) \
+	$(@D:$(ROOT)/%=$(CLOSEDROOT)/%)/$(@F)
+INS.liblinkccc64=	$(INS.liblinkccc)

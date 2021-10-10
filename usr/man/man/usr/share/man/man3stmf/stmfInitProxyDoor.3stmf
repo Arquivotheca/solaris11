@@ -1,0 +1,129 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems Inc. All Rights Reserved.
+.TH stmfInitProxyDoor 3STMF "29 Sep 2009" "SunOS 5.11" "SCSI Target Mode Framework Library Functions"
+.SH NAME
+stmfInitProxyDoor \- establish the door server with the STMF proxy service
+.SH SYNOPSIS
+.LP
+.nf
+\fBcc\fR [ \fIflag\fR... ] \fIfile\fR... \fB-lstmf\fR [ \fIlibrary\fR... ]
+#include <libstmf.h>
+
+\fBint\fR \fBstmfInitProxyDoor\fR(\fBint *\fR\fIhdl\fR, \fBint\fR \fIfd\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhdl\fR\fR
+.ad
+.RS 7n
+.rt  
+a pointer to an \fBint\fR that will contain the handle for the proxy door to be used in calls to \fBstmfPostProxyMsg\fR(3STMF) and \fBstmfDestroyProxyDoor\fR(3STMF).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfd\fR\fR
+.ad
+.RS 7n
+.rt  
+the door file descriptor for the established door server
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBstmfInitProxyDoor()\fR function establishes the door server with the STMF proxy service. The STMF proxy service is responsible for sending SCSI commands to the peer node on behalf of a logical unit in the Standby asymmetric logical unit access (ALUA) state. \fBstmfInitProxyDoor()\fR should be called once a peer-to-peer communication channel between the two participating ALUA nodes has been established by the caller.
+.sp
+.LP
+The \fBdoor_call\fR(3C) from the STMF proxy service to the door server will fill in the \fBdoor_arg_t\fR structure as follows:
+.sp
+.in +2
+.nf
+door_arg_t arg;
+uint32_t result;
+
+arg.data_ptr = buf;
+arg.data_size = size;
+arg.desc_ptr = NULL;
+arg.desc_num = 0;
+arg.rbuf = (char *)&result
+arg.rsize = sizeof (result);
+.fi
+.in -2
+
+.sp
+.LP
+The tuple <\fIdata_ptr\fR, \fIdata_size\fR> is expected to arrive at the peer node STMF proxy service via \fBstmfPostProxyMsg()\fR.
+.sp
+.LP
+The door server is expected to complete the door call with these arguments to \fBdoor_return\fR(3C):
+.sp
+.in +2
+.nf
+uinit32_t result;
+
+(void) door_return((char *)&result, sizeof(result), NULL, 0);
+.fi
+.in -2
+
+.sp
+.LP
+where result is of type \fBuint32_t\fR and set to 0 on success, non-zero on failure.
+.sp
+.LP
+Non-zero values are logged as errors without further action. No file descriptors will be exchanged by the door call or return.
+.SH RETURN VALUES
+.sp
+.LP
+The following values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTMF_ERROR_DOOR_INSTALLED\fR\fR
+.ad
+.RS 29n
+.rt  
+A previous door has already been established.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTMF_STATUS_SUCCESS\fR\fR
+.ad
+.RS 29n
+.rt  
+The API call was successful.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdoor_call\fR(3C), \fBdoor_return\fR(3C), \fBlibstmf\fR(3LIB), \fBstmfDestroyProxyDoor\fR(3STMF), \fBstmfPostProxyMsg\fR(3STMF), \fBattributes\fR(5)

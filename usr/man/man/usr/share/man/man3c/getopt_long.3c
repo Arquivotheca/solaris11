@@ -1,0 +1,551 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH getopt_long 3C "10 May 2004" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+getopt_long, getopt_long_only, getopt_clip \- parse long command options
+.SH SYNOPSIS
+.LP
+.nf
+#include <getopt.h>
+
+\fBint\fR \fBgetopt_long\fR(\fBint\fR \fIargc\fR, \fBchar * const *\fR\fIargv\fR, \fBconst char *\fR\fIshortopts\fR,
+     \fBconst struct option *\fR\fIlongopts\fR, \fBint *\fR\fIindexptr\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBgetopt_long_only\fR(\fBint\fR \fIargc\fR, \fBchar * const *\fR\fIargv\fR, \fBconst char *\fR\fIshortopts\fR,
+     \fBconst struct option *\fR\fIlongopts\fR, \fBint *\fR\fIindexptr\fR);
+.fi
+
+.LP
+.nf
+\fBint\fR \fBgetopt_clip\fR(\fBint\fR \fIargc\fR, \fBchar * const *\fR\fIargv\fR, \fBconst char *\fR\fIshortopts\fR,
+     \fBconst struct option *\fR\fIlongopts\fR, \fBint *\fR\fIindexptr\fRextern char *\fIoptarg\fR;
+extern int \fIoptind\fR, \fIopterr\fR, \fIoptopt\fR;
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+These functions are provided as a porting aid for GNU/Freeware/OpenBSD utilities. The \fBgetopt_long()\fR function is intended to be as closely compatible with the GNU and OpenBSD implementations as possible, but since these public implementations differ in some corner cases, it is not possible to be fully compatible with both. The differences are enumerated in the NOTES section.
+.sp
+.LP
+The \fBgetopt_long()\fR function is an aid for implementing the GNU command line argument conventions. See the GNU documentation for the details of these conventions (glibc 2.2.3). Note that the GNU conventions are not POSIX-conforming. Most notably, the GNU conventions allow for optional option-arguments and do not enforce that operands must follow options on the command line.
+.sp
+.LP
+The \fBgetopt_clip()\fR function provides an interface similar to \fBgetopt_long()\fR except that it implements the Sun CLIP convention, which is slightly more restrictive than the GNU/Freeware conventions. CLIP is modeled after the GNU/Freeware conventions but removes POSIX violations and syntactic ambiguities (see \fBIntro\fR(1)). Specifically, \fBgetopt_clip()\fR is a command line parser that can be used by applications that follow the Command Line Interface Paradigm or CLIP syntax guidelines 3, 4, 5, 6, 7, 9, 10, 15, and 16. The remaining guidelines are not addressed by \fBgetopt_clip()\fR and are the responsibility of the application.
+.sp
+.LP
+The \fBgetopt_long()\fR function is similar to \fBgetopt\fR(3C) except that it accepts options in two forms: words and characters, also referred to as long options and short options.
+.sp
+.LP
+The \fBgetopt_long()\fR function can be used in two ways. In the first way, every long option understood by the program is mapped to a single character that is usually a corresponding short option. The \fBoption\fR structure is used only to translate from long options to short options. In the second way, a long option sets a \fBflag\fR specified in the \fBoption\fR structure, or stores a pointer to the command line argument in the address passed to it for options that take arguments. These two methods apply individually to each long option. Both methods can be used in the same application.
+.sp
+.LP
+The \fBgetopt_long()\fR function accepts command lines that interleave options and operands. The \fBgetopt_long()\fR function reorders the elements of the \fIargv\fR argument such that when all command line arguments have been processed, all operands follow options (and their option-arguments) in the \fIargv\fR array and \fIoptind\fR points to the first operand. The order of options relative to other options and operands relative to other operands is maintained. The argument "--" is accepted as a delimiter indicating the end of options. No argument reorder occurs past this delimiter. Argument reordering can not be unambiguously performed in all cases. The \fBgetopt_long()\fR function depends on a number of internal heuristics to perform the reordering. The \fIargc\fR and \fIargv\fR arguments are the argument count and argument array as passed to \fBmain()\fR (see \fBexec\fR(2)).
+.sp
+.LP
+The \fIshortopts\fR argument contains the short-option characters recognized by the command using these functions. If a letter is followed by a colon (:), the option is expected to have an option-argument that should be separated from it by white space. If a character is followed by two colons (::), the option takes an optional option-argument. Any text after the option name it is returned in \fIoptarg\fR; otherwise, \fIoptarg\fR is set to 0. A whitespace character can never be used to separate an optional option-argument from its associated option. If \fIshortopts\fR contains the character "\fBW\fR" followed by a semicolon (;), then \fB-W\fR \fBfoo\fR is treated as the long option --\fBfoo\fR.
+.sp
+.LP
+If the first character of the \fIshortopts\fR argument is the plus sign (+), \fBgetopt_long()\fR enforces the POSIX requirement that operands follow options on the command line by returning -1 and stopping argument processing upon encountering the first operand (or "--"). This behavior can also be specified by setting the environment variable \fBPOSIXLY_CORRECT\fR.
+.sp
+.LP
+A hyphen (-) as the first character of the \fIshortopts\fR argument specifies that options and operands can be intermixed in \fIargv\fR but no argument reordering is performed. Operands are returned as arguments to option `\e1', and option processing does not stop until "--" or the end of \fIargv\fR is found.
+.sp
+.LP
+If the first character of the \fIshortopts\fR argument (after a potential plus or minus character) is a colon (:), a colon is returned by \fBgetopt_long()\fR in response to a missing argument; otherwise, a question mark (?) is returned for this condition.
+.sp
+.LP
+The \fIlongopts\fR argument describes the long options to accept.  It is an array of \fBstruct option\fR structures, one for each long option. The array is terminated with an element containing all zeros.
+.sp
+.LP
+The \fBstruct option\fR structure contains the following members:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconst char *name\fR\fR
+.ad
+.RS 20n
+.rt  
+Contains a pointer to the name of the option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint has_arg\fR\fR
+.ad
+.RS 20n
+.rt  
+Specifies whether the option takes an argument. The possible values, defined in <\fBgetopt.h\fR>, are \fBno_argument\fR, \fBoptional_argument\fR, and \fBrequired_argument\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint *flag\fR\fR
+.ad
+.RS 20n
+.rt  
+Contains the address of an \fBint\fR variable that is the flag for this option. The value contained in val is stored in this location to indicate that the option was seen. If \fBflag\fR is a null pointer, then the value contained in \fBval\fR is returned when this option is encountered, otherwise zero is returned.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint val\fR\fR
+.ad
+.RS 20n
+.rt  
+Contains the value to be stored at the variable pointed to by \fBflag\fR or returned by \fBgetopt_long()\fR if \fBflag\fR is a null pointer.
+.RE
+
+.sp
+.LP
+For any long option, \fBgetopt_long()\fR returns the index in the array \fIlongopts\fR of the options definition by storing it in \fIindexptr\fR. The name of the option can be retrieved with \fIlongopts\fR[(*\fIindexptr\fR)].\fBname\fR. Long options can be distinguished either by the values in their \fBval\fR members or by their indices. The \fIindexptr\fR variable can also distinguish long options that set flags. The value of \fIindexptr\fR after encountering a short option is undefined.
+.sp
+.LP
+If an option has an argument, the \fIoptarg\fR global variable is set to point to the start of the option argument on return from \fBgetopt_long()\fR; otherwise it is set to null. A long option can take an argument in one of two forms: --option=arg or --option arg. If the long option argument is optional, only the "\fB--option=arg\fR" form can be used to specify the option argument. No argument is specified by the simple form "\fB--option"\fR. The form "\fB--option\fR=" specifies an empty string as the option argument.
+.sp
+.LP
+Long-option names can be abbreviated if the abbreviation is unique or an exact match for some defined option. An exact match takes precedence over an abbreviated match. Thus, if \fBfoo\fR and \fBfoobar\fR are acceptable long-option names, then specifying --\fBfoo\fR on the command line always matches the former.  Specifying --\fBf\fR or --\fBfo\fR would not be accepted as a match for either.
+.sp
+.LP
+The \fBgetopt_long()\fR function places in \fIoptind\fR the \fIargv\fR index of the next argument to be processed. The \fIoptind\fR global variable is external and is initialized to 1 before the first call to \fBgetopt_long()\fR. When all options have been processed (that is, up to the first non-option argument), \fBgetopt_long()\fR returns -1. The special option "--" (two hyphens) can be used to delimit the end of the options; when it is encountered, -1 is returned and "\(em" is skipped. This ooption is useful in delimiting non-option arguments that begin with "-" (hyphen).
+.sp
+.LP
+If \fBgetopt_long()\fR encounters a short option character \fIshortopts\fR string or a long option not described in the \fIlongopts\fR array, it returns the question mark (?) character. It also returns a question mark (?) character in response to a missing option argument unless the first character of \fIshortopts\fR is a colon (:) (or the second character, if the first character is either a plus (+) or a minus (-)), in which case it returns a colon (:). In either case, if the application has not set \fIopterr\fR to 0 and the first character of \fIshortopts\fR is not a colon (:), \fBgetopt_long()\fR prints a diagnostic message to \fBstderr\fR.
+.sp
+.LP
+The \fBgetopt_long_only()\fR function is equivalent to the \fBgetopt_long()\fR function except that it allows the user of the application to pass long options with only a single hyphen (-) instead of "--". The "--" prefix is still recognized. However, when a single hyphen (-) is encountered, \fBgetopt_long_only()\fR attempts to match this argument to a long option, including abbreviations of the long option. If a long option starts with the same character as a short option, a single hyphen followed by that character (and no other characters) will be recognized as a short option. Use of \fBgetopt_long_only()\fR is strongly discouraged by Sun and GNU for new applications.
+.sp
+.LP
+The behavior of \fBgetopt_clip()\fR differs from that of \fBgetopt_long()\fR in the following ways:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBgetopt_clip()\fR function does not perform argument reordering. The \fBgetopt_clip()\fR function always enforces the POSIX behavior that all options should precede operands on the command line. Specifically, \fBgetopt_clip()\fR does not reorder arguments but returns -1 and stops processing upon encountering the first operand argument.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The environment variable \fBPOSIXLY_CORRECT\fR is ignored (the \fBgetopt_clip()\fR function behaves as though it were set.)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The plus and minus characters do not have a special meaning as the first character of the \fIshortopts\fR argument. They are treated as any other character (other than the colon) would be treated.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Optional option-arguments are not allowed. The behavior of \fBgetopt_clip()\fR when \fBoptional_argument\fR is specified as the value of \fBhas_arg\fR in the \fIlongopts\fR argument or double colons are included in the \fIshortopts\fR argument is unspecified.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Long-option abbreviations are not recognized.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Short options are required to have at least one long-option equivalent. That is, each character in \fIshortopts\fR must appear as the \fBval\fR member in one or more \fBoption\fR structures. Similarly, each long option must have a short option equivalent, meaning that the \fBval\fR member of each \fBoption\fR structure must appear in the \fIshortopts\fR string.  If these requirements are not met, \fBgetopt_clip()\fR returns -1 and sets \fBerrno\fR to \fBEINVAL\fR.
+.RE
+.SH RETURN VALUES
+.sp
+.LP
+For short options (other than \fB-W\fR when \fBW;\fR is in \fIshortopts\fR), these functions return the next option character specified on the command line. For long options, the value returned by these functions depends upon the value of the \fBflag\fR structure element for the identified option. If \fBflag\fR is \fINULL\fR, the  value contained in the \fBval\fR structure element for the long option encountered on the command line is returned.  Otherwise, these functions return 0 (and the value specified in the \fBval\fR member for the long option is stored into the location pointed to by \fBflag\fR). When \fBW;\fR is in \fIshortopts\fR and \fB-W\fR is encountered in the command line and the option argument to \fB-W\fR matches a long-option name, the return state from these functions is as if the long option had been encountered. However, if no argument is specified to the long option, \fIoptarg\fR is set to the option argument of \fB-W\fR (the long-option name or unique prefix). If the option argument of \fB-W\fR does not match a long option (or unique prefix), the return state is as for any other short option.
+.sp
+.LP
+A colon (:) is returned if \fBgetopt_long()\fR detects a missing argument and the first character of \fIshortopts\fR (other than a possible initial "+" or "-") was a colon (':').
+.sp
+.LP
+A question mark (?) is returned if \fBgetopt_long()\fR encounters an option letter not included in \fIshortopts\fR or detects a missing argument and the first character of \fIshortopts\fR (other than a possible initial "+" or "-") was not a colon (:).
+.sp
+.LP
+The \fBgetopt_clip()\fR function expects all short options to have one or more long-option equivalent and all long options to have one short option equivalent (see NOTES for details). If proper equivalents are not found, \fBgetopt_clip()\fR returns -1 and sets \fBerrno\fR to \fBEINVAL\fR.
+.SH ERRORS
+.sp
+.LP
+The \fBgetopt_clip()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+A short option does not have at least one long-option equivalent, or a long option does not have at least one short-option equivalent.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRExample using \fBgetopt()\fR.
+.sp
+.in +2
+.nf
+#include <unistd.h>
+#include <getopt.h>
+
+/* Flag set by `--verbose'. */
+static int verbose_flag;
+
+int
+main (int argc, char **argv)
+{
+  int c;
+
+  while (1) {
+    static struct option long_options[] = {
+      /* These options set a flag. */
+      {"verbose", no_argument, &verbose_flag, 1},
+      {"brief",   no_argument, &verbose_flag, 0},
+      /* The following options don't set a flag. */
+      {"add",     no_argument, NULL, 'a'},
+      {"append",  no_argument, NULL, 'b'},
+      {"delete",  required_argument, NULL, 'd'},
+      {"create",  required_argument, NULL, 'c'},
+      {"file",    required_argument, NULL, 'f'},
+      {0, 0, 0, 0}
+    };
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
+
+    c = getopt_long (argc, argv, "abc:d:f:",
+                     long_options, &option_index);
+
+    /* Detect the end of the options. */
+    if (c == -1)
+      break;
+
+    switch (c) {
+      case 0:
+        /* (In this example) only options which set */
+        /* a flag return zero, so do nothing. */
+        break;
+
+      case 'a':
+        puts ("option --add (-a)\en");
+        break;
+
+      case 'b':
+        puts ("option --append (-b)\en");
+        break;
+
+      case 'c':
+        printf ("option --create (-c) with value `%s'\en", optarg);
+        break;
+
+      case 'd':
+        printf ("option --delete (-d) with value `%s'\en", optarg);
+        break;
+
+      case 'f':
+        printf ("option --file (-f) with value `%s'\en", optarg);
+        break;
+
+      case '?':
+        /* getopt_long already printed an error message. */
+        break;
+
+      default:
+        abort ();
+    }
+  }  
+
+  /* Instead of reporting `--verbose'
+     and `--brief' as they are encountered,
+     we report the final status resulting from them. */
+  if (verbose_flag)
+    puts ("verbose flag is set");
+
+  /* Print any remaining command line arguments (not options). */
+  if (optind < argc) {
+      printf ("non-option ARGV-elements: ");
+      while (optind < argc)
+        printf ("%s ", argv[optind++]);
+      putchar ('\en');
+    }
+
+  exit (0);
+}
+.fi
+.in -2
+
+.SH ENVIRONMENT VARIABLES
+.sp
+.LP
+See environ(5) for descriptions of the following environment variables that affect the execution of \fBgetopt_long()\fR: \fBLANG\fR, \fBLC_ALL\fR, and \fBLC_MESSAGES\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSIXLY_CORRECT\fR\fR
+.ad
+.RS 19n
+.rt  
+When set (and the first character of the \fIshortopts\fR argument is neither a plus or minus sign), the POSIX rule that all operands must follow all options is enforced. Option processing terminates when the first operand is encountered. The \fBgetopt_clip()\fR function ignores the setting of \fBPOSIXLY_CORRECT\fR and always behaves as if it were set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.RS 19n
+.rt  
+Determine the locale for the interpretation of sequences of bytes as characters in \fIshortopts\fR and the \fIlongopts\fR[].\fBname\fR structure members.
+.RE
+
+.SH USAGE
+.sp
+.LP
+The \fBgetopt_long()\fR function does not fully check for mandatory arguments because there is no unambiguous algorithm to do so. Given an option string \fBa:b\fR and the input \fB-a -b\fR, \fBgetopt_long()\fR assumes that \fB-b\fR is the mandatory argument to the \fB-a\fR option and not that \fB-a\fR is missing a mandatory argument. Indeed, the only time a missing option argument can be reliably detected is when the option is the final option on the command line and is not followed by any command arguments.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelUnsafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBIntro\fR(1), \fBgetopts\fR(1), \fBgetopt\fR(3C), \fBgetsubopt\fR(3C), \fBgettext\fR(3C), \fBsetlocale\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH NOTES
+.sp
+.LP
+Use of \fBgetopt_long()\fR is discouraged for applications targeted strictly for Solaris. It should be used only for applications targeted at Solaris and platforms that adhere to the GNU command line conventions. The \fBgetopt_long_only()\fR function is provided by Solaris and GNU for legacy applications and its use is discouraged by both current conventions.
+.sp
+.LP
+The differences between the Solaris/GNU and OpenBSD versions of these functions are as follows:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The handling of the hyphen (-) as the first character of the option string in presence of the environment variable \fBPOSIXLY_CORRECT\fR:
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fBSolaris/GNU\fR
+.ad
+.RS 15n
+.rt  
+Operands are returned as arguments to option '\1', and option processing does not stop until "--" or the end of \fIargv\fR is found.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBOpenBSD\fR
+.ad
+.RS 15n
+.rt  
+obeys \fBPOSIXLY_CORRECT\fR and stops at the first non-option.
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The handling of the hyphen (-) within the \fIshortopts\fR parameter string when not the first character.
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fBSolaris/GNU\fR
+.ad
+.RS 15n
+.rt  
+treats a single hyphen (-) on the command line as an operand.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBOpenBSD\fR
+.ad
+.RS 15n
+.rt  
+treats a single hyphen (-) on the command line as an option. BSD recognizes this behavior as incorrect, but maintains it for compatibility.
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The return value in the event of a missing argument if the first character after "+" or "-" in the option string is not a colon (:)
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fBSolaris/GNU\fR
+.ad
+.RS 15n
+.rt  
+returns "?".
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBOpenBSD\fR
+.ad
+.RS 15n
+.rt  
+returns ":" (since OpenBSD's getopt does).
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The setting \fIoptopt\fR for long options with \fBflag\fR != \fINULL\fR:
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fBSolaris/GNU\fR
+.ad
+.RS 15n
+.rt  
+sets \fIoptopt\fR to \fBval\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBOpenBSD\fR
+.ad
+.RS 15n
+.rt  
+sets \fIoptopt\fR to 0 (since \fBval\fR would never be returned).
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The setting of \fIoptarg\fR for long options without an argument that are invoked with \fB-W\fR (\fBW;\fR in option string):
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fBSolaris/GNU\fR
+.ad
+.RS 15n
+.rt  
+sets \fIoptarg\fR to the option name (the argument of \fB-W\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBOpenBSD\fR
+.ad
+.RS 15n
+.rt  
+sets \fIoptarg\fR to \fINULL\fR (the argument of the long option).
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The  handling of \fB-W\fR with an argument that is not (a prefix to) a known long option (\fBW;\fR in option string):
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fBSolaris/GNU\fR
+.ad
+.RS 15n
+.rt  
+returns '\fBW\fR' with \fIoptarg\fR set to the unknown option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBOpenBSD\fR
+.ad
+.RS 15n
+.rt  
+treats as an  error (unknown option) and returns "?" with \fIoptopt\fR set to 0 and \fIoptarg\fR set to \fINULL\fR.
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The error messages are different (all).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The implementations do not permute the argument vector at the same points in the calling sequence. The aspects normally used by the caller (ordering after -1 is returned, value of \fIoptind\fR relative to current positions) are the same. Applications should not depend upon the ordering of the argument vector before -1 is returned.
+.RE

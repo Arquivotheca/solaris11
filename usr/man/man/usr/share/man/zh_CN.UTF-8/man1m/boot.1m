@@ -1,0 +1,1438 @@
+'\" te
+.\" Copyright (c) 2001, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH boot 1M "2011 年 7 月 6 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+boot \- 启动系统内核或独立程序
+.SH 用法概要
+.SS "SPARC"
+.LP
+.nf
+\fBboot\fR [\fIOBP\fR \fInames\fR] [\fIfile\fR] [\fB-aLV\fR] [\fB-F\fR \fIobject\fR] [\fB-D\fR \fIdefault-file\fR]
+     [\fB-Z\fR \fIdataset\fR] [\fIboot-flags\fR] [\fB\(mi\(mi\fR] [\fIclient-program-args\fR]
+.fi
+
+.SS "x86"
+.LP
+.nf
+\fBkernel$\fR \fB/platform/i86pc/kernel/$ISADIR/unix\fR [\fIboot-args\fR]
+     [\fB-B\fR \fIprop\fR=\fIval\fR [,\fIval\fR...]]
+.fi
+
+.SH 描述
+.sp
+.LP
+引导是装入并执行独立程序的过程。出于此探讨的目的，引导意即装入并执行可引导操作系统的过程。一般而言，独立程序是操作系统内核（请参见 \fBkernel\fR(1M)），但任何独立程序都可以进行引导。在基于 SPARC 的系统上，用于计算机的诊断监视程序就是一个可引导的独立程序而不是操作系统的不错示例。
+.sp
+.LP
+如果将该独立程序标识为动态链接的可执行文件，则 \fBboot\fR 将按照该可执行文件格式所示装入解释程序（链接程序/装载程序），然后将控制权转移给该解释程序。如果该独立程序是静态链接的，则将直接跳至该独立程序。
+.sp
+.LP
+装入了内核后，将启动 UNIX 系统，挂载所需的文件系统（请参见 \fBvfstab\fR(4)），并运行 \fB/usr/sbin/init\fR 使系统处于 \fB/etc/inittab\fR 中指定的 "initdefault" 状态。请参见 \fBinittab\fR(4)。
+.SS "SPARC 引导过程"
+.sp
+.LP
+在基于 SPARC 的系统上，多数计算机上的引导过程包含以下基本阶段。
+.sp
+.LP
+打开计算机后，系统固件（在 PROM 中）将执行开机自检 (power-on self-test， POST)。自检的形式和范围取决于系统中固件的版本。
+.sp
+.LP
+自检成功完成后，如果已在由固件使用的非易失性存储区域中设置了相应的标志，则固件将尝试进行自动引导。还可对要装入的文件名以及要从其中装入该文件的设备进行处理。
+.sp
+.LP
+这些标志和名称可在 shell 中使用 \fBeeprom\fR(1M) 命令进行设置，或在停止系统后在 \fBok\fR 提示符下使用 \fBPROM\fR 命令进行设置。
+.sp
+.LP
+二级程序可以是特定于文件系统的引导块（从磁盘引导时），也可以是 \fBinetboot\fR 或 \fBwanboot\fR（通过网络引导时）。
+.sp
+.LP
+网络引导
+.sp
+.LP
+网络引导分为两步：客户机首先获取 IP 地址和任何其他允许其装入第二阶段引导程序所必需的参数。第二阶段引导程序进而从引导设备装入引导归档文件。
+.sp
+.LP
+IP 地址可以通过三种方式获取：RARP、DHCP 或手动配置，具体取决于 PROM 中提供的功能和 PROM 的配置。\fBsun4u\fR 和 \fBsun4v\fR 内核体系结构的计算机都具有支持 DHCP 功能的 PROM。
+.sp
+.LP
+指定两种网络引导方法的 boot 命令语法是：
+.sp
+.in +2
+.nf
+boot net:rarp
+boot net:dhcp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此命令：
+.sp
+.in +2
+.nf
+boot net
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+没有 \fBrarp\fR 或 \fBdhcp\fR 说明符，将通过别名为 \fBnet\fR 的网络接口调用缺省网络引导方法。
+.sp
+.LP
+用于使用 RARP/\fBbootparams\fR 进行网络引导的事件序列在以下段落中进行了介绍。DHCP 的序列在 RARP/\fBbootparams\fR 说明之后。 
+.sp
+.LP
+使用 RARP/\fBbootparams\fR 通过网络进行引导时，PROM 将通过广播反向 ARP 请求开始，直至其收到回复。收到回复后，PROM 将广播 TFTP 请求以获取 \fBinetboot\fR 的第一块。后续请求将发送至最初应答第一块请求的服务器。装载后，\fBinetboot\fR 还将使用反向 ARP 获取其 IP 地址，然后广播 \fBbootparams\fR RPC 调用（请参见 \fBbootparams\fR(4)）以定位配置信息及其根文件系统。之后，\fBinetboot\fR 通过 NFS 方式装入引导归档文件并将控制权转移给该归档文件。
+.sp
+.LP
+使用 DHCP 通过网络进行引导时，PROM 将广播硬件地址和内核体系结构，并请求 IP 地址、引导参数和网络配置信息。某个 DHCP 服务器响应并被选定后（可能存在多个服务器），该服务器将向客户机发送 IP 地址和引导客户机所需的所有其他信息。收到该信息后，客户机 PROM 将检查要装入的文件名并采取对应的两种操作方式之一，具体取决于该文件的名称看起来是否是 HTTP URL。如果不是，PROM 将下载 \fBinetboot\fR，将该文件装入至内存中并进行执行。\fBinetboot\fR 将装入接管计算机并释放 \fBinetboot\fR 的引导归档文件。然后，启动脚本初始化 DHCP 代理（请参见 \fBdhcpagent\fR(1M)），用于实现进一步的 DHCP 活动。
+.sp
+.LP
+如果要装入的文件是 HTTP URL，则 PROM 将使用 HTTP 装入引用的文件。如果客户机已配置了 HMAC SHA-1 密钥，其将在继续执行装入的文件之前检查该文件的完整性。该文件应是 \fBwanboot\fR 二进制文件。WAN Boot 过程可以配置为使用 DHCP 或 NVRAM 属性，以搜索安装服务器和路由器以及需要连接至其的代理。当 \fBwanboot\fR 开始执行时，将确定提供的信息是否足够供其继续。如果缺少任何必要信息，将退出并报告相应错误，或启动命令解释程序并提示提供更多的配置信息。一旦 \fBwanboot\fR 获取了必要的信息，就会通过 HTTP 方式将引导装载程序装入至内存。如果客户机上安装了加密密钥，\fBwanboot\fR 将验证引导装载程序的签名及其随附的散列。存在加密密钥但没有散列密钥是错误的。
+.sp
+.LP
+\fBwanboot\fR 引导装载程序可以与使用 HTTP 或安全 HTTP 的客户机通信。如果是前者，并且如果客户机已配置了 HMAC SHA-1 密钥，则引导装载程序将检查根文件系统的完整性。在将根文件系统装入至内存后（可能已经执行了完整性检查），引导归档文件将从服务器进行传送。如果提供有 \fBboot_logger\fR URL（通过 \fBwanboot.conf\fR(4) 文件方式），\fBwanboot\fR 将定期记录其进度。
+.sp
+.LP
+并非所有 PROM 都能够使用 URL。可以使用 \fBlist-security-keys\fR OBP 命令确定客户机是否具备此功能（请参见 \fBmonitor\fR(1M)）。
+.sp
+.LP
+WAN 引导目前在 x86 平台上并未提供。
+.sp
+.LP
+\fBwanboot\fR 命令行
+.sp
+.LP
+当客户机程序是 \fBwanboot\fR 时，将接受以下格式的 \fBclient-program-args\fR：
+.sp
+.in +2
+.nf
+boot ... -o \fIopt1\fR[,\fIopt2\fR[,...]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中每个选项可能是一个操作：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+要求 \fBwanboot\fR 通过 DHCP 方式获取配置参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+导致 \fBwanboot\fR 进入其命令解释程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fI<cmd>\fR\fR
+.ad
+.sp .6
+.RS 4n
+下面列出了解释程序命令之一。
+.RE
+
+.sp
+.LP
+\&...或赋值，使用下面列出的解释程序参数名称。
+.sp
+.LP
+\fBwanboot\fR 命令解释程序
+.sp
+.LP
+\fBwanboot\fR 命令解释程序通过在引导时提供 "\fB-o prompt\fR" 的 \fBclient-program-args\fR 进行调用。输入包括单一的命令或赋值，或以逗号分隔的命令或赋值列表。配置参数为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+客户机的 IP 地址（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省路由器的 IP 地址（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.sp .6
+.RS 4n
+子网掩码（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclient-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 客户机标识符（引号括起的 ASCII 字符串或十六进制 ASCII）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 事务中请求的主机名 (ASCII)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp-proxy\fR\fR
+.ad
+.sp .6
+.RS 4n
+HTTP 代理服务器规范 (IPADDR[:PORT])
+.RE
+
+.sp
+.LP
+密钥名是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3des\fR\fR
+.ad
+.sp .6
+.RS 4n
+三重 DES 加密密钥（48 个十六进制 ASCII 字符）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaes\fR\fR
+.ad
+.sp .6
+.RS 4n
+AES 加密密钥（32 个十六进制 ASCII 字符）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsha1\fR\fR
+.ad
+.sp .6
+.RS 4n
+HMAC SHA-1 签名密钥（40 个十六进制 ASCII 字符）
+.RE
+
+.sp
+.LP
+最后，URL 或 WAN Boot CGI 将通过以下方式进行引用：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbootserver\fR\fR
+.ad
+.sp .6
+.RS 4n
+WAN Boot CGI 的 URL（等同于 OBP 的 \fBfile\fR 参数）
+.RE
+
+.sp
+.LP
+解释程序接受以下命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出可用命令的简要说明
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIvar\fR=\fIval\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIval\fR 赋值给 \fIvar\fR，其中 \fIvar\fR 是配置参数名、密钥名或 \fBbootserver\fR 之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIvar\fR=\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消设置参数 \fIvar\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出所有参数及其值（通过 OBP 检索的密钥值始终不会显示）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+提示输入取消设置参数的值。输出每个参数的名称及其当前值（如果有），用户可以接受此值（按回车键）或输入新的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgo\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户在对所有输入的值满意后，可以保持解释程序处于现有状态并继续引导。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit\fR\fR
+.ad
+.sp .6
+.RS 4n
+退出引导解释程序并返回至 OBP 的 \fBok\fR 提示符。
+.RE
+
+.sp
+.LP
+任何这些赋值或命令都可以在命令行上作为 \fB-o\fR 选项的一部分进行传递，遵循引导参数的 128 字节的 OBP 限制。例如，\fB-o\fR \fBlist,go\fR 将仅列出参数的当前（缺省）值，然后继续引导。
+.SS "iSCSI 引导"
+.sp
+.LP
+iSCSI 引导在 x86 和 SPARC 上均受支持。
+.SS "基于 x86 的 iSCSI 引导"
+.sp
+.LP
+对于基于 x86 的 iSCSI 引导，接受引导的主机必须配备有支持 iBFT（iSCSI Boot Firmware Table，iSCSI 引导固件表）的 NIC，或该主机的主板的 BIOS 必须支持 iBFT。iBFT（在高级配置和电源接口 (Advanced Configuration and Power Interface, ACPI) 3.0b 规范中进行定义）指定了一个信息块，其中包含了可用于 iSCSI 引导过程的各种参数。
+.sp
+.LP
+实现 iBFT 的固件通过建立与 iSCSI 目标的连接，于启动期间在 BIOS 中提供了一个作为可引导设备的 iSCSI 磁盘。iSCSI 引导的其余过程与从本地磁盘引导一样。
+.sp
+.LP
+要正确配置 iBFT，用户需要参考来自硬件供应商的文档。
+.SS "基于 SPARC 的 iSCSI 引导"
+.sp
+.LP
+基于 SPARC 的 iSCSI 引导在 OpenBoot level 4.31 及以上版本中受支持，无需特定 NIC。
+.sp
+.LP
+OpenBoot 中的 boot 命令采用 \fIkeyword\fR=\fIvalue\fR 格式提取一系列关键字以标识目的地 iSCSI 目标。iSCSI boot 命令的完整格式是：
+.sp
+.in +2
+.nf
+boot net:iscsi-target-ip=\fIt-ip\fR,iscsi-target-name=\fIname\fR
+     host-ip=\fIh-ip\fR[,router-ip=\fIr-ip\fR]
+     [,subnet-mask=\fIm-ip\fR]
+     [,iscsi-port=\fIport\fR]
+     [,iscsi-lun=\fIlun\fR]
+     [,iscsi-partition=\fIpartition\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上述关键字的描述如下所述：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.RS 21n
+.rt  
+引导主机的 IP 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.RS 21n
+.rt  
+路由网关的 IP 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBhost-ip\fR 的子网掩码。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-target-ip\fR\fR
+.ad
+.RS 21n
+.rt  
+存储 OS 的 iSCSI 目标的 IP 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-target-name\fR\fR
+.ad
+.RS 21n
+.rt  
+存储 OS 的 iSCSI 目标的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-partition\fR\fR
+.ad
+.RS 21n
+.rt  
+包含可引导根的分区。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-port\fR\fR
+.ad
+.RS 21n
+.rt  
+目标的 IP 端口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiscsi-lun\fR\fR
+.ad
+.RS 21n
+.rt  
+目标上从其进行引导的 LUN。
+.RE
+
+.sp
+.LP
+\fBiscsi-target-ip\fR、\fBroute-ip\fR 和 \fBsubnet-mask\fR 的值都采用标准的 IPv4 点分十进制格式，例如 \fB255.255.255.0\fR（用于 \fBsubnet-mask\fR）。IPv6 在当前 OpenBoot 实现中不受支持。
+.sp
+.LP
+\fBiscsi-port\fR 的值（一个十进制数）介于 1 到 65535 范围之间。
+.sp
+.LP
+\fBiscsi-lun\fR 的值采用以短划线相连的十六进制 LUN 格式，即 \fIffff\fR-\fIffff\fR-\fIffff\fR-\fIffff\fR。有关详细信息，请参见 RFC 4173 第 5 节。前导零和结尾短划线可以排除在外，因此，例如 \fB3\fR，等同于 \fB0003-0000-0000-0000\fR。
+.sp
+.LP
+\fBiscsi-partition\fR 的值是一个 ASCII 字符，用于指定根分区。多数情况下，其值为 \fBa\fR。
+.sp
+.LP
+\fBiscsi-target-name\fR 的值采用的格式为字符串，由 RFC 3720 和 RFC 3722 指定。
+.sp
+.LP
+添加了两个安全密钥以在目标侧提供 CHAP 验证。它们是：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-user\fR\fR
+.ad
+.RS 17n
+.rt  
+CHAP 名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchap-password\fR\fR
+.ad
+.RS 17n
+.rt  
+CHAP 密钥
+.RE
+
+.sp
+.LP
+目前，这两个密钥可以通过命令 \fBset-ascii-security-key\fR 在 Open Boot PROM (\fBok\fR) 提示符下进行设置。例如：
+.sp
+.in +2
+.nf
+ok \fBset-ascii-security-key chap-user \fIchap name\fR\fR
+ok \fBset-ascii-security-key chap-password \fIchap password\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+目前还不支持双向验证。这两个变量只能在 Open Boot PROM 提示符下进行更改。
+.sp
+.LP
+支持 RFC 4173，以从 DHCP 服务器检索 iSCSI 引导信息。DHCP 服务器必须为引导客户机指定根路径选项，这样，客户机才可通过简单的命令执行 iSCSI 引导。
+.sp
+.in +2
+.nf
+boot net:dhcp
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+目前，密钥 \fBboot-device\fR 用于在 iSCSI 引导期间检索物理引导设备。该密钥在 Solaris 安装期间设置。手动修改的密钥值可能会中断 iSCSI 引导。
+.SS "从磁盘引导"
+.sp
+.LP
+从磁盘引导时，OpenBoot PROM 固件将从指定为引导设备的分区的块 1 到 15 读取引导块。该独立引导程序通常包含能够读取引导归档文件的特定于文件系统的读取器。
+.sp
+.LP
+如果到独立程序的路径名是相对的（不是以斜线开头），则二级引导将在依赖于平台的搜索路径中查找独立程序。该路径必须包含 \fB/platform/\fR\fIplatform-name\fR。许多 SPARC 平台接下来会搜索特定于平台的路径条目 \fB/platform/\fR\fIhardware-class-name\fR。请参见 \fBfilesystem\fR(5)。如果路径名是绝对的，则 \fBboot\fR 将使用指定路径。然后，\fBboot\fR 程序将在合适的地址装入独立程序，之后移交控制权。
+.sp
+.LP
+在引导归档文件从引导设备进行了传输后，Solaris 即可初始化计算机并接管其控制权。下面的"引导归档文件阶段"中将进一步介绍该过程，该过程在所有平台上都是相同的。
+.sp
+.LP
+如果文件名并未在命令行上给定或，例如，由 \fBboot-file\fR NVRAM 变量进行了指定，则 \fBboot\fR 将根据系统上安装的软件以及硬件和固件的功能选择要装入的合适缺省文件。
+.sp
+.LP
+指向内核的路径不得包含任何空格。
+.SS "从 ZFS 引导"
+.sp
+.LP
+从 ZFS 引导不同于从 UFS 引导，原因是，对于 ZFS，设备说明符标识存储池，而不是单个根文件系统。存储池可能包含多个可引导的数据集（即，根文件系统）。因此，从 ZFS 引导时，只是指定引导设备是不够的。还必须在由引导设备标识的池内标识根文件系统。缺省情况下，选择用来进行引导的数据集是由池的 \fBbootfs\fR 属性标识的数据集。通过使用 \fB-Z\fR 选项指定备用可引导数据集可以覆盖此缺省选择。使用 \fB-L\fR 选项列出 ZFS 池内的可引导数据集。 
+.SS "引导归档文件阶段"
+.sp
+.LP
+引导归档文件包含一个使用内存磁盘挂载的文件系统映像。该映像是自描述的，特别是在引导块中包含了一个文件系统读取器。该文件系统读取器挂载并打开 RAM 磁盘映像，然后读取并执行其中包含的内核。缺省情况下，该内核位于：
+.sp
+.in +2
+.nf
+/platform/`uname -i`/kernel/unix
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果从 ZFS 引导，归档文件和内核文件的路径名都在获选用于引导（如上文所述）的根文件系统（即，数据集）中解析。
+.sp
+.LP
+通过从内存文件系统装入必要驱动程序和模块继续初始化内核，直至 I/O 可以开启且根文件系统装入完毕。挂载了根文件系统后，将不再需要内存文件系统，并将其放弃。
+.SS "OpenBoot PROM \fBboot\fR 命令行为"
+.sp
+.LP
+OpenBoot \fBboot\fR 命令采用以下格式的参数：
+.sp
+.in +2
+.nf
+ok boot [\fIdevice-specifier\fR] [\fIarguments\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+缺省的 \fBboot\fR 命令不带参数：
+.sp
+.in +2
+.nf
+ok boot
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果 \fBboot\fR 命令行上未给定 \fIdevice-specifier\fR，OpenBoot 一般会使用 \fIboot-device\fR 或 \fIdiag-device\fR \fBNVRAM\fR 变量。如果该命令上给定了可选 \fIarguments\fR，则 OpenBoot 一般会使用 \fIboot-file\fR 或 \fIdiag-file\fR \fBNVRAM\fR 变量作为缺省的 \fBboot\fR 参数。（如果系统处于诊断模式，则使用 \fIdiag-device\fR 和 \fIdiag-file\fR，而不是 \fIboot-device\fR 和 \fIboot-file\fR）。
+.sp
+.LP
+\fIarguments\fR 可以包含多个字符串。所有 \fIargument\fR 字符串都将传递至辅助引导程序；这些字符串不由 OpenBoot 进行解释。 
+.sp
+.LP
+如果在 \fBboot\fR 命令行上指定了任意 \fIarguments\fR，则不会使用 \fIboot-file\fR 或 \fIdiag-file\fR \fBNVRAM\fR 变量。\fBNVRAM\fR 变量的内容不与命令行参数进行合并。例如，命令:
+.sp
+.in +2
+.nf
+ok \fBboot\fR \fB-s\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+将忽略 \fIboot-file\fR 和 \fIdiag-file\fR 中的设置；它会将字符串 \fB"-s"\fR 解释为 \fIarguments\fR。\fBboot\fR 将不使用 \fIboot-file\fR 或 \fIdiag-file\fR 的内容。
+.sp
+.LP
+使用较旧的 PROM，命令：
+.sp
+.in +2
+.nf
+ok \fBboot net\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+不带任何参数，将使用 \fIboot-file\fR 或 \fIdiag-file\fR 中的设置（如果有设置）作为要传递至引导程序的缺省文件名和参数。在多数情况下，最好允许 \fBboot\fR 命令根据系统类型、系统硬件和固件以及根文件系统上安装的内容选择适当的缺省值。在某些情况下，更改 \fIboot-file\fR 或 \fIdiag-file\fR 可能会生成意外的结果。
+.sp
+.LP
+在多数基于 OpenBoot 2.x 和 3.x 的系统中都可以看到此行为。请注意，在一些平台上可能会有所不同。
+.sp
+.LP
+命令：
+.sp
+.LP
+ok \fBboot cdrom\fR
+.sp
+.LP
+\&...通常也不带任何参数。相应地，如果将 \fIboot-file\fR 设置为 64 位内核文件名并尝试通过 \fBboot cdrom\fR 引导安装 CD 或 DVD，若安装介质仅包含 32 位内核，那么引导将失败。
+.sp
+.LP
+因为 \fIboot-file\fR 或 \fIdiag-file\fR 的内容可能会根据所用 \fBboot\fR 命令的格式而被忽略，所以，对于多数生产系统而言，不建议过多依赖于 \fIboot-file\fR。
+.sp
+.LP
+从 \fBwanboot\fR 的本地（CD 或 DVD）副本执行 WAN Boot 时，必须使用：
+.sp
+.LP
+ok \fBboot cdrom -F wanboot - install\fR
+.sp
+.LP
+现代 PROM 已增强了网络引导支持软件包，以支持以下将由该软件包处理的参数的语法：
+.sp
+.LP
+[\fIprotocol\fR,] [\fIkey\fR=\fIvalue\fR,]*
+.sp
+.LP
+所有参数均是可选的，显示顺序随意。除非参数位于列表末尾，否则需要使用逗号。如果进行了指定，参数将优先于任何缺省值，或者，如果使用 DHCP 进行引导，则优先于 DHCP 服务器为那些参数提供的配置信息。
+.sp
+.LP
+上述的 \fIprotocol\fR 指定要使用的地址搜索协议。
+.sp
+.LP
+下列配置参数被指定为 \fIkey\fR=\fIvalue\fR 属性对。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtftp-server\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP 服务器的 IP 地址
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对 WAN Boot 要使用 TFTP 或 URL 下载的文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+客户机的 IP 地址（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter-ip\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省路由器的 IP 地址
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet-mask\fR\fR
+.ad
+.sp .6
+.RS 4n
+子网掩码（采用点分十进制记法）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclient-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 客户机标识符
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 事务中要使用的主机名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp-proxy\fR\fR
+.ad
+.sp .6
+.RS 4n
+HTTP 代理服务器规范 (IPADDR[:PORT])
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtftp-retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+TFTP 重试的最大次数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp-retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+DHCP 重试的最大次数
+.RE
+
+.sp
+.LP
+将由网络引导支持软件包处理的参数列表通过以下两种方式之一指定：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将参数传递至该软件包的 \fBopen\fR 方法，或
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将参数在 NVRAM 变量 \fBnetwork-boot-arguments\fR 中列出。
+.RE
+.sp
+.LP
+仅当没有参数传递至该软件包的 \fBopen\fR 方法时，才会处理 \fBnetwork-boot-arguments\fR 中指定的参数。
+.sp
+.LP
+参数值
+.sp
+.LP
+\fIprotocol\fR 指定要使用的地址搜索协议。如果存在，则可能的值是 \fBrarp\fR 或 \fBdhcp\fR。
+.sp
+.LP
+如果其他配置参数以本文档指定的新语法和样式指定，则缺少 \fIprotocol\fR 参数意味着需要手动配置。
+.sp
+.LP
+如果没有指定其他配置参数，或那些参数以目前支持的位置参数语法指定，则缺少 \fIprotocol\fR 参数将导致网络引导支持软件包使用特定于平台的缺省地址搜索协议。
+.sp
+.LP
+手动配置要求向客户机提供其 IP 地址、引导文件名以及提供引导文件映像的服务器地址。根据网络配置，可能还需要指定 \fBsubnet-mask\fR 和 \fBrouter-ip\fR。
+.sp
+.LP
+如果未指定 \fIprotocol\fR 参数，则网络引导支持软件包将使用特定于平台的缺省地址搜索协议。
+.sp
+.LP
+\fBtftp-server\fR 是提供要下载文件的 TFTP 服务器（如果使用 TFTP）的 IP 地址（采用标准的 IPv4 点分十进制记法）。
+.sp
+.LP
+使用 DHCP 时，该值（如果指定）将覆盖 DHCP 响应中指定的 TFTP 服务器的值。
+.sp
+.LP
+如果将 TFTP RRQ 指定为参数或在 DHCP 响应中进行了指定，则其将单点传送至服务器。否则，TFTP RRQ 将进行广播。
+.sp
+.LP
+\fIfile\fR 指定将由 TFTP 从 TFTP 服务器或 URL（如果使用的是 HTTP）装入的文件。如果文件名是 URL，则将触发 HTTP 的使用，即，文件名以 \fBhttp:\fR（不区分大小写）开头。
+.sp
+.LP
+使用 RARP 和 TFTP 时，缺省文件名是客户机的 IP 地址（以 ASCII 十六进制表示），如本文档前面的部分所述。
+.sp
+.LP
+使用 DHCP 时，该参数（如果指定）将覆盖 DHCP 响应中指定的根文件名。
+.sp
+.LP
+使用 DHCP 和 TFTP 时，缺省文件名基于根节点的 \fBname\fR 属性进行构造，其中逗号 (,) 替换为句点 (.)。
+.sp
+.LP
+在命令行上指定时，文件名不得包含斜线 (\fB/\fR)。
+.sp
+.LP
+RFC 2396 中对 URL 的格式进行了介绍。HTTP 服务器必须指定为 IP 地址（采用标准的 IPv4 点分十进制记法）。可选端口号以十进制方式指定。如果未指定端口，则默示使用端口 80（十进制）。
+.sp
+.LP
+提供的 URL 必须是"经过安全编码的"，即，软件包不会向提供的 URL 应用转义编码。包含逗号的 URL 必须以引号括起来的字符串形式出现。否则，引号括起来的 URL 为可选。
+.sp
+.LP
+\fBhost-ip\fR 指定要引导系统的客户机 IP 地址（采用标准的 IPv4 点分十进制记法）。如果使用 RARP 作为地址搜索协议，则指定该参数使得 RARP 的使用没有必要。
+.sp
+.LP
+如果使用 DHCP，指定 \fBhost-ip\fR 参数将使客户机遵循要求具有"外部配置的网络地址"的客户机遵循的步骤，如 RFC 2131 中所述。
+.sp
+.LP
+\fBrouter-ip\fR 是直接连接的网络上的路由器的 IP 地址（采用标准的 IPv4 点分十进制记法）。该路由器将用作通信跨越网络的第一个中继站。如果提供了该参数，则此处指定的路由器将优先于 DHCP 响应中指定的首选路由器。
+.sp
+.LP
+\fBsubnet-mask\fR（采用标准的 IPv4 点分十进制记法）是客户机网络上的子网掩码。如果未提供子网掩码（无论是通过该参数还是 DHCP 响应），则会假设一个缺省掩码，该掩码适合分配给引导客户机的地址的网络类型（A、B 或 C 类）。
+.sp
+.LP
+\fBclient-id\fR 为客户机指定唯一标识符。DHCP 客户机标识符派生自该值。客户机标识符可以指定为：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+采用 ASCII 十六进制表示的标识符，或
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+引号括起来的字符串
+.RE
+.sp
+.LP
+因此，\fBclient-id="openboot"\fR 和 \fBclient-id=6f70656e626f6f74\fR 均表示 DHCP 客户机标识符为 6F70656E626F6F74。
+.sp
+.LP
+命令行上指定的标识符不得包含斜线 (\fB/\fR) 或空格。
+.sp
+.LP
+DHCP 客户机标识符的最大长度是 32 字节，如果使用 ASCII 十六进制格式，则 64 个字符表示 32 字节。如果使用第二种格式，标识符中的字符数必须是偶数。有效的字符是 0-9、a-f 以及 A-F。
+.sp
+.LP
+为了正确标识客户机，在客户机连接至的子网上使用的客户机标识符中，客户机标识符必须是唯一的。系统管理员负责选择符合此要求的标识符。
+.sp
+.LP
+在命令行上指定客户机标识符将优先于任何其他指定标识符的 DHCP 机制。
+.sp
+.LP
+\fBhostname\fR（指定为字符串）指定要在 DHCP 事务中使用的主机名。该名称可以通过本地域名限定，也可以不通过本地域名限定。主机名的最大长度为 255 个字符。
+.LP
+注 - 
+.sp
+.RS 2
+\fBhostname\fR 参数可用于要求客户机向 DHCP 服务器提供所需主机名的服务环境中。客户机向 DHCP 服务器提供所需的主机名，然后，该服务器可以通过 DNS 注册分配给该客户机的主机名和 IP 地址。
+.RE
+.sp
+.LP
+\fBhttp-proxy\fR 采用以下标准记法针对主机进行指定：
+.sp
+.in +2
+.nf
+\fIhost\fR [":"" \fIport\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...其中 \fIhost\fR 指定为 IP 地址（采用标准的 IPv4 点分十进制记法），可选的 \fIport\fR 采用十进制指定。如果未指定端口，则默示使用端口 8080（十进制）。
+.sp
+.LP
+\fBtftp-retries\fR 是确定 TFTP 进程失败之前重试的最大次数（采用十进制指定）。缺省设置为可进行无限次重试。
+.sp
+.LP
+\fBdhcp-retries\fR 是确定 DHCP 进程失败之前重试的最大次数（采用十进制指定）。缺省设置为可进行无限次重试。
+.SS "x86 引导过程"
+.sp
+.LP
+在基于 x86 的系统上，引导过程包含两个概念截然不同的阶段，即内核装入和内核初始化。内核装入在使用系统板上的 BIOS ROM 以及外围板上 ROM 中的 BIOS 扩展的 GRUB (GRand Unified Bootloader) 中实现。BIOS 装入 GRUB，从硬盘、DVD 或 CD 上的第一个物理扇区开始。如果受网络适配器上的 ROM 支持，BIOS 还可从网络引导服务器下载 \fBpxegrub\fR 二进制文件。找到了 GRUB 后，将执行菜单中的命令以装入 \fBunix\fR 内核和包含内核模块与数据的预构造引导归档文件。
+.sp
+.LP
+如果由 GRUB 标识为引导设备的相应设备包含 ZFS 存储池，则用于创建 GRUB 菜单的 \fBmenu.lst\fR 文件将位于该池的数据集分层结构的根数据集中。这是一个数据集，其名称与池自身的名称相同。池中正好始终有这样一个数据集存在，因此，此数据集适用于池范围的数据，如 \fBmenu.lst\fR 文件。引导了系统后，该数据集将挂载在根文件系统中的 /\fIpoolname\fR。
+.sp
+.LP
+池中可以有多个可引导数据集（即，根文件系统）。缺省情况下，\fBmenu.lst\fR 文件中的文件名条目获得解析的文件系统由池的 \fBbootfs\fR 属性标识（请参见 \fBzpool\fR(1M)）。但是，\fBmenu.lst\fR 项可以包含 \fBbootfs\fR 命令，该命令可指定池中的备用数据集。这样，\fBmenu.lst\fR 文件就可以包含池中多个根文件系统的项。
+.sp
+.LP
+内核初始化在 GRUB 完成装入引导归档文件并将控制权移交至 \fBunix\fR 二进制文件后开始。此时，GRUB 将停止活动，引导设备上不会再出现更多 I/O。Unix 操作系统针对根文件系统进行初始化、在引导归档文件的必要模块中进行链接以及在实际的根设备上进行挂载。此时，内核重新获取存储 I/O，挂载其他文件系统（请参见 \fBvfstab\fR(4)），并启动各种操作系统服务（请参见 \fBsmf\fR(5)）。
+.SS "启用自动重新引导 (x86)"
+.sp
+.LP
+Solaris 操作系统支持 \fBsmf\fR(5) 属性，通过该属性，可使系统自动从当前引导设备进行重新引导，以从诸如过时引导归档文件之类的状态中恢复。
+.sp
+.LP
+服务 \fBsvc:/system/boot-config:default\fR 包含布尔属性 \fBauto-reboot-safe\fR，该属性缺省设置为 \fBfalse\fR。将其设置为 \fBtrue\fR 表明系统的 BIOS 以及缺省 GRUB 菜单项均设置为从当前引导设备引导。可以使用 \fBsvccfg\fR(1M) 和 \fBsvcadm\fR(1M) 更改该属性的值。例如，要设置 \fBauto-reboot-safe\fR 以启动自动重新引导，请输入诸如以下所示的命令：
+.sp
+.in +2
+.nf
+example# \fBsvccfg -s svc:/system/boot-config:default \e\fR
+      \fBsetprop config/auto-reboot-safe = true\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+多数系统均配置为从当前引导设备进行自动重新引导。然而，在某些情况下，自动重新引导至未知操作系统可能会产生意外结果。对于这些情况，\fBauto-reboot-safe\fR 属性允许用户指定希望的行为。
+.SS "故障安全模式"
+.sp
+.LP
+若要从内置于引导归档文件的根文件系统映像引导，而后将根重新挂载至实际的根设备，引导归档文件和根文件系统的内容必须一致。否则，无法保证计算机的正常运行与完整性。
+.sp
+.LP
+术语"一致"意即根文件系统中的所有文件和模块都在引导归档文件中并具有相同的内容。由于引导策略要求首先将引导归档文件读取并挂载为第一阶段根映像，因此，所有可卸载内核模块和初始化（派生自引导归档文件的内容）均要求与实际根文件系统匹配。如果缺乏一致性，系统运行可能会出现这样的情况：内核模块或参数设置在重新引导之前应用至根设备，但并未在根归档文件中更新。这种不一致性可能导致系统不稳定或数据丢失。
+.sp
+.LP
+挂载了根文件系统后，在放弃内存文件系统之前，Solaris 将针对两个文件系统执行一致性验证。如果检测到不一致，Solaris 将暂停常规引导序列并回退至故障安全模式。纠正此状态需要管理员采取以下两个步骤之一。推荐的做法是重新引导至故障安全归档文件并重新构建引导归档文件。这将确保引导已知内核并在归档文件重建过程中发挥作用。或者，管理员可以选择清除不一致的引导归档文件服务状态并继续系统初启（如果该不一致性不会影响系统正常运行）。请参见 \fBsvcadm\fR(1M)。
+.sp
+.LP
+如果清除了引导归档文件服务并继续系统初启（上述第二种备选方法），则系统运行时，可卸载内核驱动程序或其他模块可能相对于根文件系统已过时。因而，可能会影响系统正常运行。
+.sp
+.LP
+为了确保引导归档文件是一致的，标准系统关机过程（由 \fBreboot\fR(1M) 和 \fBshutdown\fR(1M) 启动）将检查更新并将其应用至引导归档文件（在 \fBumountall\fR(1M ) 结束后）。
+.sp
+.LP
+对于任何需要在 \fBumountall\fR 服务完成后包含在引导归档文件中的内核文件、驱动程序、模块或驱动程序配置文件，对其进行更新都将导致下一次引导时检查引导归档文件一致性失败。为了避免这种情况，建议始终彻底关闭计算机。
+.sp
+.LP
+如果要求在完成了 \fBumountall\fR 服务后对内核进行更新，则管理员可以选择通过调用以下内容重新构建归档文件：
+.sp
+.in +2
+.nf
+# \fBbootadm update-archive\fR
+.fi
+.in -2
+.sp
+
+.SS "故障安全引导归档文件"
+.sp
+.LP
+故障安全归档文件可用于随时引导计算机以进行维护或故障排除。故障安全引导归档文件安装在计算机上，源自 miniroot 归档文件。引导故障安全归档文件将使计算机使用内存文件系统作为根设备进行引导。
+.SS "SPARC"
+.sp
+.LP
+SPARC 故障安全归档文件是：
+.sp
+.in +2
+.nf
+/platform/`uname -i`/failsafe
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...可按如下进行引导：
+.sp
+.in +2
+.nf
+ok \fBboot [\fIdevice-specifier\fR] -F failsafe\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果用户希望从特定 ZFS 可引导数据集引导故障安全归档文件，则可使用如下命令来完成：
+.sp
+.in +2
+.nf
+ok \fBboot [\fIdevice-specifier\fR] -Z \fIdataset\fR -F failsafe\fR
+.fi
+.in -2
+.sp
+
+.SS "x86"
+.sp
+.LP
+x86 故障安全归档文件是：
+.sp
+.in +2
+.nf
+/boot/x86.miniroot-safe
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\&...可通过从 GRUB 菜单选择 \fBSolaris failsafe\fR（Solaris 故障安全）项进行引导。
+.SH 选项
+.SS "SPARC"
+.sp
+.LP
+以下 SPARC 选项受支持：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+引导程序将该标志解释为 \fBask me\fR，因此会提示提供独立程序的名称。然后，\fB\&'\fR\fB-a\fR\fB\&'\fR 标志将传递至该独立程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIdefault-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+显式指定 \fIdefault-file\fR。在某些系统上，\fBboot\fR 选择动态缺省文件，前提是其他任何地方都没有指定相应文件。该选项允许显式设置 \fIdefault-file\fR，可在引导 \fBkmdb\fR(1) 时使用，因为缺省情况下，\fBkmdb\fR 将在 default-file 由 \fBboot\fR 程序导出时对其进行装入。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIobject\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用命名对象引导。该对象必须是 ELF 可执行文件或包含引导块的可引导对象。主要用途是引导故障安全或 \fBwanboot\fR 引导归档文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出 ZFS 池内的可引导数据集。可以在该列表中选择一个可引导数据集，其后将显示引导该数据集的详细说明。按照以下说明引导选定的数据集。该选项只有在引导设备包含 ZFS 存储池时才受支持。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示详细的调试信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIboot-flags\fR\fR
+.ad
+.sp .6
+.RS 4n
+引导程序将所有 \fIboot-flags\fR 传递至 \fBfile\fR。它们不由 \fBboot\fR 进行解释。有关随缺省独立程序提供的选项的信息，请参见 \fBkernel\fR(1M) 和 \fBkmdb\fR(1) 手册页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIclient-program-args\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBboot\fR 程序将所有 \fIclient-program-args\fR 传递至 \fIfile\fR。它们不由 \fBboot\fR 进行解释。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+要引导的\fB\fR的独立程序的名称。如果文件名并未显式指定（无论是在 \fBboot\fR 命令行上还是在 \fIboot-file\fR NVRAM 变量中），\fBboot\fR 将选择适当的缺省文件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIOBP\fR \fInames\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 Open Boot Prom 的名称。例如，在基于 Desktop SPARC 的系统上，名称 \fB/sbus/esp@0,800000/sd@3,0:a\fR 意指位于 \fBSCSI\fR 总线上目标 3 lun0 的 \fBSCSI\fR 磁盘 (sd)，esp 主机适配器插入插槽 0。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR \fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+在指定的 ZFS 数据集中从根文件系统引导。
+.RE
+
+.SS "x86"
+.sp
+.LP
+以下 x86 选项受支持：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fIprop\fR=\fIval\fR...\fR
+.ad
+.sp .6
+.RS 4n
+要传递至内核的一个或多个属性-值对。多个属性-值对必须用逗号分开。使用该选项等同于命令：\fBeeprom\fR \fIprop\fR=\fIval\fR。有关可用属性和有效值，请参见 \fBeeprom\fR(1M)。
+.sp
+如果与此菜单项对应的根文件系统是 ZFS 数据集，则此菜单项需要添加以下选项：
+.sp
+.in +2
+.nf
+-B $ZFS-BOOTFS
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIboot-args\fR\fR
+.ad
+.sp .6
+.RS 4n
+引导程序将所有 \fIboot-args\fR 传递至 \fBfile\fR。它们不由 \fBboot\fR 进行解释。有关随内核提供的选项的信息，请参见 \fBkernel\fR(1M) 和 \fBkmdb\fR(1)。
+.RE
+
+.sp
+.LP
+除非另有指定，否则 x86 系统都将引导 \fB/platform/i86pc/kernel/amd64/unix\fR。
+.SH X86 引导序列详细信息
+.sp
+.LP
+打开与 PC 兼容的计算机后，\fBBIOS ROM\fR 中的系统固件将执行开机自检 (power-on self test, POST)，运行外围板 \fBROM\fR 中的 \fBBIOS\fR 扩展，并调用软件中断 INT 19h（引导）。INT 19h 处理程序通常执行标准的与 PC 兼容的引导，其中包含尝试从第一个硬盘读取第一个物理扇区。然后，处理器将跳至内存中该扇区映像的第一个字节。
+.SH X86 主引导
+.sp
+.LP
+磁盘介质上的第一个扇区包含主引导块 (GRUB \fBstage1\fR)。stage1 负责装入 GRUB \fBstage2\fR。现在，GRUB 功能齐全了。它将读取并执行菜单文件 \fB/boot/grub/menu.lst\fR。类似序列也会在 DVD 或 CD 引导中出现，但主引导块位置和内容由 El Torito 规范确定。El Torito 引导还会导致 \fBstrap.com\fR，进而装入 \fBboot.bin\fR。
+.sp
+.LP
+硬盘上的第一个扇区包含主引导块，其中包含主引导程序和 \fBFDISK\fR 表，针对维护其的 \fBPC\fR 程序命名。主引导将在 \fBFDISK\fR 表中查找活动分区，装入其第一个扇区 (GRUB \fBstage1\fR)，并跳至其在内存中第一个字节。这将完成标准的与 PC 兼容的硬盘引导序列。如果 GRUB \fBstage1\fR 安装在主引导块上（请参见 \fBinstallgrub\fR(1M) 的 \fB-m\fR 选项），则 \fBstage2\fR 将直接从 Solaris \fBFDISK\fR 分区进行装入，与活动分区无关。
+.sp
+.LP
+针对 Solaris 软件的 x86 \fBFDISK\fR 分区以一个柱面引导分片开始，在第一个扇区中包含 GRUB \fBstage1\fR，在第二个和第三个扇区中包含标准的 Solaris 磁盘标号和卷目录表 (volume table of content, VTOC)，在第五十个和后续扇区中包含 GRUB \fBstage2\fR。从扇区 4 到 49 的区域包含适用于较旧版本的 Solaris 的引导块。这使得在同一 FDISK 上可以同时存在多个 Solaris 版本。当针对 Solaris 软件的 \fBFDISK\fR 分区是活动分区时，主引导程序 (\fBmboot\fR) 会将第一个扇区中的分区引导程序读入到内存中并跳至该位置。然后，将 GRUB \fBstage2\fR 程序读入到内存中并跳至该位置。显示 GRUB 菜单后，用户可以选择在不同的分区、不同的磁盘上或可以从网络引导操作系统。
+.sp
+.LP
+对于网络引导，受支持的方法是 Intel 的 Preboot eXecution Environment (PXE) 标准。使用 PXE 从网络引导时，系统或网络适配器 BIOS 将使用 DHCP 定位引导服务器上的网络引导程序 (\fBpxegrub\fR)，并使用简单文件传输协议 (Trivial File Transfer Protocol, TFTP) 对其进行读取。BIOS 通过跳至其内存中的第一个字节执行 \fBpxegrub\fR。\fBpxegrub\fR 程序将下载菜单文件并将菜单项显示给用户。
+.SH X86 内核启动
+.sp
+.LP
+内核启动过程独立于内核装入过程。内核启动期间，控制台 I/O 将转至由 \fBconsole\fR 属性指定的设备。
+.sp
+.LP
+从 UFS 引导时，根设备由 \fBbootpath\fR 属性指定，根文件系统类型由 \fBfstype\fR 属性指定。这些属性应由 \fB/boot/solaris/bootenv.rc\fR 中的 Solaris Install/Upgrade 进程设置，并可由 \fB-B\fR 选项覆盖，如上文所述（请参见 \fBeeprom\fR(1M) 手册页）。
+.sp
+.LP
+从 ZFS 引导时，根设备由引导参数指定，而该参数由 GRUB 菜单项中的 \fBkernel\fR 或 \fBmodule\fR 行上的 \fB-B\fR \fB$ZFS-BOOTFS\fR 参数指定。该值（与由 \fB-B\fR 选项指定的所有参数一样）由 GRUB 传递给内核。
+.sp
+.LP
+如果未提供控制台属性，则控制台 I/O 缺省为 \fBscreen\fR（屏幕）和 \fBkeyboard\fR（键盘）。根设备缺省为 \fBramdisk\fR（RAM 磁盘），文件系统缺省为 \fBufs\fR。
+.SH 示例
+.SS "SPARC"
+.LP
+\fB示例 1 \fR在单用户交互模式中引导缺省内核
+.sp
+.LP
+要在单用户交互模式中引导缺省内核，请使用以下项之一响应 \fBok\fR 提示符：
+
+.sp
+.in +2
+.nf
+\fBboot\fR \fB\fR\fB-as\fR
+
+\fBboot\fR \fBdisk3\fR \fB-as\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR通过支持 WAN Boot 的 PROM 进行网络引导
+.sp
+.LP
+为了说明各种引导命令行调用的一些细微反响，假设设置了 \fBnetwork-boot-arguments\fR，通过 devalias 命令设置了 \fBnet\fR，如以下命令所示。
+
+.sp
+.LP
+在以下命令中，设备别名中的设备参数由该设备驱动程序处理。网络引导支持软件包处理 \fBnetwork-boot-arguments\fR 中的参数。
+
+.sp
+.in +2
+.nf
+\fBboot net\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令将不会生成任何设备参数。网络引导支持软件包处理 \fBnetwork-boot-arguments\fR 中的参数。
+
+.sp
+.in +2
+.nf
+\fBboot net:\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令将不会生成任何设备参数。\fBrarp\fR 是唯一的网络引导支持软件包参数。\fBnetwork-boot-arguments\fR 将被忽略。
+
+.sp
+.in +2
+.nf
+\fBboot net:rarp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在以下命令中，指定的设备参数会被接受。网络引导支持软件包处理 \fBnetwork-boot-arguments\fR 中的参数。
+
+.sp
+.in +2
+.nf
+\fBboot net:speed=100,duplex=full\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR结合使用 \fBwanboot\fR 与较旧的 PROM
+.sp
+.LP
+以下命令将生成要从 DVD 或 CD 装入的 \fBwanboot\fR 二进制文件，此时 \fBwanboot\fR 将执行 DHCP，然后进入其命令解释程序以允许用户输入密钥和任何其他必要配置。
+
+.sp
+.in +2
+.nf
+\fBboot cdrom -F wanboot -o dhcp,prompt\fR
+.fi
+.in -2
+.sp
+
+.SS "x86"
+.LP
+\fB示例 4 \fR在单用户交互模式中引导缺省内核
+.sp
+.LP
+要在单用户交互模式中引导缺省内核，请编辑 GRUB 内核命令行以读取：
+
+.sp
+.in +2
+.nf
+kernel /platform/i86pc/kernel/amd64/unix -as
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inittab\fR\fR
+.ad
+.sp .6
+.RS 4n
+其中指定了 \fBinitdefault\fR 状态的表
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/sbin/init\fR\fR
+.ad
+.sp .6
+.RS 4n
+使系统进入 \fBinitdefault\fR 状态的程序
+.RE
+
+.SS "仅 SPARC"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/\fR\fIplatform-name\fR\fB/kernel/sparcv9/unix\fR\fR
+.ad
+.sp .6
+.RS 4n
+要引导系统的缺省程序。
+.RE
+
+.SS "仅限于 x86"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/Boot\fR\fR
+.ad
+.sp .6
+.RS 4n
+包含与引导相关的文件的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/rpool/boot/grub/menu.lst\fR\fR
+.ad
+.sp .6
+.RS 4n
+由 GRUB 显示的可引导操作系统菜单。\fB/rpool\fR 是一个通用约定。路径名是可配置的，具体取决于安装程序的功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/i86pc/kernel/amd64/unix\fR\fR
+.ad
+.sp .6
+.RS 4n
+要引导系统的缺省程序。
+.RE
+
+.SH 另请参见
+.sp
+.LP
+\fBkmdb\fR(1)、\fBuname\fR(1)、\fBbootadm\fR(1M)、\fBeeprom\fR(1M)、\fBinit\fR(1M)、\fBinstallboot\fR(1M)、\fBkernel\fR(1M)、\fBmonitor\fR(1M)、\fBshutdown\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBumountall\fR(1M)、\fBzpool\fR(1M)、\fBuadmin\fR(2)、\fBbootparams\fR(4)、\fBinittab\fR(4)、\fBvfstab\fR(4)、\fBwanboot.conf\fR(4)、\fBattributes\fR(5)、\fBfilesystem\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+RFC 903 \fIA Reverse Address Resolution Protocol\fR（《反向地址解析协议》），\fBhttp://www.ietf.org/rfc/rfc903.txt\fR
+.sp
+.LP
+RFC 2131 \fIDynamic Host Configuration Protocol\fR（《动态主机配置协议》），\fBhttp://www.ietf.org/rfc/rfc2131.txt\fR
+.sp
+.LP
+RFC 2132 \fIDHCP Options and BOOTP Vendor Extensions\fR（《DHCP 选项和 BOOTP 供应商扩展》），\fBhttp://www.ietf.org/rfc/rfc2132.txt\fR
+.sp
+.LP
+RFC 2396 \fIUniform Resource Identifiers (URI): Generic Syntax\fR（《统一资源标识符 (Uniform Resource Identifier, URI)：通用语法》），\fBhttp://www.ietf.org/rfc/rfc2396.txt\fR
+.sp
+.LP
+\fI\fR
+.sp
+.LP
+《\fISun 硬件平台指南\fR》
+.sp
+.LP
+《\fIOpenBoot 命令参考手册\fR》
+.SH 警告
+.sp
+.LP
+\fBboot\fR 实用程序无法确定可以用作可引导程序的文件。如果请求引导不可引导的文件，\fBboot\fR 实用程序将装入并进一步处理该文件。之后会发生什么不可预知。
+.SH 附注
+.sp
+.LP
+可以使用 \fBuname\fR(1) 的 \fB-i\fR 选项查找 \fIplatform-name\fR。可以使用 \fBuname\fR(1) 的 \fB-m\fR 选项查找 \fIhardware-class-name\fR。
+.sp
+.LP
+Solaris 操作系统的当前发行版不支持运行 UltraSPARC-I CPU 的计算机。

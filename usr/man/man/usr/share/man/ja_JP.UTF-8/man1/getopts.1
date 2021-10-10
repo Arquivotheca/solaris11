@@ -1,0 +1,761 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright 1992, X/Open Company Limited All Rights Reserved
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH getopts 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+getopts \- ユーティリティーオプションの解析
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/getopts\fR \fIoptstring\fR \fIname\fR [\fIarg\fR...]
+.fi
+
+.SS "sh"
+.LP
+.nf
+\fBgetopts\fR \fIoptstring\fR \fIname\fR [\fIargument\fR]...
+.fi
+
+.SS "ksh88"
+.LP
+.nf
+\fBgetopts\fR \fIoptstring\fR \fIname\fR [\fIarg\fR]...
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fBgetopts\fR [\fB-a\fR \fIname\fR] \fIoptstring\fR \fIname\fR [\fIarg\fR]...
+.fi
+
+.SH 機能説明
+.SS "/usr/bin/getopts"
+.sp
+.LP
+\fBgetopts\fR ユーティリティを使えば、引数リストからオプションやオプション引数を検索できます。
+.sp
+.LP
+\fBgetopts\fR は、呼び出されるたびに、\fIname\fR オペランドで指定されているシェル変数に次のオプションを入れ、シェル変数 \fBOPTIND\fR に処理すべき次の引数へのインデックスを入れます。シェルが呼び出されるたびに、\fBOPTIND\fR は \fB1\fR に初期設定されます。
+.sp
+.LP
+オプション引数を必要とするオプションの場合、\fBgetopts\fR はオプション引数をシェル変数 \fBOPTARG\fR に入れます。オプションがない場合または見つかったオプションにオプション引数がない場合、\fBOPTARG\fR は設定されません。
+.sp
+.LP
+オプション文字の位置に、\fIoptstring\fR オペランドに含まれていないオプション文字があると、\fIname\fR で指定されているシェル変数が疑問符 (\fB?\fR) 文字に設定されます。この場合、\fIoptstring\fR の最初の文字がコロン (\fB:\fR) なら、シェル変数 \fBOPTARG\fR は見つかったオプション文字に設定されますが、標準エラー出力には何も出力されません。それ以外の場合、シェル変数 \fBOPTARG\fR は設定されず、標準エラー出力には診断メッセージが出力されます。この状況は、呼び出しアプリケーションに引数を渡す方法においてエラーがあったと判断され、\fBgetopts\fR 処理のエラーとはなりません。
+.sp
+.LP
+オプション引数がない場合は、以下のように処理されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIoptstring\fR の最初の文字がコロン (:) なら、\fIname\fR で指定されているシェル変数はコロン文字に設定され、シェル変数 \fBOPTARG\fR は見つかったオプション文字に設定されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+それ以外の場合、\fIname\fR で指定されているシェル変数は疑問符 (\fB?\fR) 文字に設定され、シェル変数 \fBOPTARG\fR は設定されず、標準エラー出力には診断メッセージが出力されます。この状況は、呼び出しアプリケーションに引数を渡す方法においてエラーがあったと判断され、\fBgetopts\fR 処理のエラーとはなりません。この判断を示した診断メッセージが出力されますが、終了ステータスは 0 になります。
+.RE
+.sp
+.LP
+オプションの最後にくると、\fBgetopts\fR はゼロより大きい戻り値で終了します。シェル変数 \fBOPTIND\fR は最初に現われた非オプション引数のインデックスに設定されます。このとき、最初に現われた \fB\(mi\|\(mi\fR 引数は、他の非オプション引数が先に現われない場合にオプションとしてみなされます。非オプション引数が 1 つもない場合は、\fB$#\fR + 1 に設定され、\fIname\fR 変数は疑問符 (?) 文字になります。オプションの終わりを判断するのは、 特殊オプション \fB\(mi\|\(mi\fR がある場合、\fB\(mi\fR 以外で始まる引数が見つかった場合、またはエラーが発生した場合です。
+.sp
+.LP
+シェル変数 \fBOPTIND\fR と \fBOPTARG\fR は \fBgetopts\fR の呼び出し元のローカル変数であり、デフォルトではエクスポートされません。
+.sp
+.LP
+\fIname\fR オペランドで指定されているシェル変数、\fBOPTIND\fR、および \fBOPTARG\fR は、現在のシェル実行環境に影響を及ぼします。
+.sp
+.LP
+アプリケーションが \fBOPTIND\fR を 1 に設定すると、新しいパラメータセットが使用できるようになります。 現在の位置パラメータまたは新しい \fIarg\fR 値です。すべての呼び出しで同じパラメータ (位置パラメータまたは \fIarg\fR オペランド) を使おうとしない場合、または \fBOPTIND\fR を1 以外の値に変更した場合、1 つのシェル実行環境で \fBgetopts\fR を複数回呼び出すと、結果は不確定です。
+.SS "sh"
+.sp
+.LP
+\fBgetopts\fR は、Bourne シェル組み込みコマンドの1 つであり、定位置パラメータの解析およびオプションの妥当性チェックに使用されます。\fBsh\fR(1) を参照してください。このコマンドは、コマンド構文標準規格 (\fBIntro\fR(1) のルール 3 - 10 を参照) のうち、該当するルールすべてをサポートします。このコマンドは、\fBgetopt\fR コマンドの代わりに使用してください。
+.sp
+.LP
+\fIoptstring\fR には、\fBgetopts\fR を使用するコマンドが認識できるオプション文字を入れなければなりません。オプション文字の後にコロンが付いている場合は、そのオプションには 1 つまたは複数の引数があるとみなされます。オプションと引数の間は、スペースによって区切られていなければなりません。
+.sp
+.LP
+\fBgetopts\fR は、呼び出されるたびに、次のオプションをシェル変数 \fIname\fR に入れ、処理すべき次の引数へのインデックスをシェル変数 \fBOPTIND\fR に入れます。シェルまたはシェル手続きが呼び出されるたびに、\fBOPTIND\fR の値は \fB1\fR に初期設定されます。
+.sp
+.LP
+オプションにオプション引数が必要な場合、\fBgetopts\fR はその引数をシェル変数 \fBOPTARG\fR に入れます。
+.sp
+.LP
+不正なオプションが検出されると、\fB?\fR が \fIname\fR に入ります。
+.sp
+.LP
+オプションの終わりが検出されると、\fBgetopts\fR はゼロ以外の終了ステータスで終了します。特殊オプション \fB-\fR を使用して、オプションの終わりを表すことができます。
+.sp
+.LP
+デフォルトでは、\fBgetopts\fR は定位置パラメータを解析します。getopts コマンド行に追加の引数 (\fIargument\fR .\|.\|.) が指定されると、\fBgetopts\fR は定位置パラメータの代わりにその引数を解析します。\fB\fR
+.sp
+.LP
+\fB/usr/lib/getoptcvt\fR は \fIfilename\fR 内のシェルスクリプトを読み取り、\fBgetopt\fR の代わりに \fBgetopts\fR を使用できるようにそれを変換し、その結果を標準出力に出力します。
+.sp
+.LP
+新しいコマンドはすべて、\fBIntro\fR(1) で説明しているコマンド構文標準規格に従うようにするために、定位置パラメータの解析、およびオプションがそのコマンドの有効なオプションであるかどうかのチェックに、\fBgetopts\fR または \fBgetopt\fR を使用しなければなりません。
+.sp
+.LP
+\fBgetopts\fR は、 \fIoptstring\fR に含まれていないオプション文字を検出すると、 標準エラー出力にエラーメッセージを表示します。
+.sp
+.LP
+現在の実装においては、次のようにコマンド構文標準規格 (\fBIntro\fR(1) を参照) に従わない使用方法が認められていますが、このような使用方法は、将来、システムのリリースではサポートされないので、使用しないでください。以下のセクションの例と同様に、\fB-a\fR および \fB-b\fR がオプションであり、\fB-o\fR はオプション引数を持つオプションとします。 
+.sp
+.LP
+次の例では、ルール 5   (オプション引数を持つオプションは別のオプションと一緒にまとめることはできない) に違反しています。
+.sp
+.in +2
+.nf
+example% \fBcmd -aboxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例では、ルール 6  (オプション引数を持つオプションの後には、スペースがなければならない) に違反しています。
+.sp
+.in +2
+.nf
+example% \fBcmd -ab oxxx filename\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+シェル変数 \fBOPTIND\fR の値を変更したり、異なる引数の集まりを解析したりした場合の結果は不確定です。
+.SS "ksh88"
+.sp
+.LP
+\fIarg\fR が正当なオプションを示しているかどうかをチェックします。\fIarg\fR を省略すると、定位置パラメータが使用されます。オプション引数は \fB+\fR または \fB\(mi\fR で始まります。\fB+\fR または \fB\(mi\fR 以外の文字で始まっているオプション、また \fB-\fR 引数があると、オプションの終わりとみなされます。\fIoptstring\fR には、\fBgetopts\fR が認識する文字を記述します。文字の後に \fB:\fR が続く場合、そのオプションには引数があるとみなされます。オプションと引数とは空白文字で区切ることができます。
+.sp
+.LP
+\fB+\fR で始まる場合、\fBgetopts\fR は \fB+\fR を起動するたびに \fIname\fR 内で見つかった次のオプション文字を設定します。\fI\fR次の \fIarg\fR のインデックスは \fBOPTIND\fR に格納されます。オプション引数がある場合は \fBOPTARG\fR に格納されます。
+.sp
+.LP
+\fIoptstring\fR 内で先頭に \fB:\fR がある場合は、\fBgetopts\fR は無効なオプション文字を \fBOPTARG\fR に格納し、\fIname\fR を \fB?\fR (未定義のオプションが指定された場合) または \fB:\fR (必要なオプション引数が省略されている場合) に設定します。\fBgetopts\fR はエラーメッセージを表示します。オプションがなくなると、終了ステータスは 0 以外になります。\fB\fR
+.sp
+.LP
+\fBgetopts\fR は、従来の単一文字の短いオプションも、Sun の Command Line Interface Paradigm (\fBCLIP\fR) で定義された長いオプションもサポートします。 
+.sp
+.LP
+長いオプションは短いオプションの別名です。長いオプションを指定するには、対応する短いオプションの後に、長いオプションを括弧に囲んで指定します。たとえば、短いオプション「\fBf\fR」の別名として、長いオプション「\fBfile\fR」を指定する場合、次のスクリプト行を使用します。
+.sp
+.in +2
+.nf
+getopts "f(file)" opt
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+コマンド行上では、長いオプションの前に「\fB--\fR」または「\fB++\fR」を指定します。前述の例の場合、コマンド行上の「\fB--file\fR」は「\fB-f\fR」と同じであり、「\fB++file\fR」は「\fB+f\fR」と同じです。
+.sp
+.LP
+短いオプションの別名として長いオプションを複数指定することはできますが、これは CLIP 仕様には違反することであり、使用するときには十分注意する必要があります。長いオプションを複数指定するときには、次のように、それぞれの長いオプションを括弧で囲む必要があります。
+.sp
+.in +2
+.nf
+getopts "f:(file)(input-file)o:(output-file)"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の例の場合、「\fB--file\fR」と「\fB--input-file\fR」は両方とも「\fB-f\fR」と同等であり、「\fB--output-file\fR」は「\fB-o\fR」と同等です。
+.sp
+.LP
+変数名は、常に、短いオプションに設定されます。コマンド行上で長いオプションを指定しても、変数名はそれと同等の短いオプションに設定されます。
+.sp
+.LP
+シェルの \fBgetopts\fR 組み込みコマンドに関する詳細は、このマニュアルページ内で前述した Bourne シェル (\fBsh\fR) の説明を参照してください。
+.SS "ksh"
+.sp
+.LP
+\fBgetopts\fR ユーティリティーを使えば、\fIarg\fR で指定された引数リストまたは定位置パラメータ (\fIarg\fR が省略されている場合) から、オプションや引数を検索できます。また、\fIoptstring\fR の情報に基づいて、コマンドの使用法を示すメッセージやマニュアルページを生成することもできます。 
+.sp
+.LP
+\fBgetopts\fR は、呼び出されるたびに、\fIname\fR オペランドで指定されているシェル変数に次のオプションを入れ、シェル変数 \fBOPTIND\fR に処理すべき次の引数へのインデックスを入れます。シェルが呼び出されると、\fBOPTIND\fR が \fB1\fR に初期化されます。オプションにオプション引数が必要であるか、許可される場合、\fBgetopts\fR はそのオプション引数をシェル変数 \fBOPTARG\fR に入れます。それ以外の場合、\fBOPTARG\fR はオプションの設定時に \fB1\fR に、オプションの設定解除時に \fB0\fR にそれぞれ設定されます。\fB\fR
+.sp
+.LP
+\fIoptstring\fR 文字列は、英数字、特殊文字 (\fB+\fR、\fB-\fR、\fB ?\fR、\fB:\fR)、スペース文字 (SPACE)、または \fB[...]\fR で囲まれた文字グループで構成されます。文字グループは、\fB{...}\fR 内に入れ子にできます。\fB[...]\fR グループの外にある 1 つの復帰改行文字 (NEWLINE) とそれに続く 0 個以上の空白文字は無視されます。オプションとコマンド引数の形式は、1 つ以上の空白行で区切られます。 
+.sp
+.LP
+各 \fB[...]\fR グループは、ラベル (省略可)、属性 (区切り文字は \fB:\fR、省略可)、および \fB?\fR に続く説明文字列 (省略可) で構成されます。\fB?\fR から次の \fB]\fR の末尾までの文字は、オプション解析および短い使用法メッセージとして無視されます。これらは、詳細なヘルプまたはマニュアルページの生成に使用されます。\fB:\fR 文字をラベルに表示することはできません。ラベルでは \fB?\fR 文字を \fB??\fR と指定し、説明文字列では \fB]\fR 文字を \fB]]\fR と指定する必要があります。2 つの \fB\eb\fR (バックスペース) 文字の間のテキストは、そのテキストがボールド (太文字) で表示されることを示しています。2 つの \fB\ea\fR (ベル) 文字の間のテキストは、そのテキストが強調またはイタリックで表示されることを示しています。2 つの \fB\ev\fR (垂直タブ) 文字の間のテキストは、そのテキストが固定幅フォントで表示されることを示しています。2 つの \fB\ef\fR (フォームフィード) 文字の間のテキストは、囲まれたテキストを名前とするシェル関数からの出力で置き換えられます。
+.sp
+.LP
+このインタフェースからの出力はすべて、標準エラー出力に書き込まれます。
+.sp
+.LP
+グループの種類を次に示します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+次の形式のグループ 
+.sp
+.in +2
+.nf
+\fB[-[\fR\fIversion\fR][\fIflag\fR[\fInumber\fR\fB]]...[?\fR\fItext\fR\fB]]\fR
+.fi
+.in -2
+.sp
+
+は最初のグループとして表示され、拡張インタフェースを使用可能にします。 
+.sp
+\fIversion\fR にはインタフェースのバージョン (現在は 1) を指定します。 バージョンが省略された場合は、最新バージョンと見なされます。将来の拡張により \fIversion\fR の値は大きくなってゆきますが、すべてのバージョンがサポートされます。通常、\fI text\fR には SCCS または CVS 識別文字列を指定します。数値 (省略可) を含むゼロ以上のフラグを指定して、オプション解析を制御できます。次のフラグがあります。
+.RS
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 5n
+.rt  
+複数回受け渡しできるように、この \fIoptstring\fR をキャッシュします。同じプロセス内で何度も呼び出し可能な組み込みコマンドを最適化する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.RS 5n
+.rt  
+ヘルプの生成時にこの \fIoptstring\fR を無視します。複数の受け渡しから得られる \fIoptstring\fR 値を統合する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.RS 5n
+.rt  
+ヘルプメッセージに長いオプション名だけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+オプション文字の接頭辞 \fB-\fR は省略可能です。これは、廃止された \fBps\fR(1) オプション構文に対応しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+この数値は、長いオプション名の接頭辞として追加する必要のある \fB-\fR 文字の数を示します。デフォルト値は \fB2\fR です。指定可能な値は \fB 0\fR、\fB1\fR、\fB2\fR です。たとえば、\fBdd\fR(1M) の場合は \fBp0\fR、\fBfind\fR(1) の場合は \fB p1\fR と指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 5n
+.rt  
+この数値は、マニュアルページのセクション番号を指定します。デフォルトは \fB1\fR です。
+.RE
+
+.RE
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[\fR\fI option\fR\fB[!][=\fR\fInumber\fR\fB ][:\fR\fIlongname\fR\fB][?\fR\fI text\fR\fB]]\fR 形式のオプション。この場合、最初のフィールドはオプション文字です。これは、オプションが一致した場合に name オペランド内に返される値です。オプション文字が存在しない場合は、2 桁以上の数値を指定してください。長いオプションが一致する場合、この数値が name オペランドの値として返されます。オプションの後に \fB!\fR が続く場合、オプション文字の意味は \fIlongname\fR の意味の逆になります。値を取らないオプションの場合、\fBOPTARG\fR は、逆オプション文字 \fB!\fR では \fB0\fR に、それ以外の場合は \fB1\fR に設定されます。オプションの \fI=number\fR は、オプション文字ではなく \fIname\fR オペランドに返される数を示します。\fIlongname\fR は \fB--longname\fR で指定されます。これは、すべての長いオプションのうちで、あいまいさのない最短の接頭辞により照合されます。\fBlongname\fR フィールド内の \fB*\fR は、追加の文字すべてが正確に一致するならば、その位置までの文字だけが一致する必要があることを示します。\fBlongname\fR も説明テキストも存在しないオプションの場合、\fB[\fR と \fB]\fR は省略できます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+オプション引数の指定。引数を取るオプションの後に文字列値を表す \fB:\fR または数値を表す \fB#\fR を付けてから、オプション引数を指定できます。オプション引数の指定では、フィールド 1 にオプション引数名が含まれます。「:」で区切られた残りのフィールドは、タイプ名およびゼロ以上の特殊属性ワード (\fBlistof\fR、\fBoneof\fR、および \fB ignorecase\fR) になります。最後のフィールドには、「:=default」のようにデフォルトのオプション値を指定できます。オプション引数の指定に続いて、中括弧で囲んだオプション値の説明のリストを記述できます。引数を取る長いオプションは、\fB--longname=\fR\fI value\fR のように指定します。\fB:\fR や \fB#\fR の後に \fB?\fR が続く場合、そのオプション引数は省略可能です。オプション文字の書式だけが指定されている場合は、次の引数が \fB-\fR または \fB+\fR で始まるのであれば、オプションの引数値は設定されません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+オプション値の説明。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+引数の指定。オプション引数の指定に続いて、有効なオプション引数値のリストを \fB{...}\fR で囲んで指定できます。許可されるそれぞれの値は、\fB[...]\fR の中に値を含めて指定できます。その後に説明を記述できます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[+\fR\fB\e\fR\fI n\fR\fB\&...]\fR 形式のグループは、\fB ...\fR の表す文字を固定幅フォントで表示します。改行は追加しません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[+\fR\fIname\fR\fB ?\fR\fItext\fR\fB]\fR 形式のグループでは、セクション名と説明テキストを指定します。\fIname\fR を省略すると、\fItext\fR は新しい段落に配置されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB[-\fR\fIname\fR\fB ?\fR\fItext\fR\fB]\fR 形式のグループでは、\fBIMPLEMENTATION\fR セクションのエントリを指定します。
+.RE
+.sp
+.LP
+\fIoptstring\fR の先頭文字が \fB+\fR の場合、\fB+\fR で始まる引数もオプションと見なされます。
+.sp
+.LP
+先頭の \fB:\fR 文字、または \fIoptstring\fR の先頭の \fB+\fR に続く : は、エラーの処理方法に影響を及ぼします。オプションの処理時にオプション文字または \fIoptstring\fR で指定されていない \fBlongname\fR 引数を検出すると、name という名前のシェル変数が \fB?\fR 文字に設定されます。シェル変数 \fBOPTARG\fR は、検出された文字に設定されます。オプション引数が存在しないか、その値が無効な場合、name が \fB:\fR 文字に設定され、シェル変数 \fBOPTARG\fR が検出されたオプション文字に設定されます。先頭に \fB:\fR が存在しない場合、\fIname\fR は \fB?\fR 文字に設定され、\fBOPTARG\fR の設定は解除されます。エラーが発生した場合には、エラーメッセージが標準エラー出力に書き込まれます。
+.sp
+.LP
+次の場合は、オプションの終わりが発生します。
+.RS +4
+.TP
+1.
+特別な引数 \fB--\fR が検出されました。
+.RE
+.RS +4
+.TP
+2.
+先頭文字が \fB-\fR でない引数が検出されました。
+.RE
+.RS +4
+.TP
+3.
+ヘルプ引数が指定されています。
+.RE
+.RS +4
+.TP
+4.
+エラーが発生します。
+.RE
+.sp
+.LP
+\fBOPTIND\fR が値 \fB1\fR に設定されている場合は、新しい引数セットを使用できます。
+.sp
+.LP
+\fBgetopts\fR も使用すると、コマンドの使用方法や詳細な説明を含むヘルプメッセージを生成できます。\fIargs\fR は次のように指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.RS 13n
+.rt  
+使用方法の概要を生成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??\fR\fR
+.ad
+.RS 13n
+.rt  
+詳細な使用方法メッセージを生成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??man\fR\fR
+.ad
+.RS 13n
+.rt  
+書式付きのマニュアルページを生成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??api\fR\fR
+.ad
+.RS 13n
+.rt  
+簡単に解析できる使用方法メッセージを生成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??html\fR\fR
+.ad
+.RS 13n
+.rt  
+マニュアルページを \fBhtml\fR 形式で生成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??nroff\fR\fR
+.ad
+.RS 13n
+.rt  
+マニュアルページを \fBnroff\fR 形式で生成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--??usage\fR\fR
+.ad
+.RS 13n
+.rt  
+現在の \fBoptstring\fR を一覧表示する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--???name\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBversion=\fR\fIn\fR を一覧表示する場合に使用します。オプション \fIname\fR が \fBgetopts\fR により認識される場合、\fIn\fR は \fB0\fR よりも大きくなります。
+.RE
+
+.sp
+.LP
+オプションの終わりが検出されると、\fBgetopts\fR は 0 以外の戻り値で終了し、変数 \fBOPTIND\fR が最初の非オプション引数のインデックスに設定されます。\fB\fR
+.SH オプション
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR では次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIname\fR\fR
+.ad
+.RS 11n
+.rt  
+使用方法メッセージ内で、コマンド名の代わりに \fIname\fR を使用します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIoptstring\fR \fR
+.ad
+.RS 14n
+.rt  
+\fBgetopts\fR を呼び出すユーティリティによって識別されるオプション文字が入った文字列。文字の後ろにコロンが付いている場合、そのオプションには引数があることを意味します。引数は別個に指定する必要があります。アプリケーションは、オプション文字とそのオプション引数を別々に指定しなければなりませんが、そのように指定されているかどうかに関わらず、\fBgetopts\fR は、引数を取るオプションに続く文字をその引数と解釈します。オプション引数として NULL を渡すには \fBgetopts\fR 起動時に明示的に引数とする必要があります。\fBgetopt\fR(3C) を参照してください。アプリケーションでは、疑問符 (\fB?\fR) とコロン (\fB:\fR) をオプション文字としては使用できません。英数字以外のオプション文字を使用した場合の結果は不確定です。オプション引数とオプション文字とを別々に指定しないと、\fBOPTARG\fR の値からオプション文字と \fB\(mi\fR が取り除かれます。オプション文字がわからないとき、またはオプション引数がないとき、\fIoptstring\fR の最初の文字によって、\fBgetopts\fR のふるまいが決まります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBgetopts\fR によって、見つかったオプション文字に設定されるシェル変数の名前。
+.RE
+
+.sp
+.LP
+デフォルトでは、\fBgetopts\fR は、呼び出し側のシェルプロシージャに引き渡す位置パラメータの構文を解析します。\fIarg\fR が指定されていれば、位置パラメータの代わりに解析されます。
+.SH 使用法
+.sp
+.LP
+\fBgetopts\fR は現在のシェル実行環境に影響を及ぼすので、通常、シェルに組み込まれています。以下のように、サブシェルや別のユーティリティ実行環境で呼び出された場合は、
+.sp
+.in +2
+.nf
+      (getopts abc value "$@")
+       nohup getopts ...
+       find . -exec getopts ... \e;
+.fi
+.in -2
+
+.sp
+.LP
+この場合、getopts は呼び出し側の環境のシェル変数には影響しません。
+.sp
+.LP
+なお、位置パラメータが変更されても、シェル関数は呼び出し側シェルと \fBOPTIND\fR を共有します。引数の構文を解析するために \fBgetopts\fR を使用したい関数は、処理の最初で \fBOPTIND\fR の値を保存し、戻る前に復元するのが一般的です。ただし、呼び出し側シェル用に関数が \fBOPTIND\fR を変更する場合もあります。
+.SH 使用例
+.LP
+\fB例 1 \fR引数の解析と表示
+.sp
+.LP
+以下に示すスクリプトは、引数を解析して表示する例です。
+
+.sp
+.in +2
+.nf
+aflag=
+bflag=
+while getopts ab: name
+do
+     case $name in
+     a)      aflag=1;;
+     b)      bflag=1
+             bval="$OPTARG";;
+     ?)     printf "Usage: %s: [-a] [-b value] args\en"  $0
+            exit 2;;
+     esac
+done
+if [ ! -z "$aflag" ]; then
+   printf "Option -a specified\en"
+fi
+if [ ! -z "$bflag" ]; then
+     printf 'Option -b "%s" specified\en' "$bval"
+fi
+shift $(($OPTIND - 1))
+printf "Remaining arguments are: %s\en" "$*"
+.fi
+.in -2
+
+.LP
+\fB例 2 \fRオプション付きコマンド用の引数の処理
+.sp
+.LP
+以下のシェルプログラムの一部は、コマンドに対する引数を処理する方法を示す例です。この例では、オプション引数を伴わない \fB-a\fR または \fB-b\fR と、オプション引数を伴う \fB-o\fR を使用します。
+
+.sp
+.in +2
+.nf
+while getopts abo: c
+do
+      case $c in
+     a | b)   FLAG=$c;;
+     o)       OARG=$OPTARG;;
+     \e?)      echo $USAGE
+        exit 2;;
+     esac
+done
+shift `expr $OPTIND \(mi 1`
+.fi
+.in -2
+
+.LP
+\fB例 3 \fR等価コード表現
+.sp
+.LP
+以下のコードは、すべて同じ処理を実行します。
+
+.sp
+.in +2
+.nf
+cmd -a -b -o "xxx z yy" filename
+cmd -a -b -o "xxx z yy" -- filename
+cmd -ab -o xxx,z,yy filename
+cmd -ab -o "xxx z yy" filename
+cmd -o xxx,z,yy -b -a filename
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR\fBksh getops\fR 構文の使用
+.sp
+.LP
+\fBksh getopts\fR 構文の使用方法の例については、\fB/usr/demo/ksh/src\fR 内のスクリプトを参照してください。
+
+.SH 環境
+.sp
+.LP
+\fBgetopts\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOPTIND\fR\fR
+.ad
+.RS 11n
+.rt  
+この変数は、次に処理する引数へのインデックスとして \fBgetopts\fR が使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOPTARG\fR \fR
+.ad
+.RS 11n
+.rt  
+この変数は、オプションに引数が使用された場合、その引数を保存するために \fBgetopts\fR が使用します。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+\fIoptstring\fR で指定した、または指定しなかったオプションが見つかりました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+オプションの並びの終わりを検出した、またはエラーが発生しました。
+.RE
+
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR により、次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+指定されたオプションが見つかりました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+オプションの並びの終わりを検出しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+使用方法または情報のメッセージが生成されました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/getopts、sh、ksh88"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SS "ksh"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBIntro\fR(1), \fBgetoptcvt\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBps\fR(1), \fBsh\fR(1), \fBgetopt\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.LP
+エラーが検出されたとき、\fIoptstring\fR オペランドの最初の文字がコロン (\fB:\fR) 以外なら、以下の情報が入った診断メッセージが不特定なフォーマットで標準エラー出力に出力されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+呼び出し側のプログラム名がメッセージ内に示されます。呼び出し側のプログラム名は、\fBgetopts\fR が呼び出された時点で、シェル特殊パラメータ \fB0\fR の値を持ちます。次と等価の名前
+.sp
+.in +2
+.nf
+\fIbasename\fR "$0"
+.fi
+.in -2
+
+が使用できます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIoptstring\fR にないオプションが見つかった場合、エラーと認識されて、無効なオプション文字がメッセージ内に示されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+オプション引数を必要とするオプションが見つかったが、オプション引数がない場合、エラーと認識されて、無効なオプション文字がメッセージ内に示されます。
+.RE

@@ -1,0 +1,422 @@
+'\" te
+.\" 要查看 IP 过滤器的许可条款、所有权和版权，缺省路径为 /usr/lib/ipf/IPFILTER.LICENCE。如果 Solaris 操作环境已安装在缺省安装位置以外的任意位置，应修改该给定路径以访问位于实际安装位置的文件。
+.\" 版权所有 (c) 2009，2011，Oracle 和/或其附属公司。All rights reserved.
+.TH svc.ipfd 1M "2009 年 1 月 13 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+svc.ipfd \- IP 过滤器防火墙监视守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/lib/svc/bin/svc.ipfd\fR
+.fi
+
+.LP
+.nf
+\fBsvc:/network/ipfilter:default\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsvc.ipfd\fR 守护进程监视使用防火墙配置的服务操作，并启动更新服务的 IP 过滤器配置。此守护进程使得系统能够在每个服务级别以递增方式对系统的防火墙配置的变化作出反应。
+.sp
+.LP
+服务被启用时，将激活服务的防火墙策略；服务被禁用时，将停用服务的防火墙策略；服务的配置属性组被修改时，将更新该服务的防火墙策略。\fBsvc.ipfd\fR 监视服务管理工具 (Service Management Facility, SMF) 系统信息库以注意这些操作，并调用 IP 过滤器规则生成进程来实施服务的防火墙策略。
+.sp
+.LP
+此守护进程由 \fBnetwork/ipfilter\fR 服务通过 \fBstart\fR 或 \fBrefresh\fR 方法启动。因此，此守护进程继承相应方法的环境变量和凭证，并以具有所有区域特权的超级用户身份运行。
+.SS "防火墙静态配置"
+.sp
+.LP
+静态定义描述了服务用于生成特定于服务的 IPF 规则的网络资源配置。每个服务的 \fBfirewall_context\fR 属性组包含服务的静态定义，类似于 \fBinetd\fR 管理的服务中的 \fBinetd\fR 属性组。该属性组支持：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/name\fR\fR
+.ad
+.sp .6
+.RS 4n
+适用于非 \fBinetd\fR 服务。IANA 名称或 RPC 名称，等同于 \fBinetd/name\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/isrpc\fR\fR
+.ad
+.sp .6
+.RS 4n
+适用于非 \fBinetd\fR 服务。布尔属性，其中 \fBtrue\fR 值表示 RPC 服务，等同于 \fBinetd/isrpc\fR 属性。对于 RPC 服务，\fBfirewall_context/name\fR 的值不是 IANA 名称，而是 RPC 程序编号或名称。请参见 \fBrpc\fR(4)。
+.RE
+
+.sp
+.LP
+另外，某些服务可能需要一种机制来生成和提供其自己的 IPF 规则。可选属性 \fBipf_method\fR 提供了一种允许此类自定义规则生成的机制：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/ipf_method\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个命令。通常是一个用于为服务生成 IPF 规则的脚本。该框架不会为具有此属性定义的服务来生成规则。相反，该框架希望这些服务提供它们自己的规则。
+.RE
+
+.sp
+.LP
+服务的 \fBipf_method\fR 指定一个命令，该命令接受一个附加参数、其自己的故障管理资源标识符 (fault management resource identifier, FMRI)，生成服务的防火墙规则并将这些规则输出到 stdout。要为具有 \fBipf_method\fR 属性的服务生成规则，该框架通过将服务 FMRI 传递为附加参数来执行 \fBipf_method\fR 中指定的命令，并通过将命令输出、规则重定向到服务的规则文件来存储服务的规则。因为 \fBipf_method\fR 是从 \fBnetwork/ipfilter\fR \fBstart\fR 或 \fBrefresh\fR 方法进程上下文中执行\fB\fR的，因此它继承执行上下文并以超级用户身份运行。
+.sp
+.LP
+服务静态配置是由服务开发者提供的，用户不能修改。这些属性仅在安装更新的服务定义时进行修改。
+.SS "防火墙策略配置"
+.sp
+.LP
+每个服务的属性组 \fBfirewall_config\fR 存储服务的防火墙策略配置。因为 \fBnetwork/ipfilter:default\fR 负责两个防火墙策略，即适用于整个系统范围的 Global Default（全局缺省值）和 Global Override（全局覆盖）策略（如 \fBipfilter\fR(5) 中所述)，因此它有两个属性组 \fBfirewall_config_default\fR 和 \fBfirewall_config_override\fR，分别存储适用于整个系统范围的这两个策略。
+.sp
+.LP
+下面是属性、属性的可能值，以及相应的语义：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBpolicy\fR 有以下模式：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnone\fR 策略模式\fR
+.ad
+.sp .6
+.RS 4n
+无访问限制。对于全局策略，此模式允许所有传入通信。对于服务策略，此模式允许发送到其服务的所有传入通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeny\fR 策略模式\fR
+.ad
+.sp .6
+.RS 4n
+比 \fBnone\fR 的限制性要强。此模式允许来自除 \fBapply_to\fR 中指定的源以外的所有源的传入通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallow\fR 策略模式\fR
+.ad
+.sp .6
+.RS 4n
+限制性最强的模式。此模式阻止来自除 \fBapply_to\fR 中指定的源以外的所有源的传入通信。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapply_to\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个多值属性，它列出了要实施所选的策略模式的网络实体。如果策略为 \fBdeny\fR，则将拒绝 \fBapply_to\fR 属性中列出的实体；如果策略为 \fBallow\fR，则将允许列出的实体。可能值的语法如下：
+.sp
+.in +2
+.nf
+host:           host:\fIIP\fR                 "host:192.168.84.14"
+subnet:         network:\fIIP/netmask\fR      "network:129.168.1.5/24"
+ippool:         pool:\fIpool number\fR        "pool:77"
+interface:      if:\fIinterface_name\fR       "if:e1000g0"
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexceptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个多值属性，它列出了需要排除在 \fBapply_to\fR 列表之外的网络实体。例如，当向某个子网应用 \fBdeny\fR 策略时，通过在 \fBexceptions\fR 属性中指定该子网中的某些主机，可对这些主机进行例外处理。此属性具有与 \fBapply_to\fR 属性相同的值语法。
+.RE
+
+.sp
+.LP
+仅适用于各个网络服务：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+还可以将服务的策略设置为 \fBuse_global\fR。采用 \fBuse_global\fR 策略模式的服务继承 Global Default（全局缺省值）防火墙策略。
+.RE
+
+.sp
+.LP
+仅适用于 Global Default（全局缺省值）：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config_default/policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+Global Default（全局缺省值）策略，\fBsvc:/network/ipfilter:default\fR 中的 \fBfirewall_config\fR 属性组也可以设置为 \fBcustom\fR。用户可将 \fBpolicy\fR 设为 \fBcustom\fR 以使用预填充的 IP 过滤器配置，例如，现有的 IP 过滤器配置或框架无法提供的自定义配置。此仅适用于 Global Default（全局缺省值）的策略模式允许用户提供一个包含完整的 IPF 规则集的文本文件。当选择了 \fBcustom\fR 模式时，指定的 IPF 规则集是\fB完整的\fR，且框架不会基于所配置的防火墙策略生成 IPF 规则。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config_default/custom_policy_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+当 Global Default（全局缺省值）策略设为 \fBcustom\fR 时要使用的文件路径。该文件包含用来提供所需的 IP 过滤器配置的 IPF 规则集。例如，在 \fB/etc/ipf/ipf.conf\fR 中具有现有 IPF 规则的用户可执行下列命令来使用现有的规则：
+.RS +4
+.TP
+1.
+设置自定义策略：
+.sp
+.in +2
+.nf
+# \fBsvccfg -s ipfilter:default setprop \e
+firewall_config_default/policy = astring: "custom"\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+指定自定义文件：
+.sp
+.in +2
+.nf
+# \fBsvccfg -s ipfilter:default setprop \e
+firewall_config_default/custom_policy_file = astring: \e\fR
+\fB"/etc/ipf/ipf.conf"\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+3.
+刷新配置：
+.sp
+.in +2
+.nf
+# \fBsvcadm refresh ipfilter:default\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config_default/open_ports\fR\fR
+.ad
+.sp .6
+.RS 4n
+要求允许其传入通信的非服务程序可以请求防火墙允许将通信流量发往其通信端口。此多值属性包含协议和端口元组，格式如下：
+.sp
+.in +2
+.nf
+"{tcp | udp}:{\fIPORT\fR | \fIPORT\fR-\fIPORT\fR}"
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+初始状态下，适用于整个系统范围的策略设为 \fBnone\fR，网络服务的策略设为 \fBuse_global\fR。由于适用于整个系统范围的策略为 \fBnone\fR 且所有服务均继承该策略，因此启用 \fBnetwork/ipfilter\fR 将使用一组空的 IP 过滤器规则来激活防火墙。要配置更具限制性的策略，请使用 \fBsvccfg\fR(1M) 来修改网络服务的策略和适用于整个系统范围的策略。
+.sp
+.LP
+用户可通过修改服务的 \fBfirewall_config\fR 属性组来配置防火墙策略。已创建了一个新的授权 \fBsolaris.smf.value.firewall.config\fR，用以允许将防火墙管理特权委托给用户。具有 Service Operator（服务操作员）特权的用户需要具有该新的授权才能配置防火墙策略。
+.SS "防火墙可用性"
+.sp
+.LP
+在引导过程中，将在启动已启用的服务之前为其配置防火墙。因此，在引导时服务是受保护的。当系统在运行时，在为服务配置防火墙期间运行服务时，诸如服务重新启动、启用和刷新之类的管理操作可能会导致服务在短暂时间内存在漏洞。
+.sp
+.LP
+\fBsvc.ipfd\fR 监视服务的启动和停止事件，并在 SMF 启动或停止服务的同时配置或取消配置服务的防火墙。因为两个操作同步进行，如果在防火墙配置完成前启动服务，可能会暴露窗口（小于一秒）。RPC 服务通常在临时地址上侦听，在服务实际运行前这些地址是未知的。RPC 服务会面临同样的暴露，因为在服务运行前不会配置防火墙。
+.SS "开发者文档"
+.sp
+.LP
+建议将提供远程功能的服务加入到防火墙框架中以控制对服务的网络访问。虽然该框架集成不是强制性的，但如果配置了适用于整个系统范围的策略，对未集成到框架中的服务的远程访问可能无法正常进行。
+.sp
+.LP
+将服务集成到框架中非常简便，仅需在服务清单中定义两个附加的属性组及其相应的属性。当用户启用服务时将生成的 IP 过滤器规则。需要使用 shell 脚本生成非琐碎的自定义规则时，可以使用现有的一些脚本作为示例。
+.sp
+.LP
+其他属性组（\fBfirewall_config\fR 和 \fBfirewall_context\fR）分别存储防火墙策略配置和提供静态防火墙定义。下面是新的属性组和属性及其相应的缺省值的摘要。
+.sp
+.LP
+防火墙策略配置：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config\fR\fR
+.ad
+.sp .6
+.RS 4n
+对系统的访问由一个新的授权定义和一个用户自定义属性类型予以保护。应当以如下方式将新的授权分配给属性组 \fBvalue_authorization\fR 属性：
+.sp
+.in +2
+.nf
+<propval name='value_authorization' type='astring'
+value='solaris.smf.value.firewall.config' />
+.fi
+.in -2
+.sp
+
+第三方应按照服务符号名称空间约定来生成用户自定义类型。Sun 提供的服务可以使用 \fBcom.sun,fw_configuration\fR 作为属性类型。
+.sp
+有关更多信息，请参见上文中的"防火墙策略配置"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+此属性的初始值应为 \fBuse_global\fR，因为缺省情况下服务会继承 Global Default（全局缺省值）防火墙策略。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/apply_to\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个空属性，此属性没有初始值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/exceptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个空属性，此属性没有初始值。
+.RE
+
+.sp
+.LP
+防火墙静态定义：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context\fR\fR
+.ad
+.sp .6
+.RS 4n
+第三方应按照服务符号名称空间约定来生成用户自定义类型，Oracle 提供的服务可以使用 \fBcom.sun,fw_definition\fR 作为属性类型。
+.sp
+有关更多信息，请参见上文中的"防火墙静态配置"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/name\fR\fR
+.ad
+.sp .6
+.RS 4n
+具有大家熟知的由 IANA 定义的端口的服务，可通过 \fBgetservbyname\fR(3SOCKET) 获取。服务的 IANA 名称存储在此属性中。对于 RPC 服务，RPC 程序编号存储在此属性中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/isrpc\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 RPC 服务，创建此属性时应将其值设为 \fBtrue\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/ipf_method\fR\fR
+.ad
+.sp .6
+.RS 4n
+通常，指定的防火墙策略将用于生成服务的通信端口（派生自 \fBfirewall_context/name\fR 属性）的 IP 过滤器规则。没有由 IANA 定义的端口且不是 RPC 服务的服务将需要生成其自己的 IP 过滤器规则。生成其自己的规则的服务可以选择不使用 \fBfirewall_context/name\fR 和 \fBfirewall_context/isrpc\fR 属性。有关指南，请参见以下服务：
+.sp
+.in +2
+.nf
+svc:/network/ftp:default
+svc:/network/nfs/server:default
+svc:/network/ntp:default
+.fi
+.in -2
+.sp
+
+\&...以及具有 \fBipf_method\fR 的其他服务。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os、network/ipfilter
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcprop\fR(1)、\fBsvcs\fR(1)、\fBipf\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBgetservbyname\fR(3SOCKET)、\fBrpc\fR(4)、\fBattributes\fR(5)、\fBipfilter\fR(5)、\fBsmf\fR(5)

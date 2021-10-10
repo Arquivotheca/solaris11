@@ -1,0 +1,618 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH dtrace 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+dtrace \- DTrace 动态跟踪编译器和跟踪实用程序
+.SH 用法概要
+.LP
+.nf
+\fBdtrace\fR [\fB-32\fR | \fB-64\fR] [\fB-aACeFGHhlqSvVwZ\fR] [\fB-b\fR \fIbufsz\fR] [\fB-c\fR \fIcmd\fR] 
+     [\fB-D\fR \fIname\fR [\fI=value\fR]] [\fB-I\fR \fIpath\fR] [\fB-L\fR \fIpath\fR] [\fB-o\fR \fIoutput\fR] 
+     [\fB-s\fR \fIscript\fR] [\fB-U\fR \fIname\fR] [\fB-x\fR \fIarg\fR [\fI=val\fR]] 
+     [\fB-X\fR a | c | s | t] [\fB-p\fR \fIpid\fR] 
+     [\fB-P\fR \fIprovider\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-m\fR [\fIprovider:\fR] \fImodule\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-f\fR [[\fIprovider:\fR] \fImodule:\fR] \fIfunction\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-n\fR [[[\fIprovider:\fR] \fImodule:\fR] \fIfunction:\fR] \fIname\fR [[\fIpredicate\fR] \fIaction\fR]] 
+     [\fB-i\fR \fIprobe-id\fR [[\fIpredicate\fR] \fIaction\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+DTrace 是一个用于 Solaris 操作系统的全面的动态跟踪框架。DTrace 提供一个强大的基础结构，使管理员、开发者和服务人员能简明地回答有关操作系统和用户程序行为的任意问题。 
+.sp
+.LP
+\fI《Solaris Dynamic Tracing Guide》\fR介绍如何使用 DTrace 观察、调试和调优系统行为。请参见此书以详细了解 DTrace 功能，包括随附的 DTrace 监测工具、检测过程提供器以及 D 编程语言。
+.sp
+.LP
+\fBdtrace\fR 命令提供了一个可访问 DTrace 工具提供的基本服务的通用界面，包括：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用于列出 DTrace 当前发布的探测器和提供器集的选项
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+允许使用任何探测器说明符（提供器、模块、函数和名称）直接启用探测器的选项
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用于运行 D 编译器并编译一个或多个直接在命令行上编写的 D 程序文件或程序的选项
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用于生成匿名跟踪程序的选项
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用于生成程序稳定性报告的选项
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用于修改 DTrace 跟踪和缓冲行为并启用其他 D 编译器功能的选项
+.RE
+.sp
+.LP
+可以使用 \fBdtrace\fR 创建 D 脚本，方式是在 \fB#!\fR 声明中使用它来创建解释程序文件。还可在不使用 \fB-e\fR 选项实际启用跟踪的情况下，使用 \fBdtrace\fR 尝试编译 D 程序并确定其属性。请参见"选项"部分\fB\fR。 请参见\fI《Solaris Dynamic Tracing Guide》\fR，获得如何使用 \fBdtrace\fR 实用程序执行这些任务的详细示例。
+.SH 选项
+.sp
+.LP
+\fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR 以及 \fB-i\fR 选项接受的参数可包括括在斜杠 \fB//\fR 中的可选 D 语言 \fIpredicate\fR 与括在大括号 \fB{}\fR 中的 D 语言 \fIaction\fR 语句列表。在命令行上指定的 D 程序代码必须适当用引号括起，以避免 Shell 进行元字符解释。 
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-32\fR | \fB-64\fR\fR
+.ad
+.sp .6
+.RS 4n
+D 编译器使用操作系统内核的本机数据模型生成程序。可使用 \fBisainfo\fR \fB- b\fR 命令确定当前操作系统的数据模型。如果指定了 \fB-32\fR 选项，则 \fBdtrace\fR 将强制 D 编译器使用 32 位数据模型编译 D 程序。如果指定了 \fB-64\fR 选项，则 \fBdtrace\fR 将强制 D 编译器使用 64 位数据模型编译 D 程序。通常这些选项不是必需的，因为 \fBdtrace\fR 会选择本机数据模型作为缺省数据模型。数据模型会影响整数类型的大小和其他语言属性。对任一数据模型编译的 D 程序可在 32 位和 64 位内核上执行。\fB-32\fR 和 \fB-64\fR 选项还可确定 \fB-G\fR 选项生成的 ELF 文件格式（ELF32 或 ELF64）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+声明匿名跟踪状态并显示跟踪数据。可将 \fB-a\fR 选项与 \fB-e\fR 选项组合在一起，以强制 \fBdtrace\fR 在使用匿名跟踪状态后立即退出，而不是继续等待新数据。有关匿名跟踪的更多信息，请参见\fI《Solaris Dynamic Tracing Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成 \fBdriver.conf\fR(4) 指令以进行匿名跟踪。该选项将构造一组 \fBdtrace\fR(7D) 配置文件指令，为匿名跟踪启用指定探测器，然后退出。缺省情况下，\fBdtrace\fR 尝试将指令存储到文件 \fB/kernel/drv/dtrace.conf\fR 中。如果使用 \fB-o\fR 选项指定备用输出文件，则可修改此行为。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIbufsz\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置主体跟踪缓冲区大小 (\fIbufsz\fR)。 跟踪缓冲区大小可以使用任何大小后缀 \fBk\fR、\fBm\fR、\fBg\fR 或 \fBt\fR。如果不能分配缓冲区空间，则 \fBdtrace\fR 将根据 \fBbufresize\fR 属性的设置减小缓冲区大小或退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcmd\fR\fR
+.ad
+.sp .6
+.RS 4n
+运行指定的命令 \fIcmd\fR，并在完成时退出。如果命令行上有多个 \fB-c\fR 选项，\fBdtrace\fR 将在所有命令退出后退出，并报告每个子进程终止时的退出状态。第一个命令的进程 ID 可供在命令行上（或者使用 \fB-s\fR 选项通过 \fB$target\fR 宏变量）指定的任何 D 程序使用。有关宏变量的更多信息，请参见\fI《Solaris Dynamic Tracing Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+在编译 D 程序之前对它们运行 C 预处理程序 \fBcpp\fR(1)。可使用 \fB-D\fR、\fB-U\fR、\fB-I\fR 和 \fB-H\fR 选项将这些选项传递到 C 预处理程序。如果使用 \fB-X\fR 选项，则可选择 C 标准的符合程度。有关调用 C 预处理程序时由 D 编译器定义的一组令牌的说明，请参见 \fB-X\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIname\fR \fB[=\fR\fIvalue\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+调用 \fBcpp\fR(1)（使用 \fB-C\fR 选项启用）时定义 \fIname\fR。如果指定等号 (\fB=\fR) 和其他 \fIvalue\fR，则 name 将赋予相应的值。此选项将 \fB-D\fR 选项传递到每个 \fBcpp\fR 调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+在编译所有请求并使用匿名跟踪状态（\fB-a\fR 选项）之后、启用任何探测器之前退出。可以结合使用该选项与 \fB-a\fR 选项以列出匿名跟踪数据，然后退出。还可将该选项与 D 编译器选项结合使用。此结合使用将验证无需真正执行程序并启用相应检测过程验就对程序进行编译。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fB[[\fR\fIprovider\fR\fB:]\fR\fImodule\fR\fB:]\fR\fIfunction\fR\fB[[\fR\fIpredicate\fR\fB]\fR\fIaction\fR\fB ]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要跟踪或列出的函数名称（\fB-l\fR 选项）。相应参数可以包括下列任何探测器说明形式：\fIprovider:module:function\fR、\fImodule:function\fR 或 \fIfunction\fR。未指定的探测器说明字段将留为空白，并且与任何探测器相匹配，无论这些字段中的值是什么。如果说明中仅指定了 \fIfunction\fR 限定符，则会匹配所有包含相应 \fIfunction\fR 的探测器。可将可选 D 探测器子句用作 \fB-f\fR 参数的后缀。在命令行上，可以一次指定多个 \fB-f\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过标识函数的入口和返回位置来合并跟踪输出。对函数入口的探测报告将进行缩进，并在其输出内容前附带 \fB->\fR 前缀。对函数返回的探测报告将不进行缩进，并在其输出内容前附带 \fB<-\fR 前缀。系统调用进入探测器报告将进行缩进，并在其输出内容前附带 \fB=>\fR 前缀。系统调用返回探测器报告将不进行缩进，并在其输出内容前附带 \fB<=\fR 前缀。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成包含嵌入式 DTrace 程序的 ELF 文件。在程序中指定的 DTrace 探测器将保存在可与其他程序链接的可重定位 ELF 对象中。如果 \fB-o\fR 选项存在，则会使用指定为此操作数参数的路径名来保存 ELF 文件。如果 \fB-o\fR 选项不存在，且 DTrace 程序随附有名称为 \fB\fIfilename\fR.d\fR 的文件，则 ELF 文件将使用名称 \fB\fIfilename\fR.o\fR 进行保存。 否则，ELF 文件将使用名称 \fBd.out\fR 进行保存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+在调用 \fBcpp\fR(1)（使用 \fB-C\fR 选项启用）时列出所包含文件的路径名。此选项会将 \fB-H\fR 选项传递到每个 \fBcpp\fR 调用，从而使调用将路径名的列表显示到 \fBstderr\fR，每个路径名显示为一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+以指定的提供器定义生成包含与探测器对应的宏的头文件。该选项应用于生成由其他源文件包含以备稍后与 \fB-G\fR 选项结合使用的头文件。如果 \fB-o\fR 选项存在，则会使用指定为此选项参数的路径名来保存头文件。如果 \fB-o\fR 选项不存在，且 DTrace 程序随附有名称为 \fIfilename\fR\fB\&.d\fR 的文件，则头文件将使用名称 \fIfilename\fR\fB\&.h\fR 进行保存。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIprobe-id\fR\fB[[\fR\fIpredicate\fR] \fIaction\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要跟踪或列出的探测器标识符 (\fIprobe-id\fR) （\fB-l\fR 选项）。可以使用十进制整数指定探测器 ID，如 \fBdtrace\fR \fB-l\fR 所示。 可将可选 D 探测器子句用作 \fB-i\fR 参数的后缀。一次可以指定多个 \fB-i\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+在调用 \fBcpp\fR(1)（使用 \fB-C\fR 选项启用）时，将指定的目录 \fIpath\fR 添加到 \fB#include\fR 文件的搜索路径。此选项将 \fB-I\fR 选项传递到每个 \fBcpp\fR 调用。指定的 \fIpath\fR 将插入到缺省目录列表之前的搜索路径中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的目录 \fIpath\fR 添加到 DTrace 库的搜索路径。DTrace 库用于包含可在编写 D 程序时使用的常见定义。指定的 \fIpath\fR 将添加到缺省库搜索路径后面。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出探测器而不是启用它们。如果指定了 \fB-l\fR 选项，\fBdtrace\fR 将生成与使用 \fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR、\fB-i\fR 和 \fB-s\fR 选项指定的说明相匹配的探测器报告。如果未指定这些选项中的任何一个，该选项将列出所有探测器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR [[\fIprovider:\fR] \fImodule:\fR [[\fIpredicate\fR] \fIaction\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+指定要跟踪或列出的模块名称（\fB-l\fR 选项）。相应参数可以包括下列任何探测器说明形式：\fIprovider:module\fR 或 \fImodule\fR。未指定的探测器说明字段将留为空白，并且与任何探测器相匹配，无论这些字段中的值是什么。如果说明中仅指定了 \fImodule\fR 限定符，则会匹配所有包含相应 \fImodule\fR 的探测器。可将可选 D 探测器子句用作 \fB-m\fR 参数的后缀。在命令行上，一次可以指定多个 \fB-m\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR [[[\fIprovider:\fR] \fImodule:\fR] \fIfunction:\fR] \fIname\fR [[\fIpredicate\fR] \fIaction\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定要跟踪或列出的探测器名称（\fB-l\fR 选项）。相应参数可以包括下列任何探测器说明形式：\fIprovider:module:function:name\fR、\fImodule:function:name\fR、\fIfunction:name\fR 或 \fIname\fR。未指定的探测器说明字段将留为空白，并且与任何探测器相匹配，无论这些字段中的值是什么。如果说明中仅指定了 \fIname\fR 限定符，则会匹配所有包含相应 \fIname\fR 的探测器。可将可选 D 探测器子句用作 \fB-n\fR 参数的后缀。在命令行上，一次可以指定多个 \fB-n\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对 \fB-A\fR、\fB-G\fR、\fB-h\fR 以及 \fB-l\fR 选项或跟踪的数据本身指定 \fIoutput\fR 文件。如果 \fB-A\fR 选项存在而 \fB-o\fR 不存在，则缺省输出文件为 \fB/kernel/drv/dtrace.conf\fR。如果 \fB-G\fR 选项存在并且 \fB-s\fR 选项的参数为 \fB\fIfilename\fR.d\fR 形式，而 \fB-o\fR 不存在，则缺省输出文件为 \fB\fIfilename\fR.o\fR。否则，缺省输出文件为 \fBd.out\fR。
+.sp
+请注意，随着使用 \fB-o\fR 选项连续调用 \fBdtrace\fR，\fBdtrace\fR 不会覆盖输出文件，而是附加到输出文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取指定的进程 ID \fIpid\fR，高速缓存其符号表，然后在完成时退出。如果命令行上有多个 \fB-p\fR 选项，\fBdtrace\fR 将在所有命令退出后退出，并报告每个进程终止时的退出状态。第一个进程 ID 可供在命令行上（或使用 \fB-s\fR 选项通过 \fB$target\fR 宏变量）指定的任何 D 程序使用。有关宏变量的更多信息，请参见\fI《Solaris Dynamic Tracing Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIprovider\fR \fB[[\fR\fIpredicate\fR\fB]\fR \fIaction\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定要跟踪或列出的提供器名称（\fB-l\fR 选项）。其余的探测器说明字段（模块、函数和名称）将留为空白，并且与任何探测器相匹配，无论这些字段中的值是什么。可将可选 D 探测器子句用作 \fB-P\fR 参数的后缀。在命令行上，可以一次指定多个 \fB-P\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置静默模式。\fBdtrace\fR 将取消显示消息（如与指定选项和 D 程序相匹配的探测器数目），并且将不列出列标题、CPU ID、探测器 ID，也不会在输出中插入新行。只有 D 程序语句（如 \fBtrace()\fR 和 \fBprintf()\fR）跟踪并格式化的数据才会显示在 \fBstdout\fR 中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+编译指定的 D 程序源文件。如果 \fB-e\fR 选项存在，则将编译该程序，但不会启用检测过程。如果 \fB-l\fR 选项存在，则将编译该程序，并且会列出与其相匹配的一组探测器，但不会启用检测过程。如果 \fB-e\fR、\fB-l\fR、\fB-G\fR 或 \fB-A\fR 均不存在，则启用 D 程序指定的检测过程并开始跟踪。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 D 编译器中间代码。对于为每个 D 程序生成的中间代码，D 编译器会将它的报告生成到 \fBstderr\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+在调用 \fBcpp\fR(1)（使用 \fB-C\fR 选项启用）时取消定义指定的 \fIname\fR。此选项将 \fB-U\fR 选项传递到每个 \fBcpp\fR 调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置详细模式。如果指定了 \fB-v\fR 选项，\fBdtrace\fR 将生成程序稳定性报告，说明所指定 D 程序的最低接口稳定性和相关性级别。DTrace 稳定性级别在\fI《Solaris Dynamic Tracing Guide》\fR中进行了详细阐述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+报告 \fBdtrace\fR 支持的最高 D 编程接口版本。版本信息将列显到 \fBstdout\fR，然后 \fBdtrace\fR 命令将退出。有关 DTrace 版本控制功能的更多信息，请参见\fI《Solaris Dynamic Tracing Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许使用 \fB-s\fR、\fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR 或 \fB-i\fR 选项在指定的 D 程序中执行破坏性操作。如果未指定 \fB-w\fR 选项，\fBdtrace\fR 将不允许编译或启用包含破坏性操作的 D 程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIarg\fR [\fI=val\fR]\fR
+.ad
+.sp .6
+.RS 4n
+启用或修改 DTrace 运行时选项或 D 编译器选项。选项列表可在\fI《Solaris Dynamic Tracing Guide》\fR中找到。 将通过指定名称来启用布尔选项。将通过使用等号（\fB=\fR）分隔选项名称和值来设置包含值的选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-X\fR \fBa | c | s | t\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定在调用 \fBcpp\fR(1)（使用 \fB-C\fR 选项启用）时应选择的 ISO C 标准的符合程度。根据参数字母的值，\fB-X\fR 选项参数会影响 \fB__STDC__\fR 宏的值和存在性。
+.sp
+\fB-X\fR 选项支持以下参数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.RS 5n
+.rt  
+缺省。ISO C 及 K&R 兼容性扩展，包含 ISO C 所需的语义更改。如果未指定 \fB-X\fR，则此模式为缺省模式。在将 \fBcpp\fR 与 \fB-Xa\fR 选项一起调用时，预定义宏 \fB__STDC__\fR 具有值 0。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 5n
+.rt  
+一致性。严格符合 ISO C（不包含 K&R C 兼容性扩展）。将 \fBcpp\fR 与 \fB-Xc\fR 选项一起调用时，预定义宏 \fB__STDC__\fR 具有值 1。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.RS 5n
+.rt  
+仅 K&R C。将 \fBcpp\fR 与 \fB-Xs\fR 选项一起调用时，不会定义宏 \fB__STDC__\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+转换。ISO C 及 KR C 兼容性扩展，不包含 ISO C 所需的语义更改。将 \fBcpp\fR 与 \fB-Xt\fR 选项一起调用时，预定义宏 \fB__STDC__\fR 具有值 0。
+.RE
+
+因为 \fB-X\fR 选项仅影响 D 编译器调用 C 预处理程序的方式，所以从 D 的角度看来，\fB-Xa\fR 和 \fB-Xt\fR 选项是等同的，提供这两个选项都是为了简化 C 生成环境中设置的重复使用。
+.sp
+无论 \fB-X\fR 模式如何，始终会指定下列附加 C 预处理程序定义，并且它们在所有模式中有效：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__sun\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__unix\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__SVR4\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__sparc\fR（仅在 SPARC 系统上）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__sparcv9\fR（仅当在 SPARC 系统上编译 64 位程序时）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__i386\fR（仅当在 x86 系统上编译 32 位程序时）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__amd64\fR（仅当在 x86 系统上编译 64 位程序时）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__\fI`uname -s`\fR_\fI`uname -r`\fR\fR（例如，\fB__SunOS_5_10\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__SUNW_D=1\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB__SUNW_D_VERSION=0x\fIMMmmmuuu\fR\fR
+.sp
+其中，\fIMM\fR 是以十六进制表示的主要发行版值，\fImmm\fR 是以十六进制表示的次要发行版值，而 \fIuuu\fR 是以十六进制表示的微发行版值。有关 DTrace 版本控制的更多信息，请参见\fI《Solaris Dynamic Tracing Guide》\fR。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许与任何探测器都不匹配的探测器说明。在未指定 \fB-Z\fR 选项时，如果在 D 程序文件中（使用 \fB-s\fR 选项）或在命令行上（使用 \fB-P\fR、\fB-m\fR、\fB-f\fR、\fB-n\fR 或 \fB-i\fR 选项）指定的任何探测器说明中包含不与任何已知探测器匹配的说明，则 \fBdtrace\fR 会报告错误并退出。
+.RE
+
+.SH 操作数
+.sp
+.LP
+可以在 \fBdtrace\fR 命令上指定零或多个附加参数，以定义一组宏变量（\fB$1\fR、\fB$2\fR 等等）。附加参数可以用于使用 \fB-s\fR 选项指定的 D 程序中或命令行上。宏变量的使用在\fI《Solaris Dynamic Tracing Guide》\fR中有进一步的描述。
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.RS 5n
+.rt  
+成功完成。 
+.sp
+对于 D 程序请求，退出状态 \fB0\fR 指示已成功编译程序，并且已成功启用探测器，或者已成功检索匿名状态。即使指定的跟踪请求遇到错误或删除，\fBdtrace\fR 也会返回 \fB0\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+出现错误。
+.sp
+对于 D 程序请求，退出状态 \fB1\fR 指示程序编译失败或者无法满足指定的请求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项或参数无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/dtrace
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令行语法是 Committed（已确定）。人可阅读的输出是 Uncommitted（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBcpp\fR(1)、\fBisainfo\fR(1)、\fBssh\fR(1)、\fBlibdtrace\fR(3LIB)、\fBdriver.conf\fR(4)、\fBattributes\fR(5)、\fBdtrace\fR(7D)
+.sp
+.LP
+《\fI《Solaris 动态跟踪指南》\fR》
+.SH 用法
+.sp
+.LP
+使用 \fB-p\fR 标志后，\fBdtrace\fR 将在检查目标进程并报告结果时停止这些进程。进程被停止后将无法执行任何操作。这意味着，例如，如果 X 服务器由在 X 服务器控制下的窗口中运行的 \fBdtrace\fR 进行检查，则整个窗口系统可能会出现死锁现象，因为 \fBproc\fR 工具将尝试将其结果显示到无法刷新的窗口。在此情况下，使用 \fBssh\fR(1) 从另一个系统登录，中止违例 \fBproc\fR 工具以清除死锁。

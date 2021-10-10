@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+
+	Service manifest for devchassisd.
+-->
+
+<service_bundle type='manifest' name='SUNWcsd:devchassis'>
+
+<!--
+	The devchassis service is dependent on the sysevent service,
+	and the fmd service. Devchassisd is needed for device access
+	via the /dev/chassis namespace.
+-->
+
+<service
+    name='system/devchassis'
+    type='service'
+    version='1'>
+
+    <!-- { -->
+    <!-- devchassis:cleanstart - one-shot /dev/chassis cleanstart -->
+    <instance name='cleanstart' enabled='true'>
+	<!-- cleanstart when root mounted read/write -->
+	<dependency
+	    name='filesystem_usr-devchassis_cleanstart'
+	    type='service'
+	    grouping='require_all'
+	    restart_on='none'>
+	    <service_fmri value='svc:/system/filesystem/usr' />
+	</dependency>
+
+	<!-- don't start fmd until cleanstart is complete -->
+	<dependent
+	    name='devchassisd_cleanstart-fmd'
+	    grouping='require_all'
+	    restart_on='none'>
+	    <service_fmri value='svc:/system/fmd' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+	        exec='/usr/lib/devchassis/devchassis_cleanstart'
+		timeout_seconds='0' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='0' />
+
+	<!-- this instance is a transient cleanstart procedure -->
+	<property_group name='startd' type='framework'>
+	    <propval name='duration' type='astring' value='transient' />
+	</property_group>
+    </instance>
+    <!-- } -->
+
+    <!-- { -->
+    <!-- devchassis:daemon - long-running /dev/chassis daemon -->
+    <instance name='daemon' enabled='true'>
+	<dependency
+	    name='fmd-devchassis_daemon_onerror'
+	    type='service'
+	    grouping='require_all'
+	    restart_on='error'>
+	    <service_fmri value='svc:/system/fmd' />
+	</dependency>
+	<dependency
+	    name='fmd-devhcassis_daemon_onrestart'
+	    type='service'
+	    grouping='require_all'
+	    restart_on='restart'>
+	    <service_fmri value='svc:/system/fmd' />
+	</dependency>
+
+	<!-- No dependent definitions at this time...  -->
+
+	<exec_method
+	    type='method'
+	    name='start'
+	    exec='/usr/lib/devchassis/devchassisd'
+	    timeout_seconds='60'>
+	    <method_context>
+		<method_credential
+		user='root'
+		group='root'
+		privileges='basic,sys_devices,sys_config' />
+	    </method_context>
+	</exec_method>
+
+	<!-- This sends a SIGKILL to the daemon, it does cleanup -->
+	<exec_method
+	    type='method'
+	    name='stop'
+	    exec=':kill'
+	    timeout_seconds='60'>
+	    <method_context>
+		<method_credential
+		user='root'
+		group='root' />
+	    </method_context>
+	</exec_method>
+    </instance>
+    <!-- } -->
+
+    <stability value='Unstable' />
+
+    <template>
+	<common_name>
+	    <loctext xml:lang='C'>
+		/dev/chassis namespace support service
+	    </loctext>
+	</common_name>
+	<documentation>
+	    <manpage
+		title='devchassis'
+		section='1M'
+		manpath='/usr/share/man/devchassisd(1M)' />
+	</documentation>
+    </template>
+</service>
+
+</service_bundle>

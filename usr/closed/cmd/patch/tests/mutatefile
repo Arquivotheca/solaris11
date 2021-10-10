@@ -1,0 +1,46 @@
+#!/bin/sh
+
+nawk '
+function random(n) {
+	return int(n * rand())
+}
+
+BEGIN {
+	srand()
+
+	lines_to_change = ARGV[1]
+	ARGV[1] = ""
+
+	lines_in_file = ARGV[2]
+	ARGV[2] = ""
+
+	for(i=0; i<lines_in_file; i++) {
+		modify_line[i] = 0
+	}
+
+	while(lines_to_change) {
+		x = random(lines_in_file)
+		if(modify_line[x] == 0) {
+			lines_to_change--
+			modify_line[x] = 1
+		}
+	}
+	current_line = 0;
+}
+
+{
+	if(modify_line[current_line] == 1) {
+		action = random(3)
+		if(action == 0) {
+			print "Modified: " $0
+		} else if(action == 1) {
+			print $0
+			print "New line: " $0
+		}
+	} else {
+		print $0
+	}
+	current_line++
+	next
+}
+' $*

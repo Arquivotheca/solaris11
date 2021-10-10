@@ -1,0 +1,249 @@
+'\" te
+.\" Copyright (c) 2007, Sun Microsystems, Inc. All Rights Reserved
+.TH isns 1M "2007 年 11 月 8 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+isns \- iSNS (Internet Storage Name Service)
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/isns\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+iSNS (Internet Storage Name Service) は、IP ネットワーク内の iSCSI (インターネット SCSI) および iFCP (Internet Fibre Channel Protocol) デバイス向けの統合化された検出サービスを提供します。iSNS はクライアントサーバーメカニズムを使用します。サーバーはクライアントの構成情報を格納し、クライアントの要求に応じてその情報を提供します。サーバーとクライアント間のプロトコルについては、IETF RFC 4171 に記述されています。
+.sp
+.LP
+このマニュアルページでは、Solaris iSNS サーバー実装の要約を説明します。現在の実装では iFCP デバイスはサポートされていません。
+.sp
+.LP
+Solaris iSNS サーバーはデーモン \fBisns\fR として実装されています。これは、サービスクライアント要求への既知のポート 3205 にバインドします。このデーモンは、サービス管理機能 (\fBsmf\fR(5)) により、障害管理リソース識別子 (FMRI) を使用して開始されます。
+.sp
+.in +2
+.nf
+svc:/network/isns_server
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBisns\fR を有効にするには、\fBsvcadm\fR(1M) を使用します。サービスを有効にすると、オペレーティングシステムのブート時に常にサービスが自動的に開始および実行されます。サービスの状態は、\fBsvcs\fR(1) コマンドを使用すると表示できます。
+.sp
+.LP
+次に示すサービスのプロパティーは、\fBsvccfg\fR(1M) を使用すると管理できます。デフォルト値は、RFC 4171 および実装の選択を通じて割り当てられます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdata_store_location\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成データストアの場所。デフォルトの場所は \fB/etc/isns/isnsdata.xml\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBESI_retry_threshold_count\fR\fR
+.ad
+.sp .6
+.RS 4n
+エンティティーステータス照会の再試行しきい値カウンタ。デフォルトのカウントは \fB3\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBManagement_SCNs_Enabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+管理状態変更通知を有効にするかどうかを決定するブール値。デフォルトは \fByes\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAuthorized_Control_Nodes\fR\fR
+.ad
+.sp .6
+.RS 4n
+制御ノード名。
+.RE
+
+.sp
+.LP
+プロパティー値の変更後に、\fBsvcadm\fR(1M) \fBrefresh\fR を使用して \fBisns\fR を有効にし、新しい値を認識させる必要があります。\fBdata_store_location\fR プロパティーを変更した場合は、\fBsvcadm restart\fR コマンドを入力して変更を有効にする必要があります。
+.sp
+.LP
+RFC 4171 には、デフォルト発見ドメイン、デフォルトドメインセット、および「デフォルト DD/DDS」設定が定義されています。これは、ユーザー定義の発見ドメインのいずれにも割り当てられていないクライアントを管理するためのものです。デフォルトの発見ドメインおよびドメインセットに対してサーバーが採用する動作を次に示します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+未割り当てのクライアントがデフォルト発見ドメインに追加されます。新たに登録されたクライアントまたは最後の発見ドメインメンバーシップから削除されたクライアントは、未割り当てのクライアントと見なされます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+クライアントがユーザー定義の発見ドメインに割り当てられると、サーバーはデフォルト発見ドメインからクライアントを削除します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+デフォルト発見ドメインセットは、管理者による有効化/無効化が可能です。これにより、デフォルト発見ドメイン内でのクライアントの発見を管理者が制御できます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+管理者がクライアントをデフォルト発見ドメインに追加することも、ユーザー定義の発見ドメインをデフォルト発見ドメインセットに追加することもできません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+デフォルト発見ドメインセットのデフォルト状態は無効です。
+.RE
+.sp
+.LP
+\fBisns\fR サーバーでサポートされる \fBrbac\fR(5) 承認を使用すると、\fBisns\fR のアクティビティーを管理できます。これらの承認には、次の \fBauth_attr\fR(4) 特権が含まれています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.isnsmgr.write\fR\fR
+.ad
+.sp .6
+.RS 4n
+発見ドメインやドメインセットの作成、発見ドメインセットの有効化/無効化、および発見ドメイン内の iSNS クライアントのグループや発見ドメインセット内の発見ドメインのグループの変更に必要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.manage.isns\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsmf\fR(5) を使用した \fBisns\fR サーバーの管理に必要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.value.isns\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBisns\fR に関連付けられている SMF サービスプロパティーの変更に必要です。
+.RE
+
+.sp
+.LP
+iSNS サーバー管理プロファイル (\fBprof_attr\fR(4) を参照) には、前述の承認がすべて含まれています。役割と承認の概要については、\fBrbac\fR(5) を参照してください。
+.SH オプション
+.sp
+.LP
+\fBisns\fR デーモンによってサポートされているオプションはありません。
+.SH 使用例
+.LP
+\fB例 1 \fR\fBisns\fR サーバーを起動する
+.sp
+.LP
+次のコマンドは、\fBisns\fR サーバーを起動します。
+
+.sp
+.in +2
+.nf
+# \fBsvcadm enable svc:/network/isns_server\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBisns\fR サーバーを停止する
+.sp
+.LP
+次のコマンドは、\fBisns\fR サーバーを停止します。
+
+.sp
+.in +2
+.nf
+# \fBsvcadm disable svc:/network/isns_server\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR\fBisns\fR のプロパティーを変更する
+.sp
+.LP
+次の一連のコマンドは、\fBESI_retry_threshold_count\fR プロパティーの値を変更します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/network/isns_server setprop \e
+config/ESI_retry_threshold_count = 6\fR
+# \fBsvcadm refresh svc:/network/isns_server\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/sbin/isns\fR\fR
+.ad
+.sp .6
+.RS 4n
+iSNS デーモンバイナリ。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/storage/isns
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBisnsadm\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBauth_attr\fR(4), \fBprof_attr\fR(4), \fBattributes\fR(5), \fBrbac\fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+サービスプロパティーの変更後に、サーバー (\fBsvcadm restart\fR) を再起動することが強く推奨されています。これにより、サーバーは既存のクライアントにも新規のクライアントにも同一の設定を適用できます。
+.sp
+.LP
+サーバーの管理に、RFC 4171 に記述されている制御ノードは不要です。制御ノードは、ローカルホスト上で \fBisnsadm\fR(1M) コマンドを使用して操作できます。たとえば、\fBisnsadm\fR を使って発見ドメインおよび発見ドメインセットを作成し、それにメンバーを追加して、発見ドメインと発見ドメインセットの関連付けを作成できます。

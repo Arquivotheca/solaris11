@@ -1,0 +1,392 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH plgrp 1 "2011 年 6 月 10 日" "SunOS 5.11" "用户命令"
+.SH 名称
+plgrp \- 观察和影响线程的主 lgroup 和 lgroup 关联
+.SH 用法概要
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-h\fR] \fIpid\fR | \fIcore\fR [/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-i\fR \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-a\fR \fIlgroup_list\fR \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I\fR \fBdefault\fR | \fBnone\fR |\fBfuture\fR] 
+     -H \fIlgroup_list\fR \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I\fR \fBdefault\fR | \fBnone\fR |\fBfuture\fR] -H \fIlgroup_list\fR \fB-e\fR \fIcommand\fR [\fIarguments\fR]
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I default\fR | \fBnone\fR | \fBfuture\fR] 
+     \fB-A\fR \fIlgroup_list\fR\fB/none\fR | \fBweak\fR | \fBstrong\fR [,...] \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I\fR \fBdefault\fR | \fBnone\fR | \fBfuture\fR] 
+     \fB-A\fR \fIlgroup_list\fR/none | \fBweak\fR |\fBstrong\fR [,...] \fB-e\fR \fIcommand\fR [\fIarguments\fR]
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-I\fR \fBdefault\fR | \fBnone\fR | \fBfuture\fR \fIpid\fR[/\fIlwps\fR]
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-I default\fR | \fBnone\fR | \fBfuture\fR \fB-e\fR \fIcommand\fR [\fIarguments\fR] ...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBplgrp\fR 为一个或多个进程、线程或 LWP 显示或设置主 \fBlgroup\fR 和 \fBlgroup\fR 关联。 
+.sp
+.LP
+\fBlgroup\fR 表示彼此之间最多相隔某个间隔（等待时间）的 CPU 和内存之类的硬件设备的集合。系统中的每个 \fBlgroup\fR 由一个唯一的 \fBlgroup\fR ID 来标识。\fBlgroups\fR 组织到分层结构中，以便于查找最近的资源。有关 \fBlgroups\fR 和 \fBlgroup\fR 分层结构的更多信息，请参见 \fBlgrpinfo\fR(1)。
+.sp
+.LP
+缺省情况下，在创建每个线程时都会为其分配一个主 \fBlgroup\fR。当系统需要为线程分配 CPU 或内存资源时，它将从线程的主 \fBlgroup\fR 中搜索 \fBlgroup\fR 分层结构以查找离线程的主 lgroup 最近的可用资源。
+.sp
+.LP
+通常，线程的主 \fBlgroup\fR 是与线程的关联性最强的 \fBlgroup\fR。最初，系统为每个线程选择一个主 \fBlgroup\fR，但将该 \fBlgroup\fR 的线程关联保留设置为 \fBnone\fR。如果一个线程为其处理器集合中的某个 \fBlgroup\fR（非其主 lgroup）设置了更强的关联，则只要该线程没有绑定到某个 CPU，它将重新认该 \fBlgroup\fR 为主。如果线程的主 \fBlgroup\fR 的关联（如果有）被删除（设置为 \fBnone\fR），则线程会重新认其处理器集中具有次高关联的 \fBlgroup\fR 为主。 
+.sp
+.LP
+\fBlgrp_affinity_set\fR(3LGRP) 中详细介绍了不同级别的 \fBlgroup\fR 关联及其语义。
+.SH 用法
+.SS "指定 \fBlgroups\fR"
+.sp
+.LP
+\fIlgroup_list\fR 是包含以下一项或多项内容的逗号分隔列表：
+.sp
+.in +2
+.nf
+- \fIlgroup_ID\fR
+- Range of \fIlgroup_ID\fRs specified as
+ <start \fIlgroup_ID\fR>-<end \fIlgroup_ID\fR>
+- all
+- root
+- leaves
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBall\fR 关键字表示系统中的所有 \fBlgroup\fR ID。\fBroot\fR 关键字表示根 \fBlgroup\fR 的 ID。\fBleaves\fR 关键字表示所有 \fBleaf\fR\fBlgroups\fR（即没有子项的 \fBlgroups\fR）的 ID。
+.SS "指定进程和线程"
+.sp
+.LP
+\fBplgrp\fR 接受一个或多个以空格分隔的进程或线程作为参数。可以用与 \fBproc\fR(1) 工具类似的方式指定进程和线程。进程 ID 可以指定为整数 \fIpid\fR 或 \fB/proc/\fR\fIpid\fR。使用 \fB/proc/\fR\fIpid\fR 时，可以使用 Shell 扩展来指定进程。例如，可以使用 \fB/proc/*\fR 指定系统中的所有进程。如果只是单独给定了进程 ID，则会将该进程的所有线程提供为 \fBplgrp\fR 的参数。
+.sp
+.LP
+可以显式指定线程，将其进程 ID 和线程 ID 分别指定为 \fIpid\fR\fB/\fR\fIlwpid\fR。通过使用连字符 (\fB-\fR) 和逗号 (\fB,\fR)，一次可以选择一个进程的多个线程。例如，\fIpid\fR\fB/1,2,7-9\fR 以 \fIpid\fR 作为其进程 ID，并指定进程的线程 1、2、7、8 和 9。
+.SH 选项
+.sp
+.LP
+支持下列选项： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIlgroup_list\fR\fR
+.ad
+.sp .6
+.RS 4n
+为指定 \fIlgroup_list\fR 显示指定进程或线程的 \fBlgroup\fR 关联。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIlgroup_list\fR\fB/\fR\fInone\fR\fB|\fR\fIweak\fR\fB|\fR\fIstrong\fR\fB[,...]\fR\fR
+.ad
+.sp .6
+.RS 4n
+为指定 \fIlgroup_list\fR 设置指定进程或线程的关联。 
+.sp
+可以给定以逗号分隔的 \fIlgroups\fR\fB/\fR\fIaffinity\fR 分配列表来一次设置多个关联。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过抓取目标进程来强制执行，即使另一进程已掌握了控制权。使用 \fB-F\fR 标志时应谨慎。在一个被调试的进程上施加两个控制进程可能会导致混乱。仅当主控制进程（通常是调试器）已停止了被调试的进程，并且在应用该 \fBproc\fR 工具的过程中主控制进程未在执行任何操作，才能保证安全。有关更多详细信息，请参见\fB警告\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个新进程，将 \fBplgrp\fR 应用到该进程，然后执行指定的命令和参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+获取指定进程和/或线程的主 \fBlgroup\fR。如果没有指定任何选项，则此选项是缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fIlgroup_list\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定进程和线程的主 \fBlgroup\fR。
+.sp
+这将为目标 \fBlgroup\fR 设置一个很强的关联以便让线程重新认主。如果指定了多个 \fBlgroup\fR，则 \fBplgrp\fR 将尝试以循环方式让线程认 \fBlgroup\fR 为主。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示指定进程或线程的 \fBlgroup\fR 关联继承。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fBdefault | none | future\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定进程或线程的 \fBlgroup\fR 关联继承。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIlwps\fR\fR
+.ad
+.RS 8n
+.rt  
+指定线程。请参见\fB用法\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.RS 8n
+.rt  
+指定进程 ID。请参见\fB用法\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR获取 Shell 的主 \fBlgroup\fR
+.sp
+.LP
+以下示例获取 Shell 的主 \fBlgroup\fR：
+
+.sp
+.in +2
+.nf
+% plgrp $$
+PID/LWPID    HOME
+3401/1        1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR将多个线程的主 \fBlgroup\fR 设置为根 \fBlgroup\fR
+.sp
+.LP
+以下示例将多个线程的主 \fBlgroup\fR 设置为根 \fBlgroup\fR：
+
+.sp
+.in +2
+.nf
+% plgrp -H root `pgrep firefox`
+     PID/LWPID    HOME
+     918/1        1 => 0
+     934/1        2 => 0
+     934/2        1 => 0
+     934/3        2 => 0
+     934/625      1 => 0
+     934/626      2 => 0
+     934/624      2 => 0
+     934/623      2 => 0
+     934/630      1 => 0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR执行 \fBplgrp\fR，根 \fBlgroup\fR 为多个线程的主 \fBlgroup\fR
+.sp
+.LP
+以下示例执行 \fBfirefox\fR，根为多个线程的主 \fBlgroup\fR：
+
+.sp
+.in +2
+.nf
+% plgrp -H root -e /usr/bin/firefox
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR获取 \fBlgroups 0-2\fR 的两个线程的关联
+.sp
+.LP
+以下示例获取 \fBlgroups 1-2\fR 的两个线程的关联：
+
+.sp
+.in +2
+.nf
+% plgrp -a 0-2 101398/1 101337/1
+PID/LWPID    HOME  AFFINITY
+101398/1        1     0-2/none
+101337/1        1     0-2/none
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR设置 \fBlgroup\fR 关联
+.sp
+.LP
+以下示例设置 \fBlgroup\fR 关联： 
+
+.sp
+.in +2
+.nf
+% plgrp -A 0/weak,1/none,2/strong 101398
+PID/LWPID    HOME       AFFINITY
+101398/1        1 => 2     0,2/none => 2/strong,0/weak
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+语法错. 没有更改任何内容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+发生非致命错误或中断。更改了一些内容。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性参见下文。
+.TE
+
+.sp
+.LP
+命令语法和输出格式是 "Ucommitted"（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBlgrpinfo\fR(1)、\fBmadv.so.1\fR(1)、\fBpmadvise\fR(1)、\fBpmap\fR(1)、\fBproc\fR(1)、\fBps\fR(1)、\fBprstat\fR(1M)、\fBlgrp_affinity_get\fR(3LGRP)、\fBlgrp_affinity_set\fR(3LGRP)、\fBlgrp_affinity_inherit_get\fR(3LGRP)、\fBlgrp_affinity_inherit_set\fR(3LGRP)、\fBlgrp_home\fR(3LGRP)、\fBliblgrp\fR(3LIB)、\fBproc\fR(4)、\fBattributes\fR(5)
+.SH 警告
+.sp
+.LP
+与 \fBproc\fR(1) 工具一样，\fBplgrp\fR 实用程序在检查其目标进程时会停止这些进程，如果调用该实用程序时使用了任何选项，则它会报告结果。 
+.sp
+.LP
+在某些情况下，进程可能会发生死锁。进程被停止后将无法执行任何操作。在生产环境中停止某个频繁使用的进程（即使仅停止很短时间）可能会导致严重的瓶颈，甚至导致这些进程挂起，使得用户无法使用这些进程。因此，应该避免在生产环境中停止 UNIX 进程。请参见 \fBproc\fR(1)。 
+.sp
+.LP
+可以通过以下方法来识别由该工具停止的进程：发出以下命令
+.sp
+.in +2
+.nf
+/usr/bin/ps -eflL
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+并在输出的第一列中查找 \fBT\fR。缺省情况下，某些进程（例如，\fBsched\fR）大多数情况下都可以显示 \fBT\fR 状态。

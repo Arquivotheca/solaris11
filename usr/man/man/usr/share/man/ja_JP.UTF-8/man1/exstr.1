@@ -1,0 +1,361 @@
+'\" te
+.\"  Copyright 1989 AT&T
+.\" Copyright (c) 1990, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH exstr 1 "2011 年 6 月 7 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+exstr \- ソースファイルからの文字列の抽出
+.SH 形式
+.LP
+.nf
+\fBexstr\fR \fIfilename\fR...
+.fi
+
+.LP
+.nf
+\fBexstr\fR \fB-e\fR \fIfilename\fR...
+.fi
+
+.LP
+.nf
+\fBexstr\fR \fB-r\fR [\fB-d\fR] \fIfilename\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBexstr\fR ユーティリティは、C 言語のソースファイルから文字列を抽出し、それをメッセージ検索関数の呼び出し (\fBgettxt\fR(3C) を参照) に置き換えます。このユーティリティーは、\fBprintf\fR コマンドや \fBprintf\fR ルーチンへの引数として指定された文字列だけではなく、二重引用符で囲まれている文字列もすべて抽出します。第 1 の形式では、\fBexstr\fR はソースファイルからすべての文字列を取り出して、標準出力上に書き出します。 各文字列の先頭には、ソースファイル名とコロン (\fB:\fR) が付加されます。
+.sp
+.LP
+最初のステップとして、まず \fBexstr\fR \fB-e\fR を使って一群の文字列を入力ファイルから取り出し、 別のファイルに保存します。次にそれらのうちどの文字列が、 あとでメッセージ検索関数で検索できるように変換可能かを 見つけ出します。次に、変換可能でない行を削除し、変換可能な行に関しては メッセージファイル名とメッセージ番号を第 4 項目 (\fImsgfile\fR) と第 5 項目 (\fImsgnum\fR) として追加します。指定するメッセージファイルは、\fBmkmsgs\fR(1) で作成したもので、\fB/usr/lib/locale/\fR\fBlocale\fR\fB/\fR\fBLC_MESSAGES\fR ディレクトリ中に存在している必要があります。このパス中の \fBlocale\fR は、テキスト文字列が書かれている言語に対応しています。詳しくは \fBsetlocale\fR(3C) を参照してください。指定するメッセージ番号は、メッセージファイル中の文字列の シーケンス番号に一致している必要があります。
+.sp
+.LP
+次に、このようにして編集したファイルを入力に指定して \fBexstr\fR \fB-r\fR を実行します。これにより元の C 言語のソースファイルの新バージョンとして、 文字列がメッセージ検索関数 \fBgettxt()\fR の呼び出しに置き換えられているファイルが生成されます。\fImsgfile\fR と \fImsgnum\fR の 2 つのフィールドは、\fBgettxt()\fR へ渡す第 1 引数を構築するために用いられます。\fBgettxt()\fR への第 2 引数は、実行時にメッセージ検索が失敗したときに印刷されます。この引数は、\fB-d\fR オプションが指定された場合を除き、 NULL 文字列です。
+.sp
+.LP
+このユーティリティは、 すべての場合に文字列を変換できるわけではありません。たとえば、静的初期化文字列を関数呼び出しに 置き換えることはできません。また文字列が、変換できないエスケープシーケンスの形式を とっている場合もあります。既存のコードを破壊しないようにするため、\fBexstr\fR \fB-e\fR を使って生成したファイルの中身をよく検査して、 関数呼び出しに置換できない文字列を 含んでいる行を必ず削除してください。また場合によっては、文字列が抽出されて メッセージ検索関数の呼び出しに置き換えられるように、 コードを修正する必要があります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fR
+.ad
+.RS 7n
+.rt  
+指定した C 言語のソースファイルから、文字列リストと 位置情報を取り出します。リストは以下に示す形式で標準出力上に 書き込まれます。
+.sp
+.in +2
+.nf
+\fIfile:line:position:msgfile:msgnum:string\fR
+.fi
+.in -2
+.sp
+
+各情報の意味は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 13n
+.rt  
+C 言語のソースファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIline\fR \fR
+.ad
+.RS 13n
+.rt  
+ファイル中の行番号
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIposition\fR \fR
+.ad
+.RS 13n
+.rt  
+その行における文字位置
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgfile\fR \fR
+.ad
+.RS 13n
+.rt  
+NULL 文字列
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgnum\fR \fR
+.ad
+.RS 13n
+.rt  
+NULL 文字列
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstring\fR \fR
+.ad
+.RS 13n
+.rt  
+抽出されたテキスト文字列
+.RE
+
+この出力先としてファイルを指定することも可能です。ファイルに書き出せば、あとでその内容を編集して \fImsgfile\fR と \fImsgnum\fR 用に使いたい値を追加することができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgfile\fR \fR
+.ad
+.RS 12n
+.rt  
+\fIstring\fR を置き換えるテキスト文字列を含んでいるファイル。\fBmkmsgs\fR(1) ユーティリティーを使って、この名前を持つファイルを作成して適切なディレクトリに置いておく必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgnum\fR \fR
+.ad
+.RS 12n
+.rt  
+\fImsgfile\fR 中のシーケンス番号
+.RE
+
+次の手順として、 \fBexstr\fR \fB-r\fR を使って \fBfile\fR の \fIstring\fR を置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fR
+.ad
+.RS 7n
+.rt  
+C 言語のソースファイル中の文字列を、 メッセージ検索関数 \fBgettxt\fR() の呼び出しに置き換えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fR
+.ad
+.RS 7n
+.rt  
+このオプションは、 \fB-r\fR オプションとともに使用します。実行時に \fBgettxt\fR() を呼び出してメッセージの検索が成功しなかった場合、抽出された文字列が印刷されます。国際的環境で動作してメッセージを 複数の言語で印刷するような アプリケーションプログラム上では、 \fBexstr\fR が提供する機能を使います。\fBexstr\fR は、テキスト文字列を、メッセージデータベース中の 文字列を指す関数呼び出しに置き換えます。どのデータベースを用いるかは、環境変数 \fBLC_MESSAGES\fR の実行時の値により決まります (\fBenviron\fR(5) を参照)。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRexstr の使用例
+.sp
+.LP
+\fBexample.c\fR というファイル中に、次のような 2 つの文字列が含まれていると想定します。
+
+.sp
+.in +2
+.nf
+main()
+
+{
+
+        printf("This is an example\en");
+
+        printf("Hello world!\en");
+
+}\fI\fR
+.fi
+.in -2
+
+.sp
+.LP
+このとき、以下のように \fBexample.c\fR を引数として指定して \fBexstr\fR を実行すると、これらの文字列が取り出されて 標準出力上に書き込まれます。
+
+.sp
+.in +2
+.nf
+example% \fBexstr example.c\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これにより次の出力が得られます。
+
+.sp
+.in +2
+.nf
+example.c:This is an example\en
+example.c:Hello world!\en
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次に \fB-e\fR オプションと出力ファイル名を指定した例を示します。\fB\fR\fB\fR\fB\fR
+
+.sp
+.in +2
+.nf
+example% \fBexstr -e example.c > example.stringsout\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合には、 \fBexample.stringsout\fR というファイルに以下の出力が得られます。
+
+.sp
+.in +2
+.nf
+example.c:3:8:::This is an example\en
+example.c:4:8:::Hello world!\en
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次にこの \fBexample.stringsout\fR ファイルを編集して、 これらの文字列が検索関数呼び出しに置き換えられる前に、\fImsgfile\fR と \fImsgnum\fR の両フィールド用に使用したい値を追加します。たとえばメッセージファイルの名前が \fBUX\fR で、ファイル中の文字列のシーケンス番号が \fB1\fR と \fB2\fR であったとすると、 \fBexample.stringsout\fR ファイルを編集して次のような内容に変更します。
+
+.sp
+.in +2
+.nf
+example.c:3:8:UX:1:This is an example\en
+example.c:4:8:UX:2:Hello world!\en
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このように準備を整えたら、\fB-r\fR オプション付きで \fBexstr\fR ユーティリティを実行して、ソースファイル中の文字列をメッセージ検索関数 \fBgettxt()\fR の呼び出しに置き換えることができます。
+
+.sp
+.in +2
+.nf
+example% \fBexstr -r example.c <example.stringsout >intlexample.c\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これにより次の出力が得られます。
+
+.sp
+.in +2
+.nf
+extern char *gettxt();
+
+main()
+
+{
+
+	printf(gettxt("UX:1", ""));
+
+	printf(gettxt("UX:2", ""));
+
+}
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例を見てください。
+
+.sp
+.in +2
+.nf
+example% \fBexstr -rd example.c <example.stringsout >intlexample.c\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合には、抽出された文字列が \fBgettxt()\fR 関数への第 2 引数として用いられます。
+
+.sp
+.in +2
+.nf
+extern char *gettxt();
+
+main()
+
+{
+
+        printf(gettxt("UX:1", "This is an example\en"));
+
+        printf(gettxt("UX:2", "Hello world!\en"));
+
+}
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/locale/\fR\fIlocale\fR\fB/LC_MESSAGES/* \fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmkmsgs\fR(1) が生成したファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件text/locale
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBgettxt\fR(1), \fBmkmsgs\fR(1), \fBprintf\fR(1), \fBsrchtxt\fR(1), \fBgettxt\fR(3C), \fBprintf\fR(3C), \fBsetlocale\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5)
+.SH 診断
+.sp
+.LP
+\fBexstr\fR が発行するエラーメッセージは、 メッセージテキストを読めば意味が分かるようになっています。エラーメッセージはコマンド行で見つかったエラー、また 入力ファイル中で見つかった形式エラーを 表します。

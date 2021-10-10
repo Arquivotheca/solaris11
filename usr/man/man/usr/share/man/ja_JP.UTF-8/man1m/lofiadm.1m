@@ -1,0 +1,698 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH lofiadm 1M "2011 年 7 月 6 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+lofiadm \- lofi を使用してブロックデバイスとして使用可能なファイルを管理する
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-k\fR \fIraw_key_file\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-T\fR \fItoken_key\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-T\fR \fItoken_key\fR
+     \fB-k\fR \fIwrapped_key_file\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-c\fR \fIcrypto_algorithm\fR \fB-e\fR \fB-a\fR \fIfile\fR [\fIdevice\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-C\fR \fIalgorithm\fR [\fB-s\fR \fIsegment_size\fR] \fIfile\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-d\fR \fIfile\fR | \fIdevice\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR \fB-U\fR \fIfile\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/lofiadm\fR [ \fIfile\fR | \fIdevice\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBlofiadm\fR は \fBlofi\fR (ループバックファイルドライバ) を管理します。\fBlofi\fR を使用すると、ファイルをブロックデバイスに関連付けることができます。関連付けられたファイルは、ブロックデバイスからアクセスできます。これはファイルになんらかのファイルシステムのイメージ (\fBCD-ROM\fR イメージなど) が含まれている場合に役立ちます。ファイルシステムのマウント、検査、または修復用の標準のシステムユーティリティーでそのブロックデバイスを使用できるからです。\fBfsck\fR(1M) および \fBmount\fR(1M) を参照してください。
+.sp
+.LP
+\fBlofiadm\fR を使用して、ファイルをループバックデバイスとして追加したり、そうした関連付けを削除したり、現在の関連付けに関する情報を表示したりします。 
+.sp
+.LP
+利用可能な \fBlofi\fR デバイスの数は、\fBzone.max-lofi\fR rctl により制限されます。これは、大域ゾーンで \fBzonecfg\fR(1M) を使用すると設定できます。\fBzone.max-lofi\fR については、\fBresource_controls\fR(5) を参照してください。
+.sp
+.LP
+暗号化オプションと圧縮のオプションの両方をコマンド行に指定することはできません。また、暗号化されたファイルをあとで圧縮することも、圧縮されたファイルをあとで暗号化することもできません。
+.sp
+.LP
+大域ゾーンでは、大域ゾーンデバイス、およびシステムのほかの非大域ゾーンにより所有されるすべてのデバイスの両方で \fBlofiadm\fR を使用できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIfile\fR [\fIdevice\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIfile\fR をブロックデバイスとして追加します。 
+.sp
+\fIdevice\fR が指定されていない場合、使用可能なデバイスが 1 つ選択されます。
+.sp
+\fIdevice\fR が指定されている場合、\fBlofiadm\fR はそのデバイスの \fIfile\fR への割り当てを試みます。\fIdevice\fR は使用可能でなければならず、そうでない場合は \fBlofiadm\fR は失敗します。デバイスを指定する機能は、特定の関連付けセットを再設定するスクリプトで使用するためのものです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR {\fIgzip\fR | \fIgzip-N\fR | \fIlzma\fR}\fR
+.ad
+.sp .6
+.RS 4n
+指定された圧縮アルゴリズムでファイルを圧縮します。
+.sp
+\fBgzip\fR 圧縮アルゴリズムでは、オープンソースの \fBgzip\fR コマンドと同じ圧縮が使用されます。\fBgzip\fR のレベルを値 \fBgzip-\fR\fIN\fR を使用して指定できます。この \fIN\fR は 6 (高速) または 9 (最大圧縮率) です。現在、数値を指定しない \fBgzip\fR は、\fBgzip-6\fR (\fBgzip\fR コマンドのデフォルトでもある) に相当します。
+.sp
+\fIlzma\fR は、LZMA (Lempel-Ziv-Markov) 圧縮アルゴリズムを表します。
+.sp
+圧縮済みのファイルに書き込むことも、圧縮済みのファイルを読み取り/書き込みでマウントすることもできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIfile\fR | \fIdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+関連付けられたブロックデバイスがビジー状態ではない場合は、\fIfile\fR または \fIdevice\fR 名で指定された関連付けを削除し、ブロックデバイスの割り当てを解除します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsegment_size\fR\fR
+.ad
+.sp .6
+.RS 4n
+圧縮するファイルの分割に使用するセグメントサイズ。\fIsegment_size\fR は整数で、512 の倍数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+圧縮済みのファイルを圧縮解除します。
+.RE
+
+.sp
+.LP
+ファイルが暗号化されている場合は、次のオプションを使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcrypto_algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化アルゴリズムを選択します。アルゴリズムはディスクイメージに格納されていないため、暗号化が有効な場合はアルゴリズムを指定する必要があります。
+.sp
+\fB-e\fR、\fB-k\fR、\fB-T\fR のいずれも指定されていない場合、\fBlofiadm\fR は 8 文字以上のパスフレーズの入力を求めます。PKCS#5 PBKD2 を利用した対称暗号化鍵の取得には、パスフレーズが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIraw_key_file\fR | \fIwrapped_key_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+raw またはラップされた対称暗号化鍵へのパス。PKCS#11 オブジェクトも \fB-T\fR オプションを使って指定される場合、そのオブジェクトにより鍵がラップされます。\fB-T\fR が指定されていない場合、raw の鍵が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItoken_key\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化または鍵ファイルのラップ解除に使用される PKCS#11 トークン内の鍵。
+.sp
+\fB-k\fR も指定されている場合、\fB-T\fR でラップを解除する鍵を特定します。この鍵は RSA 秘密鍵である必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+一時的な暗号化鍵を生成します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcrypto_algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBaes-128-cbc\fR、\fBaes-192-cbc\fR、\fBaes-256-cbc\fR、\fBdes3-cbc\fR、\fBblowfish-cbc\fR のいずれか。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブロックデバイス \fIdevice\fR と関連付けられたファイル名を表示します。
+.sp
+引数が指定されていない場合、現在の関連付けのリストを一覧表示します。ファイル名は有効な絶対パス名である必要があります。
+.sp
+ファイルが追加されると、root による読み取りまたは書き込みのためにファイルが開かれます。すべての制限が適用されます (\fBNFS\fR 上のルートアクセスの制限など)。ファイルは、関連付けが削除されるまで開かれたままになります。ブロックデバイスが使用されるまでファイルは実際にアクセスされないため、ブロックデバイスが読み取り専用で開かれた場合はファイルに書き込まれません。
+.sp
+現在のコンテキストでパスを解決できない場合 (非大域ゾーン内の NFS パスなど)、ファイル名が疑問符 (\fB?\fR) で表示されることがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIfile\fR に関連付けられているブロックデバイスを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIraw_key_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+raw 対称暗号化鍵に使用する、適切な長さ (単位はビット) のファイルへのパス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItoken_key\fR\fR
+.ad
+.sp .6
+.RS 4n
+PKCS#11 トークンオブジェクト。書式は次のとおりです。
+.sp
+.in +2
+.nf
+\fItoken_name\fR:\fImanufacturer_id\fR:\fIserial_number\fR:\fIkey_label\fR
+.fi
+.in -2
+.sp
+
+鍵ラベル以外はすべて省略可能であり、空でもかまいません。たとえば、鍵ラベル \fBMylofiKey\fR のみを使ってトークンオブジェクトを指定するには、次のように記述します。
+.sp
+.in +2
+.nf
+-T :::MylofiKey
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIwrapped_key_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-T\fR で指定された RSA 秘密鍵を使ってラップされた対称暗号化鍵を含むファイルへのパス。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR既存の CD-ROM イメージのマウント
+.sp
+.LP
+\fBCD\fR を作成する前に、Solaris がイメージを認識することを確認する必要があります。\fBlofi\fR を使用すればイメージをマウントでき、これが機能するかどうかを確認できます。
+
+.sp
+.LP
+この例では、インターネットからダウンロードした \fBRed Hat 6.0 CD\fR の既存の \fBCD-ROM\fR イメージ (\fBsparc.iso\fR) をマウントします。これはインターネットから入手した \fBmkisofs\fR ユーティリティーで作成されました。
+
+.sp
+.LP
+次のように \fBlofiadm\fR を使用して、これにブロックデバイスを接続します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /home/mike_s/RH6.0/sparc.iso\fR
+/dev/lofi/1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBlofiadm\fR はデバイスを選択し、デバイス名を標準出力に表示します。次のコマンドを実行して、\fBlofiadm\fR を再度実行できます。 
+
+.sp
+.in +2
+.nf
+# \fBlofiadm\fR
+Block Device     File                           Options
+/dev/lofi/1      /home/mike_s/RH6.0/sparc.iso   -
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+または、次のコマンドを実行して一方の名前を指定し、もう一方の名前を要求できます。 
+
+.sp
+.in +2
+.nf
+# \fBlofiadm /dev/lofi/1\fR
+/home/mike_s/RH6.0/sparc.iso
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBmount\fR コマンドを使用してイメージをマウントします。 
+
+.sp
+.in +2
+.nf
+# \fBmount -F hsfs -o ro /dev/lofi/1 /mnt\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Solaris がイメージを認識することを確認します。
+
+.sp
+.in +2
+.nf
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/lofi/1           512418  512418       0   100%    /mnt 
+# \fBls /mnt\fR
+\&./            RedHat/       doc/          ls-lR         rr_moved/ 
+\&../           TRANS.TBL     dosutils/     ls-lR.gz      sbin@ 
+\&.buildlog     bin@          etc@          misc/         tmp/ 
+COPYING       boot/         images/       mnt/          usr@ 
+README        boot.cat*     kernels/      modules/ 
+RPM-PGP-KEY   dev@          lib@          proc/
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Solaris は CD-ROM イメージをマウントし、ファイル名を認識できます。イメージが正しく作成されたため、確信をもって \fBCD-ROM\fR を作成できます。
+
+.sp
+.LP
+最終ステップとして、イメージのマウント解除および切り離しを行います。
+
+.sp
+.in +2
+.nf
+# \fBumount /mnt\fR
+# \fBlofiadm -d /dev/lofi/1\fR
+# \fBlofiadm\fR
+Block Device             File             Options
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRファイル上の \fBUFS\fR ファイルシステムの作成
+.sp
+.LP
+\fBUFS\fR ファイルシステムをファイル上に作成すると、特にテストスイートに新しいファイルシステムが必要な場合に便利です。テストスイートのためだけにディスクをパーティションに再分割することは手間がかかりますが、その必要はありません。\fBlofi \fR を使用するとファイルに \fBnewfs\fR を実行できます。 
+
+.sp
+.LP
+ ファイルを作成します。 
+
+.sp
+.in +2
+.nf
+# \fBmkfile 35m /export/home/test\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+作成したファイルをブロックデバイスに接続します。\fBnewfs\fR に必要な文字デバイスも取得するため、\fBnewfs\fR は次のようになります。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /export/home/test\fR
+/dev/lofi/1
+# \fBnewfs /dev/rlofi/1\fR
+newfs: construct a new file system /dev/rlofi/1: (y/n)? \fBy\fR
+/dev/rlofi/1:   71638 sectors in 119 cylinders of 1 tracks, 602 sectors
+        35.0MB in 8 cyl groups (16 c/g, 4.70MB/g, 2240 i/g)
+super-block backups (for fsck -F ufs -o b=#) at:
+ 32, 9664, 19296, 28928, 38560, 48192, 57824, 67456,
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBufs\fR はファイル全体を使用できない場合があります。ファイルシステムをマウントおよび使用します。 
+
+.sp
+.in +2
+.nf
+# \fBmount /dev/lofi/1 /mnt\fR
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/lofi/1            33455       9   30101     1%    /mnt
+# \fBls /mnt\fR
+\&./           ../          lost+found/
+# \fBumount /mnt\fR
+# \fBlofiadm -d /dev/lofi/1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRUNIX ファイル上の PC (FAT) ファイルシステムの作成
+.sp
+.LP
+次に示す一連のコマンドは、\fBFAT\fR ファイルシステムを UNIX ファイル上に作成します。ファイルは \fBlofiadm\fR によって作成されたブロックデバイスに関連付けられています。
+
+.sp
+.in +2
+.nf
+# \fBmkfile 10M /export/test/testfs\fR
+# \fBlofiadm -a /export/test/testfs\fR
+/dev/lofi/1
+\fBNote use of\fR rlofi\fB, not\fR lofi\fB, in following command.\fR
+# \fBmkfs -F pcfs -o nofdisk,size=20480 /dev/rlofi/1\fR
+\fBConstruct a new FAT file system on /dev/rlofi/1: (y/n)?\fR y
+# \fBmount -F pcfs /dev/lofi/1 /mnt\fR
+# \fBcd /mnt\fR
+# \fBdf -k .\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/lofi/1            10142       0   10142     0%    /mnt
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR既存の CD-ROM イメージの圧縮
+.sp
+.LP
+次の例では、既存の CD-ROM イメージ (\fBsolaris.iso\fR) を圧縮し、イメージが圧縮されたことを確認してから、圧縮を解除します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -C gzip /export/home/solaris.iso\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のように \fBlofiadm\fR を使用して、これにブロックデバイスを接続します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /export/home/solaris.iso\fR
+  /dev/lofi/1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+マップされたイメージが圧縮されたかどうかを確認します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm\fR
+Block Device      File                            Options
+/dev/lofi/1       /export/home/solaris.iso        Compressed(gzip)
+/dev/lofi/2       /export/home/regular.iso        -
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+圧縮されたイメージをマップ解除して、圧縮を解除します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -d /dev/lofi/1\fR
+# \fBlofiadm -U /export/home/solaris.iso\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR暗号化 UFS ファイルシステムをファイル上に作成する
+.sp
+.LP
+この例は、前述の UFS ファイルシステムの作成例に似ています。
+
+.sp
+.LP
+ ファイルを作成します。
+
+.sp
+.in +2
+.nf
+# \fBmkfile 35m /export/home/test\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ファイルをブロックデバイスに接続して、ファイルイメージの暗号化を指定します。このコマンドの結果、文字デバイスが取得されます。この文字デバイスは、あとで \fBnewfs\fR により使用されます。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -c aes-256-cbc -a /export/home/secrets\fR
+Enter passphrase: \fBMy-M0th3r;l0v3s_m3+4lw4ys!\fR           (\fBnot echoed\fR)
+Re-enter passphrase: \fBMy-M0th3r;l0v3s_m3+4lw4ys!\fR        (\fBnot echoed\fR)
+/dev/lofi/1
+
+# \fBnewfs /dev/rlofi/1\fR
+newfs: construct a new file system /dev/rlofi/1: (y/n)? \fBy\fR
+/dev/rlofi/1:   71638 sectors in 119 cylinders of 1 tracks, 602 sectors
+       35.0MB in 8 cyl groups (16 c/g, 4.70MB/g, 2240 i/g)
+super-block backups (for fsck -F ufs -o b=#) at:
+32, 9664, 19296, 28928, 38560, 48192, 57824, 67456,
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+マップされたファイルシステムは、暗号化が有効であることを示します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm\fR
+Block Device    File                     Options
+/dev/lofi/1     /export/home/secrets     Encrypted
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ファイルシステムをマウントおよび使用します。
+
+.sp
+.in +2
+.nf
+# \fBmount /dev/lofi/1 /mnt\fR
+# \fBcp moms_secret_*_recipe /mnt\fR
+# \fBls /mnt\fR
+\&./           moms_secret_cookie_recipe    moms_secret_soup_recipe
+\&../          moms_secret_fudge_recipe     moms_secret_stuffing_recipe
+lost+found/  moms_secret_meatloaf_recipe  moms_secret_waffle_recipe
+# \fBumount /mnt\fR
+# \fBlofiadm -d /dev/lofi/1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以後、不正な鍵または不正な暗号化アルゴリズムを使用してファイルシステムをマップしようとしても失敗します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -c blowfish-cbc -a /export/home/secrets\fR
+Enter passphrase: \fBmommy\fR                                (\fInot echoed\fR)
+Re-enter passphrase: \fBmommy\fR                             (\fInot echoed\fR)
+lofiadm: could not map file /root/lofi: Invalid argument
+# \fBlofiadm\fR
+Block Device    File                    Options
+#
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+暗号化なしでファイルシステムのマップを試みると成功します。ただし、ファイルシステムをマウントして使用しようとしても失敗します。
+
+.sp
+.in +2
+.nf
+# \fBlofiadm -a /export/home/secrets\fR
+/dev/lofi/1
+# \fBlofiadm\fR
+Block Device    File                     Options
+/dev/lofi/1     /export/home/secrets     -
+# \fBmount /dev/lofi/1 /mnt\fR
+mount: /dev/lofi/1 is not this fstype
+#
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBlofiadm\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBfsck\fR(1M), \fBmount\fR(1M), \fBmount_ufs\fR(1M), \fBnewfs\fR(1M), \fBzonecfg\fR(1M), \fBattributes\fR(5), \fBresource_controls\fR(5), \fBlofi\fR(7D), \fBlofs\fR(7FS)
+.SH 注意事項
+.sp
+.LP
+マウントされたファイルシステムを持つディスクデバイスに直接アクセスしないのと同様に、\fBlofi\fR ファイルドライバを使用する場合を除き、ブロックデバイスに関連付けられているファイルにアクセスしないようにしてください。また、そのようなアクセスを防止するために、適切なアクセス権をファイルに設定することもお勧めします。
+.sp
+.LP
+\fBlofiadm\fR の機能およびこの機能を使用できるユーザーは、\fB/dev/lofictl\fR のアクセス権によって制御されます。読み取りアクセス権は、すべての関連付けの表示などのクエリー操作を可能にします。書き込みアクセス権は、関連付けの追加などの状態変更操作の実行に必要です。出荷時の \fB/dev/lofictl\fR は、\fBroot\fR によって所有され、グループ \fBsys\fR に所属し、モード \fB0644\fR に設定されているため、すべてのユーザーがクエリー操作を実行できますが、変更操作はルートのみに可能です。管理者は、ユーザーに書き込みアクセスを与えて、関連付けの追加または削除を許可することができますが、これはセキュリティーホールになる可能性が非常に高いため、信頼できるグループにのみ与えるようにしてください。
+.sp
+.LP
+ファイルシステムイメージをマウントする場合は、適切なマウントオプションを使用するように注意してください。特に、出所が不明な \fBUFS\fR イメージには、\fBnosuid\fR マウントオプションが適切な場合があります。また、\fBUFS\fR に \fBlogging\fR や \fBforcedirectio\fR を使用する場合のように、いくつかのオプションは役に立たなかったり適切でなかったりすることがあります。互換性を保つために、raw デバイスもブロックデバイスと一緒にエクスポートされます。たとえば、\fBnewfs\fR(1M) にはこれが必要です。
+.sp
+.LP
+\fBlofiadm\fR (引数なし) の出力は、将来のリリースで変更される可能性があります。

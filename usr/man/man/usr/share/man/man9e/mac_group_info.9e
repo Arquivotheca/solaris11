@@ -1,0 +1,216 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH mac_group_info 9E "16 Jun 2011" "SunOS 5.11" "Driver Entry Points"
+.SH NAME
+mac_group_info, mgi_start, mgi_stop, mgi_addmac, mgi_remmac, mgi_add_vlanfilter, mgi_rem_vlanfliter, mgi_setmtu, mgi_getsriov_info \- MAC group info driver entry points
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mac_provider.h>
+
+int prefix_group_start(mac_group_driver_t \fIgroup_handle\fR);
+.fi
+
+.LP
+.nf
+void prefix_group_stop(mac_group_driver_t \fIgroup_handle\fR);
+.fi
+
+.LP
+.nf
+int prefix_group_addmac(void *arg, const uint8_t *\fImacaddr\fR,
+     uint64_t \fImflags\fR);
+.fi
+
+.LP
+.nf
+int prefix_group_remmac(void *\fIarg\fR, const uint8_t *\fImacaddr\fR);
+.fi
+
+.LP
+.nf
+int prefix_group_add_vlanfilter(void *\fIarg\fR, uint16_t \fIvlanid\fR,
+     uint32_t \fIvflags\fR);
+.fi
+
+.LP
+.nf
+int prefix_group_remove_vlanfilter(void *\fIarg\fR, uint16_t \fIvlanid\fR);
+.fi
+
+.LP
+.nf
+int prefix_group_setmtu(void *\fIarg\fR, uint32_t \fImtu\fR);
+.fi
+
+.LP
+.nf
+int prefix_group_getsriov_info(void *\fIarg\fR, mac_sriov_info_t *\fIsriovinfop\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgroup_handle\fR\fR
+.ad
+.RS 16n
+.rt  
+The private driver handle that identifies the driver ring group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImacaddr\fR\fR
+.ad
+.RS 16n
+.rt  
+The MAC address that the MAC layer would like to be programmed into the driver's hardware.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIarg\fR\fR
+.ad
+.RS 16n
+.rt  
+The opaque handle that identifies the driver ring group that is being programmed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImflags\fR\fR
+.ad
+.RS 16n
+.rt  
+The flags associated with the programming of the specified MAC address. Currently, the flag that can be specified is \fBMAC_GROUP_PRIMARY_ADDRESS\fR. This enables a SRI-OV capable driver to understand that the MAC address being programmed is the primary address for the VF associated with this ring group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvlanid\fR\fR
+.ad
+.RS 16n
+.rt  
+The VLAN to be programmed into the driver's hardware.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvflags\fR\fR
+.ad
+.RS 16n
+.rt  
+The flags associated with the specified VLAN. Currently, the flag possible is \fBMAC_GROUP_VLAN_TRANSPARENT_ENABLE\fR. This enables VLAN tagging/stripping.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsriovinfop\fR\fR
+.ad
+.RS 16n
+.rt  
+The SR-IOV information structure to be filled in by the PF driver. Currently, the information to be filled in is the VF index for the VF that corresponds to this ring group.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImtu\fR\fR
+.ad
+.RS 16n
+.rt  
+The MTU size to be programmed for the specified ring group.
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris architecture specific (Solaris DDI).
+.SH DESCRIPTION
+.sp
+.LP
+The driver entry points described below implement the actions the MAC layer can take on a driver ring group. The entry points are passed to the MAC layer using the \fBmac_group_info\fR(9S) structure in response to a call to the driver entry point \fBmr_gget\fR(9E) by the MAC layer.
+.sp
+.LP
+The \fBmgi_start()\fR function is the driver entry called by the MAC layer to start a ring group. Driver's that implement dynamic grouping should implement this entry point to properly initialize the ring group before rings are added to the ring group by the MAC layer.
+.sp
+.LP
+The \fBmgi_stop()\fR function is the driver entry called by the MAC layer to stop a ring group. The MAC layer will call this entry after all rings of the ring group have been stopped.
+.sp
+.LP
+The \fBmgi_addmac()\fR function is the driver entry point to add a MAC address to the ring group. The \fImflags\fR argument specifies if the MAC address being added is the primary address for the VF that corresponds to the ring group.
+.sp
+.LP
+The \fBmgi_remmac()\fR function is the driver entry point to remove a MAC address from the ring group.
+.sp
+.LP
+The \fBmgi_add_vlanfilter()\fR function is the driver entry point to enable the MAC layer to program a VLAN filter for the specified ring group. The flags will enable tag/strip for the ring group.
+.sp
+.LP
+The \fBmgi_rem_vlanfliter()\fR function is the driver entry point to remove a previously added vlan filter.
+.sp
+.LP
+The \fBmgi_setmtu()\fR function is the driver entry point to set the MTU for the ring group. This entry point is implemented by SR-IOV capable drivers and is only valid when the PF driver is operating in SR-IOV mode.
+.sp
+.LP
+The \fBmgi_getsriov_info()\fR function is the driver entry for the MAC layer to query for the ring group for it's SR-IOV mode information.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBmgi_start()\fR function returns 0 on success and either \fBEIO\fR or \fBENXIO\fR on failure.
+.sp
+.LP
+The \fBmgi_stop()\fR function returns 0 on success and \fBEIO\fR or \fBENXIO\fR on failure.
+.sp
+.LP
+The \fBmgi_setmtu()\fR function returns 0 on success. If the MTU is an invalid size, then it returns \fBEINVAL\fR.
+.sp
+.LP
+The \fBmgi_getsriov_info()\fR function returns 0 on success and \fBEIO\fR or \fBENXIO\fR on failure.
+.sp
+.LP
+The \fBmgi_addmac()\fR function returns 0 on success, \fBENOSPC\fR if there is no space to add the MAC address, and \fBEIO\fR for other failures.
+.sp
+.LP
+The \fBmgi_add_vlanfilter()\fR function returns 0 on success, \fBENOSPC\fR if there is no room to add the filter, and \fBEIO\fR for other failures.
+.sp
+.LP
+The \fBmgi_rem_vlanfilter()\fR function returns 0 on success and \fBEIO\fR on failure.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/header
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBmr_gget\fR(9E), \fBmac_capab_rings\fR(9S), \fBmac_group_info\fR(9S), \fBmac_register\fR(9S)

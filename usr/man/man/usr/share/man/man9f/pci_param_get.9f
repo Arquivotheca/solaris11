@@ -1,0 +1,142 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pci_param_get 9F "19 May 2011" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+pci_param_get \- get the name-value pair list from the backend store
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/sunddi.h>
+
+int pci_param_get(dev_info_t *\fIdip\fR, pci_param_t *\fIphp\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdip\fR\fR
+.ad
+.RS 7n
+.rt  
+A pointer to a \fBdev_info\fR structure
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIphp\fR\fR
+.ad
+.RS 7n
+.rt  
+A pointer to a (\fBvoid *\fR)\fIparam\fR handle
+.RE
+
+.sp
+.LP
+On successful return a non\(emnull handle is returned.
+.SH DESCRIPTION
+.sp
+.LP
+The param handle pointer (\fIphp\fR) returned by \fBpci_param_get()\fR contains the name-value information of both PF (Physical  Function) and its configured VF (Virtual Function) devices. The caller should use \fBpci_plist_get\fR(9F) to get the param list of the PF device and \fBpci_plist_getvf\fR(9F) to obtain the param lists for the configured VFs.
+.sp
+.LP
+The name-value pairs are defined on a per device basis. There is one set of name-value pairs for the PF and each of the configured VFs. The name-value pairs are optional and may be absent for any or all of the devices.
+.sp
+.LP
+The param handle is invalid after the device is detached.
+.sp
+.LP
+The caller is responsible to free the \fIphp\fR (param handle pointer) after each call to \fBpci_param_get()\fR using \fBpci_param_free\fR(9F).
+.SH RETURN VALUES
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDDI_SUCCESS\fR\fR
+.ad
+.RS 18n
+.rt  
+A valid param handle pointer \fIphp\fR is returned.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBNon-zero value\fR
+.ad
+.RS 18n
+.rt  
+No name-value pairs defined for devices.
+.RE
+
+.SH USAGE
+.sp
+.LP
+Use the DDI \fBpci_plist_lookup_\fR\fIxxx\fR() on the param list of the PF/VF devices to obtain the name-value pairs. Validate all parameters as a whole; that is, both PF parameters and VF parameters. If the current configuration cannot be satisfied, the driver needs to fail the attach. The validation needs to be done before VFs are configured using \fBpciv_vf_config\fR(9F) interface. Apply these parameters and corresponding action for PF and VFs.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fR\fBpci_param_get()\fR example
+.sp
+.in +2
+.nf
+pci_param_t     my_params;
+pci_plist_t     pf_plist;
+pci_plist_t     vf_plist[8];
+
+labelp = NULL;
+rval = pci_param_get(dip, &my_params);
+if (rval || (my_params == NULL)) {
+        cmn_err(CE_NOTE, "No params available\n");
+        goto continue_with_attach;
+}
+rval = pci_plist_get(my_params, &pf_plist);
+if (rval || (pf_plist == NULL)) {
+        cmn_err(CE_NOTE, "No params for PF \n");
+        goto continue_with_attach;
+}
+for (i = 0; i < 8; i++) {
+        rval = pci_plist_getvf(my_params, i, &vf_plist[i]);
+        if (rval || (vf_plist[i] == NULL)) {
+                cmn_err(CE_WARN, "No params for VF %d\n", i);
+                continue;
+        }
+}
+pci_param_free(my_params);
+/*
+ * Validate the PF and VF params lists.
+ * Fail the attach if the params are incompatible or exceed the
+ * resources available.
+ */
+continue_with_attach:
+.fi
+.in -2
+
+.SH CONTEXT
+.sp
+.LP
+The \fBpci_param_get()\fR function can be called from kernel non-interrupt context.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBpci_param_free\fR(9F), \fBpci_plist_get\fR(9F), \fBpci_plist_getvf\fR(9F), \fBpciv_vf_config\fR(9F)

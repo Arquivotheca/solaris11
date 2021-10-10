@@ -1,0 +1,397 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH label_encodings 4 "16 Aug 2011" "SunOS 5.11" "File Formats"
+.SH NAME
+label_encodings \- label encodings file
+.SH SYNOPSIS
+.LP
+.nf
+\fB/etc/security/tsol/label_encodings\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBlabel_encodings\fR file is a standard encodings file of security labels that are used to control the conversion of human-readable labels into an internal format, the conversion from the internal format to a human-readable canonical form, and the construction of banner pages for printed output. On a Solaris Trusted Extensions system, the \fBlabel_encodings\fR file is protected at the label \fBadmin_high\fR. The file should be edited and checked by the security administrator using the Check Label Encodings action in the System_Admin folder in the Application Manager.
+.sp
+.LP
+In addition to the required sections of the label encodings file that are described in \fICompartmented Mode Workstation Labeling: Encodings Format\fR, a Solaris Trusted Extensions system accepts optional local extensions. These extensions provide various translation options and an association between character-coded color names and sensitivity labels.
+.sp
+.LP
+The optional local extensions section starts with the \fBLOCAL DEFINITIONS:\fR keyword and is followed by zero or more of the following unordered statements:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT USER SENSITIVITY LABEL=\fR \fIsensitivity label\fR\fR
+.ad
+.sp .6
+.RS 4n
+This option specifies the sensitivity label to use as the user's minimum sensitivity label if none is defined for the user in the administrative databases. The default value is the \fBMINIMUM SENSITIVITY LABEL=\fR value from the \fBACCREDITATION RANGE:\fR section of the label encodings file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT USER CLEARANCE=\fR \fIclearance\fR\fR
+.ad
+.sp .6
+.RS 4n
+This option specifies the clearance to use as the user's clearance if none is defined for the user in the administrative databases. The default value is the \fBMINIMUM CLEARANCE=\fR value from the \fBACCREDITATION RANGE:\fR section of the label encodings file.
+.RE
+
+.sp
+.LP
+The final part of the \fBLOCAL DEFINITIONS:\fR section defines the character-coded color names to be associated with various words, sensitivity labels, or classifications. This section supports the \fBstr_to_label\fR(3TSOL) function. It consists of the \fBCOLOR NAMES:\fR keyword and is followed by zero or more color-to-label assignments. Each statement has one of the following two syntaxes:
+.sp
+.in +2
+.nf
+word= \fIword value\fR; color= \fIcolor value\fR;
+
+label= \fIlabel value\fR; color= \fIcolor value\fR;
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+where \fIcolor value\fR is a character\(micoded color name to be associated with the word \fIword value\fR, or with the sensitivity label \fIlabel value\fR, or with the classification \fIlabel value\fR.
+.sp
+.LP
+The character\(micoded color name \fIcolor value\fR for a label is determined by the order of entries in the \fBCOLOR NAMES:\fR section that make up the label. If a label contains a word \fIword value\fR that is specified in this section, the \fIcolor value\fR of the label is the one associated with the first \fIword value\fR specified. If no specified word \fIword value\fR is contained in the label, the \fIcolor value\fR is the one associated with an exact match of a \fIlabel value\fR. If there is no exact match, the \fIcolor value\fR is the one associated with the first specified \fIlabel value\fR whose classification matches the classification of the label.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRA Sample LOCAL DEFINITIONS: Section
+.sp
+.in +2
+.nf
+LOCAL DEFINITIONS:
+     
+DEFAULT USER SENSITIVITY LABEL= C A;
+DEFAULT USER CLEARANCE LABEL= S ABLE;
+
+COLOR NAMES:
+
+label= Admin_Low;    color= Pale Blue;
+label= unclassified; color= light grey;
+word= Project A;     color= bright blue;
+label= c;            color= sea foam green;
+label= secret;       color= #ff0000;       * Hexadecimal RGB value
+word= Hotel;         color= Lavender;
+word= KeLO;          color= red;
+label= TS;           color= khaki;
+label= TS Elephant;  color= yellow;
+label= Admin_High;   color= shocking pink;
+.fi
+.in -2
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/label_encodings\fR\fR
+.ad
+.sp .6
+.RS 4n
+The label encodings file contains the classification names, words, constraints, and values for the defined labels of this system. It is protected at the label \fBadmin_high\fR.
+.RE
+
+.SH DIAGNOSTICS
+.sp
+.LP
+The following diagnostics are in addition to those found in Appendix A of \fICompartmented Mode Workstation Labeling: Encodings Format\fR:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCan't allocate NNN bytes for color names table.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system cannot dynamically allocate the memory it needs to process the \fBCOLOR NAMES:\fR section.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCan't allocate NNN bytes for color table entry.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system cannot dynamically allocate the memory it needs to process a Color Table entry.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCan't allocate NNN bytes for color word entry.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system cannot dynamically allocate the memory it needs to process a Color Word entry.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCan't allocate NNN bytes for DEFAULT USER CLEARANCE.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system cannot dynamically allocate the memory it needs to process the DEFAULT USER CLEARANCE.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCan't allocate NNN bytes for DEFAULT USER SENSITIVITY LABEL.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system cannot dynamically allocate the memory it needs to process the DEFAULT USER SENSITIVITY LABEL.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT USER CLEARANCE= XXX is not in canonical form. Is YYY what is intended?\fR\fR
+.ad
+.sp .6
+.RS 4n
+This error occurs if the clearance specified, while understood, is not in canonical form. This additional canonicalization check ensures that no errors are made in specifying the clearance.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT USER SENSITIVITY LABEL= XXX is not in canonical form. Is YYY what is intended?\fR\fR
+.ad
+.sp .6
+.RS 4n
+This error occurs if a sensitivity label specified, while understood, is not in canonical form. This additional canonicalization check ensures that no errors are made in specifying the sensitivity label.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDuplicate DEFAULT USER CLEARANCE= ignored.\fR\fR
+.ad
+.sp .6
+.RS 4n
+More than one \fBDEFAULT USER CLEARANCE=\fR option was encountered. All but the first are ignored.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDuplicate DEFAULT USER SENSITIVITY LABEL= ignored.\fR\fR
+.ad
+.sp .6
+.RS 4n
+More than one \fBDEFAULT USER SENSITIVITY LABEL=\fR option was encountered. All but the first are ignored.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEnd of File not found where expected. Found instead: XXX.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The noted extraneous text was found when the end of label encodings file was expected.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEnd of File or LOCAL DEFINITIONS: not found. Found instead: XXX.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The noted extraneous text was found when the \fBLOCAL DEFINITIONS:\fR section or end of label encodings file was expected.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFound color XXX without associated label.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The color \fBXXX\fR was found, however it had no label or word associated with it.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBInvalid color label XXX.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The label \fBXXX\fR cannot be parsed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBInvalid DEFAULT USER CLEARANCE XXX.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The DEFAULT USER CLEARANCE \fBXXX\fR cannot be parsed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBInvalid DEFAULT USER SENSITIVITY LABEL XXX.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The DEFAULT USER SENSITIVITY LABEL \fBXXX\fR cannot be parsed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLabel preceding XXX did not have a color specification.\fR\fR
+.ad
+.sp .6
+.RS 4n
+A label or word was found without a matching color name.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBWord XXX not found as a valid Sensitivity Label word.\fR\fR
+.ad
+.sp .6
+.RS 4n
+The word \fBXXX\fR was not found as a valid word for a sensitivity label.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/trusted/trusted-global-zone
+_
+Interface StabilitySee \fBNOTES\fR.
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBchk_encodings\fR(1M), \fBlabel_to_str\fR(3TSOL), \fBstr_to_label\fR(3TSOL), \fBattributes\fR(5), \fBlabels\fR(5)
+.sp
+.LP
+\fIOracle Solaris Trusted Extensions Label Administration\fR
+.sp
+.LP
+Defense Intelligence Agency document DDS-2600-6216-93, \fICompartmented Mode Workstation Labeling: Encodings Format\fR, September 1993.
+.SH WARNINGS
+.sp
+.LP
+Creation of and modification to the label encodings file should only be undertaken with a thorough understanding not only of the concepts in \fICompartmented Mode Workstation Labeling: Encodings Format\fR, but also of the details of the local labeling requirements.
+.sp
+.LP
+The following warnings are paraphrased from \fICompartmented Mode Workstation Labeling: Encodings Format\fR.
+.sp
+.LP
+Take extreme care when modifying a label encodings file that is already loaded and running on a Solaris Trusted Extensions system. Once the system runs with the label encodings file, many objects are labeled with sensitivity labels that are well formed with respect to the loaded label encodings file. If the label encodings file is subsequently changed, it is possible that the existing labels will no longer be well-formed. Changing the bit patterns associated with words causes existing objects whose labels contain the words to have possibly invalid labels. Raising the minimum classification or lowering the maximum classification that is associated with words will likely cause existing objects whose labels contain the words to no longer be well-formed.
+.sp
+.LP
+Changes to a current encodings file that has already been used should be limited only to adding new classifications or words, changing the names of existing words, or modifying the local extensions. As described in \fICompartmented Mode Workstation Labeling: Encodings Format\fR, it is important to reserve extra inverse bits when the label encodings file is first created to allow for later expansion of the label encodings file to incorporate new inverse words. If an inverse word is added that does not use reserved inverse bits, all existing objects on the system will erroneously have labels that include the new inverse word.
+.SH NOTES
+.sp
+.LP
+The functionality described on this manual page is available only if the system is configured with Trusted Extensions.
+.sp
+.LP
+This file is part of the Defense Intelligence Agency (DIA) Mandatory Access Control (MAC) policy and might be meaningful only for the DIA MAC policy. This file might not be applicable to other Mandatory policies that might be developed for future releases of Solaris Trusted Extensions software. Parts of it are obsolete and retained for ease of porting. The obsolete parts might be removed in a future Solaris Trusted Extensions release.
+.sp
+.LP
+Parts of the \fBlabel_encodings\fR file are considered standard and are controlled by Defense Intelligence Agency document DDS-2600-6216-93, \fICompartmented Mode Workstation Labeling: Encodings Format\fR, September 1993. Of that standard, the parts that refer to the \fBINFORMATION LABELS:\fR and \fBNAME INFORMATION LABELS:\fR sections are Obsolete. However, the \fBINFORMATION LABELS:\fR section must be present and syntactically correct. It is ignored. The \fBNAME INFORMATION LABELS:\fR section is optional. If present, it is ignored but must be syntactically correct.
+.sp
+.LP
+Defining the label encodings file is a three-step process. First, the set of human-readable labels to be represented must be identified and understood. The definition of this set includes the list of classifications and other words that are used in the human-readable labels, relations between and among the words, classification restrictions that are associated with use of each word, and intended use of the words in mandatory access control and labeling system output. Next, this definition is associated with an internal format of integers, bit patterns, and logical relationship statements. Finally, a label encodings file is created. The \fICompartmented Mode Workstation Labeling: Encodings Format\fR document describes the second and third steps, and assumes that the first has already been performed.
+.sp
+.LP
+The following values in the optional \fBLOCAL DEFINITIONS:\fR section are obsolete. These values might only affect the obsolete \fBbltos\fR(3TSOL) functions, and might be ignored by the \fBlabel_to_str\fR(3TSOL) replacement function:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBADMIN LOW NAME=\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBADMIN HIGH NAME=\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDEFAULT LABEL VIEW IS EXTERNAL\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDEFAULT LABEL VIEW IS INTERNAL\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDEFAULT FLAGS=\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBFORCED FLAGS=\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBCLASSIFICATION NAME=\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBCOMPARTMENTS NAME=\fR
+.RE

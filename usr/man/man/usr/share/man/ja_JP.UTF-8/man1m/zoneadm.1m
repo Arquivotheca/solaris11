@@ -1,0 +1,696 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zoneadm 1M "2011 年 8 月 10 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+zoneadm \- ゾーンの管理
+.SH 形式
+.LP
+.nf
+\fBzoneadm\fR \fB-z\fR \fIzonename\fR [\fB-u\fR \fIuuid-match\fR] \fIsubcommand\fR 
+     [\fIsubcommand_options\fR]
+.fi
+
+.LP
+.nf
+\fBzoneadm\fR [\fB-R\fR \fIroot\fR] [\fB-z\fR \fIzonename\fR] [\fB-u\fR \fIuuid-match\fR] list 
+     [\fIlist_options\fR]
+.fi
+
+.LP
+.nf
+\fBzoneadm\fR [\fB-R\fR \fIroot\fR] \fB-z\fR \fIzonename\fR [\fB-u\fR \fIuuid-match\fR] mark incomplete
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBzoneadm\fR ユーティリティーは、システムゾーンを管理するために使用されます。ゾーンは、オペレーティングシステムによって実行時に管理されるアプリケーションコンテナです。
+.SH セキュリティ
+.sp
+.LP
+ゾーン \fB0\fR 以外のゾーンに実装されたプロセスは、すべての子プロセスを含めて、ゾーンを変更できません。
+.SH セキュリティ
+.sp
+.LP
+単純な一覧表示機能とヘルプ機能以外は、大域システムゾーンで操作しているユーザーのみが \fBzoneadm\fR を使用でき、ルートの実効ユーザー ID で実行する必要があります。さらに、ユーザーは、特定のサブコマンドを実行することが承認されている必要があります。
+.sp
+.LP
+\fBzoneadm\fR は、前にスラッシュ文字が付き、接尾辞として指定された \fIzonename\fR が任意で含まれる承認文字列をチェックします。省略すると、承認はすべてのゾーンと一致します。
+.sp
+.LP
+情報を表示するだけのサブコマンド (\fBhelp\fR や \fBlist\fR など) では、承認は必要ありません。ほかのすべてのサブコマンドでは、承認 \fBsolaris.zone.manage/\fR\fIzonename\fR が必要となります。
+.sp
+.LP
+ゾーン 0 以外のゾーンに実装されたプロセスは、すべての子プロセスを含めて、ゾーンを変更できません。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替ルート (ブート環境) を指定します。このオプションは、「\fBlist\fR」および「\fBmark\fR」サブコマンドとの組み合わせでのみ使用できます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuuid-match\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlibuuid\fR(3LIB) によって割り当てられる、ゾーンの一意識別子。このオプションが存在し、引数が空の文字列でない場合、\fBUUID\fR に一致するゾーンがあると \fB-z\fR オプションで指定されたゾーンの代わりに選択されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンの文字列識別子。 
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+破壊的な動作や作業内容の消失を伴う可能性のあるサブコマンドには、強制的にその処理を実行するために \fB-F\fR フラグが用意されています。端末デバイスから入力しているときに、\fB-F\fR フラグを指定しないでそのようなコマンドを実行した場合は、フラグを指定するかどうかを確認されます。それ以外の状況で \fB-F\fR フラグを指定しないでそのようなコマンドを実行した場合、その操作は許可されず、診断メッセージが標準エラーに書き込まれます。ゾーンのインストールまたはアンインストールが中断した場合、ゾーンの状態は不完全なままになります。そのようなゾーンをリセットして構成済みの状態に戻すには、アンインストールを使用します。
+.sp
+.LP
+次のサブコマンドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattach\fR [\fB-u\fR] [\fB-F\fR] [\fB-n\fR \fIpath\fR] [\fIbrand-specific options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBattach\fR サブコマンドは、あるシステムから切り離されたゾーンを取得し、そのゾーンを新しいシステムに接続します。したがって、「接続」を行う前に、\fBdetach\fR サブコマンドを実行することをお勧めします (必須ではありません)。構成済み状態の新しいゾーンが得られたら、ゾーンを新しいゾーンとしてインストールする代わりに、\fBattach\fR サブコマンドを使用してゾーンのルートを設定します。
+.sp
+\fB-F\fR オプションを使えば、確認を行わずにゾーンを強制的に「インストール済み」の状態にすることができます。あるソースシステムからゾーンを適切にホストできないターゲットシステムへの移動を行なった場合にゾーンがサポート不可能な状態に陥る危険性があるため、このオプションは注意して使用してください。\fB-n\fR オプションを使用すると、\fBattach\fR サブコマンドの「予行演習」を実行できます。このオプションは、「\fBdetach\fR \fB-n\fR」サブコマンドの出力を入力として使用し、ネットワークデバイスの非互換など、あらゆる競合問題を特定するのに便利です。また、ホストがゾーンをサポートできるかどうかを判定することもできます。パスには「\fB-\fR」を指定できますが、その場合、入力が標準入力から読み取られます。
+.sp
+ゾーンのブランドには、ゾーンがどのように接続されるかを管理する、追加のオプションが含まれる場合があります。ブランド固有の情報については、\fBbrands\fR(5) を参照してください。
+.sp
+接続するゾーンは、事前に \fBzonecfg\fR (\fBzonecfg\fR(1M) を参照) コマンドを使って構成しておく必要があります。ただしそれは、「\fBattach\fR \fB- n\fR」を実行する場合には当てはまりません。
+.sp
+ゾーンを接続するには次のコマンドを使用します。
+.sp
+.in +2
+.nf
+# \fBzoneadm -z my-zone attach\fR
+.fi
+.in -2
+.sp
+
+ゾーンの接続と更新を行うには、次のコマンドを使用します。
+.sp
+.in +2
+.nf
+# \fBzoneadm -z my-zone attach -u\fR
+.fi
+.in -2
+.sp
+
+\fB-n\fR を指定しない場合 (上記の例)、このサブコマンドを使用する前にソースゾーンを停止する必要があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンのマニフェストを読み取り、実際に接続を実行することなく、ターゲットマシンがゾーンをホストできるように正しく構成されているかどうかを確認します。試行接続を行う前に、新規ホストで移行先システムのゾーンを構成する必要はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+接続されたゾーンを更新します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBboot\fR [\fB-w\fR|\fB-W\fR] [\fB--\fR \fIboot_options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンをブート (アクティブに) します。
+.sp
+\fBboot\fR サブコマンドには、次のような相互に排他的なオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み可能なルートでゾーンをブートします。これにより、ゾーンの構成で効率的に \fBfile-mac-profile\fR 設定が上書きされます。このオプションは、このブートサイクルでのみ有効です。その後のリブートでは、\fBfile-mac-profile\fR を含むゾーンが効率的に再度ブートされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-W\fR\fR
+.ad
+.sp .6
+.RS 4n
+一時的な R/W モードでゾーンをブートします。ゾーンが自己アセンブリを完了すると、ゾーンは読み取り専用モードでリブートします。 非読み取り専用のルートゾーンでは無効です。 
+.RE
+
+次の \fIboot_options\fR がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIaltinit\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替実行可能ファイルを原始プロセスとして選択します。\fI altinit\fR は実行可能ファイルへの有効なパスです。デフォルトの原始プロセスは \fBinit\fR(1M) です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIsmf_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIsmf_options\fR には、サービス管理機能のブート動作を制御する次の 2 つのカテゴリのオプションが含まれています。 復旧オプションとメッセージオプションです。
+.sp
+メッセージオプションは、ブート中に \fBsmf\fR(5) が表示するメッセージの種類と量を決定します。サービスオプションは、システムのブートに使用されるサービスを決定します。\fB-m\fR サブオプションの一覧については、\fBkernel\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+マイルストン \fBsvc:/milestone/single-user:default\fR に対してのみブートします。このマイルストーンは、init のレベル \fBs\fR と同等です。\fBsvc.startd\fR(1M) および \fBinit\fR(1M) を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclone\fR [\fB-m\fR \fIcopy\fR] [\fB-s\fR \fIzfs_snapshot\fR] [\fIbrand-specific options\fR] \fIsource_zone\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存のインストール済みゾーンをコピーすることでゾーンのインストールを行います。このサブコマンドは、ゾーンをインストールするための代替手段となります。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIcopy\fR\fR
+.ad
+.sp .6
+.RS 4n
+「\fBZFS\fR クローン」が可能な場合でも、このクローンを強制的にコピーにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIzfs_snapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+クローンのソースとして使用する \fBZFS\fR スナップショットの名前を指定します。\fIsnapshot\fR は、以前の「\fBzoneadm\fR clone」インストールから取得したソースゾーンの \fIsnapshot\fR でなければなりません。
+.RE
+
+ソースゾーンを停止しないと、このサブコマンドを使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdetach\fR [\fB-F\fR | \fB-n\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンを切り離します。ゾーンの切り離しは、あるシステムから別のシステムへゾーンを移動する際の、最初のステップです。ゾーンを切り離し、\fIzonepath\fR ディレクトリを新しいホストに移動したあと、ゾーンを新しいホストに接続する、というのが、完全なゾーン移行手順となります。ゾーンが切り離されると、そのゾーンは構成済みの状態になります。切り離された構成済みゾーンをインストールまたはクローンしようとするとエラーメッセージが表示され、その \fBinstall\fR または \fBclone\fR サブコマンドの処理を続行できなくなります。\fB-n\fR オプションを使用すると、\fBdetach\fR サブコマンドの「予行演習」を実行できます。この場合、「\fBattach\fR \fB-n\fR」サブコマンドの実行に必要な情報が生成されます。このサブコマンドは、ネットワークデバイスの非互換やホストのゾーン未サポートなど、あらゆる競合問題を特定するのに便利です。この情報は標準出力に送られますが、ファイルに保存したり、「\fBattach\fR \fB-n\fR」サブコマンドにパイプしたりすることもできます。\fB-F\fR オプションを使用して、既存の \fIzonepath\fR の検証チェックを実行せずにゾーンを強制的に切り離すことができます。
+.sp
+ゾーンを切り離すには次のコマンドを使用します。 
+.sp
+.in +2
+.nf
+# \fBzoneadm -z my-zone detach\fR
+.fi
+.in -2
+.sp
+
+\fB-n\fR オプションを指定しないかぎり、このサブコマンドを使用する前にソースゾーンを停止する必要があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fR
+.ad
+.sp .6
+.RS 4n
+ゾーンの記憶領域の検証チェックを実行せずにゾーンを強制的に切り離します。このオプションは通常、\fIzonepath\fR の記憶領域にこのホストがアクセスできなくなっているときに使用されます。このようなシナリオは通常、手動で、またはクラスタの一部として、ゾーンの記憶領域が代替ホストにフェイルオーバーされている場合に発生します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+実際にゾーンを切り離すことなく、実行中のゾーンでゾーンのマニフェストを生成します。移行元のシステムのゾーンの状態は変わりません。ゾーンのマニフェストは標準出力に送信されます。\fB\fR大域管理者は、この出力をファイルに送ったり、移行先ホストですぐに検証されるように遠隔コマンドにパイプしたりできます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhalt\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンを停止します。\fBhalt\fR を指定した場合、そのゾーンのシャットダウンスクリプトは実行されません。また、ゾーンの実行時リソースを削除します。
+.sp
+次の \fBshutdown\fR サブコマンドも参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fIsubcommand\fR]\fR
+.ad
+.sp .6
+.RS 4n
+一般ヘルプを表示します。\fIsubcommand\fR を指定した場合は、\fIsubcommand\fR に関するヘルプが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall\fR [\fIbrand-specific options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンをシステムにインストールします。このサブコマンドが実行される前に、自動的にゾーンの確認が行われます。この確認手順が失敗した場合は、インストールが拒否されます。\fBverify\fR サブコマンドを参照してください。
+.sp
+ゾーンのブランドには、ソフトウェアがゾーンにどのようにインストールされるかを管理する、追加のオプションが含まれる場合があります。ブランド固有の情報については、\fBbrands\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fIlist_options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在のゾーンの名前、またはゾーンが表示されるように指定されている場合はそのゾーンの名前を表示します。 
+.sp
+デフォルトでは、実行中のすべてのゾーンの一覧を表示します。このサブコマンドを \fBzoneadm\fR \fB-z\fR \fIzonename\fR オプションと一緒に使用した場合は、指定したゾーンの状態に関係なく、そのゾーンだけが表示されます。この場合、\fB-i\fR および \fB-c\fR オプションは許可されません。
+.sp
+\fB-i\fR オプションと \fB-c\fR オプションのどちらも指定されなかった場合、実行中のすべてのゾーンの一覧を表示します。 
+.sp
+次の \fIlist_options\fR がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成済みのすべてのゾーンを表示します。このオプションは、\fB-i\fR オプションよりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストール済みのすべてのゾーンを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+機械可読な出力を要求します。出力形式は行のリストです。1 つのゾーンは 1 行に出力され、各フィールドはコロンで区切られます。これらのフィールドは次のとおりです。
+.sp
+.in +2
+.nf
+zoneid:zonename:state:zonepath:uuid:brand:ip-type:\e
+r/w:file-mac-profile
+.fi
+.in -2
+.sp
+
+\fIzonepath\fR にコロンが含まれている場合、そのコロンはバックスラッシュ ("\: ") でエスケープできます。これは、環境変数 \fBIFS\fR を持つシェルの \fBread\fR(1) 関数を使用することで解析できます。\fIuuid\fR 値は、ゾーンのインストール時に \fBlibuuid\fR(3LIB) によって割り当てられ、代替ブート環境に同じゾーンが存在する (またはリネームされた) 場合にゾーンを識別するのに役立ちます。「\fBzoneadm list -p\fR」コマンドの出力を解析するすべてのソフトウェアは、将来追加される可能性のあるすべてのフィールドを扱うことができる必要があります。
+.sp
+\fB-v\fR と \fB-p\fR オプションを同時に指定することはできません。\fB-v\fR と \fB-p\fR のどちらのオプションも使用しない場合は、ゾーン名だけが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーン名、ID、現在の状態、ルートディレクトリ、ブランドタイプ、IP タイプ、およびオプションなどの冗長情報を表示します。
+.sp
+\fB-v\fR と \fB-p\fR オプションを同時に指定することはできません。\fB-v\fR と \fB-p\fR のどちらのオプションも使用しない場合は、ゾーン名だけが表示されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmark incomplete\fR\fR
+.ad
+.sp .6
+.RS 4n
+インストールされているゾーンの状態を「incomplete」に変更します。このコマンドは、システムにおける管理上の変更によって、ゾーンが使用できない、または一貫性のない状態になった場合に役立つ可能性があります。この変更は (ゾーンをアンインストールしないかぎり) 取り消せません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmove\fR \fInew_zonepath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIzonepath\fR を \fInew_zonepath\fR に移動します。ゾーンを停止しないと、このサブコマンドを使用できません。\fInew_zonepath\fR はローカルファイルシステムでなければなりません。また、\fIzonepath\fR の通常の制約が適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBready\fR\fR
+.ad
+.sp .6
+.RS 4n
+アプリケーションを実行するためにゾーンを準備します。このゾーンでユーザープロセスを開始するためのサブコマンドではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreboot\fR [\fB-\(em\fR \fIboot_options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンを再起動します。これは、\fBhalt\fR \fBboot\fR シーケンスと同等です (shutdown スクリプトは実行されません)。
+.sp
+サポートされているブートオプションについては、\fBboot\fR サブコマンドを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshutdown\fR [\fB-r\fR [\fB-\(em\fR \fIboot_options\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンを正常にシャットダウンします (ゾーンで \fB/usr/sbin/init 0\fR を実行することと同等です)。 \fBshutdown\fR サブコマンドは、ゾーンが正常にシャットダウンされるまで待機します。シャットダウンプロセスに長時間かかる場合は、\fBzoneadm\fR \fBhalt\fR を使用すればゾーンを強制的に停止できます。
+.sp
+\fB-r\fR が指定されている場合は、ゾーンをリブートします。サポートされているブートオプションについては、\fBboot\fR サブコマンドを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninstall [\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンをシステムからアンインストールします。このサブコマンドを使用するときは、注意が必要です。指定されたゾーンの \fIzonepath\fR にあるすべてのファイルが削除されます。\fB-F\fR フラグを使用すれば、強制的に処理を実行できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンの構成を確認して、このマシンに安全にインストールできることを確認します。\fBresource/property\fR 形式による確認を次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIzonepath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIzonepath\fR とその親ディレクトリが存在し、それらが適切なモードの root によって所有されていることを確認します。適切なモードとは、\fIzonepath\fR が \fB700\fR である、その親がグループ書き込み可やだれでも書き込み可でない、などの状態であることを指します。\fB\fR\fB\fR\fIzonepath\fR が NFS マウントを越えていないことを確認します。\fIzonepath\fR に「root」という名前のサブディレクトリが存在しないことを確認します。
+.sp
+\fIzonepath\fR が存在しなくても、\fBverify\fR が失敗することはありません。次回のインストールのときに適切なアクセス権で作成されることが警告されるだけです。それ以降の \fBverify\fR で問題が発生した場合には、失敗する可能性があります。
+.sp
+\fIzonepath\fR はシンボリックリンクであってはいけません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfs\fR リソースの \fItype\fR 値を確認します。値が \fBproc\fR、\fBmntfs\fR、\fBautofs\fR、または \fBnfs\fR の場合、あるいはファイルシステムに関連付けられているマウントバイナリが \fB/usr/lib/fs/\fI<fstype>\fR/mount\fR に存在しない場合には、エラーを報告します。
+.sp
+\fIdirectory\fR が相対パスの場合は、エラーになります。
+.sp
+また、\fBraw\fR に指定されているパスが相対パスの場合、または指定されたファイルシステムタイプの \fBfsck\fR バイナリが \fB/usr/lib/fs/\fI<fstype>\fR/fsck\fR に存在しない場合は、エラーになります。対応する \fBfsck\fR バイナリは存在していても、\fBraw\fR パスが指定されていない場合には、エラーになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての物理ネットワークインタフェースが存在することを確認します。すべてのネットワークアドレスリソースは、次のいずれかになります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有効な IPv4 アドレス。後続の「\fB/\fR」とプレフィックス長は任意です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有効な IPv6 アドレス。後続の「\fB/\fR」とプレフィックス長は必須です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IPv4 アドレスに解決されるホスト名。
+.RE
+IPv6 アドレスに解決されるホスト名はサポートされていません。
+.sp
+物理インタフェース名はネットワークインタフェース名です。
+.sp
+ゾーンは排他的 IP か共有 IP のいずれかに構成できます。共有 IP ゾーンでは、物理プロパティーとアドレスプロパティーの両方を設定する必要があります。排他的 IP ゾーンでは、物理プロパティーを設定する必要があり、アドレスプロパティーは設定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC が自動的に作成される下位リンクが存在することを確認します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義されているリソース制御値が現在のマシン上で有効であることも確認します。つまり、特権レベルが \fBprivileged\fR であること、制限値が現在定義されているシステム値より低いこと、および定義されているアクションがリソース制御で有効になっていることを確認します。 
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fB-m\fR オプションを使用する
+.sp
+.LP
+次のコマンドは、\fB-m\fR オプションの使用法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBzoneadm boot -- -m verbose\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fB-i\fR オプションを使用する
+.sp
+.LP
+次のコマンドは、\fB-i\fR オプションの使用法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBzoneadm boot -- -i /usr/sbin/init\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR\fB-s\fR オプションを使用する
+.sp
+.LP
+次のコマンドは、\fB-s\fR オプションの使用法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBzoneadm boot -- -s\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効な使用法。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/zones
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBread\fR(1), \fBsvcs\fR(1), \fBzlogin\fR(1), \fBzonename\fR(1), \fBinit\fR(1M), \fBkernel\fR(1M), \fBsvcadm\fR(1M), \fBsvc.startd\fR(1M), \fBsvc.startd\fR(1M), \fBzonecfg\fR(1M), \fBlibuuid\fR(3LIB), \fBattributes\fR(5), \fBbrands\fR(5), \fBMWAC\fR(5), \fBsmf\fR(5), \fBzones\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBzones\fR(5) サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/system/zones:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+読み取り専用ゾーンのインストールまたはアップグレード後にはじめてブートしたとき、または \fB-w\fR/\fB-W\fR を使ってゾーンをブートしたときに、書き込み専用保護は無効化されます。 ゾーンが別の方法で保護されるように配慮する必要があります。

@@ -1,0 +1,416 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH mount 1M "2010 年 10 月 26 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+mount, umount \- 挂载或卸载文件系统和远程资源
+.SH 用法概要
+.LP
+.nf
+\fBmount\fR [\fB-p\fR | \fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBmount\fR [\fB-F\fR \fIFSType\fR] [\fIgeneric_options\fR] [\fB-o\fR \fIspecific_options\fR] 
+     [\fB-O\fR] \fIspecial\fR | \fImount_point\fR
+.fi
+
+.LP
+.nf
+\fBmount\fR [\fB-F\fR \fIFSType\fR] [\fIgeneric_options\fR] [\fB-o\fR \fIspecific_options\fR] 
+     [\fB-O\fR] \fIspecial\fR \fImount_point\fR
+.fi
+
+.LP
+.nf
+\fBmount\fR \fB-a\fR [\fB-F\fR \fIFSType\fR] [\fB-V\fR] [\fIcurrent_options\fR] 
+     [\fB-o\fR \fIspecific_options\fR] [\fImount_point\fR]...
+.fi
+
+.LP
+.nf
+\fBumount\fR [\fB-f\fR] [\fB-V\fR] [\fB-o\fR \fIspecific_options\fR] \fIspecial\fR | \fImount_point\fR
+.fi
+
+.LP
+.nf
+\fBumount\fR \fB-a\fR [\fB-f\fR] [\fB-V\fR] [\fB-o\fR \fIspecific_options\fR] [\fImount_point\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBmount\fR 将文件系统附加到文件系统分层结构中的 \fImount_point\fR，这是一个目录的路径名。如果在执行 \fBmount\fR 操作之前，\fImount_point\fR 中具有任何内容，则这些内容将被隐藏直至该文件系统被卸载。
+.sp
+.LP
+\fBumount\fR 卸载当前已挂载的文件系统，该文件系统可以指定为 \fImount_point\fR 或 \fIspecial\fR（文件系统所驻留的设备）。
+.sp
+.LP
+可以通过检查已挂载文件系统信息文件来查看当前挂载的文件系统的表。这是由通常挂载在 \fB/etc/mnttab\fR 上的一个文件系统提供的。\fBmnttab\fR(4) 中描述了已挂载的文件系统的信息。挂载一个文件系统会向挂载表添加一个条目，\fBumount\fR 会从该表删除一个条目。
+.sp
+.LP
+当同时使用 \fIspecial\fR 和 \fImount_point\fR 参数以及 \fB-F\fR 选项调用时，\fBmount\fR 会验证除 \fIspecial\fR 之外的所有参数并调用相应的特定于 \fIFSType\fR 的 \fBmount\fR 模块。在不使用参数调用时，\fBmount\fR 将列出挂载表 (\fB/etc/mnttab\fR) 中记录的所有已挂载的文件系统。当使用一个部分参数列表调用时（只指定 \fIspecial\fR 和 \fImount_point\fR 中的一个，或同时指定 \fIspecial\fR 和 \fImount_point\fR 但不指定 \fIFSType\fR），\fBmount\fR 将搜索 \fB/etc/vfstab\fR 来查找将提供缺少的参数的条目。如果没有找到相应的条目，并且 special 参数以 \fB/\fR 开头，则将使用 \fB/etc/default/fs\fR 中指定的缺省本地文件系统类型。否则，将使用缺省的远程文件系统类型。缺省的远程文件系统类型是由 \fB/etc/dfs/fstypes\fR 文件中的第一个条目决定的。在填充缺少的参数后，\fBmount\fR 将调用特定于 \fIFSType\fR 的 \fBmount\fR 模块。
+.sp
+.LP
+如果文件系统类型支持，可以直接将一个文件挂载为文件系统：通过将文件的全路径指定为 special 参数。在这种情况下，\fBnosuid\fR 选项是必需的。如果没有针对此类回送文件挂载提供特定文件系统支持，您仍然可以使用 \fBlofiadm\fR(1M) 来挂载文件系统映像。在此情况下，不需要特殊选项。
+.sp
+.LP
+只有具有足够特权（至少为 \fBPRIV_SYS_MOUNT\fR）的用户可以使用 \fBmount\fR 和 \fBumount\fR 来挂载或卸载文件系统。不过，任何用户都可以使用 \fBmount\fR 来列出已挂载的文件系统和资源。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIFSType\fR\fR
+.ad
+.sp .6
+.RS 4n
+用来指定要对其进行操作的 \fIFSType\fR。\fIFSType\fR 必须予以指定，或者可以从 \fB/etc/vfstab\fR 或通过查询 \fB/etc/default/fs\fR 或 \fB/etc/dfs/fstypes\fR 来确定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR [ \fImount_points\fR. . . ]\fR
+.ad
+.sp .6
+.RS 4n
+尽可能以并行方式执行挂载或卸载操作。
+.sp
+如果未指定挂载点，\fBmount\fR 将挂载其 \fB/etc/vfstab\fR "mount at boot" 字段为 \fByes\fR 的所有文件系统。如果指定了挂载点，则会忽略 \fB/etc/vfstab\fR "mount at boot" 字段。
+.sp
+如果指定了挂载点，则 \fBumount\fR 将仅\fB卸载\fR那些挂载点。如果未指定挂载点，则 \fBumount\fR 将尝试\fB卸载\fR \fB/etc/mnttab\fR 中的所有文件系统，但下面列出的这些系统必需文件系统除外：\fB/\fR、\fB/usr\fR、\fB/var\fR、\fB/var/adm\fR、\fB/var/run\fR、\fB/proc\fR、\fB/dev/fd\fR 和 \fB/tmp\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制卸载某个文件系统。 
+.sp
+未指定此选项时，如果文件系统上的某个文件正处于繁忙状态，则 \fBumount\fR 不允许卸载该文件系统。使用此选项可能会导致打开的文件的数据丢失；访问这些文件的程序在文件系统被卸载后将收到一个错误 (\fBEIO\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+以 \fB/etc/vfstab\fR 格式输出已挂载的文件系统的列表。必须是唯一指定的选项。请参见 \fBBUG\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+以详细格式输出已挂载的文件系统的列表。必须是唯一指定的选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+回显完整命令行，但不执行命令。\fBumount\fR 使用用户提供的选项和参数并将由 \fB/etc/mnttab\fR 派生的信息添加到这些选项和参数，从而生成一个命令行。应当使用此选项来确认和验证命令行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgeneric_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定于 \fIFSType\fR 的大多数命令模块通常会支持的选项。有下列选项可用： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载文件系统但不在 \fB/etc/mnttab\fR 中创建条目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+全局性地挂载文件系统。在群集系统上，这将在群集的所有节点上全局性地挂载文件系统。在非群集系统上，这不起作用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+在以逗号分隔的（没有空格）子选项和关键字-属性对的列表中，指定将由该命令的特定于 \fIFSType\fR 的模块解释的特定于 \fIFSType\fR 的选项。（请参见 \fBmount_ufs\fR(1M)。）当您将 \fB-o\fR 用于在 \fB/etc/vfstab\fR 中有相应条目的文件系统时，\fBmount\fR 将忽略在 \fB/etc/vfstab\fR 中为该文件系统输入的选项。
+.sp
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevices | nodevices\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止打开设备特定文件。缺省值为 \fBdevices\fR。
+.sp
+如果将 \fBnosuid\fR 与 \fBdevices\fR 结合使用，则其行为等同于 \fBnosuid\fR 的行为。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexec | noexec\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止执行文件系统中的程序。允许或禁止在使用 \fBPROT_EXEC\fR 的情况下对文件系统内的文件执行 \fBmmap\fR(2)。缺省值为 \fBexec\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBloop\fR\fR
+.ad
+.sp .6
+.RS 4n
+将被忽略以便兼容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnbmand | nonbmand\fR\fR
+.ad
+.sp .6
+.RS 4n
+在此文件系统上允许或禁止非阻塞强制性锁定语义。缺省情况下会禁止非阻塞强制性锁定。
+.sp
+如果文件系统是使用 \fBnbmand\fR 选项挂载的，则应用程序可以使用 \fBfcntl\fR(2) 接口在文件上放置非阻塞强制性锁定并且系统将实施那些语义。如果启用此选项，它会导致遵循标准的应用程序看到意外的错误。 
+.sp
+为避免在系统文件上获取强制性锁定这一可能性，请不要对下列文件系统使用 \fBnbmand\fR 选项：
+.sp
+.in +2
+.nf
+/
+/usr
+/etc
+/var
+/proc
+/dev
+/devices
+/system/contract
+/system/object
+/etc/mnttab
+/etc/dfs/sharetab
+.fi
+.in -2
+.sp
+
+不要使用 \fBremount\fR 选项来更改文件系统的 \fBnbmand\fR 配置。\fBnbmand\fR 选项与全局选项是互斥的。请参见 \fB-g\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro | rw\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定只读或读写。缺省值为 \fBrw\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetuid | nosetuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止 \fBsetuid\fR 或 \fBsetgid\fR 执行。缺省值为 \fBsetuid\fR。 
+.sp
+如果您同时指定了 \fBsetuid\fR 与 \fBnosuid\fR，则其行为与 \fBnosuid\fR 的行为相同。 
+.sp
+\fBnosuid\fR 等效于 \fBnosetuid\fR 和 \fBnodevices\fR。当 \fBsuid\fR 或 \fBnosuid\fR 与 \fBsetuid\fR 或 \fBnosetuid\fR 以及 \fBdevices\fR 或 \fBnodevices\fR 结合使用时，这会实施最具限制性的选项。
+.sp
+如果文件系统是使用 \fBroot=\fR 选项通过 NFS 共享的，则强烈建议使用此选项。如果不使用此选项，则 NFS 客户机将能够向服务器添加 \fBsetuid\fR 程序或创建可能会带来安全漏洞的设备。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsuid | nosuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止 \fBsetuid\fR 或 \fBsetgid\fR 执行。缺省值为 \fBsuid\fR。此选项还可允许或禁止打开在文件系统内出现的任何设备特殊条目。
+.sp
+\fBnosuid\fR 等效于 \fBnosetuid\fR 和 \fBnodevices\fR。当 \fBsuid\fR 或 \fBnosuid\fR 与 \fBsetuid\fR 或 \fBnosetuid\fR 以及 \fBdevices\fR 或 \fBnodevices\fR 结合使用时，这会实施最具限制性的选项。
+.sp
+如果文件系统是使用 \fBroot=\fI 选项通过 NFS 共享的，则强烈建议使用此选项\fR\fR；这是因为，如果不使用此选项，则 NFS 客户机将能够向服务器添加 \fBsetuid\fR 程序或者创建可能会带来安全漏洞的设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrstchown\fR | \fBnorstchown\fR\fR
+.ad
+.sp .6
+.RS 4n
+允许或禁止受限的 \fBchown\fR。如果文件系统是使用 \fBrstchown\fR 挂载的，则不允许文件的所有者更改文件的所有者 ID。如果文件系统是使用 \fBnorstchown\fR 挂载的，则用户可以更改他们拥有的文件的所有权。只有超级用户或具有相应特权的用户可以任意更改所有者 ID。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.sp .6
+.RS 4n
+覆盖挂载。允许文件系统挂载到现有的挂载点之上，使得底层文件系统不可访问。如果在未设置此标志的情况下尝试在已存在的挂载点上进行挂载，则挂载将失败，并生成错误 "device busy"（设备繁忙）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+将文件系统挂载为只读的。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR直接挂载和卸载 DVD 映像
+.sp
+.LP
+下面的命令挂载和卸载 DVD 映像。
+
+.sp
+.in +2
+.nf
+# \fBmount -F hsfs /images/solaris.iso /mnt/solaris-image\fR
+# \fBumount /mnt/solaris-image\fR
+.fi
+.in -2
+.sp
+
+.SH 用法
+.sp
+.LP
+有关遇到大于或等于 2 GB（2^31 字节）的文件时 \fBmount\fR 和 \fBumount\fR 的行为，请参见 \fBlargefile\fR(5) 中的描述。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mnttab\fR\fR
+.ad
+.sp .6
+.RS 4n
+其中列出了已挂载的文件系统的表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/fs\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省的本地文件系统类型。可以在 \fB/etc/default/fs\fR 中为以下标志设置缺省值。例如：\fBLOCAL=ufs\fR 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLOCAL：\fR\fR
+.ad
+.sp .6
+.RS 4n
+未指定 \fIFSType\fR 时用于命令的缺省分区。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+每个文件系统的缺省参数的列表。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBlofiadm\fR(1M)、\fBmount_hsfs\fR(1M)、\fBmount_nfs\fR(1M)、\fBmount_pcfs\fR(1M)、\fBmount_smbfs\fR(1M)、\fBmount_tmpfs\fR(1M)、\fBmount_udfs\fR(1M)、\fBmount_ufs\fR(1M)、\fBmountall\fR(1M)、\fBumountall\fR(1M)、\fBfcntl\fR(2)、\fBmmap\fR(2 )、\fBmnttab\fR(4)、\fBvfstab\fR(4)、\fBattributes\fR( 5)、\fBlargefile\fR(5)、\fBprivileges\fR(5)、\fBlofs\fR(7FS)、\fBpcfs\fR(7FS)
+.SH 附注
+.sp
+.LP
+如果要在其上挂载文件系统的目录是一个符号链接，则文件系统将挂载到符号链接所指向的目录，而不是挂载到符号链接自身之上。
+.SH 已知问题
+.sp
+.LP
+\fBmount\fR \fB-p\fR 针对 \fBcachefs\fR 的输出不正确。

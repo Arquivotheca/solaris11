@@ -1,0 +1,750 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH sar 1 "2011 年 8 月 15 日" "SunOS 5.11" "用户命令"
+.SH 名称
+sar \- 系统活动报告程序
+.SH 用法概要
+.LP
+.nf
+\fBsar\fR [\fB-aAbcdgkmpqruvwy\fR] [\fB-o\fR \fIfilename\fR] \fIt\fR [\fIn\fR]
+.fi
+
+.LP
+.nf
+\fBsar\fR [\fB-aAbcdgkmpqruvwy\fR] [\fB-e\fR \fItime\fR] [\fB-f\fR \fIfilename\fR] [\fB-i\fR \fIsec\fR] 
+     [\fB-s\fR \fItime\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+在第一个实例中，\fBsar\fR 实用程序在操作系统中以 \fIn\fR 次间隔（每个间隔 \fIt\fR 秒）对累积活动计数器进行抽样，其中 \fIt\fR 应该为 \fB5\fR 或者更大。如果使用多个选项指定 \fIt\fR，则所有标题会一起打印，输出会难以辨认。（如果抽样间隔小于 \fB5\fR，则 \fBsar\fR 自身的活动会影响样例。）如果指定了 \fB-o\fR 选项，则它以二进制格式在 \fIfilename\fR 中保存样例。\fIn\fR 的缺省值为 \fB1\fR。
+.sp
+.LP
+在第二个实例中，没有指定任何抽样间隔。\fBsar\fR 从之前记录的 \fIfilename\fR 文件中提取数据，该文件可以是由 \fB-f\fR 选项指定的文件，也可以是缺省情况下当前日期 \fIdd\fR 的标准系统活动每日数据文件 \fB/var/adm/sa/sa\fI dd\fR\fR。报告的开始时间和结束时间可以使用 \fB-e\fR 和 \fB-s\fR 参数进行绑定，其中 \fItime\fR 使用 \fIhh\fR[:\fI mm\fR[:\fIss\fR]] 格式指定。\fB-i\fR 选项以 \fIsec\fR 秒间隔选择记录。否则，将报告数据文件中找到的所有间隔。
+.SH 选项
+.sp
+.LP
+以下选项修改 \fBsar\fR 报告的信息子集。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+报告文件访问系统例程的使用：iget/s、namei/s、dirblk/s
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.RS 15n
+.rt  
+报告所有数据。等效于 \fB-abcdgkmpqruvwy\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 15n
+.rt  
+报告缓冲区活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBbread/s、bwrit/s\fR
+.ad
+.RS 21n
+.rt  
+每秒在系统缓冲区和磁盘或其他块设备之间的数据传输。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlread/s、lwrit/s\fR
+.ad
+.RS 21n
+.rt  
+系统缓冲区的访问。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%rcache、%wcache\fR
+.ad
+.RS 21n
+.rt  
+高速缓存命中率，即 (1\(mibread/lread)，百分比形式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpread/s、pwrit/s\fR
+.ad
+.RS 21n
+.rt  
+使用原始（物理）设备机制进行传输。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 15n
+.rt  
+报告系统调用： 
+.sp
+.ne 2
+.mk
+.na
+\fBscall/s\fR
+.ad
+.sp .6
+.RS 4n
+所有类型的系统调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsread/s、swrit/s、fork/s、exec/s\fR
+.ad
+.sp .6
+.RS 4n
+特定的系统调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrchar/s、wchar/s\fR
+.ad
+.sp .6
+.RS 4n
+由读取和写入系统调用传输的字符。没有报告任何传入或传出 \fBexec\fR(2) 和 \fBfork\fR(2) 调用。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 15n
+.rt  
+报告每个块设备（例如，磁盘或磁带机）的活动，除了 \fBXDC\fR 磁盘和磁带机。显示数据时，设备规范 \fIdsk-\fR 通常用于表示磁盘驱动器。用于表示磁带机的设备规范是与计算机有关的。报告的活动数据是： 
+.sp
+.ne 2
+.mk
+.na
+\fB%busy、avque\fR
+.ad
+.RS 29n
+.rt  
+设备忙于处理传输请求而花费的时间，在此时间内未解决的平均请求数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBread/s、write/s、blks/s\fR
+.ad
+.RS 29n
+.rt  
+从设备或到设备的读取/写入传输数目，以 512 字节为单元传输的字节数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBavwait\fR
+.ad
+.RS 29n
+.rt  
+以毫秒为单位的平均等待时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBavserv\fR
+.ad
+.RS 29n
+.rt  
+以毫秒为单位的平均服务时间。
+.RE
+
+有关更多常规系统统计信息，请使用 \fBiostat\fR(1M)、\fBsar\fR(1M) 或 \fBvmstat\fR(1M)。
+.sp
+有关磁盘的命名约定，请参见\fI《System Administration Guide: Advanced Administration》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fItime\fR\fR
+.ad
+.RS 15n
+.rt  
+选择到 \fBtime\fR 为止的数据。缺省值是 \fB18:00\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfilename\fR\fR
+.ad
+.RS 15n
+.rt  
+将 \fIfilename\fR 用作 \fBsar\fR 的数据源。缺省文件为当前每日数据文件 \fB/var/adm/sa/sa\fR\fIdd\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.RS 15n
+.rt  
+报告分页活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBpgout/s\fR
+.ad
+.RS 12n
+.rt  
+每秒的页出请求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBppgout/s\fR
+.ad
+.RS 12n
+.rt  
+每秒进行页出操作的页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpgfree/s\fR
+.ad
+.RS 12n
+.rt  
+每秒由页窃取守护进程置于空闲表中的页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpgscan/s\fR
+.ad
+.RS 12n
+.rt  
+每秒由页窃取守护进程扫描的页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB%ufs_ipf\fR
+.ad
+.RS 12n
+.rt  
+具有关联的可重用页的 iget 从空闲表中取消的 \fBUFS\fR inode 的百分比。这些页面被刷新，并且不能由进程回收。因此，这是具有页面刷新的 igets 的百分比。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIsec\fR\fR
+.ad
+.RS 15n
+.rt  
+以尽可能接近 \fIsec\fR 秒的间隔选择数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 15n
+.rt  
+报告内核内存分配 (KMA) 活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBsml_mem、alloc、fail\fR
+.ad
+.RS 26n
+.rt  
+有关内存池保留和为小型请求分配空间的信息：\fBKMA\fR 针对小型池具有的内存量（以字节表示）、用于满足少量内存请求的已分配字节数，以及未满足的（失败的）少量内存请求数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlg_mem、alloc、fail\fR
+.ad
+.RS 26n
+.rt  
+有关大型内存池的信息（类似于有关小型内存池的信息）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBovsz_alloc、fail\fR
+.ad
+.RS 26n
+.rt  
+为过大请求分配的内存量以及无法满足的过大请求的数目（因为过大内存是动态分配的，所以没有池）。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 15n
+.rt  
+报告消息和信号活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBmsg/s、sema/s\fR
+.ad
+.RS 18n
+.rt  
+每秒的基元。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfilename\fR\fR
+.ad
+.RS 15n
+.rt  
+将样例以二进制格式保存在文件 \fIfilename\fR 中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 15n
+.rt  
+报告分页活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBatch/s\fR
+.ad
+.RS 11n
+.rt  
+每秒通过回收当前在内存中的页来满足的缺页（每秒附加数）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpgin/s\fR
+.ad
+.RS 11n
+.rt  
+每秒的页入请求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBppgin/s\fR
+.ad
+.RS 11n
+.rt  
+每秒进行页入操作的页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpflt/s\fR
+.ad
+.RS 11n
+.rt  
+每秒由保护错误引起的缺页（非法访问页面）或者"写复制"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBvflt/s\fR
+.ad
+.RS 11n
+.rt  
+每秒的地址转换缺页（内存中不存在有效页）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBslock/s\fR
+.ad
+.RS 11n
+.rt  
+每秒由需要物理 \fBI/O\fR 的软件锁定请求导致的错误。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 15n
+.rt  
+报告占用时的平均队列长度以及占用的时间百分比： 
+.sp
+.ne 2
+.mk
+.na
+\fBrunq-sz、%runocc\fR
+.ad
+.RS 21n
+.rt  
+在内存中运行内核线程队列并且可运行
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBswpq-sz、%swpocc\fR
+.ad
+.RS 21n
+.rt  
+交换进程队列
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 15n
+.rt  
+报告未使用的内存页和磁盘块： 
+.sp
+.ne 2
+.mk
+.na
+\fBfreemem\fR
+.ad
+.RS 12n
+.rt  
+可用于用户进程的平均页数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfreeswap\fR
+.ad
+.RS 12n
+.rt  
+可用于页交换的磁盘块。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fItime\fR\fR
+.ad
+.RS 15n
+.rt  
+选择晚于 \fBtime\fR、格式为 \fIhh\fR[:\fImm\fR] 的数据。缺省值是 \fB08:00\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.RS 15n
+.rt  
+报告 \fBCPU\fR 使用率（缺省）： 
+.sp
+.ne 2
+.mk
+.na
+\fB%usr、%sys、%wio、%idle\fR
+.ad
+.RS 30n
+.rt  
+以用户模式运行、以系统模式运行、某些进程等待块 \fBI/O\fR 的空闲状态以及其他空闲状态的时间。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 15n
+.rt  
+报告进程状态、i-node、文件表： 
+.sp
+.ne 2
+.mk
+.na
+\fBproc-sz、inod-sz、file-sz、ock-sz\fR
+.ad
+.sp .6
+.RS 4n
+每个表的项数/大小，在抽样点处计算一次。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBov\fR
+.ad
+.sp .6
+.RS 4n
+在每个表的抽样点之间发生的溢出。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.RS 15n
+.rt  
+报告系统交换和切换活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBswpin/s、swpot/s、bswin/s、bswot/s\fR
+.ad
+.sp .6
+.RS 4n
+传输的数目以及为换入和换出传输的 512 字节单元的数目（包括初始装载某些程序）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpswch/s\fR
+.ad
+.sp .6
+.RS 4n
+进程切换。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.RS 15n
+.rt  
+报告 TTY 设备活动： 
+.sp
+.ne 2
+.mk
+.na
+\fBrawch/s、canch/s、outch/s\fR
+.ad
+.sp .6
+.RS 4n
+输入字符率、由 canon 处理的输入字符率、输出字符率。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrcvin/s、xmtin/s、mdmin/s\fR
+.ad
+.sp .6
+.RS 4n
+接收、传输和调制解调器中断率。
+.RE
+
+如果在非全局区域中运行，并且池设备处于活动状态，则这些值反映向区域绑定到的池的处理器集合中处理器上的活动。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR查看系统活动
+.sp
+.LP
+以下示例显示今天到目前为止的 \fBCPU\fR 活动：
+
+.sp
+.in +2
+.nf
+example% sar
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR观察系统活动发展
+.sp
+.LP
+要观察 \fBCPU\fR 活动在 10 分钟内的发展并保存数据：
+
+.sp
+.in +2
+.nf
+example% sar -o temp 60 10
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR查看磁盘和磁带活动
+.sp
+.LP
+要稍后查看此时间段内的磁盘和磁带活动：
+
+.sp
+.in +2
+.nf
+example% sar -d -f temp
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/sa/sa\fIdd\fR\fR\fR
+.ad
+.RS 20n
+.rt  
+每日数据文件，其中 \fIdd\fR 是用于表示月份日期的数字
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/accounting/legacy-accounting
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBiostat\fR(1M)、\fBsar\fR(1M)、\fBvmstat\fR(1M)、\fBexec\fR(2)、\fBfork\fR(2)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Common Tasks》\fR
+.SH 附注
+.sp
+.LP
+由于百分比图生成过程中的舍入误差，CPU 使用率总量可能与 100 稍有不同。

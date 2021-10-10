@@ -1,0 +1,287 @@
+'\" te
+.\"  Copyright 1989 AT&T
+.\" Copyright (C) 2003, Sun Microsystems, Inc. All Rights Reserved 
+.TH rcp 1 "2008 年 12 月 23 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+rcp \- リモートファイルコピー
+.SH 形式
+.LP
+.nf
+\fBrcp\fR [\fB-p\fR] [\fB-a\fR] [\fB-K\fR] [\fB-x\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-k\fR \fIrealm\fR] \fIfilename1\fR \fIfilename2\fR
+.fi
+
+.LP
+.nf
+\fBrcp\fR [\fB-pr\fR] [\fB-a\fR] [\fB-K\fR] [\fB-x\fR] [\fB-PN\fR | \fB-PO\fR] [\fB-k\fR \fIrealm\fR] \fIfilename\fR... \fIdirectory\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBrcp\fR コマンドは、マシン間でファイルをコピーします。\fIfilename\fR 引数、\fIdirectory\fR 引数にリモートファイルを指定する場合は、次のような書式を使用します。
+.sp
+.in +2
+.nf
+\fIhostname\fR\fB:\fR\fIpath\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ローカルファイルを指定する場合は、コロン (\fB:\fR) を使用しないか、コロンの前にスラッシュ (\fB/\fR) を付けます。\fB\fR
+.sp
+.LP
+\fIhostname\fR には、IPv4 または IPv6 のアドレス文字列を指定できます (\fBinet\fR(7P)、\fBinet6\fR(7P) を参照)。IPv6 のアドレスにはコロンが含まれているので、\fIhostname\fR を角括弧で囲む必要があります。\fIhostname\fR を角括弧で囲まないと、最初のコロンが \fIhostname\fR と path の区切り文字と見なされてしまいます。たとえば、次のように指定します。
+.sp
+.in +2
+.nf
+[1080::8:800:200C:417A]:tmp/file
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+また、フルパス名を指定しないと、\fIfilename\fR はホスト (\fIhostname\fR) 上のホームディレクトリから見た相対パスと解釈されます。リモートホスト上のパス名と解釈させるには、パス名 (\fIpath\fR) を \fB\e\|\fR、\fB"\|\fR、\fB '\|\fR などで囲みます。Kerberos 認証バージョンの \fBrcp\fR は IPv6 が無効であることに注意してください。
+.sp
+.LP
+\fBrcp\fR コマンドの使用時、パスワードを入力する必要はありません。Kerberos 認証をコマンド行オプションで有効にした場合、rcp は Kerberos 認証を使用します。そうでない場合、現在のローカルユーザー名が \fIhostname\fR 上に存在し、\fBrsh\fR(1) でリモートコマンドを実行できる必要があります。
+.sp
+.LP
+\fBrcp\fR セッションで Kerberos 認証を使用するには、次の任意の Kerberos 固有オプションを使用します。 \fB-a\fR、\fB-PN\fR または \fB-PO\fR、\fB-x\fR、および \fB-k\fR \fIrealm\fR。これらのオプションのうち、\fB-a\fR、\fB-x\fR、および \fB-PN\fR または \fB-PO\fR は、\fBkrb5.conf\fR(4) の \fB[appdefaults]\fR セクションにも指定できます。これらのオプションの使用法と期待される動作については、次の「オプション」セクションを参照してください。Kerberos 承認を使用する場合、アカウントの承認は、\fBkrb5_auth_rules\fR(5) の規則によって制御されます。Kerberos 承認が失敗した場合、\fB-PO\fR オプションをコマンド行に明示的に指定するか、\fBkrb5.conf\fR(4) 経由で指定している場合にのみ、rhosts を使用する通常の \fBrcp\fR へのフォールバックが発生します。Kerberos 承認が成功した場合、パスワードの入力は求められずに、リモートコピーは成功します。\fB-PN\fR または \fB-PO\fR、\fB-x\fR、および \fB-k\fR \fIrealm\fR オプションは、\fB-a\fR オプションの上位集合であることに注意してください。
+.sp
+.LP
+\fBrcp\fR では、ソースファイルもターゲットファイルも現在のマシン上に存在しないような「サードパーティコピー」も処理できます。ホスト名は、次の形式になります。
+.sp
+.in +2
+.nf
+\fIusername\fR\fB@\fR\fIhostname\fR\fB:\fR\fIfilename\fR
+.fi
+.in -2
+
+.sp
+.LP
+この場合、現在のローカルユーザー名でなく、\fIusername\fR に指定されたユーザー名が リモートホスト上のユーザー名として使用されます。また、\fBrcp\fR は、リモートホストの インターネットドメインアドレス指定をサポートしており、次の形式で指定できます。
+.sp
+.in +2
+.nf
+\fIusername\fR\fB@\fR\fIhost\fR\fB\&.\fR\fIdomain\fR\fB:\fR\fIfilename\fR
+.fi
+.in -2
+
+.sp
+.LP
+使用するユーザー名、ホスト名、ホストの所属するドメインを指定できます。\fIfilename\fR にフルパス名を指定しないと、username に指定したリモートホスト上のユーザーのホームディレクトリから見た相対アドレスと解釈されます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 12n
+.rt  
+このオプションは、Kerberos 認証を明示的に有効にし、アクセス制御において \fB\&.k5login\fR ファイルを信用します。サーバー側での \fBin.rshd\fR(1M) による承認チェックが成功して、なおかつ、\fB\&.k5login\fR ファイルがアクセスを許可する場合、ユーザーは \fBrcp\fR 転送を実行することが許可されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIrealm\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBrcp\fR は、\fBkrb5.conf\fR(4) で定義されているリモートホストの領域ではなく、指定した \fIrealm\fR 内のリモートホスト用のチケットを取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIrealm\fR\fR
+.ad
+.RS 12n
+.rt  
+このオプションは、Kerberos 認証を明示的に無効にします。このオプションを使用すると、\fBkrb5.conf\fR(4) の \fBautologin\fR 変数を上書きできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 12n
+.rt  
+必要に応じて、各コピーに、オリジナルのファイルと同じ変更時間、アクセス時間、モード、\fBACL\fR を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-PO\fR\fR
+.ad
+.br
+.na
+\fB\fB-PN\fR\fR
+.ad
+.RS 12n
+.rt  
+Kerberos の「\fBrcmd\fR」プロトコルの新しいバージョン (\fB-PN\fR) または古いバージョン (\fB-PO\fR) を明示的に要求します。新しいプロトコルは、古いプロトコルで蔓延している多くのセキュリティの問題を回避し、より安全であると考えられますが、古い (MIT/SEAM) サービスとは相互運用できません。PO オプションで古いプロトコルを明示的に指定するか、\fBkrb5.conf\fR(4) 経由で指定していないかぎり、デフォルトでは、新しいプロトコルが使用されます。古い「\fBrcmd\fR」プロトコルを使用しているときに Kerberos 承認が失敗した場合、Kerberos 承認を使用しない通常の \fBrcp\fR へのフォールバックが発生します。これは、新しい、より安全な「\fBrcmd\fR」プロトコルを使用している場合には当てはまりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 12n
+.rt  
+指定された \fIfilename\fR のサブツリーをコピーします。この場合、コピー先はディレクトリでなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 12n
+.rt  
+ホスト間で転送される情報を暗号化します。このコマンド自身は暗号化されずにリモートシステムに送信されることに注意してください。それ以降の転送はすべて暗号化されます。
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルサイズが 2G バイト (2^31 バイト) 以上の場合の \fBrcp\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.sp
+.LP
+\fBrcp\fR コマンドでは、IPv6 を使用できます。\fBip6\fR(7P) を参照してください。現在のところ、\fBIPv6\fR は Kerberos V5 認証ではサポートされません。
+.sp
+.LP
+Kerberos 承認を使用する \fBrcp\fR セッションの場合、各ユーザーは自分のホームディレクトリの \fB\&.k5login\fR ファイルに、専用の承認リストを持つことができます。このファイルの各行には、形式 \fIprincipal\fR/\fIinstance\fR@\fIrealm\fR の Kerberos 主体名が入っている必要があります。\fB~/.k5login\fR ファイルが存在する場合、起点ユーザーが \fB~/.k5login\fR ファイルに指定された主体の 1 人であると認証された場合にのみ、起点ユーザーのアカウントにアクセス権が付与されます。\fI~/.k5login\fR ファイルが存在しない場合、\fIauthenticated-principal-name\fR \(-> local-user-name マッピング規則を使用して、起点ユーザーの認証された主体名をローカルアカウント名にマッピングできる場合にのみ、起点ユーザーのアカウントにアクセス権が付与されます。\fB\&.k5login\fR ファイル (アクセス制御用) が処理されるのは、Kerberos 認証が行われるときだけです。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+すべてのファイルを正常にコピーしました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.LP
+終了コードの注意点に関する「注意事項」の項を参照してください。
+.SH ファイル
+.sp
+.LP
+\fB$HOME/.profile\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.k5login\fR\fR
+.ad
+.RS 23n
+.rt  
+アクセスを許可する Kerberos 主体を含むファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/krb5/krb5.conf\fR\fR
+.ad
+.RS 23n
+.rt  
+Kerberos 構成ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/network-clients
+_
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcpio\fR(1), \fBftp\fR(1), \fBrlogin\fR(1), \fBrsh\fR(1), \fBsetfacl\fR(1), \fBtar\fR(1), \fBtar\fR(1), \fBin.rshd\fR(1M), \fBhosts.equiv\fR(4), \fBkrb5.conf\fR(4), \fBattributes\fR(5), \fBlargefile\fR(5), \fBkrb5_auth_rules\fR(5), \fBinet\fR(7P), \fBinet6\fR(7P), \fBip6\fR(7P)
+.SH 注意事項
+.sp
+.LP
+\fBrcp\fR の目的は、別々のホスト間でファイルをコピーすることです。このため、たとえば次のような指定で、あるファイルをそのファイル自体にコピーしようとすると、\fB\fR
+.sp
+.in +2
+.nf
+example% \fBrcp tmp/file myhost:/tmp/file\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ファイルが壊れてしまいます。
+.sp
+.LP
+コピーの対象がディレクトリではなくファイルである場合、\fBrcp\fR が正常に失敗しないことがあります。
+.sp
+.LP
+また、リモートホスト上の \fB$HOME/.profile\fR ファイルに指定されているコマンドからの出力によって、処理が正しく行われないこともあります。\fB\fR
+.sp
+.LP
+\fBrcp\fR でサードパーティコピーを行うには、ソースホストがリモートホスト上で コマンドを実行することを許可されていなければなりません。
+.sp
+.LP
+\fBrcp\fR では、シンボリックリンクの処理が正しく行われません。シンボリックリンクや名前付きパイプが含まれているディレクトリをリモートコピーする場合は、\fBtar\fR または \fBcpio\fR コマンドを \fBrsh\fR コマンドにパイプして使用してください。詳細については、\fBtar\fR(1) と \fBcpio\fR(1) を参照してください。
+.sp
+.LP
+リモートホストを指定する際のメタキャラクタを引用符で囲まないと、解釈不可を示すエラーメッセージが出力されます。
+.sp
+.LP
+\fBACL\fR をサポートしていないファイルシステムに \fBACL\fR をコピーすると、\fBrcp\fR は失敗します。
+.sp
+.LP
+\fBrcp\fR は、ユーザー名、ホスト名、ドメインの処理を除いて \fBCSI\fR 対応が可能です。
+.sp
+.LP
+どちらか一方のリモートマシンで Solaris を実行していない場合に、\fBrcp\fR を使用してサードパーティコピーを実行するとき、その終了コードは信頼できません。つまり、終了コードが正常終了を示していても、エラーが発生している可能性があります。あるいは、終了コードが異常終了を示していても、コピーは完全に成功している可能性があります。

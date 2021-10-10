@@ -1,0 +1,823 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH iiadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+iiadm \- 用于控制 Sun StorageTek Availability Suite Point-in-Time Copy 操作的命令行接口
+.SH 用法概要
+.LP
+.nf
+\fBiiadm\fR \fB-e\fR {ind | shd} \fImaster_vol\fR \fIshadow_vol\fR \fIbitmap_vol\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR \fB-ne\fR ind \fImaster_vol\fR \fIshadow_vol\fR \fIbitmap_vol\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-p\fR] [\fB-n\fR] {\fB-c\fR | \fB-u\fR} {s | m} \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-adDilR\fR] \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-p\fR] [\fB-n\fR] \fB-w\fR \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-hilLv\fR]
+.fi
+
+.LP
+.nf
+\fBiiadm\fR \fB-P\fR \fIdelay\fR \fIunits\fR \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR \fB-P\fR \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR \fB-A\fR \fIoverflow_vol\fR \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-OQ\fR] \fIoverflow_vol\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR \fB-E\fR \fIvolume_set\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-IJ\fR] \fIvolume_set\fR \fIbitmap\fR
+.fi
+
+.LP
+.nf
+\fBiiadm\fR \fB-g\fR \fIgroup_name\fR [\fB-aAcdDeEilLmPRuw\fR]
+.fi
+
+.LP
+.nf
+\fBiiadm\fR [\fB-C\fR] \fIcluster_tag\fR [\fIoptions\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+Point-in-Time Copy 软件是 Solaris 操作系统的时间点快照功能。
+.sp
+.LP
+Point-in-Time Copy 快照是暂时停止的卷的复制视图，此视图可立即使用，且时间固定。创建快照后，Point-in-Time Copy 软件允许对主卷数据和影子卷数据立即进行读取/写入访问。
+.sp
+.LP
+Point-in-Time Copy 软件从建立快照之时起跟踪主卷和影子卷之间的差异（由写入所致）。此功能允许访问主卷数据的应用程序独立于访问影子卷数据的应用程序继续运行，反之亦然。
+.sp
+.LP
+Point-in-Time Copy 软件对主卷和影子卷之间的差异的跟踪功能有助于在以后进行快速重新同步或完整复制。可以从影子卷重新同步到主卷，也可以从主卷重新同步到影子卷。
+.sp
+.LP
+在（重新）建立时间点之后（当返回 CLI 提示符或读取下一 shell 脚本命令时），可以立即重新挂载主卷或恢复使用主卷的应用程序。此外，还可以挂载并立即访问影子卷。
+.sp
+.LP
+\fBiiadm\fR 命令行实用程序在每次调用命令时仅执行一个操作。为此，除组合下列所有命令修饰符以外，不能组合多个选项：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果未输入操作项，\fBiiadm\fR 显示当前配置的 Point-in-Time Copy 集（未暂停）的列表。如果输入了多个操作项或错误指定的操作项，\fBiiadm\fR 向标准错误显示具体错误消息，然后显示简要的用法汇总。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+对于 Point-in-Time Copy 选项 ENABLE (\fB-e\fR)、COPY (\fB-c\fR) 和 UPDATE (\fB-u\fR)，存在两个关联的影子卷选择限定符 (\fB{ind|dep}\fR)，用于指定要创建的 Point-in-Time Copy 卷集的类型。
+.RE
+.sp
+.LP
+独立 (\fBind\fR) 快照导致 Point-in-Time Copy 软件执行从主卷到影子卷的完整卷复制操作。复制完成后，影子卷数据在建立时与主卷数据相同。如果您需要两个物理数据副本，请创建单独的影子卷。单独的影子卷的大小必须等于或大于主卷的大小。对于要考虑从影子卷重新同步到主卷的环境，Oracle 建议主卷和影子卷应采用相同大小。
+.sp
+.LP
+从属 (\fBdep\fR) 快照导致 Point-in-Time Copy 软件不会执行完整的卷复制。对于所有未修改的数据块（除非请求，否则不会复制这些数据块），生成的影子卷依赖于主卷。如果您不需要两个物理数据副本，请创建从属影子卷。从属影子卷的大小可以等于或小于主卷的大小。较小的影子卷称为\fB压缩从属影子卷\fR，当对 Point-in-Time Copy 卷集所做的更改量小于主卷的整个大小时，通常会使用压缩从属影子卷。
+.sp
+.LP
+使用下面的语法格式，您可以在 Sun Cluster 环境中创建可导出的独立影子卷：
+.sp
+.in +2
+.nf
+# iiadm -ne ind master shadow bitmap
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+由于压缩从属影子卷的大小在启用 Point-in-Time Copy 卷集时建立，因此使用压缩从属影子卷时会出现问题。如果在使用卷集时对整个卷集所做的更改量超出了为影子卷分配的空间，则会将影子卷标记为空间不足。即使影子卷空间不足，也可以从影子卷进行读取，直到请求没有相应空间的部分数据为止。一旦发生此情况，读取将失败，并且会将影子卷标记为脱机。
+.sp
+.LP
+为了解决此问题，Point-in-Time Copy 支持将\fB溢出\fR卷关联到现有 Point-in-Time Copy 从属卷集的功能。因此，如果压缩从属影子卷的大小太小，或者对卷集执行了计划外的更改量，更改后的数据可重定向到关联的溢出卷。为了帮助有效使用此溢出卷，可以根据需要将溢出卷与多个 Point-in-Time Copy 卷集相关联。
+.SS "注意事项"
+.sp
+.LP
+在调用 Point-in-Time Copy \fBenable\fR、\fBcopy\fR 或 \fBupdate\fR 操作之前，Point-in-Time Copy 确保未挂载影子卷，以免出现文件系统故障。同时，建议您仅在创建时间点快照时卸载或暂停（停止）使用主卷的所有应用程序。这确保创建根本一致的时间点快照。
+.sp
+.LP
+如果已暂停（而非卸载）主卷，建议使用 \fBfsck\fR(1M)等卷验证实用程序验证新时间点影子卷的完整性。其原因在于，Point-in-Time Copy 在\fB已卸载\fR影子卷上创建了\fB已挂载\fR主卷的时间点副本。挂载影子卷时，文件系统检测到影子卷处于\fB已挂载\fR状态。通常，此状态仅在系统崩溃时出现，因此文件系统尝试验证此卷的完整性，并假定发生了系统故障，而不是 Point-in-Time Copy。
+.SS "环境选项"
+.sp
+.LP
+\fB/usr/kernel/drv/ii.conf\fR 配置文件中的 \fBii_bitmap\fR 变量确定位图卷操作语义，如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+表示仅在内存或恢复操作中保存位图。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 13n
+.rt  
+表示在内存和磁盘中保存位图。这是缺省值。
+.RE
+
+.sp
+.LP
+如果在使用 \fBii_bitmap=0\fR 时发生系统故障，影子卷可能会不一致，并且无法进行快速重新同步。
+.sp
+.LP
+如果 Point-in-Time Copy 与网络存储组件远程镜像配合使用或在 Sun Cluster 中使用，请设置 \fBii_bitmap=1\fR。
+.sp
+.LP
+\fB/usr/kernel/drv/ii.conf\fR 配置文件中的 \fBii_debug\fR 变量确定在 Point-in-Time Copy 处理过程中输出到系统控制台 \fB/dev/console\fR 的信息日志量。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+表示不会向系统控制台发送日志。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 13n
+.rt  
+表示向系统控制台发送信息日志。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 13n
+.rt  
+表示向系统控制台发送开发日志。
+.RE
+
+.SH 选项
+.sp
+.LP
+\fBiiadm\fR 实用程序支持下列选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fB{ind|dep}\fR \fImaster_vol shadow_vol bitmap_vol\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对指定主卷、影子卷和位图卷启用 Point-in-Time Copy。
+.sp
+启用投影集处理功能确保可访问指定卷，未挂载 \fIshadow_vol\fR，并为创建的投影集类型正确确定 \fIbitmap_vol\fR 的大小。此外，它还确保这些卷可由 SV 驱动程序控制（否则，则将其放置在此位置），初始化位图卷，并且如果卷集是独立投影集，还会启动完整复制操作。
+.sp
+成功启用后，Point-in-Time Copy 将指定 \fImaster_vol\fR、\fIshadow_vol\fR 和 \fIbitmap_vol\fR 名称以及启用类型（\fBind\fR 或 \fBdep\fR）存储到 Point-in-Time Copy 配置存储中。配置存储包含当前配置的所有 Point-in-Time Copy 卷集及其相关配置属性。（有关独立和从属影子卷的语义，请参见上面的讨论。）
+.sp
+\fImaster_vol\fR 是创建时间点快照所基于的卷。
+.sp
+\fIshadow_vol\fR 是包含时间点快照的卷。
+.sp
+\fIbitmap_vol\fR 用于跟踪影子卷和主卷之间的区别。暂停或恢复 Point-in-Time Copy 投影操作后，可在永久性存储中存储或检索位图卷（保存在内核内存中）。与位图卷关联的存储应当像影子卷存储一样冗余。
+.sp
+\fIshadow_vol\fR 名称是需要指定 \fIvolume_set\fR 名称的所有 \fBiiadm\fR 选项已知的 Point-in-Time Copy 投影集的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用与指定 \fIvolume_set\fR 关联的 Point-in-Time Copy 卷集。
+.sp
+如果 Point-in-Time Copy 在上述 \fB-e\fR \fBind\fR 选项指定的\fB独立\fR模式下运行，影子卷数据包含与禁用前相同的数据（假定未进行写入）。现在，主卷和影子卷均为单独的时间点副本，因此用户可以访问主卷和影子卷。
+.sp
+在完整副本处于活动状态期间，\fB独立\fR卷将按照\fB从属\fR卷的方式运行。为了确保卷不再处于完整复制模式，请发出以下命令以便等待完整复制完成：
+.sp
+.in +2
+.nf
+# iiadm -w \fIvolume_set\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-p\fR] \fB-u\fR \fBs\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+从主卷更新影子卷。
+.sp
+将主卷的时间点副本更新到影子卷。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 投影集。此选项提供影子卷的快速重新同步，并创建主卷的增量副本。此更新复制在主卷和影子卷之间标记为不同的所有 32 KB 段。它不会复制所有主卷数据，而仅复制更改的数据。复制数据时，影子卷依赖于主卷。
+.sp
+使用此选项之前，暂时停止卷的工作负荷；并使主机应用程序停止写入到卷。这可以确保时间点数据一致。在使用目标卷执行任何其他操作之前，您可以使用 \fBiiadm\fR \fB-i\fR \fIvolume_set\fR 以可视方式检查此副本或更新操作的状态，或者使用 \fBiiadm\fR \fB-w\fR \fIvolume_set\fR 以交互方式检查状态（通过 shell 或脚本）。
+.sp
+通过使用选项 \fB-p\fR、\fBiiadm\fR \fB-p\fR \fB-u\fR \fBs\fR，此命令支持 PID（Process Identifier，进程标识符）锁定。启用此选项可防止其他进程创建新的时间点快照，从而使时间点之前的数据无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-p\fR] [\fB-n\fR] \fB-u\fR \fBm\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+从影子卷更新主卷的时间点副本。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。此选项提供主卷的快速重新同步，并创建影子卷的增量副本。此更新复制在主卷和影子卷之间标记为不同的所有 32 KB 段。它不会复制所有影子卷数据，而仅复制更改的数据。复制数据时，主卷依赖于影子卷。
+.sp
+使用此选项之前，暂时停止卷的工作负荷；并使主机应用程序停止写入到卷。这可以确保时间点数据一致。在使用目标卷执行任何其他操作之前，您可以使用 \fBiiadm\fR \fB-i\fR \fIvolume_set\fR 以可视方式检查此副本或更新操作的状态，或者使用 \fBiiadm\fR \fB-w\fR \fIvolume_set\fR 以交互方式检查状态（通过 shell 或脚本）。
+.sp
+此命令支持查询，以免意外覆盖主卷上的数据。当在脚本中使用此命令选项时，添加 \fB-n\fR 选项可以防止出现查询。
+.sp
+通过使用选项 \fB-p\fR、\fBiiadm\fR \fB-p\fR \fB-u\fR \fBm\fR，此命令支持 PID（Process Identifier，进程标识符）锁定。启用此选项可防止其他进程创建新的时间点快照，从而使时间点之前的数据无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB-p\fR] \fB-c\fR s \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+将主卷复制到影子卷。
+.sp
+在影子卷上创建主卷的时间点副本。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。此选项将主卷的时间点副本中的所有数据写入到影子卷。在将数据从主卷复制到影子卷时，影子卷依赖于主卷。
+.sp
+此选项执行完整卷复制。除非您怀疑独立影子卷上的数据的完整性，请使用 \fBiiadm\fR \fB-u\fR \fBs\fR。否则，使用此选项可同步主卷和影子卷；也即，使每个卷上的数据相一致。
+.sp
+使用此选项之前，暂时停止卷的工作负荷；并使主机应用程序停止写入到卷。这可以确保时间点数据一致。在使用目标卷执行任何其他操作之前，您可以使用 \fBiiadm\fR \fB-i\fR \fIvolume_set\fR 以可视方式检查此副本或更新操作的状态，或者使用 \fBiiadm\fR \fB-w\fR \fIvolume_set\fR 以交互方式检查状态（通过 shell 或脚本）。
+.sp
+通过使用 \fB-p\fR 选项、\fBiiadm\fR \fB-p\fR \fB-c\fR \fBs\fR，此命令支持 PID（Process Identifier，进程标识符）锁定。启用此选项可防止其他进程创建新的时间点快照，从而使时间点之前的数据无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fBm\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+将影子卷复制到主卷。
+.sp
+在主卷上创建影子卷的时间点副本。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。此选项将影子卷的时间点副本中的所有数据写入到主卷。在将数据从影子卷复制到主卷时，主卷依赖于影子卷。
+.sp
+此选项执行完整卷复制。除非您怀疑独立主卷上的数据的完整性，请使用 \fBiiadm\fR \fB-u\fR \fBm\fR。否则，使用此选项可同步主卷和影子卷；也即，使每个卷上的数据相一致。
+.sp
+使用此选项之前，暂时停止卷的工作负荷；并使主机应用程序停止写入到卷。这可以确保时间点数据一致。在使用目标卷执行任何其他操作之前，您可以使用 \fBiiadm\fR \fB-i\fR \fIvolume_set\fR 以可视方式检查此副本或更新操作的状态，或者使用 \fBiiadm\fR \fB-w\fR \fIvolume_set\fR 以交互方式检查状态（通过 shell 或脚本）。
+.sp
+此命令支持查询，以免意外覆盖主卷上的数据。当在脚本中使用此命令选项时，添加 \fB-n\fR 选项可以防止出现查询。
+.sp
+通过使用 \fB-p\fR 选项、\fBiiadm\fR \fB-p\fR \fB-c\fR \fBm\fR，此命令支持 PID（Process Identifier，进程标识符）锁定。启用此选项可防止其他进程创建新的时间点快照，从而使时间点之前的数据无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+中止可能在主卷和影子卷之间处于活动状态的任何当前复制操作。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。执行 \fBiiadm\fR \fB-a\fR 后，不会完成对目标卷（主卷或影子卷）的更新或复制操作。目标卷现在已成为源卷的从属副本。重新发出更新或复制命令选项，以便重新同步卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[\fR\fB-p\fR\fB] [\fR\fB-n\fR\fB] \fR\fB-w\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+等待任何正在进行的复制或更新操作完成或中止。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。
+.sp
+此选项等待当前 Point-in-Time Copy 操作完成，从而防止执行后续 \fBiiadm\fR 命令（通过 shell 或脚本）。如果您希望确定复制或更新操作是否已完成，请使用此命令选项。
+.sp
+此命令支持 PID（Process IDentifier，进程标识符）解除锁定。如果使用 \fB-p\fR 选项调用使用命令 \fBiiadm\fR \fB-p\fR \fB{\fR\fB-c\fR\fB|\fR\fB-u\fR\fB} {m|s}\fR 的早期复制或更新，完成等待处理后，如果当前 PID 是锁定时间点数据的 PID，此选项将解除锁定数据。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 Point-in-Time Copy 当前启用或暂停的卷集的状态。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。如果未指定 \fIvolume_set\fR，则会显示配置的所有 Point-in-Time Copy 卷集的状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出当前配置的所有 Point-in-Time Copy 卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR \fIoverflow_vol\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项导致 Point-in-Time Copy 初始化指定 \fIoverflow_vol\fR，以便在以后作为溢出卷与压缩从属影子卷配合使用。为了帮助有效共享使用此溢出卷，可以根据需要将溢出卷与多个 Point-in-Time Copy 卷集相关联。
+.sp
+在初始化 \fIoverflow_vol\fR 时，此选项的启动器必须回答以下问题"是否要初始化此溢出卷？是/否"。必须回答"是/否"才能继续。
+.sp
+此选项支持 \fB-n\fR 选项，因此将执行请求的操作，而不会显示提示。此选项对包含在脚本中非常有用。必须首先指定 \fB-n\fR 选项。例如，\fBiiadm\fR \fB-nO\fR \fBvol\fR 有效；\fBiiadm\fR \fB-On\fR \fBvol\fR 无效。
+.sp
+确保您希望初始化指定 \fIoverflow_vol\fR 上的数据，特别是当使用 \fB-n\fR 选项时。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIoverflow_vol\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项支持在压缩从属影子卷太小或对卷集执行计划外的更改的情况下，在后续操作中将指定 \fIoverflow_vol\fR 用作溢出卷。更改的溢出数据将重定向到关联的溢出卷。\fIvolume_set\fR 是包含主卷和影子卷的 Point-in-Time Copy 卷集。
+.sp
+如果未初始化 \fIoverflow_vol\fR，此选项将初始化 \fIoverflow_vol\fR（请参见 \fB-O\fR 选项），然后将 \fIoverflow_vol\fR 附加到 \fIvolume_set\fR。
+.sp
+如果以前已初始化 \fIoverflow_vol\fR，此选项会将 \fIoverflow_vol\fR 附加到 \fIvolume_set\fR。
+.sp
+此选项支持 \fB-n\fR 选项，因此将执行请求的操作，而不会显示提示。此选项对包含在脚本中非常有用。必须首先指定 \fB-n\fR 选项。例如，\fBiiadm\fR \fB-nA\fR \fBvol\fR 有效；\fBiiadm\fR \fB-An\fR \fBvol\fR 无效。
+.sp
+确保您希望初始化指定 \fIoverflow_vol\fR 上的数据，特别是当使用 \fB-n\fR 选项时。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项删除当前与指定 \fIvolume_set\fR 相关联的溢出卷。如果 \fIvolume_set\fR 当前正在使用溢出卷，此操作将失败，并返回"溢出卷仍在使用"错误消息。要解决此情况，请在 \fIvolume_set\fR 中执行下面介绍的操作之一。这些操作会暂时清除与此卷集关联的所有溢出写入。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBabort\fR(\fB-a\fR)\fR
+.ad
+.sp .6
+.RS 4n
+中止复制操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR(\fB-d\fR)\fR
+.ad
+.sp .6
+.RS 4n
+分解卷集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBupdate\fR(\fB-u\fR)\fR
+.ad
+.sp .6
+.RS 4n
+更新卷集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项列出与一个或多个卷集关联的所有溢出卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Q\fR \fIoverflow_vol\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项显示 \fIoverflow_vol\fR 的当前状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+导出 \fIvolume_set\fR 指定的 Point-in-Time Copy 卷集的独立影子卷。通过多端口设备等支持的技术，影子卷可供其他主机进行读取/写入访问。当影子卷重新加入到其主卷时，上述其他主机负责维护差异位图，此位图用于合并在本地记录的主卷的差异。导出影子卷时，影子卷不能受更新或复制操作的影响。请在调用导出命令之前执行 \fBiiadm\fR \fB-w\fR \fIvolume_set\fR 命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIvolume_set\fR \fIbitmap_vol\fR\fR
+.ad
+.sp .6
+.RS 4n
+导入 \fIvolume_set\fR 指定的 Point-in-Time Copy 卷集的独立影子卷。通过多端口设备等支持的技术，以前必须已从主机导出影子卷。导入操作导致此主机在修改卷时开始维护差异位图。\fIbitmap_vol\fR 不应与影子卷在最初形成投影组时所使用的 bitmap_vol 相同。
+.sp
+在其他节点不再需要导出/导入的独立影子卷之后，在执行联接操作之前，必须输入禁用命令以使 \fIbitmap_vol\fR 及其关联 \fIshadow_vol\fR 保持一致。例如，
+.sp
+.in +2
+.nf
+# iiadm -d \fIvolume_set\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-J\fR \fIvolume_set\fR \fIbitmap_vol\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fIbitmap_vol\fR 联接 \fIvolume_set\fR 和 Point-in-Time Copy 卷集的主卷集。读取提供的位图卷，并将其与原始卷合并，以便重建由主卷、影子卷和位图卷组成的原始卷集。要合并的 \fIbitmap_vol\fR 是在已导入独立影子卷的节点上获取的 bitmap_vol。自复制位图之时起，不能对导入计算机上的影子卷执行写入活动，直到重新导入影子卷为止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgroup_name\fR \fB-m\fR \fIvolume_set [volume_set2 ...]\fR\fR
+.ad
+.sp .6
+.RS 4n
+向用户指定的 \fIgroup_name\fR 添加一个或多个现有 Point-in-Time Copy \fIvolume_set\fR。通过组中的一个或多个 Point-in-Time Copy 卷集的这种关联，可以将 \fIgroup_name\fR 中的所有卷集作为一个整体，统一执行下面显示的 \fBiiadm\fR 选项的列表。
+.sp
+以原子方式仅对组中的所有 Point-in-Time Copy 集执行命令 \fBCOPY\fR (\fB-c\fR) 和 \fBUPDATE\fR (\fB-u\fR)。按顺序对每个组成员执行所有其他 \fBiiadm\fR 组命令。 
+.sp
+\fBiiadm\fR 组命令的语法如下所示：
+.sp
+.in +2
+.nf
+iiadm -g \fIgroup_name\fR [\fIoptions\fR]
+.fi
+.in -2
+.sp
+
+\fIoptions\fR 如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fIgroup_name\fR 中的所有集中止复制操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIoverflow_vol\fR 附加到 \fIgroup_name\fR 中的所有集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fB{s | m}\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对 \fIgroup_name\fR 中的所有集复制影子卷/主卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 \fIgroup_name\fR 中的所有集分离 \fIoverflow_vol\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用 \fIgroup_name\fR 中的所有集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.sp .6
+.RS 4n
+导出 \fIgroup_name\fR 中的所有卷集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIgroup_name\fR 中的所有卷集的状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出 \fIgroup_name\fR 中的所有卷集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出所有组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+不询问更新主卷是否是用户希望执行的实际操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fIgroup_name\fR 中的所有卷集设置参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+重置 \fIgroup_name\fR 中的所有卷集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fB{s | m}\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对 \fIgroup_name\fR 中的所有集更新影子卷/主卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+等待 \fIgroup_name\fR 中的所有卷集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fB-" "\fR \fB-m\fR \fIvolume_set\fR [\fIvolume_set2 ...\fR]\fR
+.ad
+.sp .6
+.RS 4n
+从卷集的当前关联 \fIgroup_name\fR 中删除一个或多个现有 Point-in-Time Copy \fIvolume_set\fR。缺省情况下，或者在移至用户指定的 \fIgroup_name\fR 之前，所有 Point-in-Time Copy \fIvolume_set\fR 都位于空 (\fB" "\fR) 组中。此关联允许针对空 (\fB" "\fR) \fBiiadm\fR \fIgroup_name\fR 执行以前记录的所有 \fBiiadm\fR 组命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIcluster_tag\fR\fR
+.ad
+.sp .6
+.RS 4n
+此 Point-in-Time Copy 选项是一个修饰符，可将配置操作限定为仅包含在 Sun Cluster 资源组或磁盘组中的卷。
+.sp
+在卷管理器可识别 Sun Cluster 的 Sun Cluster 中，\fBiiadm\fR 自动获取正确的磁盘组信息，因此，除非卷是包含的资源组的一部分，否则通常不需要使用此选项。
+.sp
+在只能在本地节点上访问卷的 Sun Cluster 中，\fBlocal\fR 的特殊 \fIcluster_tag\fR 用于表示不是 Sun Cluster 资源组或磁盘组的一部分的卷。
+.sp
+如果将"\fB-L\fR"指定为 \fIcluster_tag\fR 参数，\fBiiadm\fR 将列出与 Point-in-Time Copy 关联的所有群集标记。
+.sp
+当在未安装或配置 Sun Cluster 软件包的 Solaris 系统上使用时，此选项无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出 \fBiiadm\fR 用法汇总。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 Point-in-Time Copy 软件组件的当前版本。
+.RE
+
+.sp
+.LP
+有关使用此部分中的其余命令的帮助，请与 Oracle Enterprise Services 联系。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIdelay\fR \fIunit\fR \fIvolume_set\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定 \fIvolume_set\fR 的 Point-in-Time Copy 卷集调整参数更改为每个 \fIunit\fR I/O 的 \fIdelay\fR 周期。delay 范围为 2 至 10000（含 2 和 10000）；unit 范围为 100 至 60000（含 100 和 60000）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+卷失败后，Point-in-Time Copy 会将其置于脱机状态。在替换卷之后，请使用此选项将其恢复为联机状态。同时，还会将 Point-in-Time Copy 卷集中的关联从属卷置于联机状态。在将卷置于联机状态之后，此命令还会启动任何必要的时间点卷更新。
+.RE
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+命令已成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 13n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性storage/avs/avs-point-in-time-copy
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdscfg\fR(1M)、\fBsvadm\fR(1M)、\fBds.log\fR(4)、\fBrdc.cf\fR(4)、\fBattributes\fR(5)、\fBii\fR(7D)、\fBsv\fR(7D)

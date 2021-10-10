@@ -1,0 +1,2280 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zonecfg 1M "2011 年 7 月 1 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+zonecfg \- ゾーン構成の設定
+.SH 形式
+.LP
+.nf
+\fBzonecfg\fR \fB-z\fR \fIzonename\fR
+.fi
+
+.LP
+.nf
+\fBzonecfg\fR \fB-z\fR \fIzonename\fR \fIsubcommand\fR
+.fi
+
+.LP
+.nf
+\fBzonecfg\fR \fB-z\fR \fIzonename\fR \fB-f\fR \fIcommand_file\fR
+.fi
+
+.LP
+.nf
+\fBzonecfg\fR help
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBzonecfg\fR ユーティリティーは、ゾーンの構成を作成、変更、および一覧表示します。作成機能と変更機能は承認されたユーザーだけが使用でき、ルートの実効ユーザー ID でプロセスを実行する必要があります。それ以外の場合には、読み取り専用モードで実行されます。
+.sp
+.LP
+ゾーン構成は、いくつかのリソースおよびプロパティーで構成されます。
+.sp
+.LP
+ユーザーインタフェースを簡素化するために、\fBzonecfg\fR では有効範囲の概念が使用されます。デフォルトの有効範囲は大域です。
+.sp
+.LP
+次の形式の \fBzonecfg\fR コマンドは、対話形式で使用されます。 
+.sp
+.in +2
+.nf
+zonecfg \fB-z\fR \fIzonename subcommand\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBzonecfg\fR 経由で変更されたパラメータは、稼働中のゾーンには影響しません。変更を適用するには、ゾーンをリブートする必要があります。
+.sp
+.LP
+ゾーンの作成と変更のほか、\fBzonecfg\fR ユーティリティーは大域ゾーンのリソース管理設定を永続的に指定するためにも使用できます。
+.sp
+.LP
+以降の文では、「rctl」を「resource control」(リソース制御) の略語として使用します。\fBresource_controls\fR(5) を参照してください。
+.sp
+.LP
+すべてのゾーンに、それぞれ関連するブランドが構成されます。ブランドによって、ゾーン内で使用されるユーザーレベルの環境のみでなく、ゾーンがインストール、ブート、またはシャットダウンされるときのゾーンのさまざまな動作も決まります。ゾーンのインストールが完了したあとは、そのブランドを変更することはできません。デフォルトのブランドは、大域ゾーンにインストールされているディストリビューションによって決まります。ブランドの中には、\fBzonecfg\fR のすべてのプロパティーおよびリソースをサポートしないものがあります。各ブランドについての詳細は、ブランド固有のマニュアルページを参照してください。ブランドの概要については、\fBbrands\fR(5) のマニュアルページを参照してください。
+.SS "リソース"
+.sp
+.LP
+次のリソースタイプがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+汎用属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+CPU 使用率の制限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-memory\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理メモリー、スワップメモリー、およびロックされたメモリーの制限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBZFS\fR データセット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedicated-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+稼働している間、このゾーン専用に割り当てられるシステムプロセッサのサブセット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステム。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークインタフェース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動ネットワークインタフェース。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+委任された管理者。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソース制御。
+.RE
+
+.SS "疎ルートおよび完全ルート非大域ゾーン"
+.sp
+.LP
+Solaris の以前のリリースで使用されていた\fB疎ルートゾーン\fRの概念。この機能は、SVr4 パッケージングシステムと密接に関連しており、ディスク容量の節約と管理作業の軽減を目的としていました。
+.sp
+.LP
+新しいパッケージングシステムである IPS では、ゾーンにインストールするパッケージをより柔軟に選択できるようになっています。したがって、ファイルシステムテクノロジが進歩したこと (特に ZFS \fB複製解除\fR) も考慮すれば、疎ルートゾーンを削除することは非常に実用的です。IPS パッケージングとファイルシステムの進歩が組み合わされた結果、すべてのゾーンに疎ルートゾーンのメリットがもたらされています。
+.SS "プロパティー"
+.sp
+.LP
+各リソースタイプには、1 つまたは複数のプロパティーが割り当てられます。また、いくつかの大域プロパティー (特定のリソースのプロパティーではなく、構成全体のプロパティー) も割り当てられます。
+.sp
+.LP
+次のプロパティーがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBzonename\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBzonepath\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBautoboot\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBbootargs\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBpool\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBlimitpriv\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBbrand\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBcpu-shares\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBhostid\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-lwps\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-msg-ids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fR
+.ad
+.br
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-processes\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-sem-ids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-shm-ids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-shm-memory\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBscheduling-class\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+\fBfs-allowed\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB(大域)\fR
+.ad
+.sp .6
+.RS 4n
+file-mac-profile
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdir\fR、\fBspecial\fR、\fBraw\fR、\fBtype\fR、\fBoptions\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBaddress\fR、\fBallowed-address\fR、\fBconfigure-allowed-address\fR、\fBphysical\fR、\fBdefrouter\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlinkname\fR、\fBlower-link\fR、\fBallowed-address\fR、\fBconfigure-allowed-address\fR、\fBdefrouter\fR、\fBmac-address\fR、\fBmac-slot\fR、\fBmac-prefix\fR、\fBmtu\fR、\fBmaxbw\fR、\fBpriority\fR、\fBvlan-id\fR、\fBrxfanout\fR、\fBrxrings\fR、\fBtxrings\fR、\fBlink-protection\fR、\fBallowed-dhcp-cids\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmatch\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBname\fR、\fBvalue\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBname\fR、\fBtype\fR、\fBvalue\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBname\fR、\fBalias\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedicated-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBncpus\fR、\fBimportance\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-memory\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBphysical\fR、\fBswap\fR、\fBlocked\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-cpu\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBncpus\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+user、auths
+.RE
+
+.sp
+.LP
+これらのプロパティー名のプロパティー値は、単純値、複合値、またはリスト値で指定します。許可されるタイプはプロパティーごとに異なります。単純値は文字列で、引用符で囲むこともできます。複合値は次の構文で指定します。
+.sp
+.in +2
+.nf
+(<\fIname\fR>=<\fIvalue\fR>,<\fIname\fR>=<\fIvalue\fR>,...)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、各 <\fIvalue\fR> は単純値であり、<\fIname\fR> 文字列は与えられたプロパティー内で一意になります。リストは次の構文で指定します。
+.sp
+.in +2
+.nf
+[<\fIvalue\fR>,...]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、<\fIvalue\fR> は、単純値、複合値のいずれかです。値 (単純値または複合値) が 1 つだけのリストは、リスト構文を使わずにその値を指定することと等価です。つまり、「foo」は「[foo]」と等価です。リストは空でもかまいません (「[]」と表記)。
+.sp
+.LP
+プロパティー値の解釈において、\fBzonecfg\fR は \fBfnmatch\fR(5) で指定されている正規表現に対応しています。「\fB使用例\fR」を参照してください。
+.sp
+.LP
+次にプロパティータイプについて説明します。
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンの名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBzonepath\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンのファイルシステムのパス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBautoboot\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムがブートするときに、ゾーンを自動的にブートするかどうかを指定するブール値。ゾーンサービスが無効になっている場合は、このプロパティーの設定に関係なく、ゾーンは自動的にブートされません。ゾーンサービスを有効にするには、次のように \fBsvcadm\fR コマンドを使用します。
+.sp
+.in +2
+.nf
+# \fBsvcadm enable svc:/system/zones:default\fR
+.fi
+.in -2
+.sp
+
+ゾーンサービスを無効にする場合は、\fBenable\fR を \fBdisable\fR に置き換えます。\fBsvcadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBbootargs\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンのブート時に渡される引数 (オプション)。ただし、\fBzoneadm boot\fR コマンドにオプションが指定された場合は、そちらが優先されます。有効な引数は、\fBzoneadm\fR(1M) で説明されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBpool\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブート時にこのゾーンをバインドするリソースプールの名前。このプロパティーには \fBdedicated-cpu\fR リソースとの互換性はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBlimitpriv\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーン内のいずれかのプロセスが入手できる特権のセットの最大数。プロパティーは、\fBpriv_str_to_set\fR(3C) で説明されているコンマ区切りの特権セットの仕様で構成するようにしてください。名前の前にダッシュ (-) または感嘆符 (!) を付けると、結果として得られるセットから特権を除外できます。このコンテキストでは、特別な特権文字列「zone」はサポートされていません。特別な文字列「default」がプロパティーで最初のトークンとして出現する場合、\fBzones\fR(5) で説明されている、リソースとセキュリティーの分離を保持する安全な特権のセットに展開します。プロパティーが不足しているか空である場合、この同じ安全な特権のセットと同等になります。
+.sp
+システム管理者は、ゾーンの構成を行う際に細心の注意を払う必要があります。一部の特権は、ゾーンのブートに必須のためこのメカニズムを介して除外できません。さらに、ゾーン内のプロセスがほかのゾーンのプロセスに過度に影響を与えてしまうため、特定の特権はゾーンに対して付与されていません。\fBzoneadm\fR(1M) は、ゾーンを「ブート」または「準備」しようとする際、無効な特権がゾーンに追加されるまたはゾーンから削除される場合を示しています。
+.sp
+特権の説明は、\fBprivileges\fR(5) を参照してください。コマンド「\fBppriv -l\fR」(\fBppriv\fR(1) を参照) は、すべての Solaris 特権の一覧を生成します。\fBppriv\fR で表示されるように特権を指定できます。\fBprivileges\fR(5) では、特権がPRIV_\fIprivilege_name\fR の形式で一覧表示されています。たとえば、このプロパティーで特権 \fIsys_time\fR を指定した場合、これは \fBprivileges\fR(5) では \fBPRIV_SYS_TIME\fR として表示されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBbrand\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンのブランドタイプ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBip-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンは独自の排他的な IP のインスタンスを持つ (デフォルト) か、大域ゾーンと IP インスタンスを共有することができます。デフォルトゾーンテンプレート \fBSYSdefault\fR では、\fBip-type\fR は \fBexclusive\fR に設定されます。追加で提供される \fBSYSdefault-shared-ip \fR テンプレートでは、\fBip-type\fR は shared に設定されます。
+.sp
+このプロパティーは \fBexclusive\fR および \fBshared\fR の値を取ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBhostid\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンは、システムを統合しやすくするために、32 ビットのホスト識別子をエミュレートできます。ゾーンの \fBhostid\fR プロパティーはデフォルトで空になっており、ゾーンがホスト識別子をエミュレートしないことを意味しています。ゾーンのホスト識別子には、0 から FFFFFFFE の 16 進値を指定してください。接頭辞 \fB0x\fR または \fB0X\fR は省略可能です。大文字と小文字の両方の 16 進数を使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBfs-allowed\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーン内にマウントできる追加ファイルシステムのコンマ区切りリスト (たとえば、\fBufs,pcfs\fR)。デフォルトでは、\fBhsfs\fR(7FS) とネットワークファイルシステムだけがマウントできます。
+.sp
+このプロパティーは、\fBadd fs\fR または \fBadd dataset\fR によってゾーンにマウントされたファイルシステムには適用されません。
+.LP
+注意 - 
+.sp
+.RS 2
+デフォルト以外のファイルシステムマウントを許可すると、ゾーン管理者が偽のファイルシステムイメージでシステムに損害を与えることが可能になるため、このような許可はサポートされていません。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBfile-mac-profile\fR\fR
+.ad
+.sp .6
+.RS 4n
+読み取り専用ポリシーから除外されるファイルシステムの部分、つまりゾーンが書き込むことができるファイルシステムの部分を定義します。
+.sp
+このプロパティーでは現在、\fBnone\fR、\fBstrict\fR、\fBfixed-configuration\fR、および \fBflexible-configuration\fR の 4 つの値がサポートされています。
+.sp
+\fBnone\fR を指定すると、このゾーンは通常の r/w ゾーンと全く同じになります。\fBstrict\fR を指定すると、読み取り専用ポリシーに対する例外を許可しません。\fBfixed-configuration\fR を指定すると、構成ファイルが格納されているディレクトリを除いて、\fB/var\fR の内部とそれ以下にあるファイルへの書き込みが許可されます。
+.sp
+.in +2
+.nf
+/var/ld
+/var/lib/postrun
+/var/pkg
+/var/spool/cron,
+/var/spool/postrun
+/var/svc/manifest
+/var/svc/profiles
+.fi
+.in -2
+.sp
+
+\fBflexible-configuration\fR は \fBfixed-configuration\fR と同じですが、\fB/etc\fR 内のファイルへの書き込みも追加で許可されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR: dir、special、raw、type、options\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムをマウントする方法や場所などを決めるために必要な値。\fBmount\fR(1M)、\fBmount\fR(2)、\fBfsck\fR(1M)、および \fBvfstab\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR: address、allowed-address、configure-allowed-address、physical、defrouter\fR
+.ad
+.sp .6
+.RS 4n
+\fBnet\fR リソースは、ゾーンに対する物理ネットワークリソースの割り当てを表します。割り当ての前に、リソースは大域ゾーンに存在する必要があります。
+.sp
+ネットワークインタフェースのネットワークアドレスと物理インタフェース名。ネットワークアドレスは、次のいずれかになります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有効な IPv4 アドレス。後続の「\fB/\fR」とプレフィックス長は任意です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有効な IPv6 アドレス。後続の「\fB/\fR」とプレフィックス長は必須です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IPv4 アドレスに解決されるホスト名。
+.RE
+IPv6 アドレスに解決されるホスト名はサポートされていません。
+.sp
+物理インタフェース名はネットワークインタフェース名です。
+.sp
+省略可能なデフォルトルートの値は、ネットワークアドレスと同様に指定しますが、後ろに \fB/\fR (スラッシュ) とネットワーク接頭辞長を決して付けないでください。\fBdefrouter\fR 機能を正しく使用できるようにするには、このプロパティーを使用するゾーンを、大域ゾーンが常駐するサブネットとは異なるサブネット上に配置してください。また、異なる \fBdefrouter\fR 設定を使用する各ゾーン (あるいはゾーンセット) を異なるサブネット上に配置してください。
+.sp
+ゾーンは排他的 IP か共有 IP のいずれかに構成できます。共有 IP ゾーンでは、物理プロパティーとアドレスプロパティーの両方を設定する必要があります。デフォルトルートの設定は省略可能です。物理プロパティーで指定したインタフェースは、非大域ゾーンをブートする前に大域ゾーンに plumb する必要があります。ただし、そのインタフェースが大域ゾーンで使用されない場合は、そのインタフェースを大域ゾーンで \fBdown\fR に構成するようにしてください。そのインタフェースのデフォルトルートがここで指定されるはずです。\fBallowed-address\fR プロパティーは共有 IP ゾーン用には設定できません。
+.sp
+排他的 IP ゾーンでは、\fBphysical\fR プロパティーを設定する必要があり、\fBaddress\fR プロパティーは設定してはいけません。また、排他的 IP ゾーンが使用できる IP アドレスのセットは、\fBallowed-address\fR プロパティーを指定して制限できます。\fBallowed-address\fR が指定されていない場合、排他的 IP ゾーンは、関連付けられた \fBphysical\fR インタフェース上の任意の IP アドレスをネットリソースに使用できます。そうではなく、\fBallowed-address\fR が指定されている場合、排他的 IP ゾーンは、\fBallowed-address\fR リストにない IP アドレスを \fBphysical\fR アドレスに使用できません。\fBconfigure-allowed-address\fR が \fBtrue\fR に設定されている場合、\fBallowed-address\fR は、インストール後の初期ブート時にインタフェースに永続的に構成されます。これが \fBfalse\fR に設定されている場合、\fBallowed-address\fR はゾーンのブート時に構成されません。デフォルトでは、\fBallowed-address\fR が指定されると \fBconfigure-allowed-address\fR は \fBtrue\fR に設定されます。さらに、\fBallowed-address\fR リストが入力されている場合は、\fBdefrouter\fR プロパティーも必要に応じて指定できます。ただし、\fBdefrouter\fR 値が指定されて \fBconfigure-allowed-address\fR が \fBfalse\fR に設定された場合、\fBdefrouter\fR 値は無視されて、該当する警告メッセージが表示されます。\fBphysical\fR プロパティーに指定されたインタフェースを大域ゾーンで使用してはいけません。\fBallowed-address\fR とデフォルトルーターが \fBzonecfg\fR によって指定された場合、これらは、非大域排他的 IP ゾーンで \fBipadm\fR(1M) によってインタフェースが有効にされているとき (通常はゾーンの起動中) に、そのインタフェースに適用されます。非大域排他的 IP ゾーンは、ほかのどのアドレスをそのインタフェースに適用することもできなくなります。また、指定された IP バージョンの別のソースアドレスを持つパケットを送信することもできなくなります。\fBzonecfg\fR によって設定されたデフォルトのルーターは、\fB-p\fR フラグと \fBroute\fR(1M) を使用して非大域排他的 IP ゾーン内から恒久的に削除することはできません。
+.sp
+複数の排他的 IP ゾーン間で 1 つのデータリンクを共有することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR: linkname、lower-link、allowed-address、configure-allowed-address、defrouter、mac-address、mac-slot、mac-prefix、mtu、maxbw、priority、vlan-id、rxfanout、rxrings、txrings、link-protection、allowed-dhcp-cids\fR
+.ad
+.sp .6
+.RS 4n
+\fBanet\fR リソースは、排他的 IP ゾーンについてのネットワークリソースの自動作成を表します。\fBzonecfg\fR がデフォルトの \fBSYSdefault\fR テンプレートを使用してゾーンを作成すると、次のプロパティーを持つ \fBanet\fR リソースがゾーン構成に自動的に入ります。
+.sp
+.in +2
+.nf
+linkname=net0
+lower-link=auto
+mac-address=random
+link-protection=mac-nospoof
+.fi
+.in -2
+.sp
+
+そのようなゾーンがブートすると、\fBlower-link\fR (次を参照) が自動的に決定され、そのリンク上にゾーンの一時的な VNIC が自動的に作成されます。ゾーンが停止すると、\fBlower-link\fR および VNIC は削除されます。
+.sp
+サポートされるプロパティーについては、下記を参照してください。これらのプロパティーはすべてオプションです。大域ゾーンだけが、自動的に作成された VNIC またはそのプロパティーを変更できます。\fBzonecfg\fR に設定されたプロパティーを VNIC の作成時に VNIC に割り当てることができない場合、ゾーンはブートに失敗します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動作成される VNIC の名前を指定します。デフォルトでは、このプロパティーは、\fBnet\fR\fIN\fR という形式の (ゾーンの) 最初に利用可能な名前に自動的に設定されます。ここで、\fIN\fR は負でない整数です。たとえば、\fBnet0\fR、\fBnet1\fR のようになります。\fBinfo\fR サブコマンドによって、自動的に選択される \fBlinkname\fR が表示されます。
+.sp
+大域ゾーンを含む複数のゾーンが、同じ名前のリンクを同時に持つことができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlower-link\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC が作成されるリンクを指定します。このプロパティーのデフォルト値は \fBauto\fR です。管理者は、\fBanet\fR リソースを追加するとき、値を明示的に指定できます。リンクには、\fBdladm create-vnic\fR の \fB-l\fR オプションの引数として受け入れられるすべてのリンクが使用できます (\fBdladm\fR(1M) を参照してください)。このプロパティーが \fBlinkname\fR (\fBauto\fR 以外) に設定され、そのリンクが存在しない場合、ゾーンはブートに失敗します。\fBauto\fR に設定されると、\fBzoneadmd\fR(1M) デーモンは、ゾーンがブートするたびに、VNIC が作成されるリンクを自動的に選択します。リンクは次の発見的方法を使用して選択されます。
+.RS +4
+.TP
+1.
+リンク状態が \fBup\fR の最初の物理データリンク。
+.RE
+.RS +4
+.TP
+2.
+\fBup\fR のものがない場合、\fBnet0\fR という名前のデータリンクが使用されます。
+.RE
+前述の両方が満たされない場合、ゾーンはブートに失敗します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallowed-address\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBnet\fR リソースの排他的 IP ゾーンについての \fBallowed-address\fR プロパティーの説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure-allowed-address\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBnet\fR リソースの排他的 IP ゾーンについての \fBconfigure-allowed-address\fR プロパティーの説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefrouter\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBnet\fR リソースの排他的 IP ゾーンについての \fBdefrouter\fR プロパティーの説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmac-address\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された値またはキーワードに基づいて VNIC の MAC アドレスを設定します。値がキーワードでない場合は、ユニキャスト MAC アドレスとして解釈されます。サポートされるキーワードは次のとおりです。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfactory\fR: ファクトリ MAC アドレスを VNIC に割り当てます。ファクトリ MAC アドレスが要求された場合、\fBmac-slot\fR プロパティーを使用して MAC アドレススロット識別子を指定できます。そうでない場合、次に使用可能なファクトリ MAC アドレスが使用されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBrandom\fR: ランダムな MAC アドレスを VNIC に割り当てます。\fBmac-prefix\fR プロパティーを使用して接頭辞を指定します。そうでない場合、ローカルビットが設定された有効な IEEE OUI で構成されたデフォルトの接頭辞が使用されます。これがデフォルト値です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBauto\fR: 最初にファクトリ MAC アドレスの使用を試みます。どれも使用できない場合は、ランダムな MAC アドレスを割り当てます。
+.RE
+ランダムな MAC アドレスが選択された場合、生成されたアドレスは、ゾーンのブート前後およびゾーンの切り離しと接続の前後で保持されます。これにより、ゾーンは安定したクライアント ID を維持することによって DHCP リースを保持できるほか、安定した MAC アドレスを持つことによるほかの利点を活用することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmac-prefix\fR\fR
+.ad
+.sp .6
+.RS 4n
+ランダムな MAC アドレスが要求された場合の MAC アドレス接頭辞を指定します。それ以外の場合、このプロパティーは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmac-slot\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファクトリ MAC アドレスが要求された場合の MAC アドレススロット識別子を指定します。それ以外の場合、このプロパティーは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC の最大転送単位 (バイト)。\fBdladm\fR(1M) の \fBmtu\fR プロパティーを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxbw\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC の全二重帯域幅を指定します。\fBdladm\fR(1M) の \fBmaxbw\fR プロパティーを参照してください。デフォルトでは、VNIC は \fBlower-link\fR に設定された \fBmaxbw\fR を使用し、何も設定されない場合は帯域幅制限はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC の相対的な優先順位を指定します。サポートされる値とデフォルトについては、\fBdladm\fR(1M) の \fBpriority\fR プロパティーを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlan-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+この VNIC の VLAN タグを使用可能にして、VLAN タグの ID を指定します。デフォルト値は存在しません。つまり、このプロパティーを設定しないと、VNIC はどの VLAN にも参加しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrxfanout\fR\fR
+.ad
+.sp .6
+.RS 4n
+受信側ファンアウトスレッドの数を指定します。\fBdladm\fR(1M) の説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrxrings\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC の受信リングを指定します。サポートされる値とデフォルトについては、\fBdladm\fR(1M) の \fBrxrings\fR プロパティーを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtxrings\fR\fR
+.ad
+.sp .6
+.RS 4n
+VNIC の送信リングを指定します。サポートされる値とデフォルトについては、\fBdladm\fR(1M) の \fBtxrings\fR プロパティーを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlink-protection\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンマ区切り値を使用して、1 つ以上のリンク保護のタイプを使用可能にします。サポートされる値については、\fBdladm\fR(1M) の \fBprotection\fR プロパティーを参照してください。このデフォルト値は \fBmac-nospoof\fR です。
+.sp
+\fBip-nospoof\fR をこのプロパティーに追加しても、\fBallowed-address\fR も設定しないかぎり効果はありません。\fBallowed-address\fR を設定すると、\fBip-nospoof\fR が \fBlink-protection\fR のセットに暗黙に追加され、\fBallowed-address\fR をクリアするとこれが削除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallowed-dhcp-cids\fR\fR
+.ad
+.sp .6
+.RS 4n
+このプロパティーを設定すると、VNIC の \fBdhcp-nospoof\fR が有効になります。詳細は、\fBdladm\fR(1M) を参照してください。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR: match\fR
+.ad
+.sp .6
+.RS 4n
+照合するデバイス名。これは、照合するパターンにすることも絶対パス名にすることもできます。デバイスリソースと別名を付けたデータセットは、\fB/dev/zvol\fR 内で名前空間の競合が発生する可能性があります。\fBdev\fR(7FS) を参照してください。
+.LP
+注 - 
+.sp
+.RS 2
+一般に、ゾーンにデバイスを追加すると、システムのセキュリティーが損なわれる可能性があります。「\fB注意事項\fR」を参照してください。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR: name、value\fR
+.ad
+.sp .6
+.RS 4n
+リソース制御の名前、特権、制限、アクション。\fI\fR\fI\fR\fI\fR\fBprctl\fR(1) および \fBrctladm\fR(1M) を参照してください。rctl の値の望ましい設定方法は、特定の rctl に関連する大域的なプロパティー名を使用する方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattr\fR: name、type、value\fR
+.ad
+.sp .6
+.RS 4n
+汎用属性の名前、型、および値。\fBtype\fR は、\fBint\fR、\fBuint\fR、\fBboolean\fR、\fBstring\fR のいずれかでなければなりません。値には、その型の値を指定する必要があります。\fBuint\fR は符号なしの (負でない) 整数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataset\fR: name、alias\fR
+.ad
+.sp .6
+.RS 4n
+ゾーン内からアクセスする \fBZFS\fR データセットの名前。\fBzfs\fR(1M) を参照してください。各データセットがゾーン内の仮想 ZFS プールとして表示されるように、データセットに別名が付けられます。別名はこの仮想プールの名前です。ZFS プール名に適用される名前制限と、その結果、データセットの別名の値にも適用される名前制限については、\fBzpool\fR(1M) を参照してください。別名 \fBrpool\fR はゾーンの rpool データセットから予約されています。別名を付けたデータセットとデバイスリソースは、\fB/dev/zvol\fR 内で名前空間の競合が発生する可能性があります。\fBdev \fR(7FS) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBcpu-shares\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンに割り当てられている公平配分スケジューラ (FSS) の配分数。このプロパティーには \fBdedicated-cpu\fR リソースとの互換性はありません。このプロパティーは、\fBzone.cpu-shares\fR rctl を設定するための望ましい方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBmax-lwps\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンの、同時に使用できる LWP の最大数。このプロパティーは、\fBzone.max-lwps\fR rctl を設定するための望ましい方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBmax-msg-ids\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンに許容されるメッセージキュー ID の最大数。このプロパティーは、\fBzone.max-msg-ids\fR rctl を設定するための望ましい方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBmax-processes\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンの、同時に使用できるプロセステーブルスロットの最大数。このプロパティーは、\fBzone.max-processes\fR rctl を設定するための望ましい方法です。このプロパティーを設定すると、\fBmax-lwps\fR プロパティーが明示的に設定されていないかぎり、\fBmax-lwps\fR プロパティーの値がプロセススロット数の 10 倍の数に暗黙的に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBmax-sem-ids\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンに許容されるセマフォー ID の最大数。このプロパティーは、\fBzone.max-sem-ids\fR rctl を設定するための望ましい方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBmax-shm-ids\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンに許容される共有メモリー ID の最大数。このプロパティーは、\fBzone.max-shm-ids\fR rctl を設定するための望ましい方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBmax-shm-memory\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンに許容される共有メモリーの最大容量。このプロパティーは、\fBzone.max-shm-memory\fR rctl を設定するための望ましい方法です。この数値には、K、M、G、T の単位を適用できます。たとえば、1M は 1 メガバイトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal: \fBscheduling-class\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンで実行されているプロセスに使用するスケジューリングクラスを指定します。このプロパティーを指定しないと、スケジューリングクラスは次のように確立されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcpu-shares\fR プロパティーまたは同等の rctl が設定されている場合、スケジューリングクラス FSS が使用されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcpu-shares\fR も同等の rctl も設定されず、ゾーンのプールプロパティーがデフォルトのスケジューリングクラスを持つプールを参照する場合、そのクラスが使用されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+その他の条件下では、システムのデフォルトのスケジューリングクラスが使用されます。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedicated-cpu\fR: ncpus、importance\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンが排他的に使用するために割り当てられるべき CPU の数。ゾーンは、ブート時にプールおよびプロセッサのセットを作成します。リソースプールの詳細については、\fBpooladm\fR(1M) および \fBpoolcfg\fR(1M) を参照してください。\fBncpu\fR プロパティーには、プロセッサ数を単一の値か範囲 (たとえば 1-4) で指定できます。\fBimportance\fR プロパティーは省略可能であり、これが設定されると、\fBpoold\fR(1M) によって使用される \fBpset.importance\fR の値を指定します。このリソースを使用する場合、ゾーンに割り当てるのに十分な数の空きプロセッサがゾーンのブート時に必要であり、足りないとゾーンはブートしません。このゾーンに割り当てられたプロセッサを、大域ゾーンやほかのゾーンが使用することはできません。このリソースには、\fBpool\fR および \fBcpu-shares\fR プロパティーとの互換性はありません。このリソースの単一のインスタンスのみをゾーンに追加できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-memory\fR: physical、swap、locked\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンが使用できるメモリーの上限。これらの各数値には、K、M、G、T の単位を適用できます。たとえば、1M は 1 メガバイトです。これらの各プロパティーは省略可能ですが、このリソースを追加するときは少なくとも 1 つのプロパティーを設定する必要があります。このリソースの単一のインスタンスのみをゾーンに追加できます。\fBphysical\fR プロパティーは、このゾーンの \fBmax-rss\fR を設定します。これは大域ゾーンで実行中の \fBrcapd\fR(1M) によって強制されます。\fBswap\fR プロパティーは、\fBzone.max-swap\fR rctl を設定するための望ましい方法です。\fBlocked\fR プロパティーは、\fBzone.max-locked-memory\fR rctl を設定するための望ましい方法です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcapped-cpu\fR: ncpus\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンで使用できる CPU 時間に対して制限を設定します。使用される単位は、ゾーン内のすべてのユーザースレッドが使用できる 1 つの CPU の割合 (パーセント) に換算され、小数 (たとえば \fB\&.75\fR) または帯小数 (整数と小数が混在した数、たとえば \fB1.25\fR) で表現されます。\fBncpu\fR 値 \fB1\fR は CPU の割合が 100% であることを意味し、値 \fB1.25\fR は 125%、\fB\&.75\fR は 75% (以下同様) を意味します。上限が設けられたゾーン内のプロジェクトに独自の上限がある場合は、最小値が優先されます。
+.sp
+\fBcapped-cpu\fR プロパティーは、\fBzone.cpu-cap\fR リソース制御の別名であり、\fBzone.cpu-cap\fR リソース制御に関連しています。\fBresource_controls\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadmin\fR: user、auths\fR
+.ad
+.sp .6
+.RS 4n
+ゾーン管理の承認を、指定されたユーザーまたは役割に委任します。ユーザーは有効なローカルアカウントに対応している必要があります。auths に使用できる値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogin\fR\fR
+.ad
+.sp .6
+.RS 4n
+このゾーンへの \fBzlogin\fR(1) の使用の認証を許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmanage\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成済みゾーンの通常の管理を許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcopyfrom\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいゾーンのクローンを作成するソースとして、指定されたゾーンの使用を許可します。
+.RE
+
+.RE
+
+.sp
+.LP
+次の表は、リソース、プロパティー名、および型の一覧です。
+.sp
+.in +2
+.nf
+resource          property-name   type
+(global)          zonename        simple
+(global)          zonepath        simple
+(global)          autoboot        simple
+(global)          bootargs        simple
+(global)          pool            simple
+(global)          limitpriv       simple
+(global)          brand           simple
+(global)          ip-type         simple
+(global)          hostid          simple
+(global)          cpu-shares      simple
+(global)          max-lwps        simple
+(global)          max-msg-ids     simple
+(global)          max-sem-ids     simple
+(global)          max-shm-ids     simple
+(global)          max-shm-memory  simple
+(global)          scheduling-class simple
+(global)          fs-allowed      list of simple
+fs                dir             simple
+                  special         simple
+                  raw             simple
+                  type            simple
+                  options         list of simple
+net               address         simple
+                  allowed-address list of simple
+                  configure-allowed-address simple
+                  defrouter       list of simple
+                  physical        simple
+anet              linkname        simple
+                  lower-link      simple
+                  allowed-address list of simple
+                  configure-allowed-address simple
+                  defrouter       list of simple
+                  mac-address     simple
+                  mac-slot        simple
+                  mac-prefix      simple
+                  mtu             simple
+                  maxbw           simple
+                  priority        simple
+                  vlan-id         simple
+                  rxfanout        simple
+                  rxrings         simple
+                  txrings         simple
+                  link-protection list of simple
+                  allowed-dhcp-cids list of simple
+device            match           simple
+rctl              name            simple
+                  value           list of complex
+attr              name            simple
+                  type            simple
+                  value           simple
+dataset           name            simple
+                  alias           simple
+dedicated-cpu     ncpus           simple or range
+                  importance      simple
+
+capped-memory     physical        simple with scale
+                  swap            simple with scale
+                  locked          simple with scale
+
+capped-cpu        ncpus           simple
+
+admin             user            simple
+                  auths           list of simple
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この表について、いくつか説明を補足します。「rctl」リソースタイプの複合プロパティー「value」は、名前/値の 3 つの組み合わせで構成されます。名前は「priv」、「limit」、および「action」で、それぞれ単純値を指定します。「attr」リソースの「name」プロパティーの構文には、ゾーン名と同じような制限がありますが、相違点もあります。 つまり、英数字で始める必要がありますが、英数字以外にハイフン (\fB-\fR)、下線 (\fB_\fR)、およびピリオド (\fB\&.\fR) も使用できます。「zone」で始まる属性名はシステム用に予約されています。また、「autoboot」大域プロパティーの値は、必ず「true」または「false」にしてください。
+.SS "カーネル統計を使った CPU キャップの監視"
+.sp
+.LP
+カーネル統計 (\fBkstat\fR(3KSTAT)) モジュール \fBcaps\fR を使用して、システムは上限が設定されたすべてのプロジェクトおよびゾーンの情報を維持管理します。この情報を入手するには、\fBkstat\fR モジュール名として \fBcaps\fR を指定して、カーネル統計 (\fBkstat\fR(3KSTAT)) を読み取ります。次のコマンドは、アクティブなすべての CPU キャップのカーネル統計を表示します。
+.sp
+.in +2
+.nf
+# \fBkstat caps::'/cpucaps/'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ゾーン内で実行されている \fBkstat\fR(1M) コマンドは、そのゾーンとそのゾーン内のプロジェクトに関連する CPU キャップしか表示しません。「\fB使用例\fR」を参照してください。
+.sp
+.LP
+\fBkstat\fR(1M) で使用するキャップ関連の引数を次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcaps\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR モジュール。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproject_caps\fR または \fBzone_caps\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR クラス。\fBkstat\fR \fB-c\fR オプションとともに使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcpucaps_project_\fR\fIid\fR または \fBcpucaps_zone_\fR\fIid\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR 名。\fBkstat\fR \fB-n\fR オプションとともに使用します。\fIid\fR はプロジェクトまたはゾーンの識別子です。
+.RE
+
+.sp
+.LP
+次のフィールドは、すべての CPU キャップの統計情報を要求する \fBkstat\fR(1M) コマンドに応答して表示されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodule\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkstat\fR のこの使用法では、このフィールドには値 \fBcaps\fR が入ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述のとおり、\fBcpucaps_project_\fR\fIid\fR または \fBcpucaps_zone_\fR\fIid\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBabove_sec\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャップを上回って費やされた合計時間 (秒)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbelow_sec\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャップを下回って費やされた合計時間 (秒)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxusage\fR\fR
+.ad
+.sp .6
+.RS 4n
+監視された最大 CPU 使用率。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnwait\fR\fR
+.ad
+.sp .6
+.RS 4n
+待機キューに入っているスレッドの数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusage\fR\fR
+.ad
+.sp .6
+.RS 4n
+上限が設けられたプロジェクトまたはゾーンに属しているすべてのスレッドの現在の合計 CPU 使用率。1 つの CPU の割合 (パーセント) で表されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャップ値。1 つの CPU の割合 (パーセント) で表されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+統計情報が表示されるゾーンの名前。
+.RE
+
+.sp
+.LP
+\fBkstat\fR コマンドの出力例については、「使用例」を参照してください。\fB\fR
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBzonecfg\fR コマンドファイルの名前を指定します。\fIcommand_file\fR は、\fBzonecfg\fR サブコマンドを 1 行に 1 つずつ記述するテキストファイルです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+ゾーンの名前を指定します。ゾーン名では、大文字と小文字が区別されます。ゾーン名は英数字で始める必要がありますが、英数字以外に下線 (\fB_\fR)、ハイフン (\fB-\fR)、およびピリオド (\fB\&.\fR) も使用できます。\fBglobal\fR という名前と \fBSYS\fR で始まるすべての名前は、予約されているので使用できません。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+\fBadd\fR および \fBselect\fR サブコマンドを使用して、特定のリソースを選択できます。選択した時点で、有効範囲がそのリソースに変更されます。\fBend\fR および \fBcancel\fR サブコマンドを使用して、そのリソースの指定を終了することができます。指定を終了した時点で、有効範囲が大域に戻ります。\fBadd\fR、\fBremove\fR、\fBset\fR などの一部のサブコマンドでは、有効範囲ごとにセマンティクスが異なります。
+.sp
+.LP
+\fBzonecfg\fR は、サブコマンドをセミコロンで区切ったリストをサポートします。例: 
+.sp
+.in +2
+.nf
+# \fBzonecfg -z myzone "add net; set physical=myvnic; end"\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+破壊的な動作や作業内容の消失を伴う可能性のあるサブコマンドには、強制的にその処理を実行するために \fB-F\fR オプションが用意されています。端末デバイスから入力しているときに、\fB-F\fR オプションを指定しないでそのようなコマンドを実行した場合は、オプションを指定するかどうかを適切なタイミングで確認されます。それ以外の状況で \fB-F\fR オプションを指定しないでそのようなコマンドを実行した場合、その操作は許可されず、診断メッセージが標準エラーに書き込まれます。 
+.sp
+.LP
+サポートされているサブコマンドは次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR \fIresource-type\fR (global scope)\fR
+.ad
+.br
+.na
+\fB\fBadd\fR \fIproperty-name property-value\fR (resource scope)\fR
+.ad
+.sp .6
+.RS 4n
+大域有効範囲の場合は、特定のリソースタイプの指定を開始します。有効範囲がそのリソースタイプに変わります。 
+.sp
+リソース固有の有効範囲では、指定された名前と値を持つプロパティーを追加します。プロパティー値の構文は、プロパティータイプによって異なります。通常は、単純値または単純値のリストを使用します。リストの場合は、角括弧で囲み、各値をコンマで区切ります (\fB[foo,bar,baz]\fR)。「\fBプロパティー\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcancel\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースの指定を終了し、有効範囲を大域に戻します。指定途中のリソースをすべて破棄します。\fBcancel\fR は、リソースの有効範囲だけに適用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fIproperty-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーの値を消去します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcommit\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成をメモリーから安定した記憶領域に確定します。\fBzoneadm\fR で構成を使用するには、その構成を確定する必要があります。メモリー内構成を確定するまでは、\fBrevert\fR サブコマンドを使って変更を取り消すことができます。\fBzonecfg\fR セッションが終了するときには、\fBcommit\fR 処理が自動的に実行されます。構成が正しく設定されていないと確定できないので、この処理では自動的に構成が確認されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate [\fR\fB-F\fR\fB] [\fR \fB-a\fR \fIpath\fR |\fB-b\fR \fB|\fR \fB-t\fR \fItemplate\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゾーンのメモリー内構成を作成します。新しいゾーンの構成を開始するときは、\fBcreate\fR を使用します。このゾーンを安定した記憶領域に保存する方法については、\fBcommit\fR を参照してください。 
+.sp
+既存の構成を上書きする場合は、\fB-F\fR オプションを指定して、強制的に処理を実行します。\fItemplate\fR と同じ構成を作成する場合は、\fB-t\fR \fItemplate\fR オプションを指定します。\fItemplate\fR は設定済みゾーンの名前です。
+.sp
+\fBcreate\fR はデフォルトテンプレート \fBSYSdefault\fR を使用します。デフォルトテンプレートは、\fBsvc:/system/zones:default\fR サービスの \fBdefault_template\fR SMF プロパティーを使用することによって、システム全体ベースで変更できます。管理者は、\fB-t\fR (特定のテンプレートを使用) または \fB-b\fR (ブランクテンプレートを使用) を使用することによって、このゾーンのデフォルトを置き換えることができます。
+.sp
+新しいホストで切り離されたゾーンを構成できるようにするには、\fB-a\fR \fIpath\fR オプションを使用します。\fIpath\fR パラメータは、この新しいホスト上に移動されている、切り離されたゾーンのゾーンパスの位置です。\fB\fR切り離されたゾーンが構成されたあとは、「\fBzoneadm attach\fR」コマンド (\fBzoneadm\fR(1M) を参照) を使用してインストールするようにしてください。新しいゾーンのすべての検証は、ゾーンの構成中ではなく \fBattach\fR 処理中に行われます。
+.sp
+空の構成を作成する場合は、\fB-b\fR オプションを使用します。引数が指定されていない場合、\fBcreate\fR は Oracle Sun のデフォルト設定を適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete [\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された構成をメモリー内および安定した記憶領域から削除します。この操作はすぐに実行されるので、確定する必要はありません。削除した構成を元に戻すことはできません。 
+.sp
+この操作を強制的に実行する場合は、\fB-F\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBend\fR\fR
+.ad
+.sp .6
+.RS 4n
+リソースの指定を終了します。このサブコマンドは、リソースの有効範囲だけに適用できます。\fBzonecfg\fR は、現在のリソースが完全に指定されていることを確認します。完全に指定されている場合は、メモリー内構成に追加され (メモリー内構成を安定した記憶領域に保存する方法については \fBcommit\fR を参照)、有効範囲は大域に戻ります。指定が完全でない場合は、対応するエラーメッセージが通知されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport [\fR\fB-f\fR \fIoutput-file\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+標準出力に構成を出力します。\fIoutput-file\fR に構成を出力する場合は、\fB-f\fR オプションを使用します。このオプションを使用すると、コマンドファイルに適した形式で出力が作成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp [usage] [\fIsubcommand\fR] [syntax] [\fR\fIcommand-name\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+一般ヘルプまたは特定項目のヘルプを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfo zonename | zonepath | autoboot | brand | pool | limitpriv\fR\fR
+.ad
+.br
+.na
+\fB\fBinfo [\fR\fIresource-type\fR \fB[\fR\fIproperty-name\fR\fB=\fR\fIproperty-value\fR\fB ]*]\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成に関する情報を表示します。\fIresource-type\fR が指定されている場合は、そのタイプのリソースについてのみ情報を表示します。\fIproperty-name\fR 値ペアが指定されている場合は、その条件を満たしているリソースの情報だけを表示します。リソースの有効範囲では、引数が無視され、\fBinfo\fR は現在追加または変更されているリソースの情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fIresource-type\fR\fB{\fR\fIproperty-name\fR\fB=\fR\fIproperty-value\fR\fB}\fR(global scope)\fR
+.ad
+.sp .6
+.RS 4n
+大域有効範囲では、指定されたリソースタイプを削除します。\fB[]\fR 構文は、0 個以上の項目を角括弧の中に指定できることを意味します。リソースの単一インスタンスを削除するだけの場合、そのリソースが一意に識別されるように、プロパティーの名前と値ペアを十分に指定する必要があります。プロパティーの名前と値の対をまったく指定しないと、すべてのインスタンスが削除されます。2 つ以上のペアを指定した場合は、\fB-F\fR オプションを指定しないかぎり、確認を要求されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR \fIresource-type\fR \fB{\fR\fIproperty-name\fR\fB=\fR\fIproperty-value\fR\fB}\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたリソースタイプのうち、指定された \fIproperty-name\fR と \fIproperty-value\fR の対の条件に一致するものを、変更対象として選択します。このサブコマンドは、大域有効範囲だけに適用できます。有効範囲がそのリソースタイプに変わります。\fB{} 構文は、1 つまたは複数の項目をこの中に指定できることを意味します。\fRリソースが一意に識別されるように、\fIproperty-name property-value\fR ペアを十分に指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIproperty-name\fR\fB=\fR\fIproperty\fR\fB-\fR\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロパティー名を、指定された値に設定します。プロパティーには、\fBzonename\fR や \fBzonepath\fR のような大域プロパティーと、リソース固有のプロパティーがあります。このサブコマンドは、大域有効範囲とリソース固有の有効範囲の両方で使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+現在の構成が正しいかどうかを確認します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各リソースに必須プロパティーがすべて指定されていこと。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBzonepath\fR が指定されていること。
+.RE
+\fB-v\fR オプションが指定された場合、デバイスリソース内で指定されたデバイスが、別名が付けられたデータセット内で作成された ZFS ボリュームと競合して、ZFS ボリュームを非表示にする可能性があるときに、警告が発行されます。\fBdev\fR(7FS) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrevert\fR \fB[\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成を、最後に確定されたときの状態に戻します。この操作を強制的に実行する場合は、\fB-F\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexit [\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBzonecfg\fR のセッションを終了します。必要な場合は、確定操作が自動的に試行されます。\fBEOF\fR 文字を使用して \fBzonecfg\fR を終了することもできます。この操作を強制的に実行する場合は、\fB-F\fR オプションを使用します。 
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR新しいゾーンの環境を作成する
+.sp
+.LP
+次の例では、\fBzonecfg\fR を使って新しいゾーンの環境を作成します。\fB/usr/local\fR は、大域ゾーンから \fB/opt/local\fR にマウントされるループバックです。\fB/opt/sfw\fR は、大域ゾーンからマウントされるループバックで、\fBnxge0\fR 上の VNIC が 3 つの IP アドレスとともにこのゾーンに追加され、ゾーンに対する公平配分スケジューラ (FSS) の CPU 共有の数に関する制限が、\fBrctl\fR リソースタイプを使用して設定されます。この例では、所定のリソースを変更するために選択する方法も示されています。このケースでは、\fBzonecfg\fR によって自動的に作成される \fBanet\fR リソースを選択することによって実行します。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone3\fR
+my-zone3: No such zone configured
+Use 'create' to begin configuring a new zone.
+zonecfg:myzone3> \fBcreate\fR
+zonecfg:myzone3> \fBset zonepath=/export/home/my-zone3\fR
+zonecfg:myzone3> \fBset autoboot=true\fR
+zonecfg:myzone3> \fBadd fs\fR
+zonecfg:myzone3:fs> \fBset dir=/usr/local\fR
+zonecfg:myzone3:fs> \fBset special=/opt/local\fR
+zonecfg:myzone3:fs> \fBset type=lofs\fR
+zonecfg:myzone3:fs> \fBadd options [ro,nodevices]\fR
+zonecfg:myzone3:fs> \fBend\fR
+zonecfg:myzone3> \fBadd fs\fR
+zonecfg:myzone3:fs> \fBset dir=/mnt\fR
+zonecfg:myzone3:fs> \fBset special=/dev/dsk/c0t0d0s7\fR
+zonecfg:myzone3:fs> \fBset raw=/dev/rdsk/c0t0d0s7\fR
+zonecfg:myzone3:fs> \fBset type=ufs\fR
+zonecfg:myzone3:fs> \fBend\fR
+zonecfg:myzone3> \fBadd fs\fR
+zonecfg:myzone3:fs> \fBset dir=/opt/sfw\fR
+zonecfg:myzone3:fs> \fBset special=/opt/sfw\fR
+zonecfg:myzone3:fs> \fBset type=lofs\fR
+zonecfg:myzone3:fs> \fBadd options [ro,nodevices]\fR
+zonecfg:myzone3:fs> \fBend\fR
+zonecfg:myzone3> \fBselect anet linkname=net0\fR
+zonecfg:myzone3:anet> \fBset lower-link=nxge0\fR
+zonecfg:myzone3:anet> \fBset allowed-address="192.168.0.1/24,192.168.1.2/\e\fR
+           \fB24,192.168.2.3/24"\fR
+zonecfg:myzone3:anet> \fBend\fR
+zonecfg:my-zone3> \fBset cpu-shares=5\fR
+zonecfg:my-zone3> \fBadd capped-memory\fR
+zonecfg:my-zone3:capped-memory> \fBset physical=50m\fR
+zonecfg:my-zone3:capped-memory> \fBset swap=100m\fR
+zonecfg:my-zone3:capped-memory> \fBend\fR
+zonecfg:myzone3> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR排他的 IP ゾーンを作成する
+.sp
+.LP
+次の例では、\fBnet0\fR という名前の VNIC が割り当てられるゾーンを作成します。VNIC が作成されるリンクは自動的に決定されます。IP アドレスおよびルーティングは、新しいゾーンの中で \fBipadm\fR(1M) を使用して構成されます。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z excl\fR
+zonecfg:excl> \fBcreate\fR
+zonecfg:excl> \fBset zonepath=/export/zones/excl\fR
+zonecfg:excl> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR共有 IP ゾーンを作成する
+.sp
+.LP
+次の例では、IP スタックを大域ゾーンと共有し、単一の IP アドレスとデフォルトルーターが割り当てられるゾーンを作成します。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -b -z shared\fR
+zonecfg:shared> \fBcreate\fR
+zonecfg:shared> \fBset zonepath=/export/zones/shared\fR
+zonecfg:shared> \fBset ip-type=shared\fR
+zonecfg:shared> \fBadd net\fR
+zonecfg:shared:net> \fBset physical=nge0\fR
+zonecfg:shared:net> \fBset address=192.168.0.3/24\fR
+zonecfg:shared:net> \fBset defrouter=192.168.0.1\fR
+zonecfg:shared:net> \fBend\fR
+zonecfg:shared> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRゾーンをリソースプールに関連付ける
+.sp
+.LP
+次の例は、既存のゾーンを既存のリソースプールに関連付ける方法を示しています。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBset pool=mypool\fR
+zonecfg:myzone> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+リソースプールの詳細については、\fBpooladm\fR(1M) および \fBpoolcfg\fR(1M) を参照してください。
+
+.LP
+\fB例 5 \fRゾーンの名前を変更する
+.sp
+.LP
+次の例は、既存のゾーンの名前を変更する方法を示したものです。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBset zonename=myzone2\fR
+zonecfg:myzone2> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRゾーンの特権セットを変更する
+.sp
+.LP
+次の例では、次回ゾーンのブート時に制限される既存のゾーンのプロセスの特権セットを変更する方法を示しています。この場合の特権セットは、システムの日付と時間を変更する特権に加え、通常ゾーンが持っている標準的な安全特権セットになります。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBset limitpriv="default,sys_time"\fR
+zonecfg:myzone2> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR大域ゾーンの \fBzone.cpu-shares\fR プロパティーを設定する
+.sp
+.LP
+次のコマンドでは、大域ゾーンの \fBzone.cpu-shares\fR プロパティーを設定します。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z global\fR
+zonecfg:global> \fBset cpu-shares=5\fR
+zonecfg:global> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRパターンマッチングを使用する
+.sp
+.LP
+次のコマンドでは、\fBzonecfg\fR のパターンマッチングのサポートを説明しています。ゾーン \fBflexlm\fR で、次のように入力します。
+
+.sp
+.in +2
+.nf
+zonecfg:flexlm> \fBadd device\fR
+zonecfg:flexlm:device> \fBset match="/dev/cua/a00[2-5]"\fR
+zonecfg:flexlm:device> \fBend\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+大域ゾーンで、次のように入力します。
+
+.sp
+.in +2
+.nf
+global# \fBls /dev/cua\fR
+a     a000  a001  a002  a003  a004  a005  a006  a007  b
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ゾーン \fBflexlm\fR で、次のように入力します。
+
+.sp
+.in +2
+.nf
+flexlm# \fBls /dev/cua\fR
+a002  a003  a004  a005
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRゾーンのキャップを 3 つの CPU に設定する
+.sp
+.LP
+次のシーケンスでは、\fBzonecfg\fR コマンドを使ってゾーンの CPU キャップを 3 つの CPU に設定します。
+
+.sp
+.in +2
+.nf
+zonecfg:myzone> \fBadd capped-cpu\fR
+zonecfg:myzone>capped-cpu> \fBset ncpus=3\fR
+zonecfg:myzone>capped-cpu>capped-cpu> \fBend\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前のシーケンスでは capped-cpu プロパティーを使用し、次のシーケンスでは \fBzone.cpu-cap\fR リソース制御を使用していますが、これらのシーケンスは同等です。
+
+.sp
+.in +2
+.nf
+zonecfg:myzone> \fBadd rctl\fR
+zonecfg:myzone:rctl> \fBset name=zone.cpu-cap\fR
+zonecfg:myzone:rctl> \fBadd value (priv=privileged,limit=300,action=none)\fR
+zonecfg:myzone:rctl> \fBend\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR\fBkstat\fR を使って CPU キャップを監視する
+.sp
+.LP
+次のコマンドは、すべての CPU キャップに関する情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBkstat -n /cpucaps/\fR
+module: caps                            instance: 0     
+name:   cpucaps_project_0               class:    project_caps
+        above_sec                       0
+        below_sec                       2157
+        crtime                          821.048183159
+        maxusage                        2
+        nwait                           0
+        snaptime                        235885.637253027
+        usage                           0
+        value                           18446743151372347932
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_1               class:    project_caps
+        above_sec                       0
+        below_sec                       0
+        crtime                          225339.192787265
+        maxusage                        5
+        nwait                           0
+        snaptime                        235885.637591677
+        usage                           5
+        value                           18446743151372347932
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_201             class:    project_caps
+        above_sec                       0
+        below_sec                       235105
+        crtime                          780.37961782
+        maxusage                        100
+        nwait                           0
+        snaptime                        235885.637789687
+        usage                           43
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_202             class:    project_caps
+        above_sec                       0
+        below_sec                       235094
+        crtime                          791.72983782
+        maxusage                        100
+        nwait                           0
+        snaptime                        235885.637967512
+        usage                           48
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_203             class:    project_caps
+        above_sec                       0
+        below_sec                       235034
+        crtime                          852.104401481
+        maxusage                        75
+        nwait                           0
+        snaptime                        235885.638144304
+        usage                           47
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_project_86710           class:    project_caps
+        above_sec                       22
+        below_sec                       235166
+        crtime                          698.441717859
+        maxusage                        101
+        nwait                           0
+        snaptime                        235885.638319871
+        usage                           54
+        value                           100
+        zonename                        global
+
+module: caps                            instance: 0     
+name:   cpucaps_zone_0                  class:    zone_caps
+        above_sec                       100733
+        below_sec                       134332
+        crtime                          821.048177123
+        maxusage                        207
+        nwait                           2
+        snaptime                        235885.638497731
+        usage                           199
+        value                           200
+        zonename                        global
+
+module: caps                            instance: 1     
+name:   cpucaps_project_0               class:    project_caps
+        above_sec                       0
+        below_sec                       0
+        crtime                          225360.256448422
+        maxusage                        7
+        nwait                           0
+        snaptime                        235885.638714404
+        usage                           7
+        value                           18446743151372347932
+        zonename                        test_001
+
+module: caps                            instance: 1     
+name:   cpucaps_zone_1                  class:    zone_caps
+        above_sec                       2
+        below_sec                       10524
+        crtime                          225360.256440278
+        maxusage                        106
+        nwait                           0
+        snaptime                        235885.638896443
+        usage                           7
+        value                           100
+        zonename                        test_001
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fR特定のゾーンまたはプロジェクトの CPU キャップを表示する
+.sp
+.LP
+\fBkstat\fR \fB-c\fR および \fB-i\fR オプションを使用すると、次に示すように特定のゾーンまたはプロジェクトの CPU キャップを表示できます。最初のコマンドは特定のプロジェクトを対象とした表示を行い、2 番目のコマンドはゾーン 1 内部の同じプロジェクトを対象とした表示を行います。
+
+.sp
+.in +2
+.nf
+# \fBkstat -c project_caps\fR
+
+# \fBkstat -c project_caps -i 1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRゾーン管理権を委任する
+.sp
+.LP
+次の例は、現在のゾーンの管理権を役割に割り当てる方法を示しています。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z myzone\fR
+zonecfg:myzone> \fBadd admin\fR
+zonecfg:myzone:admin> \fBset user=zadmin\fR
+zonecfg:myzone:admin> \fBset auths=login,manage\fR
+zonecfg:myzone:admin> \fBend\fR
+zonecfg:myzone> \fBcommit\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これらのコマンドを実行すると、RBAC \fBuser_attr\fR(4) データベース内で次のようにエントリが更新されます。
+
+.sp
+.in +2
+.nf
+zadmin::::type=role;\e
+auths=solaris.zone.login/myzone,solaris.zone.manage/myzone;profiles=\e
+Zone Management
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 13 \fRデフォルト以外のプロパティーを使用して排他的 IP ゾーンを作成する
+.sp
+.LP
+次の例はゾーンを作成し、\fBmylink0\fR 上に指定の MAC アドレスを持ち、最大帯域幅が 100Mbps、高い優先順位、RX 側に専用ハードウェアリング、TX 側に専用ハードウェアリングなし (つまりソフトウェアベース)、および VLAN ID が 2 の VNIC が自動的に作成されます。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -b -z excl\fR
+excl: No such zone configured
+Use 'create' to begin configuring a new zone
+zonecfg:excl> \fBcreate\fR
+zonecfg:excl> \fBset zonepath=/export/zones/excl\fR
+zonecfg:excl> \fBadd anet\fR
+zonecfg:excl:anet> \fBset linkname=mynic0\fR
+zonecfg:excl:anet> \fBset lower-link=mylink0\fR
+zonecfg:excl:anet> \fBset mac-address=8:0:20:fe:4e:b8\fR
+zonecfg:excl:anet> \fBset maxbw=100M\fR
+zonecfg:excl:anet> \fBset priority=high\fR
+zonecfg:excl:anet> \fBset vlan-id=2\fR
+zonecfg:excl:anet> \fBset rxrings=hw\fR
+zonecfg:excl:anet> \fBset txrings=sw\fR
+zonecfg:excl:anet> \fBend\fR
+zonecfg:excl> \fBexit\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 14 \fR読み取り専用ゾーンを作成する
+.sp
+.LP
+次の例では、ルートファイルシステムがゾーンによる変更から保護される新しいゾーンを作成します。\fB/var\fR 内のファイルは、\fBfixed-configuration\fR プロファイルが適用されるため、書き込み可能です。
+
+.sp
+.in +2
+.nf
+example# \fBzonecfg -z rozone\fR
+rozone: No such zone configured
+Use 'create' to begin configuring a new zone
+zonecfg:rozone> \fBcreate\fR
+zonecfg:rozone> \fBset brand=solaris\fR
+zonecfg:rozone> \fBset zonepath=/export/zones/rozone\fR
+zonecfg:rozone> \fBset autoboot=true\fR
+zonecfg:rozone> \fBset file-mac-profile=fixed-configuration\fR
+zonecfg:rozone> \fBset ip-type=exclusive\fR
+zonecfg:rozone> \fBadd net\fR
+zonecfg:rozone:net> \fBset physical=vnic0\fR
+zonecfg:rozone:net> \fBend\fR
+zonecfg:rozone> exit
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効な使用法。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/zones
+_
+インタフェースの安定性流動的
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBppriv\fR(1), \fBprctl\fR(1), \fBzlogin\fR(1), \fBdladm\fR(1M), \fBipadm\fR(1M), \fBkstat\fR(1M), \fBmount\fR(1M), \fBpooladm\fR(1M), \fBpoolcfg\fR(1M), \fBpoold\fR(1M), \fBrcapd\fR(1M), \fBrctladm\fR(1M), \fBroute\fR(1M), \fBsvcadm\fR(1M), \fBzfs\fR(1M), \fBzoneadm\fR(1M), \fBzpool\fR(1M), \fBpriv_str_to_set\fR(3C), \fBkstat\fR(3KSTAT), \fBuser_attr\fR(4), \fBvfstab\fR(4), \fBattributes\fR(5), \fBbrands\fR(5), \fBfnmatch\fR(5), \fBMWAC\fR(5), \fBprivileges\fR(5), \fBrbac\fR(5), \fBresource_controls\fR(5), \fBzones\fR(5), \fBdev\fR(7FS), \fBhsfs\fR(7FS), \fBuscsi\fR(7I)
+.sp
+.LP
+\fISystem Administration Guide: Solaris Containers-Resource Management, and Solaris Zones\fR
+.SH 注意事項
+.sp
+.LP
+\fBzonecfg\fR で使用するすべての文字データは、US-ASCII エンコーディングにする必要があります。
+.sp
+.LP
+一般に、すべてのデバイスに対してゾーン内で安全に使用できるどうかの監査が行われるわけではないため、ゾーンにデバイスを追加すると、そのゾーンがシステムのセキュリティーおよび安定性に悪影響を与えることがあります。
+.sp
+.LP
+\fBsd\fR または \fBssd\fR ターゲットドライバを使用するストレージデバイス (\fBprtconf -D /dev/dsk/c2t40d3\fR などを使用すると検査できます) は、ゾーンに安全に委任できます。このため、ゾーン管理者は、このようなデバイスに対してラベル付けやパーティション分割を実行できます。
+.sp
+.LP
+スライス (たとえば、\fBmatch=/dev/dsk/c2t40d3s0\fR) だけを委任した場合も、ゾーン管理者は、そのスライスを含むディスク全体に対してラベル付けやパーティション分割を実行できるようになります。これを回避するには、\fBformat\fR を実行できる機能を次のゾーンから削除してください。
+.sp
+.in +2
+.nf
+set limitpriv=default,-storage_config
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBraw_storage\fR 特権をゾーンの \fBlimitpriv\fR に追加すると、ストレージデバイスへの raw アクセスを有効にできます。ゾーンプロセスで raw SCSI コマンド (\fBuscsi\fR(7I) を参照) を実行できるようになるため、この操作は安全ではありません。

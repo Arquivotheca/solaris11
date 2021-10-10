@@ -1,0 +1,377 @@
+'\" te
+.\" 版权所有 (c) 2008，Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_sdcard 1M "2008 年 2 月 28 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_sdcard \- 特定于 SD/MMC 硬件的 cfgadm 命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR[...]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIhardware_function\fR \fIap_id\fR[...]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR]
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR | \fIap_type\fR[...]]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR [\fIap_id\fR[...]]
+.fi
+
+.SH 描述
+.sp
+.LP
+特定于安全数字 (Secure Digital, SD) 和多媒体存储卡 (MultiMediaCard, MMC) 硬件的库 \fB/usr/lib/cfgadm/sdcard.so.1\fR 通过 \fBcfgadm\fR(1M) 命令提供 SD/MMC 热插拔功能。\fBcfgadm\fR 命令对挂接点执行操作，而挂接点是系统中可以动态重新配置硬件资源的位置。有关挂接点的信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+每个 SD/MMC 插槽都通过设备树中的一个挂接点来表示。系统中连接并配置的卡设备显示为挂接点名称的扩展。"挂接点"和"SD/MMC 插槽"两个术语在本手册页中可互换使用。
+.sp
+.LP
+挂接点通过 ap_id 命名。所有的 SD/MMC 挂接点均由以下形式的字符串组成：
+.sp
+.in +2
+.nf
+sdcardX/[S][::dsk/cXtYd0]
+.fi
+.in -2
+
+.sp
+.LP
+其中： 
+.sp
+.LP
+\fIX\fR 是 SD/MMC 控制器号。
+.sp
+.LP
+\fIS\fR 是控制器上的槽号（0 到 8）。
+.sp
+.LP
+\fBdev/cXtYd0\fR 标识插入的内存卡。
+.sp
+.LP
+\fIY\fR 是目标编号。
+.sp
+.LP
+通常，设备标识符源自 \fB/dev\fR 中的设备的对应逻辑链接。由于 SD/MMC 设备只支持一个 LUN (LUN 0)，因此，设备字符串的 "d" 组件总是设置为 0（零）。例如，SD/MMC 控制器 2 的插槽 4 的逻辑 \fIap_id\fR 应为 \fBsdcard2/4\fR。如果 SD/MMC 媒体卡插入该挂接点并且该设备已配置，\fBap_id\fR 可能为 \fBsdcard2/4::dsk/c2t0d0\fR。
+.sp
+.LP
+标识设备的 c\fIX\fRt\fIY\fRd\fI0\fR 字符串与设备挂接点之间存在一对一的对应关系。
+.sp
+.LP
+系统中挂接点的简单列表包含所有 SD/MMC 设备插槽以及附加的设备。例如：
+.sp
+.in +2
+.nf
+#cfgadm -l
+Ap_Id                    Type       Receptacle   Occupant    Condition
+ sdcard0/0::dev/c2t0d0   sdcard      connected    configured     ok
+ sata0/1::dev/c0t1d0     disk        connected    configured     ok
+ sata0/2::dev/c0t2d0     cd-dvd      connected    configured     ok
+ sata0/3                 sata-port   empty        unconfigured   ok
+ usb0/1                  unknown     empty        unconfigured   ok
+ usb0/2                  unknown     empty        unconfigured   ok
+.fi
+.in -2
+
+.sp
+.LP
+有关挂接点列表的更多信息，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+SD/MMC 插槽中的挂接点的插口状态的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBempty（空）\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC 插槽通电且已启用。在该插槽未检测到任何设备。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected（断开）\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC 插槽未启用，或检测到 SD/MMC 设备但未与该设备建立通信，或插槽出现故障。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected（已连接）\fR
+.ad
+.sp .6
+.RS 4n
+在插槽中检测到 SD/MMC 设备并且已建立设备通信。
+.RE
+
+.sp
+.LP
+插卡（SD/MMC 插槽中插入的设备）状态的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured（已配置）\fR
+.ad
+.sp .6
+.RS 4n
+附加的 SD/MMC 设备已配置，且可供操作系统使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured（未配置）\fR
+.ad
+.sp .6
+.RS 4n
+未附加任何设备或 SD/MMC 插槽中插入的 SD/MMC 设备尚未配置。要进行配置，请运行 \fBcfgadm -c configure ap_id\fR 命令。
+.RE
+
+.sp
+.LP
+挂接点（SD/MMC 插槽）状况的含义如下：
+.sp
+.ne 2
+.mk
+.na
+\fBok（正常）\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC 插槽已通电并启用，随时可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfailed（失败）\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC 插槽出现故障。该端口被系统禁用和/或断电。这种情况下，端口不可用且处于未知状态。该故障可能是由插入插槽的设备导致的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunknown（未知）\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC 插槽已禁用且处于未知状况。
+.RE
+
+.SH 选项
+.sp
+.LP
+除了列出 (\fB-l\fR)，\fBcfgadm\fR 命令还定义了其他几种类型的操作。这些操作包括调用配置状态更改 (\fB-c\fR)、调用特定于硬件的函数 (\fB-x\fR) 以及获取配置管理帮助消息 (\fB-h\fR)。
+.sp
+.LP
+\fB-c\fR：对于 SD/MMC 插槽挂接点，支持以下配置状态更改操作：
+.sp
+.ne 2
+.mk
+.na
+\fBconnect（连接）\fR
+.ad
+.sp .6
+.RS 4n
+启用（激活）SD/MMC 插槽并建立与所附加设备之间的通信。该操作意味着给插槽通电（如有必要）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnect（断开）\fR
+.ad
+.sp .6
+.RS 4n
+如果尚未取消插入的设备的配置，则取消其配置并禁用（取消激活）SD/MMC 插槽。后续 "connect" 命令可启用 SD/MMC 插槽操作但不会使设备处于 "configured"（已配置）状态。
+.RE
+
+.sp
+.LP
+以下状态更改操作适用于 SD/MMC 插槽中插入的 SD/MMC 卡：
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure（配置）\fR
+.ad
+.sp .6
+.RS 4n
+配置新设备以便由操作系统使用（如果尚未配置）。该命令意味着执行连接操作（如有必要）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure（取消配置）\fR
+.ad
+.sp .6
+.RS 4n
+取消插入 SD/MMC 插槽的设备的配置（如果尚未取消配置）。
+.RE
+
+.sp
+.LP
+\fB-f\fR：不支持。
+.sp
+.LP
+\fB-h\fR \fBap_id\fR：SD/MMC 特定帮助可通过将帮助选项与任何 SD/MMC 挂接点一起使用来获取。 
+.sp
+.LP
+\fB-l\fR [-v]：按照 \fBcfgadm\fR(1M) 中所述使用 -l 选项。如果该选项与 -v 选项一起使用，"Information"（信息）字段将包含以下特定于 SD/MMC 的信息：
+.br
+.in +2
+Mod（型号）：产品型号字符串
+.in -2
+.br
+.in +2
+Rev（修订版）：产品修订版本号（主发行版.次发行版）
+.in -2
+.br
+.in +2
+Date（日期）：制造日期（年、月）
+.in -2
+.br
+.in +2
+SN：产品序列号（十六进制）
+.in -2
+.sp
+.LP
+\fB-o\fR hardware_options：当前没有定义特定于硬件的选项。
+.sp
+.LP
+\fB-s\fR listing_options：可使用 select 子选项列出 SD/MMC 类的挂接点。请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+\fB-t\fR \fBap_id\fR：自检功能。SD/MMC 插槽不支持。
+.sp
+.LP
+\fB-x\fR \fBhardware_function\fR：执行特定于硬件的函数。sdcard_reset_slot \fBap_id\fR 指示复位 \fBap_id\fR 指定的 SD/MMC 插槽。如果插槽中插入了 SD/MMC 设备，也会复位该设备。
+.sp
+.LP
+\fB-v\fR：在详细模式下执行。
+.SH 示例
+.sp
+.LP
+示例 1－配置 SD/MMC 卡：
+.sp
+.LP
+以下命令配置附加到 SD/MMC 控制器 0 上的插槽 0 的卡。仅当 SD/MMC 插槽中插入设备时，才应发出该命令。
+.sp
+.in +2
+.nf
+       # cfgadm -c configure sdcard0/0
+.fi
+.in -2
+
+.sp
+.LP
+示例 2－取消 SD/MMC 卡的配置：
+.sp
+.LP
+以下命令取消 SD/MMC 控制器 0 上的插槽 3 中插入的卡的配置：
+.sp
+.in +2
+.nf
+       # cfgadm -c unconfigure sdcard0/3
+.fi
+.in -2
+
+.sp
+.LP
+示例 3－取消磁盘配置时遇到一个已挂载文件系统：
+.sp
+.LP
+以下命令表明在取消配置磁盘时遇到已挂载的文件系统：
+.sp
+.in +2
+.nf
+       # cfgadm -c unconfigure sdcard1/5::dsk/c01t35d0
+
+ 
+.fi
+.in -2
+
+.sp
+.LP
+系统作出如下响应：
+.sp
+.in +2
+.nf
+ cfgadm: Component system is busy, try again: failed to offline:
+       /devices/pci@0,0/pci8086,244e@1e/pci1095,3124@1/sd@5,0
+           Resource              Information
+       ------------------  --------------------------
+       /dev/dsk/c1t5d0s0   mounted filesystem "/mnt"
+.fi
+.in -2
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/lib/cfgadm/sdcard.so.1\fR
+.ad
+.sp .6
+.RS 4n
+适用于通用 SD/MMC 热插拔的特定于硬件的库。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBlibcfgadm\fR(3LIB)、\fBattributes\fR(5)、\fBsda\fR(7D)、\fBsdcard\fR(7D)、\fBsdhost\fR(7D)
+.SH 附注
+.sp
+.LP
+正常操作情况下，SD/MMC 媒体卡会在插入卡时自动配置。大多数管理员发现正常操作时无需使用该命令。
+.sp
+.LP
+如果正在向 SD/MMC 卡写入内容，那么删除该设备前应先取消其配置，否则，将导致数据丢失。以只读模式挂载的设备可随时安全地删除。
+.sp
+.LP
+配置了文件系统（\fBpcfs\fR(7FS) 除外）的设备始终应该在删除前先显式取消配置。

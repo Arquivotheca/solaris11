@@ -1,0 +1,225 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH mac_ring_info 9E "16 Jun 2011" "SunOS 5.11" "Driver Entry Points"
+.SH NAME
+mac_ring_info, prefix_ring_start, prefix_ring_stop, prefix_ring_tx, prefix_ring_poll, prefix_ring_stat, mri_intr_enable, mri_intr_disable \- MAC ring info driver entry points
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mac_provider.h>
+
+int prefix_ring_start(mac_ring_driver_t \fIring_handle\fR, uint64_t \fIgen_num\fR);
+.fi
+
+.LP
+.nf
+void prefix_ring_stop(mac_ring_driver_t \fIring_handle\fR);
+.fi
+
+.LP
+.nf
+mblk_t *prefix_ring_tx(void *\fIarg\fR, mblk_t *\fImp\fR);
+.fi
+
+.LP
+.nf
+mblk_t *prefix_ring_poll(void *\fIarg\fR, int \fInbytes\fR, int \fInpackets\fR);
+.fi
+
+.LP
+.nf
+int prefix_ring_stat(mac_ring_driver_t \fIring_handle\fR, uint_t \fIstat\fR,
+      uint64_t *\fIval\fR);
+.fi
+
+.LP
+.nf
+int mri_intr_enable(mac_intr_handle_t *\fIihandle\fR);
+.fi
+
+.LP
+.nf
+int mri_intr_disable(mac_intr_handle_t *\fIihandle\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIring_handle\fR\fR
+.ad
+.RS 15n
+.rt  
+The opaque handle to the driver's representation of the specified ring.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIgen_num\fR\fR
+.ad
+.RS 15n
+.rt  
+Generation number for this ring.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIarg\fR\fR
+.ad
+.RS 15n
+.rt  
+Opaque handle to the driver's ring.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImblk_t\fR\fR
+.ad
+.RS 15n
+.rt  
+Chain of \fImblk\fR packet buffers.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInbytes\fR\fR
+.ad
+.RS 15n
+.rt  
+The number of total bytes that will be polled for this call to \fBprefix_ring_poll()\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInpackets\fR\fR
+.ad
+.RS 15n
+.rt  
+The maximum number of packets that will be returned for this call to \fBprefix_ring_poll()\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstatsp\fR\fR
+.ad
+.RS 15n
+.rt  
+The pointer to the ring statistic being queried.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIihandle\fR\fR
+.ad
+.RS 15n
+.rt  
+The opaque handle to the driver private data representing this interrupt.
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris architecture specific (Solaris DDI).
+.SH DESCRIPTION
+.sp
+.LP
+The \fBprefix_ring_start()\fR function is the driver entry point called by the MAC layer to start the ring processing packets. The \fBprefix_ring_stop()\fR function is the driver entry point called by the MAC layer to stop the ring processing packets.
+.sp
+.LP
+The \fBmri_stop()\fR function is the driver entry point called by the MAC layer to stop the ring processing packets
+.sp
+.LP
+The \fBprefix_ring_tx()\fR function is the driver entry point called by the MAC layer to transmit packets. This is a TX ring only entry point.
+.sp
+.LP
+The \fBprefix_ring_poll()\fR function is the driver entry point called by the MAC layer to poll for the reception of incoming packets. This is RX ring only driver entry point. Packets are returned to the MAC layer as a chain of \fImblk\fRs. The parameters of \fInbytes\fR is used to cap the number of bytes that can be polled while the \fInpackets\fR parameters caps the number of packets that can be polled.
+.sp
+.LP
+The \fBprefix_ring_stat()\fR function is the driver entry point called to get various ring statistics. Statistics included for TX/RX rings:
+.br
+.in +2
+\fBMAC_STAT_OERRORS\fR
+.in -2
+.br
+.in +2
+\fBMAC_STAT_OBYTES\fR
+.in -2
+.br
+.in +2
+\fBMAC_STAT_OPACKETS\fR
+.in -2
+.br
+.in +2
+\fBMAC_STAT_IERRORS\fR
+.in -2
+.br
+.in +2
+\fBMAC_STAT_IBYTES\fR
+.in -2
+.br
+.in +2
+\fBMAC_STAT_IPACKETS\fR
+.in -2
+.sp
+.LP
+The \fBmri_intr_enable()\fR function is the driver entry point called by the MAC layer to enable interrupts to re-enable interrupts while transitioning the ring from polling mode to interrupt mode. This is an RX ring entry point.
+.sp
+.LP
+The \fBmri_intr_disable()\fR function is the driver entry point called by the MAC layer to disable interrupts for the specified ring while transitioning the ring to polling mode.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBprefix_ring_start()\fR function returns 0 on success and \fBEIO\fR when the operation fails.
+.sp
+.LP
+The \fBprefix_ring_tx()\fR function returns \fINULL\fR if all packets are transmitted. It returns some or all of the \fImblk\fR chain if some or all of the packets where processed.
+.sp
+.LP
+The \fBprefix_ring_poll()\fR function returns It returns a chain of packets received during this poll call or \fINULL\fR if no packets where received.
+.sp
+.LP
+The \fBprefix_ring_stat()\fR function returns 0 on success and \fBENOTUSP\fR if the statistic is not supported.
+.sp
+.LP
+The \fBmri_intr_enable()\fR function returns 0 on success.
+.sp
+.LP
+The \fBmri_intr_disable()\fR function returns 0 on success.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/header
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBmac_capab_rings\fR(9S), \fBmac_register\fR(9S)

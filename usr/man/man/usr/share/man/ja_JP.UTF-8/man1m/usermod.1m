@@ -1,0 +1,559 @@
+'\" te
+.\" Copyright 1989 AT&T All Rights Reserved
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH usermod 1M "2011 年 6 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+usermod \- システムにあるユーザーのログイン情報の変更
+.SH 形式
+.LP
+.nf
+\fBusermod\fR [\fB-u\fR \fIuid\fR [\fB-o\fR]] [\fB-g\fR \fIgroup\fR] [\fB-G\fR [+|-]\fIgroup\fR [, \fIgroup\fR...]] 
+     [\fB-d\fR \fIdir\fR [\fB-m\fR]] [\fB-s\fR \fIshell\fR] [\fB-c\fR \fIcomment\fR] [\fB-l\fR \fInew_name\fR]
+     [\fB-f\fR \fIinactive\fR] [\fB-e\fR \fIexpire\fR] 
+     [\fB-A\fR [+|-]\fIauthorization\fR [,\fIauthorization\fR]] 
+     [\fB-P\fR [+|-]\fIprofile\fR [,\fIprofile\fR]] [\fB-R\fR [+|-]\fIrole\fR [,\fIrole\fR]] 
+     [\fB-K\fR \fIkey\fR[+|-]=\fIvalue\fR] [\fB-S\fR \fIrepository\fR] \fIlogin\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBusermod\fR ユーティリティーは、システムにあるユーザーのログイン定義を変更します。指定されたログインの定義を変更し、システムファイルやファイルシステムにログイン関連の適切な変更を加えます。
+.sp
+.LP
+このコマンドで作成されるシステムファイルエントリには、1 行あたり 512 文字の制限があります。複数のオプションに長い引数を指定すると、この制限を超える可能性があります。
+.sp
+.LP
+既存のユーザーのセキュリティー属性を変更するには、管理者に User Security プロファイルが付与されている必要があります。既存のユーザーのセキュリティー属性以外の属性を変更するには、User Management プロファイルが必要です。\fBpasswd\fR、\fBshadow\fR、および \fBuser_attr\fR の各種フィールドの設定に必要な承認については、\fBpasswd\fR(4)、\fBshadow\fR(4)、および \fBuser_attr\fR(4) を参照してください。グループの割り当てに必要な承認については、\fBgroup\fR(4) を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR [+|-]\fIauthorization\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBauth_attr\fR(4) で定義されている、コンマで区切られた 1 つ以上の承認。アカウントに承認を割り当てることができるのは、\fBauthorization\fR に対する \fBgrant\fR 権限を持つユーザーまたは役割だけです。これにより、既存の承認設定はすべて置き換えられます。承認リストが指定されていない場合は、既存の設定が削除されます。
+.sp
+接頭辞 \fB+\fR は承認を既存の承認に追加します。 接頭辞 \fB-\fR は承認を既存の承認から削除します。 接頭辞を指定しない場合、\fIauthorization\fR で既存の承認を置換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcomment\fR\fR
+.ad
+.sp .6
+.RS 4n
+コメント文字列を指定します。\fIcomment\fR には任意のテキスト文字列を指定できます。一般にはログインの簡単な説明文ですが、現在はユーザーのフルネームを表すフィールドとして使用されています。この情報は、ユーザーの \fBpasswd\fR エントリに保存されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの新しいホームディレクトリを指定します。このディレクトリは、デフォルトでは \fIbase_dir/login\fR になります。ここで、\fIbase_dir\fR は新しいログインホームディレクトリのベースディレクトリであり、\fBlogin\fR は新しいログインです。この指定に従って、ユーザーの \fBauto_home \fR エントリが作成または変更されます。
+.sp
+このオプションの引数は、\fIserver\fR:\fIdir\fR という形式で指定します。ここで、\fIserver\fR はホームディレクトリがあるマシンのホスト名、\fIdir\fR はユーザーのホームディレクトリへのパスです。サーバーがリモートホストの場合、ユーザーのログイン時にシステムがホームディレクトリをマウントするために、リモートホストにホームディレクトリを作成する必要があります。\fB-m\fR オプションが指定されていて、サーバー名が指定されていない場合、ホームディレクトリはコマンドが実行されたホストに作成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIexpire\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログインの有効期限を指定します。この日付を過ぎると、どのユーザーもこのログインにアクセスできなくなります。expire オプション引数は、テンプレートファイル \fB/etc/datemsk\fR に含まれているいずれかの日付形式を使用して入力される日付です。\fBgetdate\fR(3C) を参照してください。
+.sp
+たとえば、\fB10/6/90\fR または \fBOctober 6, 1990\fR と入力できます。\fB`` ''\fR の値によって、期限切れの日付のステータスが無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIinactive\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログイン \fBID\fR が無効と宣言される前に、そのログイン \fBID\fR の使用の間に経過することが許される最大日数を指定します。正常な値は正の整数です。\fB0\fR の値によって、ステータスが無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存のグループの整数 \fBID\fR または文字列名を指定します。これにより、ユーザーの一次グループメンバーシップが再定義されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR [+|-]\fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存グループのグループ ID (整数) または名前 (文字列) を指定します。新しいユーザーの補助グループメンバーシップを定義します。group が \fB-g\fR オプションと \fB-G\fR オプションで重複して指定されている場合、その項目は無視されます。指定できるグループの数は \fBNGROUPS_MAX\fR 以下です。0 から 99 の GID は、Solaris オペレーティングシステムによる割り当て用として予約されています。
+.sp
+接頭辞 \fB+\fR はグループを既存のグループに追加します。 接頭辞 \fB-\fR はグループを既存のグループから削除します。 接頭辞を指定しない場合、\fIgroup\fR で既存のグループを置換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIkey\fR[+|-]=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの既存の \fIkey=value\fR ペア属性を置き換えるか、またはこれらの属性に追加します。複数の \fIkey=value\fR ペアを置き換えるか、または追加するために、複数の \fB-K\fR オプションを使用できます。ただし、キーを繰り返さないでください。特定の暗黙のキーオプション (\fB-A\fR、\fB-P\fR、\fB-R\fR、\fB-p\fR) の代わりに、適切なキーを含む一般的な \fB-K\fR オプションを使用できます。使用可能な \fIkey\fR のリストについては、\fBuser_attr\fR(4) を参照してください。これらのキーの値は通常、キーに関連したマニュアルページまたはその他のソースに記載されています。たとえば、\fBproject\fR キーの値に関するガイダンスについては \fBproject\fR(4) を参照してください。キー \fBdefaultpriv\fR および \fBlimitpriv\fR の値のリストを表示するには、コマンド \fBppriv\fR(1) を \fB-v\fR および \fB-l\fR オプションとともに使用します。値を指定しないと、既存のキーが削除されます。
+.sp
+キーワード \fBtype\fR には値 \fBrole\fR または \fBnormal\fR を指定できます。値 \fBrole\fR を使用すると、アカウントが通常ユーザーから役割に変わります。値 \fBnormal\fR を使用すると、アカウントは通常ユーザーのままです。
+.sp
+\fBrole\fR アカウントとしては、役割 (\fB-R\fR または \fIroles=value\fR) は存在できません。
+.sp
+接頭辞 \fB+\fR は値を既存の値に追加します。 接頭辞 \fB-\fR は値を既存の値から削除します。 接頭辞を指定しない場合、\fIvalue\fR で既存の値を置換します。
+.sp
+接頭辞 \fB+\fR/\fB-\fR の操作は、キー \fBauths\fR、\fBprofiles\fR、\fBroles\fR、 \fBproject\fR、\fBlimitpriv\fR、および \fBdefaultpriv\fR にのみ適用可能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fInew_logname\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの新しいログイン名を指定します。ユーザー名の要件については、\fBpasswd\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのホームディレクトリを、\fB-d\fR オプションで指定された新しいディレクトリに移動します。ディレクトリがすでに存在する場合、そのディレクトリは、\fIgroup\fR による読み取り/書き込み/実行のアクセス権を持っている必要があります。ここで、\fIgroup\fR はユーザーの一次グループです。\fB-d\fR オプションに指定されたサーバー名がリモートホストの場合、システムはホームディレクトリの作成を試みません。
+.sp
+ディレクトリがまだ存在しない場合は、新しい ZFS データセットが作成されます。大域ゾーンにデータセットが \fBrpool/export/home/\fR\fIrolename\fR として作成されます。大域ゾーン以外の場合、データセットは \fIROOT-dataset\fR\fB/export/home/\fR\fIrolename\fR として作成されます。ZFS データセットのマウントポイントは、デフォルトでは \fB/export/home/\fR\fIrolename\fR です。\fB-d\fR \fIpath\fR が指定され、それがローカルマシン上のパスである場合、データセットは指定された場所にマウントされます。ZFS スナップショットを作成してそれをプロモートするためのアクセス権が役割に委任されます。新しく作成されるデータセットは、その親から暗号化設定を継承します。暗号化されている場合は、そのラップ鍵を変更するためのアクセス権が役割に委任されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、指定された \fBUID\fR を複製できるようにします (一意ではない)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR [+|-]\fIprofile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBprof_attr\fR(4) で定義された、コンマで区切られた 1 つ以上の権利プロファイル。これにより、\fBuser_attr\fR(4) に既存のプロファイル設定がある場合は置き換えられます。空のプロファイルリストを指定すると、既存の設定が削除されます。
+.sp
+接頭辞 \fB+\fR はプロファイルを既存のプロファイルに追加します。 接頭辞 \fB-\fR はプロファイルを既存のプロファイルから削除します。 接頭辞を指定しない場合、\fIprofile\fR で既存のプロファイルを置換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR [+|-]\fIrole\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンマで区切られた 1 つ以上の役割 (\fBroleadd\fR(1M) を参照)。これにより、既存の役割設定はすべて置き換えられます。役割リストが指定されていない場合は、既存の設定が削除されます。
+.sp
+接頭辞 \fB+\fR は役割を既存の役割に追加します。 接頭辞 \fB-\fR は役割を既存の役割から削除します。 接頭辞を指定しない場合、\fIrole\fR で既存の役割を置換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIshell\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログイン時のユーザーのシェルとして使用されるプログラムのフルパス名を指定します。\fIshell\fR の値は有効な実行可能ファイルでなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIrepository\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効なリポジトリは、\fBfiles\fR と \fBldap\fR です。リポジトリは、更新するネームサービスを指定します。デフォルトのリポジトリは \fBfiles\fR です。リポジトリが \fBfiles\fR の場合、承認、プロファイル、および役割が、別のネームサービスリポジトリに存在していても、\fBfiles\fR リポジトリ内のユーザーに割り当てることができます。リポジトリが \fBldap\fR の場合、割り当て可能な属性はすべて \fBldap\fR リポジトリに存在している必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの新しい \fBUID\fR を指定します。この値は、\fB<param.h>\fR で定義されている \fBMAXUID\fR より小さい、負でない 10 進数の整数である必要があります。ユーザーのホームディレクトリに関連付けられた \fBUID\fR は、このオプションでは変更されません。その \fBUID\fR が \fBchown\fR(1) を使用して手動で再割り当てされるまで、ユーザーは自分のホームディレクトリにアクセスできません。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogin\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更される既存のログイン名。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRユーザーへの特権の割り当て
+.sp
+.LP
+次のコマンドは、高精度の時刻に影響を与える特権を、ユーザーの初期の継承可能な一連の特権に追加します。
+
+.sp
+.in +2
+.nf
+# \fBusermod -K defaultpriv=basic,proc_clock_highres jdoe\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドにより、\fBuser_attr\fR に次のエントリが生成されます。
+
+.sp
+.in +2
+.nf
+jdoe::::type=normal;defaultpriv=basic,proc_clock_highres
+.fi
+.in -2
+
+.LP
+\fB例 2 \fRユーザーの制限セットからの特権の削除
+.sp
+.LP
+次のコマンドは、指定されたユーザーがディレクトリへのハードリンクを作成したり、ディレクトリのリンクを解除したりできるようにする特権を削除します。
+
+.sp
+.in +2
+.nf
+# \fBusermod -K limitpriv=all,!sys_linkdir jdoe\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドにより、\fBuser_attr\fR に次のエントリが生成されます。
+
+.sp
+.in +2
+.nf
+jdoe::::type=normal;defaultpriv=basic,limitpriv=all,!sys_linkdir
+.fi
+.in -2
+
+.LP
+\fB例 3 \fRユーザーの基本セットからの特権の削除
+.sp
+.LP
+次のコマンドは、指定されたユーザーがそのユーザーのセッションの外部にあるプロセスを検査できるようにする特権を削除します。
+
+.sp
+.in +2
+.nf
+# \fBusermod -K defaultpriv=basic,!proc_session jdoe\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドにより、\fBuser_attr\fR に次のエントリが生成されます。
+
+.sp
+.in +2
+.nf
+jdoe::::type=normal;defaultpriv=basic,!proc_session;limitpriv=all
+.fi
+.in -2
+
+.LP
+\fB例 4 \fRユーザーへの役割の割り当て
+.sp
+.LP
+次のコマンドは、ユーザーに役割を割り当てます。このコマンドを実行する前に、\fBroleadd\fR(1M) を使って役割を作成しておく必要があります。
+
+.sp
+.in +2
+.nf
+# \fBusermod -R mailadm jdoe\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドにより、\fBuser_attr\fR に次のエントリが生成されます。
+
+.sp
+.in +2
+.nf
+jdoe::::type=normal;roles=mailadm;defaultpriv=basic;limitpriv=all
+.fi
+.in -2
+
+.LP
+\fB例 5 \fRユーザーからのすべてのプロファイルの削除
+.sp
+.LP
+次のコマンドは、ユーザーに直接付与されたすべてのプロファイルを削除します。ユーザーは、\fBpolicy.conf\fR(4) の \fBPROFS_GRANTED\fR キーによって付与される権利プロファイルは引き続き保持します。
+
+.sp
+.in +2
+.nf
+# \fBusermod -P "" jdoe\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+エラーが発生した場合、\fBusermod\fR はエラーメッセージを出力し、次のいずれかの値で終了します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド構文が無効でした。\fBusermod\fR コマンドの使用法に関するメッセージが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+オプションに無効な引数が指定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-u\fR オプションで指定された \fIuid\fR はすでに使用されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB5\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードファイルにエラーが含まれています。\fBpwconv\fR(1M) を使用すると、可能性があるエラーを修正できます。\fBpasswd\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更されるログインが存在しないか、\fIgroup\fR が存在しないか、またはログインシェルが存在しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB8\fR\fR
+.ad
+.sp .6
+.RS 4n
+変更されるログインが使用されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB9\fR\fR
+.ad
+.sp .6
+.RS 4n
+この \fInew_logname\fR はすでに使用されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB10\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB/etc/group\fR または \fB/etc/user_attr\fR ファイルを更新できません。ほかの更新要求は実装されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB11\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホームディレクトリを移動するための容量が不足しています (\fB-m\fR オプション)。ほかの更新要求は実装されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB12\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホームディレクトリの新しいホームディレクトリへの移動を完了できません。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/group\fR\fR
+.ad
+.sp .6
+.RS 4n
+グループ定義を含むシステムファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/datemsk\fR\fR
+.ad
+.sp .6
+.RS 4n
+日付形式のシステムファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムパスワードファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/shadow\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの暗号化パスワードおよび関連情報を含むシステムファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/user_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+追加のユーザーおよび役割属性を含むシステムファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBchown\fR(1), \fBpasswd\fR(1), \fBusers\fR(1B), \fBgroupadd\fR(1M), \fBgroupdel\fR(1M), \fBgroupmod\fR(1M), \fBlogins\fR(1M), \fBpwconv\fR(1M), \fBroleadd\fR(1M), \fBroledel\fR(1M), \fBrolemod\fR(1M), \fBuseradd\fR(1M), \fBuserdel\fR(1M), \fBgetdate\fR(3C), \fBauth_attr\fR(4), \fBpasswd\fR(4), \fBpolicy.conf\fR(4), \fBprof_attr\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5) 
+.SH 注意事項
+.sp
+.LP
+\fBusermod\fR ユーティリティーは、デフォルトの有効範囲または指定された有効範囲内にある \fBpasswd\fR、\fBshadow\fR、\fBgroup\fR、\fBproject\fR、および \fBuser_attr\fR データベースにある定義を変更します。このユーティリティーは、ユーザー名およびユーザー ID が一意であることを、外部のネームサービスと照合して確認します。
+.sp
+.LP
+\fBusermod\fR ユーティリティーは、日付の書式設定のために、\fBSUNWaccr\fR で使用可能な \fB/etc/datemsk\fR ファイルを使用します。

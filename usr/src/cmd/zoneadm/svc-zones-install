@@ -1,0 +1,177 @@
+#!/bin/ksh -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+. /lib/svc/share/smf_include.sh
+
+if [ -z "$SMF_FMRI" ]; then
+	echo "this script can only be invoked by smf(5)" >&2
+	exit $SMF_EXIT_ERR_NOSMF
+fi
+
+# Make sure working directory is / to prevent unmounting problems.
+cd /
+export PATH=/usr/sbin:/usr/bin
+AI_INST_DIR=/var/zones/install
+AI_ZONE_DEF_MANIFEST=/usr/share/auto_install/manifest/zone_default.xml
+SC_ZONE_DEF_PROFILE=/usr/share/auto_install/sc_profiles/enable_sci.xml
+failure=""
+
+case "$1" in
+'start')
+	if [[ ! -d $AI_INST_DIR ]]; then
+		exit 0
+	fi
+
+	if [[ ! -d $AI_INST_DIR/.installed ]]; then
+		mkdir $AI_INST_DIR/.installed
+	fi
+
+	for zonedir in $AI_INST_DIR/*
+	do
+		if [[ ! -d $zonedir ]]; then
+			continue;
+		fi
+		zone=$(basename $zonedir)
+		if [[ ! -f $zonedir/config ]]; then
+			echo "No config file for zone $zone"
+			failure="yes"
+			continue
+		fi
+
+		state=$(zoneadm -z $zone list -p | nawk -F: \
+		    '{ print $3 }') 2> /dev/null
+
+		# If zone already installed, then move to .installed dir
+		if [[ -n $state ]] && [[ $state != "configured" ]] &&
+		   [[ $state != "incomplete" ]]; then
+			mv $AI_INST_DIR/$zone $AI_INST_DIR/.installed/$zone
+			continue
+		fi
+
+		# If zone is partially installed then uninstall it
+		if [[ $state == "incomplete" ]]; then
+			echo "Reinstalling incomplete zone $zone"
+			zoneadm -z $zone uninstall -F
+			if (( $? != 0 )); then
+				failure="yes"
+				continue
+			fi
+		fi
+
+		#
+		# Configure zone if not configured
+		#
+		state=$(zoneadm -z $zone list -p | nawk -F: \
+		    '{ print $3 }') 2> /dev/null
+
+		if [[ -z $state ]]; then
+			echo "Configuring zone $zone"
+			zonecfg -z $zone -f $zonedir/config
+			if (( $? != 0 )); then
+				"Configuration of zone $zone failed"
+				failure="yes"
+				continue
+			fi
+		fi
+
+		profile_file=""
+		profile_dir=""
+		# Is there a manifest?
+		if [[ -r $zonedir/ai_manifest.xml ]]; then
+			manifest=" -m $zonedir/ai_manifest.xml"
+		else
+			manifest=" -m $AI_ZONE_DEF_MANIFEST"
+		fi
+		if [[ -r $zonedir/sc_profile.xml ]]; then
+			profile_file=" -c $zonedir/sc_profile.xml"
+		elif [[ -d $zonedir/profiles ]]; then
+			profile_dir=" -c $zonedir/profiles"
+		fi
+		if [[ -z $profile_file ]] && [[ -z $profile_dir ]]; then
+			profile_file=" -c $SC_ZONE_DEF_PROFILE"
+		fi
+
+		echo "Installing zone $zone"
+
+		if [[ -f $AI_ZONE_DEF_MANIFEST ]]; then
+			echo "zoneadm -z $zone install $manifest \
+			    $profile_file $profile_dir"
+			zoneadm -z $zone install $manifest $profile_file \
+			    $profile_dir
+		else
+			echo "zoneadm -z $zone install"
+			zoneadm -z $zone install
+		fi
+		state=$(zoneadm -z $zone list -p | nawk -F: \
+		    '{ print $3 }') 2> /dev/null
+
+		#
+		# For each successfully installed zone, move zone
+		# configuration to the .installed directory.
+		#
+		if [[ $state != "installed" ]]; then
+			echo "Unable to install zone $zone"
+			failure="yes"
+			continue
+		fi
+
+		mv $AI_INST_DIR/$zone $AI_INST_DIR/.installed/$zone
+
+		#
+		# If a labeled zone, but system is not labeled then
+		# don't autoboot zone since this will just fail.
+ 		#
+		brand=$(zoneadm -z $zone list -p | nawk -F: \
+		    '{ print $6 }') 2> /dev/null
+ 		if [[ smf_is_system_labeled != 0 ]] && 
+ 		   [[ $brand == "labeled" ]]; then
+			continue
+		fi
+
+		zonecfg -z $zone info autoboot | grep "true" > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			echo "Booting zone $zone"
+			#
+			# zoneadmd puts itself into its own contract so
+			# this service will lose sight of it.  We don't
+			# support restart so it is OK for zoneadmd to
+			# to be in an orphaned contract.
+			#
+			zoneadm -z $zone boot
+		else
+			zoneadm -z $zone sysboot &
+		fi
+	done
+
+	if [[ $failure ]]; then
+ 		exit $SMF_EXIT_ERR_FATAL
+	fi
+	;;
+
+*)
+	echo "Usage: $0 { start }"
+	exit 1
+	;;
+esac
+exit 0

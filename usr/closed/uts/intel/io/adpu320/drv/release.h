@@ -1,0 +1,1 @@
+#define ADPU320_RELEASE	"d1.20"

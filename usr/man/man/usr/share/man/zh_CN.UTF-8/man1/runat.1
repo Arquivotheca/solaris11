@@ -1,0 +1,312 @@
+'\" te
+.\" 部分版权所有 (c) 2003，Oracle 和/或其附属公司。保留所有权利。
+.TH runat 1 "2001 年 6 月 22 日" "SunOS 5.11" "用户命令"
+.SH 名称
+runat \- 在扩展属性名称空间中执行命令
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/runat\fR \fIfile\fR [\fIcommand\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBrunat\fR 实用程序用于在文件的隐藏属性目录中执行 shell 命令。实际上，此实用程序将当前工作目录更改为与文件参数关联的隐藏属性目录，然后在 bourne shell (\fB/bin/sh\fR) 中执行指定的命令。如果未提供 command 参数，则会派生一个交互式 shell。环境变量 $\fBSHELL\fR 定义了要派生的 shell。如果未定义该变量，则将使用缺省 shell (\fB/bin/sh\fR)。
+.sp
+.LP
+file 参数可以是能够支持扩展属性的任何文件（包括目录）。在调用 \fBrunat\fR 命令之前，不需要此文件具有任何属性，也不需要以任何方式准备此文件。
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 12n
+.rt  
+可以支持扩展属性的任何文件（包括目录）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcommand\fR \fR
+.ad
+.RS 12n
+.rt  
+要在属性目录中执行的命令。
+.RE
+
+.SH 错误
+.sp
+.LP
+如果 \fBrunat\fR 无法访问 \fIfile\fR 参数，或者 \fIfile\fR 参数不支持扩展属性，将返回一个非零值退出状态。
+.SH 用法
+.sp
+.LP
+有关扩展文件属性的详细说明，请参见 \fBfsattr\fR(5)。
+.sp
+.LP
+\fBrunat\fR 命令创建的进程上下文将其当前工作目录设置为包含文件扩展属性的隐藏目录。该目录的父代（"\fB\&..\fR"项）始终是指在命令行上提供的文件。因此，它可能不是目录。因此，依赖于格式正确的父代（即目录）的命令（如 \fBpwd\fR）可能会失败。
+.sp
+.LP
+缺少 \fIcommand\fR 参数时，\fBrunat\fR 将派生一个新的交互式 shell，其当前工作目录设置为给定文件的隐藏属性目录。请注意，如上所述，当目录的父代不是目录时，某些 shell（如 \fBzsh\fR 和 \fBtcsh\fR）将不能正常运行。这些 shell 不应该与 \fBrunat\fR 一起使用。
+.SH 示例
+.LP
+\fB示例 1 \fR使用 runat 列出文件上的扩展属性
+.sp
+.in +2
+.nf
+example% \fBrunat file.1 ls -l\fR
+example% \fBrunat file.1 ls\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR创建扩展属性
+.sp
+.in +2
+.nf
+example% \fBrunat file.2 cp /tmp/attrdata attr.1\fR
+example% \fBrunat file.2 cat /tmp/attrdata > attr.1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR将属性从一个文件复制到另一个文件
+.sp
+.in +2
+.nf
+example% \fBrunat file.2 cat attr.1 | runat file.1 "cat > attr.1"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR使用 runat 派生交互式 shell
+.sp
+.in +2
+.nf
+example% \fBrunat file.3 /bin/sh\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+这将在 \fBfile.3\fR 的属性目录中派生一个新的 shell。请注意，该 shell 无法确定您的当前目录是什么。要离开该属性目录，请退出派生的 shell，或者使用绝对路径更改目录 (\fBcd\fR)。
+
+.sp
+.LP
+用于执行基本属性操作的推荐方法：
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisplay（显示）\fR
+.ad
+.sp .6
+.RS 4n
+\fBrunat \fIfile\fR ls [\fIoptions\fR]\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBread（读取）\fR
+.ad
+.sp .6
+.RS 4n
+\fBrunat \fIfile\fR cat \fIattribute\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcreate/modify（创建/修改）\fR
+.ad
+.sp .6
+.RS 4n
+\fBrunat \fIfile\fR cp \fIabsolute-file-path\fR \fIattribute\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdelete（删除）\fR
+.ad
+.sp .6
+.RS 4n
+\fBrunat \fIfile\fR rm \fIattribute\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpermission changes（权限更改）\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.in +2
+.nf
+\fBrunat \fIfile\fR chmod \fImode attribute\fR
+runat \fIfile\fR chgrp \fIgroup attribute\fR
+runat \fIfile\fR chown \fIowner attribute\fR\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinteractive shell（交互式 shell）\fR
+.ad
+.sp .6
+.RS 4n
+.LP
+.nf
+\fBrunat \fIfile\fR /bin/sh\fR 或将您的 $SHELL 设置为 /bin/sh 并运行 \fBrunat \fIfile\fR\fR
+.fi
+
+.RE
+
+.sp
+.LP
+以上列表包括了已知的可与 \fBrunat\fR 配合使用的命令。虽然许多其他命令也可使用，但是不能保证此列表范围外的任何命令都能够使用。任何要求能够确定当前工作目录的命令都可能会失败。此类命令的示例如下所示：
+.LP
+\fB示例 5 \fR在属性目录中使用 man
+.sp
+.in +2
+.nf
+example% \fBrunat file.1 man runat\fR
+>getcwd: Not a directory
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR在属性目录中派生 tcsh shell
+.sp
+.in +2
+.nf
+example% \fBrunat file.3 /usr/bin/tcsh\fR
+tcsh: Not a directory
+tcsh: Trying to start from "/home/\fIuser\fR"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+已派生了一个新的 tcsh shell，其当前工作目录设置为用户的起始目录。
+
+.LP
+\fB示例 7 \fR在属性目录中派生 zsh shell
+.sp
+.in +2
+.nf
+example% \fBrunat file.3 /usr/bin/zsh\fR
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+虽然命令看上去已运行，但是 \fBzsh\fR 实际上仅仅是将当前工作目录更改为了 "/"。这可以通过使用 \fB/bin/pwd\fR 来查看：
+
+.sp
+.in +2
+.nf
+example% \fB/bin/pwd\fR
+/
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.RS 9n
+.rt  
+指定 \fBrunat\fR 要调用的命令 shell。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB125\fR \fR
+.ad
+.RS 8n
+.rt  
+\fIfile\fR 参数引用的文件的属性目录不可访问。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB126\fR \fR
+.ad
+.RS 8n
+.rt  
+无法执行所提供的 \fIcommand\fR 参数。
+.RE
+
+.sp
+.LP
+其他情况下，返回的退出状态是被调用来执行给定命令的 shell 的退出状态。
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+CSIEnabled（已启用）
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBopen\fR(2)、\fBattributes\fR(5)、\fBfsattr\fR(5)
+.SH 附注
+.sp
+.LP
+对于无法确定当前工作目录时，命令在 \fBrunat\fR 中为什么会失败，原因并不总是很明显的。错误结果可能是令人困惑的或是含糊的（请参见上述的 \fBtcsh\fR 和 \fBzsh\fR 示例）。

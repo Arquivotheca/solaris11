@@ -1,0 +1,225 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nfsmapid 1M "2011 年 3 月 22 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+nfsmapid \- NFS ユーザー ID とグループ ID のマッピングデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/nfs/nfsmapid\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnfsmapid\fR デーモンは、NFS Version 4 の \fBowner\fR と \fBowner_group\fR の ID 属性と、NFS バージョン 4 のクライアントとサーバーの両方で使用されるローカル \fBUID\fR および \fBGID\fR 番号とのマッピングを行います。
+.sp
+.LP
+\fBnfsmapid\fR は、\fB/etc/nsswitch.conf\fR ファイル内の \fBpasswd\fR および \fBgroup\fR エントリを使用して、マッピングの実行方法を指示します。
+.sp
+.LP
+\fBnfsmapid\fR デーモンには、ユーザーからアクセスできる外部インタフェースはありません。ただし、次のいずれかの方法を使って \fBnfsmapid\fR の構成を管理できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+NFS の SMF で、\fBsharectl\fR(1M) コマンドを使用して \fBnfsmapid_domain\fR パラメータを指定します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB_nfsv4idmapdomain\fR DNS リソースレコードを指定します。
+.RE
+.sp
+.LP
+現在選択されている NFSv4 ドメインは、\fB/var/run/nfs4_domain\fR ファイル内で使用できます。
+.sp
+.LP
+詳細は、『\fI『System Administration Guide: Network Services』\fR\fI\fR』を参照してください。
+.SS "SMF による管理"
+.sp
+.LP
+\fBnfsmapid\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/network/nfs/mapid
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+無効になっている場合は、\fBapplication/auto_enable\fR プロパティーが \fBfalse\fR に設定されていないかぎり、\fBmount_nfs\fR(1M)、\fBshare_nfs\fR(1M)、および \fBautomountd\fR(1M) を使用することで有効になります。
+.sp
+.LP
+\fBnfsmapid\fR は、ユーザーの UID と GID をキャッシュします。あとでユーザーが、後述するユーティリティーのいずれかを使って UID や GID を変更した場合、\fBnfsmapid\fR キャッシュは無効になります。この時点で、属性を取得または設定する NFS 操作では、この無効な情報が交換されます。この状況を解決するには、次のように \fBnfsmapid\fR を再起動します。
+.sp
+.in +2
+.nf
+# \fBsvcadm restart svc:/network/nfs/mapid:default\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ドメイン名を指定する起動 SMF パラメータ (\fBnfsmapid_domain\fR) は、\fBsharectl\fR(1M) コマンドを使って操作できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnfsmapid_domain\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS SMF パラメータ \fBnfsmapid_domain\fR の設定は、送信と受信の各属性文字列の作成と比較に \fBnfsmapid\fR で使用されるドメインよりも優先されます。また、この設定は、NFSv4 ドメインを設定するほかのすべてのメカニズムよりも優先されます。\fBnfsmapid_domain\fR の設定が存在しない場合、\fBnfsmapid\fR デーモンは次のように NFSv4 ドメインを決定します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+適切に構成された \fB/etc/resolv.conf\fR (\fBresolv.conf\fR(4) を参照) が存在する場合、\fBnfsmapid\fR は指定されたネームサーバーに対してドメインを照会します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+適切に構成された \fB/etc/resolv.conf\fR (\fBresolv.conf\fR(4) を参照) が存在するが、照会先のネームサーバーが適切なドメイン名レコードを保持していない場合、\fBnfsmapid\fR は \fBBIND\fR インタフェースを介してドメイン名の取得を試みます (\fBresolver\fR(3RESOLV) を参照)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/resolv.conf\fR が存在しない場合、\fBnfsmapid\fR はフォールバックして構成済みのドメイン名 (\fBdomainname\fR(1M) を参照) を使用します。返されるドメイン名は、先頭のドメイン接尾辞が削除されています。たとえば、\fBwidgets.sales.acme.com\fR の場合は \fBsales.acme.com\fR が返されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/resolv.conf\fR が存在せず、構成済みのドメイン名 (または \fB/etc/defaultdomain\fR) も存在しない場合は、ホスト名に完全指定のドメイン名 (FQDN) が含まれていれば、\fBnfsmapid\fR はフォールバックしてホスト名からドメイン名を取得します。
+.RE
+.RE
+
+.sp
+.LP
+前述の手順をすべて実行してもドメイン名を取得できない場合、\fBnfsmapid\fR は構成済みのドメインを持ちません。その結果、次のような動作になります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBowner\fR および \fBowner_group\fR 送信属性文字列は、リテラル ID としてエンコードされます。たとえば、UID 12345 は \fB12345\fR としてエンコードされます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnfsmapid\fR は、受信属性文字列の \fBdomain\fR 部分を無視し、ユーザーまたはグループのネームサービス検索のみを実行します。ローカルシステムのネームサービスデータベース内にユーザー/グループが存在する場合は、ドメインが構成されていない場合でも、適切な UID/GID がマップされます。
+.RE
+.sp
+.LP
+この動作は、NFSv4 のクライアントとサーバー間で同じ管理ユーザー/グループドメインが存在する (つまり、クライアントとサーバーの両方でユーザー/グループの UID/GID が同じである) ことを意味します 重複する ID 空間では、受信属性文字列が不正な ID にマップされる可能性があります。ただし、これは、受信文字列を \fBnobody\fR にマップすることとは機能的に異なり、より高い柔軟性を実現します。後述の「使用例」を参照してください。\fB\fR
+.sp
+.LP
+UID と GID を変更できるユーティリティーを次に示します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusermod\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBuserdel\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgroupmod\fR(1M)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBgroupdel\fR(1M)
+.RE
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/run/nfs4_domain\fR\fR
+.ad
+.RS 24n
+.rt  
+現在 NFSv4 により使用されているドメイン名が含まれています。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRドメイン名を設定する
+.sp
+.LP
+次のコマンドは、\fBsharectl\fR を使用してドメイン名を設定します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p nfsmapid_domain=sun.com nfs\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBnfsmapid_domain\fR プロパティーについては、後述の「注意事項」を参照してください。\fB\fR
+
+.LP
+\fB例 2 \fRドメイン名を取得する
+.sp
+.LP
+次のコマンドは、\fBsharectl\fR を使用して現在のドメイン名を取得します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl get -p nfsmapid_domain nfs\fR
+nfsmapid_domain=sun.com
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/nfs
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBautomountd\fR(1M), \fBdomainname\fR(1M), \fBgroupdel\fR(1M), \fBgroupmod\fR(1M), \fBmount_nfs\fR(1M), \fBsvcadm\fR(1M), \fBshare_nfs\fR(1M), \fBsharectl\fR(1M), \fBuserdel\fR(1M), \fBusermod\fR(1M), \fBresolver\fR(3RESOLV), \fBnfs\fR(4), \fBresolv.conf\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fI『System Administration Guide: Network Services 』\fR
+.SH 注意事項
+.sp
+.LP
+Solaris の将来のリリースでは、\fBnfsmapid\fR デーモンが存在しなくなる可能性があります。

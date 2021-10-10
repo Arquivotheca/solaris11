@@ -1,0 +1,192 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH HBA_GetAdapterPortAttributes 3HBAAPI "1 Sep 2003" "SunOS 5.11" "Common Fibre Channel HBA Information Library Functions"
+.SH NAME
+HBA_GetAdapterPortAttributes, HBA_GetDiscoveredPortAttributes, HBA_GetPortAttributesByWWN \- retrieve Fibre Channel port attributes for a specific device
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR\&.\|.\|. ] \fIfile\fR\&.\|.\|. \fB-lHBAAPI\fR [ \fIlibrary\fR\&.\|.\|. ]
+#include <hbaapi.h>
+
+\fBHBA_STATUS\fR \fBHBA_GetAdapterPortAttributes\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBHBA_UINT32\fR \fIportindex\fR, \fBHBA_PORTATTRIBUTES *\fR\fIportattributes\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_GetDiscoveredPortAttributes\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBHBA_UINT32\fR \fIportindex\fR, \fBHBA_UINT32\fR \fIdiscoveredportindex\fR,
+     \fBHBA_PORTATTRIBUTES *\fR\fIportattributes\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_GetPortAttributesByWWN\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBHBA_WWN\fR \fIPortWWN\fR, \fBHBA_PORTATTRIBUTES *\fR\fIportattributes\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhandle\fR\fR
+.ad
+.RS 23n
+.rt  
+an open handle returned from \fBHBA_OpenAdapter\fR(3HBAAPI)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIportindex\fR\fR
+.ad
+.RS 23n
+.rt  
+the index of a specific port on the HBA as returned by a call to \fBHBA_GetAdapterAttributes\fR(3HBAAPI).  The maximum value specified should be (\fBHBA_ADAPTERATTRIBUTES.NumberOfPorts\fR - 1).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIportattributes\fR\fR
+.ad
+.RS 23n
+.rt  
+a pointer to an \fBHBA_PORTATTRIBUTES\fR structure.  Upon successful completion, this structure contains the specified port attributes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdiscoveredportindex\fR\fR
+.ad
+.RS 23n
+.rt  
+the index of a specific discovered port on the HBA as returned by HBA_GetAdapterPortAttributes(3HBAAPI). The maximum value specified should be (\fBHBA_PORTATTRIBUTES.NumberOfDiscoveredPorts\fR - 1).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIPortWWN\fR\fR
+.ad
+.RS 23n
+.rt  
+the port WWN of the device for which port attributes are retrieved.
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBHBA_GetAdapterPortAttributes()\fR function retrieves Port Attributes for a specific port on the HBA.
+.sp
+.LP
+The \fBHBA_GetDiscoveredPortAttributes()\fR function retrieves Port Attributes for a specific discovered device connected to the HBA.
+.sp
+.LP
+The \fBHBA_GetPortAttributesByWWN()\fR function retrieves Port Attributes for a specific device based on the \fIPortWWN\fR argument.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, \fBHBA_STATUS_OK\fR is returned. Otherwise, an error value is returned from the underlying VSL and the values in \fIhbaattributes\fR are undefined.
+.SH ERRORS
+.sp
+.LP
+See \fBlibhbaapi\fR(3LIB) for general error status values.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRRetrieve the port attributes for each port on the HBA.
+.sp
+.LP
+The following example retrieves the port attributes for each port on the HBA.
+
+.sp
+.in +2
+.nf
+for (hbaPort = 0; hbaPort < hbaAttrs.NumberOfPorts; hbaPort++) {
+    if ((status = HBA_GetAdapterPortAttributes(handle,
+            hbaPort, &hbaPortAttrs)) != HBA_STATUS_OK) {
+        fprintf(stderr, "Unable to get adapter port %d "
+            "attributes for HBA %d with name \e"%s\e".\en",
+            hbaPort, hbaCount, adaptername);
+        HBA_CloseAdapter(handle);
+        continue;
+    }
+    memcpy(&wwn, hbaPortAttrs.PortWWN.wwn, sizeof (wwn));
+    printf(" Port %d: WWN=%016llx\en", hbaPort, wwn);
+
+    /* ... */
+}
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRRetrieve the discovered port target attributes for each discovered target port on the HBA.
+.sp
+.LP
+The following example retrieves the discovered port target attributes for each discovered target port on the HBA.
+
+.sp
+.in +2
+.nf
+for (discPort = 0;
+        discPort < hbaPortAttrs.NumberofDiscoveredPorts;
+        discPort++) {
+    if ((status = HBA_GetDiscoveredPortAttributes(
+            handle, hbaPort, discPort,
+            &discPortAttrs)) != HBA_STATUS_OK) {
+        fprintf(stderr, "Unable to get "
+            "discovered port %d attributes for "
+            "HBA %d with name \e"%s\e".\en",
+            discPort, hbaCount, adaptername);
+        continue;
+    }
+    memcpy(&wwn, discPortAttrs.PortWWN.wwn,
+        sizeof (wwn));
+    printf("  Discovered Port %d: WWN=%016llx\en",
+        discPort, wwn);
+
+    /* ... */
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+T{
+Standard: FC-HBA Version 4 (API version 2)
+T}
+_
+MT-LevelSafe
+_
+StandardFC-MI 1.92 (API version 1)
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+HBA_GetAdapterPortAttributes(3HBAAPI), \fBHBA_OpenAdapter\fR(3HBAAPI), \fBlibhbaapi\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+T11 FC-MI Specification

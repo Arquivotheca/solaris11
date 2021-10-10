@@ -1,0 +1,77 @@
+'\" te
+.\" Copyright (c) 2007, Sun Microsystems, Inc. All Rights Reserved.
+.TH labels 5 "2007 年 7 月 20 日" "SunOS 5.11" "標準、環境、マクロ"
+.SH 名前
+labels \- Solaris Trusted Extensions ラベル属性
+.SH 機能説明
+.sp
+.LP
+ラベルは必須ポリシーの決定に使用される属性です。ラベルは、すべてのサブジェクト (通常はプロセス) およびサブジェクトへとアクセス可能なオブジェクト (通常はファイルのようにデータを保持するもの) に、明示的または暗黙的に関連付けられます。デフォルトの Trusted Extensions 必須ポリシーラベルは、サイトのセキュリティー管理者により、\fBlabel_encodings\fR(4) 内で定義されます。
+.SS "必須ポリシー"
+.sp
+.LP
+Solaris Trusted Extensions の有効期間中に、さまざまな必須ポリシーを提供できます。
+.sp
+.LP
+Trusted Extensions のデフォルト必須ポリシーは必須アクセス制御 (MAC) ポリシー (Lattice の Bell-LaPadula Model の必須ポリシー、Simple Security Property、および *-Property (Star Property) と同等) で、制限された上位書き込みを持ちます。デフォルト必須ポリシーは、Non-Inteference  の Goguen and Mesegeur モデルとも同等です。
+.sp
+.LP
+この MAC ポリシーの場合、2 つのラベル  \fBadmin_low\fR および \fBadmin_high\fR が常に定義されます。サイトのセキュリティー管理者は、\fBlabel_encodings\fR(4) 内でその他のラベルすべてを定義します。\fBadmin_low\fR は、ユーザーが読み取り (表示) 可能な通常の Trusted Extensions オブジェクトすべてと関連付けられます。\fBadmin_high\fR は、その他の Trusted Extensions オブジェクトすべてと関連付けられます。\fBadmin_high\fR オブジェクトへの MAC 読み取り (表示) アクセス権を保持するのは、管理ユーザーだけです。また、\fBadmin_low\fR オブジェクトや \fBadmin_high\fR オブジェクトへの MAC 書き込み (変更) アクセス権を保持するのも管理ユーザーだけです。
+.SS "人間が読み取り可能なラベル"
+.sp
+.LP
+ユーザーは、ラベルを文字列として対話的に処理します。グラフィカルユーザーインタフェースおよびコマンド行インタフェースには、\fBlabel_encodings\fR(4) の定義に従って文字列が表示されます。人間が読み取り可能なラベルは、それが表現するラベルで格付けされます。このため、ラベル \fBA\fR の文字列を読み取り可能 (表示可能、人間が読み取り可能な文字列と不透明な \fBm_label_t\fR 間の相互変換が可能) なのは、そのラベルへの読み取り (表示) アクセスを許可するラベルを持つサブジェクトだけです。
+.SS "内部テキストラベル"
+.sp
+.LP
+公開アクセス可能な (\fBadmin_low\fR) ネームサービスデータベースにラベルを格納する場合には、格付けされていない内部テキスト形式が使用されます。このテキスト形式は、この形式のラベルを作成した Trusted Extensions ソフトウェアリリースで提供されるインタフェース以外のインタフェースでの使用は意図されていません。
+.SS "ラベルとアプリケーション"
+.sp
+.LP
+アプリケーションは、ラベルとの対話処理を行う際に、ラベルが不透明な (\fBm_label_t\fR) 構造体であると見なします。これら不透明な構造体のセマンティクスは、文字列から \fBm_label_t\fR への変換で定義されます。変換は、\fBlabel_encodings\fR(4) 内で定義されます。さまざまなアプリケーションプログラミングインタフェース (API) が、文字列と \fBm_label_t\fR 構造体間の変換を行います。さまざま API が、サブジェクト関連のラベルからオブジェクト関連のラベルへのアクセスをテストします。
+.SH 属性
+.sp
+.LP
+次の属性については、 \fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+ラベル実装は、\fBlabel_encodings\fR(4) の米国国防情報局 (DIA) MAC ポリシーを実装するシステムでは「確実」です。Trusted Extensions の将来のリリースにその他のポリシーが存在する可能性はありますが、それらは将来のリリースでは廃止されるか、\fBlabel_encodings\fR の補完的役割になる可能性があります。
+.sp
+.LP
+内部テキストラベルはインタフェースではないため、Trusted Extensions のいずれかのリリースで変更される可能性があります。これらは、同一の Trusted Extensions ソフトウェアリリース上で入力および生成を行う場合だけを想定しています。
+.sp
+.LP
+Trusted Solaris 8 アプリケーションでの移植性を高めるために、不透明な構造体名 \fBbslabel_t\fR、\fBblevel_t\fR、および \fBbclear_t\fR が、\fBm_label_t\fR と等価なものとして定義されています。これらのタイプは、\fBm_label_t\fR と同様に、不透明なポインタとして移植する必要があります。さまざまな Trusted Solaris 8 ラベルインタフェースに対して、同じ作業を行う必要があります。これらの Trusted Solaris 8 構造体およびインタフェースは廃止済みであり、Trusted Extensions の将来のリリースでは削除される可能性があります。
+.SH 関連項目
+.sp
+.LP
+\fBchk_encodings\fR(1M), \fBblcompare\fR(3TSOL), \fBlabel_to_str\fR(3TSOL), \fBm_label_alloc\fR(3TSOL), \fBm_label_dup\fR(3TSOL), \fBm_label_free\fR(3TSOL), \fBstr_to_label\fR(3TSOL), \fBlabel_encodings\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+『\fISecure Computer Systems: Unified Exposition and Multics Interpretation\fR』、Bell, D. E. および LaPadula, L. J. 共著、MTR-2997 第 2 版、MITRE Corp 発行、Bedford Mass.、1976 年 3 月。NTIS AD-A023 588/7。
+.sp
+.LP
+『\fISecurity Policies and Security Models\fR』、Goguen, J. A. および Mesegeur, J. 共著、1982 Symposium on Security and Privacy 紀要、IEEE Computer Society Press 発行、1982 年、11-20 ページ。
+.sp
+.LP
+『\fIUnwinding and Interference Control\fR』、Goguen, J. A. および Mesegeur, J. 共著、1984 Symposium on Security and Privacy 紀要、IEEE Computer Society Press 発行、1984 年、75-86 ページ。
+.sp
+.LP
+\fI『Compartmented Mode Workstation Labeling: Encodings Format』\fR
+.SH 注意事項
+.sp
+.LP
+このマニュアルページに記載されている機能を利用できるのは、システムが Trusted Extensions を使用して構成されている場合だけです。

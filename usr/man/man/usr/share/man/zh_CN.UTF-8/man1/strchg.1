@@ -1,0 +1,244 @@
+'\" te
+.\" 版权所有 1989 AT&T 版权所有 (c) 2005，Oracle 和/或其附属公司。保留所有权利
+.TH strchg 1 "2005 年 3 月 24 日" "SunOS 5.11" "用户命令"
+.SH 名称
+strchg, strconf \- 更改或查询流配置
+.SH 用法概要
+.LP
+.nf
+\fBstrchg\fR \fB-h\fR \fImodule1\fR [, \fImodule2\fR...]
+.fi
+
+.LP
+.nf
+\fBstrchg\fR \fB-p\fR [\fB-a\fR | \fB-u\fR \fImodule\fR]
+.fi
+
+.LP
+.nf
+\fBstrchg\fR \fB-f\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fBstrconf\fR [\fB-m\fR | \fB-t\fR \fImodule\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+这些命令用于更改或查询用户的标准输入关联的流配置。\fBstrchg\fR 命令推动模块到流上和/或将模块从流上弹出。\fBstrconf\fR 命令查询流配置。只有超级用户或 STREAMS 设备的所有者才能更改该流的配置。
+.sp
+.LP
+如果调用时不带任何参数，\fBstrconf\fR 将输出包含流中所有模块以及最顶端的驱动程序的列表。该列表输出时，每行显示一个名称。其中，输出的第一个名称是流上的最顶端模块（如果存在），输出的最后一项是驱动程序的名称。
+.SH 选项
+.sp
+.LP
+以下选项适用于 \fBstrchg\fR 命令。其中，\fB\fR\fB-h\fR\fB、\fR\fB\fR\fB-f\fR\fB \fR和 \fB-p\fR 选项是互斥的。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+将最顶端的驱动程序上的所有模块从流上弹出来。该选项需和 \fB-p\fR 选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定一个包含代表所需流配置的模块列表的 \fIfilename\fR。每个模块名称必须在一个单独的行上显示。其中，第一个名称代表最顶端的模块，最后一个名称代表最靠近驱动程序的模块。\fBstrchg\fR 确定当前流配置，并弹出和推动必要的模块以获取所需的配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fI module1\fR [\|,\|\fImodule2\fR.\|.\|.\|]\fR
+.ad
+.sp .6
+.RS 4n
+ 推动助记符 \fIh\fR，将模块推动到流上。该助记符将一个或多个可推流模块的名称作为参数。这些模块按顺序推动，即首先推动 \fImodule1\fR，其次推动 \fImodule2\fR 等。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+弹出助记符 \fIp\fR，将模块从流中弹出。如果只有 \fB-p\fR 选项，\fBstrchg\fR 会将最顶端模块从流中弹出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fI module\fR \fR
+.ad
+.sp .6
+.RS 4n
+从流中弹出除 \fImodule\fR 之外的上述所有模块。该选项需和 \fB-p\fR 选项一起使用。
+.RE
+
+.sp
+.LP
+以下选项适用于 \fBstrconf\fR。其中，\fB-m\fR 和 \fB-t\fR 选项是互斥的。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fI module\fR \fR
+.ad
+.RS 14n
+.rt  
+确定指定的 \fImodule\fR 是否在流上。如果该模块在流上，\fBstrconf\fR 命令将输出 \fByes\fR 消息并返回零值。如果该模块不在流上，\fBstrconf\fR 将输出 \fBno\fR 消息并返回非零值。\fB-a\fR 和 \fB-d\fR 选项相互排斥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fI module\fR \fR
+.ad
+.RS 14n
+.rt  
+只输出最顶端的模块（如果存在）。\fB-t\fR 和 \fB-m\fR 选项是互斥的。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBstrchg\fR 命令
+.sp
+.LP
+以下命令将模块 \fBldterm\fR 推动到用户的标准输入关联的流上。
+
+.sp
+.in +2
+.nf
+example% strchg -h ldterm
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令将最顶端的模块从 \fB/dev/term/24\fR 关联的流上弹出。用户必须是该设备的所有者或超级用户。
+
+.sp
+.in +2
+.nf
+example% strchg -p < /dev/term/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果 \fBfileconf\fR 文件包含以下几项：
+
+.sp
+.in +2
+.nf
+ttcompat
+ldterm
+ptem
+.fi
+.in -2
+
+.sp
+.LP
+则以下命令会
+
+.sp
+.in +2
+.nf
+example% strchg -f fileconf
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+配置用户的标准输入流，以便将 \fBptem\fR 模块推动到驱动程序上，\fBldterm\fR 模块跟随在该模块的后面，而 \fBttcompat\fR 模块被推到最靠近流头。
+
+.sp
+.LP
+如果不指定任何参数，\fBstrconf\fR 命令将列出该流中的模块以及最顶端的驱动程序。如果流中只有 \fBldterm\fR 模块在 \fBzs\fR 驱动程序上推动，该命令将产生以下输出：
+
+.sp
+.in +2
+.nf
+ldterm
+zs
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令询问 \fBldterm\fR 模块是否在流上： 
+
+.sp
+.in +2
+.nf
+example% strconf -m ldterm
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+该命令返回退出状态 0 时产生以下输出：
+
+.sp
+.in +2
+.nf
+yes
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) lw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+属性类型\fB\fR属性值\fB\fR
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBattributes\fR(5)、\fBstreamio\fR(7I)
+.SH 诊断
+.sp
+.LP
+如果执行成功，\fBstrchg\fR 命令将返回零值。对于各种错误状态，该命令会输出错误消息并返回非零状态，包括使用错误、错误模块名称、要推动的模块太多、流上的 ioctl 操作故障，或未能打开 \fB-f\fR 选项指定的 \fIfilename\fR。
+.sp
+.LP
+如果执行成功，\fBstrconf\fR 命令将返回零值。对于 \fB-m\fR 或 \fB-t\fR 选项，"执行成功"意味着指定的模块或最顶端的模块在流上。如果该命令在调用时指定了 \fB-m\fR 或者 \fB-t\fR 选项并且模块不在流上，则会返回非零状态。对于各种错误状态，该命令会输出错误消息并返回非零状态，包括使用错误或流上的 \fBioctl\fR 操作故障。
+.SH 附注
+.sp
+.LP
+如果用户既不是流的所有者也不是超级用户，\fBstrchg\fR 命令将会失败。如果用户不是超级用户且没有流的读取权限，\fBstrconf\fR 命令将会失败。
+.sp
+.LP
+如果模块按错误的顺序推动，用户可能会获取不按预期的方式运行的流。对于 tty，如果线路规程模块被推动到不正确的位置，用户的终端可能不会对任何命令作出响应。

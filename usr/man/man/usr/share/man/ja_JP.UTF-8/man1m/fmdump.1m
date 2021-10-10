@@ -1,0 +1,716 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmdump 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+fmdump \- 障害管理ログビューア
+.SH 形式
+.LP
+.nf
+\fBfmdump\fR [[\fB-e\fR | \fB-i\fR | \fB-I\fR] | \fB-A\fR ] [\fB-f\fR] [\fB-mvVp\fR] [\fB-c\fR \fIclass\fR] [\fB-R\fR \fIroot\fR]
+     [\fB-t\fR \fItime\fR] [\fB-T\fR \fItime\fR] [\fB-u\fR \fIuid\fR] [\fB-n\fR \fIname\fR[.\fIname\fR]*[=\fIvalue\fR]]
+     [\fB-E\fR \fIENA\fR] [\fIfile\fR] ...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfmdump\fR ユーティリティーは、Solaris Fault Manager (\fBfmd\fR(1M)) に関連付けられたログファイルの内容を表示するために使用できます。Fault Manager は各 Solaris システムのバックグラウンドで実行されます。Fault Manager は、システムソフトウェアが検出した問題に関する遠隔測定情報を受け取り、問題を診断し、障害のあるコンポーネントの無効化などの予測的自己修復操作を開始します。
+.sp
+.LP
+\fBfmdump\fR ユーティリティーは、Fault Manager の主管理インタフェースとして設計されたものではありません。その目的には、\fBfmadm\fR を使用してください (\fBfmadm\fR(1M) を参照)。\fBfmdump\fR ユーティリティーは、新たな解釈をほとんど行うことなく Fault Manager の履歴ログを単純にダンプするほか、何の説明もなしに実装の詳細情報を含める可能性があります。後述の「属性」の節を参照してください。\fB\fR
+.sp
+.LP
+Fault Manager は次のように、複数のセットのログファイルを維持しますが、これらは主にサービス担当者向けのものです (場合によっては管理者も使用可)。
+.sp
+.ne 2
+.mk
+.na
+\fBエラーログ\fR
+.ad
+.RS 19n
+.rt  
+エラー遠隔測定 (システムによって検出された問題の兆候) を記録するログ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB情報ログ\fR
+.ad
+.RS 19n
+.rt  
+情報イベントを記録するログ。これは、高価値情報イベントとその他の情報イベントという 2 セットのログファイルとして実現されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB障害ログ\fR
+.ad
+.RS 19n
+.rt  
+障害診断情報 (エラーログや情報ログに記録された兆候を説明すると考えられる問題) を記録するログ。
+.RE
+
+.sp
+.LP
+1 つのログファイルセットは、現在のアクティブログファイルと、そのセット内のおそらくいくつかのローテーションされた古いログファイルとから構成されます。すべてのログは \fBlogadm\fR(1M) で管理され、\fB/etc/logadm.conf\fR 内にエントリを持ちます。
+.sp
+.LP
+\fBfmdump\fR ユーティリティーは、対象セットの現在のログファイルとローテーションされたすべてのログファイルをダンプします。したがって、ログ履歴の全体が表示されることになります。特に障害ログの場合、\fBfmdump\fR が、進行中の問題だけにとどまらず、\fBかつて\fR診断されたことのあるすべての問題を表示する点を認識することが重要です。(その情報を取得するには \fBfmadm\fR faulty を使用します。)
+.sp
+.LP
+デフォルトでは、\fBfmdump\fR は障害ログの内容を表示します。障害ログには、Fault Manager またはそのコンポーネントモジュールによって行われた個々の診断の結果が記録されます。エラーログを選択するには \fB-e\fR を使用し、情報ログの場合は \fB-i\fR を、高価値情報ログの場合は \fB-I\fR を、それぞれ使用します。あるいは、コマンド行で特定のログファイルパスを [\fIfile\fR] として指定することもできます (この場合、そのファイルだけがダンプされ、ローテーション版のログは検索されません)。さらに、オプション \fB-A\fR を使用することで、すべてのログを集約したり、コマンド行に設定されたログファイルパスのセットを集約したりすることもできます。
+.sp
+.LP
+\fBfmdump\fR のデフォルト表示の例を次に示します。
+.sp
+.in +2
+.nf
+# \fBfmdump\fR
+TIME                 UUID                                 SUNW-MSG-ID EVENT
+Mar 23 14:06:35.2682 0a11a1a7-a8ce-c941-8527-8d7a9d320071 ZFS-8000-CS Diagnosed
+Mar 25 14:51:41.2261 0a11a1a7-a8ce-c941-8527-8d7a9d320071 FMD-8000-4M Repaired
+Mar 25 14:51:41.2523 0a11a1a7-a8ce-c941-8527-8d7a9d320071 FMD-8000-6U Resolved
+May 31 23:35:39.9146 c63ac52e-506b-c1cc-e965-ff3b8544490d SMF-8000-YX Diagnosed
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+(80 文字以下の画面では出力が折り返されます。)
+.sp
+.LP
+この場合は障害ログがダンプされます。ほかのログを選択するオプションや引数がコマンド行に指定されていないためです。障害ログには、Fault Manager やそのコンポーネントモジュールによって診断された問題のライフサイクル (初期の問題診断から、問題解決まで) が記録されます。
+.sp
+.LP
+障害ログに記録された個々の問題は、次の要素で識別されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+イベントのタイムスタンプ。問題のライフサイクルの状態変化を記述します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+汎用一意識別子 (UUID)。一連のシステム間でその問題を一意に識別するために使用できます。ある特定の問題の問題ライフサイクル状態変化を記述するイベントはすべて同じ UUID を使用します (前述の例でも、初期診断やそのあとの修復や解決がすべて同じ問題 UUID を参照していることがわかります)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+メッセージ識別子。Sun の Web サイト (http://www.oracle.com/us/sun/msg/) にある対応するナレッジ記事にアクセスするために使用できます。
+.RE
+.sp
+.LP
+問題に対して管理者やサービス担当者による処置が必要な場合や、問題がシステムの動作に影響する場合は、人間が読める形式のメッセージが Fault Manager から \fBsyslogd\fR(1M) に出力されます。このメッセージには、問題の要約と Sun Web サイト (http://www.oracle.com/us/sun/msg/) のナレッジ記事への参照が含まれています。\fBfmdump\fR ユーティリティーで \fBsyslog\fR への書き込みと似た形式で \fBfltlog\fR エントリをダンプするには、\fB-m\fR オプションを使用します。
+.sp
+.LP
+\fB-v\fR および \fB-V\fR オプションを使って、1 行だけの要約から、ログに記録された各イベントの詳細情報のレベルまで、表示を展開できます。\fB-p\fR オプションを \fB-V\fR と組み合わせて使用すると、「より高品質の」出力を要求できます。
+.sp
+.LP
+\fB-c\fR、\fB-t\fR、\fB-T\fR、\fB-n\fR、および \fB-u\fR オプションを使って、指定した class、時間範囲、または uuid と一致するイベントだけを選択することにより、出力をフィルタ処理できます。コマンド行に複数のフィルタオプションを指定すると、各オプションの論理 \fBAND\fR によって選択されたイベントだけを表示するようにオプションが組み合わされます。コマンド行に同じフィルタオプションを複数回指定すると、各オプションの論理 \fBOR\fR によって選択されたイベントを表示するように同類のオプションが組み合わされます。次に例を示します。 
+.sp
+.in +2
+.nf
+# \fBfmdump -u uuid1 -u uuid2 -t 02Dec09\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、属性が (\fBuuid1 OR uuid2\fR) \fBAND\fR (\fB02Dec09\fR 以降) であるイベントを選択します。 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログの集約を実行します。コマンド行に 1 つ以上のログファイルパスが指定された場合は、それらのファイルを集約します。それ以外の場合は、すべての \fBlogadm\fR ローテーションファイルを含む、すべての既知のログタイプを集約します。ログのマージは時間順に行われますが、その際、同じログファイル内の任意の 2 つのレコードは、集約内でも元のログファイル内とまったく同じ順番になります (これは、Fault Manager が受け取って処理した順番であり、基本的には時間順になる)。
+.sp
+ほかのログセット選択オプション \fB-e\fR、\fB-i\fR、\fB-I\fR を \fB-A\fR と併用することはできません。\fB-c\fR、\fB-t\fR、\fB-T\fR、\fB-n\fR などのフィルタオプションは使用できますが、\fB-u\fR は使用できません。出力オプション \fB-v\fR、\fB-V\fR、および \fB-p\fR は使用できますが、\fB-m\fR は使用できません。オプション \fB-f\fR は、選択されたすべてのログに追従します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したクラスと一致するイベントを選択します。class 引数には、\fBsh\fR(1) に示されている構文と一致する glob パターンを使用できます。このクラスは、遠隔測定イベントの種類を示す階層分類文字列を表します。Sun の遠隔測定プロトコルの詳細については、Sun の Web サイト (http://www.oracle.com/us/sun/msg/) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+障害管理の障害ログではなくエラーログのイベントを表示します。
+.sp
+エラーログには、Sun の自動診断ソフトウェアが使用する非公開の遠隔測定情報が含まれています。この情報は、問題の事後分析やイベントの再現を支援するために記録されるものであるため、スクリプトやほかのツールの開発のために解析したり利用したりしないでください。非公開インタフェースに関する Sun の規則については、\fBattributes\fR(5) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIENA\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された ENA 値に一致する任意の世代のイベントを選択します。ENA をサポートする検出機能でこのオプションを使用すると、同じ操作に関連付けられた複数のイベントを表示できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログファイル (\fB-A\fR 使用時は複数のログファイル) の増大に追従するため、追加データが発生するまで待機します。\fBfmdump\fR は、1 秒間休止し、ログファイルから新しいデータを読み取って整形したあと、また休止状態に戻るという無限ループに入ります。このループは、割り込み (\fBCtrl + C\fR) を送信することでいつでも終了できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+障害ログ内の各エントリに関連するローカライズされた診断メッセージを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIname\fR[.\fIname\fR]*[=\fIvalue\fR]\fR
+.ad
+.sp .6
+.RS 4n
+名前 (と場合によっては値) が一致するプロパティーを含むログイベントを (コマンド行で選択されたログから) 選択します。文字列プロパティーの場合は、この値を正規表現照合にできます。正規表現の構文は、\fBregex\fR(5) のマニュアルページの「EXTENDED REGULAR EXPRESSIONS」の節で説明されています。次の文字を使用する場合、
+.sp
+.in +2
+.nf
+$  *  {  ^  |  (  )  \e
+.fi
+.in -2
+.sp
+
+または正規表現を使用する場合は、これらがシェルにとって意味を持つため、注意が必要です これらのすべてを単一引用符で囲むのがもっとも安全です。数値プロパティーの場合は、この値を 8 進数、16 進数、または 10 進数にすることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-V\fR (非常に詳細) オプションと組み合わせた場合、使用可能な整形された出力オプションが実際に実行されることを要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfmdump\fR がアクセスするログファイルのルートディレクトリとして、デフォルトのルート (\fB/\fR) ではなく指定したディレクトリを使用します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した時間以降に発生したイベントを選択します。時間は次の形式で指定できます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy hh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+月、日、年、時 (24 時間形式)、分、および秒。日付と時刻は任意の数のスペース文字で区切ることができます。シェルに 2 つの文字列を 1 つの引数として解釈させるには、引数全体を引用符で囲んでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy hh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+月、日、年、時 (24 時間形式)、および分。日付と時刻は任意の数のスペース文字で区切ることができます。シェルに 2 つの文字列を 1 つの引数として解釈させるには、引数全体を引用符で囲んでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fImm\fR/\fIdd\fR/\fIyy\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した月、日、年の午前 12:00:00。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIddMonyy hh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+日、月の名前、年、時 (24 時間形式)、分、および秒。日付と時刻は任意の数のスペース文字で区切ることができます。シェルに 2 つの文字列を 1 つの引数として解釈させるには、引数全体を引用符で囲んでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIddMonyy hh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+日、月の名前、年、時 (24 時間形式)、および分。日付と時刻は任意の数のスペース文字で区切ることができます。シェルに 2 つの文字列を 1 つの引数として解釈させるには、引数全体を引用符で囲んでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIMon\fR \fIdd\fR \fIhh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+当年の月、日、時 (24 時間形式)、分、および秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIyyyy\fR-\fImm\fR-\fIdd\fR [T \fIhh\fR:\fImm\fR[:\fIss\fR]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+年、月、日、省略可能な時 (24 時間形式)、分、および秒。秒、または時、分、秒を省略できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIddMonyy\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した日、月の名前、年の午前 12:00:00。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIhh\fR:\fImm\fR:\fIss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+当日の時 (24 時間形式)、分、および秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIhh\fR:\fImm\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+当日の時 (24 時間形式) および分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIT\fR\fBns\fR | \fIT\fR\fBnsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR ナノ秒前。T は 10 進数で指定した整数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRus |\fIT\fRusec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR マイクロ秒前。T は 10 進数で指定した整数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIT\fR\fBms\fR | \fIT\fR\fBmsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+T ミリ秒前。T は 10 進数で指定した整数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRs | \fIT\fRsec\fR\fR
+.ad
+.sp .6
+.RS 4n
+T 秒前。\fIT\fR は 10 進数で指定した整数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRm |\fIT\fRmin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 分前。\fIT\fR は 10 進数で指定した整数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRh |\fIT\fRhour\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 時間前。\fIT\fR は 10 進数で指定した整数です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIT\fRd |\fIT\fRday\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIT\fR 日前。\fIT\fR は 10 進数で指定した整数です。
+.RE
+
+\fB-t\fR オプションの引数に \fB\&.\fR\fIn\fR の形式で小数を付加すると、指定する時間の小数部分を示すことができます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItime\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した時間以前に発生したイベントを選択します。\fItime\fR は、\fB-t\fR オプションで説明したいずれかの時間形式を使って指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+障害ログ内の問題診断イベントのうち、指定された \fIuuid\fR に厳密に一致するものを選択します。個々の診断には、識別用の汎用一意識別子 (UUID) が割り当てられています。\fB-u\fR オプションとほかのオプション (\fB-v\fR など) を組み合わせることにより、特定の診断に関連付けられたすべての詳細情報を表示できます。同じ問題診断 UUID に複数の障害ログイベントが関連付けられる可能性があります。単一の問題のライフサイクル (初期診断から最終解決まで) を記述するすべてのイベントが同じ問題 UUID を参照します。
+.sp
+\fB-e\fR オプションと \fB-u\fR オプションを同時に指定すると、指定した診断によって相互参照されるエラーイベントが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細なイベント情報を表示します。イベントの表示部分が拡大され、選択したイベントの追加の共通部分が表示されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+非常に詳細なイベント情報を表示します。イベントの表示部分が拡大され、各イベントに関連付けられたすべての名前-値ペアが表示されます。さらに、障害ログの場合は、イベントの表示部分に、診断に関連付けられていた該当するエラーの相互参照のリストも表示されます。
+.sp
+整形された出力を要求するには、\fB-p\fR と \fB-V\fR を併用します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 8n
+.rt  
+システム障害ログの代わりに表示する代替ログファイル (\fB-A\fR 使用時は複数の代替ログファイル) を指定します。\fBfmdump\fR ユーティリティーは、指定したログの種類を自動的に判別し、そのログに対応する適切な出力を生成します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBfmd\fR ログからの特定のクラスの取得
+.sp
+.LP
+\fBfmd\fR ログから、指定したクラスに関する情報を取得するには、次のいずれかのコマンドを使用します。完全なクラス名は \fBereport.io.ddi.context\fR です。
+
+.sp
+.in +2
+.nf
+# \fBfmdump -Ve -c 'ereport.io.ddi.context'\fR
+# \fBfmdump -Ve -c 'ereport.*.context'\fR
+# \fBfmdump -Ve -n 'class=ereport.io.ddi.context'\fR
+# \fBfmdump -Ve -n 'class=ereport.*.context'\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述のいずれのコマンドでも次の出力が生成されます。
+
+.sp
+.in +2
+.nf
+Oct 06 2007 11:53:20.975021712 ereport.io.ddi.context
+        nvlist version: 0
+                class = ereport.io.ddi.context
+                ena = 0x1b03a15ecf00001
+                detector = (embedded nvlist)
+                nvlist version: 0
+                        version = 0x0
+                        scheme = dev
+                        device-path = /
+                (end detector)
+
+                __ttl = 0x1
+                __tod = 0x470706b0 0x3a1da690
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fBfmd\fR ログからの特定の検出機能デバイスパスの取得
+.sp
+.LP
+次のコマンドは、\fBfmd\fR ログから検出機能デバイスパスを取得します。
+
+.sp
+.in +2
+.nf
+# \fBfmdump -Ve -n 'detector.device-path=.*/disk@1,0$'\fR
+Oct 06 2007 12:04:28.065660760 ereport.io.scsi.disk.rqs
+nvlist version: 0
+       class = ereport.io.scsi.disk.rqs
+       ena = 0x453ff3732400401
+       detector = (embedded nvlist)
+                nvlist version: 0
+                        version = 0x0
+                        scheme = dev
+                        device-path = /pci@0,0/pci1000,3060@3/disk@1,0
+                (end detector)
+
+                __ttl = 0x1
+                __tod = 0x4707094c 0x3e9e758
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。ログファイル内のすべてのレコードが検査され、問題はありませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+致命的なエラーが発生。このため (指定されたファイルを開くのに失敗したなどの理由で)、ログファイルのデータは検査されませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+ログファイルを開くことには成功しましたが、入出力エラーが発生したか、レコード自体の形式が不正だったため、ログファイルの 1 つ以上のレコードが表示されませんでした。\fBfmdump\fR は、表示できなかったレコードごとに警告メッセージを表示したあと、処理を続行し、ほかのレコードを表示しようとします。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd\fR\fR
+.ad
+.RS 29n
+.rt  
+障害管理ログのディレクトリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/errlog\fR\fR
+.ad
+.RS 29n
+.rt  
+障害管理のエラーログ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/fltlog\fR\fR
+.ad
+.RS 29n
+.rt  
+障害管理の障害ログ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/infolog_hival\fR\fR
+.ad
+.RS 29n
+.rt  
+高価値情報ログ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd/infolog\fR\fR
+.ad
+.RS 29n
+.rt  
+情報ログ
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/fault-management
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド行オプションは「不確実」です。人間が読める形式のエラーログおよび情報ログ出力は「非公開」です。人間が読める形式の障害ログ出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBsh\fR(1), \fBfmadm\fR(1M), \fBfmd\fR(1M), \fBfmstat\fR(1M), \fBlogadm\fR(1M), \fBsyslogd\fR(1M), \fBlibexacct\fR(3LIB), \fBattributes\fR(5), \fBregex\fR(5)
+.sp
+.LP
+\fI\fR
+.sp
+.LP
+http://www.oracle.com/us/sun/msg/
+.SH 注意事項
+.sp
+.LP
+障害ログには、エラーログに格納されたレコードへの参照が含まれています。\fBfmdump\fR \fB-V\fR を使ってこれらのレコードを表示することにより、特定の障害の診断に使用されたエラーを知ることができます。ログのローテーションによってエラーログの名前が変更されても、これらのリンクは保持されます。エラーログファイルを削除したり、エラーログファイルを別のファイルシステムのディレクトリに移動したりすると、これらのリンクが壊れることがあります。\fBfmdump\fR では、このような壊れたリンクのエラー情報を表示できません。障害ログに含まれる情報は引き続きすべて表示されます。

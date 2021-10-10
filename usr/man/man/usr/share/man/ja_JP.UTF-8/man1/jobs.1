@@ -1,0 +1,917 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T 
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH jobs 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+jobs, fg, bg, stop, notify \- プロセスの実行の制御
+.SH 形式
+.SS "sh"
+.LP
+.nf
+\fBjobs\fR [\fB-p\fR | \fB-l\fR] [% \fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBjobs\fR \fB-x\fR \fIcommand\fR [\fIarguments\fR]
+.fi
+
+.LP
+.nf
+\fBfg\fR [% \fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBbg\fR [% \fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBstop\fR % \fIjob_id\fR...
+.fi
+
+.LP
+.nf
+\fBstop\fR \fIpid\fR...
+.fi
+
+.SS "csh"
+.LP
+.nf
+\fBjobs\fR [\fB-l\fR]
+.fi
+
+.LP
+.nf
+\fBfg\fR [% \fIjob_id\fR]
+.fi
+
+.LP
+.nf
+\fBbg\fR [% \fIjob_id\fR]...
+.fi
+
+.LP
+.nf
+\fBnotify\fR [% \fIjob_id\fR]...
+.fi
+
+.LP
+.nf
+\fBstop\fR % \fIjob_id\fR...
+.fi
+
+.LP
+.nf
+\fBstop\fR \fIpid\fR...
+.fi
+
+.SS "ksh88"
+.LP
+.nf
+\fBjobs\fR [\fB-lnp\fR] [% \fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBfg\fR [% \fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBbg\fR [% \fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBstop\fR % \fIjob_id\fR...
+.fi
+
+.LP
+.nf
+\fBstop\fR \fIpid\fR...
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fBjobs\fR [\fB-lnp\fR] [\fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBfg\fR [\fIjob_id\fR...]
+.fi
+
+.LP
+.nf
+\fBbg\fR [\fIjob_id\fR...]
+.fi
+
+.SH 機能説明
+.SS "sh"
+.sp
+.LP
+ジョブ制御が有効なとき、Bourne シェルに組み込まれた \fBjobs\fR は、停止中またはバックグラウンドで実行中のすべてのジョブを表示します。\fB%\fR\fIjob_id\fR を省略すると、停止中またはバックグラウンドで稼動中のすべてのジョブが表示されます。次のオプションは、\fBjobs\fR の出力を変更または拡張するために使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+ジョブのプロセスグループ \fBID\fR および作業ディレクトリを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+ジョブのプロセスグループ \fBID\fR のみを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIcommand\fR または \fIarguments\fR 中に見つかった \fIjob_id\fR を、対応するプロセスグループ \fBID\fR に置き換え、\fIcommand\fR に \fIargument\fR を渡して実行します。
+.RE
+
+.sp
+.LP
+シェルを \fBjsh\fR として呼び出すと、\fBsh\fR の説明で述べたすべての機能に加えて、ジョブ制御が可能になります。通常、ジョブ制御は対話型シェルに対してだけ可能です。非対話型シェルは、ジョブ制御の機能が追加されても、その恩恵を受けないのが通常です。
+.sp
+.LP
+ジョブ制御が可能なとき、ユーザーが端末から入力したコマンドまたはパイプラインは、すべて \fIjob_id\fR と呼ばれます。どのジョブも、必ず、次のいずれかの状態にあります。フォアグラウンド、バックグラウンド、または停止です。これらの用語の定義を次に示します。
+.RS +4
+.TP
+1.
+\fBフォアグラウンド\fR状態にあるジョブは、制御している端末への読み取りおよび書き込み権を持っています。
+.RE
+.RS +4
+.TP
+2.
+\fBバックグラウンド\fR状態にあるジョブは、制御している端末への読み取りアクセスを拒否されていますが、条件付き書き込みアクセス権は持っています (\fBstty\fR(1) を参照)。
+.RE
+.RS +4
+.TP
+3.
+\fB停止\fRジョブは保留状態に置かれたジョブであり、通常は \fBSIGTSTP\fR シグナルにより、この状態になります (\fBsignal.h\fR(3HEAD) を参照)。
+.RE
+.sp
+.LP
+シェルが起動するすべてのジョブには、ジョブ番号 (\fIjob-id number\fR) と呼ばれる正の整数が割り当てられます。シェルはこの番号を把握し、特定のジョブを示す識別子として使用します。また、シェルは現在 (\fBcurrent\fR) および直前 (\fBprevious\fR) のジョブも把握しています。現在のジョブとは、最後に起動または再起動されたジョブです。\fB\fR\fB前回のジョブ\fRとは、その直前のジョブです。
+.sp
+.LP
+ジョブ識別子の正しい構文は次のような形式です。
+.sp
+.LP
+\fB%\fR\fIjob_id\fR
+.sp
+.LP
+\fIjob_id\fR は、次のいずれかの形式で指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR または \fB+\fR\fR
+.ad
+.RS 17n
+.rt  
+現在のジョブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\fR\fR
+.ad
+.RS 17n
+.rt  
+前回のジョブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fI<string>\fR\fR
+.ad
+.RS 17n
+.rt  
+\fIstring\fR を含むコマンド行 (一意に表す) に対応したジョブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIn\fR\fR
+.ad
+.RS 17n
+.rt  
+ジョブ番号が \fIn\fR のジョブ\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpref\fR\fR
+.ad
+.RS 17n
+.rt  
+コマンド名の先頭が \fIpref\fR のコマンド。たとえば \fBls\fR \fBl\fR \fIname\fR がバックグラウンドで実行中だった場合、% ls と指定すればこのコマンドを示すことができます。pref は、引用符で囲まないかぎり、空白文字を含めることができません。
+.RE
+
+.sp
+.LP
+ジョブ制御が有効なとき、\fBfg\fR は中断しているジョブの実行を フォアグラウンドで再開します。またバックグラウンドで実行中のジョブを フォアグラウンドに移動します。\fB%\fR\fIjob_id\fR を省略した場合は、現在のジョブとみなされます。
+.sp
+.LP
+ジョブ制御が有効なとき、\fBbg\fR は中断されているジョブの実行をバックグラウンドで再開します。\fB%\fR\fIjob_id\fR を省略した場合は、現在のジョブとみなされます。
+.sp
+.LP
+\fBstop\fR は、\fIjob_id\fR を指定してバックグラウンドジョブの実行を中断、または \fIpid\fR (プロセス ID 番号) を指定してすべてのプロセスを中断します (\fBps\fR(1) を参照)。
+.SS "csh"
+.sp
+.LP
+C シェルに組み込まれた \fBjobs\fR は、引数なしでジョブ制御下で活動中のジョブを一覧表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fR
+.ad
+.RS 7n
+.rt  
+通常の情報の他に、プロセス \fBID\fR を表示します。
+.RE
+
+.sp
+.LP
+シェルは、番号の付いた \fIjob_id\fR を各コマンドシーケンスと対応付けて、バックグラウンドで動作中のコマンド、または \fBTSTP\fR シグナル (通常は Control-Z) によって停止したコマンドの動作を追跡します。コマンドまたはコマンドシーケンス (セミコロンで区切られたリスト) をメタキャラクタ \fB&\fR を使用してバックグラウンドで起動した場合、シェルは角括弧で囲まれたジョブ番号と関連するプロセス番号のリストを表示します。次に例を示します。
+.sp
+.LP
+\fB[1] 1234\fR
+.sp
+.LP
+現在のジョブリストを見るには、組み込みコマンド \fBjobs\fR を使用します。最後に停止したジョブ (停止したジョブがない場合は、最後にバックグラウンドに投入されたジョブ) を「\fB現在\fRのジョブ」といい、`\fB+\fR' で示します。前のジョブは `\fB-\fR\&' で示します。現在のジョブが終了したりフォアグラウンドに移された場合、前のジョブが新しく現在のジョブになります。
+.sp
+.LP
+ジョブを操作するには、組み込みコマンド \fBbg\fR、\fBfg\fR、\fBkill\fR、\fBstop\fR、および \fB%\fR を使用します
+.sp
+.LP
+ジョブの参照は `\fB%\fR' で始まります。パーセント記号だけの指定は、現在のジョブを示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR \fB%+\fR \fB%%\fR\fR
+.ad
+.RS 12n
+.rt  
+現在のジョブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%-\fR\fR
+.ad
+.RS 12n
+.rt  
+前のジョブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fIj\fR\fR
+.ad
+.RS 12n
+.rt  
+次のようにしてジョブ \fIj\fR を参照します。`\fBkill \fR\fB-9\fR\fB %\fR\fIj\fR'。ここで、\fIj\fR はジョブ番号、またはジョブを起動した コマンド行を一意に表す文字列です。たとえば `\fBfg %vi\fR' は、停止した \fBvi\fR ジョブをフォアグラウンドに移します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%?\fR\fIstring\fR\fR
+.ad
+.RS 12n
+.rt  
+コマンド行が \fIstring\fR を含んでいるジョブ
+.RE
+
+.sp
+.LP
+バックグラウンドで動作中のジョブは、端末からの読み取り時に停止します。バックグラウンドジョブは、通常出力を生成しますが、`\fBstty tostop\fR' コマンドを使用して抑制することも可能です。
+.sp
+.LP
+\fBfg\fR は現在のジョブまたは指定された \fIjob_id\fR をフォアグラウンドへ移します。
+.sp
+.LP
+\fBbg\fR はバックグラウンドで、現在のジョブまたは指定されたジョブを実行します。
+.sp
+.LP
+\fBstop\fR は、\fIjob_id\fR を指定してバックグラウンドジョブの実行を中断、または \fIpid\fR (プロセス ID 番号) を指定してすべてのプロセスを中断します (\fBps\fR(1) を参照)。
+.sp
+.LP
+\fBnotify\fR は、現在のジョブまたは指定されたジョブのステータスが変わったとき、非同期的にユーザーに知らせます。
+.SS "ksh88"
+.sp
+.LP
+\fBjobs\fR は、現在のシェル環境で開始されたジョブの状況を表示します。\fBjobs\fR がジョブの終了ステータスを報告したとき、シェルはそのジョブのプロセス \fBID\fR を、現在のシェル実行環境で把握しているプロセス ID のリストから削除します。
+.sp
+.LP
+特定のジョブの報告だけが必要なら、\fIjob_id\fR を使ってジョブを指定します。\fIjob_id\fR を 1 つも指定しないと、全ジョブに関する情報が出力されます。
+.sp
+.LP
+次のオプションは、\fBjobs\fR の出力を変更または拡張するために使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 7n
+.rt  
+(小文字のエル)個々のジョブに関して詳細な情報を出力します。具体的には、ジョブ番号、現在のジョブ、プロセスグループ \fBID\fR、状態、ジョブを生成したコマンドを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fR
+.ad
+.RS 7n
+.rt  
+前回通知を受けたあとに停止または終了したジョブだけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.RS 7n
+.rt  
+選択されたジョブのプロセスグループリーダのプロセスグループ \fBID\fR だけを出力します。
+.RE
+
+.sp
+.LP
+デフォルトでは、\fBjobs\fR は、停止しているすべてのジョブのステータス、実行中のバックグラウンドジョブのステータス、そしてステータスが変わったのにシェルによりまだ報告されていないすべてのジョブのステータスを表示します。
+.sp
+.LP
+\fBset\fR コマンドの \fBmonitor\fR オプションを有効にすると、対話型シェルが \fBjob\fR を各パイプラインと関連付けます。このオプションは、\fBjobs\fR コマンドが表示する現在のジョブのテーブルを維持し、これらのジョブに整数番号を割り当てます。ジョブを \fB&\fR で非同期に起動すると、シェルは、次の形式の行を表示します。
+.sp
+.LP
+\fB[1]\fR \fB1234\fR
+.sp
+.LP
+非同期に起動されたジョブはジョブ番号 \fB1\fR であり、プロセス ID が \fB1234\fR であるプロセスが 1 つ (トップレベル) あることを示します。
+.sp
+.LP
+実行中のジョブがあるが、別の実行対象のジョブがある場合、^Z (Control-Z) キーを押せば、現在のジョブに \fBSTOP\fR シグナルが送信されます。そうするとシェルは通常、ジョブが「\fB停止\fR」されたことを示し (後述の「\fB出力\fR」の項を参照)、プロンプトを表示します。これで、このジョブの状態を \fBbg\fR コマンドでバックグラウンドで処理するか、またはほかのコマンドを実行してから、\fBfg\fR というコマンドでジョブをフォアグラウンドに移すことができます。^Z はただちに有効になります。つまり、保留中の出力や読み取られていない入力がただちに中止されるという点で、割り込みに似ています。
+.sp
+.LP
+シェル内のジョブを参照する方法はいくつかあります。そのジョブのいずれかのプロセスの ID を使っても、また次のいずれかを使っても参照できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fInumber\fR\fR
+.ad
+.RS 13n
+.rt  
+指定された番号のジョブ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fIstring\fR\fR
+.ad
+.RS 13n
+.rt  
+コマンド行が \fIstring\fR で始まっていたジョブ。履歴ファイルが有効なとき、この方法は対話モードでのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%?\fR\fIstring\fR \fR
+.ad
+.RS 13n
+.rt  
+コマンド行が \fIstring\fR を含んでいたジョブ。履歴ファイルが有効なとき、この方法は対話モードでのみ使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%%\fR\fR
+.ad
+.RS 13n
+.rt  
+現在のジョブ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%+\fR\fR
+.ad
+.RS 13n
+.rt  
+\fB%%\fR と同等
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%-\fR \fR
+.ad
+.RS 13n
+.rt  
+直前のジョブ
+.RE
+
+.sp
+.LP
+シェルは、プロセスの状態が変更されると、ただちにそれを検出します。ジョブがブロックされてそれ以上進めない状態になると、プロンプトを発行する直前にだけ、シェルはその旨をユーザーに通知します。これは、ユーザーの作業の妨げにならないようにするためです。モニターモードが有効なとき、完了した各バックグラウンドジョブは、\fBCHLD\fR に設定されているトラップを起こします。ジョブの実行中または停止中にシェルを終了しようとすると、「停止中 (実行中) のジョブがある (`You have stopped (running) jobs.')」旨の警告を受けます。\fBjobs\fR コマンドを使用すれば、どのジョブが該当するのかを確認できます。これを実行するか、またはただちにシェルを再終了しようとすると、シェルは 2 度目の警告は出さず、停止中のジョブは終了します。
+.sp
+.LP
+\fBfg\fR は、バックグラウンドジョブを、現在の環境からフォアグラウンドへ移します。\fBfg\fR を使ってジョブをフォアグラウンドへ移した場合、そのジョブのプロセス \fBID\fR は、現在のシェル実行環境で把握しているプロセス ID のリストから削除されます。\fBfg\fR コマンドが使えるのは、ジョブ制御をサポートするシステム上だけです。\fIjob_id\fR が指定されないと、現在のジョブをフォアグラウンドで実行します。
+.sp
+.LP
+\fBbg\fR は、現在の環境で中断されたジョブを、バックグラウンドジョブとして実行することにより再開します。\fIjob_id\fR が示すジョブがすでにバックグラウンドジョブを実行している場合、\fBbg\fR は何も行わず正常に終了します。\fBbg\fR を使ってジョブをバックグラウンドへ移した場合、あたかも非同期リストから起動されたかのように、そのジョブのプロセス \fBID\fR は、「現在のシェル実行環境で把握しているプロセス ID」の 1 つとなります。\fBbg\fR コマンドが使えるのは、ジョブ制御をサポートするシステム上だけです。\fIjob_id\fR が省略された場合は、現在のジョブをバックグラウンドで実行します。
+.sp
+.LP
+\fBstop\fR は、\fIjob_id\fR を指定してバックグラウンドジョブの実行を中断、または \fIpid\fR (プロセス ID 番号) を指定してすべてのプロセスを中断します\fBps\fR(1) を参照してください。
+.SS "ksh"
+.sp
+.LP
+\fBjobs\fR は、現在のシェル環境によって開始された、指定されたジョブに関する情報を標準出力で表示します。情報には、\fB[...]\fR で囲まれたジョブ番号、ステータス、およびジョブを開始したコマンド行が含まれます。
+.sp
+.LP
+\fIjob_id\fR を省略した場合、\fBjobs\fR は、停止されたすべてのジョブ、バックグラウンドジョブ、およびシェルによる最後の報告以降にステータスが変更されたすべてのジョブのステータスを表示します。
+.sp
+.LP
+\fBjobs\fR がジョブの終了ステータスを報告したとき、シェルはそのジョブを、現在のシェル環境で把握しているジョブのリストから削除します。
+.sp
+.LP
+次のオプションは、\fBjobs\fR の出力を変更または拡張するために使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+通常の情報に加えて、プロセス ID をジョブ番号のあとに表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+最後のプロンプトが表示されてからステータスが変更されたジョブのみを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+指定されたジョブのプロセスグループリーダーの ID を表示します。
+.RE
+
+.sp
+.LP
+\fIjob_id\fR は、次のいずれかの形式で \fBjobs\fR、\fBfg\fR、および \fBbg\fR に対し指定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fInumber\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBjob\fR のプロセス ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fInumber\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBjob\fR のプロセスグループ ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fInumber\fR\fR
+.ad
+.RS 12n
+.rt  
+ジョブ番号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fIstring\fR\fR
+.ad
+.RS 12n
+.rt  
+名前が \fIstring\fR で始まるジョブ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%?\fR\fIstring\fR\fR
+.ad
+.RS 12n
+.rt  
+名前に \fIstring\fR が含まれるジョブ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%+\fR\fR
+.ad
+.br
+.na
+\fB\fB%%\fR\fR
+.ad
+.RS 12n
+.rt  
+現在のジョブ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%-\fR\fR
+.ad
+.RS 12n
+.rt  
+前のジョブ。
+.RE
+
+.sp
+.LP
+\fBfg\fR は、指定されたジョブをフォアグラウンドに順に移行し、\fBCONT\fR 信号を送信してそれぞれの実行を開始します。\fIjob_id\fR を省略した場合、最後に開始または停止されたバックグラウンドジョブがフォアグラウンドに移行されます。
+.sp
+.LP
+\fBbg\fR は、指定されたジョブをバックグラウンドに移行し、\fBCONT\fR 信号を送信してそれらの実行を開始します。\fIjob_id\fR を省略した場合、最後に開始または停止されたバックグラウンドジョブがバックグラウンドで再開または続行されます。
+.SH 出力
+.sp
+.LP
+\fB-p\fR オプションを指定すると、各プロセス \fBID\fR に対して次に示す 1 行の情報が出力されます。
+.sp
+.LP
+\fB"%d\en",\fR \fI"process ID"\fR
+.sp
+.LP
+p を指定しない場合、 \fB-l\fR オプションも省略されていれば、次の形式の一連の行が出力されます。
+.sp
+.LP
+\fB"[%d] %c %s %s\en"\fR, \fIjob-number\fR, \fIcurrent\fR, \fIstate\fR, \fIcommand\fR
+.sp
+.LP
+各フィールドの意味を次に説明します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcurrent\fR \fR
+.ad
+.RS 14n
+.rt  
+文字 \fB+\fR は、\fBfg\fR および \fBbg\fR コマンド用のデフォルトとして使用するジョブを表します。このデフォルトジョブは、\fIjob_id\fR \fB%+\fR または \fB%%\fR を使って指定することもできます。\fB\fR文字 \fB\(mi\fR は、現在のデフォルトジョブが終了してしまった場合に デフォルトとなるジョブを表します。このジョブは、\fIjob_id\fR \fB%\(mi\fR\fB\fR を使って指定することもできます。その他のジョブに関しては、このフィールドはスペース文字として出力されます。\fB+\fR や \fB\(mi\fR を使って表せるジョブの数は、どちらも最大 1 つです。停止中のジョブがあれば、現在のジョブも停止ジョブとなります。停止中のジョブが 2 つ以上あれば、以前のジョブも停止ジョブとなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIjob-number\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBwait\fR、\fBfg\fR、\fBbg\fR、\fBkill\fR の各ユーティリティー用にプロセスグループを識別するのに使用する番号。これらのユーティリティーを使うと、ジョブはジョブ番号の後に \fB%\fR を付加することにより識別できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 14n
+.rt  
+POSIX ロケールにある次の文字列のいずれかです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRunning\fR\fR
+.ad
+.RS 20n
+.rt  
+ジョブはシグナルによって中断されておらず、終了もしていないことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDone\fR\fR
+.ad
+.RS 20n
+.rt  
+ジョブは終了して、ゼロの終了ステータスを返したことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDone\fR(\fIcode\fR) \fR
+.ad
+.RS 20n
+.rt  
+ジョブは正常に終了し、指定された \fB0\fR 以外の終了ステータス (\fIcode\fR が示す 10 進数) を返したことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBStopped\fR\fR
+.ad
+.RS 20n
+.rt  
+ジョブが停止されたことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBStopped(SIGTSTP)\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBSIGTSTP\fR シグナルがジョブを停止したことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBStopped(SIGSTOP)\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBSIGSTOP\fR シグナルがジョブを停止したことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBStopped(SIGTTIN)\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBSIGTTIN\fR シグナルがジョブを停止したことを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBStopped(SIGTTOU)\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBSIGTTOU\fR シグナルがジョブを停止したことを表します。
+.RE
+
+利用者側で、文字列 \fBStopped\fR の代わりに \fBSuspended\fR を使うよう定義できます。ジョブをシグナルが終了した場合、\fBstate\fR の形式は不特定ですが、ここに示したほかの \fBstate\fR 形式とは明確に区別できるものです。その出力上で、ジョブを終了させたシグナルの名前または説明が与えられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcommand\fR\fR
+.ad
+.RS 14n
+.rt  
+シェルに与えられた関連コマンド。
+.RE
+
+.sp
+.LP
+\fB-l\fR オプションを指定すると、プロセスグループ \fBID\fR を示すフィールドが \fBstate\fR フィールドの前に挿入されます。さらに、プロセスグループ内のより多くのプロセスが別の行に出力されることがあります。その内容は、プロセス \fBID\fR と \fBcommand\fR フィールドだけです。
+.SH 環境
+.sp
+.LP
+\fBjobs\fR、\fBfg\fR、\fBbg\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.SS "sh、csh、ksh88"
+.sp
+.LP
+\fBjobs\fR、\fBfg\fR、\fBbg\fR は、次の終了値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.SS "ksh"
+.sp
+.LP
+\fBjobs\fR は、次の終了値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+各ジョブの情報が標準出力に書き込まれました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+1 つ以上のジョブが存在しません。
+.RE
+
+.sp
+.LP
+\fBfg\fR は、次の終了値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB最後のジョブの終了ステータス\fB\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上のジョブがフォアグラウンドに移行されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0 以外\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上のジョブが存在しないか、完了していません。
+.RE
+
+.sp
+.LP
+\fBbg\fR は、次の終了値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+すべてのバックグラウンドジョブが開始されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+1 つ以上のジョブが存在しないか、バックグラウンドジョブが存在しません。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "csh、sh、ksh88"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SS "ksh"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBkill\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBps\fR(1), \fBsh\fR(1), \fBstop\fR(1), \fBshell_builtins\fR(1), \fBstty\fR(1), \fBwait\fR(1), \fBsignal.h\fR(3HEAD), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)

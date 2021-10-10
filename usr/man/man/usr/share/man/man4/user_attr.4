@@ -1,0 +1,377 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH user_attr 4 "8 Aug 2011" "SunOS 5.11" "File Formats"
+.SH NAME
+user_attr \- extended user attributes database
+.SH SYNOPSIS
+.LP
+.nf
+\fB/etc/user_attr\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fB/etc/user_attr\fR is a local source of extended attributes associated with users and roles. \fBuser_attr\fR can be used with other user attribute sources, including the LDAP people container and the \fBuser_attr\fR \fBNIS\fR map. Programs use the \fBgetuserattr\fR(3C) routines to gain access to this information.
+.sp
+.LP
+The search order for multiple \fBuser_attr\fR sources is specified in the \fB/etc/nsswitch.conf\fR file, as described in the \fBnsswitch.conf\fR(4) man page. The search order follows that for \fBpasswd\fR(4).
+.sp
+.LP
+Each entry in the \fBuser_attr\fR databases consists of a single line with five fields separated by colons (\fB:\fR). Line continuations using the backslash (\fB\e\fR) character are permitted. Each entry has the form:
+.sp
+.in +2
+.nf
+\fIuser\fR:\fIqualifier\fR:\fIres1\fR:\fIres2\fR:\fIattr\fR
+.fi
+.in -2
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the user as specified in the \fBpasswd\fR(4) database.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIqualifier\fR\fR
+.ad
+.sp .6
+.RS 4n
+Reserved for future use.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIres1\fR\fR
+.ad
+.sp .6
+.RS 4n
+Reserved for future use.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIres2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Reserved for future use.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+An optional list of semicolon-separated (\fB;\fR) key-value pairs that describe the security attributes to apply to the object upon execution. Zero or more keys can be specified. The following keys are currently interpreted by the system: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaudit_flags\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies per-user audit preselection flags as colon-separated always-audit-flags and never-audit-flags. As in, \fBaudit_flags\fR=\fIalways-audit-flags\fR:\fInever-audit-flags\fR. See \fBaudit_flags\fR(5).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauths\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies a comma-separated list of authorization names chosen from those names defined in the \fBauth_attr\fR(4) database. Authorization names can be specified using the asterisk (\fB*\fR) character as a wildcard. For example, \fBsolaris.print.*\fR means all of Oracle Solaris' printer authorizations.
+.sp
+All of the authorizations from profiles are available to the user.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaultpriv\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default set of privileges assigned to a user's inheritable set upon login. See \fBPrivileges Keywords\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimitpriv\fR\fR
+.ad
+.sp .6
+.RS 4n
+The maximum set of privileges a user or any process started by the user, whether through \fBsu\fR(1M) or any other means, can obtain. See \fBPrivileges Keywords\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlock_after_retries\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies whether an account is locked after the count of failed logins for a user equals or exceeds the allowed number of retries as defined by \fBRETRIES\fR in \fB/etc/default/login\fR. Possible values are \fByes\fR or \fBno\fR. The default is \fBno\fR. Account locking is applicable only to local accounts and accounts in the \fBldap\fR name service repository. LDAP account must be configured with an \fBenableShadowUpdate\fR of true as specified in \fBldapclient\fR(1M).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofiles\fR\fR
+.ad
+.sp .6
+.RS 4n
+Contains an ordered, comma-separated list of profile names chosen from \fBprof_attr\fR(4). Profiles are enforced by the profile shells. See \fBpfexec\fR(1). A list of profiles can also be defined in the \fB/etc/security/policy.conf\fR file. See \fBpolicy.conf\fR(4). If no profiles are assigned, the profile shells do not allow the user to execute any commands.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproject\fR\fR
+.ad
+.sp .6
+.RS 4n
+Can be assigned a name of one project from the \fBproject\fR(4) database to be used as a default project to place the user in at login time. For more information, see \fBgetdefaultproj\fR(3PROJECT).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBroleauth\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies whether the assigned \fBrole\fR requires a \fBrole\fR password or the password of the user who is assuming the role.
+.sp
+Valid values are \fBrole\fR and \fBuser\fR. If \fBroleauth\fR is not specified, \fBroleauth=role\fR is implied.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBroles\fR\fR
+.ad
+.sp .6
+.RS 4n
+Can be assigned a comma-separated list of role names from the set of user accounts in this database whose \fBtype\fR field indicates the account is a role. If the \fBroles\fR key value is not specified, the user is not permitted to assume any role.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR\fR
+.ad
+.sp .6
+.RS 4n
+Can be assigned one of these strings: \fBnormal\fR, indicating that this account is for a normal user, one who logs in; or \fBrole\fR, indicating that this account is for a role. Roles can only be assumed by a normal user after the user has logged in.
+.RE
+
+The following keys are available only if the system is configured with the Trusted Extensions feature:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclearance\fR\fR
+.ad
+.sp .6
+.RS 4n
+Contains the maximum label at which the user can operate. If unspecified, in the Defense Intelligence Agency (\fBDIA\fR) encodings scheme, the default is specified in \fBlabel_encodings\fR(4).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidlecmd\fR\fR
+.ad
+.sp .6
+.RS 4n
+Contains one of two keywords that the Trusted Extensions window manager interprets when a workstation is idle for too long. The keyword \fBlock\fR specifies that the workstation is to be locked (thus requiring the user to re-authenticate to resume the session). The keyword \fBlogout\fR specifies that session is to be terminated (thus, killing the user's processes launched in the current session). If unspecified, the default value, \fBlock\fR, is in effect.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidletime\fR\fR
+.ad
+.sp .6
+.RS 4n
+Contains a number representing the maximum number of minutes a workstation can remain idle before the Trusted Extensions window manager attempts the task specified in \fBidlecmd\fR. A zero in this field specifies that the \fBidlecmd\fR command is never executed. If no value is specified, the default \fBidletime\fR of 30 minutes is in effect.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmin_label\fR\fR
+.ad
+.sp .6
+.RS 4n
+Contains the minimum label at which the user can log in. If unspecified, in the \fBDIA\fR encodings scheme, the default is specified in \fBlabel_encodings\fR(4).
+.RE
+
+.RE
+
+.sp
+.LP
+Except for the \fBtype\fR key, the \fB\fIkey\fR=\fIvalue\fR\fR fields in the \fBuser_attr\fR database can be added using \fBroleadd\fR(1M) and \fBuseradd\fR(1M). You can use \fBrolemod\fR(1M) and \fBusermod\fR(1M) to modify these values. Modification of the \fBtype\fR key is restricted as described in \fBrolemod\fR and \fBusermod\fR.
+.sp
+.LP
+The values assigned to the \fBauths\fR, \fBroles\fR, and \fBprofiles\fR keywords are cumulative. To assign the values, \fB/etc/user_attr\fR is searched first, followed by each of the profiles, in order. The other keywords (\fBaudit_flags, project, defaultpriv, limitpriv, lock_after_retries, idletime, idlecmd, clearance\fR and \fBmin_label\fR) are first matched, meaning that \fB/etc/user_attr\fR is searched first, followed by each of the profiles, in order. Once a match is found that search is over.
+.SS "Privileges Keywords"
+.sp
+.LP
+See \fBprivileges\fR(5) for a description of privileges. The command \fBppriv\fR \fB-l\fR (see \fBppriv\fR(1)) produces a list of all supported privileges. You specify privileges as they are displayed by \fBppriv\fR. In \fBprivileges\fR(5), privileges are listed in the form \fBPRIV_\fR\fI<privilege_name>\fR\&. For example, the privilege \fBfile_chown\fR, as you would specify it in \fBuser_attr\fR, is listed in \fBprivileges\fR(5) as \fBPRIV_FILE_CHOWN\fR.
+.sp
+.LP
+Privileges can be specified through \fBusermod\fR(1M)and \fBrolemod\fR(1M). See \fBusermod\fR(1M) for examples of commands that modify privileges and their subsequent effect on \fBuser_attr\fR.
+.sp
+.LP
+The following authorizations are required to set the various keywords:
+.sp
+.in +2
+.nf
+audit_flags             solaris.audit.assign
+auths                   solaris.auth.delegate/assign
+clearance               solaris.label.delegate
+defaultpriv             solaris.privilege.delegate/assign
+idlecmd                 solaris.session.setpolicy
+idletime                solaris.session.setpolicy
+limitpriv               solaris.privilege.delegate/assign
+lock_after_retries      solaris.passwd.setpolicy
+min_label               solaris.label.delegate
+profiles                solaris.profile.delegate/assign
+project                 solaris.project.delegate/assign
+roles                   solaris.role.delegate/assign
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fBsolaris.auth.assign\fR authorization allows an authorized user to grant any authorization to another user. The \fBsolaris.auth.delegate\fR allows an authorized user to grant only the user's authorizations to another user. The same principle applies to \fBroles\fR, \fBprofiles\fR, \fBprivileges\fR, and \fBproject\fR. 
+.sp
+.LP
+The \fBclearance\fR and \fBmin_label\fR values can only be set based on the authorized user's label range. The \fBdefaultpriv\fR and \fBlimitpriv\fR values can only be set based on the authorized user's granted \fBdefaultpriv\fR and \fBlimitpriv\fR privileges.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRAssigning a Profile to Root
+.sp
+.LP
+The following example entry assigns to \fBroot\fR the \fBAll\fR profile, which allows root to use all commands in the system, and also assigns all authorizations:
+
+.sp
+.in +2
+.nf
+root::::auths=solaris.*;profiles=All;type=normal
+.fi
+.in -2
+
+.sp
+.LP
+The \fBsolaris.*\fR wildcard authorization gives \fBroot\fR all of the \fBsolaris\fR authorizations. See \fBauth_attr\fR(4) for more about authorizations.
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nsswitch.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+See \fBnsswitch.conf\fR(4).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/user_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Locally added entries. The shipped header must remain intact.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/user_attr.d/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+Entries added by package installation.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilitySee below.
+.TE
+
+.sp
+.LP
+The command-line syntax is Committed. The output is Uncommitted.
+.SH SEE ALSO
+.sp
+.LP
+\fBauths\fR(1), \fBpfexec\fR(1), \fBppriv\fR(1), \fBprofiles\fR(1), \fBroles\fR(1), \fBuserattr\fR(1), \fBgetent\fR(1M), \fBldapclient\fR(1M), \fBroleadd\fR(1M), \fBrolemod\fR(1M), \fBuseradd\fR(1M), \fBusermod\fR(1M), \fBgetdefaultproj\fR(3PROJECT), \fBgetuserattr\fR(3C), \fBauth_attr\fR(4), \fBexec_attr\fR(4), \fBlabel_encodings\fR(4), \fBnsswitch.conf\fR(4), \fBpasswd\fR(4), \fBpolicy.conf\fR(4), \fBprof_attr\fR(4), \fBproject\fR(4), \fBattributes\fR(5), \fBaudit_flags\fR(5), \fBprivileges\fR(5)
+.sp
+.LP
+\fIOracle Solaris Administration: Security Services\fR
+.SH NOTES
+.sp
+.LP
+The root user is usually defined in local databases for a number of reasons, including the fact that root needs to be able to log in and do system maintenance in single-user mode, before the network name service databases are available. For this reason, an entry should exist for root in the local \fBuser_attr\fR file, and the precedence shown in the example \fBnsswitch.conf\fR(4) file entry under EXAMPLES is highly recommended.
+.sp
+.LP
+Because the list of legal keys is likely to expand, any code that parses this database must be written to ignore unknown key-value pairs without error. When any new keywords are created, the names should be prefixed with a unique string, such as the company's stock symbol, to avoid potential naming conflicts.
+.sp
+.LP
+This file should not be edited. Values are changed using \fBuseradd\fR(1M) and \fBusermod\fR(1M).
+.sp
+.LP
+A user without an entry in \fBuser_attr\fR gets the default values as defined in \fB/etc/security/policy.conf\fR.

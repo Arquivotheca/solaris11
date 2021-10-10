@@ -1,0 +1,424 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH nscfg 1M "10 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+nscfg \- import, export name service configurations
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/sbin/nscfg\fR \fIcommand\fR [\fIcmd_options\fR] [\fIoperands\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/nscfg\fR import [\fB-fnvq\fR] \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/nscfg\fR export [\fB-nvq\fR] \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/nscfg\fR unconfig [\fB-nvq\fR] \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/nscfg\fR validate [\fB-vq\fR] \fIFMRI\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/nscfg\fR help
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnscfg\fR utility imports or exports legacy name service configuration files into or out of the SMF repository. Given a valid SMF configuration and corresponding FMRI, \fBnscfg\fR will regenerate the legacy naming service configuration files, such as \fBnsswitch.conf\fR, \fBresolv.conf\fR, \fBnscd.conf\fR, and so forth, into their legacy locations. Alternatively, \fBnscfg\fR can import those same configuration files populating the SMF repository if it is currently unpopulated.
+.sp
+.LP
+The following are SMF services that can be operands to \fBnscfg\fR. In many instances, the legacy configuration file that is replaced by the SMF service is listed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/system/name-service/switch:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+Legacy file: \fB/etc/nsswitch.conf\fR
+.sp
+Name service switch configuration (used by \fBnscd\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/system/name-service/cache:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+Legacy file: \fB/etc/nscd.conf\fR
+.sp
+Name service cache (\fBnscd\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/dns/client:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+Legacy file: \fB/etc/resolv.conf\fR
+.sp
+DNS naming service.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/nis/domain:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+Legacy file: \fB/etc/defaultdomain\fR
+.sp
+Legacy file: \fB/var/yp/binding/$DOMAIN/*\fR
+.sp
+Shared NIS domain configuration. Used by all NIS services. Also (historical) shared use with LDAP naming services. Must be enabled when using \fBnis/client\fR or \fBldap/client\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/nis/client:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS client naming service (\fBypbind\fR and related)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/ldap/client:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+Legacy file: \fB/var/ldap/*\fR
+.sp
+LDAP client naming service (\fBldap_cachemgr\fR and related).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/nis/server:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS server service (\fBypserv\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/nis/passwd:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS server \fBpasswd\fR service (\fBrpc.yppasswd\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/nis/xfr:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS server \fBxfr\fR service (\fBypxfrd\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/network/nis/update:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+NIS server update service (\fBrpc.ypupdated\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/system/name-service/upgrade:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+Import legacy configuration files into SMF service.
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+The \fBnscfg\fR utility supports the subcommands described below. Options are described in the context of the subcommands.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR [\fB-fvq\fR] \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+If none of the SMF repository properties for the specified FMRI are currently populated, import the legacy configuration files associated with the specified FMRI into the SMF repository.
+.sp
+With \fB-f\fR, force the repopulation of the SMF repository with the legacy configuration, even if currently populated.
+.sp
+With \fB-v\fR, issue verbose progress messages during the requested operation. With \fB-q\fR, issue no error or other messages during the requested operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-vq\fR] \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+Export the SMF configuration for the specified FMRI to legacy configuration files. This operation removes any existing affected legacy file(s) and generates new one(s) using the SMF configuration.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfig\fR [\fB-vq\fR] \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unconfigure the SMF configuration for the specified FMRI. This operation resets the specified FMRI and any existing legacy file(s) to their initial unconfigured state.
+.sp
+With \fB-v\fR, issue verbose progress messages during the requested operation. With \fB-q\fR, issue no error or other messages during the requested operation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalidate\fR [\fB-vq\fR] \fIFMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+Validate the SMF configuration for the specified FMRI. This operation checks the current configuration and verifies whether any errors exist.
+.sp
+With \fB-v\fR, issue verbose progress messages during the requested operation. With \fB-q\fR, issue no error or other messages during the requested operation.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRImporting DNS Client Configuration
+.sp
+.LP
+The following command imports the DNS client configuration, stored in \fBresolv.conf\fR, into the SMF repository.
+
+.sp
+.in +2
+.nf
+# \fBnscfg import svc:/network/dns/client:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRExporting SMF LDAP Client Configuration
+.sp
+.LP
+The following command exports the SMF LDAP client configuration to the legacy configuration files in \fB/var/ldap\fR.
+
+.sp
+.in +2
+.nf
+# \fBnscfg export svc:/network/ldap/client:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRResetting Name Service Switch Configuration
+.sp
+.LP
+The following command resets the name service switch configuration to its initial unconfigured state. The command generates no output and exits quietly with status only.
+
+.sp
+.in +2
+.nf
+# \fBnscfg unconfig -q svc:/system/name-service/switch:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRValidating LDAP Client Configuration
+.sp
+.LP
+The following command validates the LDAP client configuration for  errors or inconsistencies. The command generates no output and exits quietly with status only.
+
+.sp
+.in +2
+.nf
+# \fBnscfg validate -q svc:/network/ldap/client:default\fR
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Command successfully executed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Configuration unmodified, no change necessary.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+No configuration to import.
+.RE
+
+.SH FILES
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/default/{nss, yppasswd}\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/defaultdomain\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/nscd.conf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/nsswitch.conf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/resolv.conf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/var/ldap/ldap_client_cred\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/var/ldap/ldap_client_file\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/var/yp/binding/{\fInisdomainname\fR}/ypservers\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/var/yp/NISLDAPmapping\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/var/yp/securenets\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/var/yp/updaters\fR
+.RE
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBldapclient\fR(1M), \fBnscd\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBypinit\fR(1M), \fBdefaultdomain\fR(4), \fBnsswitch.conf\fR(4), \fBresolv.conf\fR(4), \fBypfiles\fR(4), \fBattributes\fR(5)

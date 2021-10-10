@@ -1,0 +1,765 @@
+'\" te
+.\"  Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH crle 1 "2011 年 6 月 10 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+crle \- 実行時リンク環境の構成
+.SH 形式
+.LP
+.nf
+\fBcrle\fR [\fB-64\fR] [\fB-a\fR \fIname\fR] [\fB-A\fR \fIname\fR] [\fB-c\fR \fIconf\fR] [\fB-e\fR \fIenv\fR] [\fB-E\fR \fIenv\fR] 
+     [\fB-f\fR \fIflags\fR] [\fB-i\fR \fIname\fR] [\fB-I\fR \fIname\fR] [\fB-g\fR \fIname\fR] [\fB-G\fR \fIname\fR] 
+     [\fB-l\fR \fIdir\fR] [\fB-o\fR \fIdir\fR] [\fB-s\fR \fIdir\fR] [\fB-u\fR] [\fB-v\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcrle\fR ユーティリティーを使用すると、実行時リンク構成ファイルを作成および表示できます。構成ファイルは、プロセスの開始時に実行時リンカー \fBld.so.1\fR(1) によって読み取られ、解釈されます。実行時リンカーは、全プロセスのデフォルト構成ファイルを読み取ろうとします。32 ビットプロセスの場合、デフォルトの構成ファイルは \fB/var/ld/ld.config\fR です。64 ビットプロセスの場合、デフォルトの構成ファイルは \fB/var/ld/64/ld.config\fR です。
+.sp
+.LP
+引数が指定されていないか、\fB-c\fR オプションのみが指定されている場合、\fBcrle\fR は構成情報を表示します。この情報には、構成ファイルの内容、すべてのシステムデフォルト、および構成ファイルの再生成に必要なコマンド行が含まれます。ほかのオプションとともに使用すると、新しい構成ファイルが作成または更新されます。
+.sp
+.LP
+\fBLD_CONFIG\fR ファミリ環境変数のいずれかを設定して、実行時リンカーを代替構成ファイルに接続することもできます。\fBLD_CONFIG\fR は、32 ビットと 64 ビットの両方のプログラムに適用されます。32 ビットと 64 ビットの構成ファイルは異なるため、1 つの構成ファイルを両方のオブジェクトクラスに使用することはできません。このため、あるクラスのプログラムが別のクラスのプログラムを実行する場合、\fBLD_CONFIG\fR がプログラムの実行に悪影響を及ぼすことがあります。特に、32 ビットバージョンの標準の Solaris ユーティリティーがその 64 ビットバージョンを実行するということがよくあります。この場合、\fBLD_CONFIG\fR を正しく使用することはできません。したがって、適切なクラスのプロセスが正しくターゲットとして指定された \fBLD_CONFIG_32\fR および \fB LD_CONFIG_64\fR 環境変数を使用することをお勧めします。
+.sp
+.LP
+標準の場所である \fB/var/ld\fR に不正な構成ファイルを作成すると、プログラムが実行されず、その結果回復が困難になる可能性があります。 このような状況にならないようにするため、新しい構成ファイルは一時的な場所に作成することをお勧めします。次に、適切な \fBLD_CONFIG\fR 環境変数をこの新しい構成ファイルに設定します。この設定によって、実行時リンカーが、デフォルトではなく新しい構成ファイルを使用するようになります。検証が終わったら、必要に応じて新しい構成ファイルをデフォルトの場所に移動できます。いつでも環境変数 \fBLD_NOCONFIG\fR を任意の値に設定して、実行時リンカーに構成ファイルを無視するように指示できます。この設定は、実験を行う場合に役立ちます。
+.sp
+.LP
+構成ファイルには次の情報を含めることができます。
+.sp
+.ne 2
+.mk
+.na
+\fBデフォルト検索パス\fR
+.ad
+.sp .6
+.RS 4n
+実行時リンカーは、指定した検索パスを使って、オブジェクトの動的な依存関係を検索します。この検索パスは、\fBLD_LIBRARY_PATH\fR 定義のコンポーネントで始まり、その後ろにオブジェクトの \fBrunpath\fR のコンポーネントが続きます。最後に、オブジェクトのクラスに固有のデフォルト検索パスが使用されます。検索パスの最後のコンポーネントは、構成ファイル内に記述できます。通常、この機能を使用するときは、システムデフォルトと組み合わせて機能を拡張してください。\fB-l\fR および \fB-u\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBトラストディレクトリ\fR
+.ad
+.sp .6
+.RS 4n
+実行時リンカーは、セキュリティー保護されたアプリケーションを処理する際、\fBLD_LIBRARY_PATH\fR 検索および \fB$ORIGIN\fR トークン拡張の使用を制限します。\fI「Security」\fR in \fI『Linker and Libraries Guide』\fRを参照してください。また、事前に読み込まれたライブラリや監査ライブラリを検索できるディレクトリも制限されます。事前に読み込まれたライブラリや監査ライブラリに関連付けるパス名は、既知のトラストディレクトリに制限されます。トラストディレクトリは、構成ファイル内に記述できます。通常、この機能を使用するときは、システムデフォルトと組み合わせて機能を拡張してください。\fB-s\fR および \fB-u\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB環境変数\fR
+.ad
+.sp .6
+.RS 4n
+実行時リンカーによって解釈されるすべての環境変数は、構成ファイル内で指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBディレクトリキャッシュ\fR
+.ad
+.sp .6
+.RS 4n
+定義済みディレクトリ内部の共有オブジェクトの場所を、構成ファイル内でキャッシュとして管理できます。このディレクトリキャッシュによって、アプリケーションの依存関係を検索する際のオーバーヘッドを減らすことができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB代替オブジェクト\fR
+.ad
+.sp .6
+.RS 4n
+ディレクトリキャッシュとともに、共有オブジェクトの代替オブジェクトを指定して実行時に使用できます。これらの代替オブジェクトは、ユーザーが指定できます。また、\fBcrle\fR を使用すると、既知のメモリー位置に固定された共有オブジェクトのコピーとして代替オブジェクトを作成できます。これらの固定代替オブジェクトは、元の共有オブジェクトよりも実行時の処理が少なくて済みます。
+.RE
+
+.sp
+.LP
+追加のデフォルト検索パスやトラストディレクトリを定義することは、管理者が他社のソフトウェアを 1 つの場所にインストールする場合に役立ちます。定義しない場合は、適切な runpath でコーディングされていない可能性があるアプリケーションの検索パスを変更することになります。
+.sp
+.LP
+代替オブジェクトを宣言すると、シンボリックリンクを使用したり、\fBLD_LIBRARY_PATH\fR を設定したりせずに、依存関係を置き換えることができます。
+.sp
+.LP
+実行時リンカーによって解釈される環境変数を宣言すると、すべてのアプリケーションの定義を集中管理できます。
+.sp
+.LP
+ディレクトリキャッシュおよび \fBcrle\fR によって生成される代替オブジェクトを使用すると、アプリケーション実行時の起動オーバーヘッドを減らすことができます。代替オブジェクトは、多数の依存関係が必要なアプリケーションや依存関係の再配置に大きな負荷がかかるアプリケーションで役に立つ場合があります。\fBposition-dependent\fR コードを含む共有オブジェクトでは、再配置に大きな負荷がかかることがよくあります。システムには負のパス検索などの負荷の軽減に役立つキャッシュ機能が多数備わっているため、\fBcrle\fR を使用したディレクトリキャッシュを作成すると、一部のごく限定的な場合を除いて影響が最小限で済みます。
+.sp
+.LP
+\fBcrle\fR によって生成される代替オブジェクトが構成ファイル内で指定されている場合、実行時リンカーは最小限の一貫性検証を実行します。代替オブジェクトは元のオブジェクトと照合されます。この照合の目的は、アプリケーション構成情報が基盤となるシステムコンポーネントと同期しなくなった場合にアプリケーション障害を回避することです。こうした状況が発生すると、動的リンクシステムコンポーネントの柔軟性が損なわれることがあります。このようなアプリケーション障害は、診断が非常に困難な場合があります。ディレクトリキャッシュ情報の検証は行われません。キャッシュを再構築しないかぎり、ディレクトリ構造へのどのような変更もプロセスで検出できません。
+.sp
+.LP
+多くの場合、システム共有オブジェクトは適切に調整されているため、キャッシュされることによるメリットはほとんどありません。通常、ディレクトリキャッシュと代替オブジェクトの機能はユーザーアプリケーションや共有オブジェクトに適用されますが、一部のごく限定的な場合にしか機能は向上しません。
+.sp
+.LP
+\fBcrle\fR は、\fB-I\fR および \fB-G\fR オプションを使用したときに検出される共有オブジェクトの代替オブジェクトを、\fBdldump\fR(3C) を使用して作成します。代替オブジェクトは、直前の \fB-o\fR オプションで指定されたディレクトリ内に作成されます。デフォルトでは、構成ファイルが作成されたディレクトリになります。\fBdldump()\fR によって使用されるフラグは、\fB-f\fR オプションで指定します。デフォルトでは \fBRTLD_REL_RELATIVE\fR になります。
+.SH オプション
+.sp
+.LP
+以下のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-64\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビットオブジェクトを処理するよう指定します。デフォルトは 32 ビットです。\fB-64\fR は、64 ビット固有の構成ファイルを作成する場合に使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR の代替パス名を作成します。代替パス名は構成ファイルに追加されます。
+.sp
+実際の代替ファイルは、ユーザーが準備する必要があります。このオプションは複数回指定できます。\fIname\fR がディレクトリの場合、ディレクトリ内の各共有オブジェクトがキャッシュに追加されます。\fIname\fR が存在しない場合、\fIname\fR は、存在しないファイルとしてキャッシュ内でマークされます。
+.sp
+通常、このオプションは \fB-o\fR オプションとともに使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR のオプションの代替パス名を作成します。この代替パス名は構成ファイルに追加されます。
+.sp
+このオプションは、\fB-a\fR オプションと同じように動作します。ただし、実行時に代替が使用できない場合には元のオブジェクト \fIname\fR が使用されます。これは、補助フィルタを使用するのと同じような動作です。\fI「Generating Auxiliary Filters」\fR in \fI『Linker and Libraries Guide』\fRを参照してください。
+.sp
+通常、このオプションは \fB-o\fR オプションとともに使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconf\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成ファイル名 \fIconf\fR を使用するよう指定します。このオプションを指定しないと、デフォルトの構成フィルが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIenv\fR\fR
+.ad
+.sp .6
+.RS 4n
+置換可能な環境変数 \fIenv\fR を指定します。\fB\fRこのオプションが意味を持つのは、実行時リンカーに適用可能な環境変数だけです。このオプションは複数回指定できます。このオプションは、\fB-E\fR オプションに似ています。ただし、構成ファイル定義、および同じ名前のプロセス環境定義を実行時に解決する方法が異なります。
+.sp
+構成ファイルで指定された定義は、プロセス環境定義で上書きしたり、NULL 値のプロセス環境定義で無効にしたりできます。\fB\fR\fB\fR
+.sp
+つまり、これらの構成ファイル定義は、実行時にプロセス環境で置換または削除できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIenv\fR\fR
+.ad
+.sp .6
+.RS 4n
+永続的な環境変数 \fIenv\fR を指定します。\fB\fRこのオプションが意味を持つのは、実行時リンカーに適用可能な環境変数だけです。このオプションは複数回指定できます。このオプションは、\fB-e\fR オプションに似ています。ただし、構成ファイル定義、および同じ名前のプロセス環境定義を実行時に解決する方法が異なります。
+.sp
+実行時リンカーにとって意味がある環境変数定義は、2 つのどちらかのカテゴリに分けられます。単数定義は、\fBLD_NOLAZYLOAD=1\fR や \fBLD_DEBUG_OUTPUT=\fR\fIfile\fR などの定義です。リスト定義は 1 つ以上の値を含めることができる定義で、\fBLD_LIBRARY_PATH=\fR\fIpath\fR や \fBLD_DEBUG=\fR\fIfiles\fR,\fIdetails\fR などがあります。
+.sp
+構成ファイルに記述された単数定義は、プロセス環境定義よりも優先されます。構成フィルに記述されたリスト定義は、プロセス環境定義に追加されます。\fB\fR構成ファイル内で記述された定義を、NULL 値のプロセス環境定義で無効にすることはできません。\fB\fR
+.sp
+つまり、これらの構成ファイル定義は、実行時にプロセス環境で置換および削除できません。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替オブジェクトの生成に使用される \fBdldump\fR(3C) の呼び出しに対してシンボリック \fIflags\fR 引数を指定します。\fB/usr/include/dlfcn.h\fR 内で定義された任意の \fBRTLD_REL\fR フラグを使用できます。「\fB|\fR」文字を使用すると、複数のフラグを \fBOR\fR 接続できます。この場合、シェルによって拡張されないようにするため、文字列を引用符で囲んでください。\fIflags\fR 値が指定されていない場合、デフォルトのフラグは \fBRTLD_REL_RELATIVE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR を構成キャッシュに個別に追加します。このオプションは複数回指定できます。\fIname\fR には共有オブジェクトまたはディレクトリを指定できます。\fIname\fR がディレクトリの場合、ディレクトリ内の各共有オブジェクトがキャッシュに追加されます。\fIname\fR が存在しない場合、\fIname\fR は、存在しないディレクトリとしてキャッシュ内でマークされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-i\fR と同じように動作するだけでなく、\fBdldump\fR(3C) を使用して、処理対象のすべての共有オブジェクトの代替を作成します。\fB-f\fR フラグに \fBRTLD_REL_EXEC\fR が含まれる場合は、\fIname\fR を動的実行可能ファイルにでき、そのファイルの代替が作成されます。作成されるキャッシュはこのアプリケーションに固有であるため、この方法で指定できる動的実行可能ファイルは 1 つだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+グループ \fIname\fR を構成キャッシュに追加します。各オブジェクトが展開されて、依存関係が特定されます。このオプションは複数回指定できます。\fIname\fR には、動的実行可能ファイル、共有オブジェクト、またはディレクトリを指定できます。\fIname\fR が共有オブジェクトの場合、共有オブジェクトおよびその依存関係がキャッシュに追加されます。\fIname\fR がディレクトリの場合、ディレクトリ内の各共有オブジェクトとその依存関係がキャッシュに追加されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-g\fR オプションと同じように動作するだけでなく、\fBdldump\fR(3C) を使用して、処理対象のすべての共有オブジェクトの代替を作成します。\fIname\fR が動的実行可能ファイルで、\fB-f\fR フラグに \fBRTLD_REL_EXEC\fR が含まれる場合、その動的実行可能ファイルの代替も作成されます。作成されるキャッシュはこのアプリケーションに固有であるため、この方法で指定できる動的実行可能ファイルは 1 つだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBELF\fR オブジェクトの新しいデフォルト検索ディレクトリ \fIdir\fR を指定します。このオプションは複数回指定できます。検索に適用するオブジェクト型は \fB-t\fR オプションで指定します。デフォルトは \fBELF\fR です。
+.sp
+32 ビット \fBELF\fR オブジェクトのデフォルト検索パスは、順番に \fB/lib\fR、そして \fB/usr/lib\fR です。64 ビット \fBELF\fR オブジェクトのデフォルト検索パスは、順番に \fB/lib/64\fR、そして \fB/usr/lib/64\fR です。
+.sp
+このオプションを使用すると、デフォルトの検索パスが置き換えられます。\fB\fRこのため、通常は、\fB-l\fR オプションを使用して、適用される新しいパスに対応する元のシステムデフォルトを指定する必要があります。ただし、\fB-u\fR オプションが有効で、かつ構成ファイルが存在しない場合は、システムデフォルトが新しい構成ファイルに追加されます。\fB\fRこれらのデフォルトは、\fB-l\fR オプションで指定する新しいパスの前に追加されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-a\fR または \fB-A\fR オプションとともに使用される場合、代替オブジェクトが存在するディレクトリ \fIdir\fR を指定します。代替オブジェクトが \fBcrle\fR によって作成される場合、このオプションで代替の作成場所を指定します。このオプションを指定しない場合、代替オブジェクトは構成ファイルが作成されるディレクトリ内に存在します。このオプションは複数回指定でき、ディレクトリ \fIdir\fR は、以降のコマンド行オプションの代替を検索するために使用されます。代替オブジェクトで元の関連オブジェクトを上書きすることは許可されません。
+.sp
+通常、このオプションは \fB-a\fR または \fB-A\fR オプションとともに使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+セキュリティー保護された \fBELF\fR オブジェクトの新しいトラストディレクトリ \fIdir\fR を指定します。\fI\fRセキュリティー保護されたオブジェクトの定義については、\fBSECURITY\fR in \fBld.so.1\fR(1) を参照してください。セキュリティー保護されたアプリケーションに適用される実行時制限については、\fI「Security」\fR in \fI『Linker and Libraries Guide』\fRを参照してください。
+.sp
+このオプションは複数回指定できます。検索に適用するオブジェクト型は、\fB-t\fR オプションで指定します。デフォルトは \fBELF\fR です。
+.sp
+セキュリティー保護された 32 ビットの \fBELF\fR オブジェクトの場合、デフォルトのトラストディレクトリは、順番に \fB/lib/secure\fR、そして \fB/usr/lib/secure\fR です。セキュリティー保護された 64 ビットの \fBELF\fR オブジェクトの場合、デフォルトのトラストディレクトリは、順番に \fB/lib/secure/64\fR、そして \fB/usr/lib/secure/64\fR です。
+.sp
+このオプションを使用すると、デフォルトのトラストディレクトリが置き換えられます。\fB\fRこのため、通常は、\fB-l\fR オプションを使用して、適用される新しいディレクトリに対応する元のシステムデフォルトを指定する必要があります。ただし、\fB-u\fR オプションが有効で、かつ構成ファイルが存在しない場合は、システムデフォルトが新しい構成ファイルに追加されます。\fB\fRこれらのデフォルトは、\fB-l\fR オプションで指定する新しいディレクトリの前に追加されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成ファイルの更新を要求します (通常は、新しい情報を追加して更新します) 。ほかのオプションを指定しないと、既存のすべての構成ファイルが検査され、その内容が再計算されます。 引数を追加すると、再計算された内容に情報を追加できます。「注意事項」を参照してください。
+.sp
+構成ファイルが存在しない場合は、ほかの引数で指定されたとおりに構成ファイルが作成されます。\fB-l\fR および \fB-s\fR オプションを指定すると、システムデフォルトが構成ファイルに適用されてから、これらのオプションで指定したディレクトリが適用されます。
+.sp
+構成ファイルを、通常ならファイルの先頭に記述されるシステム識別情報が存在しない、古い形式にすることもできます。この場合、\fBcrle\fR は生成されるファイルにシステム識別情報を記録しないため、古いバージョンの Solaris との互換性が維持されます。「注意事項」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細表示モードを指定します。構成ファイルの作成時には、処理中のファイルの追跡情報が標準出力に書き込まれます。構成ファイルの内容の出力時には、ディレクトリとファイルに関するより広範囲な情報が表示されます。
+.RE
+
+.sp
+.LP
+デフォルトでは、実行時リンカーは、処理対象の 32 ビットアプリケーションごとに構成ファイル \fB/var/ld/ld.config\fR の読み取りを試みます。また、64 ビットのアプリケーションごとに \fB/var/ld/64/ld.config\fR を読み取ります。実行時リンカーは、代替アプリケーションを処理する際に、\fB$ORIGIN/ld.config.\fIapp-name\fR\fR 構成ファイルを使用します (存在する場合)。「注意事項」を参照してください。\fBLD_CONFIG\fR 環境変数を設定すると、アプリケーションから代替構成ファイルを参照できるようになります。アプリケーションの構築時に構成ファイル名をアプリケーションに記録して、代替構成ファイルを指定することもできます。\fBld\fR(1) の \fB-c\fR オプションを参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fR一時構成ファイルを試す
+.sp
+.LP
+次の例では、ELF オブジェクトの新しいデフォルト検索パスを使用して一時構成ファイルを作成します。環境変数 \fBLD_CONFIG_32\fR を使用して、すべての 32 ビットプロセスでこの構成ファイルを使用するよう実行時リンカーに指示します。
+
+.sp
+.in +2
+.nf
+$ \fBcrle -c /tmp/ld.config -u -l /local/lib\fR
+$ \fBcrle -c /tmp/ld.config\fR
+
+Configuration file [version 4]: /tmp/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib:/local/lib
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e
+                               (system default)
+
+Command line:
+  crle -c /tmp/ld.config -l /lib:/usr/lib:/local/lib
+
+$ \fBLD_CONFIG_32=/tmp/ld.config date\fR
+Thu May 29 17:42:00 PDT 2008
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRELF オブジェクトの新しいデフォルト検索パスを更新して表示する
+.sp
+.LP
+次の例では、ELF オブジェクトの新しいデフォルト検索パスを更新して表示します。
+
+.sp
+.in +2
+.nf
+# \fBcrle -u -l /local/lib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib:/local/lib
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e 
+                               (system default)
+
+Command line:
+  crle -l /lib:/usr/lib:/local/lib
+
+# \fBcrle -u -l /ISV/lib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform      32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib:/local/lib:/ISV/lib
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e
+                               (system default)
+
+Command line:
+  crle -l /lib:/usr/lib:/local/lib:/usr/local/lib
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例では、最初はデフォルトの構成ファイルがありませんでした。このため、システムデフォルトに新しい検索パス \fB/local/lib\fR が追加されます。次回の更新で、検索パス \fB/ISV/lib\fR が、すでに構成ファイルに作成されているこれらのパスに追加されます。
+
+.LP
+\fB例 3 \fR不正な構成ファイルを回復する
+.sp
+.LP
+次の例では、デフォルトの場所に不正な構成ファイルを作成します。環境変数 \fBLD_NOCONFIG\fR を含む構成ファイルをすべて無視するよう実行時リンカーに指示することで、このファイルを削除できます。一時構成ファイルを作成し、環境変数 \fBLD_CONFIG\fR を使用してこれらのファイルを試すことをお勧めします。
+
+.sp
+.in +2
+.nf
+# \fBcrle -l /local/lib\fR
+# \fBdate\fR
+ld.so.1: date: fatal: libc.so.1: open failed:  \e 
+   No such file or directory
+Killed
+# \fBLD_NOCONFIG=yes rm /var/ld/ld.config\fR
+# \fBdate\fR
+Thu May 29 17:52:00 PDT 2008
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+構成ファイルが不正である理由は、システムのデフォルト検索パスが存在しないためです。このため、\fBdate\fR ユーティリティーは、必要なシステム依存関係を見つけることができません。この場合に使用しなければならないオプションは \fB-u\fR でした。
+.LP
+\fB例 4 \fRELF オブジェクトの新しいデフォルト検索パスおよび新しいトラストディレクトリを作成して表示する
+.sp
+.LP
+次の例では、ELF オブジェクトの新しいデフォルト検索パスおよび新しいトラストディレクトリを作成して表示します。
+
+.sp
+.in +2
+.nf
+# \fBcrle -l /local/lib -l /lib -l /usr/lib -s /local/lib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /local/lib:/lib:/usr/lib
+  Trusted Directories (ELF):   /local/lib
+
+Command line:
+  crle -l /local/lib:/lib:/usr/lib -s /local/lib
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この構成ファイルを使用すると、他社のアプリケーションを \fB/local/bin\fR に、関連する依存関係を \fB/local/lib\fR にインストールできます。デフォルトの検索パスを使用すると、\fBLD_LIBRARY_PATH\fR を設定しなくてもアプリケーションが依存関係を見つけることができます。この例では、デフォルトのトラストディレクトリも置き換えられています。
+
+.LP
+\fB例 5 \fRELF オブジェクトのディレクトリキャッシュを作成する
+.sp
+.LP
+次の例では、ELF オブジェクトのディレクトリキャッシュを作成します。
+
+.sp
+.in +2
+.nf
+$ \fBcrle -i /usr/dt/lib -i /usr/openwin/lib -i /lib -i /usr/lib  \e
+        -c config\fR
+$ \fBldd -s ./main\fR
+\&....
+   find object=libc.so.1; required by ./main
+    search path=/usr/dt/lib:/usr/openwin/lib  (RUNPATH/RPATH ./main)
+    trying path=/usr/dt/lib/libc.so.1
+    trying path=/usr/openwin/lib/libc.so.1
+    search path=/lib  (default)
+    trying path=/lib/libc.so.1
+        libc.so.1 =>     /lib/libc.so.1
+
+$ \fBLD_CONFIG=config ldd -s ./main\fR
+\&....
+   find object=libc.so.1; required by ./main
+    search path=/usr/dt/lib:/usr/openwin/lib  (RUNPATH/RPATH ./main)
+    search path=/lib  (default)
+    trying path=/lib/libc.so.1
+        libc.so.1 =>     /lib/libc.so.1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この構成では、システムライブラリ \fBlibc.so.1\fR がディレクトリ \fB/usr/dt/lib\fR にも \fB/usr/openwin/lib\fR にも存在しないことがキャッシュに反映されています。このため、アプリケーションの runpath でこれらのディレクトリが検索対象となっていても、このシステムファイルの検索では無視されます。
+
+.LP
+\fB例 6 \fRELF 実行可能ファイルの代替オブジェクトキャッシュを作成する
+.sp
+.LP
+次の例では、ELF 実行可能ファイルの代替オブジェクトキャッシュを作成します。
+
+.sp
+.in +2
+.nf
+$ \fBcrle -c /local/$HOST/.xterm/ld.config.xterm  \e
+        -f RTLD_REL_ALL  -G /usr/openwin/bin/xterm\fR
+$ \fBln  -s /local/$HOST/.xterm/xterm  /local/$HOST/xterm\fR
+$ \fBldd /usr/local/$HOST/xterm\fR
+    libXaw.so.5 =>  /local/$HOST/.xterm/libWaw.so.5  (alternate)
+    libXmu.so.4 =>  /local/$HOST/.xterm/libXmu.so.4  (alternate)
+    ....
+    libc.so.1 =>    /local/$HOST/.xterm/libc.so.1  (alternate)
+    ....
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この構成を使用すると、新しい \fBxterm\fR およびその依存関係が作成されます。これらの新しいオブジェクトが相互に完全に再配置されるため、元のオブジェクトより起動が高速化されます。このアプリケーションの実行には、独自の構成ファイルが使用されます。このモデルでは、通常、ほかのアプリケーションが \fBldd\fR(1) や \fBtruss\fR(1) などの構成ファイルを誤って使用してしまうことがないため、環境変数 \fBLD_CONFIG\fR を使用する場合に比べて柔軟性が高くなります。
+
+.LP
+\fB例 7 \fR代替オブジェクトキャッシュを作成して ELF 共有オブジェクトを置き換える
+.sp
+.LP
+次の例では、代替オブジェクトキャッシュを作成して ELF 共有オブジェクトを置き換えます。
+
+.sp
+.in +2
+.nf
+$ \fBldd /usr/bin/vi\fR
+    libcurses.so.1 =>  /lib/libcurses.so.1
+    ....
+
+# \fBcrle -a /lib/libcurses.so.1 -o /usr/ucblib\fR
+# \fBcrle\fR
+
+Configuration file [version 4]: /var/ld/ld.config
+  Platform:     32-bit MSB SPARC
+  Default Library Path (ELF):  /lib:/usr/lib  (system default)
+  Trusted Directories (ELF):   /lib/secure:/usr/lib/secure  \e
+                               (system default)
+
+Directory: /lib
+  libcurses.so.1  (alternate: /usr/ucblib/libcurses.so.1)
+\&....
+
+$ \fBldd /usr/bin/vi\fR
+    libcurses.so.1 => /usr/ucblib/libcurses.so.1 (alternate)
+    ....
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この構成では、通常なら \fB/usr/lib/libcurses.so.1\fR に解決される依存関係がすべて \fB/usr/ucblib/libcurses.so.1\fR に解決されます。
+
+.LP
+\fB例 8 \fR置換可能な環境変数および永続的な環境変数を設定する
+.sp
+.LP
+次の例では、置換可能な環境変数と永続的な環境変数を設定します。
+
+.sp
+.in +2
+.nf
+# \fBcrle -e LD_LIBRARY_PATH=/local/lib  \e
+        -E LD_PRELOAD=preload.so.1\fR
+# \fBcrle\fR
+\&.....
+Environment Variables:
+  LD_LIBRARY_PATH=/local/lib  (replaceable)
+  LD_PRELOAD=preload.so.1  (permanent)
+
+\&.....
+$ \fBLD_DEBUG=files LD_PRELOAD=preload.so.2 ./main\fR
+\&.....
+18764: file=preload.so.2;  preloaded
+18764: file=/local/lib/preload.so.2  [ ELF ]; generating link map
+\&.....
+18764: file=preload.so.1;  preloaded
+18764: file=/local/lib/preload.so.1  [ ELF ]; generating link map
+\&.....
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この構成ファイルでは、置換可能な検索パスが、事前に読み込まれた永続的なオブジェクトとともに指定されており、そのオブジェクトはプロセス環境定義に追加されます。
+
+.SH 終了ステータス
+.sp
+.LP
+構成ファイルを作成または表示すると、\fB0\fR が返されます。それ以外の場合は、どのようなエラー条件でも、診断メッセージとゼロ以外の値がともに返されます。
+.SH 注意事項
+.sp
+.LP
+元のアプリケーションに \fBDT_FLAGS_1\fR および \fBDT_FEATURE_1\fR のいずれかの \fI\&.dynamic\fR タグが含まれる場合、代替アプリケーションにタグを付けてアプリケーション固有の構成ファイルを使用できます。これらのエントリが存在しない場合は、\fBLD_CONFIG\fR 環境変数を使用して構成ファイルを指定する必要があります。 後者の方法の場合、フォークされたすべてのアプリケーションからこの環境変数が見えるようになるため、注意してください。
+.sp
+.LP
+\fB-u\fR オプションを使用するには、 \fBcrle\fR のバージョン 2 以降が必要です。このバージョンレベルは、構成ファイルの内容を表示することで確認できます。
+.sp
+.in +2
+.nf
+$ \fBcrle\fR
+
+Configuration file [2]: /var/ld/ld.config
+  ......
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+バージョン 2 の構成ファイルでは、\fBcrle\fR は構成ファイルの再生成に必要なコマンド行引数を作成できます。このコマンド行を作成すると、\fB-u\fR オプションを使用して完全な更新を実行できます。バージョン 1 の構成ファイルを更新することはできますが、\fBcrle\fR ですべての更新要件を計算するには、構成ファイルの内容が十分ではない可能性があります。
+.sp
+.LP
+構成ファイルには、プラットフォーム固有のバイナリデータが含まれます。ある特定の構成ファイルは、ソフトウェアによって、同じマシンクラスとバイト順序でのみ解釈できます。ただし、この制限を適用するために必要な情報は、\fBSXCE\fR ビルド \fB41\fR までの構成ファイルには含まれていませんでした。この \fBSXCE\fR ビルドでは、構成ファイルの先頭にシステム識別情報が含まれています。この追加情報は、構成ファイルとの互換性を検査するために \fBcrle\fR と実行時によって使用されます。また、この情報によって、\fBfile\fR(1) コマンドは構成ファイルを正しく識別できます。下位互換性を確保するため、この情報が不足している古いファイルも受け入れられますが、新しいファイルでは可能な識別とエラー検査は行われません。システム情報が不足している以前のファイルに対して更新 (\fB-u\fR) 操作を実行しても、\fBcrle\fR がシステム識別情報を結果に追加することはありません。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/ld/ld.config\fR\fR
+.ad
+.sp .6
+.RS 4n
+32 ビットアプリケーション用のデフォルトの構成ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/ld/64/ld.config\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビットアプリケーション用のデフォルトの構成ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/tmp\fR\fR
+.ad
+.sp .6
+.RS 4n
+一時構成ファイルのデフォルトの場所。\fBtempnam\fR(3C) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/lddstub\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdldump\fR(3C) 32 ビットオブジェクトに対して使用されるスタブアプリケーション。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/lddstub\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdldump\fR(3C) 64 ビットオブジェクトに対して使用されるスタブアプリケーション。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/libcrle.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdldump\fR(3C) 32 ビットオブジェクトに対して使用される監査ライブラリ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/libcrle.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdldump\fR(3C) 64 ビットオブジェクトに対して使用される監査ライブラリ。
+.RE
+
+.SH 環境
+.sp
+.LP
+\fBcrle\fR によって参照される環境変数はありません。ただし、いくつかの環境変数は、\fBcrle\fR によって作成される構成ファイルの処理に関する実行時リンカーの動作に影響を及ぼします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_CONFIG\fR、\fBLD_CONFIG_32\fR、および \fBLD_CONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替構成ファイルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOCONFIG\fR、\fBLD_NOCONFIG_32\fR、および \fBLD_NOCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成ファイルの処理を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NODIRCONFIG\fR、\fBLD_NODIRCONFIG_32\fR、および \fBLD_NODIRCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成ファイルからのディレクトリキャッシュ処理を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOENVCONFIG\fR、\fBLD_NOENVCONFIG_32\fR、および \fBLD_NOENVCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成ファイルからの環境変数処理を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOOBJALTER\fR、\fBLD_NOOBJALTER_32\fR、および \fBLD_NOOBJALTER_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成ファイルからの代替オブジェクト処理を無効にします。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/linker
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBfile\fR(1), \fBld\fR(1), \fBld.so.1\fR(1), \fBdldump\fR(3C), \fBtempnam\fR(3C), \fBattributes\fR(5)
+.sp
+.LP
+\fI『Linker and Libraries Guide』\fR

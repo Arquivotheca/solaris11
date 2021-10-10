@@ -1,0 +1,609 @@
+'\" te
+.\" 版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利
+.TH vrrpadm 1M "2009 年 10 月 14 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+vrrpadm \- VRRP 管理工具
+.SH 用法概要
+.LP
+.nf
+\fBvrrpadm\fR \fBcreate-router\fR \fB-V\fR \fIvrid\fR \fB-l\fR \fIlink\fR \fB-A\fR \fIinet\fR | \fIinet6\fR
+        [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBdelete-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBdisable-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBenable-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBmodify-router\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR]
+        [\fB-o\fR \fIflags\fR] [\fIrouter_name\fR]
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBshow-router\fR [\fB-P\fR | \fB-x\fR] [\fB-p\fR] [\fB-o\fR \fIfield\fR[,...]] [\fIrouter_name\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBvrrpadm\fR 命令用来管理系统中的 VRRP（Virtual Router Redundancy Protocol，虚拟路由器冗余协议）服务。
+.sp
+.LP
+VRRP 指定一种选择协议，用以将对某个虚拟路由器的职责动态分配到 LAN 内的 VRRP 路由器之一。在任一给定时刻，只有一个 VRRP 路由器控制着与某个虚拟路由器关联的 IPv4 或 IPv6 虚拟地址（该路由器称为\fB主路由器\fR），并转发发送到这些 IP 地址的包。如果主路由器变得不可用，则选择进程可以动态地对转发职责进行故障转移。
+.sp
+.LP
+每个 \fBvrrpadm\fR 子命令对由管理员给定的名称标识的 VRRP 路由器执行操作。同一 LAN 内具有相同的 VRID 和地址族的 VRRP 路由器构成了一个虚拟路由器，它保护着一组虚拟 IP 地址。
+.sp
+.LP
+一个系统可以有多个 VRRP 路由器，每个属于一个不同的虚拟路由器。
+.SH 子命令
+.sp
+.LP
+所支持的子命令如下。请注意，所有子命令（\fBshow-router\fR 除外）都需要 \fBsolaris.network.vrrp\fR 授权。\fBshow-router\fR 子命令不需要特殊授权。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm create-router\fR \fB-V\fR \fIvrid\fR \fB-l\fR \fIlink\fR \fB-A\fR \fIinet\fR | \fIinet6\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建具有指定配置的 VRRP 路由器。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIinet\fR | \fIinet6\fR、\fB--address_family\fR=\fIinet\fR | \fIinet6\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址族。可以是 IPv4 或 IPv6。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIadv_interval\fR, \fB--adv_interval\fR=\fIadv_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+通告时间间隔（以毫秒为单位）。缺省值为 \fB1000\fR（一秒）。有效的时间间隔范围为 10-40950。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR、\fB--link\fR=\fIlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+在其上配置 VRRP 路由器的数据链路。这决定了该 VRRP 路由器在哪个 LAN 中运行。该数据链路可以是物理链路、VLAN 或聚合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIflags\fR、\fB--flags\fR=\fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+抢先模式和接受模式，以逗号分隔。值可以是：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpreempt\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBun_preempt\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBaccept\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnoaccept\fR
+.RE
+缺省情况下，两种模式均设为 true。
+.sp
+\fBpreempt\fR 模式控制已启用的较高优先级备份路由器是否可以抢先于较低优先级主路由器。如果 \fBpreempt\fR 模式为 true，则允许抢先；否则，禁止抢先。请注意，如果 VRRP 路由器是虚拟 IP 地址的所有者，则 \fBpreempt\fR 模式必须为 true。
+.sp
+\fBaccept\fR 模式控制虚拟 IP 地址的本地包接受情况。如果 \fBaccept\fR 模式为 true，主路由器必须接受发送到虚拟 IP 地址的包。如果 \fBaccept\fR 模式为 false，则主路由器不接受这些包，尽管它会为这些不被接受的虚拟 IP 地址对 ARP 请求或 ND 请求和通告进行响应。它还必须为在此子命令中指定的路由器转发包。请注意，如果 VRRP 路由器是虚拟 IP 地址的所有者，则 \fBaccept\fR 模式必须为 true。此选项的语法示例：
+.sp
+.in +2
+.nf
+-o preempt,no_accept
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpriority\fR、\fB--priority\fR=\fIpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的 VRRP 路由器的优先级（用于主路由器选择）。该值越高，路由器被选作主路由器的可能性越大。
+.sp
+缺省值为 255，表示指定的 VRRP 路由器是 IP 地址所有者并拥有所有虚拟 IP 地址。IP 地址所有者将响应为进行 ICMP 强制回应、TCP 连接等等而发送到某个虚拟 IP 地址的包。
+.sp
+范围 1-254 供充当虚拟路由器的备份的 VRRP 路由器使用。选择主路由器时将优先选择具有较高优先级的 VRRP 路由器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR \fIvrid\fR、\fB--VRID\fR=\fIvrid\fR\fR
+.ad
+.sp .6
+.RS 4n
+虚拟路由器标识符 (VRID)。它与地址族共同标识 LAN 内的虚拟路由器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的名称。在其他 \fBvrrpadm\fR 子命令中，该名称用来标识 VRRP 路由器。
+.sp
+有效路由器名称的最大长度为 31 个字符。合法字符包括字母数字（a-z、A-Z、0-9）和下划线 ('_')。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBdelete-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除由 \fIrouter_name\fR 标识的 VRRP 路由器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBdisable-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用由 \fIrouter_name\fR 标识的虚拟路由器。路由器被禁用后，它将不再参与主虚拟路由器的选择过程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBenable-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+重新启用由 \fIrouter_name\fR 标识的之前被禁用的虚拟路由器。该路由器将会重新参与主虚拟路由器的选择过程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBmodify-router\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] [\fIrouter_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+修改由 \fIrouter_name\fR 标识的 VRRP 路由器的配置。仅可修改优先级、通告时间间隔、抢先模式和接受模式。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpriority\fR、\fB--priority\fR=\fIpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+该 VRRP 路由器的新优先级。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIadv_interval\fR, \fB--adv_interval\fR=\fIadv_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+新的通告时间间隔。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIflags\fR、\fB--flags\fR=\fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+新的抢先模式和接受模式。可以指定一个，也可以两者都指定。如果二者都指定，需用逗号分隔它们。例如：
+.sp
+.in +2
+.nf
+-o preempt,no_accept
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBshow-router\fR [\fB-P\fR | \fB-x\fR] [\fB-p\fR] [\fB-o\fR \fIfield\fR[,...]] [\fIrouter_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示由 \fIrouter_name\fR 标识的 VRRP 路由器的信息。如果未指定 \fIrouter_name\fR，则会显示系统上所有 VRRP 路由器的信息。
+.sp
+缺省情况下（无选项），显示以下字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVRID\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的 VRID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK\fR\fR
+.ad
+.sp .6
+.RS 4n
+在其上创建 VRRP 路由器的数据链路。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAF\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的地址族，可以是 \fBIPv4\fR 或 \fBIPv6\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+该 VRRP 路由器的优先级（用于主路由器选择）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADV_INTV\fR\fR
+.ad
+.sp .6
+.RS 4n
+通告时间间隔（以毫秒为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的当前状态：\fBINIT\fR（初始化）、\fBBACK\fR（备份）或 \fBMAST\fR（主）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMODE\fR\fR
+.ad
+.sp .6
+.RS 4n
+与 VRRP 路由器关联的一组标志。可能的值为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+路由器已启用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+Preempt（抢先）模式为 true。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.RS 5n
+.rt  
+Accept（接受）模式为 true。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+虚拟地址所有者。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVNIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+为该 VRRP 路由器创建的 VRRP VNIC。
+.sp
+请注意，VNIC 的名称可能会随时间推移而改变，除非该路由器已启用。
+.RE
+
+\fBshow-router\fR 子命令具有以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR、\fB--extended\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示给定 VRRP 路由器的其他信息：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIMARY_IP\fR\fR
+.ad
+.sp .6
+.RS 4n
+由 VRRP 路由器选择的主 IP 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVIRTUAL_IPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 VRRP 路由器上配置的虚拟 IP 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRV_STAT\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的前一个状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTAT_LAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+自上次状态转换以来已过去的时间。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR、\fB--peer\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示备份 VRRP 路由器的信息。仅当 VRRP 路由器处于备份状态时此选项才有意义。
+.sp
+将显示以下字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 路由器的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPEER\fR\fR
+.ad
+.sp .6
+.RS 4n
+对等 VRRP 路由器的主 IP 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_PRIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+接收自对等方的通告中包含的对等 VRRP 路由器的优先级。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_INTV\fR\fR
+.ad
+.sp .6
+.RS 4n
+接收自对等方的通告中包含的通告时间间隔（以毫秒为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_ADV_LAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+自上次从对等方接收通告以来已过去的时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMASTER_DOWN_INT\fR\fR
+.ad
+.sp .6
+.RS 4n
+声明主路由器已关闭之前需等待的时间间隔（以毫秒为单位）。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+以计算机可解析的格式显示 VRRP 路由器信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR=\fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。字段名必须是上面列出的字段之一，或是用以显示所有字段的特殊值 \fBall\fR（全部）。缺省情况下（不带 \fB-o\fR），\fBvrrpadm show\fR 将显示所有字段。
+.RE
+
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/network/routing/vrrp
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdladm\fR(1M)、\fBvrrpd\fR(1M)、\fBattributes\fR(5)

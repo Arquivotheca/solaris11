@@ -1,0 +1,312 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+-->
+
+<service_bundle type='manifest' name='SUNWcsr:ns-switch'>
+
+<service
+	name='system/name-service/switch'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance />
+
+	<dependency
+	    name='filesystem'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri value='svc:/system/filesystem/root' />
+		<service_fmri value='svc:/system/filesystem/usr' />
+		<service_fmri value='svc:/system/filesystem/minimal' />
+	</dependency>
+
+	<dependency
+		name='milestone'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/milestone/unconfig' />
+	</dependency>
+
+	<!--
+	 During system configuration, explicitly wait until manifest-import
+	 is online and has imported the new profile explicitly.
+	-->
+	<dependency
+		name='manifest_import'
+		grouping='optional_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/manifest-import' />
+	</dependency>
+
+	<dependent
+		name='name-service-switch_self-assembly-complete'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/self-assembly-complete' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/ns-switch %m'
+		timeout_seconds='180' />
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec='/lib/svc/method/ns-switch %m'
+		timeout_seconds='180' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='180' />
+
+	<exec_method
+		type='method'
+		name='unconfigure'
+		exec='/lib/svc/method/ns-switch unconfigure'
+		timeout_seconds='180' >
+	</exec_method>
+
+	<property_group name='general' type='framework'>
+		<!-- to start stop the service -->
+		<propval name='action_authorization' type='astring'
+			value='solaris.smf.manage.name-service.switch' />
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.manage.name-service.switch' />
+	</property_group>
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring' value='transient' />
+	</property_group>
+
+	<property_group name='config' type='application'>
+	    <!-- to manage properties of the service -->
+	    <propval name='value_authorization' type='astring'
+		value='solaris.smf.value.name-service.switch' />
+	    <propval name='default' type='astring' value='files'/>
+	    <propval name='printer' type='astring' value='user files'/>
+	</property_group>
+
+	<property_group name='sysconfig' type='application'>
+	    <propval name='group' type='astring' value='naming_services' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+				Local files based naming services
+			</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='nsswitch.conf' section='4'
+				manpath='/usr/share/man' />
+		</documentation>
+		<pg_pattern name='config' type='application'
+		    target='this' required='true'>
+			<description> <loctext xml:lang='C'>
+			    Name service switch configuration data as described in nsswitch.conf(4).
+			 </loctext> </description>
+			<prop_pattern name='default' type='astring'
+			    required='true'>
+				<description> <loctext xml:lang='C'>
+				    Default configuration database entry.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='host' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for host database lookups. (both IPv4 and IPv6 hosts)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='password' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for passwd database lookups. Also used with the shadow and user_attr databases.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='group' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for group database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='network' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for network database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='protocol' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for protocol database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='rpc' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for rpc database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='ether' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for ether database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='netmask' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for netmask database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='bootparam' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for bootparam database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='publickey' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for publickey database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='netgroup' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for netgroup database lookups.  Only used with network repositories.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='automount' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for automount database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='alias' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for alias database lookups. (sendmail)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='service' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for service database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='printer' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for printer database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='project' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for project database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='auth_attr' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for auth_attr database lookups.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='prof_attr' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for prof_attr database lookups.  Also used with the exec_attr database.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='tnrhtp' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for tnrhtp database lookups.  Used with Trusted Extensions only.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='tnrhdb' type='astring'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Override configuration for tnrhdb database lookups.  Used with Trusted Extensions only.
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='enable_passwd_compat' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Enable passwd compat (Obsolete: use pam_list(5) instead).
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='enable_group_compat' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Enable group compat (Obsolete: use pam_list(5) instead).
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+
+</service>
+
+</service_bundle>

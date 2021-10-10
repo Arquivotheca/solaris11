@@ -1,0 +1,171 @@
+'\" te
+.\" 版权所有 (c) 2007，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH updatehome 1 "2010 年 10 月 15 日" "SunOS 5.11" "用户命令"
+.SH 名称
+updatehome \- 更新起始目录副本，然后链接当前标签的文件
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/updatehome\fR [\fB-cirs\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBupdatehome\fR 读取用户的最小标签副本和链接控制文件（\fB\&.copy_files\fR 和 \fB\&.link_files\fR）。这些文件中包含要复制的和要从用户最小标签起始目录以符号方式链接到当前标签处的用户起始目录的文件列表。
+.sp
+.LP
+缺省情况下，在 \fBlabel_encodings\fR(4) 中指定最小用户标签，并且可在 \fBuser_attr\fR(4) 中明确指定最小用户标签。使用 \fBtxzonemgr\fR(1M) 创建公共区域时，会为公共区域分配缺省最小标签，并且会将公共区域配置为多级别 NFS 服务器。公共区域中的授权管理员可使用 \fBshare\fR(1M) 命令导出起始目录，从而可由较高级别的区域在只读模式下挂载这些目录。通过 \fBtxzonemgr\fR(1M) 方式创建的其他区域将配置有 \fBautomount\fR(1M) 项，该项在 \fB/zone/public/home\fR 处挂载公共区域的起始目录。
+.sp
+.LP
+如果用户的最小起始目录已按照这种方式进行了共享，则用户可以在较高级别的区域中运行 \fBupdatehome\fR 命令（手动或通过在启动文件中执行）。例如，用户可能需要指向诸如 \fB\&.profile\fR、\fB .login\fR、\fB\&.cshrc\fR、\fB\&.exrc\fR、\fB\&.mailrc\fR 和 \fB~/bin\fR 等的文件的符号链接。\fBupdatehome\fR 命令为完成该符号链接提供了一种方便的机制。用户可将文件添加到那些要复制的 (\fB\&.copy_files \fR) 和要以符号方式链接 (\fB\&.link_files\fR) 的文件。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+替换当前标签处的现有起始目录副本。缺省设置是跳过现有副本。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+忽略遇到的错误。缺省设置出错时中止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+替换当前标签处的现有起始目录副本或符号链接。该选项表示选项 \fB-c\fR 和 \fB-s\fR。缺省设置是跳过现有副本或符号链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+替换当前标签处的现有起始目录符号链接。缺省设置是跳过现有符号链接。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+一旦成功，\fBupdatehome\fR 返回 \fB0\fR。一旦失败。\fBupdatehome\fR 返回 \fB1\fR，并且会将诊断消息写入标准错误。
+.SH 示例
+.LP
+\fB示例 1 \fR样例 \fB\&.copy_files\fR 文件
+.sp
+.LP
+可在每个用户标签处对 \fB\&.copy_files\fR 中列出的文件进行修改。
+
+.sp
+.in +2
+.nf
+\&.cshrc 
+\&.mailrc 
+\&.mozilla/bookmarks.html
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR样例 \fB\&.link_files\fR 文件
+.sp
+.LP
+可在最低级别标签处对 \fB\&.link_files\fR 中所列的文件进行修改。更改将传播到用户可用的其他标签。
+
+.sp
+.in +2
+.nf
+~/bin
+\&.mozilla/preferences
+\&.xrc
+\&.rhosts
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR更新已链接文件和已复制文件
+.sp
+.LP
+用户在最低级别标签处对 \fB\&.copy_files\fR 和 \fB\&.link_files\fR 进行了更行。在较高级别标签处，用户刷新副本和链接。运行该命令不需要特权。
+
+.sp
+.in +2
+.nf
+% \fBupdatehome -r\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.copy_files\fR\fR
+.ad
+.RS 21n
+.rt  
+要复制的文件列表
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.link_files\fR\fR
+.ad
+.RS 21n
+.rt  
+要以符号方式链接的文件列表
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/trusted
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBautomount\fR(1M)、\fBshare\fR(1M)、\fBtxzonemgr\fR(1M)、\fBlabel_encodings\fR(4)、\fBuser_attr\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI".copy_files and .link_files Files"\fR in \fI《Oracle Solaris Trusted Extensions Configuration and Administration》\fR
+.SH 附注
+.sp
+.LP
+仅当系统配置有 Trusted Extensions 时，本手册页中介绍的功能才可用。

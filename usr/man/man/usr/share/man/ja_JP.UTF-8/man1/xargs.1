@@ -1,0 +1,395 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/. 
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH xargs 1 "2010 年 11 月 2 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+xargs \- 引数リストを構築してコマンドを実行
+.SH 形式
+.LP
+.nf
+\fBxargs\fR [\fB-t\fR] [\fB-p\fR] [\fB-e\fR[\fIeofstr\fR]] [\fB-E\fR \fIeofstr\fR] 
+     [\fB-I\fR \fIreplstr\fR] [\fB-i\fR[\fIreplstr\fR]] [\fB-L\fR \fInumber\fR] [\fB-l\fR[\fInumber\fR]] 
+     [\fB-n\fR \fInumber\fR [\fB-x\fR]] [\fB-s\fR \fIsize\fR] [\fIutility\fR [\fIargument\fR...]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBxargs\fR ユーティリティーは、オペランドで指定された \fIutility\fR と \fIargument\fR からなり、その後にいくつかの引数を伴ったコマンド行を生成します。付加する引数は、標準入力から読み込んだものがその順序どおりに与えられます。ただしその長さや数は、オプションで指定した値を超えることはありません。コマンド行を生成したら、\fBxargs\fR ユーティリティーはそのコマンドを実行して、完了を待ちます。この一連の処理は、標準入力上でファイルの終わりが検出されるまで、あるいは実行したコマンドが終了ステータス \fB255\fR で終了するまで繰り返されます。
+.sp
+.LP
+標準入力から読み込まれる引数は、引用符で囲まれていない空白文字、エスケープされていない空白文字、もしくは復帰改行文字で 区切られていなければなりません。0 個以上の、二重引用符 (\fB"\fR) および復帰改行以外の文字からなる文字列は、二重引用符で囲むことができます。0 個以上の、アポストロフィ (\fB\&'\fR) および復帰改行以外の文字からなる文字列は、アポストロフィで囲むことができます。また引用符でかこまれていない文字は、いずれもバックスラッシュ (\fB\e\fR) を先頭に付加することによりエスケープできます。\fIutility\fR で指定したユーティリティーは、ファイルの終わりが検出されるまで、繰り返して実行されます。そのユーティリティーが標準入力からデータを読み込もうとした場合、処理の結果は不確定です。\fI\fR
+.sp
+.LP
+生成したコマンド行の長さは、ユーティリティー名のバイト長と文字列として認識された各引数のバイト長の合計となります。文字列の終端用の NULL 文字も含まれます。\fBxargs\fR ユーティリティーは、生成したコマンドを呼び出すときに、引数と環境リストをまとめた長さが \fB{ARG_MAX}-2048\fR バイトを超えないよう、コマンド行の長さを制限します。この制限範囲の中で、\fB-n\fR と \fB-s\fR の両オプションがともに省略された場合、デフォルトのコマンド行の長さの最小値は \fB{LINE_MAX}\fR となります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-0\fR\fR
+.ad
+.RS 16n
+.rt  
+入力項目は、スペースまたは復帰改行ではなく NULL 文字で終了します。引用符とバックスラッシュは特殊文字ではなく、すべての文字は文字どおりに扱われます。ファイルの終わりを表す文字列も無効にされ、その他の引数と同じように扱われます。これは、入力項目にスペース、引用符、またはバックスラッシュが含まれている可能性がある場合に便利です。find の \fB-print0\fR オプションでは、このモードに適した入力が生成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR\fB[\fR\fIeofstr\fR\fB]\fR \fR
+.ad
+.RS 16n
+.rt  
+論理的なファイルの終わり (EOF) を表す文字列を \fIeofstr\fR で指定します。この \fB-e\fR オプションを省略し、さらに \fB-E\fR も省略すると、デフォルトとして下線 (\fB_\fR) が論理的 \fBEOF\fR 文字列となります。また \fIe\fR だけを記述して eofstrを省略すると、論理的 \fBEOF\fR 文字列機能は無効となり、下線はそのまま引数の値の一部とみなされます。\fBxargs\fR の標準入力からの読み込みは、ファイルの終わりに達するか、eofstr が示す文字列が現れた時点で終了します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR \fIeofstr\fR \fR
+.ad
+.RS 16n
+.rt  
+論理的 EOF 文字列として、デフォルトの下線の代わりに eofstr で示す文字列を使用します。\fBxargs\fR の標準入力からの読み込みは、ファイルの終わりに達するか、eofstr が示す文字列が現れた時点で終了します。\fIeofstr\fR がヌル文字列の場合、論理的なファイルの終わり (EOF) を表す文字列の機能が無効になり、下線文字はそのまま引数の値の一部と見なされます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIreplstr\fR \fR
+.ad
+.RS 16n
+.rt  
+挿入モードを表します。標準入力から読み込んだ各行に対して \fIutility\fR で指定したユーティリティーが実行されます。このとき、読み込んだ行全体を 1 つの引数と見なし、\fIreplstr\fR が示す文字列が \fIargument\fR \fIs\fR 中に含まれていればその位置に読み込んだ行の内容を挿入します。\fIargument\fR で指定する引数のうち、最大 5 つの引数に \fIreplstr\fR を 1 つまたは複数個含めることができます。標準入力からの行の先頭が空白文字の場合、それらは無視されます。挿入によって生成される引数の合計長は、255 バイトを超えることはできません。この \fB-I\fR オプションを指定した場合は、xオプションが強制的に有効となります。\fB-I\fR と \fB-i\fR は相互に排他的なオプションで、両方が指定された場合には最後に現れた方が有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-i\fR\fB[\fR\fIreplstr\fR\fB]\fR \fR
+.ad
+.RS 16n
+.rt  
+このオプションは \fB-I\fR \fIreplstr\fR と同等の意味を持ちます。引数の \fIreplstr\fR を省略すると、デフォルトの文字列として \fB{\|}\fR が用いられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fInumber\fR \fR
+.ad
+.RS 16n
+.rt  
+\fInumber\fR で示す数の引数行 (空の行を除く) を標準入力から読み込むたびに、\fIutility\fR を実行します。最後の呼び出し時、標準入力に残っている行数が \fInumber\fR より少なくても、その引数で \fIutility\fR を実行します。各行は、その行で最初に現れた復帰改行をもって終わりと見なされます。ただし行の最後の文字が空白文字の場合、次の空ではない行に継続することになります。\fB-L\fR、\fB-l\fR、\fB-n\fRの 3 つのオプションは相互に排他的で、 2 つ以上が指定された場合には最後に現れたものが有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l[\fR\fInumber\fR\fB]\fR \fR
+.ad
+.RS 16n
+.rt  
+(小文字のエル)このオプションは、\fB-L\fR \fInumber\fR と同等の意味を持ちます。\fInumber\fR を省略すると、\fB1\fR とみなされます。この \fB-I\fR オプションを指定した場合は、xオプションが強制的に有効となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fInumber\fR \fR
+.ad
+.RS 16n
+.rt  
+できるだけ多くの、ただし最大 \fInumber\fR 個の引数を標準入力から読み込んで \fIutility\fR を呼び出します。number は正の 10 進整数です。次の場合は、より少ない引数が使用されます。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+コマンド行の累積長が、\fB-s\fR オプションで指定された長さ (\fB-s\fRオプション省略時には \fBLINE_MAX\fR が示す長さ) を超えた場合。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+繰り返し実行の最終回に、残っている引数の数が \fInumber\fR 未満でゼロではない場合
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.RS 16n
+.rt  
+プロンプトモードを表します。\fIutility\fR を呼び出すたびに、実行してもよいかどうかユーザーに問い合わせます。トレースモード (\fB-t\fR) が自動的に有効となってその回のコマンド内容を表示し、その後にプロンプトメッセージが表示されます。この表示は標準エラー出力に現れます。\fB/dev/tty\fR から肯定の応答 (ユーザーのロケールに固有) を読み取るとコマンドを実行し、肯定の応答でない場合はその回の \fIutility\fR の実行は行われません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsize\fR\fR
+.ad
+.RS 16n
+.rt  
+コマンド行の長さが \fIsize\fR で示すバイト数を超えない範囲で、できるだけ多くの引数を標準入力から読み込んで \fIutility\fR を呼び出します。size は正の 10 進整数です。次の場合は、より少ない引数が使用されます。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+引数の合計個数が \fB-n\fR オプションで指定した数を超えた場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+行数が \fB-L\fR オプションで指定した値を超えた場合
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+行の長さが \fIsize\fR バイトに到達する前にファイルの終わりを検出した場合
+.RE
+「機能説明」節で記述されている制限が満たされている場合は、\fIsize\fR の値としては、少なくとも \fB{LINE_MAX}\fR バイトまでの値がサポートされます。その制限値を超えたり、システムがサポートしている最大値を超えたりした場合でも、エラーとは見なされません。そのような場合 \fBxargs\fR は、制限の範囲内で、サポートできる最大値を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 6n
+.rt  
+トレースモードを有効にします。生成されたコマンド行は、実行する直前に標準エラー出力に書き込まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 6n
+.rt  
+引数の数を表す \fInumber\fR 引数 (\fB-n\fR オプションを参照) あるいは行数を表す \fInumber\fR 引数 (\fB-L\fR オプションを参照) を含むコマンド行が、明に指定された長さ (\fB-s\fR オプションを参照) あるいは暗に指定された長さを超えた場合、実行を中止します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIutility\fR \fR
+.ad
+.RS 12n
+.rt  
+実行するユーティリティーの名前。環境変数 \fBPATH\fR を使った検索パスにより得られます (\fBenviron\fR(5) を参照)。\fIutility\fR を省略すると、デフォルトとして \fBecho\fR(1)ユーティリティーが実行されます。\fBshell_builtins\fR(1) に定義されている特殊な組み込みユーティリティの名前を \fIutility\fR で指定した場合の処理結果は定義されていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIargument\fR\fR
+.ad
+.RS 12n
+.rt  
+\fIutility\fR を実行するときの最初のオプションまたはオペランド。
+.RE
+
+.SH 使用法
+.sp
+.LP
+\fBxargs\fR から実行されるユーティリティーは、再度呼び出されても現データストリームを使うかぎり実行は失敗する、ということがわかっている場合、終了ステータス \fB255\fR を使用して \fBxargs\fR に対し実行を終了するよう通知できます。したがって \fIutility\fR は、偶然 \fB255\fR を返すことのないよう、適切な終了コード値を明に指定して実行を終了することが必要です。\fB\fR
+.sp
+.LP
+入力データは行の集まりとして解析されます。引数は空白文字により区切られます。\fBxargs\fR を使って \fBfind\fR \fIdir\fR \fB-print\fR や \fBls\fR などのコマンドの出力を、実行対象コマンドの入力とする場合、ファイル名に空白文字や復帰改行文字が含まれていると、処理の結果は予測できません。これを防ぐには、見つかった各ファイル名を引用符つきの文字列に変換するスクリプトを \fBfind\fR を使って呼び出し、そのスクリプトを \fBxargs\fR にパイプでつなげるようにしてください。なお \fBxargs\fR が使う引用符の規則は、シェルの規則とは異なります。同じ規則を採用しないのは、既存のアプリケーションが現状の規則に 依存しているのに対し、シェルの構文規則は それと互換性を持たないためです。文字列を \fBxargs\fR が正しく解釈できる形式に変換する簡単な方法は、各文字の前にバックスラッシュ (\fB\e\fR) を付加することです。
+.sp
+.LP
+\fB{ARG_MAX}\fR 値が大きいシステムにおいては、\fBxargs\fR は \fB{LINE_MAX}\fR より長いコマンド行を生成することがあります。これはユーティリティを呼び出すうえでは問題ではありません。\fBxargs\fR を使ってテキストファイルを作成する場合、ユーザーは \fB-s\fR オプションを使ってコマンド行の長さを明確に設定しなけばなりません。
+.sp
+.LP
+\fBxargs\fR ユーティリティーは、エラーが発生すると終了ステータス \fB127\fR を返します。これによりアプリケーションは、「ユーティリティーが見つからなかった」エラーと「呼び出したユーティリティーがエラーで終了した」ステータスとを見分けることができます。\fB127\fR という値を選んだのは、通常この値はほかの意味で使われることがないためです。ほとんどのユーティリティーは、小さい値を使って「一般的なエラー状態」を表し、\fB128\fR より大きな値は、シグナル受信による終了の場合と区別が困難になりかねないためです。同じような観点から、ユーティリティは見つかったが実行できなかった、という場合に使う値として \fB126\fR が選ばれています。
+.SH 使用例
+.LP
+\fB例 1 \fRxargs コマンドの使用
+.sp
+.LP
+次の例では、ディレクトリ \fB$1\fR 中の全ファイルをディレクトリ \fB$2\fR へ mv コマンドで移動することとと、各実行の直前にそのコマンドの内容を表示することを指定しています。
+
+.sp
+.in +2
+.nf
+example% \fBls $1 | xargs -I {} -t mv $1/{} $2/{}\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次では、カッコで囲まれたコマンドの実行結果を 1 行にまとめ、それを \fBlog\fR というファイルの終わりに追加出力することを指定しています。
+
+.sp
+.in +2
+.nf
+example% \fB(logname; date; printf "%s\en" "$0 $*") | xargs >>log\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、元来コマンド行引数として入力されたいくつかの対の引数を使って \fBdiff\fR を実行します。なお元の引数リストの各要素には空白文字が埋め込まれていない、と仮定しています。
+
+.sp
+.in +2
+.nf
+example% \fBprintf "%s\en" "$*" | xargs -n 2 -x diff\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ユーザーは、現在のディレクトリに含まれるファイルのうち、どのファイルのアーカイブを作成するかを確認されます。ファイルのアーカイブが作成されて \fBarch\fR \fB;\fR に渡されます (a: 1 度に 1 ファイルずつ、b: 1 度に複数のファイル)。
+
+.sp
+.in +2
+.nf
+example% \fBls | xargs -p -L 1 ar -r arch
+ls | xargs -p -L 1 | xargs ar -r arch\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、元来コマンド行引数として入力されたいくつかの対の引数を使って diff コマンドを実行します。
+
+.sp
+.in +2
+.nf
+example% \fBecho $* | xargs -n 2 diff\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBxargs\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5)を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPATH\fR\fR
+.ad
+.RS 8n
+.rt  
+\fIutility\fR の位置を指定します。
+.RE
+
+.sp
+.LP
+肯定応答は、ユーザーのロケールの \fBLC_MESSAGES\fR カテゴリの \fByesexpr\fR キーワードに定義されている拡張正規表現を使用して処理されます。\fBLC_COLLATE\fR カテゴリに指定されているロケールは、\fByesexpr\fR に定義されている式に使用される範囲、同等クラス、および複数文字照合要素の動作を定義します。\fBLC_CTYPE\fR に指定されているロケールは、テキストデータのバイト列を文字として解釈するロケールや、\fByesexpr\fR に定義されている式に使用される文字クラスの動作を定義します。\fBlocale\fR(5) を参照してください。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 9n
+.rt  
+\fIutility\fR で指定したユーティリティーのすべての実行の終了ステータスは \fB0\fR だった。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1-125\fR\fR
+.ad
+.RS 9n
+.rt  
+指定された要求に合うコマンド行が生成できなかった、または \fIutility\fR で指定されたユーティリティーのうちいくつかの実行で 0 でない終了ステータスが返されました。またはほかの何らかのエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB126\fR \fR
+.ad
+.RS 9n
+.rt  
+\fIutility\fR で指定されたユーティリティーが見つかったが実行できなかった。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB127\fR \fR
+.ad
+.RS 9n
+.rt  
+\fIutility\fR で指定されたユーティリティーが見つからなかった。
+.RE
+
+.sp
+.LP
+指定された要求に合うコマンド行が生成できない、またはユーティリティーが実行できない、またはユーティリティーの実行がシグナルにより中断した、またはユーティリティーの実行が終了ステータス \fB255\fR で終了した場合、\fBxargs\fR ユーティリティーは診断メッセージを出力し、残りの入力データを処理することなく終了します。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBecho\fR(1), \fBshell_builtins\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)

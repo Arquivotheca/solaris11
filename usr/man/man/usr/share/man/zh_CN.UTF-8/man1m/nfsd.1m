@@ -1,0 +1,366 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. 保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH nfsd 1M "2011 年 6 月 25 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+nfsd \- NFS 守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/nfs/nfsd\fR [\fB-a\fR] [\fB-c\fR \fI#_conn\fR] [\fB-l\fR \fIlisten_backlog\fR] 
+     [\fB-p\fR \fIprotocol\fR] [\fB-t\fR \fIdevice\fR] [\fInservers\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBnfsd\fR 是处理客户机文件系统请求的守护进程。只有具有 \fB{PRIV_SYS_NFS}\fR 且具有足够的特权向 \fB/var/run\fR 进行写入的用户可以运行此守护进程。 
+.sp
+.LP
+当使用带 \fB-a\fR 选项的 \fBshare\fR(1M) 时，会自动调用 \fBnfsd\fR 守护进程。
+.sp
+.LP
+缺省情况下，对于版本 2 和 3，\fBnfsd\fR 会在 TCP 和 UDP 传输上启动。缺省情况下，对于版本 4，它会在 TCP 传输上启动。您可以使用 \fB-p\fR 选项更改此行为。
+.sp
+.LP
+在调用 \fBnfsd\fR 命令之前必须停止之前启动的（不管是否使用了选项）\fBnfsd\fR 守护进程。
+.sp
+.LP
+要更改 \fBnfsd\fR 的启动参数，请使用 \fBsharectl\fR(1M) 命令。
+.SS "SMF 管理"
+.sp
+.LP
+\fBnfsd\fR 服务由服务管理工具 \fBsmf\fR(5) 进行管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/network/nfs/server
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+如果通过 \fBSIGTERM\fR 终止了 \fBnfsd\fR，它将无法由服务管理工具来重新启动。但是，可以通过其他信号（例如 \fBSIGINT\fR）来重新启动 \fBnfsd\fR。
+.sp
+.LP
+可以使用 \fBsharectl\fR(1M) 命令来管理与 \fBnfsd\fR 相关的所有参数。下面是当前支持的参数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserver_versmax\fR=\fInum\fR\fR
+.ad
+.br
+.na
+\fB\fBserver_versmin\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS 服务器仅使用由这些变量指定的范围中的 NFS 版本。有效的值或版本为：\fB2\fR、\fB3\fR 和 \fB4\fR。如果这些参数中的一个或者两个都没有设置，则缺省的最小版本为 \fB2\fR，而缺省的最大版本为 \fB4\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserver_delegation\fR=\fBon\fR | \fB off\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省情况下，此变量为 \fBon\fR 并且 NFS 服务器向客户机提供委托。用户可以通过将此变量设置为 \fBoff\fR（区分大小写）为所有导出的文件系统关闭委托。此变量仅适用于 NFS 版本 4。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_connections\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置并发的、面向连接的连接的最大数目。缺省设置是无限制，并且可通过将其设置为 \fB-1\fR 来实现。等效于 \fBnfsd\fR 中的 \fB-c\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlisten_backlog\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+为面向连接的传输上的 NFS 设置连接队列长度。缺省值为 \fB32\fR，表示队列中有 32 个条目。等效于 \fBnfsd\fR 中的 \fB-l\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprotocol\fR=\fBALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅在指定的协议上启动 \fBnfsd\fR。等效于 \fBnfsd\fR 中的 -p 选项。\fBALL\fR 等效于 \fBnfsd\fR 命令行上的 \fB-a\fR。与 NFS SMF 参数 \fBdevice\fR 是互斥的。NFS SMF 参数 \fBdevice\fR 和 \fBprotocol\fR 不得同时指定。如果同时指定了两者，\fBnfs/server\fR 服务将进入维护模式。对于 UDP 协议，只会建立版本 2 和版本 3 服务。NFS 版本 4 不支持 UDP 协议。等效于 \fB-p\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR=\fIdevname\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅为由指定的设备指定的传输启动 NFS 守护进程。等效于 \fBnfsd\fR 中的 \fB-t\fR 选项。与 NFS SMF 参数 \fBprotocol\fR 是互斥的。NFS SMF 参数 \fBdevice\fR 和 \fBprotocol\fR 不得同时指定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBservers\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+并发 NFS 请求的最大数目。等效于 \fBnfsd\fR 命令行上最后的数字参数。缺省值为 \fB1024\fR。等效于 \fInservers\fR 操作数。
+.RE
+
+.sp
+.LP
+请参见下文的\fB\fR"示例"部分。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+在所有可用的连接和面向连接的传输（包括 UDP 和 TCP）上启动 \fBNFS\fR 守护进程。等效于在 SMF 中使用 \fBsharectl\fR(1M) 命令为 NFS 将 \fBprotocol\fR 参数设置为 \fBALL\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fI#_conn\fR\fR
+.ad
+.RS 15n
+.rt  
+这设置面向连接的传输上的 \fBNFS\fR 服务器允许的最大连接数。缺省情况下，连接数目是无限制的。等效于在 SMF 中使用 \fBsharectl\fR(1M) 命令为 NFS 设置 \fBmax_connections\fR 参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 15n
+.rt  
+为面向连接的传输上的 \fBNFS TCP\fR 设置连接队列长度。缺省值为 32 个条目。等效于在 SMF 中使用 \fBsharectl\fR(1M) 命令为 NFS 设置 \fBlisten_backlog\fR 参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprotocol\fR\fR
+.ad
+.RS 15n
+.rt  
+在指定的协议上启动 \fBNFS\fR 守护进程。等效于在 SMF 中使用 \fBsharectl\fR(1M) 命令为 NFS 设置 \fBprotocol\fR 参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIdevice\fR\fR
+.ad
+.RS 15n
+.rt  
+为由给定设备指定的传输启动 \fBNFS\fR 守护进程。等效于在 SMF 中使用 \fBsharectl\fR(1M) 命令为 NFS 设置 \fBdevice\fR 参数。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fInservers\fR\fR
+.ad
+.RS 12n
+.rt  
+这设置服务器可以处理的并发 \fBNFS\fR 请求的最大数目。此并发性是由根据需要在内核中创建的最多 \fInservers\fR 个线程来实现的。\fInservers\fR 应当基于该服务器上的预期负荷而设置。\fInservers\fR 的数字通常为 16。如果未指定 \fInservers\fR，则并发 \fBNFS\fR 请求的最大数目将缺省设置为 1。等效于在 SMF 中使用 \fBsharectl\fR(1M) 命令为 NFS 设置 \fBservers\fR 参数。
+.RE
+
+.SH 用法
+.sp
+.LP
+如果在 \fB/etc/system \fR中设置了 \fBNFS_PORTMON\fR 变量，则客户机必须使用特权端口（小于 \fBIPPORT_RESERVED\fR 的端口）来获取 \fBNFS\fR 服务。缺省情况下，该变量等于零。该变量已从 "nfs" 移到了 "nfssrv" 模块。要设置该变量，请编辑 \fB/etc/system\fR 文件并添加以下条目：
+.sp
+.LP
+\fBset\fR \fBnfssrv:nfs_portmon\fR \fB=\fR \fB 1\fR
+.SH 示例
+.LP
+\fB示例 1 \fR关闭委托
+.sp
+.LP
+这些示例中指定的 \fBnfsd\fR 属性在上文中的"SMF 管理"部分进行了介绍。
+
+.sp
+.LP
+委托是一项 NFSv4 功能，服务器通过该功能将文件的管理委托给客户机。例如，服务器可以向客户机授予（或不授予）读取委托或写入委托。下面的命令执行该操作，将 \fBserver_delegation\fR 属性设置为 \fBoff\fR。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p server_delegation=off nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR确定委托的值
+.sp
+.LP
+下面的命令获取 \fBserver_delegation\fR 属性的当前值。
+
+.sp
+.in +2
+.nf
+# \fBsharectl get -p server_delegation nfs\fR
+server_delegation=on
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR设置并发请求的最大数目
+.sp
+.LP
+下面的命令设置并发 NFS 请求的最大数目。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p servers=32 nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR设置连接队列长度
+.sp
+.LP
+下面的命令为面向连接的传输上的 NFS 设置最大队列长度。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p listen_backlog=48 nfs\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+守护进程启动成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+守护进程启动失败。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\&.nfs\fIXXX\fR\fR\fR
+.ad
+.RS 25n
+.rt  
+打开但未链接的文件的客户机指针。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/system\fR\fR
+.ad
+.RS 25n
+.rt  
+系统配置信息文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/nfs/v4_state\fR\fR
+.ad
+.br
+.na
+\fB\fB /var/nfs/v4_oldstate\fR\fR
+.ad
+.RS 25n
+.rt  
+服务器用来管理客户机状态信息的目录。不应删除这些目录。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/file-system/nfs
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBps\fR(1)、\fBsvcs\fR(1)、\fBmountd\fR(1M)、\fBshare\fR(1M)、\fBsharectl\fR(1M)、\fBsvcadm\fR(1M)、\fBsharetab\fR(4)、\fBsystem\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+\fI《System Administration Guide: Network Services》\fR
+.SH 附注
+.sp
+.LP
+建议不要手动启动和重新启动 \fBnfsd\fR。如果必须要这样做，请使用 \fBsvcadm\fR 来启用或禁用 \fBnfs\fR 服务 (\fBsvc:/network/nfs/server\fR)。如果该服务被禁用，它将由 \fBshare_nfs\fR(1M) 来启用，除非它的 \fBapplication/auto_enable \fR属性设置为 \fBfalse\fR。有关更多信息，请参见\fI《System Administration Guide: Network Services》\fR和 \fBsvcadm\fR(1M)。

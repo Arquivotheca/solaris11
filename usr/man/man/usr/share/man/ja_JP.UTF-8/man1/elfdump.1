@@ -1,0 +1,649 @@
+'\" te
+.\"  Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH elfdump 1 "2011 年 6 月 8 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+elfdump \- オブジェクトファイルの選択部分のダンプ
+.SH 形式
+.LP
+.nf
+\fBelfdump\fR [\fB-cCdegGhHiklmnPrsSuvy\fR] [\fB-p | -w file\fR] [\fB-I\fR \fIindex-expr\fR]
+     [\fB-N\fR \fIname\fR] [\fB-O\fR \fIosabi\fR] [\fB-T\fR \fItype\fR] \fIfilename\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBelfdump\fR ユーティリティは、指定されたオブジェクトファイルの選択部分をシンボルでダンプします。オプションを指定することにより、オブジェクトファイルの特定部分を抽出できます。
+.sp
+.LP
+\fBelfdump\fR ユーティリティは、\fBdump\fR(1) ユーティリティと機能的に似ています。\fBelfdump\fR のインタフェースの方が \fBdump\fR よりも新しく、ユーザーフレンドリです。ただし、シェルスクリプト内で使用するような場合は、\fBdump\fR ユーティリティの方が適しています。
+.sp
+.LP
+\fBelfdump\fR は、\fBar\fR(1) で作成したアーカイブファイルの検査にも使用できます。その場合、アーカイブ内の各オブジェクトは、指定されたオプションに従って処理されます。
+.sp
+.LP
+\fBelfdump\fR を使用すると、任意の ELF オブジェクトの ELF ヘッダー、プログラムヘッダーの配列、およびセクションヘッダーの配列を表示できます。また、次のタイプのセクションに含まれているデータを表示することもできます。
+.sp
+.in +2
+.nf
+Category                     Option     ELF Section Type
+Dynamic                      -d         SHT_DYNAMIC
+Global Offset Table (GOT)    -G         Special. See below.
+Group                        -g         SHT_GROUP
+Capabilities                 -H         SHT_SUNW_cap
+Hash Table                   -h         SHT_HASH
+Interpreter                  -i         Special, see below.
+Move                         -m         SHT_SUNW_move
+Note                         -n         SHT_NOTE
+Relocation                   -r         SHT_RELA
+                                        SHT_REL
+Stack Unwind/Exceptions      -u         Special. See below.
+Syminfo                      -y         SHT_SUNW_syminfo
+Symbol Sort                  -S         SHT_SUNW_symsort
+                                        SHT_SUNW_tlssort
+Symbol Table                 -s         SHT_SYMTAB
+                                        SHT_DYNSYM
+                                        SHT_SUNW_LDYNSYM
+                                        SHT_SUNW_versym
+Versioning                   -v         SHT_SUNW_verdef
+                                        SHT_SUNW_verneed
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+インタプリタおよびグローバルオフセットテーブルのセクションには特殊な ELF セクションタイプは存在せず、代わりに、既知の名前 (それぞれ、\fB\&.interp\fR と \fB\&.got\fR) を使用して \fBSHT_PROGBITS\fR セクションとして実装されます。\fBelfdump\fR は、これらの特殊なセクションを認識して表示できます。
+.sp
+.LP
+スタックの巻き戻しと例外処理に使用されるセクションは、使用されているコンパイラやプラットフォームに応じて、\fBSHT_PROGBITS\fR または \fBSHT_AMD64_UNWIND\fR の ELF セクションタイプになる場合があります。これらのセクションは、\fB\&.eh_frame\fR、\fB\&.eh_frame_hdr \fR、および \fB\&.exception_ranges\fR の名前で認識されます。
+.sp
+.LP
+表示される情報を絞るためのオプションなしで実行されると、\fBelfdump\fR は、各オブジェクトの使用可能なすべての情報を表示します。
+.sp
+.LP
+表示される情報の詳細については、\fI『Linker and Libraries Guide』\fRを参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+セクションヘッダー情報をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+C++ シンボル名を復号化します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.dynamic\fR セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBELF\fR ヘッダーをダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.group\fR セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.got\fR セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.hash\fR セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.SUNW_cap\fR 機能セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.interp\fR セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIindex-expr\fR\fR
+.ad
+.sp .6
+.RS 4n
+検査するセクションまたはプログラムヘッダーを、特定のインデックスまたはインデックス範囲で修飾します。たとえば、次を使用して、ファイルの 3 番目のセクションヘッダーを表示できます。
+.sp
+.in +2
+.nf
+example% \fBelfdump -c -I 3 \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+\fIindex-expr\fR には、上記の例に示したように、特定の項目を指定する負でない単一の整数値を指定できます。または、\fIindex-expr\fR は、項目の範囲を示すコロン (:) で区切られた 2 つの負でない単一の整数値で構成することもできます。次の例は、ファイル内の 3 番目、4 番目、および 5 番目のプログラムヘッダーを表示します。
+.sp
+.in +2
+.nf
+example% \fBelfdump -p -I 3:5 \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+インデックスの範囲を指定する場合、2 番目の値を省略すると、ファイル内の最後の項目を示すことができます。たとえば、次の文は 10 番目から最後までのすべてのセクションヘッダーを一覧表示します。
+.sp
+.in +2
+.nf
+example% \fBelfdump -c -I 10: \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) の詳細は、「マッチングオプション」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBELF\fR チェックサムを計算します。\fBgelf_checksum\fR(3ELF) のマニュアルページを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+省略しない長いセクション名を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+D\fB\&.SUNW_move\fR セクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.note\fR セクションの内容をダンプします。デフォルトでは、\fBelfdump\fR は、このデータを解釈せずに 16 進形式で表示します。コアファイルは例外です。\fBcore\fR(4) で説明されているコアファイルの note のサブセットは、\fBelfdump\fR によって解釈され、高いレベルの形式 NT_PRSTATUS、NT_PRPSINFO、NT_PLATFORM、NT_AUXV、NT_ASRS、NT_PSTATUS、NT_PSINFO、NT_PRCRED、NT_UTSNAME、NT_LWPSTATUS、NT_LWPSINFO、NT_PRPRIV、NT_PRPRIVINFO、NT_CONTENT、および NT_ZONENAME で表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+検査するセクションまたはプログラムヘッダーを、特定の名前で修飾します。たとえば、複数のシンボルテーブルが入っているファイルにおいて \fB\&.dynsym\fR シンボルテーブルだけを表示するには、次を使用します。
+.sp
+.in +2
+.nf
+example% \fBelfdump -N .dynsym \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+ELF プログラムヘッダーには名前がありません。\fB-p\fR オプションを指定した場合、\fIname\fR は、プログラムヘッダータイプを指し、\fB-N\fR オプションの動作は \fB-T\fR オプションの動作と同じになります。たとえば、次を使用して、インタプリタを識別するプログラムヘッダーを表示できます。
+.sp
+.in +2
+.nf
+example% \fBelfdump -p -N PT_INTERP \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) の詳細は、「マッチングオプション」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR \fIosabi\fR\fR
+.ad
+.sp .6
+.RS 4n
+オブジェクトを解釈するときに適用するオペレーティングシステム ABI を指定します。\fIosabi\fR には、\fB/usr/include/sys/elf.h\fR にある \fBELFOSABI_\fR 定数のいずれかの名前または値を指定できます。便宜上、これらの名前から \fBELFOSABI_\fR 接頭辞を省略できます。\fIosabi\fR では、2 つの値が完全にサポートされています。\fBsolaris\fR は、Solaris オペレーティングシステムのネイティブ ABI です。\fBnone\fR は、汎用の ELF ABI です。ほかのオペレーティングシステムの ABI のサポートは、不完全であるか、存在しない可能性があります。文字列を取得できない項目は、数値形式で表示されます。
+.sp
+\fB-O\fR が使用されておらず、オブジェクトの ELF ヘッダーが汎用でない ABI を指定している場合は、そのオブジェクトによって指定された ABI が使用されます。オブジェクトが汎用の ELF ABI を指定している場合、\fBelfdump\fR は \fB\&.note.ABI-tag\fR セクションを検索し、見つかった場合は、そのオブジェクトの ABI を \fBlinux\fR として識別します。それ以外の場合、汎用の ELF ABI を指定しているオブジェクトは \fBsolaris\fR ABIに準拠していると見なされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+プログラムヘッダーをダンプします。個々のプログラムヘッダーは、マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) を使用して指定できます。詳細については、「マッチングオプション」を参照してください。
+.sp
+\fB-p\fR オプションと \fB-w\fR オプションを同時に指定することはできません。1 回の \fBelfdump\fR 呼び出しでは、どちらかのオプションしか使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+プログラムヘッダーからの情報に基づいて代替のセクションヘッダー情報を生成および使用し、ファイルに含まれているセクションヘッダー情報を無視します。ファイルにセクションヘッダーがない場合、警告メッセージが出力され、このオプションが自動的に選択されます。セクションヘッダーは、プログラムを実行するためにシステムで使用されることはありません。そのため、悪意のあるプログラムでは、そのセクションヘッダーが削除されていたり、偽の情報を提供するように変更されていたりする場合があります。対照的に、プログラムが実行可能であるためには、プログラムヘッダーは正確である必要があります。プログラムヘッダーから生成された合成のセクションヘッダーを使用すると、変更されたセクションヘッダーを持つファイルを調べることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+再配置セクション (つまり、\fB\&.rel\fR[\fBa\fR]) の内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.SUNW_ldynsym\fR、\fB\&.dynsym\fR、および \fB\&.symtab\fR シンボルテーブルセクションの内容をダンプします。アーカイブの場合は、アーカイブシンボルテーブルもダンプします。個々のセクションは、マッチングオプション (\fB-I\fR、\fB- N\fR、\fB-T\fR) を使用して指定できます。アーカイブシンボルテーブルは特殊なセクション名 \fB-N\fR \fBARSYM\fR で指定できます。
+.sp
+コアファイルの場合、\fBshndx\fR フィールドには有効な値が入っていないため、shndx フィールドの値は「\fBunknown\fR」になります。
+.sp
+\fBver\fR ヘッダーの下に、標準のシンボルテーブル情報に加えて、シンボルのバージョン定義索引も出力します。
+.sp
+マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) の詳細は、「マッチングオプション」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.SUNW_dynsymsort\fR および \fB\&.SUNW_dyntlssort\fR シンボルソートセクションで指定された順序でソートされた \fB\&.SUNW_ldynsym\fR および \fB\&.dynsym\fR シンボルテーブルセクションの内容をダンプします。TLS (Thread Local Storage) シンボルはオフセットでソートされます。通常のシンボルはアドレスでソートされます。ソートセクションによって参照されていないシンボルは表示されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fItype\fR \fR
+.ad
+.sp .6
+.RS 4n
+検査するセクションまたはプログラムヘッダーを、特定のタイプで修飾します。たとえば、複数のシンボルテーブルを含むファイル内の \fB\&.dynsym\fR シンボルテーブルだけを表示するには、次のコマンドを使用できます。
+.sp
+.in +2
+.nf
+example% \fBelfdump -T SHT_DYNSYM \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+\fItype\fR の値には数値、または \fB/usr/include/sys/elf.h\fR で定義されている \fBSHT_\fR シンボル名のいずれかを指定できます。\fBSHT_\fR 接頭辞は省略可能であり、\fItype\fR は大文字小文字を区別しません。そのため、上の例は次のように記述することもできます。
+.sp
+.in +2
+.nf
+example% \fBelfdump -T dynsym \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+\fB-p\fR オプションを指定した場合、\fItype\fR はプログラムヘッダータイプを指すため、特定のプログラムヘッダーを表示できます。たとえば、インタプリタを識別するプログラムヘッダーは、次のコマンドを使用して表示できます。
+.sp
+.in +2
+.nf
+example% \fBelfdump -p -T PT_INTERP \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+\fItype\fR の値には数値、または \fB/usr/include/sys/elf.h\fR で定義されている \fBPT_\fR シンボル名のいずれかを指定できます。\fBPT_\fR 接頭辞は省略可能であり、\fItype\fR は大文字小文字を区別しません。そのため、上記の例は次のように記述することもできます。
+.sp
+.in +2
+.nf
+example% \fBelfdump -p -T interp \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) の詳細は、「マッチングオプション」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+スタックフレーム巻き戻しおよび例外処理に使用されるセクションの内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+バージョンセクション \fB\&.SUNW\fR\fI_version\fR の内容をダンプします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) を使用して指定されたセクションの内容を、指定されたファイルに書き込みます。たとえば、ファイル内の \fB\&.text\fR セクションを抽出するには、次のように指定します。
+.sp
+.in +2
+.nf
+example% \fBelfdump -w text.out -N .text \fIfilename\fR\fR
+.fi
+.in -2
+.sp
+
+マッチングオプション (\fB-I\fR、\fB-N\fR、\fB-T\fR) の詳細は、「マッチングオプション」を参照してください。
+.sp
+\fB-p\fR オプションと \fB-w\fR オプションを同時に指定することはできません。1 回の \fBelfdump\fR 呼び出しでは、どちらかのオプションしか使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB\&.SUNW_syminfo\fR セクションの内容をダンプします。シンボルの属性は、文字トークンによって伝達されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBA\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボル定義は、補助フィルタとして機能します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBB\fR\fR
+.ad
+.RS 13n
+.rt  
+\fBD\fR とともに割り当てられ、シンボル参照は、関連付けられている依存関係定義に直接結合すべきです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBC\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボル定義は、コピー再配置の結果です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボル参照は、定義を含む依存関係へ直接関連付けられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBF\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボル定義は、標準フィルタとして機能します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBI\fB\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボル定義は、割り込みシンボルとして機能します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBL\fR\fR
+.ad
+.RS 13n
+.rt  
+レイジー読み込みの必要がある依存関係に対するシンボル参照です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBN\fR\fR
+.ad
+.RS 13n
+.rt  
+外部参照をこのシンボル定義に直接結合することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボルは、遅延 (延期された) 依存関係と関連付けられています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBS\fR\fR
+.ad
+.RS 13n
+.rt  
+シンボルは、機能と関連付けられています。
+.RE
+
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR\fR
+.ad
+.RS 12n
+.rt  
+指定されたオブジェクトファイルの名前
+.RE
+
+.SH 使用法
+.SS "マッチングオプション"
+.sp
+.LP
+オプション \fB-I\fR、\fB-N\fR、および \fB-T\fR は、まとめて\fBマッチングオプション\fRと呼ばれます。これらのオプションは、インデックス、名前、またはタイプによって、検査するプログラムヘッダーまたはセクションの範囲を絞り込むために使用されます。
+.sp
+.LP
+マッチングオプションの厳密な解釈は、使用されているほかのオプションによって異なります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-p\fR オプションとともに使用した場合、マッチングオプションはプログラムヘッダーを参照します。\fB-I\fR は、プログラムヘッダーのインデックスを指します。\fB-T\fR は、プログラムヘッダータイプを指します。プログラムヘッダーには名前がないため、\fB-N\fR オプションは、プログラムヘッダーに対しては \fB-T\fR と同様に動作します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+マッチングオプションは、オプション \fB-c\fR、\fB-g\fR、\fB-m\fR、\fB-n\fR、\fB-r\fR、\fB-s\fR、\fB-S\fR、\fB-u\fR、\fB-w\fR のいずれかとともに使用された場合、セクションをインデックス、名前、またはタイプで選択するために使用されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+オプション \fB-c\fR、\fB-g\fR、\fB-m\fR、\fB-n\fR、\fB-p\fR\fB-r\fR、\fB-s\fR、\fB-S\fR、\fB-u\fR、\fB-w\fR のいずれも指定されず、マッチングオプションが単独で使用された場合、\fBelfdump\fR は各オブジェクトを検査し、一致したいずれかのセクションの内容を表示します。
+.RE
+.sp
+.LP
+\fBelfdump\fR の特定の呼び出しに、任意の数およびタイプのマッチングオプションを混在させることができます。この場合、\fBelfdump\fR は使用されたすべてのマッチングオプションと一致する、すべての項目の上位集合を表示します。この機能を使用すると、各項目の指定にもっとも簡単な形式を使用し、複雑な項目のグループを選択できます。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fBliblddbg.so\fR\fR
+.ad
+.RS 15n
+.rt  
+リンカーデバッグ用ライブラリ
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、マニュアルページの \fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/linker
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBar\fR(1), \fBdump\fR(1), \fBelffile\fR(1), \fBfile\fR(1), \fBnm\fR(1), \fBpvs\fR(1), \fBelf\fR(3ELF), \fBcore\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fI『Linker and Libraries Guide』\fR

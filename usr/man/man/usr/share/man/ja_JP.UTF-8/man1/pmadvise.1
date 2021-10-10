@@ -1,0 +1,279 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pmadvise 1 "2011 年 4 月 4 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+pmadvise \- プロセスへのメモリーに関するアドバイスの適用
+.SH 形式
+.LP
+.nf
+\fBpmadvise\fR \fB-o\fR \fIoption\fR[,\fIoption\fR] [\fB-F\fR] [\fB-l\fR] [\fB-v\fR] \fIpid\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpmadvise\fR は、指定されたプロセスでのメモリーの使用方法に関するアドバイスを \fBmadvise\fR(3C) を使用して適用します。 
+.sp
+.LP
+\fBpmadvise\fR では、特定の時点の特定のサブレンジにアドバイスを適用できます。\fBpmadvise\fR が \fBmadv.so.1\fR(1) と異なるのは、\fBmadv.so.1\fR(1) はターゲットプログラムを実行している間、指定されたタイプのすべてのセグメントにアドバイスを常時適用する点です。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+別のプロセスが制御していても、ターゲットプロセスを捕捉して強制実行します。
+.sp
+\fB-F\fR オプションを使用する場合は注意してください。\fBproc\fR(1) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+未解決の動的リンカーマップ名を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 6n
+.rt  
+適用するアドバイスは次の形式で指定します。
+.sp
+.in +2
+.nf
+private=\fBadvice\fR
+shared=\fBadvice\fR
+heap=\fBadvice\fR
+stack=\fBadvice\fR
+\fBaddress\fR[:\fBlength\fR]=\fBadvice\fR
+.fi
+.in -2
+.sp
+
+ここで、\fBadvice\fR には次のいずれかを指定できます。
+.sp
+.in +2
+.nf
+normal
+random
+sequential
+willneed
+dontneed
+free
+access_lwp
+access_many
+access_many_pset
+access_default
+.fi
+.in -2
+.sp
+
+\fBaddress\fR と \fBlength\fR は、デバイスに適用するサブレンジを指定するために設定できます。デフォルトで、\fBaddress\fR は 16 進数、\fBlength\fR はバイト数になります。
+.sp
+\fBlength\fR が指定されておらず、開始アドレスがセグメントの先頭を指している場合、アドバイスはそのセグメントに適用されます。\fBlength\fR には、\fBK\fR、\fBM\fR、\fBG\fR、\fBT\fR、\fBP\fR、または \fBE\fR を付けて、それぞれキロバイト、メガバイト、ギガバイト、テラバイト、ペタバイト、またはエクサバイトを単位として指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+詳細な情報を出力します。\fBpmap\fR(1) と同様に、どのアドバイスがどこに適用されるかを出力に表示します。これは、指定した領域 (たとえば、非公開、共有など) にアドバイスを適用する場合に、アドバイスが実際に適用された場所についてのフィードバックを取得するときに役に立ちます。
+.RE
+
+.sp
+.LP
+\fBpmadvise\fR は、すべての有効なオプションの処理を試みます。不正なアドレスの範囲が指定された場合は、エラーメッセージが出力され、問題のあるオプションがスキップされます。構文エラーがある場合、\fBpmadvise\fR は、どのオプションも処理せずに終了し、使用法に関するメッセージを出力します。 
+.sp
+.LP
+競合するアドバイスが 1 つの領域に指定された場合、優先順位はもっとも限定されているアドバイスからもっとも限定されていない (つまり、もっとも一般的な) アドバイスの順になります。言い換えると、特定のアドレスの範囲に指定されたアドバイスは、ヒープおよびスタックへのアドバイスより優先され、ヒープおよびスタックへのアドバイスは、非公開メモリーおよび共有メモリーへのアドバイスより優先されます。 
+.sp
+.LP
+また、次の各グループに含まれるアドバイスは、同じグループ内のほかのアドバイス規則とは互いに排他的です。
+.sp
+.in +2
+.nf
+MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL
+MADV_WILLNEED, MADV_DONTNEED, MADV_FREE
+MADV_ACCESS_DEFAULT, MADV_ACCESS_LWP, MADV_ACCESS_MANY
+.fi
+.in -2
+.sp
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.RS 7n
+.rt  
+プロセス ID。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR指定されたアドレスのセグメントにアドバイスを適用する
+.sp
+.LP
+次の例では、指定されたアドレスのセグメントにアドバイスを適用します。
+
+.sp
+.in +2
+.nf
+% pmap $$
+100666: tcsh
+00010000     312K r-x--  /usr/bin/tcsh
+0006C000      48K rwx--  /usr/bin/tcsh
+00078000     536K rwx--    [ heap ]
+FF100000     856K r-x--  /lib/libc.so.1
+FF1E6000      32K rwx--  /lib/libc.so.1
+FF1EE000       8K rwx--  /lib/libc.so.1
+FF230000     168K r-x--  /lib/libcurses.so.1
+FF26A000      32K rwx--  /lib/libcurses.so.1
+FF272000       8K rwx--  /lib/libcurses.so.1
+FF280000     576K r-x--  /lib/libnsl.so.1
+FF310000      40K rwx--  /lib/libnsl.so.1
+FF31A000      24K rwx--  /lib/libnsl.so.1
+FF364000       8K rwxs-    [ anon ]
+FF370000      48K r-x--  /lib/libsocket.so.1
+FF38C000       8K rwx--  /lib/libsocket.so.1
+FF3B0000     176K r-x--  /lib/ld.so.1
+FF3EC000       8K rwx--  /lib/ld.so.1
+FF3EE000       8K rwx--  /lib/ld.so.1
+FFBE6000     104K rw---    [ stack ]
+%
+% pmadvise -o 78000=access_lwp $$
+
+%
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fB-v\fR オプションを使用する
+.sp
+.LP
+次の例では、\fBpmadvise\fR の詳細な出力を表示します。
+
+.sp
+.in +2
+.nf
+ 
+% pmadvise -o heap=access_lwp,stack=access_default -v $$
+1720:   -sh
+00010000      88K r-x--  /usr/sbin/sh
+00036000       8K rwx--  /usr/sbin/sh
+00038000      16K rwx--    [ heap ]           <= access_lwp
+FF250000      24K r-x--  /lib/libgen.so.1
+FF266000       8K rwx--  /lib/libgen.so.1
+FF272000       8K rwxs-    [ anon ]
+FF280000     840K r-x--  /lib/libc.so.1
+FF362000      32K rwx--  /lib/libc.so.1
+FF36A000      16K rwx--  /lib/libc.so.1
+FF390000      64K rwx--    [ anon ]
+FF3B0000     168K r-x--  /lib/ld.so.1
+FF3EA000       8K rwx--  /lib/ld.so.1
+FF3EC000       8K rwx--  /lib/ld.so.1
+FFBFE000       8K rw---    [ stack ]          <= access_default
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0 以外\fR\fR
+.ad
+.RS 12n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR\fR
+.ad
+.RS 19n
+.rt  
+プロセスファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/prob/lib/*\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBproc\fR ツールサポートファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンドの構文は「確実」です。出力形式は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBmadv.so.1\fR(1), \fBpmap\fR(1), \fBproc\fR(1), \fBmadvise\fR(3C), \fBattributes\fR(5)

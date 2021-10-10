@@ -1,0 +1,84 @@
+#!/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Install DNS client service
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+
+# Test and import if upgrade
+case "$1" in
+'start')
+	# Test and import if upgrade
+	/usr/sbin/nscfg import -q $SMF_FMRI
+	err=$?
+	if [ $err -eq 1 ] ; then
+		msg="WARNING: $SMF_FMRI configuration import error."
+		net_record_err "$msg" $err
+		exit $SMF_EXIT_ERR_CONFIG
+	elif [ $err -eq 3 ] ; then
+		msg="WARNING: $SMF_FMRI no configuration."
+		net_record_err "$msg" $err
+		exit $SMF_EXIT_ERR_CONFIG
+	fi
+	/usr/sbin/nscfg export $SMF_FMRI
+	err=$?
+	if [ $err -eq 1 ] ; then
+		msg="Error creating /etc/resolv.conf"
+		net_record_err "$msg" $err
+		return $SMF_EXIT_ERR_FATAL
+	fi
+	;;
+'refresh')
+	/usr/sbin/nscfg export $SMF_FMRI
+	err=$?
+	if [ $err -eq 2 ] ; then
+		exit $SMF_EXIT_OK
+	elif [ $err -ne 0 ]; then
+		msg="Error creating /etc/resolv.conf"
+		net_record_err "$msg" $err
+		return $SMF_EXIT_ERR_FATAL
+	fi
+	;;
+'unconfigure')
+	# Permanently shutdown service
+	svcadm disable $SMF_FMRI 
+	# Unroll any admin customization
+	svccfg -s svc:/network/dns/client delcust
+	if [ $? -ne 0 ]; then
+		echo "Failed to unroll administrative customizations for $SMF_FMRI"
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+	rm -f /etc/resolv.conf
+	;;
+*)
+        echo "Usage: $0 { start | refresh | unconfigure }"
+        exit 1
+        ;;
+esac
+
+exit $SMF_EXIT_OK

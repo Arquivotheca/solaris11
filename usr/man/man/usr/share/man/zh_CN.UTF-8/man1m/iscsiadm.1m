@@ -1,0 +1,1356 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH iscsiadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+iscsiadm \- 允许管理 iSCSI 启动器
+.SH 用法概要
+.LP
+.nf
+\fBiscsiadm\fR \fIsubcommand\fR \fIdirect-object\fR [\fIoptions\fR] [\fIoperand\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBiscsiadm\fR 命令允许在主机上管理 iSCSI (Internet SCSI) 启动器。\fBiscsiadm\fR 作为一组子命令实现，许多子命令都具有其自己的选项，并在其各自的部分中进行说明。"选项"下面介绍了不与特定子命令关联的选项。
+.sp
+.LP
+仅当下列服务处于联机状态时，\fBiscsiadm\fR 才会运行：
+.sp
+.in +2
+.nf
+svc:/network/iscsi/initiator:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBiscsiadm\fR 命令支持下列子命令，下面的小节中详细介绍了这些子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR\fR
+.ad
+.RS 10n
+.rt  
+向对象添加元素。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.RS 10n
+.rt  
+列出对象的元素。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify\fR\fR
+.ad
+.RS 10n
+.rt  
+修改对象的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR\fR
+.ad
+.RS 10n
+.rt  
+删除对象的元素。
+.RE
+
+.sp
+.LP
+\fBiscsiadm\fR 子命令基于 \fIdirect-object\fR 运行。各个子命令的相应部分中分别对这些子命令进行了说明。
+.sp
+.LP
+\fBiscsiadm\fR 命令支持 Internet 存储名称服务 (Internet Storage Name Service, iSNS) 以便搜索 iSCSI 目标。此命令支持质询握手身份验证协议 (Challenge Handshake Authentication Protocol, CHAP) 以便进行身份验证。
+.SS "\fBadd\fR 子命令"
+.sp
+.LP
+\fBadd\fR 子命令的语法如下：
+.sp
+.in +2
+.nf
+# iscsiadm add \fIdirect_object\fR [\fIoperands\fR...] 
+.fi
+.in -2
+
+.sp
+.LP
+\fBadd\fR 子命令添加下列 \fIdirect_object\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery-address\fR \fIdiscovery-address\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+向搜索地址列表添加目标。搜索地址（如在下面所示的语法中）是在 SendTargets 搜索会话中使用的 IP \fIaddress\fR:\fIport\fR 组合。通过使用此搜索方法，目标设备可告知启动器由该设备公开的各个目标的目标地址和目标名称。除非已在主机上启用搜索的 SendTargets 方法，否则不会尝试连接到目标。应使用 \fBmodify\fR 子命令启用此方法。
+.sp
+\fIdiscovery-address\fR 参数的格式如下：
+.sp
+.in +2
+.nf
+<\fIIP address\fR>[:\fIport\fR]
+.fi
+.in -2
+
+如果未指定 \fIport\fR，则将使用缺省值 3260。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisns-server\fR \fIisns-server\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+向 iSNS 服务器地址列表添加 iSNS 服务器。iSNS 服务器地址（在下面所示的语法中指定）是在 iSNS 搜索会话中使用的 IP 地址-端口组合。通过使用 iSNS 搜索，iSNS 服务器可以向启动器提供有关门户以及与该启动器隶属于同一搜索域中的各个目标的名称的信息。除非已在主机上启用搜索的 iSNS 方法，否则不会尝试连接到 iSNS 服务器。应使用 \fBmodify\fR 子命令启用此方法，如下所述。
+.sp
+\fIisns-server\fR 参数的格式如下：
+.sp
+.in +2
+.nf
+\fIIP_address\fR[:\fIport\fR]
+.fi
+.in -2
+
+如果未指定端口，则将使用缺省值 3205。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatic-config\fR \fIstatic_target\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+向静态配置目标的列表添加目标。除非已启用搜索的静态配置方法，否则不会尝试连接到目标。
+.sp
+\fIstatic_target\fR 参数的格式如下：
+.sp
+.in +2
+.nf
+\fI<target-name>\fR,\fI<target address>\fR[:\fIport-number\fR][,\fItpgt\fR]
+.fi
+.in -2
+
+\fI<target-name>\fR 最多可包含 223 个字符。
+.RE
+
+.SS "\fBlist\fR 子命令"
+.sp
+.LP
+\fBlist\fR 子命令的语法如下：
+.sp
+.in +2
+.nf
+# iscsiadm list \fIdirect-object\fR [\fIoptions\fR]
+.fi
+.in -2
+
+.sp
+.LP
+\fBlist\fR 子命令显示下列 \fIdirect-object\fR 的数据：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出搜索方法及其当前激活状态（即启用或禁用）。搜索方法如下所示：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+iSNS（Internet Storage Name Service，Internet 存储名称服务）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+静态
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SendTargets
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitiator-node\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出主机上的启动器节点的信息。iSCSI 启动器节点表示逻辑 HBA，它是 iSCSI 目标的逻辑主机连接点。响应中列出的参数值是启动器的缺省参数设置。启动器的每个连接目标都具有不同于启动器节点上的参数值的参数值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatic-config\fR [\fIstatic_target\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+列出指定目标的目标名称和地址，或者如果未指定静态目标，则列出所有静态搜索目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget\fR [\fB-S\fR] [\fB-v\fR] [\fItarget\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+列出目标的当前参数、连接状态以及用于目标搜索的方法。报告指定目标的信息，或者如果未指定目标，则列出搜索到的所有目标或已使用 \fBmodify target\fR 子命令修改其参数的所有目标。
+.sp
+当与指定目标的 \fB-S\fR 选项配合使用时，此子命令将返回：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+目标名称
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+逻辑单元号
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+供应商 ID
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+产品 ID
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+OS 设备名称（例如，\fB/dev/rdsk/c0t2d0s0\fR）
+.RE
+\fB-v\fR 选项提供了更多详细信息，例如，当前登录参数、详细连接信息以及用于搜索目标的搜索方法。
+.sp
+返回 \fBNA\fR 作为搜索方法参数表示目标是使用 \fBiscsiadm modify target-param\fR 命令创建的，并且不会作为搜索目标存在。要删除此类目标，请使用 \fBiscsiadm remove target-param\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget-param\fR [\fB-v\fR] \fItarget\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+列出目标的缺省参数和用户定义参数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery-address\fR [\fB-v\fR] [\fIdiscovery-address\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+列出使用 \fBiscsiadm add discovery-address\fR 子命令添加的 \fBdiscovery-address\fR 对象。
+.sp
+当与 \fB-v\fR 选项配合使用时，列出位于指定 \fIdiscovery-address\fR 的所有已知目标。\fB-v\fR 选项返回一个或多个目标名称、零个或多个目标地址以及关联的目标门户组标记 (target portal group tag, TPGT)（如果适用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisns-server\fR [\fB-v\fR] [\fIisns-server\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+列出使用 \fBiscsiadm\fR \fBadd\fR \fBisns-server\fR 子命令添加的 \fBisns-server\fR 对象。
+.sp
+当与 \fB-v\fR 选项配合使用时，此子命令列出位于指定 \fBisns-server\fR 地址的所有已知目标。\fB-v\fR 选项返回一个或多个目标名称、零个或多个目标地址以及关联的目标门户组标记 (target portal group tag, TPGT)（如果适用）。
+.RE
+
+.SS "\fBmodify\fR 子命令"
+.sp
+.LP
+\fBmodify\fR 子命令的语法如下：
+.sp
+.in +2
+.nf
+# iscsiadm modify \fIdirect_object\fR [\fIoptions\fR] 
+.fi
+.in -2
+
+.sp
+.LP
+\fBmodify\fR 子命令支持下列 \fIdirect_object\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery\fR [\fIoptions\fR]\fR
+.ad
+.sp .6
+.RS 4n
+启用搜索方法可使用此方法启动搜索。禁用当前已启用的搜索方法不会影响使用该方法已搜索到的任何目标的连接。
+.sp
+\fBmodify discovery\fR 的选项如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-iSNS\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用或禁用 iSNS 搜索。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR, \fB-\fR\fB-static\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用或禁用静态搜索。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\fR\fB-sendtargets\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用或禁用 SendTargets 搜索。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitiator-node\fR [\fIoptions\fR]\fR
+.ad
+.sp .6
+.RS 4n
+修改启动器的属性。如果当前已连接目标，此操作即可成功。但是，在现有连接会话不再存在并且已建立新连接之前，修改后的参数集对此目标将不会生效。选项 \fB-C\fR 和 \fB-\fR\fB-CHAP-secret\fR 在响应提示时需要输入 CHAP 密钥。
+.sp
+要在禁用 Solaris I/O 多路径功能（以前称为 Sun StorEdge Traffic Manager [STMS] 或 MPxIO）时进行 iSCSI 引导，您可以仅修改下列启动器节点选项：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-r\fR, \fB--radius-server\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-R\fR, \fB--radius-access\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-P\fR, \fB--radius-shared-secret\fR
+.RE
+要在启用 Solaris I/O 多路径功能时进行 iSCSI 引导，您可以仅修改下列启动器节点选项：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-h\fR, \fB--headerdigest\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-d\fR, \fB--datadigest\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-c\fR, \fB--configured-sessions\fR
+.RE
+\fBmodify initiator-node\fR 的选项如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR, \fB-\fR\fB-node-alias\fR \fI<initiator node alias>\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改启动器节点别名。最大长度为 223 个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR, \fB-\fR\fB-authentication\fR \fBchap\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置身份验证模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR, \fB-\fR\fB-CHAP-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置 CHAP 密钥值。没有缺省值。最大长度为 16 个字符；最小必需长度为 12 个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--configured-sessions\fR \fI<num_sessions>\fR | \fI<IP address>\fR[,\fI<IP address>\fR\&...]\fR
+.ad
+.sp .6
+.RS 4n
+设置将为每个 iSCSI 目标创建的已配置 iSCSI 会话的数目。此功能应当与 \fBscsi_vhci\fR(7D) 中介绍的 Solaris I/O 多路径功能结合使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--datadigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置是否启用 CRC32 以便检查 SCSI 数据传送。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR, \fB-\fR\fB-CHAP-name\fR \fICHAP name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 CHAP 用户名。如果未使用此选项，则会在初始化时将 CHAP 名称设置为启动器节点名称。将身份验证方法设置为 CHAP（请参见上面的 \fB-a\fR/\fB-\fR\fB-authentication\fR 选项）时，使用命令 \fBiscsiadm list initiator-node\fR 可显示 CHAP 用户名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB--headerdigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置是否启用 CRC32 以便检查 SCSI 包标头。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR, \fB--max-connections\fR \fInumber_connections\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改 iSCSI 会话的最大连接数。缺省值为 \fB1\fR。各个会话的最大连接数为 \fB65535\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR, \fB-\fR\fB-node-name\fR \fI<initiator node name>\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改启动器节点名称。最多包含 223 个字符。
+.LP
+注 - 
+.sp
+.RS 2
+安装 Solaris 时，启动器节点名称设置为全局唯一值。更改此值可能会对 iSCSI 网络中的操作产生负面影响。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR, \fB--radius-shared-secret\fR (exclusive)\fR
+.ad
+.sp .6
+.RS 4n
+设置 RADIUS 共享密钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR, \fB--radius-access\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置是否将使用 RADIUS 服务器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR, \fB--radius-server\fR \fI<IP address>\fR[:\fI<port>\fR]\fR
+.ad
+.sp .6
+.RS 4n
+设置要使用的 radius 服务器的 IP 地址和端口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR, \fB-\fR\fB-tunable-param\fR <<\fItunable-prop\fR>=<\fIvalue\fR>, ...>\fR
+.ad
+.sp .6
+.RS 4n
+指定启动器节点连接的所有目标的一个或多个可调参数。
+.LP
+注 - 
+.sp
+.RS 2
+只有明确此参数在 iSCSI 网络中的影响的管理员才能修改这些值。
+.RE
+支持的 tunable-prop 选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv-login-rsp-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+会话登录响应时间
+.sp
+\fBrecv-login-rsp-timeout\fR 选项指定 iSCSI 启动器将等待来自 iSCSI 目标的 iSCSI 会话登录请求响应的时间。有效值介于 0 至 60*60 之间，缺省值为 60 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconn-login-max\fR\fR
+.ad
+.sp .6
+.RS 4n
+最长连接重试时间
+.sp
+如果在给定时间段内发生 IO 超时或连接故障，\fBconn-login-max\fR 选项允许 iSCSI 启动器重新建立到目标的连接。有效值介于 0 至 60*60 之间，缺省值为 180 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolling-login-delay\fR\fR
+.ad
+.sp .6
+.RS 4n
+登录重试时间间隔
+.sp
+\fBpolling-login-delay\fR 选项指定在 iSCSI 启动器定位 IO 超时或连接故障时每次重试登录的时间间隔。有效值介于 0 至 60*60 之间，缺省值为 60 秒。
+.RE
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget-param\fR [\fIoptions\fR] \fItarget\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改目标的参数。如果当前已连接目标，修改操作将成功，即使修改后的设置可能不会在几秒后生效也是如此。要确认这些设置是否处于活动状态，请使用 \fBiscsiadm list target\fR \fB-v\fR。如果指定目标不与任何搜索方法相关联，则会使用指定参数创建目标对象。使用此命令修改目标参数之后，将保存新参数，直到在此目标上使用 \fBiscsiadm remove target-param\fR 命令修改或删除这些参数为止。选项 \fB-C\fR 和 \fB-\fR\fB-CHAP-secret\fR 在响应提示时需要输入 CHAP 密钥。
+.sp
+\fBmodify target-param\fR 的选项如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR, \fB-\fR\fB-bi-directional-authentication enable | disable\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置双向选项。如果设置为 \fBenable\fR，启动器将对指定目标执行双向身份验证。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR, \fB-\fR\fB-CHAP-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置目标的 CHAP 密钥值。没有缺省值。最大可接受长度为 16 个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB-\fR\fB-configured-sessions\fR \fI<num_sessions>\fR | \fI<IP address>\fR[,\fI<IP address>\fR\&...]\fR
+.ad
+.sp .6
+.RS 4n
+设置将为每个 iSCSI 目标创建的已配置 iSCSI 会话的数目。此功能应当与 \fBscsi_vhci\fR(7D) 中介绍的 Solaris I/O 多路径功能结合使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB-\fR\fB-datadigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置是为数据启用还是禁用 CRC32。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR, \fB-\fR\fB-CHAP-name\fR \fICHAP name\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置 CHAP 用户名。如果未使用此选项，则会在初始化时将 CHAP 名称设置为目标名称。将身份验证方法设置为 CHAP（请参见上面的 \fBinitiator-node\fR 直接对象下的 \fB-a\fR/\fB-\fR\fB-authentication\fR 选项）时，使用命令 \fBiscsiadm list initiator-node\fR 可显示 CHAP 用户名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB-\fR\fB-headerdigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置是为头启用还是禁用 CRC32。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB-\fR\fB-login-param\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定一个或多个登录参数设置。
+.LP
+注 - 
+.sp
+.RS 2
+只有明确此参数在 iSCSI 网络中的影响的管理员才能修改这些值。
+.RE
+登录参数派生自 iSCSI 建议的标准 RFC 3720。有效值包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataseqinorder\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR 或 \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaulttime2retain\fR\fR
+.ad
+.RS 22n
+.rt  
+0-3600
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaulttime2wait\fR\fR
+.ad
+.RS 22n
+.rt  
+0-3600
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirstburstlength\fR\fR
+.ad
+.RS 22n
+.rt  
+512 至 2^24-1
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimmediatedata\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR 或 \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitialr2t\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR 或 \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxburstlength\fR\fR
+.ad
+.RS 22n
+.rt  
+512 至 2^24-1
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdatapduinorder\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR 或 \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxoutstandingr2t\fR\fR
+.ad
+.RS 22n
+.rt  
+1 - 65535
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxrecvdataseglen\fR\fR
+.ad
+.RS 22n
+.rt  
+512 至 2^24-1
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR, \fB-\fR\fB-tunable-param\fR <<\fItunable-prop\fR>=<\fIvalue\fR>, ...>\fR
+.ad
+.sp .6
+.RS 4n
+指定启动器节点连接的所有目标的一个或多个可调参数。
+.LP
+注 - 
+.sp
+.RS 2
+只有明确此参数在 iSCSI 网络中的影响的管理员才能修改可调参数值。
+.RE
+支持的 \fItunable-prop\fR 选项包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv-login-rsp-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+会话登录响应时间
+.sp
+\fBrecv-login-rsp-timeout\fR 选项指定 iSCSI 启动器将等待来自 iSCSI 目标的 iSCSI 会话登录请求响应的时间。有效值介于 0 至 60*60 之间，缺省值为 60 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconn-login-max\fR\fR
+.ad
+.sp .6
+.RS 4n
+最长连接重试时间
+.sp
+如果在给定时间段内发生 IO 超时或连接故障，\fBconn-login-max\fR 选项允许 iSCSI 启动器重新建立到目标的连接。有效值介于 0 至 60*60 之间，缺省值为 180 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolling-login-delay\fR\fR
+.ad
+.sp .6
+.RS 4n
+登录重试时间间隔
+.sp
+\fBpolling-login-delay\fR 选项指定在 iSCSI 启动器定位 IO 超时或连接故障时每次重试登录的时间间隔。有效值介于 0 至 60*60 之间，缺省值为 60 秒。
+.RE
+
+.RE
+
+.RE
+
+.SS "\fBremove\fR 子命令"
+.sp
+.LP
+\fBremove\fR 子命令的语法如下：
+.sp
+.in +2
+.nf
+# iscsiadm remove \fIdirect_object\fR 
+.fi
+.in -2
+
+.sp
+.LP
+\fBremove\fR 子命令支持下列 \fIdirect_object\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery-address\fR \fIdiscovery-address\fR, ...\fR
+.ad
+.sp .6
+.RS 4n
+从搜索地址列表中删除目标设备。搜索地址（如在下面所示的语法中）是在 SendTargets 搜索会话中使用的 IP 地址-端口组合。通过使用此搜索方法，目标设备可告知启动器由该设备公开的各个目标的目标地址和目标名称。如果当前已挂载搜索地址公开的任何目标或者设备上存在活动 I/O，则会返回"逻辑单元正在使用"错误，并且此操作将失败。如果关联设备未在使用，则会删除这些设备。
+.sp
+必须将 \fIdiscovery-address\fR 的格式设置为：
+.sp
+.in +2
+.nf
+\fI<IP address>\fR[:\fI<port>\fR]
+.fi
+.in -2
+
+没有与此直接对象相关联的选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisns-server\fR \fIisns-server\fR, ...\fR
+.ad
+.sp .6
+.RS 4n
+从 iSNS 服务器地址列表中删除 iSNS 服务器。iSNS 服务器地址（在下面所示的语法中指定）是在 iSNS 搜索会话中使用的 IP 地址-端口组合。通过使用 iSNS 搜索，iSNS 服务器可以向启动器提供有关门户以及与该启动器隶属于同一搜索域中的各个目标的名称的信息。如果当前已挂载通过 iSNS 搜索的任何目标或者设备上存在活动 I/O，则会返回"逻辑单元正在使用"错误，并且此操作将失败。如果关联设备未在使用，则会删除这些设备。
+.sp
+必须将 \fIisns-server\fR 的格式设置为：
+.sp
+.in +2
+.nf
+\fIIP_address\fR[:\fIport\fR]
+.fi
+.in -2
+
+没有与此直接对象相关联的选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatic-config\fR \fIstatic_target\fR, ...\fR
+.ad
+.sp .6
+.RS 4n
+从静态搜索目标的列表中删除目标。如果正在删除当前已挂载的目标或者设备上存在活动 I/O，则会返回"逻辑单元正在使用"错误，并且此操作将失败。如果设备未在使用，则将删除此设备。
+.sp
+必须将 \fIstatic_target\fR 的格式设置为：
+.sp
+.in +2
+.nf
+\fI<target-name>\fR,\fI<target-address>\fR[:\fIport-number\fR][,\fItpgt\fR]
+.fi
+.in -2
+
+没有与此直接对象相关联的选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget-param\fR \fItarget-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除 \fItarget-name\fR 指定的目标。目标名称的格式如下：
+.sp
+.in +2
+.nf
+\fI<target-name>\fR
+.fi
+.in -2
+
+没有与此直接对象相关联的选项。要在启用 Solaris I/O 多路径功能（以前称为 Sun StorEdge Traffic Manager [STMS] 或 MPxIO）时进行 iSCSI 引导，则不能删除目标。
+.RE
+
+.SS "正确使用搜索方法"
+.sp
+.LP
+请勿将目标配置为可供静态和动态搜索方法搜索。使用冗余搜索方法可能会导致在与 iSCSI 目标设备通信时降低性能。
+.SH 选项
+.sp
+.LP
+支持下列常规选项： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR, \fB-\fR\fB-version\fR\fR
+.ad
+.RS 17n
+.rt  
+显示版本信息。停止后续参数的解释。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR, \fB-\fR\fB-help\fR\fR
+.ad
+.RS 17n
+.rt  
+显示帮助信息。可以在没有参数的 \fBiscsiadm\fR 命令、子命令或子命令直接对象组合后面使用。使用适用于您的输入的帮助信息进行响应。例如，如果输入以下内容：
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node --help\fR
+.fi
+.in -2
+.sp
+
+\&...\fBiscsiadm\fR 通过显示可用于子命令和直接对象的此组合的选项来进行响应。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR添加搜索地址
+.sp
+.LP
+下面的命令使用 \fBadd\fR 子命令添加搜索地址。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm add discovery-address 10.0.0.1:3260 10.0.0.2:3260\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR添加静态目标
+.sp
+.LP
+下面的命令使用 \fBadd\fR 子命令添加静态目标。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm add static-config \e
+iqn.1999-08.com.array:sn.01234567,10.0.0.1:3260\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR列出当前搜索设置
+.sp
+.LP
+下面的命令使用 \fBlist\fR 子命令列出当前搜索设置。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list discovery\fR
+        Discovery:
+                Static: enabled
+                Send Targets: disabled
+                iSNS: enabled
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR获取详细搜索输出
+.sp
+.LP
+下面的命令使用 \fB-v\fR 选项（其中一个命令使用 v 选项，另一个命令不使用 v 选项）和 \fBlist\fR 子命令获取详细输出。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list discovery-address\fR
+        Discovery Address: 10.0.0.1:3260
+        Discovery Address: 10.0.0.2:3260
+
+# \fBiscsiadm list discovery-address -v 10.0.0.1:3260\fR
+        Discovery Address: 10.0.0.1:3260
+                Target name: eui.210000203787d1f7
+                        Target address:    10.0.0.1:3260
+                Target name: eui.210000203787a693
+                        Target address:    10.0.0.1:3260
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR显示有关启动器的信息
+.sp
+.LP
+下面的命令使用 \fBlist\fR 子命令显示有关启动器的信息。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list initiator-node\fR
+Initiator node name: iqn.1986-03.com.company.central.interopv20-1
+Initiator node alias: interopv20-1
+        Login Parameters (Default/Configured):
+                Header Digest: NONE/NONE
+                Data Digest: NONE/NONE
+        Authentication Type: CHAP
+                CHAP Name: iqn.1986-03.com.company.central.interopv20-1
+        RADIUS Server: NONE
+        RADIUS access: disabled
+        Tunable Parameters (Default/Configured):
+                Session Login Response Time: 60/-
+                Maximum Connection Retry Time: 180/-
+                Login Retry Time Interval: 60/-
+        Configured Sessions: 1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR显示静态配置信息
+.sp
+.LP
+下面的命令使用 \fBlist\fR 子命令显示有关静态配置的信息。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list static-config\fR
+        Static target: eui.210000203787a693,10.0.0.1:3260
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR显示目标信息
+.sp
+.LP
+下面的命令显示如何使用 \fBlist\fR 子命令和不同选项以便显示有关目标的信息。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list target\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        TPGT: 12288
+        ISID: 4000002a0000
+        Connections: 1# \fBiscsiadm list target -v iqn.2004-05.com.abcStorage:Tgt-1\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        TPGT: 12288
+        ISID: 4000002a0000
+        Connections: 1
+                CID: 0
+                  IP address (Local): 10.4.52.158:32803
+                  IP address (Peer): 10.4.49.70:3260
+                  Discovery Method: SendTargets
+                  Login Parameters (Negotiated):
+                        Data Sequence In Order: yes
+                        Data PDU In Order: yes
+                        Default Time To Retain: 20
+                        Default Time To Wait: 2
+                        Error Recovery Level: 0
+                        First Burst Length: 65536
+                        Immediate Data: yes
+                        Initial Ready To Transfer (R2T): yes
+                        Max Burst Length: 262144
+                        Max Outstanding R2T: 1
+                        Max Receive Data Segment Length: 65536
+                        Max Connections: 1
+                        Header Digest: NONE
+                        Data Digest: NONE
+# \fBiscsiadm list target -S iqn.2004-05.com.abcStorage:Tgt-1\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        TPGT: 12288
+        ISID: 4000002a0000
+        Connections: 1
+        LUN: 6
+             Vendor:  ABCStorage
+             Product: iSCSI Target
+             OS Device Name: /dev/rdsk/c3t1d0s2
+        LUN: 5
+             Vendor:  ABCStorage
+             Product: iSCSI Target
+             OS Device Name: /dev/rdsk/c3t0d0s2
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR显示目标参数信息
+.sp
+.LP
+下面的命令使用 \fBlist\fR 子命令显示特定目标的目标信息。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list target-param -v iqn.2004-05.com.abcStorage:Tgt-1\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        Bi-directional Authentication: disabled
+        Authentication Type: NONE
+        Login Parameters (Default/Configured):
+                Data Sequence In Order: yes/-
+                Data PDU In Order: yes/-
+                Default Time To Retain: 20/-
+                Default Time To Wait: 2/-
+                Error Recovery Level: 0/-
+                First Burst Length: 65536/-
+                Immediate Data: yes/-
+                Initial Ready To Transfer (R2T): yes/-
+                Max Burst Length: 262144/-
+                Max Outstanding R2T: 1/-
+                Max Receive Data Segment Length: 65536/-
+                Max Connections: 1/-
+                Header Digest: NONE/-
+                Data Digest: NONE/-
+        Tunable Parameters (Default/Configured):
+                Session Login Response Time: 60/-
+                Maximum Connection Retry Time: 180/-
+                Login Retry Time Interval: 60/-
+        Configured Sessions: 1
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR启用静态搜索方法
+.sp
+.LP
+下面的命令使用 \fBmodify\fR 子命令启用静态搜索方法。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify discovery --static enable\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR设置 Radius 服务器的 IP 地址
+.sp
+.LP
+下面的命令使用 \fBmodify\fR 子命令设置 radius 服务器的 IP 地址，该服务器将用于 CHAP 身份验证。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator --radius-server 10.0.0.1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR设置启动器的节点名称
+.sp
+.LP
+下面的命令使用 \fBmodify\fR 子命令设置启动器节点的节点名称。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node -N iqn.2004-10.com.SUN.host-1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR设置启动器节点的最大连接数
+.sp
+.LP
+下面的命令使用 \fBmodify\fR 子命令设置启动器节点的最大连接数。这允许在一个会话中存在多个连接。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node -m 3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 13 \fR更改目标参数
+.sp
+.LP
+下面的命令使用 \fBmodify\fR 子命令更改指定目标的目标参数的最大连接数。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify target-param -m 3 eui.210000203787a693\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 14 \fR删除搜索地址
+.sp
+.LP
+下面的命令使用 \fBremove\fR 子命令删除搜索地址。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm remove discovery-address 10.0.0.1:3260\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 15 \fR删除目标参数
+.sp
+.LP
+下面的命令使用 \fBremove\fR 子命令删除一组目标参数。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm remove target-param eui.210000203787a693\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 16 \fR修改最大连接数
+.sp
+.LP
+下面的命令修改启动器的属性中的每个会话的最大连接数。修改后的值将用于所有会话中的所有目标。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node --max-connections 4\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/storage/iscsi/iscsi-initiator
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBattributes\fR(5)、\fBiscsi\fR(7D)、\fBscsi_vhci\fR(7D)
+.sp
+.LP
+\fI《System Administration Guide: Devices and File Systems》\fR

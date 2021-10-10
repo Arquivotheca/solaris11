@@ -1,0 +1,405 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH netadm 1M "2011 年 6 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+netadm \- ネットワーク構成プロファイルの管理
+.SH 形式
+.LP
+.nf
+\fBnetadm enable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR
+.fi
+
+.LP
+.nf
+\fBnetadm disable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR
+.fi
+
+.LP
+.nf
+\fBnetadm list\fR [ \fB-x\fR ] [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ]
+     [ \fIprofile-name\fR ]
+.fi
+
+.LP
+.nf
+\fBnetadm show-events\fR
+.fi
+
+.LP
+.nf
+\fBnetadm scan-wifi\fR \fIlinkname\fR
+.fi
+
+.LP
+.nf
+\fBnetadm select-wifi\fR \fIlinkname\fR
+.fi
+
+.LP
+.nf
+\fBnetadm help\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnetadm\fR ユーティリティーは、ネットワークプロファイルを管理し、NWAM デーモンを操作するために使用します。
+.sp
+.LP
+ネットワークプロファイルには、ネットワーク構成プロファイル (NCP)、場所、および外部ネットワーク修飾子 (ENM) の 3 つのタイプがあります。
+.sp
+.LP
+システムには常に、1 つのアクティブな NCP と 1 つのアクティブな場所があります。別の NCP または場所を有効にすると (activation-mode が \fBmanual\fR)、現在アクティブな NCP または場所が暗黙的に無効になります。現在の場所 (その activation-mode が \fBmanual\fR である場合) を無効にすることもできます。ただし、この効果は、ネームサービスなど、システムのネットワーキング機能の一部を「無効」にすることです。NCP を無効にすると、事実上、システムの基本ネットワーク接続がシャットダウンされるので、明示的な無効化は許可されていません。NCP は、別の NCP が有効になったときにのみ暗黙的に無効になります。
+.sp
+.LP
+逆に、ENM は、常に 0 個以上をアクティブにすることができます。したがって、1 つの ENM を有効または無効にしても、ほかのアクティブな ENM には影響しません。
+.sp
+.LP
+NCU は個別に有効にしたり無効にしたりすることもできます。指定された NCU は、現在アクティブになっている NCP の一部である必要があり、その activation-mode は \fBmanual\fR に設定されている必要があります。NCU クラスが指定されない場合、指定された名前を持つすべての NCU (1 つのリンクまたは 1 つのインタフェース、あるいはその両方) が有効化または無効化されます。
+.sp
+.LP
+オブジェクトの有効化と無効化は非同期に実行されます。したがって、有効化または無効化の要求は成功しても、操作自体が失敗する場合があります。この種の失敗はオブジェクト状態に反映されます。\fBmaintenance\fR 状態は、最後に行われた操作が失敗したことを示します。
+.SH サブコマンド
+.sp
+.LP
+次のサブコマンドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロファイルを有効にします。プロファイル名が一意でない場合、有効にするプロファイルを識別するためにプロファイルタイプを指定する必要があります。プロファイルタイプが NCU であり、名前が一意でない (つまり、同じ名前のリンク NCU とインタフェース NCU の両方がある) 場合、\fB-c\fR オプションを使用して NCU クラスを指定しないかぎり、両方の NCU が有効化されます。プロファイルタイプは、\fBncp\fR、\fBncu\fR、\fBloc\fR、または \fBenm\fR のいずれかにする必要があります。NCU クラスは、\fBphys\fR または \fBip\fR のどちらかにする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロファイルを無効にします。プロファイル名が一意でない場合、無効にするプロファイルを識別するためにプロファイルタイプを指定する必要があります。プロファイルタイプが NCU であり、名前が一意でない (つまり、同じ名前のリンク NCU とインタフェース NCU の両方がある) 場合、\fB-c\fR オプションを使用して NCU クラスを指定しないかぎり、両方の NCU が無効化されます。プロファイルタイプは、\fBncu\fR、\fBloc\fR、または \fBenm\fR のいずれかにする必要があります。NCU クラスは、\fBphys\fR または \fBip\fR のどちらかにする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [ \fB-x\fR ] [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] [ \fIprofile-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+すべての使用可能なプロファイルとその現在の状態を一覧表示します。名前によって特定のプロファイルが指定された場合、そのプロファイルの現在の状態のみが一覧表示されます。プロファイル名が一意でない場合、指定された名前を持つすべてのプロファイルが一覧表示されます。プロファイルタイプまたは NCU クラス、あるいはその両方を含めると、特定のプロファイルを識別できます。タイプだけが指定された場合、そのタイプのすべてのプロファイルが一覧表示されます。アクティブな NCP を一覧表示すると、その NCP を構成する NCU が表示されます。
+.sp
+\fB-x\fR オプションを使用すると、\fBlist\fR サブコマンドは、デフォルトの表示に含まれる最初の 3 つの列ヘッダー \fBTYPE\fR、\fBPROFILE\fR、および \fBSTATE\fR のあとに、ヘッダー \fBAUXILIARY STATE\fR の付いた 4 列目の出力を表示します。\fBAUXILIARY STATE\fR 列には、プロファイルが指定された状態にある理由が表示されます。
+.sp
+考えられる \fBSTATE\fR 値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+まだアクティブ化されていない、手動でアクティブ化されるプロファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline\fR\fR
+.ad
+.sp .6
+.RS 4n
+まだアクティブ化されていない、条件またはシステムによってアクティブ化されるプロファイル。その条件が満たされていなかったために、アクティブになっていない可能性があります。または、より具体的な条件が満たされている別のプロファイルが存在し、これが代わりにアクティブ化されている可能性もあります (場所など、一度にひとつずつアクティブ化する必要があるプロファイルタイプの場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline\fR\fR
+.ad
+.sp .6
+.RS 4n
+条件が満たされアクティブ化に成功した、条件またはシステムによってアクティブ化されるプロファイル。または、ユーザーの要求でアクティブ化に成功した、手動でアクティブ化されるプロファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaintenance\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロファイルのアクティブ化が試行されましたが、失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitialized\fR\fR
+.ad
+.sp .6
+.RS 4n
+このプロファイルは、操作がまだ行われていない有効な構成オブジェクトを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninitialized\fR\fR
+.ad
+.sp .6
+.RS 4n
+このプロファイルは、削除された物理リンクに対応する NCU など、システムに存在しない構成オブジェクトを表します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-events\fR\fR
+.ad
+.sp .6
+.RS 4n
+NWAM デーモンからイベントのストリームを待機し、それらを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscan-wifi\fR \fIlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+リンク linkname に対して無線スキャンを開始します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect-wifi\fR \fIlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+リンク linkname に対するスキャン結果から、接続する無線ネットワークを選択します。必要に応じて、選択や WiFi キーなどの入力が求められます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+各サブコマンドの簡単な説明を含む使用法に関するメッセージを表示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRユーザー指定の場所の有効化
+.sp
+.LP
+次のコマンドは、ユーザー指定の場所を有効にします。
+
+.sp
+.in +2
+.nf
+# \fBnetadm enable -p loc office\fR
+Disabled loc 'home'.
+Enabled loc 'office'
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRENM の無効化
+.sp
+.LP
+次のコマンドは ENM を無効にします。
+
+.sp
+.in +2
+.nf
+# \fBnetadm disable -p enm myvpn\fR
+Disabled enm 'myvpn'.
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRすべての NCP の一覧表示
+.sp
+.LP
+次のコマンドはすべての NCP を一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBnetadm list -xp ncp\fR
+TYPE         PROFILE        STATE          AUXILIARY STATE
+ncp          Automatic      disabled       disabled by administrator
+ncp          User           online         active
+ncu:phys     nge0           online         interface/link is up
+ncu:ip       nge0           online         interface/link is up
+ncu:phys     nge1           offline        interface/link is down
+ncu:ip       nge1           offline        conditions for activation are
+                                           unmet
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRアクティブな NCP の NCU の一覧表示
+.sp
+.LP
+次のコマンドは、アクティブな NCP 内のすべての \fBip\fR NCU を一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBnetadm list -c ip\fR
+TYPE        PROFILE        STATE
+ncu:ip      bge0           online
+ncu:ip      bge1           disabled
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRスキャンの強制
+.sp
+.LP
+次のコマンドは、無線インタフェース \fBwpi0\fR に対してスキャンを強制します。
+
+.sp
+.in +2
+.nf
+# \fBnetadm scan-wifi wpi0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRWiFi ネットワークの選択
+.sp
+.LP
+次のコマンドは、ESSID をブロードキャストしている WiFi ネットワークを選択します。
+
+.sp
+.in +2
+.nf
+# \fBnetadm select-wifi wpi0\fR
+1: ESSID testing BSSID 0:40:96:29:e9:d8
+2: ESSID sunwifi BSSID 0:b:e:9f:b5:80
+3: ESSID sunwifi BSSID 0:b:e:85:26:c0
+4: ESSID sunwifi BSSID 0:b:e:49:2f:80
+5: Other
+
+Choose WLAN to connect to [1-5]: \fB2\fR
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fRWiFi ネットワークの選択 (代替)
+.sp
+.LP
+次のコマンドは、ESSID をブロードキャストしていない WiFi ネットワークを選択します。
+
+.sp
+.in +2
+.nf
+# \fBnetadm select-wifi wpi0\fR
+1: ESSID testing BSSID 0:40:96:29:e9:d8
+2: ESSID sunwifi BSSID 0:b:e:85:26:c0
+3: ESSID sunwifi BSSID 0:b:e:9f:b5:80
+4: ESSID sunwifi BSSID 0:b:e:49:2f:80
+5: ESSID sunwifi BSSID 0:b:e:49:62:c0
+6: Other
+
+Choose WLAN to connect to [1-6]: \fB6\fR
+
+Enter WLAN name: \fBoraclewifi\fR
+1: None
+2: WEP
+3: WPA
+Enter security mode: \fB2\fR
+
+Enter WLAN key for ESSID oraclewifi: \fB123456\fR
+
+Enter key slot [1-4]: \fB1\fR
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR\fBnwamd\fR の監視
+.sp
+.LP
+次のコマンドは、場所を切り換えるときに \fBnwamd\fR(1M) を監視します。
+
+.sp
+.in +2
+.nf
+# \fBnetadm show-events\fR
+EVENT           DESCRIPTION
+OBJECT_ACTION   loc Automatic -> action refresh
+OBJECT_STATE    loc Automatic -> state offline*, method/service executi
+OBJECT_STATE    loc Automatic -> state online, active
+OBJECT_ACTION   loc home -> action refresh
+OBJECT_ACTION   loc NoNet -> action refresh
+OBJECT_ACTION   loc User -> action refresh
+OBJECT_ACTION   loc home -> action enable
+OBJECT_STATE    loc home -> state offline*, method/service executing
+OBJECT_STATE    loc Automatic -> state offline, conditions for activati
+OBJECT_STATE    loc home -> state online, active
+\fB^C\fR
+#
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBnetcfgd\fR(1M), \fBnetcfg\fR(1M), \fBnwamd\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+JDS/GNOME マニュアルページコレクションで利用可能な \fBnwam-manager(1M)\fR も参照してください。

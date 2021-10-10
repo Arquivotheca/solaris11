@@ -1,0 +1,212 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+-->
+
+<service_bundle type='manifest' name='SUNWcsr:nss-upgrade'>
+
+<service
+	name='system/name-service/upgrade'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance />
+
+	<!-- dependencies needed before upgrade can run -->
+	<!-- Cannot depend on svc:/system/filesystem/root because it depends
+	     on metainit and mpxio-upgrade, which depend on networking...
+	<dependency
+		name='name-service-upgrade-fs-root'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/filesystem/root:default' />
+	</dependency>
+	-->
+
+	<!-- Non naming-service services that are dependent on upgrade -->
+	<!-- ipmgmtd performs getpwuid_r calls... -->
+	<dependent
+		name='name-service-upgrade_network-ip-interface-mgmt'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/ip-interface-management' />
+	</dependent>
+
+	<!-- The route command performs naming related calls... -->
+	<dependent
+		name='name-service-upgrade_network-install'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/install' />
+	</dependent>
+
+	<!-- physical:default is loaded with naming dependencies... -->
+	<dependent
+		name='name-service-upgrade_network-physical'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/physical:default' />
+	</dependent>
+
+	<!-- rbac is also pretty obvious... -->
+	<dependent
+		name='name-service-upgrade_system-rbac'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/system/rbac' />
+	</dependent>
+
+	<!-- TX is dependent if installed ... -->
+	<dependent
+		name='name-service-upgrade_system-labeld'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/system/labeld' />
+	</dependent>
+
+	<!-- Name service components that are dependent on upgrade -->
+	<dependent
+		name='name-service-upgrade_name-service-switch'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/system/name-service/switch' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_name-service-cache'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/system/name-service/cache' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-nis-domain'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/nis/domain' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-nis-client'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/nis/client' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-nis-server'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/nis/server' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-nis-xfr'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/nis/xfr' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-nis-passwd'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/nis/passwd' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-nis-update'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/nis/update' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-ldap-client'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/ldap/client' />
+	</dependent>
+
+	<dependent
+		name='name-service-upgrade_network-dns-client'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/network/dns/client' />
+	</dependent>
+
+	<!-- Other components that are dependent on upgrade -->
+	<dependent
+		name='name-service-upgrade_self-assembly-complete'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/self-assembly-complete' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/nss-upgrade'
+		timeout_seconds='60' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='60' />
+
+	<property_group name='general' type='framework'>
+		<propval name='duration' type='astring' value='transient' />
+		<!-- to start stop the service -->
+		<propval name='action_authorization' type='astring'
+			value='solaris.smf.manage.name-service' />
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.manage.name-service' />
+	</property_group>
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring' value='transient' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+			name service upgrade
+			</loctext>
+		</common_name>
+	</template>
+
+</service>
+
+</service_bundle>

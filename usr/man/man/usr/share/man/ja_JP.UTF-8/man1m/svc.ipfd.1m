@@ -1,0 +1,422 @@
+'\" te
+.\" To view license terms, attribution, and copyright for IP Filter, the default path is /usr/lib/ipf/IPFILTER.LICENCE. If the Solaris operating environment has been installed anywhere other than the default, modify the given path to access the file at the installed location.
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH svc.ipfd 1M "2009 年 1 月 13 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+svc.ipfd \- IP フィルタファイアウォール監視デーモン
+.SH 形式
+.LP
+.nf
+\fB/lib/svc/bin/svc.ipfd\fR
+.fi
+
+.LP
+.nf
+\fBsvc:/network/ipfilter:default\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsvc.ipfd\fR デーモンは、ファイアウォール構成を使用するサービスに対するアクションを監視し、更新サービスの IP フィルタ構成を開始します。このデーモンにより、システムのファイアウォール構成の変更に対して、システムがサービスレベルごとに増分方式で対応できるようになります。
+.sp
+.LP
+サービスのファイアウォールポリシーは、有効にされたときにはアクティブ化、無効にされたときには非アクティブ化され、その構成プロパティーグループが変更されたときに更新されます。\fBsvc.ipfd\fR は、これらのアクションのサービス管理機能 (SMF) リポジトリを監視し、サービスのファイアウォールポリシーを実行するための IP フィルタ規則生成プロセスを起動します。
+.sp
+.LP
+このデーモンは、\fBstart\fR メソッドまたは \fBrefresh\fR メソッドのどちらかを介して、\fBnetwork/ipfilter\fR サービスによって起動されます。そのため、このデーモンはそのメソッドから環境変数と資格情報を継承し、すべてのゾーン特権を持つルートとして実行されます。
+.SS "ファイアウォールの静的な構成"
+.sp
+.LP
+静的な定義には、サービス固有の IPF 規則を生成するために使用される、そのサービスのネットワークリソース構成が記述されます。サービスごとの \fBfirewall_context\fR プロパティーグループには、\fBinetd\fR 管理対象サービス内の \fBinetd\fR プロパティーグループと同様に、サービスの静的な定義が含まれます。このプロパティーグループは、次の値をサポートしています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinetd\fR 以外のサービス用。\fBinetd/name\fR プロパティーと同等の IANA 名または RPC 名です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/isrpc\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinetd\fR 以外のサービス用。\fBinetd/isrpc\fR プロパティーと同等のブール型プロパティー。ここで、\fBtrue\fR 値は RPC サービスを示します。RPC サービスの場合、\fBfirewall_context/name\fR の値は IANA 名ではなく、RPC プログラム番号または名前のどちらかです。\fBrpc\fR(4) を参照してください。
+.RE
+
+.sp
+.LP
+さらに、一部のサービスでは、独自の IPF 規則を生成して提供するためのメカニズムが必要になる場合があります。オプションのプロパティー \fBipf_method\fR は、このようなカスタム規則の生成を可能にするためのメカニズムを提供します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/ipf_method\fR\fR
+.ad
+.sp .6
+.RS 4n
+コマンド。通常は、サービスの IPF 規則を生成するスクリプトです。このフレームワークでは、このプロパティー定義を含むサービスの規則は生成しません。代わりに、これらのサービスが独自の規則を提供するものと想定します。
+.RE
+
+.sp
+.LP
+サービスの \fBipf_method\fR は、追加の引数である独自の障害管理リソース識別子 (FMRI) を受け取り、そのサービスのファイアウォール規則を生成して標準出力に出力するコマンドを指定します。このフレームワークでは、\fBipf_method\fR プロパティーを備えたサービスの規則を生成するために、\fBipf_method\fR で指定された (そのサービスの FMRI を追加の引数として渡す) コマンドを実行し、コマンド出力 (その規則) をサービスの規則ファイルにリダイレクトすることによってそのサービスの規則を格納します。\fBipf_method\fR は、\fBnetwork/ipfilter\fR \fBstart\fR または \fBrefresh\fR メソッドプロセスのどちらかのコンテキストから \fBexec\fR で実行されるため、実行コンテキストを継承し、ルートとして実行されます。
+.sp
+.LP
+サービスの静的な構成はサービス開発者によって提供され、ユーザーによる変更は意図されていません。これらのプロパティーは、更新されたサービス定義のインストール時にのみ変更されます。
+.SS "ファイアウォールポリシーの構成"
+.sp
+.LP
+サービスごとのプロパティーグループ \fBfirewall_config\fR は、そのサービスのファイアウォールポリシー構成を格納します。\fBnetwork/ipfilter:default\fR は、(\fBipfilter\fR(5) で説明しているように) システム全体のポリシーであるグローバルデフォルトとグローバルオーバーライドの 2 つのファイアウォールポリシーを担当しているため、それぞれのシステム全体のポリシーを格納するために \fBfirewall_config_default\fR と \fBfirewall_config_override\fR の 2 つのプロパティーグループを備えています。
+.sp
+.LP
+各プロパティー、指定できる値、および対応するセマンティクスは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBpolicy\fR には、次のモードがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnone\fR ポリシーモード\fR
+.ad
+.sp .6
+.RS 4n
+アクセス制限はありません。グローバルポリシーの場合、このモードでは、すべての受信トラフィックを許可します。サービスポリシーの場合、このモードでは、そのサービスへのすべての受信トラフィックを許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeny\fR ポリシーモード\fR
+.ad
+.sp .6
+.RS 4n
+\fBnone\fR より制限的なモードです。このモードでは、\fBapply_to\fR プロパティーで指定された発信元を除くすべての発信元からの受信トラフィックを許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallow\fR ポリシーモード\fR
+.ad
+.sp .6
+.RS 4n
+もっとも制限的なモードです。このモードでは、\fBapply_to\fR プロパティーで指定された発信元を除くすべての発信元からの受信トラフィックをブロックします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapply_to\fR\fR
+.ad
+.sp .6
+.RS 4n
+選択されたポリシーモードを適用するネットワークエンティティーの一覧が示された複数値プロパティー。\fBapply_to\fR プロパティーに示されているエンティティーは、ポリシーが \fBdeny\fR の場合は拒否され、ポリシーが \fBallow\fR の場合は許可されます。指定可能な値の構文は次のとおりです。
+.sp
+.in +2
+.nf
+host:           host:\fIIP\fR                 "host:192.168.84.14"
+subnet:         network:\fIIP/netmask\fR      "network:129.168.1.5/24"
+ippool:         pool:\fIpool number\fR        "pool:77"
+interface:      if:\fIinterface_name\fR       "if:e1000g0"
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexceptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBapply_to\fR リストから除外されるネットワークエンティティーの一覧が示された複数値プロパティー。たとえば、あるサブネットに \fBdeny\fR ポリシーが適用されている場合、そのサブネット内の一部のホストを \fBexceptions\fR プロパティーで指定することによって、それらのホストに例外を設定できます。このプロパティーには、\fBapply_to\fR プロパティーと同じ値の構文があります。
+.RE
+
+.sp
+.LP
+個別のネットワークサービスのみの場合
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+サービスのポリシーを \fBuse_global\fR に設定することもできます。\fBuse_global\fR ポリシーモードのサービスは、グローバルデフォルトのファイアウォールポリシーを継承します。
+.RE
+
+.sp
+.LP
+グローバルデフォルトのみの場合
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config_default/policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsvc:/network/ipfilter:default\fR 内のグローバルデフォルトポリシー \fBfirewall_config\fR プロパティーグループを \fBcustom\fR に設定することもできます。 ユーザーは、\fBpolicy\fR を \fBcustom\fR に設定することで、このフレームワークで提供できない既存の IP フィルタ構成やカスタム構成など、事前に設定された IP フィルタ構成を使用できます。このグローバルデフォルトのみのポリシーモードでは、ユーザーは、IPF 規則の完全なセットを含むテキストファイルを設定できます。\fBcustom\fR モードが選択されている場合、IPF 規則の指定されたセットは「完全」であり、このフレームワークは構成済みのファイアウォールポリシーから IPF 規則を生成しません。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config_default/custom_policy_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+グローバルデフォルトポリシーが \fBcustom\fR に設定されているときに使用されるファイルパス。このファイルには、目的の IP フィルタ構成を提供する IPF 規則のセットが含まれます。たとえば、\fB/etc/ipf/ipf.conf\fR 内に既存の IPF 規則がある場合、ユーザーは次のコマンドを実行してその既存の規則を使用できます。
+.RS +4
+.TP
+1.
+カスタムポリシーを設定します。
+.sp
+.in +2
+.nf
+# \fBsvccfg -s ipfilter:default setprop \e
+firewall_config_default/policy = astring: "custom"\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+カスタムファイルを指定します。
+.sp
+.in +2
+.nf
+# \fBsvccfg -s ipfilter:default setprop \e
+firewall_config_default/custom_policy_file = astring: \e\fR
+\fB"/etc/ipf/ipf.conf"\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+3.
+構成を更新します。
+.sp
+.in +2
+.nf
+# \fBsvcadm refresh ipfilter:default\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config_default/open_ports\fR\fR
+.ad
+.sp .6
+.RS 4n
+受信トラフィックを許可する必要があるサービス以外のプログラムは、ファイアウォールがその通信ポートへのトラフィックを許可するよう要求できます。この複数値プロパティーには、プロトコルとポートの組が次の形式で含まれます。
+.sp
+.in +2
+.nf
+"{tcp | udp}:{\fIPORT\fR | \fIPORT\fR-\fIPORT\fR}"
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+最初に、システム全体のポリシーが \fBnone\fR に設定され、ネットワークサービスのポリシーが \fBuse_global\fR に設定されます。システム全体のポリシーが \fBnone\fR で、すべてのサービスがそのポリシーを継承するため、\fBnetwork/ipfilter\fR を有効にすると、IP フィルタ規則の空のセットを備えたファイアウォールが有効になります。より制限的なポリシーを構成するには、\fBsvccfg\fR(1M) を使用して、ネットワークサービスとシステム全体のポリシーを変更します。
+.sp
+.LP
+ユーザーは、サービスの \fBfirewall_config\fR プロパティーグループを変更することによってファイアウォールポリシーを構成します。ファイアウォールの管理者特権のユーザーに委譲できるようにするため、新しい承認である \fBsolaris.smf.value.firewall.config\fR が作成されます。サービスオペレータの特権を持つユーザーがファイアウォールポリシーを構成できるようにするには、この新しい承認が必要です。
+.SS "ファイアウォールの使用条件"
+.sp
+.LP
+ブート中、有効になっているサービスが起動する前に、これらのサービスのためにファイアウォールが構成されます。そのため、ブート時にはサービスが保護されます。システムの稼働中は、サービスの再起動、有効化、更新などの管理操作により、ファイアウォールが構成されている間に実行されるサービスが短時間脆弱な状態になる可能性があります。
+.sp
+.LP
+\fBsvc.ipfd\fR は、サービスの起動イベントと停止イベントを監視し、SMF がそのサービスを起動または停止するのと同時にサービスのファイアウォールを構成または構成解除します。この 2 つの操作は同時に行われるため、ファイアウォールの構成が完了する前にサービスが起動された場合は、危険にさらされやすい期間が (1 秒未満) 発生する可能性があります。通常、RPC サービスは一時アドレス上で待機しまが、このアドレスはサービスが実際に実行されるまで不明です。したがって、サービスが実行されるまでファイアウォールが構成されないため、RPC サービスは同じように危険にさらされやすい状態になります。
+.SS "開発者向けドキュメント"
+.sp
+.LP
+リモート機能を提供するサービスは、そのサービスへのネットワークアクセスを制御するために、ファイアウォールフレームワークに参加させることをお勧めします。フレームワークの統合は必須ではありませんが、システム全体のポリシーが構成されている場合、このフレームワークに統合されていないサービスへのリモートアクセスは正しく機能しない可能性があります。
+.sp
+.LP
+このフレームワークへのサービスの統合は、2 つの追加のプロパティーグループとそれに対応するプロパティーをサービスマニフェスト内で定義するだけで完了します。IP フィルタ規則は、ユーザーがそのサービスを有効にしたときに生成されます。カスタム規則を生成するという重要な状況では、シェルスクリプトが必要になりますが、例として使用できるスクリプトがあらかじめ用意されています。
+.sp
+.LP
+追加のプロパティーグループである \fBfirewall_config\fR と \fBfirewall_context\fR はそれぞれ、ファイアウォールポリシーの構成の格納と、静的なファイアウォール定義の提供を行います。新しいプロパティーグループとプロパティー、およびそれに対応するデフォルト値の要約を次に示します。
+.sp
+.LP
+ファイアウォールポリシーの構成
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムへのアクセスは、新しい承認定義とユーザー定義のプロパティータイプによって保護されます。この新しい承認は、次のような方法で、このプロパティーグループの \fBvalue_authorization\fR プロパティーに割り当てるようにしてください。
+.sp
+.in +2
+.nf
+<propval name='value_authorization' type='astring'
+value='solaris.smf.value.firewall.config' />
+.fi
+.in -2
+.sp
+
+サードパーティーは、ユーザー定義タイプを生成するために、サービスシンボル名前空間の規則に従うようにしてください。Sun が提供するサービスでは、\fBcom.sun,fw_configuration\fR をプロパティータイプとして使用できます。
+.sp
+詳細については、前述の「ファイアウォールポリシーの構成」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+サービスは、デフォルトではグローバルデフォルトのファイアウォールポリシーを継承するため、このプロパティーの初期値は \fBuse_global\fR にするようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/apply_to\fR\fR
+.ad
+.sp .6
+.RS 4n
+空のプロパティー。このプロパティーに初期値はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_config/exceptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+空のプロパティー。このプロパティーに初期値はありません。
+.RE
+
+.sp
+.LP
+ファイアウォールの静的な定義
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context\fR\fR
+.ad
+.sp .6
+.RS 4n
+サードパーティーは、ユーザー定義のタイプを生成するために、サービスシンボル名前空間規則に従うようにしてください。Sun が提供するサービスでは、\fBcom.sun,fw_definition\fR をプロパティータイプとして使用できます。
+.sp
+詳細については、前述の「ファイアウォールの静的な構成」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/name\fR\fR
+.ad
+.sp .6
+.RS 4n
+IANA で定義された既知のポートを備えたサービスで、\fBgetservbyname\fR(3SOCKET) によって取得できます。このプロパティーには、このサービスの IANA 名が格納されています。RPC サービスの場合、このプロパティーには RPC プログラム番号が格納されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/isrpc\fR\fR
+.ad
+.sp .6
+.RS 4n
+RPC サービスの場合、このプロパティーは値を \fBtrue\fR に設定して作成するようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirewall_context/ipf_method\fR\fR
+.ad
+.sp .6
+.RS 4n
+一般に、指定されたファイアウォールポリシーは、\fBfirewall_context/name\fR プロパティーから得られる、サービスの通信ポートに対する IP フィルタ規則を生成するために使用されます。IANA で定義されたポートを備えておらず、RPC サービスではないサービスは、独自の IP フィルタ規則を生成する必要があります。独自の規則を生成するサービスは、\fBfirewall_context/name\fR プロパティーと \fBfirewall_context/isrpc\fR プロパティーを持たないようにできます。次のサービスを参照してください
+.sp
+.in +2
+.nf
+svc:/network/ftp:default
+svc:/network/nfs/server:default
+svc:/network/ntp:default
+.fi
+.in -2
+.sp
+
+そのほかに、\fBipf_method\fR を備えたものもガイダンスとして参照してください。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os, network/ipfilter
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcprop\fR(1), \fBsvcs\fR(1), \fBipf\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBgetservbyname\fR(3SOCKET), \fBrpc\fR(4), \fBattributes\fR(5), \fBipfilter\fR(5), \fBsmf\fR(5)

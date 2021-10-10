@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+
+	Service manifest for devfsadmd.
+-->
+
+<service_bundle type='manifest' name='SUNWcsd:devfsadm'>
+
+<!--
+	The devfsadm service is dependent on the sysevent service
+	inasmuch as receiving an event is subordinate to event transport
+	itself, and a devfsadm failure doesn't affect unrelated
+	sysevent activity.  Devfsadm as a daemon is not needed for
+	already configured devices per se but provides support for
+	on-demand configuration of new devices via interfaces such
+	as di_devlink_init() provided by libdevinfo, and as such,
+	depends on sysevent.
+-->
+
+<service
+	name='system/devfsadm'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance />
+
+	<dependency
+		name='sysevent'
+		type='service'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/system/sysevent' />
+	</dependency>
+
+	<!--
+		The fmd service and milestone/devices exist in all
+		zones but system/devfsadm is present in the global
+		zone only.  These dependencies are constructed so
+		that each is only applicable to a zone in which
+		system/devfsadm is available, i.e. the global zone.
+	-->
+	<dependent
+		name='devfsadm-fmd'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/system/fmd' />
+	</dependent>
+
+	<dependent
+		name='devfsadm-milestone-devices'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/devices' />
+	</dependent>
+
+	<exec_method
+	    type='method'
+	    name='start'
+	    exec='/usr/lib/devfsadm/devfsadmd'
+	    timeout_seconds='60'>
+	    <method_context>
+		<method_credential
+		user='root'
+		group='root'
+		privileges='basic,sys_devices,sys_config,sys_resource,file_owner,file_chown,file_chown_self,file_dac_read' />
+	    </method_context>
+	</exec_method>
+
+	<exec_method
+	    type='method'
+	    name='stop'
+	    exec=':kill'
+	    timeout_seconds='60'>
+	    <method_context>
+		<method_credential
+		user='root'
+		group='root' />
+	    </method_context>
+	</exec_method>
+
+	<stability value='Unstable' />
+
+	<template>
+	    	<common_name>
+		    	<loctext xml:lang='C'>
+				hot-plug and synchronous device support service
+			</loctext>
+		</common_name>
+
+		<documentation>
+		    	<manpage
+			    title='devfsadm'
+			    section='1M'
+			    manpath='/usr/share/man' />
+		</documentation>
+	</template>
+</service>
+
+</service_bundle>

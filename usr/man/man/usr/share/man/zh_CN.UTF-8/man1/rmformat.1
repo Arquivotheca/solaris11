@@ -1,0 +1,333 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH rmformat 1 "2011 年 8 月 15 日" "SunOS 5.11" "用户命令"
+.SH 名称
+rmformat \- 可移除可重写介质格式化实用程序
+.SH 用法概要
+.LP
+.nf
+\fBrmformat\fR [\fB-DeHUv\fR] [\fB-b\fR \fIlabel\fR] [\fB-c\fR \fIblockno\fR] 
+     [\fB-F\fRquick | long | force ] [\fB-s\fR \fIfilename\fR] [\fIdevname\fR]
+.fi
+
+.LP
+.nf
+\fBrmformat\fR \fB-V\fR read | write \fIdevname\fR
+.fi
+
+.LP
+.nf
+\fBrmformat\fR \fB-l\fR [\fIdevname\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBrmformat\fR 实用程序用于对可移除、可重写介质（包括 \fBPCMCIA\fR 内存和 \fBata\fR 卡）进行格式化、标记和分区，以及对其执行其他杂项功能。对于所有 USB 海量存储设备（包括 USB 硬盘驱动器），也应当使用 \fBrmformat\fR 实用程序。此实用程序还可用于验证和表面分析，并且修复验证过程中发现的坏扇区（如果驱动器或驱动程序支持坏块管理）。
+.sp
+.LP
+格式化之后，\fBrmformat\fR 将写入标签（包括介质的完整容量），作为 \fBPCMCIA\fR 内存卡上的一个分片。可以借助 \fBrmformat\fR 提供的其他选项来更改分区信息。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIlabel\fR\fR
+.ad
+.sp .6
+.RS 4n
+为介质设置 SUNOS 标签。SUNOS 卷标签名称限制为 8 个字符。对于大小超过 1 TB 的介质，将创建 EFI 标签。对于编写 \fBDOS\fR 卷标签，用户应该使用 \fBmkfs_pcfs\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIblockno\fR\fR
+.ad
+.sp .6
+.RS 4n
+更正并修复给定的块。此更正和修复选项不一定适用于 \fBrmformat\fR 支持的所有设备，因为某些设备的驱动器可能具有坏块管理功能，而某些设备可能已在驱动程序中实施了此选项。如果驱动器或驱动程序支持坏块管理，则会尽最大的努力来纠正坏块。如果坏块仍然无法纠正，将显示一条消息，指明修复失败。块编号可以采用十进制、八进制或十六进制的格式来提供。
+.sp
+普通的 \fBPCMCIA\fR 内存卡和 \fBata\fR 卡不支持坏块管理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+完成时弹出介质。如果驱动器不支持机动化弹出，则此功能不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR quick | long | force\fR
+.ad
+.sp .6
+.RS 4n
+格式化介质。
+.sp
+\fBquick\fR 选项启动不进行验证或者只对介质上的某些磁轨进行有限验证的格式化。
+.sp
+\fBlong\fR 选项启动完整格式化。对于某些设备，这可能包括连同驱动器自身在内的整个介质的验证。
+.sp
+用于格式化的 \fBforce\fR 选项启动长格式化，在启动格式化之前不需要用户进行确认。
+.sp
+在 \fBPCMCIA\fR 内存卡中，所有这些选项都将启动长格式化。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出所有可移除的设备。缺省情况下，如果不使用任何选项，\fBrmformat\fR 也会列出所有可移除的设备。如果给定了 \fBdev_name\fR，则 \fBrmformat\fR 将列出与 \fBdev_name\fR 关联的设备。输出中会显示设备路径名、供应商信息和设备类型。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用户可以在 SUNOS 标签中安排分区信息。
+.sp
+用户应提供一个文件作为输入，其中以某种格式包含了关于每个分片的信息，该格式提供了字节偏移量、所需大小、标记和标志，如下所示：
+.sp
+.in +2
+.nf
+slices: \fIn\fR = \fIoffset\fR, \fIsize\fR [, \fIflags\fR, \fItags\fR] 
+.fi
+.in -2
+.sp
+
+其中 \fIn\fR 是分片编号，\fIoffset\fR 是开始分片 \fIn\fR 时的字节偏移量，\fIsize\fR 是分片 \fIn\fR 所需的大小。\fIoffset\fR 和 \fIsize\fR 都必须是 512 字节的倍数。这些数字可以采用十进制、十六进制或八进制数字来提供。不支持浮点数字。有关分片的最大编号的详细信息，请参见\fI《Oracle Solaris Administration: Common Tasks》\fR。
+.sp
+要以千字节、兆字节或千兆字节指定 \fIsize\fR 或 \fIoffset\fR，请分别添加 \fBKB\fR、\fBMB\fR、\fBGB\fR。没有后缀的数字被视为字节偏移量。提供的标志如下所示：
+.sp
+.in +2
+.nf
+\fBwm\fR = read-write, mountable
+\fBwu\fR = read-write, unmountable
+\fBru\fR = read-only, unmountable
+.fi
+.in -2
+.sp
+
+提供的标记如下所示：\fBunassigned\fR、\fBboot\fR, \fBroot\fR、\fBswap\fR、\fBusr\fR、\fBbackup\fR、\fBstand\fR、\fBvar\fR、\fBhome\fR、\fBalternates\fR。
+.sp
+如果不需要对这些值进行更精细的控制，则可以在四元组中省略标记和标志。需要同时省略两者或同时包含两者。如果在某个特定分片的四元组中省略了标记和标志，则会为每个标记和标志假定一个缺省值。标志的缺省值是 \fBwm\fR，标记的缺省值是 \fBunassigned\fR。
+.sp
+可以提供完整的标记名称，也可以使用标记的缩写。缩写可以是标准标记名称的前两个或前几个字母。在处理所定义的标记和标志时，\fBrmformat\fR 区分大小写。
+.sp
+分片的指定按以下格式进行分隔： 
+.sp
+例如：
+.sp
+.in +2
+.nf
+slices: 0 = 0, 30MB, "wm", "home" : 
+        1 = 30MB, 51MB : 
+        2 = 0, 100MB, "wm", "backup" :
+        6 = 81MB, 19MB
+.fi
+.in -2
+.sp
+
+\fBrmformat\fR 会执行必要的检查，检测是否存在任何重叠分区，以及是否有非法请求试图访问超出目标介质的容量的地址。每个分片 \fIn\fR 只可以具有一个分片信息条目。如果为同一个分片 \fIn\fR 提供了多个分片信息条目，则会显示相应的错误消息。分片 \fB2\fR 是备份分片，其中包含整个磁盘的容量。可以使用井号字符 \fB#\fR 在输入文件中描述一行注释。如果行以 \fB#\fR 开始，则 \fBrmformat\fR 会忽略 \fB#\fR 之后直到该行结尾的所有字符。
+.sp
+对容量非常小的介质进行分区是允许的，但是在这些设备上使用此选项时要慎重。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+在任意文件系统上执行 \fBumount\fR，然后格式化。请参见 \fBmount\fR(1M)。此选项卸载所有已挂载的分片，并且对所请求的设备执行长格式化操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR read | write\fR
+.ad
+.sp .6
+.RS 4n
+在格式化后验证介质的每个块。write 验证是一种具有破坏性的机制。在开始验证前，会要求用户进行确认。此选项的输出是被识别为坏块的块编号的列表。
+.sp
+read 验证仅对块进行验证，并且报告容易出错的块。
+.sp
+可以将所显示的块编号列表与 \fB-c\fR 选项配合使用来进行修复。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdevname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevname\fR 可以是绝对设备路径名，或者是设备相对于当前工作目录的相对路径名，或者是别名，如 \fBcdrom\fR 或 \fBrmdisk\fR。 
+.sp
+对于没有运行卷管理的系统，用户也可以提供绝对设备路径名（如 \fB/dev/rdsk/c\fI?\fRt\fI?\fRd\fI?\fRs\fI?\fR\fR）或相对于当前工作目录的合适的相对设备路径名。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR为 PCFS 文件系统格式化可移除介质
+.sp
+.LP
+以下示例显示了如何创建可选的 \fBfdisk\fR 分区：
+
+.sp
+.in +2
+.nf
+example$ \fBrmformat -F quick /dev/rdsk/c0t4d0s2:c\fR
+Formatting will erase all the data on disk.
+Do you want to continue? (y/n)\fBy\fR
+example$ \fBsu\fR
+# \fBfdisk /dev/rdsk/c0t4d0s2:c\fR
+# \fBmkfs -F pcfs /dev/rdsk/c0t4d0s2:c\fR
+Construct a new FAT file system on /dev/rdsk/c0t4d0s2:c: (y/n)? \fBy\fR
+#
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/aliases\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于使用相应别名针对在卷管理的控制下的不同介质提供字符设备的符号链接的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/dsk\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于针对 \fBPCMCIA\fR 内存卡和 ata 卡以及可移除介质设备提供块设备访问的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rdsk\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于针对 \fBPCMCIA\fR 内存卡和 ata 卡以及可移除介质设备提供字符设备访问的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/aliases/pcmemS\fR\fR
+.ad
+.sp .6
+.RS 4n
+插槽 S 中的 \fBPCMCIA\fR 内存卡的字符设备的符号链接，其中 S 表示 \fBPCMCIA\fR 插槽编号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/aliases/rmdisk0\fR\fR
+.ad
+.sp .6
+.RS 4n
+除 \fBCD-ROM\fR、\fBDVD-ROM\fR、\fBPCMCIA\fR 内存卡等等之外的一般可移除介质设备的符号链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rdsk\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于针对 \fBPCMCIA\fR 内存卡和 \fBata\fR 卡以及其他可移除设备提供字符设备访问的目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/dsk\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于针对 \fBPCMCIA\fR 内存卡和 \fBata\fR 卡以及其他可移除介质设备提供块设备访问的目录。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/storage/media-volume-manageR
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcpio\fR(1)、\fBeject\fR(1)、\fBtar\fR(1)、\fBvolcheck\fR(1)、\fBvolrmmount\fR(1)、\fBformat\fR(1M)、\fBmkfs_pcfs\fR(1M)、\fBmount\fR(1M)、\fBnewfs\fR(1M)、\fBprtvtoc\fR(1M)、\fBrmmount\fR(1M)、\fBrpc.smserverd\fR(1M)、\fBattributes\fR(5)、\fBscsa2usb\fR(7D)、\fBsd\fR(7D)、\fBpcfs\fR(7FS)、\fBudfs\fR(7FS)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Common Tasks》\fR
+.SH 附注
+.sp
+.LP
+在基于 SPARC 的系统上使用 \fBnewfs\fR(1M) 创建的包含 \fBufs\fR 文件系统的可写入介质或者 \fBPCMCIA\fR 内存卡或 \fBPCMCIA\fR ata 卡与在基于 x86 的系统上创建的包含 \fBufs\fR 文件系统的可写入介质或者 \fBPCMCIA\fR 内存卡不同。不要在这些平台之间交换包含 \fBufs\fR 的任何可移除介质；请使用 \fBcpio\fR(1) 或 \fBtar\fR(1) 在这些平台之间传输内存卡上的文件。有关可交换的文件系统，请参考 \fBpcfs\fR(7FS) 和 \fBudfs\fR(7FS)。 
+.sp
+.LP
+\fBrmformat\fR 可能不会列出虚拟环境中的所有可移除设备。
+.SH 已知问题
+.sp
+.LP
+目前，\fBPCMCIA\fR 内存卡不支持坏扇区映射。因此，如果 \fBrmformat\fR 发现错误 (\fBbad sector\fR)，则内存卡便不可使用。

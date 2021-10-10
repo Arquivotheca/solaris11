@@ -1,0 +1,1548 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.TH set 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+set, unset, setenv, unsetenv, export \- 現在のシェルおよびそこから起動されたプロセスでの環境変数の特性を決定するシェル組み込み関数
+.SH 形式
+.SS "sh"
+.LP
+.nf
+\fBset\fR [\fB--aefhkntuvx\fR [\fIargument\fR]]...
+.fi
+
+.LP
+.nf
+\fBunset\fR [\fIname\fR]...
+.fi
+
+.LP
+.nf
+\fBexport\fR [\fIname\fR]...
+.fi
+
+.SS "csh"
+.LP
+.nf
+\fBset\fR [\fIvar\fR [= \fIvalue\fR]]
+.fi
+
+.LP
+.nf
+\fBset\fR \fIvar\fR [\fIn\fR] = \fIword\fR
+.fi
+
+.LP
+.nf
+\fBunset\fR \fIpattern\fR
+.fi
+
+.LP
+.nf
+\fBsetenv\fR [\fIVAR\fR [\fIword\fR]]
+.fi
+
+.LP
+.nf
+\fBunsetenv\fR \fIvariable\fR
+.fi
+
+.SS "ksh88"
+.LP
+.nf
+\fBset\fR [\(+-abCefhkmnopstuvx] [\(+-o \fIoption\fR]... [\(+-A \fIname\fR] 
+     [\fIarg\fR]...
+.fi
+
+.LP
+.nf
+\fBunset\fR [\fB-f\fR] \fIname\fR...
+.fi
+
+.LP
+.nf
+\fB**export\fR [\fIname\fR [=\fIvalue\fR]]...
+.fi
+
+.LP
+.nf
+\fB**export\fR [\fB-p\fR]
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fB+set\fR [\(+-abCefGhkmnoprstuvx] [\(+-o \fIoption\fR]... [\(+-A \fIvname\fR] 
+     [\fIarg\fR]...
+.fi
+
+.LP
+.nf
+\fB+unset\fR [\fB-fnv\fR] \fIvname\fR...
+.fi
+
+.LP
+.nf
+\fB++export\fR [\fB-p\fR] [\fIname\fR[=\fIvalue\fR]]...
+.fi
+
+.SH 機能説明
+.SS "sh"
+.sp
+.LP
+\fBset\fR 組み込みコマンドには次のようなオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--\fR\fR
+.ad
+.RS 6n
+.rt  
+どのフラグも変更しません。\fB$1\fR に \fB-\fR を設定する際に便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 6n
+.rt  
+修正または作成された変数にエクスポートのマークを付けます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 6n
+.rt  
+コマンドが 0 以外の終了ステータスで終了した場合、直ちに終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイル名を生成しないようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 6n
+.rt  
+関数の定義時に、関数コマンドを検索しその位置を記憶します (通常、関数コマンドは関数実行時に検索されます)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 6n
+.rt  
+コマンド名の前にあるキーワード引数だけでなく、すべてのキーワード引数がコマンド用の環境に置かれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+コマンドを読み取るが、実行しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 6n
+.rt  
+1 つのコマンドを読み取り、実行したあと、終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.RS 6n
+.rt  
+未設定の変数を置換時にエラーとして扱います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+シェル入力行の読み取り時に、その内容を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 6n
+.rt  
+コマンドの実行時に、コマンドと引数の内容を表示します。
+.RE
+
+.sp
+.LP
+\fB-\fR の代わりに \fB+\fR を使用すると、 これらのフラグは無効になります。これらのフラグはシェル起動時にも使用できます。現在セットされているフラグは、\fB$-\fR で見つけられます。残りの引数は定位置パラメータで、次の順に割り当てられます。\fB$1\fR、\fB$2\fR、\fB\&.\fI\fR\|.\|.\|。\fR引数が指定されない場合、すべての名前の値が出力されます。\fI\fR
+.sp
+.LP
+\fBunset\fR は \fIname\fR ごとに、対応する変数または関数値を削除します。変数 \fBPATH\fR、\fBPS1\fR、\fBPS2\fR、\fBMAILCHECK\fR および \fBIF\fR は設定解除できません。
+.sp
+.LP
+\fBexport\fR 組み込みコマンドでは、指定された \fIname\fR に対し、ひきつづき実行されるコマンドの環境へ自動的にエクスポートされるようにマークを付けます。\fI\fR引数を省略すると、現在のシェル実行中にエクスポートのマークが付けられた変数名を一覧表示します。関数名はエクスポートされません。\fB\fR
+.SS "csh"
+.sp
+.LP
+引数を設定しないと \fBset\fR はすべてのシェル変数の値を表示します。複数ワードからなる値は括弧でくくられて表示されます。引数 \fIvar\fR のみを設定すると、\fBset\fR は空の (NULL) 値を \fIvar\fR が示す変数に割り当てます。引数を \fIvar\fR \fB=\fR \fIvalue\fR の形式で設定すると、\fBset\fR は \fIvar\fR が示す変数に \fIvalue\fR が示す値を割り当てます。\fIvalue\fR は次のいずれかです。  
+.sp
+.ne 2
+.mk
+.na
+\fB\fIword\fR\fR
+.ad
+.RS 14n
+.rt  
+単一ワード (もしくは引用符付きの文字列)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB(\fR\fIwordlist\fR\fB)\fR\fR
+.ad
+.RS 14n
+.rt  
+スペースで区切られた、括弧付きワードの並び
+.RE
+
+.sp
+.LP
+値は、割り当てられる前に、コマンドおよびファイル名展開されます。\fBset\fR\fI var\fR\fB[\fR\fIn\fR\fB] =\fR\fI word\fR 形式は、複数ワードからなる値の \fIn\fR 番目のワードを \fIword\fR に置き換えます。
+.sp
+.LP
+\fBunset\fR は \fIpattern\fR が示すファイル名置換パターンに一致する名の変数を削除します。`\fBunset *\fR' と指定すると、すべての変数が削除されます。
+.sp
+.LP
+引数を設定しないと \fBsetenv\fR はすべての環境変数を表示します。引数 \fIVAR\fR を指定すると、\fBsetenv\fR は環境変数 \fB\fR\fIVAR\fR\fB \fR に空の値 (NULL) を設定します(慣例上、環境変数名は大文字で指定されるのが通常)。\fIVAR\fR と \fIword\fR の両引数を指定すると、\fBsetenv\fR は、\fIVAR\fR に単一ワードまたは引用符付き文字列である値 \fIword\fR を設定します。環境変数 \fBPATH\fR は、コロンで区切られた複数の \fIword\fR 引数を指定できます (後述の「使用例」を参照) 。最もよく使用される環境変数 \fBUSER\fR、\fBTERM\fR、\fBPATH\fR は、自動的に \fBcsh\fR 変数 \fBuser\fR、\fBterm\fR、\fBpath\fRから (へ) インポート (エクスポート) されます。これらの変数を変更する場合には \fBsetenv\fR を使用してください。さらにシェルは、\fBcsh\fR 変数 \fBcwd\fR が変更されるたびに、その値を環境変数 \fBPWD\fR へ設定します。
+.sp
+.LP
+環境変数 \fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBLC_COLLATE\fR、\fBLC_NUMERIC\fR、\fBLC_MONETARY\fR は、C シェル内で変更されると新しい値が即座に有効になります。これらの環境変数の詳細については \fBenviron\fR(5) を参照してください。
+.sp
+.LP
+\fBunsetenv\fR は環境から \fIvariable\fR が示す変数を削除します。\fBunset\fR のようなパターンマッチングは行いません。
+.SS "ksh88"
+.sp
+.LP
+\fBset\fR コマンドのフラグの意味は以下のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fR
+.ad
+.RS 13n
+.rt  
+配列の代入。\fIname\fR で示される変数の設定を解除し、\fIarg\fR リストから順々に値を割り当てます。\fB+A\fR は、最初の変数設定を解除しません。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fR
+.ad
+.RS 13n
+.rt  
+定義される後続の変数すべてを自動的にエクスポートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 13n
+.rt  
+バックグラウンドジョブの完了を非同期的にユーザーに通知します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 13n
+.rt  
+シェルのリダイレクト演算子「\fB>\fR」によって既存のファイルが上書きされるのを防ぎます。リダイレクト演算子「\fB>|\fR」は、個々のファイルに対して、このオプションよりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fR
+.ad
+.RS 13n
+.rt  
+コマンドの終了ステータスが 0 でない場合、\fBERR\fR トラップ (設定されていれば) を実行し、終了します。このモードは、プロファイル読み取り時は無効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fR
+.ad
+.RS 13n
+.rt  
+ファイル名を生成しないようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fR
+.ad
+.RS 13n
+.rt  
+各コマンドは、最初に検出された時点で、検索済み別名になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fR
+.ad
+.RS 13n
+.rt  
+コマンド名に先行するものだけでなく、すべての変数代入引数をコマンドの環境に格納します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fR
+.ad
+.RS 13n
+.rt  
+バックグラウンドジョブを個別のプロセスグループで実行し、完了時にメッセージを 1 行表示します。バックグラウンドジョブの終了ステータスは 完了メッセージで報告されます。ジョブ制御を備えたシステムでは、このフラグは対話型シェルに対して自動的に有効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fR
+.ad
+.RS 13n
+.rt  
+コマンドを読み取り、構文エラーがないかチェックします。実行は行いません。対話型シェルに対しては無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+o\fR\fR
+.ad
+.RS 13n
+.rt  
+現在のオプション設定を標準出力に書き出します。コマンドとしてシェルに再入力できる形式で書き込まれるため、同じオプション設定を再現するときに便利です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoption\fR\fR
+.ad
+.RS 13n
+.rt  
+このフラグの後に指定する引数は、次のオプション名のいずれかです。\fI\fR 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallexport\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-a\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBerrexit\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-e\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbgnice\fR \fR
+.ad
+.RS 15n
+.rt  
+バックグラウンドジョブをすべて低い優先度で実行します。これはデフォルトモードです。\fBemacs\fR コマンド入力用に、\fBemacs\fR 形式のインラインエディタを起動します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgmacs\fR \fR
+.ad
+.RS 15n
+.rt  
+コマンド入力用に、\fBgmacs\fR 形式のインラインエディタを起動します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignoreeof\fR \fR
+.ad
+.RS 15n
+.rt  
+ファイルの終わりを検出してもシェルは終了しません。終了させるには \fBexit\fR コマンドを使用する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyword\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-k\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmarkdirs\fR \fR
+.ad
+.RS 15n
+.rt  
+ファイル名生成によって生成されるディレクトリ名には、すべて最後に \fB/\fR を付加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmonitor\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-m\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoclobber\fR \fR
+.ad
+.RS 15n
+.rt  
+シェルのリダイレクト演算子「\fB>\fR」によって既存のファイルが上書きされるのを防ぎます。リダイレクト演算子「\fB>|\fR」は、個々のファイルに対して、このオプションよりも優先されます。「\fB-C\fR」と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoexec\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-n\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoglob\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-f\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnolog\fR \fR
+.ad
+.RS 15n
+.rt  
+履歴ファイルに関数定義を保存しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnotify\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-b\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnounset\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-u\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivileged\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-p\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-v\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrackall\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-h\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvi\fR \fR
+.ad
+.RS 15n
+.rt  
+\fBvi\fR 形式のインラインエディタの挿入モードになります。\fB033\fR というエスケープ文字を押すと、挿入モードから制御モードに変わります。Return で行を送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBviraw\fR \fR
+.ad
+.RS 15n
+.rt  
+各文字を \fBvi\fR モードで入力されたときと同様に処理します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxtrace\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-x\fR と同じです。
+.RE
+
+.RE
+
+.sp
+.LP
+オプション名を指定しない場合、o は現在のオプション設定を表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.RS 9n
+.rt  
+\fB$HOME/.profile\fR ファイルを処理しないようにし、\fBENV\fR ファイルの代わりに \fB/etc/suid_profile\fR ファイルを使用します。このモードは、実効ユーザー ID が実ユーザー ID と等しくないとき、また実効グループ ID が実グループ ID と等しくないときには 必ず有効になります。このモードを無効にすると、実効ユーザー ID が実ユーザー ID に、実効グループ ID が実グループ ID にそれぞれ設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fR
+.ad
+.RS 9n
+.rt  
+定位置パラメータを辞書編集方式の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fR
+.ad
+.RS 9n
+.rt  
+1 つのコマンドを読み取り、実行したあと、終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fR
+.ad
+.RS 9n
+.rt  
+置換を行う際に、設定されていないパラメータをエラーとして扱います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fR
+.ad
+.RS 9n
+.rt  
+シェル入力行の読み取り時に、その内容を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 9n
+.rt  
+コマンドの実行時に、コマンドと引数の内容を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\fR \fR
+.ad
+.RS 9n
+.rt  
+\fB-x\fR フラグと \fB-v\fR フラグを無効にし、フラグに対する引数の検査を停止します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.RS 9n
+.rt  
+どのフラグも変更しません。このフラグは、\fB$1を\fR \fB-\fRで始まる値に設定する際に便利です。このフラグの後に引数がない場合、定位置パラメータが設定解除されます。
+.RE
+
+.sp
+.LP
+\fB-\fR の代わりに \fB+\fR を使用すると、 これらのフラグは無効になります。これらのフラグはシェル起動時にも使用できます。現在セットされているフラグは、\fB$-\fR で見つけられます。\fB-A\fR を指定しないかぎり、残りの引数は定位置パラメータとなり、次の順番に割り当てられます。\fB$1\fR \fB$2\fR . \|.\|. と同じになります。引数を 1 つも指定しない場合には、すべての変数の名前と値を標準出力上に表示します。
+.sp
+.LP
+\fIname\fR が示す変数の設定を解除します。つまり、それらの変数の値と属性を消去します。\fB読み取り専用の変数は設定を解除できません。\fR\fB-f\fR フラグが設定されていると、name 引数は関数名を表します。\fB\fR\fBERRNO\fR、\fBLINENO\fR、\fBMAILCHECK\fR、\fBOPTARG\fR、\fBOPTIND\fR、\fBRANDOM\fR、\fBSECONDS\fR、\fBTMOUT\fR、および \fB_\fR の設定を解除すると、これらの変数の特殊な意味が削除されます。後でこれらの変数に値を代入しても、特殊な意味はないままです。
+.sp
+.LP
+\fBunset\fR を使用すると \fIname\fR が示す変数の設定を解除します。つまり、それらの変数の値と属性を消去します。\fB読み取り専用の変数は設定を解除できません。\fR\fB-f\fR フラグが設定されていると、name 引数は関数名を表します。\fB\fR\fBERRNO\fR、\fBLINENO\fR、\fBMAILCHECK\fR、\fBOPTARG\fR、\fBOPTIND\fR、\fBRANDOM\fR、\fBSECONDS\fR、\fBTMOUT\fR、および \fB_\fR の設定を解除すると、これらの変数の特殊な意味が削除されます。後でこれらの変数に値を代入しても、特殊な意味はないままです。
+.sp
+.LP
+\fBexport\fR 組み込みコマンドでは、指定された \fIname\fR に対し、ひきつづき実行されるコマンドの環境へ自動的にエクスポートされるようにマークを付けます。\fB\fR
+.sp
+.LP
+\fB-p\fR を指定したとき、\fBexport\fR は、すべてのエクスポートされる変数の名前と値を、次の形式で標準出力に書き出します。
+.sp
+.in +2
+.nf
+"export %s=%s\en", \fIname\fR, \fIvalue\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、\fIname\fR が設定されている場合です。
+.sp
+.in +2
+.nf
+"export %s\en", \fIname\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、\fIname\fR が設定されていない場合です。
+.sp
+.LP
+コマンドとしてシェルに再入力できる形式で書き込まれる (引用も適切に使用される) ため、エクスポートされる変数の名前と値をシェル実行環境で再現するときに便利です。ただし、この場合、以下のような制限があります。
+.RS +4
+.TP
+1.
+出力時に値が設定されていた読み取り専用の変数は、元の状態には戻りません。
+.RE
+.RS +4
+.TP
+2.
+出力時に値が設定されていなかった変数に、状態を保存したときから保存した出力をシェルに再入力するまでの時間が値として割り当てられた場合、その変数は未設定の状態には戻りません (つまり、その値は保持されます)。
+.RE
+.sp
+.LP
+このマニュアルページでは、1 つまたは 2 つのアスタリスク (\fB*\fR) が先頭に付加されている \fBksh88\fR(1) コマンドは、次のような特殊な処理を受けます。
+.RS +4
+.TP
+1.
+コマンドが完了しても、コマンドの直前の変数代入リストは依然として有効です。
+.RE
+.RS +4
+.TP
+2.
+入出力のリダイレクトは変数代入後に行われます。
+.RE
+.RS +4
+.TP
+3.
+エラーが発生すると、それを含むスクリプトは中止されます。
+.RE
+.RS +4
+.TP
+4.
+変数代入形式で、\fB**\fR を先頭に持つコマンドに続くワードは、変数代入と同一の規則で展開されます。つまり、チルド置換は \fB=\fR 符号のあとに実行され、ワード分割とファイル名生成は実行されません。
+.RE
+.SS "ksh"
+.sp
+.LP
+\fBset\fR はオプションおよび定位置パラメータを設定または設定解除します。\fB-\fR を付けてオプションを指定すると、オプションが設定されます。\fB+\fR を付けてオプションを指定すると、オプションの設定が解除されます。
+.sp
+.LP
+オプションや引数を付けずに \fBset\fR を使用すると、すべてのシェル変数の名前と値が現在のロケールの照合シーケンスの順序で表示されます。シェルへの再入力に適するように、値は引用符で囲まれます。
+.sp
+.LP
+引数が指定されていない (オプション引数の終わり \fB--\fR さえ指定されていない) 場合、定位置パラメータは変更されません。それ以外の場合は、\fB-A\fR オプションを指定しないかぎり、定位置パラメータは引数のリストで置換されます。定位置パラメータを設定するときは、最初の引数 \fB--\fR が無視されます。
+.sp
+.LP
+下位互換性のために、オプションを指定せずに \fBset\fR コマンドを使用すると (最初の引数は \fB-\fR)、\fB-v\fR および \fB-x\fR オプションが無効になります。追加の引数を指定すると、定位置パラメータが置換されます。
+.sp
+.LP
+\fBksh\fR では set に次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+名前に「.」が含まれない各変数にエクスポート属性を設定して、現在のシェル環境で値を割り当てます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIname\fR\fR
+.ad
+.RS 15n
+.rt  
+定位置パラメータにではなく、添字 \fB0\fR で始まる \fIname\fR で指定された配列に、引数を順番に割り当てます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.RS 15n
+.rt  
+次のプロンプトまで待機せずに、バックグラウンドジョブの完了が検出されるとすぐにメッセージを標準エラーに書き込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB{...}\fR グループ展開を有効にします。デフォルトではオンになっています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.RS 15n
+.rt  
+リダイレクト演算子「>」を使用して、既存の標準ファイルが上書きされるのを防ぎます。「\fB>|\fR」リダイレクトは、この \fBnoclobber\fR オプションよりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 15n
+.rt  
+終了ステータスがゼロ以外の単純コマンドを使用すると、シェルが終了します。ただし、単純コマンドが次の場合は除きます。\fB\fR
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB&&\fR または \fB||\fR リストに含まれる
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBif\fR、\fBwhile\fR、または \fBuntil\fR 直後のコマンド
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB!\fR 直後のパイプラインに含まれる
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 15n
+.rt  
+パス名展開が無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB**\fR 単独でも、パス名展開時にすべてのサブディレクトリに一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 15n
+.rt  
+廃止。別名の構文を持つ各コマンドが、最初に検出されたときに検索済みの別名になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.RS 15n
+.rt  
+csh と同様に \fB!\fR 形式の履歴展開を有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 15n
+.rt  
+廃止されました。形式 \fIname\fR\fB=\fR\fIvalue\fR の引数はすべて削除され、コマンドの変数代入リストに配置されます。通常、変数代入はコマンド引数の前に指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 15n
+.rt  
+これを有効にすると、バックグラウンドジョブを個別のプロセスグループで実行し、完了時にメッセージを 1 行表示します。ジョブ制御をサポートするシステム上の対話型シェルでは、このモードはデフォルトで有効になっています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 15n
+.rt  
+コマンドを読み取り、構文エラーがないかチェックします。ただし、コマンドは実行しません。通常、コマンド呼び出し時に指定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR [\fIoption\fR]\fR
+.ad
+.RS 15n
+.rt  
+オプションを指定しない場合、オプションと現在の設定のリストが標準出力に書き込まれます。\fB+\fR を付けて呼び出された場合、シェルに再入力して設定を復元できる形式で、オプションが書き込まれます。このオプションを繰り返して、複数のオプションを有効または無効にすることができます。 
+.sp
+\fIoption\fR の値は、次のいずれかにする必要があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBallexport\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-a\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbgnice\fR\fR
+.ad
+.RS 15n
+.rt  
+バックグラウンドジョブをすべて低い優先度で実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbraceexpand\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-B\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBemacs\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBemacs\fR 編集モードを有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBerrexit\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-e\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBglobstar\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-G\fR と同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgmacs\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBgmacs\fR を有効または無効にします。\fBgmacs\fR 編集モードは、CTRL-T の処理を除いて \fBemacs\fR 編集モードと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhistexpand\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-H\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignoreeof\fR\fR
+.ad
+.RS 15n
+.rt  
+ファイルの終わりを検出しても対話型シェルは終了しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyword\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-k\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmarkdirs\fR \fR
+.ad
+.RS 15n
+.rt  
+ファイル名生成によって生成されるディレクトリ名には、すべて最後に \fB/\fR を付加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmonitor\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-m\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmultiline\fR\fR
+.ad
+.RS 15n
+.rt  
+ウィンドウ幅よりも長い行を編集するときに、複数の行を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoclobber\fR\fR
+.ad
+.RS 15n
+.rt  
+「\fB-C\fR」と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoexec\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-n\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoglob\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-f\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnolog\fR\fR
+.ad
+.RS 15n
+.rt  
+このオプションは無効です。下位互換性を確保するために用意されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnotify\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-b\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnounset\fR \fR
+.ad
+.RS 15n
+.rt  
+\fB-u\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpipefail\fR\fR
+.ad
+.RS 15n
+.rt  
+パイプラインのすべてのコンポーネントが完了するまで、パイプラインは完了しません。パイプラインの終了ステータスは、ゼロ以外の終了ステータスで最後に終了したコマンドの値になり、すべてのコマンドがゼロの終了ステータスを返す場合はゼロになります。\fB\fR\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivileged\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-p\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshowme\fR\fR
+.ad
+.RS 15n
+.rt  
+前に「;」が付く単純コマンドは、\fB-x\fR を有効にした場合と同様に追跡されますが、実行はされません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrackall\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-h\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-v\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvi\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBvi\fR 編集モードを有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBviraw\fR\fR
+.ad
+.RS 15n
+.rt  
+vi 編集モードを使用するときは、標準入力モードを使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxtrace\fR\fR
+.ad
+.RS 15n
+.rt  
+\fB-x\fR と同じです。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 15n
+.rt  
+特権モード。\fB-p\fR を無効にすると、実効ユーザー ID が実ユーザー ID に設定され、実効グループ ID が実グループ ID に設定されます。\fB-p\fR を有効にすると、実効ユーザー ID および実効グループ ID がシェル起動時の値に復元されます。実ユーザー ID と実効ユーザー ID が同じでないとき、または実グループ ID と実効グループ ID が同じでないときは、常に \fB-p\fR オプションは有効になります。\fB-p\fR が有効になっているときは、ユーザープロファイルは処理されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 15n
+.rt  
+制限されます。制限付きシェルを有効にします。このオプションは、いったん有効にすると設定を解除できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 15n
+.rt  
+定位置パラメータをソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 15n
+.rt  
+廃止。1 つのコマンドを読み取ってから終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.RS 15n
+.rt  
+有効にすると、未設定の変数を展開しようとするとエラーメッセージが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 15n
+.rt  
+冗長。読み取り時に入力を標準エラーに出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 15n
+.rt  
+実行トレース。すべての展開のあと、および \fBPS4\fR パラメータの展開値が付く実行の前に、各コマンドを表示します。
+.RE
+
+.sp
+.LP
+\fBksh\fR の \fBset\fR では、次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.LP
+指定された名前ごとに、\fBunset\fR は現在のシェル実行環境から変数または関数 (\fB-f\fR が指定されている場合) の設定を解除します。読み取り専用の変数は設定を解除できません。
+.sp
+.LP
+\fBksh\fR の \fBunset\fR には次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIname\fR が関数名を指している場合は、関数定義の設定を解除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIname\fR が参照の変数を指している場合は、参照される変数ではなく、変数 \fIname\fR の設定が解除されます。それ以外の場合、このオプションは \fB-v\fR オプションと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIname\fR が変数名を指している場合は、設定を解除して、環境から削除します。これはデフォルトの動作です。
+.RE
+
+.sp
+.LP
+\fBksh\fR の \fBunset\fR では、次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。すべての名前は正常に設定解除されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生したか、または 1 つ以上の \fIname\fR オペランドの設定を解除できませんでした。
+.RE
+
+.sp
+.LP
+\fBexport\fR は、名前で指定された各変数にエクスポート属性を設定します。これにより、あとで実行されるコマンドの環境に変数が配置されます。\fB=\fR\fIvalue\fR を指定した場合は、変数 \fIname\fR が \fIvalue\fR に設定されます。
+.sp
+.LP
+\fIname\fR を指定しない場合は、すべてのエクスポート済み変数の名前および値が標準出力に書き込まれます。
+.sp
+.LP
+引数でフィールド分割やパス名展開が実行されないように、\fBexport\fR は宣言コマンドとしてシェルに組み込まれています。チルド展開は値に対して行われます。
+.sp
+.LP
+\fBksh\fR の \fBexport\fR には次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 6n
+.rt  
+出力をシェルへの入力に使用可能な \fBexport\fR コマンドの形式にして、現在のエクスポートを再作成できるようにします。
+.RE
+
+.sp
+.LP
+\fBksh\fR の \fBexport\fR では、次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.LP
+このマニュアルページでは、1 つまたは 2 つの \fB+\fR (プラス符号) が先頭に付加されている \fBksh\fR(1) コマンドは、次のような特殊な処理を受けます。
+.RS +4
+.TP
+1.
+コマンドが完了しても、コマンドの直前の変数代入リストは依然として有効です。
+.RE
+.RS +4
+.TP
+2.
+入出力のリダイレクトは変数代入後に行われます。
+.RE
+.RS +4
+.TP
+3.
+エラーが発生すると、それを含むスクリプトは中止されます。
+.RE
+.RS +4
+.TP
+4.
+これらは有効な関数名ではありません。
+.RE
+.RS +4
+.TP
+5.
+変数代入形式で、\fB++\fR を先頭に持つコマンドに続くワードは、変数代入と同一の規則で展開されます。つまり、チルド置換は \fB=\fR 符号のあとに実行され、フィールド分割とファイル名生成は実行されません。
+.RE
+.SH 使用例
+.SS "csh"
+.sp
+.LP
+次の例では、\fB/bin\fR、\fB/usr/bin\fR、\fB/usr/sbin\fR、\fB/usr/ucb/bin\fR ディレクトリにあるファイルをその順番で検索するために、環境変数 \fBPATH\fR を設定しています。
+.sp
+.in +2
+.nf
+setenv PATH "/bin:/usr/bin:/usr/sbin:usr/ucb/bin"
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBread\fR(1), \fBsh\fR(1), \fBtypeset\fR(1), \fBattributes\fR(5), \fBenviron\fR(5)

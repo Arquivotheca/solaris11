@@ -1,0 +1,437 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH svcadm 1M "2011 年 3 月 31 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+svcadm \- サービスインスタンスの操作
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] enable [\fB-rst\fR] {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] disable [\fB-st\fR] {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] restart {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] refresh {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] clear {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] mark [\fB-It\fR] \fIinstance_state\fR 
+     {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] milestone [\fB-d\fR] \fImilestone_FMRI\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsvcadm\fR は、サービス管理機能 (\fBsmf\fR(5) を参照) 内で実行中のサービスに対するアクションの要求を発行します。サービスに対するアクションは、それに割り当てられているサービスリスタータエージェントによって実行されます。デフォルトのサービスリスタータは \fBsvc.startd\fR です (\fBsvc.startd\fR(1M) を参照)。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+アクションを詳細形式で標準出力に出力します。
+.RE
+
+.SH サブコマンド
+.SS "一般的な操作"
+.sp
+.LP
+次に示すサブコマンドは、サービスインスタンスの一般的な管理に使用されます。
+.sp
+.LP
+1 つ以上のオペランドを取るサブコマンドの場合、オペランドがサービスインスタンスではなくサービスを指定しており、かつそのサービスのインスタンスが 1 つだけ存在するときは、\fBsvcadm\fR はそのインスタンスを操作します。省略形の \fIFMRI\fR (障害管理リソース識別子) またはパターンが複数のサービスに一致する場合は、警告メッセージが表示され、そのオペランドは無視されます。\fBsmf\fR(5) を参照してください。
+.sp
+.LP
+サービスに複数のインスタンスが存在する場合、\fBsvcadm\fR はゼロ以外の終了ステータスを返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR \fB[\fR\fB-rst\fR\fB]\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+オペランドで指定されているサービスインスタンスを有効にします。割り当てられているリスタータは、各サービスインスタンスをオンライン状態にしようとします。このアクションには、サービスインスタンスの「general」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。
+.sp
+\fB-r\fR オプションが指定されている場合、\fBsvcadm\fR は各サービスインスタンスを有効にし、その依存関係を再帰的に有効にします。
+.sp
+\fB-s\fR オプションが指定されている場合、\fBsvcadm\fR は各サービスインスタンスを有効にしたあと、各サービスインスタンスが \fBonline\fR または \fBdegraded\fR 状態になるまで待ちます。管理者の操作なしではサービスがこれらの状態に到達できないと判定した場合、\fBsvcadm\fR は状態を待たずに戻ります。
+.sp
+\fB-t\fR オプションが指定されている場合、\fBsvcadm\fR は各サービスインスタンスを一時的に有効にします。一時的な有効はリブートまでに限り継続します。このアクションには、サービスインスタンスの「restarter_actions」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。デフォルトでは、\fBenable\fR はリブート後も永続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR [\fB-st\fR] {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+オペランドで指定されているサービスインスタンスを無効にします。割り当てられているリスタータは、各サービスインスタンスを無効状態にしようとします。このアクションには、サービスインスタンスの「general」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。
+.sp
+\fB-s\fR オプションが指定されている場合、\fBsvcadm\fR は各サービスインスタンスを無効にしたあと、各サービスインスタンスが無効状態になるまで待ちます。管理者の操作なしではサービスがこの状態に到達できないと判定した場合、\fBsvcadm\fR は状態を待たずに戻ります。
+.sp
+\fB-t\fR オプションが指定されている場合、\fBsvcadm\fR は各サービスインスタンスを一時的に無効にします。一時的な無効はリブートまでに限り継続します。このアクションには、サービスインスタンスの「restarter_actions」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。デフォルトでは、\fBdisable\fR はリブート後も永続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestart\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+オペランドで指定されているサービスインスタンスの再起動を要求します。このアクションには、サービスインスタンスの「restarter_actions」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。サービスの再起動は、ほとんどのリスタータではサービスの完全「停止」後の「起動」として実装されています。
+.sp
+このサブコマンドは、オンライン (online) 状態または機能低下 (degraded) 状態にあるサービスだけを再起動できます。それらの状態は、\fBsmf\fR(5) に定義されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+オペランドで指定されている各サービスインスタンスについて、サービスの実行中の構成のスナップショットを現在の構成の値で更新するよう、割り当てられているリスタータに要求します。これらの値の一部はすぐに有効になります (たとえば、依存関係の変更など)。その他の値は、次回のサービスの \fBrestart\fR まで有効になりません。詳細については、リスタータおよびサービスのドキュメントを参照してください。 
+.sp
+サービスが \fBsvc.startd\fR(1M) によって管理されている場合は、\fBrefresh\fR メソッドが存在していればそれが呼び出され、サービスに自身の構成を読み込み直すように要求します。その他のリスタータについては、リスタータのドキュメントを参照してください。
+.sp
+このアクションには、サービスインスタンスの「restarter_actions」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+オペランドで指定されている各サービスインスタンスについて、インスタンスが \fBmaintenance\fR 状態の場合は、割り当てられているリスタータにサービスが修復されたことを通知します。インスタンスが \fBdegraded\fR 状態の場合は、サービスを \fBonline\fR 状態にするよう、割り当てられているリスタータに要求します。このアクションには、サービスインスタンスの「restarter_actions」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。
+.RE
+
+.SS "例外的な操作"
+.sp
+.LP
+次に示すサブコマンドは、サービスの開発および一時的な管理操作に使用されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmark [\fR\fB-It\fR\fB]\fR \fIinstance_state\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+\fIinstance_state\fR が「maintenance」の場合、\fBsvcadm\fR は、オペランドで指定されている各サービスについて、サービスを \fBmaintenance\fR 状態にするよう、割り当てられているリスタータに要求します。各リスタータに対して実行されるアクションの詳細については、\fBsvc.startd\fR(1M) および \fBinetd\fR(1M) を参照してください。
+.sp
+\fIinstance_state\fR が「degraded」の場合、\fBsvcadm\fR は、オペランドで指定されているサービスのうちオンライン状態のものについて、サービスを \fBdegraded\fR 状態にするよう、サービスに割り当てられているリスタータに要求します。
+.sp
+\fB-I\fR オプションが指定されている場合、要求には「即時 (immediate)」としてフラグが設定されます。 
+.sp
+\fB-t\fR オプションは保守要求にのみ有効です。このオプションが指定されている場合、要求には「一時 (temporary)」としてフラグが設定され、その効果は次回のリブートまでに限り継続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone\fR [\fB-d\fR] \fImilestone_FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fImilestone_FMRI\fR がキーワード「none」の場合は、マスターリスタータ \fBsvc:/system/svc/restarter:default \fR を除くすべてのサービスが一時的に無効になります。
+.sp
+\fImilestone_FMRI\fR がキーワード「all」の場合は、すべてのサービスについて一時的な enable 要求および disable 要求が無効化されます。
+.sp
+\fImilestone_FMRI\fR が次のいずれかの場合:
+.sp
+.in +2
+.nf
+svc:/milestone/single-user:default
+svc:/milestone/multi-user:default
+svc:/milestone/multi-user-server:default
+.fi
+.in -2
+.sp
+
+指定されたサービスおよびそれが (直接または間接的に) 依存しているすべてのサービスについて、一時的な enable 要求および disable 要求が無効化されます。その他のサービスはすべて一時的に無効になります。
+.sp
+システムの現在のマイルストーンを milestone サブコマンドで変更する場合、システムの現在の実行レベルは変更されません。システムの実行レベルを変更するには、\fB/usr/sbin/init\fR を直接呼び出します。
+.sp
+このアクションには、\fBsvc:/system/svc/restarter:default\fR サービスインスタンスの「options_ovr」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。
+.sp
+\fB-d\fR オプションが指定されている場合は、要求されたマイルストーンへの変更がすぐに、前述のとおり実行されます。また、指定されたマイルストーンはデフォルトのブートマイルストーンとなり、リブート後も持続します。デフォルトのマイルストーンは、マスターリスタータ \fBsvc:/system/svc/restarter:default\fR の \fBoptions/milestone\fR プロパティーで定義されます。このプロパティーが存在しない場合、デフォルトは「all」です。このアクションには、\fBsvc:/system/svc/restarter:default\fR サービスインスタンスの「options」プロパティーグループを変更するためのアクセス権が必要です (\fBsmf_security\fR(5) を参照)。
+.RE
+
+.SS "オペランド"
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIFMRI\fR\fR
+.ad
+.RS 11n
+.rt  
+1 つまたは複数のインスタンスを指定する \fIFMRI\fR。インスタンス名を指定するか、サービス名の連続する部分を指定することにより、\fIFMRI\fR を省略形にすることもできます。たとえば、次のような \fIFMRI\fR を仮定します。
+.sp
+.in +2
+.nf
+svc:/network/smtp:sendmail
+.fi
+.in -2
+.sp
+
+この場合、次に示す省略形はすべて有効です。 
+.sp
+.in +2
+.nf
+sendmail 
+:sendmail 
+smtp 
+smtp:sendmail 
+network/smtp
+.fi
+.in -2
+.sp
+
+これに対し、次のものは無効です。
+.sp
+.in +2
+.nf
+mail
+network
+network/smt
+.fi
+.in -2
+.sp
+
+\fIFMRI\fR がサービスを指定している場合、コマンドはそのサービスのすべてのインスタンスに適用されます。\fIFMRI\fR の省略形は不安定なので、スクリプトやその他の長期に渡って使用するツールには使用しないでください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpattern\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBfnmatch\fR(5) で説明されている展開規則に従ってサービスインスタンスの \fIFMRI\fR と照合されるパターン。このパターンが「svc:」で始まっていない場合は、 「svc: /」が先頭に付加されます。
+.RE
+
+.sp
+.LP
+省略形の \fIFMRI\fR またはパターンが複数のサービスに一致する場合は、警告メッセージが表示され、そのオペランドは無視されます。
+.SH 使用例
+.LP
+\fB例 1 \fRサービスインスタンスの再起動
+.sp
+.LP
+次のコマンドは \fBNFS\fR サーバーを再起動します。デフォルトのサービスインスタンスの完全な \fIFMRI\fR は次のとおりです。 \fBsvc:/network/nfs/server:default\fR
+
+.sp
+.LP
+ただし、完全な \fIFMRI\fR を次のような省略形にすることもできます。
+
+.sp
+.in +2
+.nf
+# svcadm restart nfs/server
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR標準 HTTP サーバーの無効化
+.sp
+.LP
+次のコマンドは、省略形の \fIFMRI\fR を使用して標準 HTTP サーバーを無効にします。
+
+.sp
+.in +2
+.nf
+$ svcadm disable http
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRインスタンスおよびその依存インスタンスの有効化
+.sp
+.LP
+次のコマンドは、\fBfoo:bar\fR インスタンスおよびそれが依存しているすべてのインスタンスを有効にします。
+
+.sp
+.in +2
+.nf
+$ svcadm enable -r foo:bar
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRインスタンスの同期的な有効化
+.sp
+.LP
+次のコマンドは \fBfoo:bar\fR インスタンスを有効にします。インスタンスがオンラインになるまで、あるいはサービスがオンライン状態に到達できないと \fBsvcadm\fR が判定するまで、コマンドは戻りません。
+
+.sp
+.in +2
+.nf
+$ svcadm enable -s foo:bar
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR実行中のサービスの制限と復元
+.sp
+.LP
+次のコマンドは、実行中のサービスをシングルユーザーモードに制限します。
+
+.sp
+.in +2
+.nf
+# svcadm milestone milestone/single-user
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、実行中のサービスを復元します。
+
+.sp
+.in +2
+.nf
+# svcadm milestone all
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+致命的なエラーが発生しました。1 つ以上のエラーメッセージが標準エラーに表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBsvcadm\fR は、サービスインスタンス自体の問題により、待機中のサービスインスタンスが管理者の操作なしでは目的の状態に到達できないと判定しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBsvcadm\fR は、サービスの依存関係の問題により、待機中のサービスインスタンスが管理者の操作なしでは目的の状態に到達できないと判定しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+対話型出力は「不確実」です。呼び出しおよび非対話型出力は「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBsvcprop\fR(1), \fBsvcs\fR(1), \fBinetd\fR(1M), \fBinit\fR(1M), \fBsvccfg\fR(1M), \fBsvc.startd\fR(1M), \fBlibscf\fR(3LIB), \fBcontract\fR(4), \fBattributes\fR(5), \fBsmf\fR(5), \fBsmf_security\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBsvcadm\fR がサービスおよびその依存関係の状態の変化を待機する時間は、それらのメソッドのタイムアウトによって暗黙に制限されます。たとえば、サービスがデフォルトのリスタータを使用している場合、その start メソッドがハングアップすると、タイムアウトの期限が切れたときサービスは保守状態に移行します。すると \fBsvcadm\fR は、管理者の操作なしではこのサービスがオンライン状態に到達できないと判定します。
+.sp
+.LP
+ファイルに (直接または間接的に) 依存しているサービスを同期的に有効にしようとすると、そのファイルの入っているディレクトリを検索するために必要な特権を呼び出し元が持っていない場合は、依存関係が満たされていないことを示す終了ステータスで失敗する場合があります。この制限事項は、Solaris の将来のリリースでは取り除かれる可能性があります。

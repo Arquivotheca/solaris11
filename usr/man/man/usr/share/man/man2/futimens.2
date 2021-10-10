@@ -1,0 +1,252 @@
+'\" te
+.\" Copyright (c) 2008, IEEE and The Open Group. All Rights Reserved.
+.\" Portions Copyright (c) 2009, Sun Microsystems Inc. All Rights Reserved.
+.TH futimens 2 "1 Sep 2009" "SunOS 5.11" "System Calls"
+.SH NAME
+futimens, utimensat \- set file access and modification times
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/stat.h>
+
+\fBint\fR \fBfutimens\fR(\fBint\fR \fIfd\fR, \fBconst struct timespec\fR \fItimes\fR[2]);
+.fi
+
+.LP
+.nf
+\fBint\fR \fButimensat\fR(\fBint\fR \fIfd\fR, \fBconst char *\fR\fIpath\fR,
+     \fBconst struct timespec\fR \fItimes\fR[2], \fBint\fR \fIflag\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBfutimens()\fR and \fButimensat()\fR functions set the access and modification times of a file to the values of the \fItimes\fR argument. The \fBfutimens()\fR function changes the times of the file associated with the file descriptor \fIfd\fR. The \fButimensat()\fR function changes the times of the file pointed to by the path argument, relative to the directory associated with the file descriptor \fIfd\fR. Both functions allow time specifications accurate to the nanosecond.
+.sp
+.LP
+The \fItimes\fR argument is an array of two \fBtimespec\fR structures. The first array member represents the date and time of last access, and the second member represents the date and time of last modification. The times in the \fBtimespec\fR structure are measured in seconds and nanoseconds since the Epoch. The file's relevant timestamp is set to the greatest value supported by the file system that is not greater than the specified time.
+.sp
+.LP
+If the \fItv_nsec\fR field of a \fBtimespec\fR structure has the special value \fBUTIME_NOW\fR, the file's relevant timestamp is set to the greatest value supported by the file system that is not greater than the current time. If the \fItv_nsec\fR field has the special value \fBUTIME_OMIT\fR, the file's relevant timestamp is not changed. In either case, the \fItv_sec\fR field is ignored.
+.sp
+.LP
+If the times argument is a null pointer, both the access and modification timestamps are set to the greatest value supported by the file system that is not greater than the current time. If \fButimensat()\fR is passed a relative path in the path argument, the file to be used is relative to the directory associated with the file descriptor \fIfd\fR instead of the current working directory.
+.sp
+.LP
+If \fButimensat()\fR is passed the special value \fBAT_FDCWD\fR in the \fIfd\fR parameter, the current working directory is used.
+.sp
+.LP
+Only a process with the effective user ID equal to the user ID of the file, or with write access to the file, or with appropriate privileges may use \fBfutimens()\fR or \fButimensat()\fR with a null pointer as the times argument or with both \fItv_nsec\fR fields set to the special value \fBUTIME_NOW\fR. Only a process with the effective user ID equal to the user ID of the file or with appropriate privileges may use \fBfutimens()\fR or \fButimensat()\fR with a non-null times argument that does not have both \fItv_nsec\fR fields set to \fBUTIME_NOW\fR and does not have both \fItv_nsec\fR fields set to \fBUTIME_OMIT\fR. If both \fItv_nsec\fR fields are set to \fBUTIME_OMIT\fR, no ownership or permissions check is performed for the file, but other error conditions are still detected (including \fBEACCES\fR errors related to the path prefix).
+.sp
+.LP
+Values for the flag argument of \fButimensat()\fR are constructed by a bitwise-inclusive OR of flags from the following list, defined in \fB<fcntl.h>\fR:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAT_SYMLINK_NOFOLLOW\fR\fR
+.ad
+.sp .6
+.RS 4n
+If path names a symbolic link, then the access and modification times of the symbolic link are changed.
+.RE
+
+.sp
+.LP
+Upon completion, \fBfutimens()\fR and \fButimensat()\fR mark the last file status change timestamp for update.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, these functions return 0. Otherwise, these functions return -1 and set \fBerrno\fR to indicate the error. If -1 is returned, the file times are not affected.
+.SH ERRORS
+.sp
+.LP
+The \fBfutimens()\fR and \fButimensat()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 10n
+.rt  
+The times argument is a null pointer, or both \fItv_nsec\fR values are \fBUTIME_NOW\fR, and the effective user ID of the process does not match the owner of the file and write access is denied.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+Either of the times argument structures specified a \fItv_nsec\fR value that was neither \fBUTIME_NOW\fR nor \fBUTIME_OMIT\fR, and was a value less than zero or greater than or equal to 1000 million.
+.sp
+A new file timestamp would be a value whose \fItv_sec\fR component is not a value supported by the file system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEPERM\fR\fR
+.ad
+.RS 10n
+.rt  
+The times argument is not a null pointer, does not have both \fItv_nsec\fR fields set to \fBUTIME_NOW\fR, does not have both \fItv_nsec\fR fields set to \fBUTIME_OMIT\fR, the calling process' effective user ID has write access to the file but does not match the owner of the file, and the calling process does not have appropriate privileges.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEROFS\fR\fR
+.ad
+.RS 10n
+.rt  
+The file system containing the file is read-only.
+.RE
+
+.sp
+.LP
+The \fBfutimens()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 9n
+.rt  
+The \fIfd\fR argument is not a valid file descriptor.
+.RE
+
+.sp
+.LP
+The \fButimensat()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 16n
+.rt  
+The permissions of the directory underlying \fIfd\fR do not permit directory searches.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 16n
+.rt  
+The path argument does not specify an absolute path and the \fIfd\fR argument is neither \fBAT_FDCWD\fR nor a valid file descriptor open for reading.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOTDIR\fR\fR
+.ad
+.RS 16n
+.rt  
+The path argument is not an absolute path and \fIfd\fR is neither \fBAT_FDCWD\fR nor a file descriptor associated with a directory.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEACCES\fR\fR
+.ad
+.RS 16n
+.rt  
+Search permission is denied by a component of the path prefix.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBELOOP\fR\fR
+.ad
+.RS 16n
+.rt  
+Too many symbolic links were encountered during resolution of the path argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENAMETOOLONG\fR\fR
+.ad
+.RS 16n
+.rt  
+The length of the path argument exceeds {\fBPATH_MAX\fR} or a pathname component is longer than {\fBNAME_MAX\fR}.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOENT\fR\fR
+.ad
+.RS 16n
+.rt  
+A component of path does not name an existing file or path is an empty string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOTDIR\fR\fR
+.ad
+.RS 16n
+.rt  
+A component of the path prefix is not a directory, or the path argument contains at least one character that is not a slash (/) and ends with one or more trailing slash characters and the last pathname component names an existing file that is neither a directory nor a symbolic link to a directory.
+.RE
+
+.sp
+.LP
+The \fButimensat()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENAMETOOLONG\fR\fR
+.ad
+.RS 16n
+.rt  
+Path name resolution of a symbolic link produced an intermediate result with a length that exceeds {\fBPATH_MAX\fR}.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelAsync-Signal-Safe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBstat\fR(2), \fButime\fR(2), \fButimes\fR(2), \fBattributes\fR(5), \fBfsattr\fR(5)

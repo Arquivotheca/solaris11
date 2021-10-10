@@ -1,0 +1,139 @@
+#!/bin/ksh -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+
+. /lib/svc/share/smf_include.sh
+
+function error {
+	echo "$@" >&2
+	echo "$@" >/dev/console
+}
+
+function running_zones {
+	echo $(zoneadm list -p | nawk -F: \
+	    '{ if ($2 != "global") { print $2 } }')
+}
+
+function wait_for_zones {
+	typeset -i timeout=$1
+
+	while [ $timeout -gt 0 -a -n "$(running_zones)" ]; do
+		((timeout--))
+		sleep 1
+	done
+
+	if [ -z "$(running_zones)" ]; then
+		exit $SMF_EXIT_OK
+	fi
+}
+
+
+if [[ -z "$SMF_FMRI" ]]; then
+	echo "this script can only be invoked by smf(5)" >&2
+	exit $SMF_EXIT_ERR_NOSMF
+fi
+
+# Make sure working directory is / to prevent unmounting problems.
+cd /
+PATH=/usr/sbin:/usr/bin; export PATH
+
+case "$1" in
+'start')
+	egrep -vs '^#|^global:' /etc/zones/index || exit 0  # no local zones
+
+	#
+	# Boot the installed zones for which the "autoboot" zone property is
+	# set and invoke the sysboot hook for all other installed zones.
+	#
+	zones=""
+	for zone in $(zoneadm list -pi | nawk -F: '{
+			if ($3 == "installed") {
+				print $2
+			}
+		}'); do
+		zonecfg -z $zone info autoboot | grep "true" >/dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			[[ -z "$zones" ]] && echo "Booting zones:\c"
+			zones=yes
+			echo " $zone\c"
+			#
+			# zoneadmd puts itself into its own contract so
+			# this service will lose sight of it.  We don't
+			# support restart so it is OK for zoneadmd to
+			# to be in an orphaned contract.
+			#
+			zoneadm -z $zone boot &
+		else
+			zoneadm -z $zone sysboot &
+		fi
+	done
+
+	#
+	# Wait for all zoneadm processes to finish before allowing the
+	# start method to exit.
+	#
+	wait
+	[[ -n "$zones" ]] && echo .
+	;;
+
+'stop')
+	egrep -vs '^#|^global:' /etc/zones/index || exit 0  # no local zones
+	[[ -z $(running_zones) ]] && exit 0   # no zones running
+
+	svc_timeout=$2
+	shutdown_timeout=$((3 * $svc_timeout / 4))
+	halt_timeout=$((1 * $svc_timeout / 4))
+
+	echo "Shutting down zones (for up to ${shutdown_timeout}s): \c"
+	echo "$(running_zones)"
+
+	for zone in $(running_zones); do
+		zoneadm -z $zone shutdown &
+	done
+
+	wait_for_zones $((3 * $svc_timeout / 4))
+
+	error "One or more zones failed to shut down cleanly: $(running_zones)"
+
+	echo "Shutting down zones (for up to ${halt_timeout}s): \c"
+	echo "$(running_zones)"
+
+	for zone in $(running_zones); do
+		zoneadm -z $zone halt &
+	done
+
+	wait_for_zones $((1 * $svc_timeout / 4))
+
+	error "One or more zones failed to halt: $(running_zones)"
+
+	umountall -Z
+
+	exit $SMF_EXIT_ERR_FATAL
+	;;
+
+*)
+	echo "Usage: $0 { start | stop }"
+	exit $SMF_EXIT_ERR_CONFIG
+	;;
+esac
+exit $SMF_EXIT_OK

@@ -1,0 +1,520 @@
+'\" te
+.\" 版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利。
+.TH smf_method 5 "2009 年 5 月 20 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+smf_method \- 方法的服务管理框架约定
+.SH 描述
+.sp
+.LP
+在服务管理框架\fBsmf\fR(5) 中通过 \fBsvc.startd\fR(1M) 管理的服务类由符合简单 \fBfork\fR(2)-\fBexec\fR(2) 模型的应用程序组成。\fBsvc.startd\fR(1M) 主守护进程及其他重启程序支持 \fBfork\fR(2)-\fBexec\fR(2) 模型（可能带有附加功能）。\fBsvc.startd\fR(1M) 守护进程及其他重启程序需要按照本手册页中所述的约定激活、处理或检查服务实例的方法。
+.SS "调用格式"
+.sp
+.LP
+方法调用的格式不受约定的控制。在某些情况下，方法调用可能由守护进程或提供服务的其他二进制可执行文件的直接调用组成。对于使用可执行脚本或其他间接可执行文件的情况，约定建议采用以下格式：
+.sp
+.in +2
+.nf
+/path/to/method_executable abbr_method_name
+.fi
+.in -2
+
+.sp
+.LP
+该建议格式中使用的 \fIabbr_method_name\fR 是支持的方法，如 \fBstart\fR 或 \fBstop\fR。在相关重启程序页中提供了重启程序支持的方法集。\fBsvc.startd\fR(1M) 守护进程支持 \fBstart\fR、\fBstop\fR 和 \fBrefresh\fR 方法。
+.sp
+.LP
+除了本页中引用的方法之外，重启程序还可能会定义其他种类的方法。围绕此类扩展的约定将由重启程序定义，可能与此处给出的定义不同。
+.SS "环境变量"
+.sp
+.LP
+重启程序向方法提供了四个环境变量，这些变量用于确定调用方法的上下文。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+为其调用方法的实例的服务故障管理资源标识符 (Fault Management Resource Identifier, FMRI)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_METHOD\fR\fR
+.ad
+.sp .6
+.RS 4n
+所调用方法的完整名称，如 \fBstart\fR 或 \fBstop\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_RESTARTER\fR\fR
+.ad
+.sp .6
+.RS 4n
+调用方法的重启程序的服务 FMRI
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSMF_ZONENAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+正在其中运行方法的区域的名称。也可使用 \fBzonename\fR(1) 命令获取此名称。
+.RE
+
+.sp
+.LP
+在方法调用任何持久性进程之前，应从环境中删除这些变量。在下述包含文件中，为使用 Bourne 兼容 shell 脚本编写服务方法的服务作者提供了便利 shell 函数 \fBsmf_clear_env\fR。
+.sp
+.LP
+方法上下文可能会导致设置其他环境变量（如下文所述）。
+.SS "方法定义"
+.sp
+.LP
+方法至少由 \fBmethod\fR 类型的属性组中的三个属性定义。 
+.sp
+.LP
+这些属性包括：
+.sp
+.ne 2
+.mk
+.na
+\fBexec (\fIastring\fR)\fR
+.ad
+.RS 27n
+.rt  
+方法可执行字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtimeout_seconds (\fIcount\fR)\fR
+.ad
+.RS 27n
+.rt  
+方法超时之前所经过的秒数。有关更多详细信息，参见\fB超时\fR部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBtype (\fIastring\fR)\fR
+.ad
+.RS 27n
+.rt  
+方法类型。当前始终设置为 \fBmethod\fR。
+.RE
+
+.sp
+.LP
+要进一步完善方法的执行环境，可定义方法上下文。有关更多信息，参见\fB方法上下文\fR部分。
+.SS "方法标记"
+.sp
+.LP
+当重启程序 \fBsvc.startd\fR 在方法的 \fBexec\fR 字符串中定义一组标记时，将使用适当的值对这些标记进行分析和扩展。其他重启程序可能不支持方法标记。inet 服务 \fBinetd\fR(1M) 的委托重启程序不支持以下方法扩展。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%%\fR\fR
+.ad
+.sp .6
+.RS 4n
+%
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%r\fR\fR
+.ad
+.sp .6
+.RS 4n
+重启程序的名称，如 \fBsvc.startd\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%m\fR\fR
+.ad
+.sp .6
+.RS 4n
+所调用方法的完整名称，如 \fBstart\fR 或 \fBstop\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%s\fR\fR
+.ad
+.sp .6
+.RS 4n
+服务的名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%i\fR\fR
+.ad
+.sp .6
+.RS 4n
+实例的名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB%f\fR\fR
+.ad
+.sp .6
+.RS 4n
+实例的 FMRI
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%{prop[:,]}\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的值。\fBprop\fR 可能是以 \fB/\fR 分隔的属性 FMRI、属性组名称和属性名，也可能是 \fBapplication\fR 属性组中的属性名。这些值可以后跟 \fB,\fR（逗号）或 \fB:\fR（冒号）。使用分隔符（如果提供）分隔多个值。如果未提供分隔符，将使用空格。出现在字符串值中的以下 shell 元字符将用 \（反斜杠）引起来：
+.sp
+.in +2
+.nf
+; & ( ) | ^ < > newline space tab  \  " '
+.fi
+.in -2
+
+无效扩展会导致方法失败。
+.RE
+
+.sp
+.LP
+有两个显式标记可用来代替方法命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB:kill [-signal]\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的信号（缺省情况下为 \fBSIGTERM\fR）发送到主实例合同中的所有进程。始终返回 \fBSMF_EXIT_OK\fR。此标记应当用于替换常见的 \fBpkill\fR 调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB:是\fR\fR
+.ad
+.sp .6
+.RS 4n
+始终返回 \fBSMF_EXIT_OK\fR。此标记应当用于对重启程序是必需的但对特定服务是不必要的方法。
+.RE
+
+.SS "正在退出和退出状态"
+.sp
+.LP
+start 方法的必需行为是延迟退出，直到服务实例已经准备好应答请求或以其他方式工作。
+.sp
+.LP
+以下退出状态代码在 \fB<libscf.h>\fR 和 shell 支持文件中定义。
+.sp
+
+.sp
+.TS
+tab();
+lw(1.74i) lw(.9i) lw(2.86i) 
+lw(1.74i) lw(.9i) lw(2.86i) 
+.
+\fBSMF_EXIT_OK\fR\fB0\fRT{
+方法已退出，已成功执行其操作。
+T}
+\fBSMF_EXIT_ERR_FATAL\fR\fB95\fRT{
+方法出现致命性失败，必须通过管理干预才能恢复。
+T}
+\fBSMF_EXIT_ERR_CONFIG\fR\fB96\fRT{
+无法恢复的配置错误。返回此退出状态的常见情况是已启用的服务实例缺少必需的配置文件。
+T}
+\fBSMF_EXIT_ERR_NOSMF\fR\fB99\fRT{
+方法被错误地在 \fBsmf\fR(5) 工具外部调用。依赖于 \fBsmf\fR(5) 功能的服务应退出并显示此状态值。
+T}
+\fBSMF_EXIT_ERR_PERM\fR\fB100\fRT{
+方法所需的某种形式的权限（如文件访问、特权、授权或其他凭证）在调用时不可用。
+T}
+\fBSMF_EXIT_ERR_OTHER\fR\fBnon-zero\fRT{
+方法的任何非零退出状态均被视为未知错误。一系列未知错误可能会被重启程序或以重启程序的名义识别为故障。
+T}
+.TE
+
+.sp
+.LP
+利用精确的退出代码，使负责的重启程序可以将错误响应分类为间歇性的（值得执行重新启动）或永久性的（要求管理干预）。
+.SS "超时"
+.sp
+.LP
+每个方法都可以有以秒为单位指定的独立超时。特定超时的选择应基于对检测因不可响应性而导致的方法故障的站点预期。具有复制文件系统或其他故障转移资源的站点可选择延长缺省的方法超时。没有远程资源的站点也可以选择缩短超时。方法超时由 \fBtimeout_seconds\fR 属性指定。
+.sp
+.LP
+如果为方法指定 \fB0 timeout_seconds\fR，该属性将向重启程序声明服务没有超时。此设置不可取，但可用于确实需要它的服务。
+.sp
+.LP
+也接受 \fB-1 timeout_seconds\fR，但此指定已过时。
+.SS "Shell 编程支持"
+.sp
+.LP
+定义上述退出状态值的一组环境变量通过文件 \fB/lib/svc/share/smf_include.sh\fR 中的便利 shell 函数提供。此文件是 Bourne shell 脚本，可通过源运算符包含在任何 Bourne 兼容 shell 中。
+.sp
+.LP
+为帮助编写可充当 SMF 方法的脚本以及 \fB/etc/init.d\fR 脚本，提供了 \fBsmf_present()\fR shell 函数。如果 \fBsmf\fR(5) 工具不可用，\fBsmf_present()\fR 会返回非零退出状态。
+.sp
+.LP
+此类脚本的一个可能的结构如下所示：
+.sp
+.in +2
+.nf
+if smf_present; then
+      # Shell code to run application as managed service
+      ....
+
+      smf_clear_env
+else
+      # Shell code to run application as /etc/init.d script
+      ....
+fi
+.fi
+.in -2
+
+.sp
+.LP
+此示例显示了所提供的两个便利函数的用法。
+.SS "方法上下文"
+.sp
+.LP
+服务管理工具提供了一种常见机制，可用于设置在其中执行 \fBfork\fR(2)-\fBexec\fR(2) 模型服务的上下文。
+.sp
+.LP
+所需的方法上下文应由服务开发者提供。所有服务实例都应尽可能地以最低权限级别运行，以限制潜在的安全危害。
+.sp
+.LP
+方法上下文可包含以下属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuse_profile\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个布尔值，指定是否应使用配置文件来代替 \fBuser\fR、\fBgroup\fR、\fBprivileges\fR 和 \fBlimit_privileges\fR 属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB环境\fR
+.ad
+.sp .6
+.RS 4n
+要以一种包含多个 \fBNAME=value\fR 字符串的形式插入方法所在环境的环境变量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofile\fR\fR
+.ad
+.sp .6
+.RS 4n
+RBAC（Role-Based Access Control，基于角色的访问控制）配置文件的名称，该配置文件与方法可执行文件一起用于标识 \fBexec_attr\fR(4) 中的条目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+数字或文本形式的用户 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+数字或文本形式的组 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsupp_groups\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个可选字符串，按数字或文本形式的 ID 指定补充组成员资格。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivileges\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个可选字符串，指定 \fBprivileges\fR(5) 中所定义的权限集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlimit_privileges\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个可选字符串，指定 \fBprivileges\fR(5) 中所定义的限制权限集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBworking_directory\fR\fR
+.ad
+.sp .6
+.RS 4n
+从中启动方法的起始目录。可将 \fB:home\fR 用作一个标记，指示使用其 \fBuid\fR 启动方法的用户的起始目录。如果未设置该属性，将使用 \fB:home\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcorefile_pattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+一个可选字符串，按照 \fBcoreadm\fR(1M) 指定要用于服务的核心文件模式。多数重启程序都提供了缺省值。设置此属性会覆盖全局核心模式的本地定制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproject\fR\fR
+.ad
+.sp .6
+.RS 4n
+数字或文本形式的项目 ID。可将 \fB:default\fR 用作一个标记，为使用其 \fBuid\fR 启动方法的用户指示由 \fBgetdefaultproj\fR(3PROJECT)标识的项目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBresource_pool\fR\fR
+.ad
+.sp .6
+.RS 4n
+启动方法的资源池的名称。可将 \fB:default\fR 用作一个标记，指示在上述 \fBproject\fR 属性中给出的 \fBproject\fR(4) 条目中所指定的池。
+.RE
+
+.sp
+.LP
+通过为服务或实例指定 \fBmethod_context\fR 属性组，可为整个服务实例设置方法上下文。通过在方法属性组上提供方法上下文属性，方法可能会覆盖实例方法上下文。
+.sp
+.LP
+无效方法上下文设置始终会导致方法失败，但导致发出警告的无效环境变量除外。
+.sp
+.LP
+除了上述定义的上下文之外，许多 \fBfork\fR(2)-\fBexec\fR(2) 模型重启程序在作为方法调用可执行文件时还使用以下约定：
+.sp
+.ne 2
+.mk
+.na
+\fB参数数组\fR
+.ad
+.sp .6
+.RS 4n
+\fBargv[]\fR 中参数的设置与 \fBexec\fR 字符串的结果\fB/bin/sh -c\fR 一致。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB文件描述符\fR
+.ad
+.sp .6
+.RS 4n
+文件描述符 \fB0\fR 为 \fB/dev/null\fR。文件描述符 \fB1\fR 和 \fB2\fR 建议为基于服务日志文件。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/svc/share/smf_include.sh\fR\fR
+.ad
+.sp .6
+.RS 4n
+退出状态值的定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/libscf.h\fR\fR
+.ad
+.sp .6
+.RS 4n
+退出状态代码的定义。
+.RE
+
+.SH 另请参见
+.sp
+.LP
+\fBzonename\fR(1)、\fBcoreadm\fR(1M)、\fBinetd\fR(1M)、\fBsvccfg\fR(1M)、\fBsvc.startd\fR(1M)、\fBexec\fR(2)、\fBfork\fR(2)、\fBgetdefaultproj\fR(3PROJECT)、\fBexec_attr\fR(4)、\fBproject\fR(4)、\fBservice_bundle\fR(4)、\fBattributes\fR(5)、\fBprivileges\fR(5)、\fBrbac\fR(5)、\fBsmf\fR(5)、\fBsmf_bootstrap\fR(5)、\fBzones\fR(5)
+.SH 附注
+.sp
+.LP
+\fBsmf\fR(5) 的现有版本不支持多个系统信息库。
+.sp
+.LP
+当服务配置为以 root 身份但以不同于 \fBlimit_privileges\fR 的权限启动时，所生成的进程可识别权限。这可能会出乎开发者的意料，他们本以为 \fBseteuid(<非零 UID>)\fR 能够将权限降为基本或更低的级别。 

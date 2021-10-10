@@ -1,0 +1,594 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH truss 1 "2011 年 6 月 7 日" "SunOS 5.11" "用户命令"
+.SH 名称
+truss \- 跟踪系统调用和信号
+.SH 用法概要
+.LP
+.nf
+\fBtruss\fR [\fB-fcaeildDE\fR] [\fB-\fR [tTvx] [!] \fIsyscall\fR ,...] 
+     [\fB-\fR [sS] [!] \fIsignal\fR ,...] [\fB-\fR [mM] [!] \fIfault\fR ,...] 
+     [\fB-\fR [rw] [!] \fIfd\fR ,...] 
+     [\fB-\fR [uU] [!] \fIlib\fR ,... : [:] [!] \fIfunc\fR ,...] 
+     [\fB-o\fR \fIoutfile\fR] \fIcommand\fR | \fB-p\fR \fIpid\fR[\fI/lwps\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBtruss\fR 实用程序执行指定的命令并跟踪记录其执行的系统调用、其收到的信号以及其引发的计算机故障。跟踪输出的每一行都会报告故障或信号名称，或者系统调用名及其参数和返回值。如果可以，将使用相关系统头中的定义通过符号方式显示系统调用参数。对于任何路径名指针参数，将显示指向字符串。使用 \fBIntro\fR(3) 中介绍的错误代码名称报告返回的错误。在出错情况下，如果内核报告缺少特权，则在错误代码名称后在方括号 (\fB[ ]\fR) 中报告\fBprivileges\fR(5) 中介绍的特权名称。有关错误报告的更多信息，请参见"附注"\fB\fR。
+.sp
+.LP
+某些情况下（请参见 \fB-u\fR 选项），\fBtruss\fR 还将记录由受跟踪进程执行的用户级函数调用的进入/退出，以缩进形式表示嵌套。
+.SH 选项
+.sp
+.LP
+对于具有列表参数的选项，名称 \fBall\fR 可用作指定列表所有可能成员的快速方法。如果列表以 \fB!\fR 开头，则该选项的含义是否定的（如，排除而不是跟踪）。可以指定同一选项多次出现。对于列表中的相同名称，后续选项（右侧选项）将覆盖之前的选项（左侧选项）。
+.sp
+.LP
+支持下列选项： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示在各个 \fBexec()\fR 系统调用中传递的参数字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+对跟踪的系统调用、故障和信号计数，而不是逐行显示跟踪。跟踪的命令终止后或 \fBtruss\fR 被中断时，将生成汇总报告。如果还指定了 \fB-f\fR，则计数将包括子进程的所有受跟踪系统调用、故障和信号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+在跟踪输出的每一行上包含时间戳。时间戳作为一个包含 \fIseconds\fR\|.\|\fI fraction\fR 的字段显示在行开头。这表示相对于跟踪开始的时间，以秒为单位。跟踪输出的第一行显示单个时间戳开始测量的基准时间，可以是从某个时间点以来的秒数（请参见 \fBtime\fR(2)），也可以是日期字符串（请参见 \fBctime\fR(3C) 和 \fBdate\fR(1)）。报告的时间是正在谈及的事件发生的时间。对于所有系统共调用，事件是系统调用的完成，而不是系统调用的开始。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+在跟踪输出的每一行上包含时间增量。该值显示为一个包含 \fIseconds\fR\|.\|\fI fraction\fR 的字段，表示自引发该事件的 \fBLWP\fR 引发上一个报告的事件以来该 \fBLWP\fR 的已用时间。特别是，对于系统调用，这不是在系统调用内花费的时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示在各个 \fBexec()\fR 系统调用中传递的环境字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.sp .6
+.RS 4n
+在跟踪输出的每一行上包含时间增量。该值显示为一个包含 \fIseconds\fR\fB\&.\fR\fI fraction\fR 的字段，表示系统调用开始与结束之间所用的时间。 
+.sp
+与 \fB-D\fR 选项相反，这是在系统调用内花费的时间量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+跟随 \fBfork()\fR 或 \fBvfork()\fR 创建的所有子项并在跟踪输出中包含其信号、故障和系统调用。通常，仅跟踪第一级命令或进程。如果指定了 \fB-f\fR，进程 ID 将包含在跟踪输出的各个行中，以指示哪个进程执行了系统调用或接收了信号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+不会显示可中断的休眠系统调用。某些系统调用（如终端设备或管道上的 \fBopen()\fR 和 \fBread()\fR）可以无限期休眠，并可中断。\fBtruss\fR 通常会在此类休眠系统调用保持休眠状态超过一秒时报告这些系统调用。系统调用在完成后会再次进行报告。\fB-i\fR 选项将使此类系统调用仅在完成时报告一次。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+在跟踪输出的各个行中包含负责轻量级进程 (lightweight process, \fILWP\fR) 的 ID。如果还指定了 \fB-f\fR，进程 ID 和 LWP ID 均会包含在内。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR [\fB!\fR]\fIfault\fR,... \fR
+.ad
+.sp .6
+.RS 4n
+要跟踪或排除的计算机故障。将跟踪在以逗号分隔的列表中指定的那些故障跟踪。故障可以按名称或编号进行指定（请参见 \fB<sys/fault.h>\fR）。 如果列表以 \fB!\fR 开头，将从跟踪输出中排除指定的故障。缺省值为 \fB-mall\fR \fB-m\fR \fB!fltpage\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR [\fB!\fR]\fIfault\fR,... \fR
+.ad
+.sp .6
+.RS 4n
+停止进程的计算机故障。将指定的故障添加至 \fB-m\fR 指定的集合中。 如果引发指定的故障之一，则 \fBtruss\fR 将保留该进程处于停止和弃用状态（请参见 \fB-T\fR 选项）。缺省值是 \fB\fR\fB-M\fR\fB!all\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \ \fIoutfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+要用于跟踪输出的文件。缺省情况下，输出为标准错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fBtruss\fR 的 \fIcommand\fR 参数解释为现有进程的进程 ID 列表（请参见 \fBps\fR(1)），而不是要执行的命令。\fBtruss\fR 控制各个进程，并在进程的用户 ID 和组 ID 与该用户的用户 ID 和组 ID 匹配或该用户是特权用户时，开始对该进程进行跟踪。用户可以通过将 \fB/\fR\fIthread-id\fR 附加到进程 ID 来仅跟踪选定的线程。使用 \fB-\fR 和 \fB ,\fR 分界符可以选定多个线程。例如，\fB/1,2,7-9\fR 将跟踪线程\fB 1\fR、\fB2\fR、\fB7\fR、\fB8\fR 以及 \fB9\fR。 也可在目录 \fB/proc\fR 中使用进程名指定进程，例如 \fB/proc/12345\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR [\fB!\fR]\fIfd\fR,... \fR
+.ad
+.sp .6
+.RS 4n
+显示任一指定文件描述符上每个 \fBread()\fR 的 \fBI/O\fR 缓冲区的完整内容。输出格式化为每行 32 字节，其中各个字节显示为 \fBASCII\fR 字符（前面留有一个空白）或双字符 C 语言转义序列，以便控制诸如水平制表符 (\|\e\|t) 和新行 (\|\e\|n) 等的字符。 如果不能进行 \fBASCII\fR 解释，则字节将采用双字符十六进制表示。（每个受跟踪 \fB print >read()\fR 的 \fBI/O\fR 缓冲区的前 12 个字节即使在没有 \fB-r\fR 的情况下也会显示。） 缺省值是 \fB\fR\fB-r\fR\fB!all\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR [\fB!\fR]\fIsignal\fR,... \fR
+.ad
+.sp .6
+.RS 4n
+要跟踪或排除的信号。将跟踪在逗号分隔的列表中指定的那些信号。跟踪输出将报告各个指定信号的接收情况，即使该信号受到忽略（未阻塞）。（不会收到阻塞的信号，直至将其解除阻塞。）信号可以按名称或编号进行指定（请参见 \fB<sys/signal.h>\fR）。 如果列表以 \fB!\fR 开头，将从跟踪输出中排除指定的信号。缺省值是 \fB-sall\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR [\fB!\fR]\fIsignal\fR,... \fR
+.ad
+.sp .6
+.RS 4n
+停止进程的信号。将指定的信号添加至 \fB-s\fR 指定的集合中。 如果收到一个指定信号，则 \fBtruss\fR 将保留该进程处于停止和弃用状态（请参见 \fB-T\fR 选项）。缺省值是 \fB\fR\fB-S\fR\fB !all\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [\fB!\fR]\fIsyscall \fR,...\fR
+.ad
+.sp .6
+.RS 4n
+要跟踪或排除的系统调用。将跟踪在逗号分隔的列表中指定的这些系统调用。如果列表以 \fB!\fR 开头，则指定的系统调用将从跟踪输出中排除。缺省值是 \fB-tall\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR [\fB!\fR]\fIsyscall \fR,...\fR
+.ad
+.sp .6
+.RS 4n
+指定停止进程的系统调用。将指定的系统调用添加至 \fB-t\fR 指定的集合中。 如果遇到指定的系统调用之一，\fBtruss\fR 将保留该进程处于停止和弃用状态。即，\fBtruss\fR 将释放该进程并退出，但在涉及的系统调用完成时保留该进程处于停止状态。然后，可以向该停止的进程应用调试程序或其他进程检查工具（请参见 \fBproc\fR(1)）。可将具有相同或不同选项的 \fBtruss\fR 重新应用于该停止的进程以继续跟踪。缺省值是 \fB\fR\fB-T\fR\fB!all\fR。
+.sp
+以此种方式保持停止状态的进程无法通过应用 \fBkill\fR \fB-CONT\fR 重新启动，因为它是通过 \fB/proc\fR 基于特定事件停止的，而不是由停止信号的缺省操作停止的（请参见 \fBsignal.h\fR(3HEAD)）。 \fBprun\fR(1) 命令（\fBproc\fR(1) 中有述）可用于将已停止进程设置为再次运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR [\fB!\fR]\fIlib\fR,...\fB :\fR[\fB:\fR][\fB!\fR]\fIfunc\fR,\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+用户级函数调用跟踪。\fIlib\fR,\|.\|.\|. 是动态库名的逗号分隔列表，不包括 "\fB\&.so.\fR\fIn\fR" 前缀。\fIfunc\fR,\|.\|.\|. 是函数名的逗号分隔列表。在两种情况下，名称都可以包括名称匹配元字符 \fB*\fR,\fB?\fR,\fB[]\fR，它们与 \fBsh\fR(1) 的那些元字符具有相同意义，但是它们应用于库/函数名称空间，而不是文件。空库或函数列表的缺省设置是 \fB*\fR，跟踪库中所有库或函数。两个列表中任一个上出现前导 \fB!\fR 将指定不受跟踪的排除列表、库或函数的名称。排除一个库将排除该库中的所有函数；库排除列表后的任何函数列表都将被忽略。
+.sp
+单 \fB:\fR 可以分离库列表与函数列表，意味着跟踪从库外到库内的调用，但忽略库中其他函数对同一库中函数的调用。双 \fB:\|:\fR 意味着跟踪所有调用，而不管来源。
+.sp
+库模式与可执行文件或动态链接程序均不匹配，除非存在确切匹配（\fBl*\fR 与 \fBld.so.1\fR 不匹配）。 要跟踪这些对象中的函数，必须准确指定名称，如：
+.sp
+.in +2
+.nf
+\fBtruss -u a.out -u ld ...\fR
+.fi
+.in -2
+.sp
+
+\fBa.out\fR 是用于实现此目的文字名称；其不代表可执行文件的名称。跟踪 \fBa.out\fR 函数调用意指所有调用（缺省值是 \fB::\fR）。
+.sp
+可以指定多个 \fB-u\fR 选项，其遵循自左向右的顺序。执行函数调用的线程的 ID 包含在该调用的跟踪输出中。\fBtruss\fR 将搜索每个库中的动态符号表以查找函数名，还将搜索标准符号表（如果其未被剥离）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR [\fB!\fR]\fIlib\fR,\|.\|.\|.\|\fB :\fR[\fB:\fR][\fB!\fR]\fIfunc\fR,\|.\|.\|.\fR
+.ad
+.sp .6
+.RS 4n
+停止进程的用户级函数调用。将指定的函数添加至 \fB-u\fR 指定的集合中。 如果调用指定的函数之一，则 \fBtruss\fR 将保留该进程处于停止和弃用状态（请参见 \fB-T\fR 选项）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR [\fB!\fR]\fIsyscall \fR,...\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。显示按地址传递至指定系统调用（如果由 \fB-t\fR 跟踪）的任何结构的内容。 将显示输入值以及由操作系统返回的值。对于用作输入和输出的任何字段，仅显示输出值。缺省值是 \fB\fR\fB-v\fR\fB!all\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR [\fB!\fR]\fIfd\fR,... \fR
+.ad
+.sp .6
+.RS 4n
+显示任一指定文件描述符上每个 \fBwrite()\fR 的 I/O 缓冲区的内容（请参见 \fB-r\fR 选项）。缺省值是 \fB\fR\fB-w\fR\fB!all\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR [\fB!\fR]\fIsyscall \fR,...\fR
+.ad
+.sp .6
+.RS 4n
+以原始格式（通常为十六进制）而不是符号方式显示指定系统调用（如果由 \fB-t\fR 跟踪）的参数。 有些技术高手希望看到原始位。缺省值是 \fB\fR\fB-x\fR\fB!all\fR。
+.RE
+
+.sp
+.LP
+有关 \fB-t\fR、\fB-T\fR、\fB-v\fR 和 \fB-x\fR 接受的系统调用名称，请参见\fI《man pages section 2: System Calls》\fR。系统调用编号也会被接受。
+.sp
+.LP
+如果使用 \fBtruss\fR 初始化并跟踪指定的命令且使用了 \fB-o\fR 选项，或者如果将标准错误输出重定向至非终端文件，则 \fBtruss\fR 在运行中将忽略挂起、中断和退出信号。这将简化对从终端捕捉中断和退出信号的交互式程序的跟踪。
+.sp
+.LP
+如果跟踪输出保持定向至终端，或者如果现有进程受到跟踪（\fB-p\fR 选项），则 \fBtruss\fR 将通过释放所有受跟踪的进程并退出来响应挂起、终端和退出信号。这使得用户能够终止过多的跟踪输出并释放之前就存在的进程。释放的进程将正常继续运行，好像从未被碰过一样。
+.sp
+.LP
+跟踪现有进程时，truss 将在退出时释放这些进程并将其设置为运行状态。其中包括由于信号导致的退出，如 \fBSIGINT\fR、\fBSIGHUP\fR 或 \fBSIGQUIT\fR。这使得用户能够终止过多的跟踪输出并释放之前就存在的进程。释放的进程将正常继续运行，好像从未被碰过一样。
+.SH 示例
+.LP
+\fB示例 1 \fR跟踪命令
+.sp
+.LP
+以下示例将跟踪记录终端上的 \fBfind\fR(1) 命令：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss find . -print >find.out\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR跟踪常见系统调用
+.sp
+.LP
+以下示例仅显示了打开、关闭、读取和写入系统调用的跟踪记录：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -t open,close,read,write find . -print >find.out\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR跟踪 Shell 脚本
+.sp
+.LP
+以下示例将跟踪记录文件 \fBtruss.out\fR 上的 \fBspell\fR(1) 命令：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -f -o truss.out spell \fIdocument\fR\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBspell\fR 是一个 shell 脚本，因此需要 \fB-f\fR 标志以跟踪 shell 以及由此 shell 创建的进程。 （该 spell 脚本将运行一个八进程的流水线。）
+
+.LP
+\fB示例 4 \fR缩短输出
+.sp
+.LP
+以下示例将缩短输出：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss nroff -mm \fIdocument\fR >nroff.out\fR 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+因为 97% 的输出报告 \fBlseek()\fR、\fBread ()\fR和 \fBwrite()\fR 系统调用。要缩短输出：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -t !lseek,read,write nroff -mm \fIdocument\fR >nroff.out\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR跟踪来自 C 库外部的库调用
+.sp
+.LP
+以下示例将跟踪从 C 库外部对 C 库内任意函数进行的所有用户级调用：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -u libc ...\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR跟踪来自 C 库内部的库调用
+.sp
+.LP
+以下示例包括从 C 库自身内对 C 库中函数进行的调用：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -u libc:: ...\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR跟踪非 C 库的库调用
+.sp
+.LP
+以下示例将跟踪对除 C 库以外的任意库进行的所有用户级调用：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -u '*' -u !libc ...\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR跟踪 \fBprintf\fR 和 \fBscanf\fR 函数调用
+.sp
+.LP
+以下示例将跟踪对 C 库内所含 printf 和 scanf 系列中的函数进行的所有用户级调用：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -u 'libc:*printf,*scanf' ...\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR跟踪每个用户级函数调用
+.sp
+.LP
+以下示例将跟踪从任意位置到任意位置的每个用户级函数调用：
+
+.sp
+.in +2
+.nf
+example$ \fBtruss -u a.out -u ld:: -u :: ...\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR详细跟踪系统调用
+.sp
+.LP
+以下示例将详细跟踪进程 #1 \fBinit\fR(1M) 的系统调用活动（如果您是特权用户）：
+
+.sp
+.in +2
+.nf
+example# \fBtruss -p -v all 1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+中断 \fBtruss\fR 会将 \fBinit\fR 返回至正常运行状态。
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR\fR
+.ad
+.RS 11n
+.rt  
+进程文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdate\fR(1)、\fBfind\fR(1)、\fBproc\fR(1)、\fBps\fR(1)、\fBsh\fR(1)、\fBspell\fR(1)、\fBinit\fR(1M)、\fBIntro\fR(3)、\fBexec\fR(2)、\fBfork\fR(2)、\fBlseek\fR(2)、\fBopen\fR(2)、\fBread\fR(2)、\fBtime\fR(2)、\fBvfork\fR(2)、\fBwrite\fR(2)、\fBctime\fR(3C)、\fBsignal.h\fR(3HEAD)、\fBproc\fR(4)、\fBattributes\fR(5)、\fBmwac\fR(5)、\fBprivileges\fR(5)、\fBthreads\fR(5)
+.sp
+.LP
+\fI《man pages section 2: System Calls》\fR
+.SH 附注
+.sp
+.LP
+\fI《man pages section 2: System Calls》\fR中描述的一些系统调用与实际操作系统界面不同。请勿对与该文档中描述的跟踪输出之间的微小差异表示惊讶。
+.sp
+.LP
+每个计算机故障（缺页除外）都会向引发该故障的 \fBLWP\fR 发送信号。已接收信号的报告紧跟在每个计算机故障（缺页除外）报告后，除非该信号被阻塞。
+.sp
+.LP
+操作系统将对进程跟踪强制执行某些安全限制。尤其是，如果任何命令的对象文件 (\fBa.out\fR) 不能由用户读取，则该用户无法跟踪此命令；set-uid 和 set-gid 命令只可由特权用户进行跟踪。除非由特权用户运行，否则 \fBtruss\fR 将无法控制执行 set-id 或不可读对象文件的 \fBexec()\fR 的任何进程；此类进程将继续从 \fBexec()\fR 的点继续正常运行，但与 \fBtruss\fR 无关。
+.sp
+.LP
+为避免与其他控制进程冲突，如果通过 \fB/proc\fR 接口检测到某个进程正在由另一个进程控制，则 \fBtruss\fR 不会跟踪该进程。这使得 \fBtruss\fR 可以应用于基于 \fBproc\fR(4) 的调试器以及它自身的其他实例。
+.sp
+.LP
+假设标准制表停止位置已设置的情况下（每八个位置），跟踪输出将包含制表符。
+.sp
+.LP
+多个进程或多线程进程（包含多个 \fBLWP\fR 的进程）的跟踪输出不会按严格的时间顺序生成。例如，某个管道上的 \fBread()\fR 可能在对应的 \fBwrite()\fR 之前报告。 对于任何一个 \fBLWP\fR（传统进程只包含一个），输出将严格按照时间顺序生成。
+.sp
+.LP
+跟踪多个进程时，\fBtruss\fR 将作为每个受跟踪进程的一个控制进程运行。对于上述 \fBspell\fR 命令的示例，\fBspell\fR 自身将使用 9 个进程槽，一个用于该 shell，8 个用于包含 8 个成员的流水线，同时 \fBtruss\fR 会添加另外 9 个进程，所以总共是 18 个。
+.sp
+.LP
+并非所有可能系统调用中传递的所有可能结构都会显示在 \fB-v\fR 选项之下。
+.sp
+.LP
+当 \fBtruss\fR 报告由于缺少特权导致系统调用返回错误时，truss 在错误代码后显示简单的特权名称，或复杂的特权描述。请参见 \fBprivileges\fR(5)。该复杂的描述可以由以下内容组成：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[ALL]\fR\fR
+.ad
+.RS 14n
+.rt  
+对于请求的操作，此进程需要所有特权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[MULTIPLE]\fR\fR
+.ad
+.RS 14n
+.rt  
+此进程缺少多个特权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[ZONE]\fR\fR
+.ad
+.RS 14n
+.rt  
+此进程缺少区域中的可用特权之一（\fBALL\fR 的区域本地变体）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[GLOBAL]\fR\fR
+.ad
+.RS 14n
+.rt  
+请求的操作要求进程在全局区域中运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[MWAC]\fR\fR
+.ad
+.RS 14n
+.rt  
+请求的操作违反适用于进程的 \fBmwac\fR(5) 策略。
+.RE
+

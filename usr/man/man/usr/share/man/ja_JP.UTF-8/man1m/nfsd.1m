@@ -1,0 +1,366 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH nfsd 1M "2011 年 6 月 25 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+nfsd \- NFS デーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/nfs/nfsd\fR [\fB-a\fR] [\fB-c\fR \fI#_conn\fR] [\fB-l\fR \fIlisten_backlog\fR] 
+     [\fB-p\fR \fIprotocol\fR] [\fB-t\fR \fIdevice\fR] [\fInservers\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnfsd\fR は、クライアントファイルシステムの要求を処理するデーモンです。\fB{PRIV_SYS_NFS}\fR および \fB/var/run\fR に書き込めるだけの十分な特権を備えたユーザーだけが、このデーモンを実行できます。 
+.sp
+.LP
+\fBnfsd\fR デーモンは、\fBshare\fR(1M) および \fB-a\fR オプションを使用して自動的に呼び出されます。
+.sp
+.LP
+バージョン 2 および 3 の場合、デフォルトでは、\fBnfsd\fR は TCP および UDP トランスポート経由で起動します。バージョン 4 の場合、デフォルトでは TCP 経由で起動します。これは、\fB-p\fR オプションを使用すると変更できます。
+.sp
+.LP
+以前に呼び出された \fBnfsd\fR デーモンは、オプション指定の有無にかかわらず、別の \fBnfsd\fR コマンドを呼び出す前に停止する必要があります。
+.sp
+.LP
+\fBnfsd\fR の起動パラメータを変更するには、\fBsharectl\fR(1M) コマンドを使用します。
+.SS "SMF による管理"
+.sp
+.LP
+\fBnfsd\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/network/nfs/server
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+\fBnfsd\fR が \fBSIGTERM\fR により強制終了された場合は、サービス管理機能によって再起動されることはありません。代わりに、\fBSIGINT\fR などのほかのシグナルを使って \fBnfsd \fR を再起動できます。
+.sp
+.LP
+\fBsharectl\fR(1M) コマンドを使用すると、\fBnfsd\fR 関連のすべてのパラメータを管理できます。現在サポートされているパラメータを次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserver_versmax\fR=\fInum\fR\fR
+.ad
+.br
+.na
+\fB\fBserver_versmin\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS サーバーは、これらの変数で指定された範囲の NFS バージョンのみを使用します。有効な値 (バージョン) は、\fB2\fR、\fB 3\fR、\fB4\fR です。これらのパラメータのいずれかまたは両方が未設定の場合、デフォルトの最小バージョンは \fB2\fR、デフォルトの最大バージョンは \fB4\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserver_delegation\fR=\fBon\fR | \fB off\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトでは、この変数は \fBon\fR で、NFS サーバーはクライアントに委託を付与します。ユーザーは、この変数を \fBoff\fR (大文字と小文字は区別される) に設定することにより、エクスポートされたすべてのファイルシステムで委託を無効にできます。この変数は、NFS Version 4 にのみ適用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_connections\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+並行する接続型接続の最大数を設定します。デフォルトは無制限で、\fB-1\fR に設定することで得られます。これは \fBnfsd\fR の \fB-c\fR オプションと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlisten_backlog\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+接続型トランスポートを介した NFS の接続キューの長さを設定します。デフォルト値は \fB32\fR で、これはキュー内に 32 個のエントリがあることを意味します。これは \fBnfsd\fR の \fB-l\fR オプションと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprotocol\fR=\fBALL\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したプロトコルのみを介して \fBnfsd\fR を起動します。これは、\fBnfsd\fR の -p オプションと同等です。\fBALL\fR は、\fBnfsd\fR コマンド行の \fB-a\fR と同等です。NFS SMF のパラメータ \fBdevice\fR とは相互に排他的です。NFS SMF のパラメータ \fBdevice\fR と \fBprotocol\fR のいずれか一方は、設定しないようにする必要があります。両方を設定すると、\fBnfs/server\fR サービスは保守モードに入ります。UDP プロトコルの場合は、バージョン 2 とバージョン 3 のサービスのみが確立されます。NFS Version 4 は、UDP プロトコルに用にはサポートされていません。これは \fB-p\fR オプションと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevice\fR=\fIdevname\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS デーモンを、指定したデバイスによるトランスポート専用で起動します。これは、\fBnfsd\fR の \fB-t\fR オプションと同等です。NFS SMF のパラメータ \fBprotocol\fR とは相互に排他的です。NFS SMF のパラメータ \fBdevice\fR と \fBprotocol\fR のいずれか一方は、設定しないようにする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBservers\fR=\fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+並行 NFS 要求の最大数。これは、\fBnfsd\fR コマンド行の最後の数値引数と同等です。デフォルトは \fB1024\fR です。これは、\fInservers\fR オペランドと同等です。
+.RE
+
+.sp
+.LP
+後述の「\fB使用例\fR」を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 15n
+.rt  
+UDP と TCP を含む、利用可能なすべての非接続型および接続型のトランスポートを介して \fBNFS\fR デーモンを起動します。これは、NFS の SMF で、\fBsharectl\fR(1M) コマンドを使用して \fBprotocol\fR パラメータを \fBALL\fR に設定することと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fI#_conn\fR\fR
+.ad
+.RS 15n
+.rt  
+これにより、接続型トランスポートを介して \fB NFS\fR サーバーに許可される接続の最大数を設定します。デフォルトでは、この接続の数は無制限です。これは、NFS の SMF で \fBsharectl\fR(1M) コマンドを使用して設定する \fBmax_connections\fR パラメータと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 15n
+.rt  
+接続型トランスポートを介した \fBNFS TCP\fR の接続キューの長さを設定します。デフォルト値は 32 エントリです。これは、NFS の SMF で \fBsharectl\fR(1M) コマンドを使用して設定する \fBlisten_backlog\fR パラメータと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprotocol\fR\fR
+.ad
+.RS 15n
+.rt  
+指定したプロトコルを介して \fBNFS\fR デーモンを起動します。これは、NFS の SMF で \fBsharectl\fR(1M) コマンドを使用して設定する \fBprotocol\fR パラメータと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIdevice\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBNFS\fR デーモンを、特定のデバイスのトランスポート用に起動します。これは、NFS の SMF で \fBsharectl\fR(1M) コマンドを使用して設定する \fBdevice\fR パラメータと同等です。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fInservers\fR\fR
+.ad
+.RS 12n
+.rt  
+これは、サーバーが処理可能な並行する \fBNFS\fR 要求の最大数を設定します。この並行性を実現するため、カーネル内で必要に応じて \fInservers \fR スレッドまで作成されます。\fInservers\fR は、このサーバーに予想される負荷に基づいて設定します。通常は、\fI nservers\fR に 16 を設定します。\fInservers\fR を指定しない場合、並行する \fBNFS\fR 要求の最大数はデフォルトの 1 になります。これは、NFS の SMF で \fBsharectl\fR(1M) コマンドを使用して設定する \fBservers\fR パラメータと同等です。
+.RE
+
+.SH 使用法
+.sp
+.LP
+\fBNFS_PORTMON\fR 変数が \fB/etc/system \fR で設定されている場合、クライアントは特権ポート (ポートは \fB IPPORT_RESERVED\fR 未満) を使用して \fBNFS\fR サービスを取得する必要があります。デフォルトでは、この変数はゼロと等価です。この変数は、「nfs」モジュールから「nfssrv」モジュールに移動されました。この変数を設定するには、\fB /etc/system\fR ファイルを編集して次のエントリを追加します。
+.sp
+.LP
+\fBset\fR \fBnfssrv:nfs_portmon\fR \fB=\fR \fB 1\fR
+.SH 使用例
+.LP
+\fB例 1 \fR委託を無効にする
+.sp
+.LP
+以降の例で指定する \fBnfsd\fR のプロパティーについては、前述の「SMF による管理」を参照してください。
+
+.sp
+.LP
+委託とは、サーバーがファイルの管理をクライアントに委託する NFSv4 の機能です。たとえば、サーバーは、読み取り委託または書き込み委託のいずれかをクライアントに付与する (または付与しない) ことができます。次のコマンドは、\fBserver_delegation\fR プロパティーを \fBoff\fR に設定してこれを実行します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p server_delegation=off nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR委託の値を判別する
+.sp
+.LP
+次のコマンドは、\fBserver_delegation \fR プロパティーの現在の値を取得します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl get -p server_delegation nfs\fR
+server_delegation=on
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR並行要求の最大数を設定する
+.sp
+.LP
+次のコマンドは、並行する NFS 要求の最大数を設定します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p servers=32 nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR接続キューの長さを設定する
+.sp
+.LP
+次のコマンドは、接続型トランスポートを介した NFS の最大キュー長を設定します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set -p listen_backlog=48 nfs\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+デーモンが正常に起動されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+デーモンの起動に失敗しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\&.nfs\fIXXX\fR\fR\fR
+.ad
+.RS 25n
+.rt  
+開かれているがリンクが解除されているファイルへのクライアントマシンのポインタ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/system\fR \fR
+.ad
+.RS 25n
+.rt  
+システム構成情報ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/nfs/v4_state\fR\fR
+.ad
+.br
+.na
+\fB\fB /var/nfs/v4_oldstate\fR\fR
+.ad
+.RS 25n
+.rt  
+サーバーがクライアント状態情報の管理に使用されるディレクトリ。これらのディレクトリは削除しないでください。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/file-system/nfs
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBps\fR(1), \fBsvcs\fR(1), \fBmountd\fR(1M), \fBshare\fR(1M), \fBsharectl\fR(1M), \fBsvcadm\fR(1M), \fBsharetab\fR(4), \fBsystem\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fI『System Administration Guide: Network Services 』\fR
+.SH 注意事項
+.sp
+.LP
+\fBnfsd\fR を手動で起動または再起動することは推奨されていません。手動で起動または再起動する必要がある場合は、\fBsvcadm\fR を使用して \fBnfs\fR サービス (\fBsvc:/network/nfs/server\fR) を有効または無効にしてください。無効になっている場合は、\fBapplication/auto_enable \fR プロパティーが \fBfalse\fR に設定されていないかぎり、\fBshare_nfs\fR(1M) により有効になります。詳細については、『\fI『System Administration Guide: Network Services』\fR』および \fBsvcadm\fR(1M) を参照してください。

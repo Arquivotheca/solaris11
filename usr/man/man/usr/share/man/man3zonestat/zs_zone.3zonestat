@@ -1,0 +1,189 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zs_zone 3ZONESTAT "19 May 2011" "SunOS 5.11" "Zones Statistics Library Functions"
+.SH NAME
+zs_zone, zs_zone_list, zs_zone_walk, zs_zone_property, zs_zone_limit_type, zs_zone_limit_uint64, zs_zone_limit_used_uint64, zs_zone_limit_time, zs_zone_limit_used_time, zs_zone_limit_used_pct \- libzonestat zone accessor methods
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR ... ] \fIfile\fR... -lzonestat [ \fIlibary\fR ... ]
+#include <zonestat.h>
+
+int zs_zone_list(zs_usage_t usage, zs_zone_t *\fIzonelist\fR, int \fInum\fR);
+.fi
+
+.LP
+.nf
+zs_zone_t zs_zone_walk(zs_usage_t \fIusage\fR, zs_zone_t \fIzone\fR);
+.fi
+
+.LP
+.nf
+zs_property_t zs_zone_property(zs_zone_t \fIzone\fR,
+     zs_zone_property_t \fIprop\fR);
+.fi
+
+.LP
+.nf
+zs_limit_type_t zs_zone_limit_type(zs_limit_t \fIlimit\fR);
+.fi
+
+.LP
+.nf
+uint64_t zs_zone_limit_uint64(zs_zone_t \fIzone\fR, zs_limit_t \fIlimit\fR);
+.fi
+
+.LP
+.nf
+uint64_t zs_zone_limit_used_uint64(zs_zone_t \fIzone\fR, zs_limit_t \fIlimit\fR);
+.fi
+
+.LP
+.nf
+void zs_zone_limit_time(zs_zone_t \fIzone\fR, zs_limit_t \fIlimit\fR,
+     timestruc_t *\fIts\fR);
+.fi
+
+.LP
+.nf
+void zs_zone_limit_used_time(zs_zone_t \fIzone\fR, zs_limit_t \fIlimit\fR,
+     timestruc_t *\fIts\fR);
+.fi
+
+.LP
+.nf
+uint_t zs_zone_limit_used_pct(zs_zone_t \fIzone\fR, zs_limit_t \fIlimit\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+These functions are used to access the zones in the usage object. These zones are the zones which were running at the time when the \fBzs_usage_read\fR(3ZONESTAT) was called and returned the usage object.
+.sp
+.LP
+The \fBzs_zone_list()\fR function returns the number of \fBzs_zone_t\fR objects contained within \fIusage\fR. If \fIzonelist\fR is non-null, the \fIzonelist\fR array will be filled with up to \fInum\fR \fBzs_zone_t\fR objects. The \fIzonelist\fR array must be first allocated by the caller. The first zone returned in the array will always be the global zone. The remaining zones will be in alphanumeric ordered by zone name.
+.sp
+.LP
+The \fBzs_zone_walk()\fR function walks the list of zones in \fIusage\fR. If \fIzone\fR is \fINULL\fR, the first zone will be returned, which is always the global zone. Otherwise, zones are returned in alphanumeric order. If there are no more zones in \fIusage\fR, \fINULL\fR is returned.
+.sp
+.LP
+The \fBzs_zone_property()\fR function returns a property of \fIzone\fR based on \fIproperty\fR. See \fBlibzonestat\fR(3LIB) for a description of the \fBZS_ZONE_PROP_\fR* property codes.
+.sp
+.LP
+The \fBzs_zone_limit_type()\fR function returns the data type of the zone limit \fIlimit\fR. See \fBlibzonestat\fR(3LIB) for the description of the \fBZS_LIMIT_\fR* limit codes. The following types can be returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_TYPE_TIME\fR\fR
+.ad
+.RS 23n
+.rt  
+The limit and its usage can be fetched in terms of time. This limit can be passed to \fBzs_zone_limit_time()\fR and \fBzs_zone_limit_used_time()\fR, as well as all other \fBzs_zone_limit_*()\fR functions.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_TYPE_COUNT\fR\fR
+.ad
+.RS 23n
+.rt  
+The limit reflects a quantity of discrete objects. For instance, a limit on the number of processes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_TYPE_BYTES\fR\fR
+.ad
+.RS 23n
+.rt  
+The limit reflects a quantity of bytes.
+.RE
+
+.sp
+.LP
+The \fBzs_zone_limit_uint64()\fR function returns the value of the configured \fIlimit\fR on \fIzone\fR. If \fIlimit\fR is not configured for \fIzone\fR, \fBZS_LIMIT_NONE\fR is returned. For example, \fIzone\fR may not be configured with the \fBZS_LIMIT_CPU\fR limit.
+.sp
+.LP
+The \fBzs_zone_limit_used_uint64()\fR function returns the usage by \fIzone\fR of the resource capped by \fIlimit\fR. If \fIlimit\fR is not configured for \fIzone\fR, \fBZS_LIMIT_NONE\fR is returned. For example, \fIzone\fR may not be configured with the \fBZS_LIMIT_CPU\fR limit.
+.sp
+.LP
+The \fBzs_zone_limit_time()\fR function sets \fIts\fR to the quantity of time available to \fIzone\fR by the configured \fIlimit\fR. \fIts\fR must be allocated by the caller. For example, if \fIzone\fR has a \fBZS_LIMIT_CPU\fR of 200, meaning 2 CPUs and the zone has been running for 10 seconds, then the quantity of time available to the zone would be 20 seconds (2 CPUs * 10 seconds). If \fIlimit\fR is not configured for the zone, \fIts\fR is set to zero seconds and nanoseconds. This function can be called only if \fIlimit\fR is of type \fBZS_LIMIT_TYPE_TIME\fR.
+.sp
+.LP
+The \fBzs_zone_limit_used_time()\fR function sets \fIts\fR to the quantity of time used by \fIzone\fR on the resource capped by \fIlimit\fR. \fIts\fR must be allocated by the caller. If \fIlimit\fR is not configured for the zone, \fIts\fR is set to zero seconds and nanoseconds. This function can be called only if \fIlimit\fR is of type \fBZS_LIMIT_TYPE_TIME\fR.
+.sp
+.LP
+The \fBzs_zone_limit_used_pct()\fR function returns the percent of \fIlimit\fR used by \fIzone\fR. The value returned is the percentage * 100. For instance, 50 percent is returned as 5000. If \fIlimit\fR is not configured for \fIzone\fR, \fBZS_PCT_NONE\fR is returned.
+.sp
+.LP
+All the \fBZS_LIMIT_\fR* limit codes are described in \fBlibzonestat\fR(3LIB).
+.SH RETURN VALUES
+.sp
+.LP
+See Description.
+.SH ERRORS
+.sp
+.LP
+If a \fBzs_zone_*()\fR function is called with an invalid limit code, the function will abort with \fBabort\fR(3C).
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRRetrieve information about each zone in a usage object.
+.sp
+.LP
+The following example traverses all zones in a usage object, retrieving information about each zone.
+
+.sp
+.in +2
+.nf
+#include <zonestat.h>
+\&...
+extern zs_usage_t usage;        /* assume returned by zs_usage_read() */
+\&...
+zs_zone_t zone;
+zs_property_t prop;
+char * zonename;
+uint64_t maxprocs;
+uint64_t usedprocs;
+
+for (zone = zs_zone_first(usage); zone != NULL;
+    zone = zs_zone_next(usage, zone)) {
+
+/* Get zonename */
+prop = zs_zone_property(zone, ZS_ZONE_PROP_NAME);
+zonename = zs_property_string(prop));
+
+/* Get max and used processes */
+maxprocs = zs_zone_limit_uint64(zone, ZS_LIMIT_PROCESSES);
+usedprocs = zs_zone_limit_used_uint64(zone, ZS_LIMIT_PROCESSES);
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBzonestat\fR(1), \fBpooladm\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBswap\fR(1M), \fBzoneadm\fR(1M), \fBzonestatd\fR(1M), \fBabort\fR(3C), \fBlibpool\fR(3LIB), \fBlibzonestat\fR(3LIB), \fBzs_open\fR(3ZONESTAT), \fBzs_pset\fR(3ZONESTAT), \fBzs_property\fR(3ZONESTAT), \fBzs_pset_zone\fR(3ZONESTAT), \fBzs_resource\fR(3ZONESTAT), \fBzs_usage\fR(3ZONESTAT), \fBzs_open\fR(3ZONESTAT), \fBattributes\fR(5), \fBresource_controls\fR(5)

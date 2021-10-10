@@ -1,0 +1,593 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH smf 5 "2011 年 6 月 22 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+smf \- 服务管理工具
+.SH 描述
+.sp
+.LP
+Solaris 服务管理工具定义了一种编程模型，用以提供持久运行的应用程序，这些应用程序称为\fI服务\fR。此工具还提供运行服务的基础结构。服务可以表示运行的应用程序、设备软件状态或一组其他服务。服务在框架中由\fI服务实例\fR对象表示，这些对象是服务对象的子项。实例对象可以继承或覆盖父服务对象的配置，这使多个服务实例可以共享配置信息。所有服务和实例对象都包含在一个\fI范围\fR内，该范围表示配置信息的集合。本地 Solaris 实例的配置称为"本地主机"范围，这是当前唯一支持的范围。
+.sp
+.LP
+每个服务实例都使用故障管理资源标识符 (fault management resource identifier, FMRI) 来命名（模式为 \fBsvc:\fR）。例如，在系统启动时启动的 \fBsyslogd\fR(1M) 守护进程是具有以下名称的缺省服务实例：
+.sp
+.in +2
+.nf
+svc://localhost/system/system-log:default
+svc:/system/system-log:default
+system/system-log:default
+.fi
+.in -2
+
+.sp
+.LP
+许多命令也允许使用 FMRI 缩写。有关此类示例，请参见 \fBsvcs\fR(1) 手册页。
+.sp
+.LP
+在上例中，'default' 是实例名称，'system/system-log' 是服务名称。服务名称可包含多个用斜杠 (\fB/\fR) 分隔的组成部分。所有组成部分（最后一个组成部分除外）构成了服务的\fI类别\fR。站点特定的服务应当用以 'site' 开头的类别来命名。
+.sp
+.LP
+服务实例可以启用，也可以禁用。所有服务都可以通过 \fBsvcadm\fR(1M) 命令来启用或禁用。
+.sp
+.LP
+可通过 \fBsvcs\fR(1) 命令来显示系统上管理服务实例的列表。
+.SS "相关性"
+.sp
+.LP
+服务实例可以与一组\fB实体\fR具有相关性，实体可包含服务、实例和文件。相关性控制着启动和自动停止服务的时间。当未满足已启用服务的相关性时，服务就保持脱机状态。当满足其相关性时，就会启动服务。如果启动成功，服务将转换为联机状态。不同于服务和实例，不会在创建或删除文件时动态地评估文件相关性。只对它们评估一次。
+.sp
+.LP
+相关性是否满足将由其\fB分组\fR确定：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire_all\fR\fR
+.ad
+.RS 16n
+.rt  
+当所有引用的服务正在运行（联机或降级）或者所有指示的文件都存在时满足。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire_any\fR\fR
+.ad
+.RS 16n
+.rt  
+当引用的任一服务正在运行（联机或降级）或者至少有一个指示的文件存在时满足。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoptional_all\fR\fR
+.ad
+.RS 16n
+.rt  
+当引用的服务正在运行（联机或降级）或因没有管理操作而未运行（禁用、维护、不存在或脱机等待必须有管理操作才能启动的相关项）时满足。不完整的服务也满足可选的相关性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexclude_all\fR\fR
+.ad
+.RS 16n
+.rt  
+当所有引用的服务都已禁用、处于维护状态或者引用的服务或文件不存在时满足。
+.RE
+
+.sp
+.LP
+在运行（联机或降级）期间，如果由 \fBrequire_all \fR、\fBrequire_any\fR 或 \fBoptional_all\fR 相关性引用的服务停止或刷新，SMF（Service Management Facility，服务管理工具）将考虑服务停止的原因以及相关性的 \fBrestart_on\fR 属性以确定是否停止该服务。
+.sp
+.in +2
+.nf
+                   |  restart_on value
+event              |  none  error restart refresh
+-------------------+------------------------------
+stop due to error  |  no    yes   yes     yes
+non-error stop     |  no    no    yes     yes
+refresh            |  no    no    no      yes
+.fi
+.in -2
+
+.sp
+.LP
+如果服务出现硬件错误或软件错误（如核心转储），则认为该服务已经因出错而停止。对于 \fBexclude_all\fR 相关性，如果引用的服务已启动，但 \fBrestart_on\fR 属性不是 \fBnone\fR，也将停止该服务。
+.sp
+.LP
+服务的相关性可通过 \fBsvcs\fR(1)\ 或 \fBsvccfg\fR(1M) 列出，也可通过\fBsvccfg\fR(1M) 进行修改。
+.SS "重启程序"
+.sp
+.LP
+每个服务都由一个重启程序来管理。主重启程序 \fBsvc.startd\fR(1M) 管理整个服务实例集及其相关项的状态。主重启程序代表其服务操作，其操作对象是委托重启程序，委托重启程序可以为特定的应用程序类提供特定的执行环境。例如，\fBinetd\fR(1M) 是一个委托重启程序，它为其服务实例提供一个由网络连接构成的初始环境作为输入和输出文件描述符。委托给 \fBinetd\fR(1M) 的每个实例都处于联机状态。虽然特定实例的守护进程可能未运行，但该实例已经可运行。
+.sp
+.LP
+由于当实例转为联机状态时将满足相关性，因此 \fBsvc.startd\fR(1M) 将调用其他实例的启动方法或指示委托重启程序执行此类操作。这些操作可能会重叠。
+.sp
+.LP
+可使用 \fBsvcs\fR(1) 检查当前的服务集及关联的重启程序。所有重启程序使用的公共配置的说明在 \fBsmf_restarter\fR(5) 中指定。
+.SS "方法"
+.sp
+.LP
+每个服务或服务实例都必须定义一组启动、停止和（可选）刷新该服务的方法。有关 \fBsvc.startd\fR(1M) 以及类似 \fBfork\fR(2)-\fBexec\fR(2) 重启程序的方法约定的更完整说明，请参见 \fBsmf_method\fR(5)。
+.sp
+.LP
+管理方法（如将传统配置信息捕获到系统信息库的方法）将在 \fBsvccfg\fR(1M) 手册页中讨论。
+.sp
+.LP
+服务的方法可使用 \fBsvccfg\fR(1M) 命令列出和修改。
+.SS "状态"
+.sp
+.LP
+每个服务实例始终处于某一明确定义的状态，具体取决于其相关性、其方法的执行结果以及其潜在合同事件。系统定义了以下状态：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUNINITIALIZED\fR\fR
+.ad
+.RS 23n
+.rt  
+这是所有服务实例的初始状态。实例将根据 \fBsvc.startd\fR(1M) 或相应重启程序的计算结果转为维护、脱机或禁用状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFFLINE（脱机）\fR\fR
+.ad
+.RS 23n
+.rt  
+实例已启用，但尚未运行或无法运行。如果重启程序成功执行服务启动方法或等效方法，实例将转为联机状态。如果执行失败，则会导致实例处于降级或维护状态。管理操作会导致实例处于初始化状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBONLINE\fR\fR
+.ad
+.RS 23n
+.rt  
+实例已启用且正在运行或可以运行。联机状态的具体特性是应用程序/模型特定的，由负责服务实例的重启程序进行定义。当满足所有相关性时，联机是正确配置的服务的预期运行状态。实例失败会导致其处于降级或维护状态。如果实例所依赖的服务失败，则会导致其处于脱机或降级状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEGRADED\fR\fR
+.ad
+.RS 23n
+.rt  
+实例已启用且正在运行或可以运行。不过，相对于正常运行而言，实例是以有限的功能运行的。实例失败会导致其处于维护状态。如果实例所依赖的服务失败，则会导致其处于脱机或降级状态。功能恢复后，应会将实例转为联机状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAINTENANCE\fR\fR
+.ad
+.RS 23n
+.rt  
+实例已启用，但无法运行。需要管理操作（通过 \fBsvcadm clear\fR 执行）才能使实例脱离维护状态。如果管理操作正在进行中，维护状态可能是临时所处的状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDISABLED\fR\fR
+.ad
+.RS 23n
+.rt  
+实例已禁用。使服务转换为脱机状态，最终只有满足所有相关性时才会恢复联机状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLEGACY-RUN\fR\fR
+.ad
+.RS 23n
+.rt  
+此状态表示不通过服务管理工具进行管理的传统实例。处于此状态的实例已在某一时间点启动，可能正在运行，也可能未在运行。只能使用该工具观察实例，不能将实例转换为其他状态。
+.RE
+
+.sp
+.LP
+状态也会发生转换，但会导致返回到最初的状态。
+.SS "事件通知"
+.sp
+.LP
+SMF 允许使用 SNMP（Simple Network Management Protocol，简单网络管理协议）或 SMTP（Simple Mail Transfer Protocol，简单邮件传输协议）通知状态转换。该工具会发布状态转换的信息事件，以供通知守护进程（如 \fBsnmp-notify\fR(1M) 和 \fBsmtp-notify\fR(1M)）使用。已禁用服务的 SMF 状态转换不会生成通知，除非转换的最终状态为禁用且该转换存在通知参数。对于初始和最终状态相同的转换，也不会为其生成通知。
+.SS "通知参数"
+.sp
+.LP
+FMA（Fault Management Architecture，故障管理体系结构）事件的通知参数存储在 \fBsvc:/system/fm/notify-params:default \fR 中，但 SMF 状态转换所生成的信息事件除外。这些事件存储在服务中或存储在转换服务的实例中。在 \fBsvc:/system/svc/global:default\fR 中，可在系统范围设置 SMF 状态转换所生成事件的通知参数。当在转换实例中找不到组合查找（如 \fBscf_instance_get_pg_composed\fR(3SCF) 中所述）时，将使用系统范围通知参数。可使用 \fBsvccfg\fR(1M) 处理通知参数。可使用 DTD（document type definition，文档类型定义）中描述的 \fBnotification_parameters\fR 元素在服务清单或配置文件中配置通知参数。下面列举了一个示例：
+.sp
+.in +2
+.nf
+<notification_parameters>
+     <event  value='from-online' />
+     <type name='smtp' active="false">
+        <parameter name='to'>
+            <value_node value='root@local' />
+            <value_node value='admin-alias@eng' />
+        </parameter>
+     </type>
+     <type name='snmp' />
+</notification_parameters>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIevents\fR 是一个用逗号分隔的 SMF 状态转换集列表或一个用逗号分隔的 FMA 事件类列表。\fIevents\fR 不能混合包含 SMF 状态转换集和 FMA 事件类。 
+.sp
+.LP
+为了方便起见，标记 \fBproblem- {diagnosed,updated,repaired,resolved} \fR 描述了 FMA 子系统诊断出的问题的生命周期：包括初始诊断、中期更新和最终问题解决。这些标记是基础 FMA 协议事件类 (全部位于 \fBlist.*\fR 分层结构中) 的别名，但在配置通知首选项时不能使用后者。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-diagnosed\fR\fR
+.ad
+.sp .6
+.RS 4n
+FMA 子系统诊断出了新问题。诊断包含由一个或多个可疑项组成的列表，系统可能（根据需要）已将这些可疑项自动隔离以防止进一步发生错误。问题在事件有效载荷中问题由 UUID（Universally Unique Identifier，通用唯一标识符）进行标识，描述此问题解决生命周期的其他事件会引用匹配的 UUID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-updated\fR\fR
+.ad
+.sp .6
+.RS 4n
+问题诊断中的一个或多个可疑资源已修复、替换或被视为没有故障（或再次出现了故障），但列表中至少保留了一个故障资源。修复可能是 \fBfmadm\fR 命令行（\fBfmadm repaired、fmadm acquit、fmadm replaced\fR）的结果，也可能是自动检测到的（如通过检测部件序列号更改）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-repaired\fR\fR
+.ad
+.sp .6
+.RS 4n
+问题诊断中的所有可疑资源均已修复、解决或被视为无故障。在此阶段，部分或全部资源可能仍处于隔离状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-resolved\fR\fR
+.ad
+.sp .6
+.RS 4n
+问题诊断中的所有可疑资源均已修复、解决或被视为无故障\fB并且\fR不再处于隔离状态（例如，曾经是可疑项并处于脱机状态的 CPU 现在又重新恢复联机状态；这种取消隔离操作通常自动执行）。
+.RE
+
+.sp
+.LP
+状态转换集的定义如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBto-<state>\fR\fR
+.ad
+.RS 16n
+.rt  
+将 <状态> 作为转换的最终状态的所有转换的集合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfrom-<state>\fR\fR
+.ad
+.RS 16n
+.rt  
+将 <状态> 作为转换的初始状态的所有转换的集合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<状态>\fR\fR
+.ad
+.RS 16n
+.rt  
+将 <状态> 作为转换的初始状态的所有转换的集合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 16n
+.rt  
+所有转换的集合。
+.RE
+
+.sp
+.LP
+状态的有效值包括：维护、脱机、禁用、联机和降级。转换集定义的示例如下：\fBmaintenance\fR、\fBfrom-online\fR、\fBto-degraded\fR。
+.SS "属性和属性组"
+.sp
+.LP
+上述相关性、方法、委托重启程序和实例状态以服务或服务实例的属性或属性组形式表示。服务或服务实例具有任意数量的属性组，这些属性组用于存储应用程序数据。以这种方式使用特性组时，可以使应用程序的配置派生可供系统信息库提供给该工具中的所有数据的属性。应用程序也可以在框架中使用适当的 \fBservice_bundle\fR(4) DTD 子集表示其配置数据。
+.sp
+.LP
+属性查找是组合查找。如果在服务实例中未找到属性组/属性组合，大部分命令以及 \fBlibscf\fR(3LIB) 的高级接口将在包含该实例的服务中搜索相同的属性组/属性组合。这样可以在服务实例之间共享公共配置。组合可视为服务实例与其父服务之间的继承关系。
+.sp
+.LP
+属性将受到保护，以防被未经授权的进程修改。请参见 \fBsmf_security\fR(5)。
+.SS "通用属性组"
+.sp
+.LP
+\fB通用\fR属性组适用于所有服务实例。该属性组包含以下属性：
+.sp
+.ne 2
+.mk
+.na
+\fBenabled (boolean)\fR
+.ad
+.RS 22n
+.rt  
+指定是否启用实例。如果实例上不存在此属性，SMF 将无法告知实例的重启程序有关重启程序的存在情况。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrestarter (fmri)\fR
+.ad
+.RS 22n
+.rt  
+此服务的重启程序。有关更多信息，参见"重启程序"一节。如果未设置此属性，将使用缺省的系统重启程序。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcomplete (astring)\fR
+.ad
+.RS 22n
+.rt  
+该服务是完整的，还是不应启动的部分定义。该属性在清单导入时或管理员手动创建实例时自动设置，因此应不需要修改。
+.RE
+
+.SS "层"
+.sp
+.LP
+系统信息库由标准位置中文件的管理定制、当前状态和缺省值的组合集合而成。由 SMF 管理的文件系统位置中的清单定义的服务、实例、属性组和属性始终在系统信息库中准确表示。运行时由管理员或其他程序执行的定制被捕获并存储在系统信息库中。 
+.sp
+.LP
+属性在系统信息库中可以具有不同的值，用于反映清单、配置文件和管理定制的不同设置。缺省情况下向用户和服务提供哪一个值由名为 \fBlayers\fR 的简单优先级机制仲裁。 
+.sp
+.LP
+SMF 跟踪四个层。按优先级降序，它们是：
+.sp
+.ne 2
+.mk
+.na
+\fBadmin\fR
+.ad
+.sp .6
+.RS 4n
+由交互使用 SMF 命令或库进行的任何更改。此层具有最高优先级。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsite-profile（站点配置文件）\fR
+.ad
+.sp .6
+.RS 4n
+\fB/etc/svc/profile/site\fR 目录中的文件，或传统 \fB/etc/svc/profile/site.xml\fR 和 \fB/var/svc/profile/site.xml\fR 文件中的任何值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsystem-profile（系统配置文件）\fR
+.ad
+.sp .6
+.RS 4n
+系统配置文件位置 \fB/etc/svc/profile/generic.xml\fR 和 \fB/etc/svc/profile/platform.xml\fR 中的任何值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmanifest（清单）\fR
+.ad
+.sp .6
+.RS 4n
+系统清单位置 \fB/lib/svc/manifest\fR 和 \fB/var/svc/manifes\fRt 中的任何值。 
+.RE
+
+.sp
+.LP
+任何单独的层中不能有属性冲突。\fBadmin\fR 层中的冲突属性只是覆盖之前的属性。如果任何其他层中的多个文件提供该同一属性，并且该属性未在更高的层中设置，则整个实例标记为冲突，并且不会由 \fBsvc.startd\fR(1M) 启动，直到冲突定义被去除，或在更高的层设置该属性。请求单个值（包括 \fBsvccfg\fR 和 \fBsvcprop\fR）的其他 \fBlibscf\fR 使用者看到所有适当的值中的随机属性设置。我们不保证返回哪个冲突值。
+.SS "快照"
+.sp
+.LP
+有关系统信息库中每个实例的历史数据由服务管理工具进行维护。此数据以只读快照形式提供，用于管理检查和回滚。可能会提供以下快照类型集：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitial\fR\fR
+.ad
+.RS 12n
+.rt  
+由管理员创建的或安装软件包期间生成的实例的初始配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprevious\fR\fR
+.ad
+.RS 12n
+.rt  
+执行管理撤消操作时捕获的当前配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrunning\fR\fR
+.ad
+.RS 12n
+.rt  
+正在运行的实例配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.RS 12n
+.rt  
+成功转换为联机状态期间所捕获的配置。
+.RE
+
+.sp
+.LP
+可使用 \fBsvccfg\fR(1M) 命令与快照进行交互。
+.SS "专用属性组"
+.sp
+.LP
+某些属性组将标记为 \fBnon-persistent\fR。这些组不会在快照中进行备份，其内容在系统引导期间会被清除。此类组通常存放活动程序状态，此状态无需在系统重新启动后存在。
+.SS "配置信息库"
+.sp
+.LP
+每个服务实例的当前状态以及与服务和服务实例关联的属性都存储在由 \fBsvc.configd\fR(1M) 管理的系统信息库中。 
+.sp
+.LP
+服务管理工具数据的系统信息库由 \fBsvc.configd\fR(1M) 管理。
+.SS "服务束、清单和配置文件"
+.sp
+.LP
+与服务或服务实例关联的信息存储在配置系统信息库中，可作为 XML 文件导出。此类 XML 文件称作服务束，是可移植的，很适合用于备份。服务束分为以下几种类型：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB清单\fR\fR
+.ad
+.RS 16n
+.rt  
+包含与特定服务或服务实例集关联的完整属性集的文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB配置文件\fR\fR
+.ad
+.RS 16n
+.rt  
+包含每个实例的 enabled 属性（在通用属性组中为\fB布尔\fR型）的一组服务实例和值的文件。
+.sp
+配置文件也可以包含服务和实例中属性的配置值。模板元素不能在配置文件中定义。
+.sp
+配置文件可以使用来自 DTD 的一组宽松元素，如 \fBservice_bundle\fR(4) 中所述。要使用这些元素，应向 \fBDOCTYPE\fR 条目添加以下定义：
+.sp
+.in +2
+.nf
+<!ENTITY % profile "INCLUDE">
+<!ENTITY % manifest "IGNORE">
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+可使用 \fBsvccfg\fR(1M) 命令在信息库中导入或导出服务束。有关服务束文件格式的说明以及有关制作服务束的准则，请参见 \fBservice_bundle\fR(4)。
+.SS "里程碑"
+.sp
+.LP
+\fBsmf\fR 里程碑是一种服务，它聚合了多个服务相关性。通常，里程碑本身并不执行任何有用的操作，但它声明一种其他服务可以依赖的特定系统就绪状态。一个示例就是\fB名称/服务\fR里程碑，它仅依赖当前启用的名称服务。
+.SS "传统启动脚本"
+.sp
+.LP
+\fB/etc/rc?.d\fR 目录中的启动程序作为相应运行级别的里程碑的一部分执行：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rcS.d\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBmilestone/single-user:default\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rc2.d\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBmilestone/multi-user:default\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rc3.d\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBmilestone/multi-user-server:default\fR
+.RE
+
+.sp
+.LP
+每个程序的执行都表示为程序路径所指定的功能简化的服务实例。这些实例保持特殊的 legacy-run 状态。
+.sp
+.LP
+这些实例没有已启用属性（在通用属性组中为 \fBboolean\fR 类型），通常无法使用 \fBsvcadm\fR(1M) 命令进行处理。系统不会对这些程序执行错误诊断或重新启动。
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBinetd\fR(1M)、\fBsnmp-notify\fR(1M)、\fBsmtp-notify\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBsvc.configd\fR(1M)、\fBsvc.startd\fR(1M)、\fBexec\fR(2)、\fBfork\fR(2)、\fBlibscf\fR(3LIB)、\fBstrftime\fR(3C)、\fBcontract\fR(4)、\fBservice_bundle\fR(4)、\fBsmf_bootstrap\fR(5)、\fBsmf_method\fR(5)、\fBsmf_restarter\fR(5)、\fBsmf_security\fR(5)

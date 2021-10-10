@@ -1,0 +1,266 @@
+'\" te
+.\" Copyright (c)  2009 Sun Microsystems, Inc.  All Rights Reserved.
+.TH se 7D "16 Jul 2009" "SunOS 5.11" "Devices"
+.SH NAME
+se \- Siemens 82532 ESCC serial communications driver
+.SH SYNOPSIS
+.LP
+.nf
+se@\fIbus_address\fR:\fIport_name\fR[,cu]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBse\fR module is a loadable  \fBSTREAMS\fR driver that provides basic support for the 82532 ESCC hardware and basic asynchronous and synchronous communication support. This manual page describes the asynchronous protocol interface; for information on the synchronous interface, please see the \fBse_hdlc\fR(7D) manual page. 
+.sp
+.LP
+This module is affected by the setting of specific eeprom variables. For information on parameters that are persistent across reboots, see the \fBeeprom\fR(1M) man page.
+.sp
+.LP
+The platform specific device bus address for the \fBse\fR module is \fIbus_address\fR. The \fBse\fR module's \fIport_name\fR is a single letter (a-z).
+.LP
+Note - 
+.sp
+.RS 2
+During boot up, ttya/b characteristics are read from the \fB/kernel/drv/options.conf\fR file and changed from the PROM defaults to reflect Solaris defaults. Messages displayed on the console after this point are based on settings in that file. If you switch a characteristic, (for example, the baud rate of the console terminal), you must revise the \fB/kernel/drv/options.conf\fR or the console will be configured to an unusable configuration and console messages will be garbled by the mismatched serial port settings.
+.RE
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The Siemens 82532 provides two serial input/output channels capable of supporting a variety of communication protocols. A typical system will use one of these devices to implement two serial ports (\fIport_name\fR),  usually configured for RS-423 (which also supports most RS-232 equipment). The Siemens 82532 uses 64 character input and output \fBFIFOs\fR to reduce system overhead. When receiving characters, the \fBCPU\fR is notified when 32 characters have arrived (one-half of receive buffer is full) or no character has arrived in the time it would take to receive four characters at the current baud rate.
+.sp
+.LP
+When sending characters, the Siemens 82532 places the first 64 characters to be sent into its output \fBFIFO\fR and then notifies the \fBCPU\fR when it is half empty (32 characters left). Because the \fBse\fR module waits for the Siemens 82532 to transmit the remaining characters within its output \fBFIFO\fR before making requested changes, delays may occur when the port's attributes are being modified.
+.sp
+.LP
+The \fBse\fR module implements \fBCTS/RTS\fR flow control in hardware. To prevent data overruns, remove CTS/RTS flow control responsibility from the CPU  during periods of high system load.
+.sp
+.LP
+In \fBasync\fR mode (obtained by opening  \fB/dev/cua/[\fIa-z\fR]\fR, \fB/dev/term/[\fIa-z\fR]\fR or \fB/dev/tty[\fIa-z\fR]\fR), the driver supports the \fBtermio\fR(7I) device control functions specified by flags in the \fBc_cflag\fR word of the \fBtermios\fR structure, and by the \fBIGNBRK,\fR \fBIGNPAR,\fR \fBPARMRK,\fR or \fBINPCK\fR flags in the \fBc_iflag\fR word. All other \fBtermio\fR(7I) functions must be performed by \fBSTREAMS\fR modules pushed atop the driver.  When a device is opened, the \fBldterm\fR(7M) and \fBttcompat\fR(7M) \fBSTREAMS\fR modules are automatically pushed on top of the stream, providing the standard \fBtermio\fR interface.
+.sp
+.LP
+You can connect a single tty line to a modem for incoming and outgoing calls using a special feature controlled by the minor device number. By accessing character-special devices with names of the form \fB/dev/cua/\fR[\fIa-z\fR], it is possible to open a port without the \fBCarrier Detect\fR signal being asserted, either through hardware or an equivalent software mechanism. These devices are commonly known as dial-out lines.
+.sp
+.LP
+After a \fB/dev/cua/\fR[\fIa-z\fR] line is opened, the corresponding tty line cannot be opened until the \fB/dev/cua/\fR\fI[a-z]\fR line is closed. A blocking open will wait until the \fB/dev/cua/\fR[\fIa-z\fR] line is closed (which will drop \fBData Terminal Ready\fR and \fBCarrier Detect\fR) and carrier is detected again. A non-blocking open will return an error. If the tty line has been opened successfully (usually only when carrier is recognized on the modem), the corresponding \fB/dev/cua/\fR[\fIa-z\fR] line cannot be opened. This allows a modem to be attached to a device, (for example, \fB/dev/term/\fR [\fIa-z\fR] renamed from \fB/dev/tty\fR[\fIa-z\fR]) and used for dial-in (by enabling the line for login in \fB/etc/inittab\fR) and dial-out (by \fBtip\fR(1) or \fBuucp\fR(1C)) as \fB/dev/cua/\fR[\fIa-z\fR] when no one is logged in on the line.
+.sp
+.LP
+The \fBse\fR driver can be configured to support mice as well as applications requiring no buffering on the receive fifo. You can do this in one of two ways:
+.RS +4
+.TP
+1.
+Using the \fBse\fR configuration file \(em To configure the \fBse\fR device to support mice using this approach, create an \fBse.conf\fR under \fB/kernel/drv\fR, then add keywords of the form: \fBdisable-rfifo-port<a/b\fR><\fIinstance number\fR>. For example, if your system has two \fBse\fR devices and you want port \fBb\fR on the device (associated with instance \fB0\fR) and port \fBa\fR (associated with instance \fB1\fR) to have their receive fifo disabled, the \fBse.conf\fR file must contain the following entries:
+.sp
+.in +2
+.nf
+   disable-rfifo-portb0;
+   disable-rfifo-porta1;
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+2.
+Programmatically \(em You can also configure the \fBse\fR device to support mice programatically by using the SERVICEIMM stream call to turn buffering off on the receive fifo, and/or SERVICEDEF to turn it back on again.
+.RE
+.SH IOCTLS
+.sp
+.LP
+The \fBse\fR module supports the standard set of \fBtermio ioctl\fR(\|) calls.
+.sp
+.LP
+Breaks can be generated by the \fBTCSBRK\fR, \fBTIOCSBRK\fR, and \fBTIOCCBRK\fR \fBioctl()\fR calls.
+.sp
+.LP
+The state of the \fBDCD,\fR \fBCTS,\fR \fBRTS,\fR and \fBDTR\fR interface signals can be queried through the use of the \fBTIOCM_CAR,\fR \fBTIOCM_CTS,\fR \fBTIOCM_RTS,\fR and \fBTIOCM_DTR\fR arguments to the \fBTIOCMGET\fR \fBioctl\fR command, respectively.  Due to hardware limitations, only the \fBRTS\fR and \fBDTR\fR signals may be set through their respective arguments to the \fBTIOCMSET,\fR \fBTIOCMBIS,\fR and \fBTIOCMBIC ioctl\fR commands.
+.sp
+.LP
+The input and output line speeds may be set to all baud rates supported by \fBtermio\fR. Input and output line speeds cannot be set independently; when you set the output speed, the input speed is automatically set to the same speed.
+.sp
+.LP
+When using baud rates over 100,000 baud, the software changes the line driver configuration to handle the higher data rates. This action decreases the theoretical maximum cable length from 70 meters to 30 meters.
+.sp
+.LP
+When the \fBse\fR module is used to service the serial console port, it supports a BREAK condition that allows the system to enter the debugger or the monitor. The BREAK condition is generated by hardware and it is usually enabled by default. A BREAK condition originating from erroneous electrical signals cannot be distinguished from one deliberately sent by remote DCE. Due to a risk of incorrect sequence interpretation, SLIP and certain other binary protocols should not be run over the serial console port when Alternate Break sequence is in effect. Although PPP is a binary protocol, it is able to avoid these sequences using the ACCM feature in \fIRFC 1662\fR. For Solaris PPP 4.0, you do this by adding the following line to the \fB/etc/ppp/options\fR file (or other configuration files used for the connection; see \fBpppd\fR(1M) for details): 
+.sp
+.in +2
+.nf
+asyncmap  0x00002000
+.fi
+.in -2
+
+.sp
+.LP
+By default, the Alternate Break sequence is a three character sequence: carriage return, tilde and control-B (CR ~ CTRL-B), but may be changed by the driver. For information on breaking (entering the debugger or monitor), see \fBkmdb\fR(1) and \fBkb\fR(7M).
+.SH ERRORS
+.sp
+.LP
+An \fBopen\fR() will fail under the following conditions:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENXIO\fR\fR
+.ad
+.RS 9n
+.rt  
+The unit being opened does not exist.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBUSY\fR\fR
+.ad
+.RS 9n
+.rt  
+The dial-out device is being opened and the dial-in device is already open, or the dial-in device is being opened with a no-delay open and the dial-out device is already open.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBUSY\fR\fR
+.ad
+.RS 9n
+.rt  
+The port is in use by another serial protocol.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBUSY\fR\fR
+.ad
+.RS 9n
+.rt  
+The unit has been marked as exclusive-use by another process with a \fBTIOCEXCL ioctl\fR(\|) call.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINTR\fR\fR
+.ad
+.RS 9n
+.rt  
+The open was interrupted by the delivery of a signal.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/cua/\fR\fI[a-z]\fR\fR
+.ad
+.RS 28n
+.rt  
+dial-out tty lines
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/term/[a-z]\fR\fR
+.ad
+.RS 28n
+.rt  
+dial-in tty lines
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/tty\fR\fI[a-z]\fR\fR
+.ad
+.RS 28n
+.rt  
+binary compatibility package device names
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/se_hdlc\fR\fI[0-9]\fR\fR
+.ad
+.RS 28n
+.rt  
+synchronous devices - see  \fBse_hdlc\fR(7D).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/se_hdlc\fR\fR
+.ad
+.RS 28n
+.rt  
+synchronous control clone device
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/options.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+System wide default device driver properties
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureSPARC
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBkmdb\fR(1), \fBtip\fR(1), \fBcu\fR(1C), \fBuucp\fR(1C), \fBeeprom\fR(1M), \fBports\fR(1M), \fBpppd\fR(1M), \fBioctl\fR(2), \fBopen\fR(2), \fBattributes\fR(5),\fBzs\fR(7D), \fBzsh\fR(7D), \fBse_hdlc\fR(7D), \fBtermio\fR(7I), \fBldterm\fR(7M), \fBttcompat\fR(7M), \fBkb\fR(7M)
+.SH DIAGNOSTICS
+.sp
+.ne 2
+.mk
+.na
+\fB\fBse\fR\fIn\fR\fB\|: fifo overrun\fR\fR
+.ad
+.RS 25n
+.rt  
+The Siemens 82532 internal  \fBFIFO\fR received more data than it could handle. This indicates that Solaris was not servicing data interrupts fast enough and suggests a system with too many interrupts or a data line with a data rate that is too high.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBse\fR\fIn\fR\fB\|: buffer overrun\fR\fR
+.ad
+.RS 25n
+.rt  
+The  \fBse\fR module was unable to store data it removed from the Siemens 82532 \fBFIFO.\fR The user process is not reading data fast enough, and suggests an overloaded system. If possible, the application should enable flow control (either  \fBCTSRTS\fR or \fBXONXOFF\fR) to allow the driver to backpressure the remote system when the local buffers fill up.
+.RE
+

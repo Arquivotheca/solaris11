@@ -1,0 +1,516 @@
+#!/usr/bin/perl -w
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+
+# check_elfstub - Validate stub object interface against real object
+#
+# The link-editor '-z stub' option builds stub object, the interface to
+# which is intended to be identical to the real object for the
+# purposes of linking. check_elfstub can be used to verify that this
+# is the case.
+#
+# For additional information, see the check_elfstub(1) manpage.
+
+
+
+use strict;
+
+
+# Define all global variables (required for strict)
+use vars  qw($script $exit_status $hexre);
+
+
+$script = 'check_elfstub';
+$exit_status = 0;
+$hexre = '0[xX][0-9a-f]+';
+
+
+
+## is_so(file)
+#
+# Issue a fatal error if file is not an ELF shared object.
+# If file is a shared object, return a descriptive string.
+#
+sub is_so {
+	my $file = $_[0];
+
+	-f $file || die "$script: no such file: $file\n";
+	my $tmp = `/usr/bin/file $file`;
+	($tmp =~ /$file:\s+ELF.+dynamic lib/) ||
+	    die "$script: Not an ELF shared object: $tmp";
+	chomp $tmp;
+
+	# 'file' output has the form:
+	#	path: ELF XX-bit XSB, dynamic lib XXX Version X, ...
+
+	# Remove the path prefix
+	$tmp =~ s/^$file:\s+//;
+
+	# "dynamically linked" and the stuff that follows (stripped, etc)
+	# the ELF version number are not interesting
+	$tmp =~ s/(Version \d+).*$/$1/;
+
+	# 32-bit sparc has some variations we don't care about
+	$tmp =~ s/SPARC32PLUS/SPARC/;
+	$tmp =~ s/, V8\+ Required//;
+	
+
+	return $tmp;
+}
+
+
+
+## read_object(file, dsynsymref, syminforef, dynamicref, nobitsref)
+#
+# Run elfdump on the specified object to read information:
+#
+#	- dynsym symbol table
+#	- syminfo section
+#	- dynamic section
+#	- Which sections are SHT_NOBITS
+#
+# For dynsym, syminfo, and dynamic, the data is inserted into
+# the corresponding hash, indexed by symbol name. For nobitsref,
+# SHT_NOBITS are inserted, with the section name as the key, and
+# a value of 1 as the value.
+#
+# entry:
+#	file - Object to examine
+#	dynsymref - Reference to hash to receive dynsym information
+#	syminforef - Reference to hash to receive syminfo information
+#	dynamicref - Reference to hash to receive dynamic section information
+#	nobitsref - Reference to hash to record SHT_NOBITS sections.
+#
+sub read_object {
+	my ($file, $dynsymref, $syminforef, $dynamicref, $nobitsref) = @_;
+	my $line;
+	my $shname;
+	my $EDMP_FH;
+
+	# Look at the section headers and fill nobitsref. The key is the
+	# section name, and the value is 1 for NOBITS sections, and
+        # 0 for BITS.
+	open($EDMP_FH, "/usr/bin/elfdump -c $file|") ||
+	    die "$script: unable to run elfdump on file: $file";
+
+	while ($line = <$EDMP_FH>) {
+		chomp $line;
+
+	        if ($line =~ /^Section Header\[\d+\]:\s+sh_name:\s+(.*)$/) {
+			$shname = $1;
+			$$nobitsref{$shname} = 0;
+			next;
+		}
+		$$nobitsref{$shname} = 1
+		    if ($line =~ /sh_type:    \[ SHT_NOBITS \]$/);
+	}
+	close $EDMP_FH;
+
+
+	# Read the symbol table
+	open($EDMP_FH, "/usr/bin/elfdump -s -N.dynsym -y -d $file|") ||
+	    die "$script: unable to run elfdump on file: $file";
+
+	while ($line = <$EDMP_FH>) {
+		chomp $line;
+
+	        if ($line =~ /^Symbol Table Section:  .dynsym$/) {
+			#
+			# elfdump symbol table output is in the format:
+			#
+			#    index  value  size  type bind oth ver shndx name
+			#
+			# We read each line, and discard the ones with:
+			#	- no symbol name
+			#	- undefined (external)
+			#	- ABS (not section relative)
+			#	- Zero size
+			# For the remaining symbols, we insert the line
+			# (with the name removed) into the dymsymref hash.
+
+			$line = <$EDMP_FH>;		# Toss table header
+			while (($line = <$EDMP_FH>)) {
+				last if !($line =~ /^\s*\[/);
+
+				my ($ndx, $value, $size, $type, $bind, $oth,
+				    $ver, $shndx, $name) = split " ",$line;
+
+				# Skip if:
+				#	- Name is null
+				#	- Size is 0 (functions excluded)
+				#	- Is an ABS symbol instead of
+				#	  section relative
+				#	- shndx is UNDEF
+				$size = hex($size);
+				next if ($name eq '') || ($shndx eq 'ABS') ||
+				    ($shndx eq 'UNDEF');
+				next if  ($size == 0) && ($type ne 'FUNC') &&
+				    ($type ne 'WEAK');
+
+				# Clip off the name to make the line shorter
+				$line =~ s/(.*)\s*$name$/$1/;
+				$$dynsymref{$name} = $line;
+			}
+
+		}
+
+		if ($line =~ /^Syminfo Section:  .SUNW_syminfo$/) {
+			# elfdump syminfo output is in the following format:
+			#
+			# index  flags            bound to          symbol
+			#
+			# The "bound to" field can have a dynamic section
+			# index. The specific index is likely to be different
+			# in the stub object, and is not important, as elfdump
+			# maps it to the string of interest. We read each line,
+			# and discard the ones with no name. For the remaining
+			# symbols, we insert the line (with the name removed)
+			# into the hash with the name as the key.
+			#
+			# Syminfo output is irregular (not designed for easy
+			# parsing). Fields can be null in some cases, and
+			# the "bound to" can have a space separated index
+			# in it. All of this makes for a variable number of
+			# space delimited tokens.
+			#
+			# The format string in elfdump for syminfo places
+			# the symbol name at column 54. There is some chance
+			# that a long "bound to" string can push this past
+			# column 54. So we do a reverse index for the last
+			# space character in the line. If that's at index 53
+			# or greater, we have the name. If it is before index
+			# 53, there is no name.
+
+			$line = <$EDMP_FH>;		# Toss table header
+			while (($line = <$EDMP_FH>)) {
+				last if !($line =~ /^\s*\[/);
+				chomp $line;
+
+				my $ndx = rindex($line, ' ');
+				next if ($ndx < 53);
+
+				my $name = substr($line, $ndx + 1);
+				$line = substr($line, 0, $ndx);
+				$line =~ s/\s*$//;
+				$$syminforef{$name} = $line;
+			}
+		}
+
+		if ($line =~ /^Dynamic Section:  .dynamic$/) {
+			# dynamic section output is in the following format:
+			#
+			#     index  tag                value
+			#
+			# There is an unlabelled 4th column where symbolic
+			# decoding of value is shown.
+			#
+			# We only really care about the SONAME for the stub
+			# object, but also enforce consistency for some
+			# other tags. Any tags not explicitly captured here
+			# are simply ignored.
+
+			my @needed = ();
+			my @filter = ();
+			my @auxiliary = ();
+			my @sunw_filter = ();
+			my @sunw_auxiliary = ();
+
+			$line = <$EDMP_FH>;		# Toss table header
+			while (($line = <$EDMP_FH>)) {
+				last if !($line =~ /^\s*\[/);
+				chomp $line;
+
+				next if !($line =~ /^\s*\[[^]]+\]\s+([^\s]+)\s+(\d+|$hexre)\s+(.*)?$/);
+
+
+				my $tag = $1;
+				my $val = $2;
+				my $str = $3;
+
+				# The DT_FLAGS_1 field of the stub object
+				# dynamic section should have DF_1_STUB
+				# (0x04000000) set, while the real one won't.
+				# To prevent spurious diffs, filter this.
+				if (($tag =~ /^FLAGS_1$/) &&
+				    ($str =~ /STUB/)) {
+					$line =~ s/\[ STUB \]/0/;
+					$line =~ s/STUB //;
+					my $v = sprintf('%#lx',
+					    hex($val) & ~0x4000000);
+					$line =~ s/$val/$v/;
+				}
+
+
+				# For things we care about that can only
+				# be specified once, enter it in the hash
+				# if it hasn't already been seen.
+				if ($tag =~
+			   /^(SONAME|RPATH|RUNPATH|FLAGS|FLAGS_1|FEATURE_1)$/) {
+					next if (defined $$dynamicref{$tag});
+					$$dynamicref{$tag} = $line;
+				}
+
+				# For tags that can occur multiple
+				# times, gather them into arrays.
+				if ($tag eq 'NEEDED') {
+					push @needed, $str;
+					next;
+				}
+				if ($tag eq 'FILTER') {
+					push @filter, $str;
+					next;
+				}
+				if ($tag eq 'AUXILIARY') {
+					push @auxiliary, $str;
+					next;
+				}
+				if ($tag eq 'SUNW_FILTER') {
+					push @sunw_filter, $str;
+					next;
+				}
+				if ($tag eq 'SUNW_AUXILIARY') {
+					push @sunw_auxiliary, $str;
+					next;
+				}
+			}
+			# Sort the multi-tags, concatenate them using ':'
+			# like a path, and insert them into the hash.
+			# The sorting handles the case where the two libs
+			# have the same items but in a different order.
+			$$dynamicref{'NEEDED'} = join(':', @needed)
+			    if (scalar(@needed) > 0);
+			$$dynamicref{'FILTER'} = join(':', @filter)
+			    if (scalar(@filter) > 0);
+			$$dynamicref{'AUXILIARY'} = join(':', @auxiliary)
+			    if (scalar(@auxiliary) > 0);
+			$$dynamicref{'SUNW_FILTER'} = join(':', @sunw_filter)
+			    if (scalar(@sunw_filter) > 0);
+			$$dynamicref{'SUNW_AUXILIARY'} =
+			    join(':', @sunw_auxiliary)
+			    if (scalar(@sunw_auxiliary) > 0);
+		}
+		
+		# We don't expect any lines here other than blank lines
+		# between sections. In any case, if we get here, ignore it.
+	}
+	close $EDMP_FH;
+
+	1;
+}
+
+
+
+## mismatch(name, reason, sref, rref)
+#
+# Print a message describing how a symbol in the stub
+# and real object differ.
+#
+# entry:
+#	name - name of symbol
+#	reason - Text describing the problem
+#	sref - Reference to hash representing the stub object
+#	rref - Reference to hash representing the real object
+#
+sub mismatch {
+	my ($name, $reason, $sref, $rref) = @_;
+
+	print STDERR "$script: $name: $reason\n";
+	print STDERR "    stub:$$sref{$name}\n";
+	print STDERR "    real:$$rref{$name}\n" if (defined $$rref{$name});
+	$exit_status = 1;
+}
+
+## fuzzy_compare(name, reason, sref, rref)
+#
+# Compare a line in the stub and real hashes in a fuzzy
+# manner:
+#	- Ignore index values within [] brackets
+#	- Remove hex constants 
+#	- Reduce all spans of whitespace to 1 blank character
+#
+# If the two lines do not match after undergoing these changes,
+# mismatch() is called to report the error.
+#
+# entry:
+#	name - name of symbol
+#	reason - Text describing the problem
+#	sref - Reference to hash representing the stub object
+#	rref - Reference to hash representing the real object
+#
+sub fuzzy_compare {
+	my ($name, $reason, $sref, $rref) = @_;
+
+	my $sline = $$sref{$name};
+	my $rline = $$rref{$name};
+
+	# Turn indexes into empty [] brackets
+	$sline =~ s/\[[^]]*\]/\[\]/g;
+	$rline =~ s/\[[^]]*\]/\[\]/g;
+
+	# Wipe out hex constants
+	$sline =~ s/\s+$hexre\s+/ 0x /g;
+	$rline =~ s/\s+$hexre\s+/ 0x /g;
+
+	# Collapse whitespace to single blanks.
+	$sline =~ s/\s+/ /g;
+	$rline =~ s/\s+/ /g;
+
+	# With indexes erased and whitespace collapsed, the lines should match
+	mismatch($name, $reason, $sref, $rref)
+	    if ($sline ne $rline);
+}
+
+
+
+###### Main program starts here
+
+scalar(@ARGV) == 2 || die "usage: $script stub-object real-object\n";
+my ($slib, $rlib) = @ARGV;
+my $name;
+
+# Are they compatible ELF shared objects?
+my $sfile = is_so($slib);
+my $rfile = is_so($rlib);
+
+if ($sfile ne $rfile) {
+	print STDERR "$script: incompatible objects\n";
+	print STDERR "    stub: $sfile\n";
+	print STDERR "    real: $rfile\n";
+	exit(1);
+}
+
+# Read the symbols from the objects
+my %sdynsym;	my %rdynsym;
+my %sinfo;	my %rinfo;
+my %sdynamic;	my %rdynamic;
+my %snobits;	my %rnobits;
+read_object($slib, \%sdynsym, \%sinfo, \%sdynamic, \%snobits);
+read_object($rlib, \%rdynsym, \%rinfo, \%rdynamic, \%rnobits);
+
+# Compare every symbol in the stub object dynsym to the corresponding
+# symbol in the real object and flag issues that would prevent
+# the stub from being an accurate substitute for the real object.
+for $name (sort keys %sdynsym) {
+
+	# Every symbol in the stub must also be in the real object.
+	# The reverse is not true.
+	if (!defined $rdynsym{$name}) {
+		mismatch($name, "symbol not found in real object",
+			 \%sdynsym, \%rdynsym);
+		next;
+	}	    
+	
+	# Split the lines to make comparisons possible
+	my ($s_ndx, $s_value, $s_size, $s_type, $s_bind, $s_oth,
+	    $s_ver, $s_shndx) = split " ", $sdynsym{$name};
+	my ($r_ndx, $r_value, $r_size, $r_type, $r_bind, $r_oth,
+	    $r_ver, $r_shndx) = split " ", $rdynsym{$name};
+
+	# The types must match
+	mismatch($name, "symbol types differ", \%sdynsym, \%rdynsym)
+	    if ($s_type ne $r_type);
+
+	# For data, the sizes must match. For functions, this does not matter
+	mismatch($name, "data symbol sizes differ", \%sdynsym, \%rdynsym)
+	    if (($s_type eq 'OBJT') && (hex($s_size) != hex($r_size)));
+
+
+	# For data, the bindings must match. For functions,
+	# bindings must match, but we consider WEAK and GLOB to
+	# be the same thing.
+	if ($s_type ne 'OBJT') {
+		$s_bind = 'GLOB' if ($s_bind eq 'WEAK');
+		$r_bind = 'GLOB' if ($r_bind eq 'WEAK');
+	}
+	mismatch($name, "symbol bindings differ", \%sdynsym, \%rdynsym)
+	    if ($s_bind ne $r_bind);
+
+
+	# The other flags must match
+	mismatch($name, "other flags differ", \%sdynsym, \%rdynsym)
+	    if ($s_oth ne $r_oth);
+
+	# The versions must match
+	mismatch($name, "versions differ", \%sdynsym, \%rdynsym)
+	    if ($s_ver ne $r_ver);
+
+	# Both shndx must be ABS, or not-ABS, but the specific
+	# section names are not important.
+	mismatch($name, "ABS/SectionRelative mismatch", \%sdynsym, \%rdynsym)
+	    if (($s_shndx eq 'ABS') != ($r_shndx eq 'ABS'));
+
+	# Both shndx should be SHT_NOBITS, or not SHT_NOBITS, but they
+	# must agree. The specific section names are not important.
+	mismatch($name, "BSS/non-BSS mismatch", \%sdynsym, \%rdynsym)
+	    if ($snobits{$s_shndx} != $rnobits{$r_shndx});
+}
+
+# Compare every symbol in the stub object .SUNW_syminfo to the
+# corresponding symbol in the real object and flag issues that would prevent
+# the stub from being an accurate substitute for the real object.
+for $name (sort keys %sinfo) {
+
+	# Every symbol in the stub must also be in the real object.
+	# The reverse is not true.
+	if (!defined $rinfo{$name}) {
+		mismatch($name, "symbol not found in real object",
+		    \%sinfo, \%rinfo);
+		next;
+	}	    
+	fuzzy_compare($name, "syminfo mismatch", \%sinfo, \%rinfo);
+}
+
+
+# Ensure the stub object has an SONAME dynamic tag
+if (! defined $sdynamic{'SONAME'}) {
+	print STDERR "$script: stub object lacks an SONAME dynamic tag\n";
+	$exit_status = 1;
+}
+
+# Compare every dynamic item in the stub object to the corresponding
+# symbol in the real object and flag items that don't match.
+for $name (sort keys %sdynamic) {
+
+	# Every tag in the stub is expected to be in the real object.
+	if (!defined $rdynamic{$name}) {
+		mismatch($name, "tag not found in real object",
+		    \%sdynamic, \%rdynamic);
+		next;
+	}
+	fuzzy_compare($name, "dynamic mismatch", \%sdynamic, \%rdynamic);
+}
+
+# Due to the selective way we gather dynamic section information,
+# we also expect everything from the real object to be in the
+# stub object. NEEDED entries are an exception, as stubs 
+for $name (sort keys %rdynamic) {
+	if (!defined $sdynamic{$name} && !($name eq 'NEEDED')) {
+		mismatch($name, "tag not found in stub object",
+		    \%sdynamic, \%rdynamic);
+	}	    
+}
+
+
+exit $exit_status;

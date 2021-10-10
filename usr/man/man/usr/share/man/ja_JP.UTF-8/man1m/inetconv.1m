@@ -1,0 +1,246 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH inetconv 1M "2010 年 3 月 17 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+inetconv \- \fBinetd.conf\fR エントリを smf サービスマニフェストに変換し、それらを smf リポジトリ内にインポートする
+.SH 形式
+.LP
+.nf
+\fBinetconv\fR \fB-?\fR
+.fi
+
+.LP
+.nf
+\fBinetconv\fR [\fB-f\fR] [\fB-n\fR] [\fB-i\fR \fIsrcfile\fR] [\fB-o\fR \fIdestdir\fR]
+.fi
+
+.LP
+.nf
+\fBinetconv\fR \fB-e\fR [\fB-n\fR] [\fB-i\fR \fIsrcfile\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBinetconv\fR ユーティリティーは、\fBinetd.conf\fR(4) のレコードを含むファイルを \fB smf\fR(5) サービスマニフェストに変換したあと、それらのマニフェストを \fBsmf\fR リポジトリ内にインポートします。\fBinetd.conf\fR ファイルの変換処理がいったん完了すると、\fBinetadm\fR(1M) ユーティリティーを使用しないと各 inet サービスの特性を変更できなくなります。
+.sp
+.LP
+入力ファイル内の 1 つのサービス行と、それに対して生成されるマニフェストとの間には、1 対 1 の対応関係が成り立ちます。マニフェストはデフォルトで、次のテンプレートに従って命名されます。
+.sp
+.in +2
+.nf
+\fI<svcname>\fR-\fI<proto>\fR\fB\&.xml\fR
+.fi
+.in -2
+
+.sp
+.LP
+\fI<svcname>\fR トークンはサービスの名前で、\fI<proto>\fR トークンはサービスのプロトコルで、それぞれ置き換えられます。ソース行のサービス名やプロトコルに含まれるスラッシュ (\fB/\fR) 文字はすべて、下線 (\fB_\fR) で置き換えられます。
+.sp
+.LP
+各サービス行は、変換先となるサービスのプロパティーとして記録されます。
+.sp
+.LP
+変換処理中に、不正なサービス行や \fBinetd\fR に対する内部的なサービス行が検出された場合には、マニフェストは生成されず、そのサービス行はスキップされます。
+.sp
+.LP
+入力ファイルは変換処理の影響を受けず、元の状態に保たれます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.RS 14n
+.rt  
+使用方法に関するメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 14n
+.rt  
+入力ファイル内に記述されている \fBsmf\fR サービスを有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 14n
+.rt  
+このオプションが指定された場合、生成予定のサービスマニフェストと同じ名前のマニフェストが出力ディレクトリ内で見つかった場合に、\fBinetconv\fR はそのマニフェストを上書きします。それ以外の場合、エラーメッセージが生成され、そのサービスの変換は実行されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIsrcfile\fR\fR
+.ad
+.RS 14n
+.rt  
+別の入力ファイル \fIsrcfile\fR を指定できるようにします。このオプションが指定されなかった場合、\fBinetd.conf\fR(4) ファイルが入力として使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 14n
+.rt  
+変換処理中に生成されたマニフェストの自動インポートを無効にします。その後、生成済みマニフェストを \fBsmf\fR(5) リポジトリ内にインポートする必要が生じた場合、\fBsvccfg\fR(1M) ユーティリティーを使えばそれを行うことができます。
+.sp
+\fB-e\fR オプションが指定された場合、\fB-n\fR オプションは単に、有効化される \fBsmf\fR サービスを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 14n
+.rt  
+生成されたマニフェストに対する別の出力ディレクトリ \fIdestdir\fR を指定できるようにします。このオプションが指定されなかった場合、RPC サービスのマニフェストは \fB/lib/svc/manifest/network/rpc\fR 内に、それ以外のサービスのマニフェストは \fB/lib/svc/manifest/network\fR 内に、それぞれ格納されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBinetd.conf\fR からの \fBsmf\fR マニフェストの生成
+.sp
+.LP
+次のコマンドは、\fBinetd.conf\fR(4) から \fBsmf\fR(5) マニフェストを生成し、それらを \fB/var/tmp\fR 内に格納します。その際、同名の既存マニフェストはすべて上書きします。続いて、それらのマニフェストを \fBsmf\fR リポジトリ内にインポートします。
+
+.sp
+.in +2
+.nf
+# inetconv -f -o /var/tmp
+100232/10 -> /var/tmp/100232_10-rpc_udp.xml
+Importing 100232_10-rpc_udp.xml ...Done
+telnet -> /var/tmp/telnet-tcp6.xml
+Importing telnet-tcp6.xml ...Done
+.fi
+.in -2
+
+.LP
+\fB例 2 \fR別の入力ファイルからのマニフェストの生成
+.sp
+.LP
+次のコマンドは、異なる入力ファイルを指定しています。また、結果のマニフェストを \fBsmf\fR リポジトリ内にロードしません。
+
+.sp
+.in +2
+.nf
+# inetconv -n -i /export/test/inet.svcs -o /var/tmp
+100232/10 -> /var/tmp/100232_10-rpc_udp.xml
+telnet -> /var/tmp/telnet-tcp6.xml
+.fi
+.in -2
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+処理が正常終了しました (エラーなし)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なオプションが指定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+不正なサービス行が 1 つ以上存在します。それらに対するマニフェストは生成されませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+1 つ以上の生成済みマニフェストのインポート中にエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+システムエラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/svc/manifest/network/{rpc}/\fI<svcname>\fR-\fI<proto>\fR\&.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトの出力マニフェストファイル名。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBinetadm\fR(1M), \fBinetd\fR(1M), \fBsvccfg\fR( 1M), \fBinetd.conf\fR(4), \fB attributes\fR(5), \fBsmf \fR(5)

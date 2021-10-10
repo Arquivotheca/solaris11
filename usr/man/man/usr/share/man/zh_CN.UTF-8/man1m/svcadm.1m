@@ -1,0 +1,437 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH svcadm 1M "2011 年 3 月 31 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+svcadm \- 处理服务实例
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] enable [\fB-rst\fR] {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] disable [\fB-st\fR] {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] restart {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] refresh {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] clear {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] mark [\fB-It\fR] \fIinstance_state\fR 
+     {\fIFMRI\fR | \fIpattern\fR}...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/svcadm\fR [\fB-v\fR] milestone [\fB-d\fR] \fImilestone_FMRI\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsvcadm\fR 发出针对在服务管理工具中执行的服务的操作请求（请参见 \fBsmf\fR(5)）。针对某个服务的操作是由分配给它的服务重启程序代理执行的。缺省的服务重启程序为 \fBsvc.startd\fR（请参见 \fBsvc.startd\fR(1M)）。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+将操作详细地输出到标准输出。
+.RE
+
+.SH 子命令
+.SS "常用操作"
+.sp
+.LP
+下面列出了在对服务实例的典型管理中使用的子命令。
+.sp
+.LP
+对于接受一个或多个操作数的子命令，如果操作数指定了一个服务（而不是一个服务实例）且该服务仅有一个实例，则 \fBsvcadm\fR 对该实例执行操作。如果某个缩写的 \fIFMRI\fR（故障管理资源标识符）或模式与多个服务相匹配，则显示一条警告消息并忽略该操作数。请参见 \fBsmf\fR(5)。
+.sp
+.LP
+如果服务具有多个实例，\fBsvcadm\fR 将返回非零退出状态。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR \fB[\fR\fB-rst\fR\fB]\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+启用由操作数指定的服务实例。对于每个服务实例，所分配的重启程序会尝试使其进入 online（联机）状态。此操作需要相应的权限来修改服务实例的 "general"（通用）属性组（请参见 \fBsmf_security\fR(5)）。
+.sp
+如果指定了 \fB-r\fR 选项，\fBsvcadm\fR 将启用每个服务实例并递归启用其依赖项。
+.sp
+如果指定了 \fB-s\fR 选项，\fBsvcadm\fR 将启用每个服务实例，然后等待每个服务实例进入 \fBonline\fR（联机）或 \fBdegraded\fR（降级）状态。如果 \fBsvcadm\fR 确定服务不能在不经管理员干预的情况下达到这些状态，它会提早返回。
+.sp
+如果指定了 \fB-t\fR 选项，\fBsvcadm\fR 会临时启用每个服务实例。临时启用仅会持续到重新引导之前。此操作需要相应的权限来修改服务实例的 "restarter_actions" 属性组（请参见 \fBsmf_security\fR(5)）。缺省情况下，\fBenable\fR 在重新引导后仍然有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR [\fB-st\fR] {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+禁用由操作数指定的服务实例。对于每个服务实例，所分配的重启程序会尝试使其进入 disabled（禁用）状态。此操作需要相应的权限来修改服务实例的 "general"（通用）属性组（请参见 \fBsmf_security\fR(5)）。
+.sp
+如果指定了 \fB-s\fR 选项，\fBsvcadm\fR 将禁用每个服务实例，然后等待每个服务实例进入 disabled（禁用）状态。如果 \fBsvcadm\fR 确定服务不能在不经管理员干预的情况下达到此状态，它会提早返回。
+.sp
+如果指定了 \fB-t\fR 选项，\fBsvcadm\fR 会临时禁用每个服务实例。临时禁用仅会持续到重新引导之前。此操作需要相应的权限来修改服务实例的 "restarter_actions" 属性组（请参见 \fBsmf_security \fR(5)）。缺省情况下，\fBdisable\fR 在重新引导后仍然有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestart\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+请求重新启动由操作数指定的服务实例。此操作需要相应的权限来修改服务实例的 "restarter_actions" 属性组（请参见 \fBsmf_security \fR(5)）。大多数重启程序将重新启动服务操作实施为一个完整的服务 "stop"（停止）操作，后跟一个 "start"（启动）操作。
+.sp
+此子命令只能重新启动处于 online（联机）或 degraded（降级）状态的服务，因为这些状态是在 \fBsmf\fR(5) 中定义的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+针对操作数指定的每个服务实例，请求所分配的重启程序使用来自当前配置的值更新该服务的运行配置快照。其中某些值是立即生效的（例如，依赖项更改）。其他值在服务下次 \fBrestart\fR（重新启动）之前不会生效。有关更多信息，请参见重启程序和服务文档。 
+.sp
+如果服务是由 \fBsvc.startd\fR(1M) 管理的，将调用 \fBrefresh\fR 方法（如果存在）来请求服务重新读取其自己的配置。对于其他重启程序，请参见重启程序文档。
+.sp
+此操作需要相应的权限来修改服务实例的 "restarter_actions" 属性组（请参见 \fBsmf_security \fR(5)）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+针对操作数指定的每个服务实例，如果它处于 \fBmaintenance\fR（维护）状态，则向所分配的重启程序发出服务已修复的信号。如果实例处于 \fBdegraded\fR（降级）状态，则请求所分配的重启程序将该服务更改为 \fBonline\fR（联机）状态。此操作需要相应的权限来修改服务实例的 "restarter_actions" 属性组（请参见 \fBsmf_security \fR(5)）。
+.RE
+
+.SS "例外操作"
+.sp
+.LP
+下列子命令用于服务开发与临时管理处理。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmark [\fR\fB-It\fR\fB]\fR \fIinstance_state\fR {\fIFMRI\fR | \fIpattern\fR}. . .\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fIinstance_state\fR 为 "maintenance"（维护），则针对操作数指定的每个服务，\fBsvcadm\fR 请求所分配的重启程序将该服务置于 \fBmaintenance\fR（维护）状态。有关为每个重启程序采取的操作的详细描述，请参见\fBsvc.startd\fR(1M) 和 \fBinetd\fR(1M)。
+.sp
+如果 \fIinstance_state\fR 为 "degraded"（降级），则针对操作数指定的处于联机状态的服务，\fBsvcadm\fR 请求分配给这些服务的重启程序将其置于 \fBdegraded\fR（降级）状态。
+.sp
+如果指定了 \fB-I\fR 选项，该请求被标记为即时的。 
+.sp
+\fB-t\fR 选项仅对维护请求有效。如果指定了此选项，该请求将被标记为临时的，它的效果仅会持续到下次重新引导之前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmilestone\fR [\fB-d\fR] \fImilestone_FMRI\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fImilestone_FMRI\fR 为关键字 "none"，则将临时禁用除主重启程序 \fBsvc:/system/svc/restarter:default\fR 以外的所有服务。
+.sp
+如果 \fImilestone_FMRI\fR 为关键字 "all"，则将废除对所有服务的临时启用和禁用请求。
+.sp
+如果 \fImilestone_FMRI\fR 为下列值之一：
+.sp
+.in +2
+.nf
+svc:/milestone/single-user:default
+svc:/milestone/multi-user:default
+svc:/milestone/multi-user-server:default
+.fi
+.in -2
+.sp
+
+则将废除对指定的服务及其依赖的（直接或间接）的所有服务的临时启用和禁用请求。将临时禁用所有其他服务。
+.sp
+使用 "milestone" 子命令更改系统的当前里程碑将不会更改系统的当前运行级。要更改系统的运行级，请直接调用 \fB/usr/sbin/init\fR。
+.sp
+此操作需要相应的权限来修改 \fBsvc:/system/svc/restarter:default\fR 服务实例的 "options_ovr" 属性组（请参见 \fBsmf_security\fR(5)）。
+.sp
+如上所述，\fB-d\fR 选项会即时将里程碑更改为所需的里程碑。此外，它将使指定的里程碑成为缺省的引导里程碑，缺省的引导里程碑在重新引导后仍然有效。缺省的里程碑是由主重启程序 \fBsvc:/system/svc/restarter:default\fR 中的 \fBoptions/milestone\fR 属性定义的。如果此属性不存在，缺省值为 "all"。此操作需要相应的权限来修改 \fBsvc:/system/svc/restarter:default\fR 服务实例的 "options"（选项）属性组（请参见 \fBsmf_security\fR(5)）。
+.RE
+
+.SS "操作数"
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIFMRI\fR\fR
+.ad
+.RS 11n
+.rt  
+一个 \fIFMRI\fR，用于指定一个或多个实例。可以通过指定实例名称或指定服务名的后缀部分以缩写形式指定 \fIFMRI\fR。例如，对于以下 \fIFMRI\fR：
+.sp
+.in +2
+.nf
+svc:/network/smtp:sendmail
+.fi
+.in -2
+.sp
+
+下列各项都是有效的缩写： 
+.sp
+.in +2
+.nf
+sendmail 
+:sendmail 
+smtp 
+smtp:sendmail 
+network/smtp
+.fi
+.in -2
+.sp
+
+而下列项则无效：
+.sp
+.in +2
+.nf
+mail
+network
+network/smt
+.fi
+.in -2
+.sp
+
+如果 \fIFMRI\fR 指定了一个服务，则命令将应用于该服务的所有实例。\fIFMRI\fR 的缩写形式不稳定，不应在脚本或其他永久性工具中使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpattern\fR\fR
+.ad
+.RS 11n
+.rt  
+服务实例的 \fIFMRI\fR 根据 \fBfnmatch\fR(5) 描述的 "globbing"（通配）规则与之匹配的模式。如果该模式不以 "svc:" 开头，则会在其前面加上 "svc:/"。
+.RE
+
+.sp
+.LP
+如果某个缩写的 \fIFMRI\fR 或模式与多个服务相匹配，则显示一条警告消息并忽略该操作数。
+.SH 示例
+.LP
+\fB示例 1 \fR重新启动服务实例
+.sp
+.LP
+以下命令重新启动 \fBNFS\fR 服务器。缺省服务实例的完整 \fIFMRI\fR 为：\fBsvc:/network/nfs/server:default\fR
+
+.sp
+.LP
+不过，您可以将该完整的 \fIFMRI\fR 缩写为以下形式：
+
+.sp
+.in +2
+.nf
+# svcadm restart nfs/server
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR禁用标准的 HTTP 服务器
+.sp
+.LP
+以下命令禁用标准的 HTTP 服务器，其中使用了缩写的 \fIFMRI\fR：
+
+.sp
+.in +2
+.nf
+$ svcadm disable http
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR启用实例及其依赖的实例
+.sp
+.LP
+以下命令启用 \fBfoo:bar\fR 实例及其依赖的所有实例：
+
+.sp
+.in +2
+.nf
+$ svcadm enable -r foo:bar
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR以同步方式启用实例
+.sp
+.LP
+以下命令启用 \fBfoo:bar\fR 实例。在实例联机或 \fBsvcadm\fR 断定该服务无法联机之前，此命令不会返回。
+
+.sp
+.in +2
+.nf
+$ svcadm enable -s foo:bar
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR限制和恢复正在运行的服务
+.sp
+.LP
+以下命令将正在运行的服务限制到单用户模式：
+
+.sp
+.in +2
+.nf
+# svcadm milestone milestone/single-user
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令恢复正在运行的服务：
+
+.sp
+.in +2
+.nf
+# svcadm milestone all
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+发生了致命错误。会在标准错误输出中显示一条或多条错误消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定的命令行选项无效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBsvcadm\fR 断定由于它等待的服务实例本身存在某个问题，不经管理员干预该服务实例无法达到所需的状态。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBsvcadm\fR 断定由于它等待的服务实例的依赖项存在某个问题，不经管理员干预该服务实例无法达到所需的状态。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+交互式输出为 Uncommitted（未确定）。调用和非交互式输出为 Committed（已确定）。
+.SH 另请参见
+.sp
+.LP
+\fBsvcprop\fR(1)、\fBsvcs\fR(1)、\fBinetd\fR(1M)、\fBinit\fR(1M)、\fBsvccfg\fR(1M)、\fBsvc.startd\fR(1M)、\fBlibscf\fR(3LIB)、\fBcontract\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)、\fBsmf_security\fR(5)
+.SH 附注
+.sp
+.LP
+\fBsvcadm\fR 等待服务及其依赖项更改状态时花费的时间量由其方法超时隐式限制。例如，如果某个服务使用的缺省重启程序的 start 方法挂起，则超时时间到期后，该服务将转换为 maintenance（维护）状态。\fBsvcadm\fR 将认为该服务在不经管理员干预的情况下无法联机。
+.sp
+.LP
+尝试以同步方式启用依赖于（直接或间接）某个文件的服务时，如果调用者不具备搜索包含某个文件的目录所需的特权，该尝试可能会失败且退出状态指出不满足依赖项。将来的 Solaris 发行版中可能会取消这一限制。

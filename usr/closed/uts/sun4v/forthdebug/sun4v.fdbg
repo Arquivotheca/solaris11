@@ -1,0 +1,571 @@
+\
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License (the "License").
+\ You may not use this file except in compliance with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+
+\
+\ Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+\
+
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/user.h>
+#include <sys/cred.h>
+#include <sys/proc.h>
+#include <sys/cpuvar.h>
+#include <sys/thread.h>
+#include <sys/sysinfo.h>
+#include <sys/vfs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/disp.h>
+#include <sys/var.h>
+#include <sys/ts.h>
+#include <sys/kstat.h>
+#include <vm/hat_sfmmu.h>
+#include <sys/ivintr.h>
+#include <sys/intr.h>
+#include <sys/machcpuvar.h>
+#include <vm/anon.h>
+#include <vm/as.h>
+#include <vm/hat.h>
+#include <vm/page.h>
+#include <vm/pvn.h>
+#include <vm/seg.h>
+#include <vm/seg_dev.h>
+#include <vm/seg_enum.h>
+#include <vm/seg_kp.h>
+#include <vm/seg_map.h>
+#include <vm/seg_vn.h>
+#include <sys/mutex_impl.h>
+#include <sys/rwlock_impl.h>
+#include <sys/callo.h>
+#include <sys/ddi_impldefs.h>
+#include <sys/kmem_impl.h>
+#include <sys/siginfo.h>
+#include <sys/memlist.h>
+#include <sys/modctl.h>
+#include <sys/kobj.h>
+#include <sys/privregs.h>
+#include <sys/machpcb.h>
+#include <sys/traptrace.h>
+
+
+forth_start
+ 
+code asm-search4  ( address size data -- )
+                  ( address' size' found-addr true | false )
+   sp  sc1  pop   \ size
+   sp  sc2  pop   \ addr
+   begin
+      sc1  test
+   0<>  while  nop
+      sc2  %g0  h# 14  sc3  lda
+      sc1  4           sc1  sub
+      sc2  4           sc2  add
+      tos  sc3              cmp
+      =  if
+         sc2  4    sc3  sub
+         sc2  sp        push
+         sc1  sp        push
+         sc3  sp        push
+         -1   tos       move
+         next
+      then
+   repeat  nop
+   0  tos  move
+c;
+         
+code asm-search8  ( address size data -- )
+                  ( address' size' found-addr true | false )
+   sp  sc1  pop   \ size
+   sp  sc2  pop   \ addr
+   begin
+      sc1  test
+   0<>  while  nop
+      sc2  %g0  h# 14  sc3  ldxa
+      sc1  8           sc1  sub
+      sc2  8           sc2  add
+      tos  sc3              cmp
+      =  if
+         sc2  8    sc3  sub
+         sc2  sp        push
+         sc1  sp        push
+         sc3  sp        push
+         -1   tos       move
+         next
+      then
+   repeat  nop
+   0  tos  move
+c;
+   
+: phys-search  ( address size data acf -- )
+   2>r  begin                 ( address size  r: data acf )
+      2r@ execute  if         ( address size found-addr  r: data acf )
+         2r@ drop .x          ( address size found-addr  r: data acf )
+         ." found at " .x cr  ( address size  r: data acf )
+         false                ( address size done?  r: data acf )
+      else                    (  r: data acf )
+         true                 ( done?  r: data acf )
+      then
+   until  2r> 2drop
+;
+
+: type>acf  ( type -- acf )
+   case
+      4  of  ['] asm-search4  endof
+      8  of  ['] asm-search8  endof
+      ." no search by " .x cr  true throw
+   endcase
+;
+
+: memlist-search ( data type memlist -- )
+   [ also memlist-words ]
+   -rot  type>acf  2>r               ( memlist  r: data acf )
+   begin  ?dup  while                ( memlist  r: data acf )
+      dup ml_address over ml_size    ( memlist ml_address ml_size  r: data acf )
+      2r@ phys-search  ml_next       ( ml_next  r: data acf )
+   repeat  2r> 2drop
+   [ previous ]
+;
+
+: avail-search
+   symbol phys_avail p@  memlist-search
+;
+
+: install-search
+   symbol phys_install p@  memlist-search
+;
+
+forth_end
+
+
+intr_vec
+	iv_inum		d
+	iv_pil		d
+	iv_flags	d
+	iv_pad		x
+	iv_handler	.addr>sym
+	iv_arg1		x
+	iv_arg2		x
+	iv_payload_buf	x
+	iv_vec_next	x
+	iv_pil_next	x
+
+intr_vecx
+	iv_vec		.intr_vec
+	iv_pil_xnext	x
+
+machcpu
+	mpcb		x
+	mutex_ready	d
+	in_prom		d
+	tl1_hdlr	d
+	cpu_q_va	x
+	dev_q_va	x
+	cpu_q_base_pa	x
+	cpu_q_size	x
+	dev_q_base_pa	x
+	dev_q_size	x
+	intr_head	x
+	intr_tail	x
+	cpu_private	x
+	kwbuf_full	d
+	kwbuf_sp	x
+	kwbuf		x
+	ptl1_state	x
+	mondo_data	x
+
+machpcb
+	mpcb_regs	.regs
+	mpcb_spbuf	x
+	mpcb_wbcnt	d
+	mpcb_wbuf	x
+	mpcb_wstate	x
+	mpcb_fpu	x
+	mpcb_flags	x
+	mpcb_thread	x
+
+TRAP_TRACE_CTL.d
+
+TRAP_TRACE_CTL
+
+trap_trace_record
+
+forth_start
+
+alias .ttc .TRAP_TRACE_CTL.d
+
+: cpu-ttc ( n -- )
+   8 to-column ." cpuid = " dup .x cr                    ( n )
+   ['] .TRAP_TRACE_CTL sizeof  * symbol trap_trace_ctl + ( trace-hdr )
+   [ also TRAP_TRACE_CTL.d-words ]
+   ." vaddr_base = " dup vaddr_base .x cr
+   ." paddr_base = " dup paddr_base .x cr
+   ." last_offset = " dup last_offset .x cr
+   ." offset = " dup offset .x cr
+   ." limit = " dup limit .x cr
+   ." asi = " asi .x cr
+   [ previous ]
+;
+
+\	Trap Trace Macros
+\	print record subroutine (short)
+: .sttr-hdr ( n -- n )
+   ." cpuid = " dup .x cr
+   6 to-column ." tick"
+   d# 18 to-column ." type"
+   d# 24 to-column ." tl"
+   d# 29 to-column ." gl"
+   d# 34 to-column ." trap PC" cr
+;
+
+: .sttr ( ptr -- )
+   [ also trap_trace_record-words ]
+   dup tt_tick .x
+   d# 18 to-column dup tt_tt .x
+   d# 24 to-column dup tt_tl .x
+   d# 29 to-column dup tt_gl .x
+   d# 34 to-column tt_tpc .addr>sym cr
+   [ previous ]
+;
+
+\	print record subroutine (long)
+: .lttr-hdr ( n -- n )
+   8 to-column ." cpuid = " dup .x cr
+;
+
+: .lttr ( ptr -- )
+   [ also trap_trace_record-words ]
+   ." tick = " dup tt_tick .x cr
+   ." trap type = " dup tt_tt .x cr
+   ." global level = " dup tt_gl .x cr
+   ." trap level = " dup tt_tl .x cr
+   ." trap pc = " dup tt_tpc .addr>sym cr
+   ." tstate = " dup tt_tstate .x cr
+   ." trap sp = " dup tt_sp .x cr
+   ." trap tr = " dup tt_tr .x cr
+   ." trap f1 = " dup tt_f1 .x cr
+   ." trap f2 = " dup tt_f2 .x cr
+   ." trap f3 = " dup tt_f3 .x cr
+   ." trap f4 = " tt_f4 .x cr cr
+   [ previous ]
+;
+
+' .trap_trace_record sizeof negate constant ttr-decr
+
+: ttr-loop ( print-acf screen-acf end start -- )
+   do                          ( p-acf s-acf )
+      2dup i swap execute  if  ( p-acf s-acf p-acf addr )
+	 swap execute          ( p-acf s-acf )
+         exit? throw           ( p-acf s-acf )
+      else                     ( p-acf s-acf p-acf addr )
+	 2drop                 ( p-acf s-acf )
+      then                     ( p-acf s-acf )
+   ttr-decr  +loop             ( p-acf s-acf )
+   2drop                       ( )
+;
+
+
+: ttr-bounds1 ( trace-hdr -- vaddr_base vaddr_base+last_offset )
+   [ also TRAP_TRACE_CTL.d-words ]
+   dup vaddr_base swap last_offset over +
+   [ previous ]
+;
+
+: ttr-bounds2 ( trace-hdr -- vaddr_base+offset vaddr_base+limit )
+   [ also TRAP_TRACE_CTL.d-words ]
+   dup vaddr_base over offset bounds   ( hdr v+o v )
+   rot limit +                         ( v+o v+l )
+   [ previous ]
+;
+
+: do-ttr ( n print-acf screen-acf -- )
+   rot ['] .TRAP_TRACE_CTL sizeof * symbol trap_trace_ctl + 
+                                        ( p-acf s-acf trace-hdr )
+   3dup ttr-bounds1 ttr-loop            ( p-acf s-acf trace-hdr )
+   ttr-bounds2 ttr-loop                 ( )
+;
+
+\ print cpu's traces in short format
+: cpu-ttr ( n -- )
+   .sttr-hdr ['] .sttr ['] true do-ttr
+;
+   
+\ print cpu's traces in long format
+: cpu-xttr ( n -- )
+   .lttr-hdr ['] .lttr ['] true do-ttr
+;
+
+
+\ trace sifting
+
+0 value sift-pc-start
+0 value sift-pc-end
+
+: set-sift-pc  ( base len -- )
+   over to sift-pc-start
+   + to sift-pc-end
+;
+
+: pc-in-range?  ( p -- p flag )
+   [ also trap_trace_record-words ]
+   dup tt_tpc  sift-pc-start sift-pc-end  within
+   [ previous ]
+;
+
+: cpu-ttr-pc  ( n -- )
+   .sttr-hdr ['] .sttr ['] pc-in-range? do-ttr
+;
+
+: cpu-xttr-pc  ( n -- )
+   .lttr-hdr ['] .lttr ['] pc-in-range? do-ttr
+;
+
+0 value sift-tt
+
+: same-tt?  ( p -- p flag )
+   [ also trap_trace_record-words ]
+   dup tt_tt  sift-tt  =
+   [ previous ]
+;
+
+: cpu-ttr-tt  ( n -- )
+   .sttr-hdr ['] .sttr ['] same-tt? do-ttr
+;
+
+: cpu-xttr-tt  ( n -- )
+   .lttr-hdr ['] .lttr ['] same-tt? do-ttr
+;
+
+\ execute acf for each cpu
+: ncpu-acf ( acf -- )
+   symbol cpu symbol _ncpu l@ 0  do   ( acf cpu )
+      dup i ptrsize * + p@ 0<>  if          ( acf cpu )
+	 over i swap execute cr       ( acf cpu )
+      then                            ( acf cpu )
+   loop                               ( acf cpu )
+   2drop                              ( )
+;
+
+: ncpu-ttr ( -- ) ['] cpu-ttr ncpu-acf ;
+: ncpu-xttr ( -- ) ['] cpu-xttr ncpu-acf ;
+: ncpu-ttc ( -- ) ['] cpu-ttc ncpu-acf ;
+
+forth_end
+
+htrap_trace_record
+
+htrap_trace_hdr
+
+forth_start
+
+alias .ttc .TRAP_TRACE_CTL.d
+
+: cpu-httc ( n -- )
+   8 to-column ." cpuid = " dup .x cr                    ( n )
+   ['] .TRAP_TRACE_CTL sizeof  * symbol trap_trace_ctl + ( trace-hdr )
+   [ also TRAP_TRACE_CTL.d-words ]
+   ." vaddr_base = " dup hvaddr_base .x cr
+   ." paddr_base = " dup hpaddr_base .x cr
+   ." last_offset = " dup hvaddr_base @ .x cr
+   ." offset = " dup hvaddr_base /x + @ .x cr
+   ." limit = " hlimit .x cr
+   [ previous ]
+;
+
+\	Trap Trace Macros
+\	print record subroutine (short)
+: .shttr-hdr ( n -- n )
+   ." cpuid = " dup .x cr
+   6 to-column ." tick"
+   d# 18 to-column ." type"
+   d# 23 to-column ." tag"
+   d# 29 to-column ." tt"
+   d# 35 to-column ." tl"
+   d# 40 to-column ." gl"
+   d# 45 to-column ." trap PC" cr
+;
+
+: .shttr ( ptr -- )
+   [ also htrap_trace_record-words ]
+   dup tt_tick .x
+   d# 18 to-column dup tt_ty .x
+   d# 23 to-column dup tt_tag .x
+   d# 29 to-column dup tt_tt .x
+   d# 35 to-column dup tt_tl .x
+   d# 40 to-column dup tt_gl .x
+   d# 45 to-column tt_tpc .addr>sym cr
+   [ previous ]
+;
+
+\	print record subroutine (long)
+: .lhttr-hdr ( n -- n )
+   8 to-column ." cpuid = " dup .x cr
+;
+
+: .lhttr ( ptr -- )
+   [ also htrap_trace_record-words ]
+   ." tick = " dup tt_tick .x cr
+   ." trap entry type = " dup tt_ty .x cr
+   ." hyper-privilege state = " dup tt_hpstate .x cr
+   ." trap type = " dup tt_tt .x cr
+   ." global level = " dup tt_gl .x cr
+   ." trap level = " dup tt_tl .x cr
+   ." extended trap indicator = " dup tt_tag .x cr
+   ." trap pc = " dup tt_tpc .addr>sym cr
+   ." tstate = " dup tt_tstate .x cr
+   ." trap f1 = " dup tt_f1 .x cr
+   ." trap f2 = " dup tt_f2 .x cr
+   ." trap f3 = " dup tt_f3 .x cr
+   ." trap f4 = " tt_f4 .x cr cr
+   [ previous ]
+;
+
+' .htrap_trace_record sizeof negate constant httr-decr
+
+: httr-loop ( print-acf screen-acf end start -- )
+   do                          ( p-acf s-acf )
+      2dup i swap execute  if  ( p-acf s-acf p-acf addr )
+	 swap execute          ( p-acf s-acf )
+         exit? throw           ( p-acf s-acf )
+      else                     ( p-acf s-acf p-acf addr )
+	 2drop                 ( p-acf s-acf )
+      then                     ( p-acf s-acf )
+   httr-decr  +loop            ( p-acf s-acf )
+   2drop                       ( )
+;
+
+
+: httr-bounds1 ( trace-hdr -- hvaddr_base+size hvaddr_base+last_offset )
+   [ also TRAP_TRACE_CTL.d-words ]
+   hvaddr_base dup @ over + swap		( v+lo v )
+   ['] .htrap_trace_hdr sizeof + swap		( v+s v+lo )
+   [ previous ]
+;
+
+: httr-bounds2 ( trace-hdr -- hvaddr_base+offset hvaddr_base+hlimit )
+   [ also TRAP_TRACE_CTL.d-words ]
+   dup hvaddr_base dup /x + @ over + swap	( hdr v+o v )
+   rot hlimit +					( v+o v+l )
+   [ previous ]
+;
+
+: do-httr ( n print-acf screen-acf -- )
+   rot ['] .TRAP_TRACE_CTL sizeof * symbol trap_trace_ctl + 
+                                        ( p-acf s-acf trace-hdr )
+   3dup httr-bounds1 httr-loop          ( p-acf s-acf trace-hdr )
+   httr-bounds2 httr-loop               ( )
+;
+
+\ print cpu's traces in short format
+: cpu-httr ( n -- )
+   .shttr-hdr ['] .shttr ['] true do-httr
+;
+   
+\ print cpu's traces in long format
+: cpu-xhttr ( n -- )
+   .lhttr-hdr ['] .lhttr ['] true do-httr
+;
+
+
+\ trace sifting
+
+0 value sift-pc-start
+0 value sift-pc-end
+
+: set-sift-pc  ( base len -- )
+   over to sift-pc-start
+   + to sift-pc-end
+;
+
+: pc-in-range?  ( p -- p flag )
+   [ also htrap_trace_record-words ]
+   dup tt_tpc  sift-pc-start sift-pc-end  within
+   [ previous ]
+;
+
+: cpu-httr-pc  ( n -- )
+   .shttr-hdr ['] .shttr ['] pc-in-range? do-httr
+;
+
+: cpu-xhttr-pc  ( n -- )
+   .lhttr-hdr ['] .lhttr ['] pc-in-range? do-httr
+;
+
+0 value sift-tt
+
+: same-tt?  ( p -- p flag )
+   [ also htrap_trace_record-words ]
+   dup tt_tt  sift-tt  =
+   [ previous ]
+;
+
+: cpu-httr-tt  ( n -- )
+   .shttr-hdr ['] .shttr ['] same-tt? do-httr
+;
+
+: cpu-xhttr-tt  ( n -- )
+   .lhttr-hdr ['] .lhttr ['] same-tt? do-httr
+;
+
+\ execute acf for each cpu
+: ncpu-acf ( acf -- )
+   symbol cpu symbol _ncpu l@ 0  do   ( acf cpu )
+      dup i ptrsize * + p@ 0<>  if          ( acf cpu )
+	 over i swap execute cr       ( acf cpu )
+      then                            ( acf cpu )
+   loop                               ( acf cpu )
+   2drop                              ( )
+;
+
+: ncpu-httr ( -- ) ['] cpu-httr ncpu-acf ;
+: ncpu-xhttr ( -- ) ['] cpu-xhttr ncpu-acf ;
+: ncpu-httc ( -- ) ['] cpu-httc ncpu-acf ;
+
+forth_end
+
+forth_start
+
+: .uintarray ( array-addr -- )
+   dup  if                       ( array-addr )
+      begin dup l@ ?dup  while   ( array-addr item )
+         .x la1+                 ( array-addr' )
+      repeat                     ( array-addr )
+   then                          ( array-addr )
+   drop
+;
+
+forth_end
+
+forth_start
+: clr_pagecol_stats
+	symbol sys_req_bins
+	200 4 *
+	0 fill
+	symbol sys_nak_bins
+	200 4 *
+	0 fill
+;
+
+h# 21 constant ASI_MMU_CTX
+h#  8 constant MMU_PCONTEXT
+h# 10 constant MMU_SCONTEXT
+
+forth_end

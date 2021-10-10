@@ -1,0 +1,332 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ttymon 1M "2011 年 5 月 11 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ttymon \- 端末ポートのポートモニター
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/ttymon\fR \fB-g\fR [\fB-d\fR \fIdevice\fR] [\fB-h\fR] [\fB-t\fR \fItimeout\fR] 
+     [\fB-l\fR \fIttylabel\fR] [\fB-p\fR \fIprompt\fR] [\fB-m\fR \fImodules\fR] [\fB-T\fR \fItermtype\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBttymon\fR は STREAMS ベースの TTY ポートモニターです。その機能には、ポートの監視、ポートの端末モード、ボーレートおよび回線規約の設定、そしてポートに関連したサービスへのユーザーまたはアプリケーションの接続があります。\fBttymon\fR の各インスタンスは、起動時に指定された 1 つのポートを監視します。\fBttymon\fR のインスタンスが起動されると、\fBttymon\fR は最初に回線制御手順 (指定されている場合)、および速度と端末の設定を初期化します。\fB/etc/logindevperm\fR 中のエントリに指定されているポートには、デバイスのオーナー、グループ、アクセス権が設定されます (\fBlogindevperm\fR(4) 参照)。初期化に使用される値は、TTY 設定ファイルの適切なエントリから取り込まれます。このファイルは \fBsttydefs\fR(1M) コマンドによって管理されています。通常、ポート上のデフォルトの回線規約は、オートプッシュファシリティの \fBautopush\fR(1M) コマンドによって設定されます。
+.sp
+.LP
+次に \fBttymon\fR はプロンプトを書き込んでユーザーの入力を待ちます。ユーザーが BREAK キーを押して速度が適切でないことを知らせると、\fBttymon\fR は次の速度を試行してプロンプトを再び書き込みます。有効な入力が受信されると、\fBttymon\fR は \fButmpx\fR エントリ (\fButmpx\fR(4) を参照) を作成し、ポートのログインサービスを実行します。\fB\fR有効な入力は、キャリッジリターンで終わり、少なくとも 1 つの復帰改行以外の文字が入った文字列からなります。
+.sp
+.LP
+\fIautobaud\fR がポートで動作可能であれば、\fBttymon\fRは自動的にポートのボーレートを判別しようとします。ユーザーがキャリッジリターンを入力してからでないと、\fBttymon\fRはボーレートを認識してプロンプトをプリントできません。現在のところ、\fIautobaud\fR が判別できるボーレートは \fB110\fR、\fB1200\fR、\fB2400\fR、\fB4800\fR、および \fB9600\fR です。
+.SS "SMF サービス記述"
+.sp
+.LP
+\fBttymon\fR を起動するプライマリ \fBsmf\fR(5) サービスは、\fBsvc:/system/console-login\fR です。このサービスには、複数のサービスインスタンスが含まれる場合があります。インスタンスについては、以下でより詳しく説明します。次に示すように、このサービスは呼び出しを制御するためにプロパティーグループ \fBttymon\fR 内の多くのプロパティーを提供します。
+.sp
+.in +2
+.nf
+NAME                  TYPE               TTYMON OPTION
+----------------------------------------------------------
+device                astring            [-d device]
+nohangup              boolean            [-h]
+label                 astring            [-l label]
+modules               astring            [-m module1,module2]
+prompt                astring            [-p prompt]
+timeout               count              [-t timeout]
+terminal_type         astring            [-T termtype]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+いずれかの値が空の文字列であるかゼロに設定された整数である場合、オプションは \fBttymon\fR 呼び出しに渡されません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/system/console-login:default\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトインスタンスは常に、システムハードウェアコンソールでのログインを提供する \fBttymon\fR を表します。
+.sp
+システムコンソール設定の変更方法の例については、「使用例」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/system/console-login:{vt2, vt3, vt4, vt5, vt6}\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムの仮想コンソールには、追加のサービスインスタンスが提供されています。 仮想コンソールが使用できない場合は、これらのサービスが自動的に無効化されます。 \fBvtdaemon\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsvc:/system/console-login:{terma, termb}\fR\fR
+.ad
+.sp .6
+.RS 4n
+便宜のために \fBsvc:/system/console-login:terma\fR および \fBsvc:/system/console-login:termb\fR が提供されており、追加ポート \fB/dev/term/a\fR および \fB/dev/term/b\fR にログインサービスを設定する際にユーザーが使用できます。これらのサービスはデフォルトで無効化されています。
+.RE
+
+.SS "追加インスタンスを作成する"
+.sp
+.LP
+ユーザーは追加デバイスに追加のサービスインスタンスを構成できます。これは、次の方法のいずれかで実現できます。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvccfg\fR(1M) を使用して手動でサービスインスタンスを作成する。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サービスプロファイルにサービスを作成する (\fBsmf\fR(5) を参照)。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+追加のサービスインスタンスにサービスマニフェストを作成する。
+.RE
+.sp
+.LP
+\fBsvccfg\fR を使用して手動でサービスを構成する例については、「使用例」を参照してください。
+.SS "SMF サービスのエラー "
+.sp
+.LP
+コンソールログインサービスのインスタンスが誤って構成された場合はほとんど、保守状態に遷移します。\fBsvcs\fR \fB-l\fR を使用して (\fBsvcs\fR(1) を参照)、サービスのログファイルの場所を確認し、追加情報がないかどうかログを調べます。
+.sp
+.LP
+エラーが発生すると、サービスが無制限に再起動されることがあります。\fBsvcadm\fR(1M) を使用してサービスを無効化してから、問題解決に役立つ追加のメッセージや情報がないかどうかサービスログを調べます。
+.SH セキュリティ
+.sp
+.LP
+\fBttymon\fR は \fBpam\fR(3PAM)を使って、セッション管理を行います。\fBPAM\fR 構成ポリシーは \fBttymon\fR で使用するモジュールを明記しています。このポリシーは \fB/etc/pam.conf\fR で見ることができます。以下に UNIX セッション管理モジュールを使用する \fBttymon\fR コマンドのエントリの入った \fBpam.conf\fR ファイルの抜粋を示します。
+.sp
+.in +2
+.nf
+ttymon session required /usr/lib/security/pam_unix_session.so.1
+.fi
+.in -2
+
+.sp
+.LP
+\fBttymon\fR サービスのエントリがない場合には「other」のサービスのエントリを使用します。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fR
+.ad
+.RS 14n
+.rt  
+歴史的経緯により、\fB-g\fR オプションは必須です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fIdevice\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIdevice\fR は \fBttymon\fR の接続先とすべきポートの完全パス名です。このオプションが指定されていなければ、ファイル記述子 \fB0\fRは TTY ポートに対する呼び出しプロセスによって設定される必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 14n
+.rt  
+-h フラグが指定されていないと、\fBttymon\fR は、速度をデフォルト速度または指定速度に設定する前に、速度を 0 に設定することによって回線のハングアップを強制的に行います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fIttylabel\fR\fR
+.ad
+.RS 14n
+.rt  
+\fIttylabel\fR は \fBttydefs\fR ファイルの速度および TTY 定義に対するリンクです。この定義によって、初期の実行速度、初期の TTY 設定の内容およびユーザーがBREAK キーを押して速度が適切でないことを指示する場合に、次に試行する速度が \fBttymon\fR に通知されます。デフォルト速度は 9600 ボーです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fImodules\fR\fR
+.ad
+.RS 14n
+.rt  
+ポートを初期化すると、\fBttymon\fR はポートのモジュールすべてをポップして、指定した順序で \fImodules\fR をプッシュします。\fImodules\fR はコンマで区切ったプッシュ可能なモジュールのリストです。通常、ポートのデフォルトのモジュールは、オートプッシュファシリティによって設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fIprompt\fR\fR
+.ad
+.RS 14n
+.rt  
+ユーザーがプロンプト文字列を指定するのを許可します。デフォルトのプロンプトは \fBLogin: \fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fItimeout\fR\fR
+.ad
+.RS 14n
+.rt  
+プロンプトの送信後、\fItimeout\fR 秒内に何も入力がない場合には \fBttymon\fR を終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fItermtype\fR\fR
+.ad
+.RS 14n
+.rt  
+\fItermtype\fR に \fBTERM\fR環境変数を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 14n
+.rt  
+詳細なメッセージを有効化します。 
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRシステムコンソールの端末タイプを設定する
+.sp
+.LP
+次の例では、システムコンソール \fBttymon\fR 呼び出しのための端末タイプ (\fB-T\fR) オプションの値を設定します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/system/console-login:default \e\fR
+	    \fB"setprop ttymon/terminal_type = xterm"\fR
+# \fBsvcadm refresh svc:/system/console-login:default\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR追加シリアルデバイスのサービスインスタンスを作成する
+.sp
+.LP
+この例では、ユーザーが USB シリアルアダプタを使用して接続されている端末でログインサービスを提供するために、\fBsvc:/system/console-login\fR サービスの追加インスタンスを構成します。USB シリアルポートが \fB/dev/term/1\fR として存在し、ユーザーがこれに \fBvt100\fR 端末を接続する計画があると想定しています。 この場合、サービスインスタンスには \fBterm1\fR (またはその他の任意の名前) という名前を付け、次のように定義できます。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/system/console-login "add term1"\fR
+# \fBSVC=svc:/system/console-login:term1\fR
+# \fBsvccfg -s $SVC "addpg ttymon application"\fR
+# \fBsvccfg -s $SVC "setprop ttymon/device = /dev/term/1"\fR
+# \fBsvccfg -s $SVC "setprop ttymon/terminal_type = vt100"\fR
+# \fBsvcadm refresh $SVC\fR
+# \fBsvcadm enable $SVC\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBLC_*\fR 変数 (\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBLC_COLLATE\fR、\fBLC_NUMERIC\fR、\fBLC_MONETARY\fR) (\fBenviron\fR(5)参照) のいずれも環境に設定されていなければ、それぞれ対応するロケール のカテゴリにおける \fBttymon\fR の動作は、環境変数 \fBLANG\fR によって決定されます。\fBLC_ALL\fR が設定されていれば、その内容が \fBLANG\fR 変数やその他の \fBLC_*\fR 変数より優先されます。前述の変数が環境にまったく設定されていなければ、「C」ロケール (米国スタイル) が \fBttymon\fR の動作を決定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBttymon\fR の文字の処理方法を決定します。\fBLC_CTYPE\fR に有効な値が設定されていると、\fBttymon\fR は、そのロケールにあった文字を含むテキストやファイル名を表示および処理できます。\fBttymon\fR は拡張 UNIX コード(EUC)も表示および処理できます。この場合、文字は 1 バイト幅、 2 バイト幅、3 バイト幅のいずれも使用できます。また、\fBttymon\fR は 1、 2、またはそれ以上のカラム幅の EUC 文字も処理することができます。「C」ロケール においては、ISO 8859-1の文字だけが有効です。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/logindevperm\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンソールデバイスのログインまたはログアウト時にデバイスの所有者、グループ、およびアクセス権を変更するときに、\fBlogin\fR(1) および \fBttymon\fR で使用される情報が含まれます。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBct\fR(1C), \fBcu\fR(1C), \fBautopush\fR(1M), \fBsttydefs\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBuucico\fR(1M), \fBvtdaemon\fR(1M), \fBpam\fR(3PAM), \fBlogindevperm\fR(4), \fBpam.conf\fR(4), \fButmpx\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBpam_authtok_check\fR(5), \fBpam_authtok_get\fR(5), \fBpam_authtok_store\fR(5), \fBpam_dhkeys\fR(5), \fBpam_passwd_auth\fR(5), \fBpam_unix_account \fR(5), \fBpam_unix_auth\fR(5), \fBpam_unix_session\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+\fI\fR
+.SH 注意事項
+.SS "サービスアクセス機能 (SAF と SAC)"
+.sp
+.LP
+以前は、\fBttymon\fR はサービスアクセス機能のコンポーネントであり、\fBsac\fR (サービスアクセスコントローラ) によって起動されていました。このリリースの Solaris では、この機能は削除され、SMF への関連部分の変換が行われました。
+.SS "ポートの競合"
+.sp
+.LP
+ポートが複数の \fBttymon\fR によって監視されている場合は、\fBttymon\fR は入力を争うような方法でプロンプトメッセージを送信できます。
+.sp
+.LP
+2 つの \fBsvc:/system/console-login\fR サービスインスタンスが同じ基本デバイスを参照している可能性があります。たとえば、(ファームウェアの設定や自動検出のために) システムのハードウェアコンソールがシリアルポート A に接続されている場合は、\fBsvc:/system/console-login:default \fR と \fBsvc:/system/console-login:terma\fR の両方のサービスが同じ基本ハードウェアデバイスを参照します。この状況を回避するために追加サービスインスタンスを定義または有効化する際は、注意しないと 2 つの \fBttymon\fR が競合してしまいます。

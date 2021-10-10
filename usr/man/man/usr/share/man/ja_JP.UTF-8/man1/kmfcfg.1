@@ -1,0 +1,878 @@
+'\" te
+.\" Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH kmfcfg 1 "2010 年 8 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+kmfcfg \- 鍵管理ポリシーおよびプラグイン構成ユーティリティー
+.SH 形式
+.LP
+.nf
+\fBkmfcfg\fR \fIsubcommand\fR [\fIoption\fR ...] 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+ユーザーは \fBkmfcfg\fR コマンドを使用すると、鍵管理フレームワーク (KMF) ポリシーデータベースを構成できます。KMF ポリシーデータベース (DB) は、KMF フレームワークから管理される鍵と証明書の使用を制限します。 
+.sp
+.LP
+\fBkmfcfg\fR を使用すると、システムのデフォルトのデータベースファイル \fB/etc/security/kmfpolicy.xml\fR またはユーザー定義のデータベースファイルのポリシー定義を一覧表示、作成、変更、削除、インポート、およびエクスポートできます。
+.sp
+.LP
+プラグイン構成の場合、ユーザーは \fBkmfcfg\fR を使用して、プラグイン情報の表示、KMF プラグインのインストール/アンインストール、およびプラグインオプションの変更を行えます。
+.SH サブコマンド
+.sp
+.LP
+サポートされているサブコマンドは次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate\fR\fR
+.ad
+.sp .6
+.RS 4n
+ポリシーデータベースファイルに新しいポリシーを追加します。 
+.sp
+\fBcreate\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+create [dbfile=\fIdbfile\fR] policy=\fIpolicyname\fR
+    [ignore-date=true|false]
+    [ignore-unknown-eku=true|false]
+    [ignore-trust-anchor=true|false]
+    [validity-adjusttime=\fIadjusttime\fR]
+    [ta-name=trust anchor subject DN]
+    [ta-name=trust anchor subject DN | search]
+    [ta-serial=trust anchor serial number]
+    [ocsp-responder=\fIURL\fR]
+    [ocsp-proxy=\fIURL\fR]
+    [ocsp-use-cert-responder=true|false]
+    [ocsp-response-lifetime=timelimit]
+    [ocsp-ignore-response-sign=true|false]
+    [ocsp-responder-cert-name=Issuer DN]
+    [ocsp-responder-cert-serial=\fIserial number\fR]
+    [crl-basefilename=\fIbasefilename\fR]
+    [crl-directory=\fIdirectory\fR]
+    [crl-get-crl-uri=true|false]
+    [crl-proxy=\fIURL\fR]
+    [crl-ignore-crl-sign=true|false]
+    [crl-ignore-crl-date=true|false]
+    [keyusage=digitalSignature|nonRepudiation
+              |keyEncipherment | dataEncipherment |
+              keyAgreement |keyCertSign |
+              cRLSign | encipherOnly | decipherOnly],[...]
+    [ekunames=serverAuth | clientAuth |
+             codeSigning | emailProtection |
+             ipsecEndSystem | ipsecTunnel |
+             ipsecUser | timeStamping |
+             OCSPSigning],[...]
+    [ekuoids=\fIOID,OID,OID...\fR]
+    [mapper-name=\fIname of the mapper\fR]
+    [mapper-dir=\fIdir where mapper library resides\fR]
+    [mapper-path=\fIfull pathname of mapper library\fR]
+    [mapper-options=\fImapper options\fR]
+.fi
+.in -2
+.sp
+
+\fBcreate\fR サブコマンドは次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-basefilename=\fR\fIfilename\fR\fR
+.ad
+.br
+.na
+\fB\fBcrl-directory=\fR\fIdirectory\fR\fR
+.ad
+.sp .6
+.RS 4n
+これら 2 つの属性は、CRL ファイルの場所を指定するために使用されます。\fBcrl-basefilename\fR 属性は CRL ファイルのベースファイル名を表します。\fBcrl-directory\fR 属性は、CRL ファイルのディレクトリを表します。デフォルトで現在のディレクトリに設定されています。
+.sp
+\fBcrl-get-crl-uri\fR 属性が \fBtrue\fR に設定され、\fBcrl-basefilename\fR が指定されていない場合、キャッシュされた CRL ファイルの \fBbasefilename\fR が、CRL ファイルの取得に使用される URI のベース名になります。
+.sp
+\fBcrl-get-crl-uri\fR 属性が \fBfalse\fR に設定されている場合、入力 CRL ファイルを示すために \fBcrl-basefilename\fR を指定する必要があります。\fBcrl-get-crl-uri\fR はデフォルトで \fB false\fR に設定されています。
+.sp
+これら 2 つの属性は、ファイルベースの CRL プラグインにのみ適用されます。現在のファイルベースの CRL プラグインは \fBfile\fR および \fBpkcs11\fR キーストアです。\fBnss\fR キーストアの場合、CRL の場所は常に NSS 内部データベースです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-get-crl-uri=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の検証の一環として、証明書の配布ポイント拡張機能の URI 情報を使用して CRL ファイルを取得し、動的にキャッシュするかどうかを構成します。
+.sp
+この属性はデフォルトで \fBfalse\fR に設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-ignore-crl-date=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcrl-ignore-crl-date\fR が true に設定されている場合、CRL の有効期間は検査されません。
+.sp
+この属性はデフォルトで \fBfalse\fR に設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-ignore-crl-sign=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcrl-ignore-crl-sign\fR が \fBtrue\fR に設定されている場合、CRL の署名は検査されません。 
+.sp
+この属性はデフォルトで \fBfalse\fR に設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-proxy=\fR \fIURL\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcrl-get-crl-uri\fR が \fBtrue\fR に設定されている場合に、CRL ファイルを動的に取得するプロキシサーバーの名前とポートを設定します。
+.sp
+ポート番号は省略できます。ポート番号を指定しない場合、デフォルト値は \fB8080\fR です。\fBcrl-proxy\fR の設定は、たとえば \fBcrl-proxy=webcache.sfbay:8080\fR のようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいポリシーを追加する DB ファイル。指定しない場合、デフォルトは、システム KMF ポリシーデータベースファイル \fB/etc/security/kmfpolicy.xml\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBekuoids=\fR\fIEKUOIDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義しているポリシーで必要になる拡張鍵用途 OID のコンマ区切りのリスト。OID は、\fB1.2.3.4\fR のように\fBドット表記\fRで表されます。\fBekuoids\fR の設定は、たとえば \fBekuoids=1.2.3.4,9.8.7.6.5\fR のようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBekunames=\fR\fIEKUNAMES\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義しているポリシーで必要になる拡張鍵用途名のコンマ区切りリスト。\fIEKUNAMES\fR に使用できる値は、\fBserverAuth\fR、\fBclientAuth\fR、\fB codeSigning\fR、\fBemailProtection\fR、\fBipsecEndSystem\fR、\fBipsecTunnel\fR、\fBipsecUser\fR、\fBtimeStamping\fR、および \fBOCSPSigning\fR です。
+.sp
+OCSP、CRL、鍵用途、および拡張鍵用途の検査はデフォルトで無効になっています。これらのいずれかを有効にするには、特定の検査に対して 1 つまたは複数の属性を指定します。たとえば、\fBocsp-responder\fR 属性を設定すると、OCSP 検査が有効になります。\fBekuname\fR 属性または \fBekuoids\fR 属性を設定すると、拡張鍵用途検査が有効になります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignore-date=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+このポリシーの\fB日付を無視\fRオプションを設定します。デフォルトではこの値は \fBfalse\fR です。\fBtrue\fR を指定した場合、ポリシーは、有効性を評価するときに、証明書で定義されている有効期限を無視します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignore-unknown-eku=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+このポリシーの\fB不明な EKU を無視\fRオプションを設定します。デフォルトではこの値は \fBfalse\fR です。\fBtrue\fR の場合、ポリシーは、拡張鍵用途拡張機能の認識できない EKU 値を無視します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBignore-trust-anchor=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+このポリシーの\fBトラストアンカーを無視\fRオプションを設定します。デフォルトではこの値は \fBfalse\fR です。\fBtrue\fR を指定した場合、ポリシーは、検証時にトラストアンカーを使用して検証対象の証明書の署名を確認しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyusage=\fR\fIKUVALUES\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義しているポリシーで必要になる鍵用途値のコンマ区切りリスト。使用できる値は、\fBdigitalSignature\fR、\fBnonRepudiation\fR、\fBkeyEncipherment\fR、\fBdataEncipherment\fR、\fBkeyAgreement\fR、\fBkeyCertSign\fR、\fBcRLSign\fR、\fBencipherOnly\fR、\fB decipherOnly\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-ignore-response-sign=true | false\fR\fR
+.ad
+.sp .6
+.RS 4n
+この属性を \fBtrue\fR に設定した場合、OCSP 応答の署名は検証されません。この属性値はデフォルトで \fBfalse\fR に設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-proxy=\fR\fIURL\fR\fR
+.ad
+.sp .6
+.RS 4n
+OCSP のプロキシサーバー名およびポートを設定します。ポート番号は省略できます。ポート番号を指定しない場合、デフォルト値は 8080 です。\fBocsp-proxy\fR の設定は、たとえば \fBocsp-proxy="webcache.sfbay:8080"\fR のようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-response-lifetime=\fR\fItimelimit \fR\fR
+.ad
+.sp .6
+.RS 4n
+応答が必要になる \fBfreshness\fR 期間を設定します。\fItimelimit\fR は、\fInumber-day\fR、\fInumber-hour\fR、\fInumber-minute \fR、または \fInumber-second\fR で指定できます。\fBocsp-response-lifetime\fR の設定は、たとえば \fBocsp-response-lifetime=6-hour\fR のようになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-responder-cert-name=\fR\fIIssuerDN \fR\fR
+.ad
+.br
+.na
+\fB\fBocsp-responder-cert-serial=\fR\fI serialNumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+これらの 2 つの属性は、OCSP 応答者証明書を表します。\fBocsp-responder-cert-name\fR には、証明書の発行者名を指定します。例については、\fBta-name\fR オプションを参照してください。\fIocsp-responder-cert-serial\fR はシリアル番号用で、\fB0x0102030405060708090a0b0c0d0e0f\fR のように 16 進数値で指定する必要があります。OCSP 応答者が証明書の発行者とは異なる場合、および OCSP 応答を検証する必要がある場合は、OCSP 応答者の証明書情報を指定するようにしてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-responder=\fR\fIURL\fR\fR
+.ad
+.sp .6
+.RS 4n
+OCSP 検証方法で使用する OCSP 応答者の URL を設定します。たとえば、\fBocsp-responder=http://ocsp.verisign.com/ocsp/status\fR のように設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBo\fBcsp-use-cert-responder=true | fals\fRe\fR
+.ad
+.sp .6
+.RS 4n
+可能な場合は証明書で定義された応答者を常に使用するように、このポリシーを構成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.sp .6
+.RS 4n
+作成されるポリシーレコード。\fIpolicyname\fR が必要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBta-name=\fR\fItrust anchor subject DN\fR | \fBsearch\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBta-name\fR は証明書を検証するために使用されるトラストアンカーを識別します。KMF ポリシーエンジンは、完全な PKIX パス検証を行うのではなく、単に、検証対象の証明書の親であるようにトラストアンカーを扱います。 
+.sp
+明示的な Subject DN が指定されている場合、\fBta-serial\fR 値と組み合わせて、使用する証明書を一意に識別する必要があります。また、識別された証明書は、選択されているキーストアで使用できる必要があります。 
+.sp
+明示的な主体名やシリアル番号の代わりに値 \fBsearch\fR を使用する場合、KMF ポリシーエンジンは、検証対象の証明書の発行者名に一致する証明書を見つけようとし、それを検証に使用します。 
+.sp
+\fBsearch\fR を使用する場合、\fBta-serial\fR 値は無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBta-serial=\fR\fItrust anchor serial number\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBta-name\fR を明示的な主体名として指定する場合、その証明書のシリアル番号を \fBta-serial\fR 値で指定する必要があります。シリアル番号は、たとえば \fBta-serial=0x01020a0b\fR のように、16 進形式で指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalidity-adjusttime=\fR\fIadjusttime \fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の有効期限の開始と終了に対する調整時間を設定します。時間は \fInumber-day、number-hour、number-minute、または number-second\fR で指定できます。\fBvalidity-adjusttime\fR の設定は、たとえば \fBvalidity-adjusttime=6-hour.ta-name="Subject DN" ta-serial=serialNumber\fR のようになります。
+.sp
+これら 2 つの属性は、トラストアンカー証明書を表し、キーストアでトラストアンカーの証明書を見つけるために使用されます。\fIta-name\fR には、トラストアンカー証明書の主体名の識別名を指定します。たとえば、\fBta-name="O=Sun Microsystems Inc., \ OU=Solaris Security Technologies Group, \ L=Ashburn, ST=VA, C=US, CN=John Smith"\fR TA 証明書のシリアル番号。これは、発行者 DN とともに、キーストアで TA 証明書を見つけるために使用されます。シリアル番号は、たとえば \fB0x0102030405060708090a0b0c0d0e\fR のように、16 進数値として指定する必要があります。\fBignore-trust-anchor\fR 属性の値が false の場合、トラストアンカー属性を設定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmapper-name=\fR\fIname\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-dir=\fR\fIdirectory\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-path=\fR\fIpath\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-options=\fR\fIoptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+これらの 4 つのオプションは、証明書と名前のマッピングをサポートします。\fBmapper-name\fR はマッパーの名前を指定します。たとえば、\fBcn\fR 名は、マッパーオブジェクト \fBkmf_mapper_cn.so.1\fR を表します。\fBmapper-dir\fR は、デフォルトのマッパーディレクトリ \fB/lib/crypto\fR を上書きします。mapper-path は、マッパーオブジェクトの完全パスを指定します。\fBmapper-options\fR は、ASCII のみから構成される最大 255 バイト長の文字列です。その書式はマッパー固有ですが、マッパーは、たとえば \fBcasesensitive,ignoredomain\fR のような、オプションのコンマ区切りリストを受け入れることが期待されます。\fBmapper-path\fR および \fBmapper-name\fR は相互に排他的です。\fBmapper-dir\fR は、\fBmapper-name\fR が設定されている場合にのみ設定できます。\fBmapper-options\fR は、\fBmapper-name\fR または \fBmapper-path\fR が設定されている場合にのみ設定できます。上記の誤った設定のいずれかを使用しようとすると、エラーになり、ポリシーデータベースは変更されません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたポリシー名に一致したポリシーを削除します。システムのデフォルトポリシー (\fBdefault\fR) は削除できません。
+.sp
+\fBdelete\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+delete [dbfile=\fIdbfile\fR] policy=\fIpolicyname\fR
+.fi
+.in -2
+.sp
+
+\fBdelete\fR サブコマンドは次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.RS 21n
+.rt  
+指定されたファイルからポリシー定義を読み込みます。\fIdbfile\fR が指定されていない場合、デフォルトは、システム KMF ポリシーデータベースファイル \fB/etc/security/kmfpolicy.xml\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 21n
+.rt  
+削除するポリシーの名前。システムデータベースを使用する場合、\fIpolicyname\fR が必要です。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR\fR
+.ad
+.sp .6
+.RS 4n
+あるポリシーデータベースファイルから別のポリシーデータベースファイルに、ポリシーをエクスポートします。
+.sp
+\fBexport\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+kmfcfg export policy=\fIpolicyname\fR outfile=\fInewdbfile\fR [dbfile=\fIdbfile\fR]
+.fi
+.in -2
+.sp
+
+\fBexport\fR サブコマンドは次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.RS 24n
+.rt  
+エクスポートしたポリシーが読み込まれる DB ファイル。\fIdbfile\fR が指定されていない場合、デフォルトは、システム KMF ポリシーデータベースファイル \fB/etc/security/kmfpolicy.xml\fR になります。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutfile=\fR\fIoutputdbfile\fR\fR
+.ad
+.RS 24n
+.rt  
+エクスポートしたポリシーが保存される DB。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 24n
+.rt  
+エクスポートされるポリシーレコード。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBkmfcfg\fR コマンドのヘルプを表示します。
+.sp
+\fBhelp\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+help
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR\fR
+.ad
+.sp .6
+.RS 4n
+あるポリシーデータベースファイルから別のポリシーデータベースファイルに、ポリシーをインポートします。 
+.sp
+\fBimport\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+kmfcfg import policy=\fIpolicyname\fR infile=\fIinputdbfile\fR [dbfile=\fIdbfile\fR]
+.fi
+.in -2
+.sp
+
+\fBimport\fR サブコマンドは次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 22n
+.rt  
+インポートされるポリシーレコード。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfile=\fR\fIinputdbfile\fR\fR
+.ad
+.RS 22n
+.rt  
+ポリシーの読み込み元の DB ファイル。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIoutdbfile\fR\fR
+.ad
+.RS 22n
+.rt  
+新しいポリシーを追加する DB ファイル。指定しない場合、デフォルトは、システム KMF ポリシーデータベースファイル \fB/etc/security/kmfpolicy.xml\fR になります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+引数がない場合、デフォルトのシステムデータベースから、すべてのポリシー定義を一覧表示します。
+.sp
+\fBlist\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+list [dbfile=\fIdbfile\fR] [policy=\fIpolicyname\fR]
+.fi
+.in -2
+.sp
+
+\fBlist\fR サブコマンドは次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdbfile=\fR\fIdbfile\fR\fR
+.ad
+.RS 21n
+.rt  
+指定されたファイルからポリシー定義を読み込みます。指定しない場合、デフォルトは、システム KMF ポリシーデータベースファイル \fB/etc/security/kmfpolicy.xml\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 21n
+.rt  
+指定された名前に一致したポリシーのポリシー定義のみを表示します。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前に一致したポリシーを変更します。システムのデフォルトポリシー (\fBdefault\fR) は変更できません。
+.sp
+\fBmodify\fR サブコマンドの書式は次のとおりです。
+.sp
+.in +2
+.nf
+modify [dbfile=\fIdbfile\fR] policy=\fIpolicyname\fR
+    [ignore-date=true|false]
+    [ignore-unknown-eku=true|false]
+    [ignore-trust-anchor=true|false]
+    [validity-adjusttime=\fIadjusttime\fR]
+    [ta-name=trust anchor subject DN]
+    [ta-serial=trust anchor serial number]
+    [ocsp-responder=\fIURL\fR]
+    [ocsp-proxy=\fIURL\fR]
+    [ocsp-use-cert-responder=true|false]
+    [ocsp-response-lifetime=timelimit]
+    [ocsp-ignore-response-sign=true|false]
+    [ocsp-responder-cert-name=Issuer DN]
+    [ocsp-responder-cert-serial=serial number]
+    [ocsp-none=true|false]
+    [crl-basefilename=\fIbasefilename\fR]
+    [crl-directory=\fIdirectory\fR]
+    [crl-get-crl-uri=true|false]
+    [crl-proxy=URL]
+    [crl-ignore-crl-sign=true|false]
+    [crl-ignore-crl-date=true|false]
+    [crl-none=true|false]
+    [keyusage=digitalSignature| nonRepudiation
+              |keyEncipherment | dataEncipherment |
+              keyAgreement |keyCertSign |
+              cRLSign | encipherOnly | decipherOnly],[...]
+    [keyusage-none=true|false]
+    [ekunames=serverAuth | clientAuth |
+             codeSigning | emailProtection |
+             ipsecEndSystem | ipsecTunnel |
+             ipsecUser | timeStamping |
+             OCSPSigning],[...]
+    [ekuoids=OID,OID,OID]
+    [eku-none=true|false]
+    [mapper-name=\fIname of the mapper\fR]
+    [mapper-dir=\fIdir where mapper library resides\fR]
+    [mapper-path=\fIfull pathname of mapper library\fR]
+    [mapper-options=\fImapper options\fR]
+.fi
+.in -2
+.sp
+
+\fBmodify\fR サブコマンドは、\fBcreate\fR サブコマンドと同じオプションを多数サポートします。共通のオプションの説明については、create サブコマンドを参照してください。 
+.sp
+\fBmodify\fR サブコマンドは次の固有のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrl-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+\fBcrl-none\fR が \fBtrue\fR に設定されている場合、CRL 検査が無効になります。この属性が \fBtrue\fR に設定されている場合、ほかの CRL 属性は設定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdfile=[\fR\fIdbfile\fR\fB ]\fR\fR
+.ad
+.RS 30n
+.rt  
+ポリシーを変更するデータベースファイル。指定しない場合、デフォルトは、システム KMF ポリシーデータベースファイル \fB/etc/security/kmfpolicy.xml\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeku-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+\fBeku-none\fR が \fBtrue\fR に設定されている場合、拡張鍵用途検査が無効になります。\fBeku-none\fR が \fBtrue\fR に設定されている場合、拡張鍵用途属性 \fBekuname\fR および \fBekuoids\fR は同時に設定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeyusage-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+\fBkeyusage-none\fR が true に設定されている場合、鍵用途検査が無効になります。 
+.sp
+この属性が \fBtrue\fR に設定されている場合、\fBkeyusage\fR 属性は同時に設定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBocsp-none=true | false\fR\fR
+.ad
+.RS 30n
+.rt  
+\fBocsp-none\fR が true に設定されている場合、OCSP 検査が無効になります。この属性が \fBtrue\fR に設定されている場合、ほかの OCSP 属性は同時に設定されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolicy=\fR\fIpolicyname\fR\fR
+.ad
+.RS 30n
+.rt  
+変更するポリシーの名前。\fIpolicyname\fR が必要です。システム KMF ポリシーデータベースの \fBdefault\fR ポリシーは変更できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmapper-name=\fR\fIname\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-dir=\fR\fIdirectory\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-path=\fR\fIpath\fR\fR
+.ad
+.br
+.na
+\fB\fBmapper-options=\fR\fIoptions\fR\fR
+.ad
+.RS 30n
+.rt  
+詳細は、\fBcreate\fR サブコマンドを参照してください。
+.RE
+
+.RE
+
+.SS "プラグインサブコマンド"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall keystore=\fR\fIkeystore_name \fR \fBmodulepath=\fR\fIpathname\fR\e \fB [option=\fR\fIoption_str\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+プラグインをシステムにインストールします。\fBmodulepath\fR フィールドには、KMF プラグイン共有ライブラリオブジェクトへのパス名を指定します。\fIpathname\fR が完全パス名として指定されない場合、共有ライブラリオブジェクトは、\fB/lib/security/$ISA/\fR を基準とした相対パスであるとみなされます。\fBISA\fR トークンは、実装で定義されたディレクトリ名に置き換えられます。これは、呼び出し側プログラムの命令セットのアーキテクチャーを基準にした相対パス名を定義します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist plugin\fR\fR
+.ad
+.sp .6
+.RS 4n
+KMF プラグイン情報を表示します。
+.sp
+\fBplugin\fR キーワードがない場合、「サブコマンド」節で説明したように、\fBkmfcfg list\fR はポリシー情報を表示します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify plugin keystore=\fR\fIkeystore_name \fR \fBoption=\fR\fIoption_str\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBplugin\fR オプションを変更します。\fBplugin\fR オプションはプラグインが定義し、プラグインが具体的に解釈するので、このコマンドは任意のオプション文字列を受け入れます。
+.sp
+\fBplugin\fR キーワードがない場合、「サブコマンド」節で説明したように、\fBkmfcfg modify\fR はポリシー構成を更新します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninstall keystore=\fR\fIkeystore_name \fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIkeystore_name\fR のプラグインをアンインストールします。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR新しいポリシーの作成
+.sp
+.LP
+次の例は、IPSEC と呼ばれる新しいポリシーをシステムデータベース内に作成します。
+
+.sp
+.in +2
+.nf
+$ kmfcfg create IPSEC \e
+ignore-trust-anchor=true \e
+ocsp-use-cert-responder=true \e
+keyusage=keyAgreement,keyEncipherment,dataEncipherment \e
+ekuname=ipsecTunnel,ipsecUser
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/kmfpolicy.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのシステムポリシーデータベース
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBattributes\fR(5)

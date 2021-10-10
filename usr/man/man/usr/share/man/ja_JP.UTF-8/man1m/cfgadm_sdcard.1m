@@ -1,0 +1,377 @@
+'\" te
+.\" Copyright (c) 2008, Sun Microsystems, Inc. All Rights Reserved
+.TH cfgadm_sdcard 1M "2008 年 2 月 28 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cfgadm_sdcard \- cfgadm の SD/MMC ハードウェア固有のコマンド
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR[...]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIhardware_function\fR \fIap_id\fR[...]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR]
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR | \fIap_type\fR[...]]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR  [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR [\fIap_id\fR[...]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+Secure Digital (SD) および MultiMediaCard (MMC) ハードウェア固有ライブラリ \fB/usr/lib/cfgadm/sdcard.so.1\fR は、\fBcfgadm\fR(1M) コマンドによる SD/MMC ホットプラグ操作のための機能を提供します。\fBcfgadm\fR コマンドは、接続点で実行されます。接続点とは、ハードウェアリソースを動的に再構成できるシステム上の場所です。接続点については、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+各 SD/MMC スロットは、デバイスツリー上で接続点によって表されます。システム上で接続および構成されているカードデバイスは、接続点の名前の拡張として表されます。このマニュアルページでは、「接続点」および「SD/MMC スロット」という用語は同じ意味で使用されます。
+.sp
+.LP
+接続点には、ap_id を通じて名前が付けられます。すべての SD/MMC 接続点は、次の形式の文字列で構成されます。
+.sp
+.in +2
+.nf
+sdcardX/[S][::dsk/cXtYd0]
+.fi
+.in -2
+
+.sp
+.LP
+各表記の意味は次のとおりです。 
+.sp
+.LP
+\fIX\fR は、SD/MMC コントローラの番号です。
+.sp
+.LP
+\fIS\fR は、コントローラのスロット番号です (0 - 8)。
+.sp
+.LP
+\fBdev/cXtYd0\fR は、挿入されているメモリーカードを識別します。
+.sp
+.LP
+\fIY\fR は、ターゲットの番号です。
+.sp
+.LP
+一般的に、デバイスの識別子は、\fB/dev\fR 内のデバイスの対応する論理リンクから生成されます。SD/MMC デバイスでは 1 つの LUN (LUN 0) しかサポートされないため、デバイス文字列の「d」コンポーネントは常に数値 0 (ゼロ) になります。たとえば、SD/MMC コントローラ 2 のスロット 4 の論理 \fIap_id\fR は、\fBsdcard2/4\fR になります。SD/MMC メディアカードがこの接続点に挿入されていて、デバイスが構成されている場合、\fBap_id\fR は \fBsdcard2/4::dsk/c2t0d0\fR になります。
+.sp
+.LP
+デバイスを識別する c\fIX\fRt\fIY\fRd\fI0\fR 文字列は、デバイスの接続点と 1 対 1 で対応します。
+.sp
+.LP
+システム上の接続点の単純な一覧には、すべての SD/MMC デバイスのスロットと、接続されているデバイスが含まれます。例: 
+.sp
+.in +2
+.nf
+#cfgadm -l
+Ap_Id                    Type       Receptacle   Occupant    Condition
+ sdcard0/0::dev/c2t0d0   sdcard      connected    configured     ok
+ sata0/1::dev/c0t1d0     disk        connected    configured     ok
+ sata0/2::dev/c0t2d0     cd-dvd      connected    configured     ok
+ sata0/3                 sata-port   empty        unconfigured   ok
+ usb0/1                  unknown     empty        unconfigured   ok
+ usb0/2                  unknown     empty        unconfigured   ok
+.fi
+.in -2
+
+.sp
+.LP
+接続点の一覧表示については、\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+SD/MMC スロット上の接続点における受容体の状態は、次の意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBempty\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットは電源が投入されており、有効になっています。このスロットではデバイスの存在が検出されませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnected\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットが有効になっていない、SD/MMC デバイスの存在は検出されたがデバイスとの通信が確立されてない、またはスロットで障害が発生している、のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnected\fR
+.ad
+.sp .6
+.RS 4n
+スロットで SD/MMC デバイスが検出され、デバイスの通信が確立されています。
+.RE
+
+.sp
+.LP
+占有装置 (SD/MMC スロットに挿入されているデバイス) の状態は、次の意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigured\fR
+.ad
+.sp .6
+.RS 4n
+接続されている SD/MMC デバイスは構成されており、オペレーティングシステムが使用できる状態です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigured\fR
+.ad
+.sp .6
+.RS 4n
+デバイスが接続されていないか、SD/MMC スロットに挿入されている SD/MMC デバイスがまだ構成されていません。構成するには、コマンド \fBcfgadm -c configure ap_id\fR を実行します。
+.RE
+
+.sp
+.LP
+接続点 (SD/MMC スロット) の条件は、次の意味を持ちます。
+.sp
+.ne 2
+.mk
+.na
+\fBok\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットは、電源が投入され、有効になっており、使用できる状態です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBfailed\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットで障害が発生しています。システムにより無効になっているか電源が切断されている可能性があります。使用不可能であり、その条件は不明です。障害の原因は、スロットに挿入されているデバイスである可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunknown\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットは無効になっており、その条件は不明です。
+.RE
+
+.SH オプション
+.sp
+.LP
+\fBcfgadm\fR コマンドでは、一覧表示 (\fB-l\fR) のほかに数種類の操作が定義されています。これらの操作には、構成状態の変更の開始 (\fB-c\fR)、ハードウェア固有の機能の実行 (\fB-x\fR)、および構成管理のヘルプ情報の表示 (\fB-h\fR) が含まれます。
+.sp
+.LP
+\fB-c\fR: SD/MMC スロットの接続点では、次の構成状態の変更操作がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBconnect\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットを有効化 (アクティブ化) して、接続されているデバイスとの通信を確立します。この操作は、必要に応じてスロットに電源を投入することを意味しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnect\fR
+.ad
+.sp .6
+.RS 4n
+挿入されているデバイスがまだ構成解除されていない場合は構成解除し、SD/MMC スロットを無効化 (非アクティブ化) します。その後に「connect」コマンドを使用した場合、SD/MMC スロット操作は有効になりますが、デバイスは「configured」状態にはなりません。
+.RE
+
+.sp
+.LP
+SD/MMC スロットに挿入された SD/MMC カードでは、次の状態の変更操作がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure\fR
+.ad
+.sp .6
+.RS 4n
+新しいデバイスがまだ構成されていない場合に、オペレーティングシステムが使用できるように構成します。このコマンドは、必要に応じて接続操作も実行することを意味しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure\fR
+.ad
+.sp .6
+.RS 4n
+SD/MMC スロットに挿入されているデバイスがまだ構成解除されていない場合は、構成解除します。
+.RE
+
+.sp
+.LP
+\fB-f\fR: サポートされていません。
+.sp
+.LP
+\fB-h\fR \fBap_id\fR: ヘルプオプションと任意の SD/MMC 接続点を組み合わせて使用して、SD/MMC 固有のヘルプを表示できます。 
+.sp
+.LP
+\fB-l\fR [-v]: -l オプションは、\fBcfgadm\fR(1M) で説明されているように機能します。-v オプションと組み合わせて使用した場合、「Information」フィールドには次の SD/MMC 固有の情報が含まれます。
+.br
+.in +2
+Mod: 製品モデル文字列
+.in -2
+.br
+.in +2
+Rev: 製品バージョン番号 (メジャー.マイナー)
+.in -2
+.br
+.in +2
+Date: 製造年月
+.in -2
+.br
+.in +2
+SN: 製品のシリアル番号 (16 進数)
+.in -2
+.sp
+.LP
+\fB-o\fR hardware_options - 現在定義されているハードウェア固有のオプションはありません。
+.sp
+.LP
+\fB-s\fR listing_options: select サブオプションを使用すると、クラス SD/MMC の接続点を一覧表示できます。\fBcfgadm\fR(1M) を参照してください。
+.sp
+.LP
+\fB-t\fR \fBap_id\fR: セルフテスト機能。SD/MMC スロットではサポートされていません。
+.sp
+.LP
+\fB-x\fR \fBhardware_function\fR: ハードウェア固有の機能を実行します。sdcard_reset_slot \fBap_id\fR は、\fBap_id\fR によって指定された SD/MMC スロットのリセットを示します。スロットに SD/MMC デバイスが挿入されている場合は、そのデバイスもリセットされます。
+.sp
+.LP
+\fB-v\fR: 詳細モードで実行します。
+.SH 使用例
+.sp
+.LP
+例 1 - SD/MMC カードの構成:
+.sp
+.LP
+次のコマンドは、SD/MMC コントローラ 0、スロット 0 に接続されているカードを構成します。このコマンドは、SD/MMC スロットにデバイスが挿入されている場合にのみ発行してください。
+.sp
+.in +2
+.nf
+       # cfgadm -c configure sdcard0/0
+.fi
+.in -2
+
+.sp
+.LP
+例 2 - SD/MMC カードの構成解除:
+.sp
+.LP
+次のコマンドは、SD/MMC コントローラ 0、スロット 3 に挿入されているカードを構成解除します。
+.sp
+.in +2
+.nf
+       # cfgadm -c unconfigure sdcard0/3
+.fi
+.in -2
+
+.sp
+.LP
+例 3 - マウントされたファイルシステムがディスクの構成解除中に検出された場合:
+.sp
+.LP
+次のコマンドは、マウントされたファイルシステムがディスクの構成解除中に検出された場合を示しています。
+.sp
+.in +2
+.nf
+       # cfgadm -c unconfigure sdcard1/5::dsk/c01t35d0
+
+ 
+.fi
+.in -2
+
+.sp
+.LP
+システムは次のように応答します。
+.sp
+.in +2
+.nf
+ cfgadm: Component system is busy, try again: failed to offline:
+       /devices/pci@0,0/pci8086,244e@1e/pci1095,3124@1/sd@5,0
+           Resource              Information
+       ------------------  --------------------------
+       /dev/dsk/c1t5d0s0   mounted filesystem "/mnt"
+.fi
+.in -2
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/lib/cfgadm/sdcard.so.1\fR
+.ad
+.sp .6
+.RS 4n
+汎用的な SD/MMC ホットプラグ操作のためのハードウェア固有ライブラリです。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/library
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcfgadm\fR(1M), \fBconfig_admin\fR(3CFGADM), \fBlibcfgadm\fR(3LIB), \fBattributes\fR(5), \fBsda\fR(7D), \fBsdcard\fR(7D), \fBsdhost\fR(7D)
+.SH 注意事項
+.sp
+.LP
+通常の操作では、SD/MMC メディアカードは、挿入すると自動的に構成されます。ほとんどの管理者は、通常の使用で、このコマンドを使用する必要はありません。
+.sp
+.LP
+SD/MMC カードを、最初に構成解除せずに取り外した場合、取り外す際にデバイスに書き込みが行われていたときは、データが失われる可能性があります。読み取り専用でマウントされているデバイスは、いつでも安全に取り外すことができます。
+.sp
+.LP
+\fBpcfs\fR(7FS) 以外のファイルシステムがマウントされているデバイスは、取り外す前に必ず明示的に構成解除するようにしてください。

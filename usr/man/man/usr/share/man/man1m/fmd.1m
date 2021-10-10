@@ -1,0 +1,240 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmd 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+fmd \- fault manager daemon
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/fm/fmd/fmd\fR [\fB-V\fR] [\fB-f\fR \fIfile\fR] [\fB-o\fR \fIopt\fR=\fIval\fR] [\fB-R\fR \fIdir\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBfmd\fR is a daemon that runs in the background on each Solaris system. \fBfmd\fR receives telemetry information relating to problems detected by the system software, diagnoses these problems, and initiates proactive self-healing activities such as disabling faulty components. When appropriate, the fault manager also sends a message to the \fBsyslogd\fR(1M) service to notify an administrator that a problem has been detected. The message directs administrators to a knowledge article on Oracle's web site, \fBhttps://support.oracle.com\fR,  which explains more about the problem impact and appropriate responses.
+.sp
+.LP
+Each problem diagnosed by the fault manager is assigned a Universal Unique Identifier (\fBUUID\fR). The \fBUUID\fR uniquely identifes this particular problem across any set of systems. The \fBfmdump\fR(1M) utility can be used to view the list of problems diagnosed by the fault manager, along with their \fBUUID\fRs and knowledge article message identifiers. The \fBfmadm\fR(1M) utility can be used to view the resources on the system believed to be faulty. The \fBfmstat\fR(1M) utility can be used to report statistics kept by the fault manager. The fault manager is started automatically when Solaris boots, so it is not necessary to use the \fBfmd\fR command directly. Sun's web site explains more about what capabilities are currently available for the fault manager on Solaris.
+.SS "Notification Services"
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsyslog\fR (package \fBsystem/fault-management\fR)\fR
+.ad
+.sp .6
+.RS 4n
+The standard notification mechanism for new diagnoses is by means of \fBsyslog\fR, using the \fBsyslog-msgs\fR \fBfmd\fR module delivered in the same package as \fBfmd\fR itself.
+.sp
+By default, only new problem diagnoses are messaged by means of \fBsyslog-msgs\fR, using the \fBsyslog\fR facility and severity as listed in the table below. An administrator can use \fBsvccfg\fR(1M) to request that other events in the problem resolution lifecycle are messaged through \fBsyslog-msgs\fR:
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify \fIevent\fR syslog:{active|inactive}\fR
+.fi
+.in -2
+.sp
+
+See \fBsvccfg\fR(1M) for additional detail.
+.sp
+.in +2
+.nf
+Event                Disposition Facility        Severity
+--------------- ---------------- --------------- -------------
+problem-diagnosed       active   LOG_DAEMON      LOG_ERR
+problem-updated         inactive LOG_DAEMON      LOG_NOTICE
+problem-repaired        inactive LOG_DAEMON      LOG_NOTICE
+problem-resolved        inactive LOG_DAEMON      LOG_NOTICE
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBEmail (package \fBsystem/fault-management/smtp-notify\fR)\fR
+.ad
+.sp .6
+.RS 4n
+Notification by means of email is an option for which an additional package must be installed. The SMF service, \fBsvc:/system/fm/smtp-notify:default\fR, is delivered by means of the package \fBsystem/fault-management/smtp-notify\fR and notification preferences configured by means of \fBsvccfg\fR(1M). See \fBsmtp-notify\fR(1M) for additional detail. Note that in addition to configuring notification preferences for the problem lifecycle events listed above (problem-diagnosed, and so forth) this mechanism can also be configured through \fBsvccfg\fR(1M) to provide notification of SMF instance state transition and other events.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSNMP (package \fBsystem/fault-management/snmp-notify\fR)\fR
+.ad
+.sp .6
+.RS 4n
+Notification of new events using SNMP traps is an option delivered by the package \fBsystem/fault-management/snmp-notify\fR. The service \fBsvc:/system/fm/snmp-notify:default\fR is responsible for raising SNMP traps for problem lifecycle and other designated events (including SMF instance state transition events, if so configured). See \fBsnmp-notify\fR(1M) for additional detail.
+.RE
+
+.SS "Global and Non-Global Solaris Zones"
+.sp
+.LP
+The fault manager service \fBsvc:/system/fmd:default\fR service is configured in both global and non-global Solaris zones. In non-global zones, various hardware-oriented fault manager modules are not delivered, so it is a cut-down fault manager that runs there. In a non-global zone, the fault manager is focussed on software events.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+Read the specified configuration \fIfile\fR prior to searching for any of the default fault manager configuration files.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIopt\fR\fB=\fR\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set the specified fault manager option to the specified value. Fault manager options are currently a Private interface; see \fBattributes\fR(5) for information about Private interfaces. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+Use the specified root directory for all pathnames evaluated by the fault manager, instead of the default root (\fB/\fR). 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+Print the fault manager's version to stdout and exit. 
+.RE
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Successful completion
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+An error occurred which prevented the fault manager from initializing, such as failure to open the telemetry transport. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+Invalid command-line options were specified. 
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault manager configuration directory
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault manager library directory
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/fm/fmd\fR\fR
+.ad
+.RS 19n
+.rt  
+Fault manager log directory
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/fault-management
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBfmadm\fR(1M), \fBfmdump\fR(1M), \fBfmstat\fR(1M), \fBsmtp-notify\fR(1M), \fBsnmp-notify\fR(1M), \fBsvccfg\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)
+.sp
+.LP
+http://www.sun.com/msg/
+.SH NOTES
+.sp
+.LP
+The Fault Manager is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+ svc:/system/fmd:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The service's status can be queried using the \fBsvcs\fR(1) command. Administrators should not disable the Fault Manager service.

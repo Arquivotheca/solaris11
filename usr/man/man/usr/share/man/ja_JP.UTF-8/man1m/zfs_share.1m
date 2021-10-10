@@ -1,0 +1,630 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zfs_share 1M "2011 年 8 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+zfs_share \- ZFS ファイルシステムを共有または共有解除する
+.SH 形式
+.LP
+.nf
+zfs [-?]
+.fi
+
+.LP
+.nf
+\fBzfs help\fR \fIsubcommand\fR | help | \fIproperty property-name\fR | \fIpermission\fR
+.fi
+
+.LP
+.nf
+\fBzfs create\fR [-p] [-o sharenfs=on | sharesmb=on] [-o \fIproperty\fR ... \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+zfs set share=\fIname=sharename\fR,path=\fIpathname\fR,[desc=\fIdescription\fR],
+prot=smb | nfs[,\fIproperty=value\fR[,...]] \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBset\fR [\fB-r\fR] sharenfs=on | off \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBset\fR [\fB-r\fR] sharesmb=on | off \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+zfs set -c share=\fIname=sharename\fR \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR [\fB-r\fR] sharenfs \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBget\fR [\fB-r\fR] sharesmb \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBget\fR  [\fB-r\fR] \fBshare\fR \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBshare\fR \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunshare\fR \fB-a\fR \fIfilesystem\fR|\fImountpoint\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBzpool\fR(1M) で説明されているように、\fBzfs set share\fR コマンドを使用して \fBZFS\fR ストレージプール内に NFS または SMB 共有を作成します。\fBsharenfs\fR または \fBsharesmb\fR をオンに設定すると、共有を公開します。また、\fBzfs share\fR および \fBzfs unshare\fR コマンドを使用すると、ZFS データセットの NFS 共有を公開および非公開にできます。 
+.SS "ネイティブな共有ファイルシステムプロパティー"
+.sp
+.LP
+ファイルシステムプロパティーは、ネイティブプロパティーとユーザー定義 (「ユーザー」) プロパティーの 2 種類に分けられます。ネイティブプロパティーは、情報を表示するか ZFS の動作を制御します。また、ネイティブプロパティーは編集可能であるか、読み取り専用です。
+.sp
+.LP
+プロパティーは、子により上書きされないかぎり、親から継承されます。一部のプロパティーは、特定のタイプのデータセット (ファイルシステム、ボリューム、またはスナップショット) にのみ適用されます。
+.sp
+.LP
+次のネイティブプロパティーを使用すると ZFS ファイルシステムの動作を変更することが可能であり、通常ファイルシステムの共有時に使用されます。
+.sp
+.LP
+次の NFS および SMB ネイティブプロパティーを使用すると、\fBZFS\fR 共有の動作を変更できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnbmand\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムを \fBnbmand\fR (非ブロッキング強制ロック) でマウントするべきかどうかを制御します。これは \fBSMB\fR クライアントに使用されます。このプロパティーの変更は、ファイルシステムをマウント解除してから再マウントしたときにはじめて反映されます。\fBnbmand\fR マウントの詳細は、\fBmount\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreadonly\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+このデータを変更できるかどうかを制御します。デフォルト値は \fBoff\fR です。
+.sp
+このプロパティーは、列の短縮名 \fBrdonly\fR を使用して参照することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharenfs\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+ZFS データセットを NFS 共有として公開するかどうかを制御します。また、\fBzfs share\fR および \fBzfs unshare\fR コマンドを使用すると、ZFS データセットの NFS 共有を公開および非公開にできます。どちらの NFS 共有公開方法でも、NFS 共有プロパティーがすでに設定されている必要があります。NFS 共有プロパティーの設定の詳細については、\fBzfs set share\fR コマンドを参照してください。
+.sp
+\fBsharenfs\fR プロパティーを変更すると、ファイルシステム共有、およびそのプロパティーを継承するすべての子は、そのプロパティーが以前に \fBoff\fR であった場合、またはそのプロパティーの変更前に共有が公開されていた場合にのみ、\fBzfs set share\fR コマンドで設定されている新しいオプションで再度公開されます。新しいプロパティー値が \fBoff\fR であれば、ファイルシステム共有は非公開になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharesmb\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+ZFS データセットを SMB 共有として公開するかどうかを制御します。また、\fBzfs share\fR および \fBzfs unshare\fR コマンドを使用すると、ZFS データセットの SMB 共有を公開および非公開にできます。どちらの SMB 共有公開方法でも、SMB 共有プロパティーが同時に設定されている必要があります。SMB 共有プロパティーの設定の詳細については、\fBzfs set share\fR コマンドを参照してください。
+.sp
+\fBSMB\fR 共有にはリソース名が必要であるため、データセット名から一意のリソース名が構築されます。構築される名前はデータセット名のコピーですが、リソース名では使用できない文字がデータセット名に含まれている場合、それらは下線 (\fB_\fR) で置き換えられます。データセット名を指定の名前で置き換えるための擬似プロパティー「name」もサポートされています。この指定された名前は、継承の際に先頭部分のデータセットを置き換えるために使用されます。たとえば、データセット \fBdata/home/john\fR が \fBname=john\fR と設定されている場合、\fBdata/home/john\fR のリソース名は \fBjohn\fR になります。\fBjohn\fR に \fBdata/home/john/backups\fR という子データセットがある場合、そのリソース名は \fBjohn_backups\fR になります。
+.sp
+SMB 共有が作成されると、SMB 共有名が \fB\&.zfs/shares\fR ディレクトリのエントリとして表示されます。\fBls\fR または \fBchmod\fR コマンドを使用して、このディレクトリのエントリについて共有レベルの ACL を表示できます。
+.sp
+\fBsharesmb\fR プロパティーを変更すると、データセット共有、およびそのプロパティーを継承するすべての子は、そのプロパティーが以前に \fBoff\fR に設定されていた場合、またはそのプロパティーの変更前に共有が公開されていた場合に、\fBzfs set share\fR コマンドで設定されている新しいオプションで再度公開されます。新しいプロパティー値が \fBoff\fR であれば、データセット共有は非公開になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscan\fR=\fBon\fR|\fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+通常ファイルを開くときや閉じるときに、ファイルのウイルススキャンを実行するかどうかを制御します。ウイルススキャンを実行するには、このプロパティーを有効にするほかに、ウイルススキャンサービスも有効にする必要があります。デフォルト値は \fBoff\fR です。
+.RE
+
+.sp
+.LP
+次のプロパティーは、ファイルシステムの作成後には変更できないため、ファイルシステムの作成時に設定するようにしてください。\fBzfs create\fR または \fBzpool create\fR コマンドで設定されていない場合、これらのプロパティーは親データセットから継承されます。これらの機能がサポートされる前に親データセットが作成されたため、親データセットにこれらのプロパティーが存在しない場合、新しいファイルシステムではこれらのプロパティーにデフォルト値が設定されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcasesensitivity\fR = \fBsensitive\fR | \fBinsensitive\fR | \fBmixed\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムで使用するファイル名照合アルゴリズムで、大文字と小文字を区別するか、区別しないか、または両方の照合方式の組み合わせを許可するかを指定します。\fBcasesensitivity\fR プロパティーのデフォルト値は \fBmixed\fR です。通常、UNIX および POSIX のファイルシステムでは、ファイル名の大文字と小文字を区別します。
+.sp
+\fBcasesensitivity\fR プロパティーの値が \fBmixed\fR の場合、ファイルシステムが要求に応じて大文字と小文字を区別する照合も区別しない照合もサポートできることを示します。現在、混合動作をサポートするファイルシステムで大文字と小文字を区別しない照合が可能なのは、Solaris SMB サーバー製品に限られています。\fBmixed\fR 値の動作の詳細については、\fI『『Solaris ZFS 管理ガイド』』\fRを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnormalization\fR = \fBnone\fR | \fBformC\fR | \fBformD\fR | \fBformKC\fR | \fBformKD\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムで 2 つのファイル名を比較するとき常にファイル名の \fBunicode\fR 正規化を実行するかどうか、およびどの正規化アルゴリズムを使用するかを指定します。保存されるファイル名が変更されることはなく、名前の正規化は比較処理の一部として実行されます。このプロパティーが \fBnone\fR 以外の有効な値に設定されており、\fButf8only\fR プロパティーが指定されなかった場合、\fButf8only\fR プロパティーは自動的に \fBon\fR に設定されます。\fBnormalization\fR プロパティーのデフォルト値は \fBnone\fR です。このプロパティーは、ファイルシステムの作成後には変更できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fButf8only\fR =\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBUTF-8\fR 文字コードセットに存在しない文字が含まれているファイル名をファイルシステムで拒否するかどうかを設定します。このプロパティーが明示的に \fBoff\fR に設定されている場合、normalization プロパティーを明示的に設定しないか、または \fBnone\fR に設定する必要があります。\fButf8only\fR プロパティーのデフォルト値は \fBoff\fR です。このプロパティーは、ファイルシステムの作成後には変更できません。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+状態を変更するサブコマンドはすべて、元の形式でプールに永続的に記録されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBzfs\fR コマンドの使用法情報を表示します。特定のコマンド、プロパティー、または委任アクセス権のヘルプを表示できます。特定のコマンドまたはプロパティーのヘルプを表示した場合、コマンド構文またはプロパティー値が表示されます。引数を何も付けずに \fBzfs help\fR を使用すると、\fBzfs\fR コマンドの完全なリストが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-p\fR] [\fB-o\fR \fBsharenfs=on | sharesmb=on\fR \fB-o\fR\fIproperty\fR=\fIvalue\fR] ... \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しい \fBZFS\fR ファイルシステムを作成します。ファイルシステムは、親から継承した \fBmountpoint\fR プロパティーに従って自動的にマウントされます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+データセットの作成時にコマンド \fBzfs set\fR \fIproperty\fR=\fIvalue\fR が呼び出された場合と同様に、指定されたプロパティーを設定します。編集可能なすべての \fBZFS\fR プロパティーは、作成時にも設定可能です。複数の \fB-o\fR オプションを指定できます。複数の \fB-o\fR オプション内で同じプロパティーを指定した場合は、エラーが発生します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs get [-r] share\fR [\fIfilesystem\fR]\fR
+.ad
+.sp .6
+.RS 4n
+定義されているすべての共有、または指定されたファイルシステムか子孫のファイルシステム用に定義されている共有を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set share\fR=\fIname\fR=\fIsharename\fR,\fBpath\fR=\fIpathname\fR,[\fBdesc\fR=\fIdescription\fR],\fBprot\fR=\fBsmb\fR | \fB nfs\fR[,\fIproperty\fR=\fIvalue\fR[,...]] \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+ZFS データセットの NFS または SMB ファイル共有プロパティーを定義します。NFS または SMB ファイル共有プロパティーの設定後、\fBsharenfs\fR または \fBsharesmb\fR プロパティーを \fBon\fR に設定することによって、ZFS ファイルシステムの NFS または SMB 共有を公開できます。
+.sp
+次の共有プロパティーは必須です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshare\fR=\fIname\fR=\fIsharename\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS または SMB 共有名を指定します。共有名の最大長は、80 文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpath\fR=\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有されるデータセットの物理パス、または共有されるデータセット内のサブディレクトリの物理パスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprot\fR=\fBsmb\fR | \fBnfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+NFS または SMB ファイル共有プロトコルを識別します。
+.RE
+
+次の共有プロパティーは省略可能です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdesc\fR=\fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有リソースを表すテキスト文字列を指定します。説明内のスペースまたはコンマは、引用符 (\fB"\fR \fB"\fR) で囲む必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro\fR= | \fBrw\fR=\fR
+.ad
+.sp .6
+.RS 4n
+すべてのクライアントに対して共有を読み取り/書き込み可能にするか読み取り専用にするかを指定します。ホスト名、IP アドレス、またはネットグループを含むコロン区切りのリストを指定することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBroot\fR=\fR
+.ad
+.sp .6
+.RS 4n
+ルートアクセスを許可された特定のホストまたはホストのリストから root ユーザーを指定します。デフォルトでは、ルートアクセスを許可されたホストはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsec\fR=\fR
+.ad
+.sp .6
+.RS 4n
+\fBsys\fR、\fBdh\fR、\fBkrb5\fR などの NFS サーバーセキュリティーモードを指定します。サポートされているセキュリティーモード情報については、\fBnfssec\fR(5) を参照してください。
+.RE
+
+次の省略可能な NFS プロパティーは、\fBprot=nfs\fR のあとで、\fBsec\fR プロパティーの前に指定する必要があります。
+.sp
+.in +2
+.nf
+anon=TYPE_USER
+nosub=[true|false]
+nosuid=[true|false]
+aclok=[true|false]
+public=[true|false]
+index=filename
+log=TYPE_LOGTAG
+cksum=TYPE_STRINGSET
+.fi
+.in -2
+.sp
+
+次の省略可能な SMB プロパティーは、\fBprot=smb\fR のあとに指定する必要があります。
+.sp
+.in +2
+.nf
+ad-container=string
+abe=[true|false]
+csc=[disabled|manual|auto|vdo]
+catia=[true|false]
+guestok=[true|false]
+ro=access-list
+rw=access-list
+none=access-list
+.fi
+.in -2
+.sp
+
+NFS および SMB 共有プロパティーの詳細については、\fBshare_nfs\fR(1M) および \fBshare_smb(1M)\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set\fR [\fB-r\fR] \fIproperty\fR=\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーを、各データセット用に指定した値に設定します。一部のプロパティーのみ、編集可能です。設定可能なプロパティーおよび有効な値については、「プロパティー」の節を参照してください。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+子データセットのサブツリー全体に対して、設定の有効な値を再帰的に適用します。有効な値は、プロパティーに応じて設定または継承できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBset\fR \fB-c\fR share=\fIname\fR=\fIsharename\fR \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステム共有を削除します。\fB-c\fR オプションは、前述の \fBzfs set share\fR コマンドからこのサブコマンドを区別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs share\fR \fB-a\fR | \fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsharenfs\fR または \fBsharesmb\fR プロパティーが設定されている場合に、共有プロパティー値に従って ZFS データセットの NFS または SMB 共有を公開します。
+.sp
+NFS または SMB プロトコルでデータセットを共有すると、データセットのデータがネットワークを介して使用できます。\fBsharenfs\fR または \fBsharesmb\fR プロパティーが設定されている ZFS データセットは、システムのブート時に自動的に共有されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有プロパティー値、および \fBsharenfs\fR プロパティーと \fBsharesmb\fR プロパティーの設定に従って、すべての ZFS データセットを共有します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有プロパティー値、および \fBsharenfs\fR プロパティーと \fBsharesmb\fR プロパティーの設定に従って、指定されたデータセットを共有します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unshare\fR \fB-a\fR | \fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsharenfs\fR プロパティーまたは \fBsharesmb\fR プロパティーが設定されているすべての ZFS データセットを共有解除します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての共有されている ZFS データセットを共有解除します。これは、ブートプロセスの一部として自動的に呼び出されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたデータセットを共有解除します。このコマンドには、システム上で共有される \fBZFS\fR データセットのパスを指定することもできます。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRZFS ファイルシステムの NFS または SMB 共有を作成する
+.sp
+.LP
+ZFS ファイルシステムの NFS または SMB 共有の作成プロセスは、次の 2 つの手順で構成されます。
+
+.RS +4
+.TP
+1.
+\fBzfs set share\fR コマンドで NFS または SMB 共有プロパティーを識別して、共有を作成します。
+.sp
+NFS 共有を作成するには:
+.sp
+.in +2
+.nf
+# \fBzfs create -o mountpoint=/data tank/data\fR
+# \fBzfs set share=name=data,path=/data,prot=nfs tank/data\fR
+.fi
+.in -2
+.sp
+
+SMB 共有を作成するには:
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=fs,path=/fs,prot=smb,ro=@10-132-60-234 \e\fR
+\fBtank/fs\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+\fBsharenfs\fR プロパティーまたは \fBsharesmb\fR プロパティーを設定して共有を公開します。次のようにコマンドを使用します。
+.sp
+.in +2
+.nf
+# \fBzfs set sharenfs=on tank/data\fR
+# \fBzfs set sharesmb=on tank/fs\fR
+.fi
+.in -2
+.sp
+
+.RE
+.LP
+\fB例 2 \fRNFS または SMB 共有情報を表示する
+.sp
+.LP
+NFS または SMB 共有情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBzfs get share\fR
+NAME                      PROPERTY  VALUE  SOURCE
+tank/data                 share     name=data,path=/data,prot=nfs  local
+tank/fs                   share     name=fs,path=/fs,prot=smb,ro... local
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRZFS ファイルシステムの共有プロパティーを追加または変更する
+.sp
+.LP
+次のように、\fBhostA\fR に読み取り専用などの新しいオプションを追加して、共有を変更します。
+
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=data,prot=nfs,ro=hostA tank/data\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRZFS ファイルシステムの NFS または SMB 共有を削除する
+.sp
+.LP
+\fBzfs set\fR \fB-c\fR コマンドを使用して共有を削除します。
+
+.sp
+.in +2
+.nf
+# \fBzfs set -c share=name=fs tank/fs\fR
+share 'fs' was removed.
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生した。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR \fR
+.ad
+.sp .6
+.RS 4n
+無効なコマンド行オプションが指定された。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/zfs
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBchmod\fR(1), \fBchown\fR(1), \fBpktool\fR(1), \fBssh\fR(1), \fBmount\fR(1M), \fBshadowd\fR(1M), \fBshare\fR(1M), \fBshare_nfs\fR(1M), \fBshare_smb\fR(1M), \fBunshare\fR(1M), \fBzfs\fR(1M), \fBzfs_allow\fR(1M), \fBzfs_encrypt\fR(1M), \fBzonecfg\fR(1M), \fBzpool\fR(1M), \fBchmod\fR(2), \fBchown\fR(2), \fBstat\fR(2), \fBwrite\fR(2), \fBfsync\fR(3C), \fBdfstab\fR(4), \fBvfstab\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fBgzip\fR(1) のマニュアルページを参照してください。これは SunOS マニュアルページコレクションには含まれていません。
+.sp
+.LP
+その他の \fBZFS\fR 機能の使用についての詳細は、\fI『『Oracle Solaris ZFS 管理ガイド』』\fRを参照してください。

@@ -1,0 +1,392 @@
+'\" te
+.\" 版权所有 (c) 2010，Oracle 和/或其附属公司。保留所有权利。
+.TH pginfo 1M "2010 年 8 月 18 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+pginfo \- 显示有关处理器组的信息
+.SH 用法概要
+.LP
+.nf
+\fBpginfo\fR [\fB-T\fR] [\fB-p\fR] [\fB-v\fR] [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR]
+     [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-s\fR [\fB-v\fR] [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-c\fR | \fB-I\fR [\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fIpg\fR ... | \fB-c\fR \fIprocessor_id\fR ...]
+.fi
+
+.LP
+.nf
+\fBpginfo\fR \fB-h\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpginfo\fR 显示有关处理器组 (Processor Group, PG) 分层结构、其内容及其特征的信息。PG 是一组按共同特征分组到一起的 CPU。
+.sp
+.LP
+操作系统使用 PG 来表示某些 CPU，这些 CPU 共享与性能相关的硬件，如执行流水线、高速缓存等。这些 PG 组织到一个分层结构中，后者构成了计算机的处理器拓扑模型。在此分层结构中，每个 CPU（导线束）具有一个叶 PG，该 PG 表示与其共享大多数硬件的 CPU。叶 PG 的每个连续父项与该 CPU 共享的硬件逐渐减少，直至到达根 PG。根 PG 包含系统中的所有 CPU，并表示彼此之间共享最少硬件的 CPU 组。（有关 PG 分层结构的示例，请参见下面的\fB示例\fR。）
+.sp
+.LP
+如果计算机没有任何性能相关硬件的共享关系，\fBpginfo\fR 将只显示包含系统中所有 CPU 的根 PG。
+.sp
+.LP
+缺省情况下，\fBpginfo\fR 会显示系统中每个 PG 的相关信息，包括其 PG ID、共享关系以及联机和脱机 CPU。缺省情况下，它以深度优先顺序显示 PG，并使用缩排帮助显示 PG 如何彼此关联（请参见下文的\fB\fR"示例"部分）。
+.sp
+.LP
+您可以通过指定选项执行下列操作：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+以图形方式显示 PG 分层结构
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+列出运行系统上存在的 PG 共享关系
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+提供当前 PG 使用信息，按 PG ID、CPU ID 或共享关系指定感兴趣的 PG
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+指定仅显示 CPU 或 PG ID
+.RE
+.sp
+.LP
+此外，\fB-p\fR 选项可用于显示哪些 PG 包含与具有共同物理关系（如 \fBsystem\fR、\fBchip\fR 和 \fBcore\fR）的 CPU 对应的 CPU。这些物理关系描述 CPU 的物理特征，并且有可能会封装与性能相关的处理器共享关系。
+.sp
+.LP
+如果 \fBpginfo\fR 在获取系统数据快照时系统配置不断更改，\fBpginfo\fR 会显示一条错误消息，并以退出状态 1 终止。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIprocessor_id\fR ... \fR
+.ad
+.sp .6
+.RS 4n
+将参数解释为处理器 ID，并仅显示包含指定处理器的 PG 的相关信息。
+.sp
+与 \fB-T\fR 选项结合使用时，此选项将显示的 PG 分层结构限制为仅包含每个指定 CPU 的沿袭。按 PG ID 指定感兴趣的 PG 时不能使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅显示属于 PG 的所有 CPU 的 CPU ID。此选项不能与 \fB-I\fR 选项同时使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示简短帮助消息，并以退出状态 0 退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅显示 PG 的 PG ID。此选项不能与 \fB-C\fR 选项同时使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示与 PG 对应的物理关系。如果某个 PG 具有与整个系统、某个处理器内核或某个芯片相同的 CPU，则会在 PG 共享关系之后的方括号 ("\fB[]\fR") 中显示 \fBsystem\fR、\fBcore\fR 或 \fBchip\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIstring1\fR,\fI string2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+仅显示其共享关系名称与任何指定字符串匹配的 PG 的相关信息。
+.sp
+每个指定字符串可以是完整的关系名称，也可以是一个或多个关系名称的一部分，并且字符串匹配不区分大小写。\fB-s\fR 选项显示的共享关系列表中列出了可能的关系名称。
+.sp
+您可以指定多个 \fB-r\fR 选项，这样可以匹配关系名称中包含任何指定字符串的所有 PG。与 \fB-T\fR 选项结合使用时，此选项将显示的 PG 分层结构限制为仅包含具有指定关系的每个 PG 的沿袭。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIstring1\fR,\fI string2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+仅显示其共享关系名称与指定名称\fB不同\fR的 PG 的相关信息。
+.sp
+字符串匹配与上述 \fB-r\fR 选项相同。可以输入多个 \fB-R\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示运行系统上支持的指定 PG 的所有共享关系。\fB-v\fR 选项可与此选项结合使用，以获取每个共享关系的 PG 列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+在所获得的分层结构中，每个 CPU（硬件导线束）的沿袭的排列顺序是：从与 CPU 共享最多硬件的 PG 到与 CPU 共享最少硬件的 PG。如果指定了任何感兴趣的 CPU、PG 或关系，所获得的 PG 分层结构将限制为 PG 分层结构中具有指定 CPU、PG 或关系的 PG 的沿袭。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。显示有关 PG 的附加信息。在不与 -s、-C 或 -I 结合使用时，此选项相当于同时使用 -T 和 -p 选项。与 -s 选项结合使用时，此选项将给出每个共享关系的 PG 列表。
+.RE
+
+.SH 操作数
+.sp
+.LP
+通过指定一个或多个对应 ID 或关键字 \fBall\fR，可以在命令行上提供以下操作数。多个 ID 可以指定为空格分隔的列表（如 \fB1 3\fR）、某个数字范围（如 \fB5-8\fR）或者两者（如 \fB1 3 5-8 13-16\fR）。不能同时指定 PG 和 CPU。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpg\fR\fR
+.ad
+.RS 16n
+.rt  
+可以在命令行上通过 PG ID 指定感兴趣的 PG。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprocessor_id\fR\fR
+.ad
+.RS 16n
+.rt  
+输入 \fB-c\fR 选项时，可以在命令行上通过 CPU ID 指定感兴趣的 CPU。
+.RE
+
+.sp
+.LP
+如果指定的某个 PG 或 CPU 无效，\fBpginfo\fR 命令将显示一条标准错误消息，说明 ID 无效，并继续处理命令行上指定的其他 PG 或 CPU。如果指定的所有 PG 或 CPU 均无效，\fBpginfo\fR 将以退出状态 2 退出。
+.SH 示例
+.sp
+.LP
+在下面的示例中，系统包含一个具有 8 个内核和 32 个导线束的 UltraSPARC T1 处理器芯片。
+.LP
+\fB示例 1 \fR显示每个 PG 的相关信息
+.sp
+.LP
+以下命令未使用参数，将显示有关每个 PG 的信息。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo\fR
+PG  RELATIONSHIP            CPUs
+0   System                  0-31
+3    Data_Pipe_to_memory    0-31
+2     Floating_Point_Unit   0-31
+1      Integer_Pipeline     0-3
+4      Integer_Pipeline     4-7
+5      Integer_Pipeline     8-11
+6      Integer_Pipeline     12-15
+7      Integer_Pipeline     16-19
+8      Integer_Pipeline     20-23
+9      Integer_Pipeline     24-27
+10     Integer_Pipeline     28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR显示有关所有共享关系的信息
+.sp
+.LP
+以下命令显示有关所有共享关系的信息。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -s -v\fR
+RELATIONSHIP         PGs
+-------------------- -------
+System               0
+Data_Pipe_to_memory  3
+Floating_Point_Unit  2
+Integer_Pipeline     1 4-10
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR显示 PG 分层结构
+.sp
+.LP
+以下命令显示有关系统中所有 PG 的一般信息。输出将显示哪些 PG 属于芯片和内核。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -p -T\fR
+0 (System) CPUs: 0-31
+`-- 3 (Data_Pipe_to_memory [system,chip]) CPUs: 0-31
+    `-- 2 (Floating_Point_Unit [system,chip]) CPUs: 0-31
+        |-- 1 (Integer_Pipeline [core]) CPUs: 0-3
+        |-- 4 (Integer_Pipeline [core]) CPUs: 4-7
+        |-- 5 (Integer_Pipeline [core]) CPUs: 8-11
+        |-- 6 (Integer_Pipeline [core]) CPUs: 12-15
+        |-- 7 (Integer_Pipeline [core]) CPUs: 16-19
+        |-- 8 (Integer_Pipeline [core]) CPUs: 20-23
+        |-- 9 (Integer_Pipeline [core]) CPUs: 24-27
+        `-- 10 (Integer_Pipeline [core]) CPUs: 28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR显示具有特定标准的列表
+.sp
+.LP
+以下命令显示与 CPU 0 共享整数流水线的 CPU 列表。该示例还说明了如何使用 -r 选项按共享关系名称过滤 PG。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -r integer_pipeline -C -c 0\fR
+0 1 2 3
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR使用选项按特定标准进行排除
+.sp
+.LP
+以下命令列出除关系为 \fBInteger_Pipeline\fR 的 PG 之外的所有 PG。
+
+.sp
+.in +2
+.nf
+$ \fBpginfo -R Integer_Pipeline\fR
+PG RELATIONSHIP            CPUs
+0  System                  0-31
+3  Data_Pipe_to_memory     0-31
+2  Floating_Point_Unit     0-31
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+语法无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.sp
+.LP
+命令行选项和输出为 Uncommitted（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBpgstat\fR(1M)、\fBattributes \fR(5)

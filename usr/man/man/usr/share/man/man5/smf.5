@@ -1,0 +1,596 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License"). You may not use this file except in compliance with the License. You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.
+.\"  See the License for the specific language governing permissions and limitations under the License. When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE. If applicable, add the following below this CDDL HEADER,
+.\" with the fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
+.TH smf 5 "22 Jun 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+smf \- service management facility
+.SH DESCRIPTION
+.sp
+.LP
+The Solaris service management facility defines a programming model for providing persistently running applications called \fIservices\fR. The facility also provides the infrastructure in which to run services. A service can represent a running application, the software state of a device, or a set of other services. Services are represented in the framework by \fIservice instance\fR objects, which are children of service objects. Instance objects can inherit or override the configuration of the parent service object, which allows multiple service instances to share configuration information. All service and instance objects are contained in a \fIscope\fR that represents a collection of configuration information. The configuration of the local Solaris instance is called the "localhost" scope, and is the only currently supported scope.
+.sp
+.LP
+Each service instance is named with a fault management resource identifier (FMRI) with the scheme \fBsvc:\fR. For example, the \fBsyslogd\fR(1M) daemon started at system startup is the default service instance named:
+.sp
+.in +2
+.nf
+svc://localhost/system/system-log:default
+svc:/system/system-log:default
+system/system-log:default
+.fi
+.in -2
+
+.sp
+.LP
+Many commands also allow FMRI abbreviations. See the \fBsvcs\fR(1) man page for one such example.
+.sp
+.LP
+In the above example, 'default' is the name of the instance and 'system/system-log' is the service name. Service names can comprise multiple components separated by slashes (\fB/\fR). All components, except the last, compose the \fIcategory\fR of the service. Site-specific services should be named with a category beginning with 'site'.
+.sp
+.LP
+A service instance is either enabled or disabled. All services can be enabled or disabled with the \fBsvcadm\fR(1M) command.
+.sp
+.LP
+The list of managed service instances on a system can be displayed with the \fBsvcs\fR(1) command.
+.SS "Dependencies"
+.sp
+.LP
+Service instances can have dependencies on a set of \fBentities\fR which can include services, instances, and files. Dependencies govern when the service is started and automatically stopped. When the dependencies of an enabled service are not satisfied, the service is kept in the offline state. When its dependencies are satisfied, the service is started. If the start is successful, the service is transitioned to the online state. Unlike services and instances, file dependencies are not evaluated dynamically as files are created or deleted. They are evaluated only one time
+.sp
+.LP
+Whether a dependency is satisfied is determined by its \fBgrouping\fR:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire_all\fR\fR
+.ad
+.RS 16n
+.rt  
+Satisfied when all cited services are running (online or degraded), or when all indicated files are present.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrequire_any\fR\fR
+.ad
+.RS 16n
+.rt  
+Satisfied when one of the cited services is running (online or degraded), or when at least one of the indicated files is present.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoptional_all\fR\fR
+.ad
+.RS 16n
+.rt  
+Satisfied if the cited services are running (online or degraded) or do not run without administrative action (disabled, maintenance, not present, or offline waiting for dependencies which do not start without administrative action). Incomplete services also satisfy optional dependencies.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexclude_all\fR\fR
+.ad
+.RS 16n
+.rt  
+Satisfied when all of the cited services are disabled, in the maintenance state, or when cited services or files are not present.
+.RE
+
+.sp
+.LP
+Once running (online or degraded), if a service cited by a \fBrequire_all\fR, \fBrequire_any\fR, or \fBoptional_all\fR dependency is stopped or refreshed, the SMF considers why the service was stopped and the \fBrestart_on\fR attribute of the dependency to decide whether to stop the service.
+.sp
+.in +2
+.nf
+                   |  restart_on value
+event              |  none  error restart refresh
+-------------------+------------------------------
+stop due to error  |  no    yes   yes     yes
+non-error stop     |  no    no    yes     yes
+refresh            |  no    no    no      yes
+.fi
+.in -2
+
+.sp
+.LP
+A service is considered to have stopped due to an error if the service has encountered a hardware error or a software error such as a core dump. For \fBexclude_all\fR dependencies, the service is stopped if the cited service is started and the \fBrestart_on\fR attribute is not \fBnone\fR.
+.sp
+.LP
+The dependencies on a service can be listed with \fBsvcs\fR(1)\ or \fBsvccfg\fR(1M), and modified with \fBsvccfg\fR(1M).
+.SS "Restarters"
+.sp
+.LP
+Each service is managed by a restarter. The master restarter, \fBsvc.startd\fR(1M) manages states for the entire set of service instances and their dependencies. The master restarter acts on behalf of its services and on delegated restarters that can provide specific execution environments for certain application classes. For instance, \fBinetd\fR(1M) is a delegated restarter that provides its service instances with an initial environment composed of a network connection as input and output file descriptors. Each instance delegated to \fBinetd\fR(1M) is in the online state. While the daemon of a particular instance might not be running, the instance is available to run.
+.sp
+.LP
+As dependencies are satisfied when instances move to the online state, \fBsvc.startd\fR(1M) invokes start methods of other instances or directs the delegated restarter to do so. These operations might overlap.
+.sp
+.LP
+The current set of services and associated restarters can be examined using \fBsvcs\fR(1). A description of the common configuration used by all restarters is given in \fBsmf_restarter\fR(5).
+.SS "Methods"
+.sp
+.LP
+Each service or service instance must define a set of methods that start, stop, and, optionally, refresh the service. See \fBsmf_method\fR(5) for a more complete description of the method conventions for \fBsvc.startd\fR(1M) and similar \fBfork\fR(2)-\fBexec\fR(2) restarters.
+.sp
+.LP
+Administrative methods, such as for the capture of legacy configuration information into the repository, are discussed on the \fBsvccfg\fR(1M) manual page.
+.sp
+.LP
+The methods for a service can be listed and modified using the \fBsvccfg\fR(1M) command.
+.SS "States"
+.sp
+.LP
+Each service instance is always in a well-defined state based on its dependencies, the results of the execution of its methods, and its potential contracts events. The following states are defined:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUNINITIALIZED\fR\fR
+.ad
+.RS 17n
+.rt  
+This is the initial state for all service instances. Instances are moved to maintenance, offline, or a disabled state upon evaluation by \fBsvc.startd\fR(1M) or the appropriate restarter.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFFLINE\fR\fR
+.ad
+.RS 17n
+.rt  
+The instance is enabled, but not yet running or available to run. If restarter execution of the service start method or the equivalent method is successful, the instance moves to the online state. Failures might lead to a degraded or maintenance state. Administrative action can lead to the uninitialized state.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBONLINE\fR\fR
+.ad
+.RS 17n
+.rt  
+The instance is enabled and running or is available to run. The specific nature of the online state is application-model specific and is defined by the restarter responsible for the service instance. Online is the expected operating state for a properly configured service with all dependencies satisfied. Failures of the instance can lead to a degraded or maintenance state. Failures of services on which the instance depends can lead to offline or degraded states.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEGRADED\fR\fR
+.ad
+.RS 17n
+.rt  
+The instance is enabled and running or available to run. The instance, however, is functioning at a limited capacity in comparison to normal operation. Failures of the instance can lead to the maintenance state. Failures of services on which the instance depends can lead to offline or degraded states. Restoration of capacity should result in a transition to the online state.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAINTENANCE\fR\fR
+.ad
+.RS 17n
+.rt  
+The instance is enabled, but not able to run. Administrative action (through \fBsvcadm clear\fR) is required to move the instance out of the maintenance state. The maintenance state might be a temporarily reached state if an administrative operation is underway.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDISABLED\fR\fR
+.ad
+.RS 17n
+.rt  
+The instance is disabled. Enabling the service results in a transition to the offline state and eventually to the online state with all dependencies satisfied.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLEGACY-RUN\fR\fR
+.ad
+.RS 17n
+.rt  
+This state represents a legacy instance that is not managed by the service management facility. Instances in this state have been started at some point, but might or might not be running. Instances can only be observed using the facility and are not transferred into other states.
+.RE
+
+.sp
+.LP
+States can also have transitions that result in a return to the originating state.
+.SS "Events Notification"
+.sp
+.LP
+SMF allows notification by using SNMP or SMTP of state transitions. It publishes Information Events for state transitions which are consumed by notification daemons like \fBsnmp-notify\fR(1M) and \fBsmtp-notify\fR(1M). SMF state transitions of disabled services do not generate notifications unless the final state for the transition is disabled and there exist notification parameters for that transition. Notification is not be generated for transitions that have the same initial and final state.
+.SS "Notification Parameters"
+.sp
+.LP
+Notification parameters for FMA Events are stored in \fBsvc:/system/fm/notify-params:default\fR except for Information Events generated by SMF state transitions. Those are stored in the service or in the instance of the transitioning service. Notification parameters for SMF state transition generated events can be set system wide in \fBsvc:/system/svc/global:default\fR. The system wide notification parameters are used when a composed lookup, as in \fBscf_instance_get_pg_composed\fR(3SCF), in the transitioning instance cannot be found. Notification parameters can be manipulated using \fBsvccfg\fR(1M). Notification parameters can be configured in a service manifest or profile using the \fBnotification_parameters\fR element described in the DTD. An example is provided below:
+.sp
+.in +2
+.nf
+<notification_parameters>
+     <event  value='from-online' />
+     <type name='smtp' active="false">
+        <parameter name='to'>
+            <value_node value='root@local' />
+            <value_node value='admin-alias@eng' />
+        </parameter>
+     </type>
+     <type name='snmp' />
+</notification_parameters>
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIevents\fR is a comma separated list of SMF state transition sets or a comma separated list of FMA event classes. \fIevents\fR cannot have a mix of SMF state transition sets and FMA event classes. 
+.sp
+.LP
+For convenience, the tags \fBproblem- {diagnosed,updated,repaired,resolved}\fR describe the lifecycle of a problem diagnosed by the FMA subsystem - from initial diagnosis to interim updates and finally problem closure. These tags are aliases for underlying FMA protocol event classes (all in the \fBlist.*\fR hierarchy), but the latter should not be used in configuring notification preferences.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-diagnosed\fR\fR
+.ad
+.sp .6
+.RS 4n
+A new problem has been diagnosed by the FMA subsystem. The diagnosis includes a list of one or more suspects, which (where appropriate) might have been automatically isolated to prevent further errors occurring. The problem is identified by a UUID in the event payload, and further events describing the resolution lifecycle of this problem quote a matching UUID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-updated\fR\fR
+.ad
+.sp .6
+.RS 4n
+One or more of the suspect resources in a problem diagnosis has been repaired, replaced or acquitted (or has been faulted again), but there remains at least one faulted resource in the list. A repair could be the result of an \fBfmadm\fR command line (\fBfmadm repaired, fmadm acquit, fmadm replaced\fR) or might have been detected automatically such as through detection of a part serial number change.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-repaired\fR\fR
+.ad
+.sp .6
+.RS 4n
+All of the suspect resources in a problem diagnosis have been repaired, resolved or acquitted. Some or all of the resources might still be isolated at this stage.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproblem-resolved\fR\fR
+.ad
+.sp .6
+.RS 4n
+All of the suspect resources in a problem diagnosis have been repaired resolved or acquitted \fBand\fR are no longer isolated (for example, a cpu that was a suspect and offlined is now back online again; this un-isolate action is usually automatic).
+.RE
+
+.sp
+.LP
+State Transition Sets are defined as:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBto-<state>\fR\fR
+.ad
+.RS 16n
+.rt  
+Set of all transitions that have <state> as the final state of the transition.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfrom-<state>\fR\fR
+.ad
+.RS 16n
+.rt  
+Set of all transitions that have <state> as the initial state of the transition.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB<state>\fR\fR
+.ad
+.RS 16n
+.rt  
+Set of all transitions that have <state> as the initial state of the transition.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall\fR\fR
+.ad
+.RS 16n
+.rt  
+Set of all transitions.
+.RE
+
+.sp
+.LP
+Valid values of state are maintenance, offline, disabled, online and degraded. An example of a transitions set definition: \fBmaintenance\fR, \fBfrom-online\fR, \fBto-degraded\fR.
+.SS "Properties and Property Groups"
+.sp
+.LP
+The dependencies, methods, delegated restarter, and instance state mentioned above are represented as properties or property groups of the service or service instance. A service or service instance has an arbitrary number of property groups in which to store application data. Using property groups in this way allows the configuration of the application to derive the attributes that the repository provides for all data in the facility. The application can also use the appropriate subset of the \fBservice_bundle\fR(4) DTD to represent its configuration data within the framework.
+.sp
+.LP
+Property lookups are composed. If a property group-property combination is not found on the service instance, most commands and the high-level interfaces of \fBlibscf\fR(3LIB) search for the same property group-property combination on the service that contains that instance. This allows common configuration among service instances to be shared. Composition can be viewed as an inheritance relationship between the service instance and its parent service.
+.sp
+.LP
+Properties are protected from modification by unauthorized processes. See \fBsmf_security\fR(5).
+.SS "General Property Group"
+.sp
+.LP
+The \fBgeneral\fR property group applies to all service instances. It includes the following properties:
+.sp
+.ne 2
+.mk
+.na
+\fBenabled (boolean)\fR
+.ad
+.RS 22n
+.rt  
+Specifies whether the instance is enabled. If this property is not present on an instance, SMF does not tell the instance's restarter about the existence of the restarter.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrestarter (fmri)\fR
+.ad
+.RS 22n
+.rt  
+The restarter for this service. See the Restarters section for more information. If this property is unset, the default system restarter is used. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcomplete (astring)\fR
+.ad
+.RS 22n
+.rt  
+Whether this service is complete or is a partial definition that should not be started. This property is automatically set on manifest import or when an administrator manually creates an instance, so should not require modification.
+.RE
+
+.SS "Layers"
+.sp
+.LP
+The repository is assembled from a combination of administrative customization, current state, and default values from files in standard locations. Services, instances, property groups, and properties defined by manifests in SMF-managed filesystem locations are always accurately represented in the repository. Customizations made during runtime by administrators or other programs are captured and stored in the repository. 
+.sp
+.LP
+A property can have different values in the repository which reflect different settings from manifests, profiles, and administrative customizations. Which one is presented to the user and service by default is arbitrated by a simple priority scheme called \fBlayers\fR. 
+.sp
+.LP
+Four layers are tracked by SMF. In decreasing priority order, they are:
+.sp
+.ne 2
+.mk
+.na
+\fBadmin\fR
+.ad
+.RS 18n
+.rt  
+Any change made by interactive use of SMF commands or libraries. This layer has the highest priority.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsite-profile\fR
+.ad
+.RS 18n
+.rt  
+Any values from the files in the \fB/etc/svc/profile/site\fR directory, or the legacy \fB/etc/svc/profile/site.xml\fR and \fB/var/svc/profile/site.xml\fR files.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsystem-profile\fR
+.ad
+.RS 18n
+.rt  
+Any values from the system profile locations \fB/etc/svc/profile/generic.xml\fR and \fB/etc/svc/profile/platform.xml\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBmanifest\fR
+.ad
+.RS 18n
+.rt  
+Any values from the system manifest locations \fB/lib/svc/manifest\fR or \fB/var/svc/manifes\fRt. 
+.RE
+
+.sp
+.LP
+Property conflicts are not permitted within any individual layer. A conflicting property in the \fBadmin\fR layer simply overwrites the previous property. If the same property is delivered by multiple files in any other layer, and is not set at a higher layer, the entire instance is tagged as in-conflict, and are not started by \fBsvc.startd\fR(1M) until the conflicting definition is removed or the property is set at a higher layer. Other \fBlibscf\fR consumers requesting a single value, including \fBsvccfg\fR and \fBsvcprop\fR, see a random property setting from amongst all appropriate values. We do not guarantee which of the conflicting values are returned.
+.SS "Snapshots"
+.sp
+.LP
+Historical data about each instance in the repository is maintained by the service management facility. This data is made available as read-only snapshots for administrative inspection and rollback. The following set of snapshot types might be available:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitial\fR\fR
+.ad
+.RS 12n
+.rt  
+Initial configuration of the instance created by the administrator or produced during package installation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprevious\fR\fR
+.ad
+.RS 12n
+.rt  
+Current configuration captured when an administrative undo operation is performed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrunning\fR\fR
+.ad
+.RS 12n
+.rt  
+The running configuration of the instance.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.RS 12n
+.rt  
+Configuration captured during a successful transition to the online state.
+.RE
+
+.sp
+.LP
+The \fBsvccfg\fR(1M) command can be used to interact with snapshots.
+.SS "Special Property Groups"
+.sp
+.LP
+Some property groups are marked as \fBnon-persistent\fR. These groups are not backed up in snapshots and their content is cleared during system boot. Such groups generally hold an active program state which does not need to survive system restart.
+.SS "Configuration Repository"
+.sp
+.LP
+The current state of each service instance, as well as the properties associated with services and service instances, is stored in a system repository managed by \fBsvc.configd\fR(1M). 
+.sp
+.LP
+The repository for service management facility data is managed by \fBsvc.configd\fR(1M).
+.SS "Service Bundles, Manifests, and Profiles"
+.sp
+.LP
+The information associated with a service or service instance that is stored in the configuration repository can be exported as XML-based files. Such XML files, known as service bundles, are portable and suitable for backup purposes. Service bundles are classified as one of the following types:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmanifests\fR\fR
+.ad
+.RS 13n
+.rt  
+Files that contain the complete set of properties associated with a specific set of services or service instances.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprofiles\fR\fR
+.ad
+.RS 13n
+.rt  
+Files that contain a set of service instances and values for the enabled property (type \fBboolean\fR in the general property group) on each instance.
+.sp
+Profiles can also contain configuration values for properties in services and instances. Template elements cannot be defined in a profile.
+.sp
+Profiles can use a relaxed set of elements from the DTD described in \fBservice_bundle\fR(4). To use these, the \fBDOCTYPE\fR entry should have the following definitions added:
+.sp
+.in +2
+.nf
+<!ENTITY % profile "INCLUDE">
+<!ENTITY % manifest "IGNORE">
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+Service bundles can be imported or exported from a repository using the \fBsvccfg\fR(1M) command. See \fBservice_bundle\fR(4) for a description of the service bundle file format with guidelines for authoring service bundles.
+.SS "Milestones"
+.sp
+.LP
+An \fBsmf\fR milestone is a service that aggregates a multiple service dependencies. Usually, a milestone does nothing useful itself, but declares a specific state of system-readiness on which other services can depend. One example is the \fBname-services\fR milestone, which simply depends upon the currently enabled name services.
+.SS "Legacy Startup Scripts"
+.sp
+.LP
+Startup programs in the \fB/etc/rc?.d\fR directories are executed as part of the corresponding run-level milestone:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rcS.d\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBmilestone/single-user:default\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rc2.d\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBmilestone/multi-user:default\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rc3.d\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBmilestone/multi-user-server:default\fR
+.RE
+
+.sp
+.LP
+Execution of each program is represented as a reduced-functionality service instance named by the program's path. These instances are held in a special legacy-run state.
+.sp
+.LP
+These instances do not have an enabled property (type \fBboolean\fR in the general property group) and, generally, cannot be manipulated with the \fBsvcadm\fR(1M) command. No error diagnosis or restart is done for these programs.
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBinetd\fR(1M), \fBsnmp-notify\fR(1M), \fBsmtp-notify\fR(1M),\fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsvc.configd\fR(1M), \fBsvc.startd\fR(1M), \fBexec\fR(2), \fBfork\fR(2), \fBlibscf\fR(3LIB), \fBstrftime\fR(3C), \fBcontract\fR(4), \fBservice_bundle\fR(4), \fBsmf_bootstrap\fR(5), \fBsmf_method\fR(5), \fBsmf_restarter\fR(5), \fBsmf_security\fR(5)

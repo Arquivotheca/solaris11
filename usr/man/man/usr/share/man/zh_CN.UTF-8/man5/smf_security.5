@@ -1,0 +1,197 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH smf_security 5 "2011 年 7 月 9 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+smf_security \- 服务管理工具的安全行为
+.SH 描述
+.sp
+.LP
+服务管理工具 \fBsmf\fR(5) 的配置子系统需要修改服务配置的权限。通过 \fBuser_attr\fR(4) 和 \fBprof_attr\fR(4) 将下文所述的授权与用户相关联，可以向用户授予适当的权限。参见 \fBrbac\fR(5)。
+.sp
+.LP
+以下授权用于处理服务和服务实例。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify\fR\fR
+.ad
+.RS 22n
+.rt  
+有权添加、删除或修改服务、服务实例或其属性以及读取受保护的属性值。
+.RE
+
+.SS "属性组授权"
+.sp
+.LP
+\fBsmf\fR(5) 配置子系统将属性与每个服务和服务实例相关联。相关属性将进行分组。组可以表示执行方法、凭证信息、应用程序数据或重启程序状态。创建或修改属性组的能力可能会导致 \fBsmf\fR(5) 组件执行可能需要系统权限的操作。相应地，框架也需要处理属性组的适当权限。
+.sp
+.LP
+每个属性组都有与其用途相对应的类型。核心属性组类型有 \fBmethod\fR、\fBdependency\fR、\fBapplication\fR 和 \fBframework\fR。也可以引入其他属性组类型，但前提是它们必须符合 \fBsmf\fR(5) 中的扩展命名约定。不过，以下基本授权仅适用于核心属性组类型：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify.method\fR\fR
+.ad
+.sp .6
+.RS 4n
+有权更改值或者创建、删除或修改 \fBmethod\fR 类型的属性组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify.dependency\fR\fR
+.ad
+.sp .6
+.RS 4n
+有权更改值或者创建、删除或修改 \fBdependency\fR 类型的属性组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify.application\fR\fR
+.ad
+.sp .6
+.RS 4n
+有权更改值、读取受保护的值以及创建、删除或修改 application 类型的属性组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify.framework\fR\fR
+.ad
+.sp .6
+.RS 4n
+有权更改值或者创建、删除或修改 \fBframework\fR 类型的属性组。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.modify\fR\fR
+.ad
+.sp .6
+.RS 4n
+有权添加、删除或修改服务、服务实例或其属性以及读取受保护的属性值。
+.RE
+
+.sp
+.LP
+属性组特定的授权可以由包含在该属性组中的属性来指定。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify_authorization\fR\fR
+.ad
+.RS 24n
+.rt  
+授权允许在属性组中添加、删除或修改属性以及从受保护的属性组检索属性值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvalue_authorization\fR\fR
+.ad
+.RS 24n
+.rt  
+授权允许更改属性组的任何属性值（\fBmodify_authorization\fR 除外）以及从受保护的属性组检索任何属性值（modify_authorization 除外）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBread_authorization\fR\fR
+.ad
+.RS 24n
+.rt  
+授权允许在属性组中检索属性值。如果存在具有此名称的字符串值属性，则会将所在属性组标识为受保护。此属性不适用于非 application 类型的属性组。参见\fB受保护的属性组\fR。
+.RE
+
+.sp
+.LP
+上述授权属性仅当具有 \fBastring\fR 类型时才能使用。如果实例属性组没有其中任一属性，但实例的服务具有与该属性同名的属性组，则将使用该属性的值。
+.SS "受保护的属性组"
+.sp
+.LP
+通常，任何用户无需显式授权即可读取系统信息库中的所有属性值。非 framework 类型的属性组可用于存储其值需要保护的属性。除非具有适当的授权，否则不能公开这些属性组。通过字符串值的 \fBread_authorization\fR 属性存在与否来指示属性组的受保护状态。如果此属性存在，只能按照\fB属性组授权\fR中的说明来检索属性组中的所有属性值。
+.sp
+.LP
+如果管理域所使用的策略禁止备份被视为敏感的数据，应从其备份中排除 SMF 系统信息库数据库。即使存在此类策略，也可备份未受保护的属性值，方法是使用 \fBsvccfg\fR(1M) 归档命令为不包含受保护属性值的系统信息库创建归档文件。
+.SS "服务操作授权"
+.sp
+.LP
+对服务实例执行的某些操作可能会导致服务中断或停用。这些操作需要授权才能确保任何拒绝服务操作都是有意的管理操作。此类操作包含执行 refresh 或 restart 方法的请求或将服务实例置于维护或其他非运行状态的请求。以下授权允许请求此类操作：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsolaris.smf.manage\fR\fR
+.ad
+.RS 22n
+.rt  
+有权请求任何服务实例的重新启动、刷新或其他状态修改。
+.RE
+
+.sp
+.LP
+此外，\fBgeneral/action_authorization\fR 属性还可以指定允许对该服务实例请求服务操作的其他授权。需要 \fBsolaris.smf.manage\fR 授权才能修改此属性。
+.SS "定义的权限配置文件"
+.sp
+.LP
+包含了两个权限配置文件，它们可以提供用于处理典型 \fBsmf\fR(5) 操作的分组授权。
+.sp
+.ne 2
+.mk
+.na
+\fB服务管理\fR
+.ad
+.RS 19n
+.rt  
+服务管理员可以通过任意方式处理系统信息库中的任何服务。服务管理员与 \fBsolaris.smf.manage\fR 和 \fBsolaris.smf.modify\fR 授权相对应。
+.sp
+要使用 \fBpkg\fR(1) 命令添加或删除其服务清单文件中包含服务清单的软件包，至少需要服务管理配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB服务操作员\fR
+.ad
+.RS 19n
+.rt  
+服务操作员能够在系统上启用或禁用任何服务实例以及请求执行其 restart 或 refresh 方法。服务操作员与 \fBsolaris.smf.manage\fR 和 \fBsolaris.smf.modify.framework\fR 授权相对应。
+.sp
+站点可根据需要定义其他权限配置文件。
+.RE
+
+.SS "远程系统信息库修改"
+.sp
+.LP
+远程系统信息库服务器可能会由于附加权限检查而拒绝修改尝试。请参见"注释"。
+.SH 另请参见
+.sp
+.LP
+\fBauths\fR(1)、\fBprofiles\fR(1)、\fBsvccfg\fR(1M)、\fBprof_attr\fR(4)、\fBuser_attr\fR(4)、\fBrbac\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+\fBpkg\fR(1)
+.SH 附注
+.sp
+.LP
+\fBsmf\fR(5) 的现有版本不支持远程系统信息库。
+.sp
+.LP
+当服务配置为以 root 身份但以不同于 \fBlimit_privileges\fR的权限启动时，所生成的进程可识别权限。这可能会出乎开发者的意料，他们本以为 \fBseteuid(<非零 UID>)\fR 能够将权限降为基本或更低的级别。 

@@ -1,0 +1,396 @@
+'\" te
+.\" 版权所有 (c) 1980 加利福尼亚大学董事会。保留所有权利。伯克利软件许可协议规定了重新发布的条款及条件。
+.\" 版权所有 (c) 2000，Oracle 和/或其附属公司。保留所有权利
+.TH vgrind 1 "2000 年 3 月 3 日" "SunOS 5.11" "用户命令"
+.SH 名称
+vgrind \- 格式化易阅读的程序列表
+.SH 用法概要
+.LP
+.nf
+\fBvgrind\fR [\fB-2fntwx\fR] [\fB-d\fR \fIdefs-file\fR] [\fB-h\fR \fIheader\fR] [\fB-l\fR \fIlanguage\fR] 
+     [\fB-s\fR \fIn\fR] [\fB-o\fR \fIpagelist\fR] [\fB-P\fR \fIprinter\fR] [\fB-T\fR \fIoutput-device\fR] \fIfilename\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBvgrind\fR 实用程序使用 \fBtroff\fR(1) 命令以易于阅读的风格格式化由 \fIfilename\fR 参数指定的程序源。注释以斜体显示，关键字以粗体显示，遇到的每个函数的名称在页边空白中列出。
+.sp
+.LP
+\fBvgrind\fR 以两种基本模式运行：过滤模式或常规模式。在过滤模式中，\fBvgrind\fR 以一种类似于 \fBtbl\fR(1) 命令的方式充当过滤器。标准输入直接被传递到标准输出，但用 \fBtroff\fR 样式的宏括起来的行除外：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB .vS\fR\fR
+.ad
+.RS 9n
+.rt  
+开始处理
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\&.vE\fR\fR
+.ad
+.RS 9n
+.rt  
+结束处理
+.RE
+
+.sp
+.LP
+这些行按照以上所述进行格式化。可以将此过滤器的输出传递到 \fBtroff\fR 进行输出。\fBeqn\fR(1) 或 \fBtbl\fR(1) 无需特定的顺序。
+.sp
+.LP
+在常规模式中，\fBvgrind\fR 接受输入的 \fIfilename\fR，进行处理并将它们传递到 \fBtroff\fR 以便输出。使用连字符 ('\fB\(mi\fR\&') 指定标准输入。否则，\fBvgrind\fR 将会退出，而不会尝试读取标准输入。文件名必须在所有其他选项参数后指定。
+.sp
+.LP
+在常规模式中，如果指定了 \fB-t\fR 或 \fB-P\fR 选项，则输出如下：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在指定了 \fB-t\fR 选项的情况下，以 \fBtroff\fR 格式发出到标准输出。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在指定了 \fB-P\fR 选项的情况下，以 PostScript 格式输出到指定的打印机。
+.RE
+.sp
+.LP
+否则，输出如下：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在定义了系统缺省打印机并且该命令的标准输出为 tty 的情况下，以 PostScript 格式输出到该打印机。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在标准输出非 tty（即标准输出是到文件的管道或重定向）的情况下，以 PostScript 格式发出到标准输出。
+.RE
+.sp
+.LP
+在这两种模式中，\fBvgrind\fR 将传递以小数点开头的任意行，而不进行转换。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-2\fR\fR
+.ad
+.RS 16n
+.rt  
+产生两列输出。指定该选项会将缺省的点尺寸更改为 8（就像提供了 \fB-s8\fR 选项一样）。此外，还会将输出调整为以横向模式显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 16n
+.rt  
+强制使用过滤模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 16n
+.rt  
+不将关键字设置为粗体。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.RS 16n
+.rt  
+考虑使制表符相隔四列，而不是通常的八列。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 16n
+.rt  
+以一种易于阅读的格式输出索引文件。只要在运行 \fBvgrind\fR 时当前目录中存在一个称为 \fBindex\fR 的文件，就会自动生成索引文件本身。然后，可以通过在 \fBvgrind\fR 中指定 \fB-x\fR 选项以及将 \fBindex\fR 文件作为参数，从而关闭函数定义索引。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdefs-file\fR\fR
+.ad
+.RS 16n
+.rt  
+指定备用的语言定义文件（缺省为 \fB/usr/lib/vgrindefs\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIheader\fR\fR
+.ad
+.RS 16n
+.rt  
+指定要显示在每个输出页的中间位置的页眉。使用引号指定嵌入了空格的页眉。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlanguage\fR\fR
+.ad
+.RS 16n
+.rt  
+指定要使用的语言。当前已知的\fI语言\fR有：Bourne shell (\fB-lsh\fR)、C（\fB-lc\fR，缺省语言）、C++ (\fB-lc++\fR)、C shell (\fB-lcsh\fR)、emacs MLisp (\fB-lml\fR)、FORTRAN (\fB-lf\fR)、Icon (\fB-lI\fR)、ISP (\fB-i\fR)、LDL (\fB-lLDL\fR)、Model (\fB-lm\fR)、Pascal (\fB-lp\fR) 以及 RATFOR (\fB-lr\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIprinter\fR\fR
+.ad
+.RS 16n
+.rt  
+将输出发送到指定的 \fIprinter\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIn\fR\fR
+.ad
+.RS 16n
+.rt  
+指定要在输出上使用的点尺寸（与 \fBtroff\fR \fB\&.ps\fR 点尺寸请求的参数完全相同）。
+.RE
+
+.sp
+.LP
+\fBvgrind\fR 将下列选项传递给由 \fBTROFF\fR 环境变量指定的格式化程序。请参见"环境变量"。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 20n
+.rt  
+与 \fBtroff\fR 中的同一选项类似，即格式化文本输出到标准输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIpagelist\fR\fR
+.ad
+.RS 20n
+.rt  
+只输出以逗号分隔的页号及页号范围 \fIpagelist\fR 中出现的页号对应的页面。例如，页号范围 \fIN\(miM\fR 表示页面 \fIN\fR 到页面 \fIM\fR；初始的 \fB-N\fR 表示起始页到页面 \fIN\fR；最后的 \fIN\fR\(mi 表示从页面 \fIN\fR 到最后一页。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIoutput-device\fR\fR
+.ad
+.RS 20n
+.rt  
+格式化指定的 \fIoutput-device\fR 的输出。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilename\fR\fR
+.ad
+.RS 12n
+.rt  
+要由 \fBvgrind\fR 处理的程序源的名称。使用 '\fB\(mi\fR\&' 指定标准输入。
+.RE
+
+.SH 环境变量
+.sp
+.LP
+在常规模式中，\fBvgrind\fR 会将其中间输出提供给 \fBTROFF\fR 环境变量的值指定的文本格式化程序，或提供给 \fB/usr/bin/troff\fR（如果环境中未定义该变量）。该机制允许 \fBtroff\fR 名称出现局部变化。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fBindex\fR\fR
+.ad
+.sp .6
+.RS 4n
+在其中创建了索引源的文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/vgrindefs\fR\fR
+.ad
+.sp .6
+.RS 4n
+语言描述
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/vfontedpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+预处理程序
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/share/lib/tmac/tmac.vgrind\fR\fR
+.ad
+.sp .6
+.RS 4n
+宏软件包
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性text/doctools
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcsh\fR(1)、\fBctags\fR(1)、\fBeqn\fR(1)、\fBtbl\fR(1)、\fBtroff\fR(1)、\fBattributes\fR(5)、\fBvgrindefs\fR(5)
+.SH 已知问题
+.sp
+.LP
+\fBvgrind\fR 假定遵循某种编程风格：
+.sp
+.ne 2
+.mk
+.na
+\fBC\fR
+.ad
+.RS 11n
+.rt  
+每行的函数名称前面只能添加空格、制表符或星号 (\fB*\fR)。括号中的参数还必须在同一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBFORTRAN\fR
+.ad
+.RS 11n
+.rt  
+函数名称需和关键字 \fBfunction\fR 或 \fBsubroutine\fR 显示在同一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBMLisp\fR
+.ad
+.RS 11n
+.rt  
+函数名称不应和前面的 \fBdefun\fR 显示在同一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBModel\fR
+.ad
+.RS 11n
+.rt  
+函数名称需和关键字 \fBis beginproc\fR 显示在同一行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBPascal\fR
+.ad
+.RS 11n
+.rt  
+函数名称需和关键字 \fBfunction\fR 或 \fBprocedure\fR 显示在同一行。
+.RE
+
+.sp
+.LP
+如果不遵守以上约定，索引建立以及边际函数名称注释机制将会失败。
+.sp
+.LP
+更普遍的情况是，任意选择程序格式化样式通常会导致未见过的结果。准备程序以进行 \fBvgrind\fR 输出时，请使用制表符（而非空格字符）将源代码正确对齐，因为 \fBvgrind\fR 使用可变宽度的字体。
+.sp
+.LP
+此处应使用 \fBctags\fR(1) 的函数识别机制。
+.sp
+.LP
+\fB-w\fR 选项令人厌烦，但除此之外别无它法能达到所需效果。
+.sp
+.LP
+\fBtmac.vgrind\fR 中定义的宏无法与其他宏软件包中的宏正常共存，这使得过滤模式很难有效利用。
+.sp
+.LP
+\fBvgrind\fR 无法正确处理 \fBcsh\fR(1) 脚本中的某些特殊字符。
+.sp
+.LP
+\fBtmac.vgrind\fR 格式化宏不支持两列模式中使用的页面高度与宽度，这使得两列输出只对美国标准页面大小（8.5 英寸 x 11 英寸）有效，而对其他页面大小毫无用处。对于其他页面大小，需要编辑 \fBtmac.vgrind\fR 中给定的大小值。更好的解决方案就是，创建专门针对横向输出的 \fBtroff\fR 输出设备规范并在其中记录大小信息。

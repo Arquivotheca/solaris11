@@ -1,0 +1,508 @@
+'\" te
+.\" To view license terms, attribution, and copyright for IP Filter, the default path is /usr/lib/ipf/IPFILTER.LICENCE. If the Solaris operating environment has been installed anywhere other than the default, modify the given path to access the file at the installed location.
+.\" Portions Copyright (c) 2009, Sun Microsystems Inc. All Rights Reserved.
+.TH ipf 1M "2009 年 2 月 25 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ipf \- IP パケットの入出力に関するパケットフィルタ処理リストの変更
+.SH 形式
+.LP
+.nf
+\fBipf\fR [\fB-6AdDEInoPRrsvVyzZ\fR] [\fB-l\fR block | pass | nomatch] 
+     [\fB-T\fR \fIoptionlist\fR] [\fB-F\fR i | o | a | s | S] \fB-f\fR \fIfilename\fR 
+     [\fB-f\fR \fIfilename\fR...]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBipf\fR ユーティリティーは、Solaris IP フィルタ機能に関連するコマンド群の 1 つです。\fBipfilter\fR(5) を参照してください。
+.sp
+.LP
+\fBipf\fR ユーティリティーは、設定されたファイル名 (ハイフン (\fB-\fR) は標準入力として扱う) を開き、そのファイルを解析して、パケットフィルタの規則セットに対して追加または削除する規則のセットを抽出します。
+.sp
+.LP
+解析に問題がない場合は、\fBipf\fR によって処理された各規則がカーネルの内部リストに追加されます。規則は、\fBipf\fR に指定したときの順序で内部リストの末尾に追加されます。
+.sp
+.LP
+\fBipf\fR の使用は、\fB/dev/ipauth\fR、\fB/dev/ipl\fR、および \fB/dev/ipstate\fR へのアクセスによって制限されます。これらのファイルのデフォルトのアクセス権では、\fBipf\fR のすべての操作を root ユーザーとして実行する必要があります。
+.SS "Solaris IP フィルタ機能の有効化"
+.sp
+.LP
+Solaris IP フィルタは、Solaris オペレーティングシステムとともにインストールされます。ただし、パケットフィルタ処理はデフォルトでは有効になっていません。次の手順で Solaris IP フィルタ機能をアクティブ化してください。
+.RS +4
+.TP
+1.
+IP Filter Management の権利プロファイル (\fBrbac\fR(5) を参照) を持つ役割またはスーパーユーザーになります。
+.RE
+.RS +4
+.TP
+2.
+システムおよびサービスのファイアウォールポリシーを構成します。\fBsvc.ipfd\fR(1M) および \fBipf \fR(4) を参照してください。
+.RE
+.RS +4
+.TP
+3.
+(省略可能) ネットワークアドレス変換 (NAT) 構成ファイルを作成します。\fBipnat.conf\fR(4) を参照してください。
+.RE
+.RS +4
+.TP
+4.
+(省略可能) アドレスプール構成ファイルを作成します。\fBippool\fR(4) を参照してください。
+.sp
+ひとかたまりのアドレスを単一のアドレスプールとして参照する場合は、\fBipool.conf\fR ファイルを作成します。ブート時にアドレスプール構成ファイルをロードする場合は、アドレスプールを保存する \fB/etc/ipf/ippool.conf\fR というファイルを作成します。ブート時にアドレスプール構成ファイルをロードしない場合は、\fB/etc/ipf\fR 以外の場所に \fBippool.conf\fR ファイルを保存し、規則を手動でアクティブ化します。
+.RE
+.RS +4
+.TP
+5.
+次のようにして Solaris IP フィルタを有効にします。
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/ipfilter\fR
+.fi
+.in -2
+.sp
+
+.RE
+.sp
+.LP
+パケットフィルタ処理を一時的に無効にしたあとで再度有効にするには、マシンをリブートするか、次のコマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/ipfilter\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これによって基本的に次の \fBipf\fR コマンドを実行します。
+.RS +4
+.TP
+1.
+Solaris IP フィルタを有効にします。
+.sp
+.in +2
+.nf
+# \fBipf -E\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+\fBippools\fR を読み込みます。
+.sp
+.in +2
+.nf
+\fB# ippool -f\fR \fI<ippool configuration file>\fR
+.fi
+.in -2
+.sp
+
+\fBippool\fR(1M) を参照してください。
+.RE
+.RS +4
+.TP
+3.
+(省略可能) パケットフィルタ処理をアクティブ化します。
+.sp
+.in +2
+.nf
+\fBipf -f\fR \fI<ipf configuration file>\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+4.
+(省略可能) NAT をアクティブ化します。
+.sp
+.in +2
+.nf
+\fBipnat -f\fR \fI<IPNAT configuration file>\fR
+.fi
+.in -2
+.sp
+
+\fBipnat\fR(1M) を参照してください。
+.RE
+.LP
+注 - 
+.sp
+.RS 2
+システムをリブートすると、IP フィルタ構成が自動的にアクティブ化されます。
+.RE
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-6\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、IPv6 規則を解析する場合と読み込む場合に必要です。IPv6 規則の読み込みについては、将来変更される可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクティブなリストを変更するためのリストを設定します (デフォルト)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバッグモードを有効にします。フィルタ規則が処理されるたびに、生成されるフィルタ規則の 16 進ダンプが出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+フィルタを無効にします (有効になっている場合)。読み込み可能なカーネルのバージョンでは機能しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.sp .6
+.RS 4n
+フィルタを有効にします (無効になっている場合)。読み込み可能なカーネルのバージョンでは機能しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fBi\fR | \fBo\fR | \fBa\fR\fR
+.ad
+.sp .6
+.RS 4n
+フラッシュするフィルタリストを指定します。パラメータとして、\fBi\fR (input、入力)、\fBo\fR (output、出力)、または \fBa\fR (all、すべてのフィルタ規則の削除) のいずれかを指定します。1 文字だけ指定することも、その文字で始まる語全体を指定することもできます。このオプションはほかのオプションの前またはあとに指定できますが、各オプションはコマンド行に指定された順序で実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fBs\fR | \fBS\fR\fR
+.ad
+.sp .6
+.RS 4n
+状態テーブルからエントリをフラッシュするには、\fB-F\fR オプションと \fBs\fR (完全に確立されていない接続に関する状態情報を削除する場合) または \fBS\fR (状態テーブル全体を削除する場合) を組み合わせて使用します。これら 2 つのオプションは、どちらか 1 つしか指定できません。\fBipfstat\fR \fB-s\fR の出力には、接続が完全に確立しなかったことを示す両方向の異常とともに、完全に確立された接続が \fB4/4\fR として表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBipf\fR がパケットフィルタの規則リストを変更するのに必要な入力の取得元ファイルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクティブでないリストを変更するためのリストを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fBpass\fR | \fBblock\fR | \fBnomatch\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのパケットログ機能を切り替えます。このオプションに対する有効な引数は、\fBpass\fR、\fBblock\fR、および \fBnomatch\fR です。オプションを設定すると、フィルタ処理を終了し、設定カテゴリと一致したパケットがログに記録されます。これは、読み込まれたどの規則にも一致しないすべてのパケットをログに記録するのに非常に便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBipf\fR が ioctl コールや、現在実行中のカーネルを変更する操作を実行しないようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトで、入力リスト (デフォルト) ではなく出力リストに規則を追加します (または出力リストから規則を削除します)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+認証規則テーブルに一時的なエントリとして規則を追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP アドレスからホスト名への解決とポート番号からサービス名への解決の両方を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+一致するフィルタ規則を、内部リストに追加するのではなく、内部リストから削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在アクティブなフィルタリストを代替リストと入れ替えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIoptionlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP フィルタのカーネル変数を実行時に変更できるようにします。変数によっては、変更できるようにするために IP フィルタを無効な状態 (\fB-D\fR) にする必要がある場合とそうでない場合があります。\fIoptionlist\fR パラメータは、チューニングコマンドをコンマで区切ったリストです。チューニングコマンドは次のいずれかです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+カーネルに含まれるすべての変数と、その最大値、最小値、および現在の値のリストを取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB1 つの変数名\fR
+.ad
+.sp .6
+.RS 4n
+変数の現在の値を取得します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB変数名と割り当て値\fR
+.ad
+.sp .6
+.RS 4n
+新しい値を設定します。
+.RE
+
+次に例を示します。
+.sp
+.in +2
+.nf
+# Print out all IPFilter kernel tunable parameters
+ipf -T list
+
+# Display the current TCP idle timeout and then set it to 3600
+ipf -D -T fr_tcpidletimeout,fr_tcpidletimeout=3600 -E
+
+# Display current values for fr_pass and fr_chksrc, then set
+# fr_chksrc to 1.
+ipf -T fr_pass,fr_chksrc,fr_chksrc=1
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細モードを有効にします。規則の処理に関する情報が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+バージョン情報を表示します。\fBipf\fR バイナリにコンパイルされたバージョン情報が表示されます。このバイナリはカーネルコードから取得されます (実行中または存在する場合)。ipf バイナリがカーネル内にある場合は、その現在の状態に関する情報 (ログ機能がアクティブかどうかや、デフォルトのフィルタ処理など) が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP フィルタによって管理されているカーネル内部のインタフェースリストを、現在のインタフェースステータスリストを使って手動で再同期します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR\fR
+.ad
+.sp .6
+.RS 4n
+入力ファイル内の各規則について、その統計情報を 0 にリセットし、0 にする前の統計情報を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR\fR
+.ad
+.sp .6
+.RS 4n
+カーネルに保持されているフィルタ処理関連のグローバル統計情報だけを 0 にリセットします。フラグメントや状態の統計情報には影響しません。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/ipauth\fR\fR
+.ad
+.br
+.na
+\fB\fB/dev/ipl\fR\fR
+.ad
+.br
+.na
+\fB\fB/dev/ipstate\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP フィルタ疑似デバイスへのリンク。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/ipf/ipf.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBipf\fR の起動時構成ファイルの場所。\fBipf\fR(4) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/share/ipfilter/examples/\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP フィルタの例が多数含まれています。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件network/ipfilter
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBipfstat\fR(1M), \fBipmon\fR(1M), \fBipnat\fR(1M), \fBippool\fR(1M), \fBsvcadm\fR(1M), \fBsvc.ipfd\fR(1M), \fBipf\fR(4), \fBipnat.conf\fR(4), \fBippool\fR(4), \fBattributes\fR(5), \fBipfilter\fR(5)
+.sp
+.LP
+\fI\fR
+.SH 診断
+.sp
+.LP
+カーネル内部のパケットフィルタ処理リストに実際にコマンドを適用するには、コマンドを root ユーザーとして実行する必要があります。

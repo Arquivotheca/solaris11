@@ -1,0 +1,291 @@
+'\" te
+.\" 版权所有 (c) 2003-2004 Apple Computer, Inc。保留所有权利。
+.\" 根据 2.0 版本 Apache 许可（"许可证"）授权；除非遵守此许可的条款，否则不能使用此文件。可以从以下位置获取许可证的副本：http://www.apache.org/licenses/LICENSE-2.0。除非因适用法律需要或书面同意，否则根据许可分发的软件"按原样"提供，无任何明示或暗示的保证或条件。有关据此许可实施的、针对具体语言规定的权限和限制，请参见许可。
+.\" 版权所有 (c) 2007，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH dns-sd 1M "2007 年 8 月 21 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+dns-sd \- 多播 DNS (Multicast DNS, mDNS) 和 DNS 服务发现 (DNS Service Discovery, DNS-SD) 测试工具
+.SH 用法概要
+.LP
+.nf
+\fBdns-sd\fR \fB-R\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR [\fIkey\fR=\fIvalue\fR ...]
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-B\fR \fItype\fR \fIdomain\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-L\fR \fIname\fR \fItype\fR \fIdomain\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-Q\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-C\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-P\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR \fIhost\fR \fIIP\fR [\fIkey\fR=\fIvalue\fR ...]
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-E\fR | \fB-F\fR | \fB-A\fR | \fB-U\fR | \fB-N\fR | \fB-T\fR | \fB-M\fR | \fB-I\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBdns-sd\fR 命令是一种网络诊断工具，类似于 \fBping\fR(1M) 或 \fBtraceroute\fR(1M)。但是，与这些工具不同，其大多数功能不是在 \fBdns-sd\fR 可执行文件本身中实现，而是通过任何应用程序都可使用的库代码实现。\fBdns-sd\fR 使用的库 \fBAPI\fR 在 \fB/usr/include/dns_sd.h\fR 中进行了介绍。
+.sp
+.LP
+\fBdns-sd\fR 命令主要用于交互使用。由于其命令行参数和输出格式可能会发生更改，因此从 shell 脚本调用该命令可能是无法预测的。此外，\fBDNS\fR 服务发现的异步性质使其无法轻易地用于面向脚本的编程。这种形式的异步交互最适合以下应用程序：多线程应用程序或使用主事件处理循环在击键、网络数据和其他异步事件发生时接收通知的应用程序。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR [\fIkey\fR=\fIvalue\fR ...]\fR
+.ad
+.sp .6
+.RS 4n
+在具有给定 \fIname\fR 和 \fItype\fR 的指定域中注册（通告）服务，以在当前计算机的指定 \fIport\fR 上侦听。
+.sp
+\fIname\fR 可以是包含合法 unicode 字符（包括没有任何限制的点、空格、斜杠、冒号等）的任意 unicode 文本，其最大长度是 63 个 \fBUTF-8\fR 字节。
+.sp
+\fItype\fR 的格式必须为 "_app-proto."_tcp" 或 "_app-proto_udp"，其中 "app-proto" 是 \fBhttp://www.dns-sd.org\fR 中注册的应用程序协议名称，在服务类型 (RFC 2782) 链接下。
+.sp
+\fIdomain\fR 是要注册服务的域。在当前实现中，仅支持本地多播域 "local"。将来可以在具有工作的 \fBDNS\fR 更新服务器 [\fBRFC\fR2136] 的任意域中注册。域 "." 表示"选择合适缺省值"，当前表示 "local" 域。
+.sp
+\fIport\fR 是从 0 到 65535 的编号，并且是服务侦听的 \fBTCP\fR 或 \fBUDP\fR 端口号。通过在端口 0 上注册服务，应用程序可以显式通告服务的不可用性。
+.sp
+存储在已通告服务的 \fBDNS\fR \fBTXT\fR 记录中的 \fIkey/value\fR 对可能会选择性地介绍服务的其他属性。允许的键和值与 \fBhttp://www.dns-sd.org\fR 中注册的服务一起列在服务类型 (RFC 2782) 链接下。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fItype\fR \fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+浏览 \fIdomain\fR 中 \fItype\fR 服务的实例。
+.sp
+有关有效的类型，请参见 \fBhttp://www.dns-sd.org\fR 中服务类型 (RFC 2782) 链接下的内容。忽略域名或使用 "." 意味着"选择合适缺省值"。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fIname\fR \fItype\fR \fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+查找并显示联系和使用命名服务所需的信息。此信息包括可以使用该服务的计算机的主机名、服务侦听的端口号以及（如果有）说明服务属性的 \fBTXT\fR 记录属性。
+.sp
+在典型应用程序中，很少发生浏览，但每次使用服务时都发生查找（或"解析"）。例如，用户不会经常浏览网络以选择缺省打印机，但是选择了缺省打印机后，用户每次按 Cmd-P 进行打印时，该命名服务都将解析为其当前 IP 地址和端口号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Q\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+任何资源记录类型和类的通用查询。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+任何资源记录类型和类的通用查询。此选项还重新确认每个查询结果。重新确认记录指示 \fBmdnsd\fR(1M) 验证记录的有效性。如果记录无效，\fBmdnsd\fR(1M) 会在守护进程高速缓存中刷新该记录，还会在网络上其他 \fBmdnsd\fR(1M) 高速缓存中刷新该记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR \fIhost\fR \fIIP\fR [\fIkey\fR=\fIvalue\fR ...] \fR
+.ad
+.sp .6
+.RS 4n
+在具有给定 \fIname\fR 和 \fItype\fR 的指定域中注册（通告）服务，该服务侦听指定端口且在其他主机上可访问该服务。此选项应该用于由代理通告可在其他主机上访问的服务。必须指定访问服务的主机名和 \fBIPv4\fR 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.sp .6
+.RS 4n
+发现建议的注册域。此选项返回建议的注册服务的域。通过查询 \fBresolv.conf\fR(4) 中的名称服务器返回建议的注册域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+发现建议的浏览域。此选项返回建议的浏览服务的域。通过查询 \fBresolv.conf\fR(4) 中的名称服务器返回建议的浏览域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试使用多播 \fBDNS\fR 注册服务，并测试使用多播 \fBDNS\fR 的 \fBDNS\fR 记录的添加、更新和删除操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试使用多播 \fBDNS\fR 注册服务，并测试为使用多播 \fBDNS\fR 注册的服务更新 \fBDNS\fR \fBTXT\fR 记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试为使用多播 \fBDNS\fR 注册的服务添加大型 \fBNULL\fR 记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试为使用多播 \fBDNS\fR 注册的服务添加大型 \fBTXT\fR 记录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试创建具有多个 \fBTXT\fR 记录的注册。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+测试注册并立即更新 \fBTXT\fR 记录。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR通告打印服务
+.sp
+.LP
+以下命令通告此计算机的端口 515 上存在 \fBLPR\fR 打印服务，因此 \fBDNS-SD\fR 兼容打印客户机可以使用该服务：
+
+.sp
+.in +2
+.nf
+dns-sd -R "My Test" _printer._tcp. . 515 pdl=application/postscript
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要使该注册可用，端口 515 上应该提供 LPR 服务。通告不存在的服务起不了作用。
+.LP
+\fB示例 2 \fR通告 Web 页
+.sp
+.LP
+以下命令通告此计算机端口 80 上的 \fBHTTP\fR 服务器提供支持的 Web 页，因此该页将在 Safari 中的 Bonjour 列表上显示或在其他 DNS-SD 兼容 Web 客户机上显示： 
+
+.sp
+.in +2
+.nf
+dns-sd -R "My Test" _http._tcp . 80 path=/path-to-page.html
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR在本地网络上查找通告的 Web 页
+.sp
+.LP
+以下命令在本地网络（Safari 显示的相同列表）上查找通告的 Web 页：
+
+.sp
+.in +2
+.nf
+dns-sd -B _http._tcp
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/network/dns/mdns
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBmdnsd\fR(1M)、\fBping\fR(1M)、\fBtraceroute\fR(1M)、\fBresolv.conf\fR(4)、\fBattributes\fR(5)

@@ -1,0 +1,181 @@
+'\" te
+.\"  Copyright (c) 2008 Sun Microsystems, Inc. All Rights Reserved.
+.TH scsi_vhci 7D "23 Jun 2008" "SunOS 5.11" "Devices"
+.SH NAME
+scsi_vhci \- SCSI virtual host controller interconnect driver
+.SH DESCRIPTION
+.sp
+.LP
+The \fBscsi_vhci\fR driver is a SCSA compliant pseudo nexus driver that supports Solaris operating system I/O multipathing services for SCSI-3 devices. This driver introduces a fundamental restructuring of the Solaris device tree to enable a multipath device to be represented as single device instance rather than as an instance per physical path as in earlier Solaris versions.
+.sp
+.LP
+The logical units (LUNs) associated multipath SCSI target devices managed by this driver are identified and represented by using the SCSI-3 VPD page (0x83) LUN global unique identifier (GUID) represented as hexadecimal number (64/128 bits)
+.sp
+.LP
+Symbolic links in \fB/dev/[r]dsk\fR and \fB/dev/scsi/changer\fR continue to adhere to the c\fIN\fRt\fIN\fRd\fIN\fRs\fIN\fR format. c\fIN\fR is the logical controller number assigned to this driver instance. tN is the GUID.
+.sp
+.LP
+Symbolic links in \fB/dev/rmt/#[l|m|h|c|u],[b],[n]\fR also adhere to the same format as non-multipath devices. Because of persistent binding of tape devices, you may want to remove old non-multipath links when enabling them for multipath.
+.sp
+.LP
+The following is an example of a system with an A5000 storage array:
+.sp
+.in +2
+.nf
+\&...
+	/dev/rdsk/c4t200000203709C3F5d0s0 -> ../../devices/
+	     scsi_vhci/ssd@g200000203709c3f5:a,raw
+	...
+	/dev/rdsk/c4t200000203709C3F5d0s7 -> ../../devices/
+	     scsi_vhci/ssd@g200000203709c3f5:h,ra
+	...
+.fi
+.in -2
+
+.sp
+.LP
+The following is an example of a system with a T300 storage array:
+.sp
+.in +2
+.nf
+	...
+	/dev/rdsk/c1t60020F200000033939C2C2B60008D4AEd0s0 -> 
+	     ../../devices/scsi_vhci/
+     ssd@g60020f200000033939a2c2b60008d4ae:a,raw
+	...
+	/dev/rdsk/c1t60020F200000033939A2C2B60008D4AEd0s7 -> 
+	     ../../devices/scsi_vhci/
+ssd@g60020f200000033939a2c2b60008d4ae:h,raw
+.fi
+.in -2
+
+.sp
+.LP
+The \fBscsi_vhci\fR driver receives naming and transport services from one or more physical HBA (host bus adapter) devices. To support multi-pathing, a physical HBA driver must have its multipathing enabled and comply with the multipathing services provided by this driver.
+.sp
+.LP
+The \fBscsi_vhci\fR driver supports the standard functions provided by the SCSA interface.
+.SS "Configuration"
+.sp
+.LP
+For each candidate SCSI target device, the scsi_vhci code must identify a failover module to support the device.  If a failover module can't be identified, the device will not function under \fBscsi_vhci\fR multipathing control.  For SCSI target devices that support the standard Target Port Group Select, no special vendor/product knowledge is needed.  For other SCSI target devices, each failover module understands which devices it supports.
+.sp
+.LP
+When autoconfiguration does not result in the desired configuration, a vendor/product specific override mechanism is available. This \fBscsi_vhci.conf\fR base mechanism can be used to direct a device to a specific failover module (or to indicate that a device should not be under scsi_vhci multipathing control by way of \fBNONE\fR).  In \fBscsi_vhci.conf\fR, the property \fB\&'scsi-vhci-failover-override'\fR defines overrides in \fBscsi_get_device_type_string\fR(9F) form.  To add a third-party (non-Sun) symmetric storage device to run under scsi_vhci (and thereby take advantage of scsi_vhci multipathing), you add the vendor ID and product ID for the device, as those strings are returned by the SCSI Inquiry command.  For example, to add a device from a vendor with the ID of \fB"Acme"\fR and a product ID of \fB"MSU"\fR, you would add:
+.sp
+.in +2
+.nf
+device-type-scsi-options-list =
+   "Acme    MSU", "f_sym",
+.fi
+.in -2
+
+.sp
+.LP
+In addition to \fB"Acme"\fR, you also might want to add another entry, for example, a device from \fB"XYZ"\fR vendor with a product ID of \fB"ABC"\fR:
+.sp
+.in +2
+.nf
+scsi-vhci-failover-override =
+   "Acme    MSU", "f_sym",
+   "XYZ     ABC", "f_sym";
+.fi
+.in -2
+
+.sp
+.LP
+As a last override, you might add an entry so that no devices from \fB"ABC"\fR vendor use \fBscsi_vhci\fR multipathing:
+.sp
+.in +2
+.nf
+scsi-vhci-failover-override =
+    "Acme    MSU",    "f_sym",
+    "XYZ     ABC",    "f_sym",
+    "ABC     ",       "NONE";
+.fi
+.in -2
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/scsi_vhci\fR\fR
+.ad
+.sp .6
+.RS 4n
+64-bit kernel module (SPARC).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/scsi_vhci\fR\fR
+.ad
+.sp .6
+.RS 4n
+32-bit kernel module (x86).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/scsi_vhci\fR\fR
+.ad
+.sp .6
+.RS 4n
+64-bit kernel module (amd64).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/scsi_vhci.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+Driver configuration file.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Architecture PCI-based systems
+_
+Availabilitysystem/kernel
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBeeprom\fR(1M), \fBprtconf\fR(1M), \fBstmsboot\fR(1M), \fBmpathadm\fR(1M), \fBattributes\fR(5), \fBfcp\fR(7D), \fBfctl\fR(7D), \fBfp\fR(7d), \fBmpt\fR(7D), \fBssd\fR(7D), \fBsd\fR(7D), \fBst\fR(7D), \fBsgen\fR(7D), \fBscsi_abort\fR(9F), \fBscsi_get_device_type_scsi_options\fR(9F), \fBscsi_get_device_type_string\fR(9F), \fBscsi_ifgetcap\fR(9F), \fBscsi_reset\fR(9F), \fBscsi_transport\fR(9F), \fBscsi_inquiry\fR(9S), \fBscsi_extended_sense\fR(9S), \fBscsi_pkt\fR(9S)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISmall Computer System Interface-3 (SCSI-3)\fR
+.SH NOTES
+.sp
+.LP
+In previous releases, the \fBscsi_vhci.conf\fR file supported the mpxio-disable  property, which allowed you to disable Solaris I/O multipathing on a system-wide basis. This property is not present in the current release of  the Solaris operating system. Multipathing is always enabled in scsi_vhci. If you want to disable multipathing, use the mechanisms provided by the HBA drivers. See \fBfp\fR(7d) and \fBmpt\fR(7D). 
+.sp
+.LP
+In previous releases, the override mechanism was based on the \fBscsi_get_device_type_scsi_options\fR(9F) defined \fB"device-type-scsi-options-list"\fR property.  During upgrade, \fBscsi_vhci.conf\fR is converted to the new form. After upgrade, a \fBscsi_vhci.conf\fR modification based on the old mechanism is silently ignored.
+.sp
+.LP
+In previous releases, Solaris I/O multipathing was also known as MPxIO and Sun StorEdge Traffic  Manager (STMS).

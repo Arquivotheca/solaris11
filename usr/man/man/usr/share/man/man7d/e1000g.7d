@@ -1,0 +1,781 @@
+'\" te
+.\" Copyright 2008, Intel Corporation. All Rights Reserved. 
+.\" Copyright 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH e1000g 7D "2 Apr 2010" "SunOS 5.11" "Devices"
+.SH NAME
+e1000g, e1000 \- Intel PRO/1000 Gigabit family of network interface controllers
+.SH SYNOPSIS
+.LP
+.nf
+\fB/dev/e1000g\fR 
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBe1000g\fR Gigabit Ethernet driver is a multi-threaded, loadable, clonable, GLD-based \fBSTREAMS\fR driver supporting the Data Link Provider Interface, \fBdlpi\fR(7P), over Intel PRO/1000 family of Gigabit controllers. This driver supports multiple Intel Gigabit controllers installed within the system. The \fBe1000g\fR driver provides basic support including chip initialization, frame transmit and receive, multicast support, and error recovery and reporting.
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The cloning, character-special device \fB/dev/e1000g\fR is used to access all Intel Gigabit devices installed within the system.
+.sp
+.LP
+The \fBe1000g\fR driver is managed by the \fBdladm\fR(1M) command line utility, which allows VLANs to be defined on top of e1000g instances and for e1000g instances to be aggregated. See \fBdladm\fR(1M) for more details.
+.sp
+.LP
+You must send an explicit DL_ATTACH_REQ message to associate the opened stream with a particular device (PPA). The PPA ID is interpreted as an unsigned integer data type and indicates the corresponding device instance (unit) number. The driver returns an error (DL_ERROR_ACK) if the PPA  field value does not correspond to a valid device instance number.
+.sp
+.LP
+The values returned by the driver in the \fBDL_INFO_ACK\fR primitive in response to the \fBDL_INFO_REQ\fR are as follows:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum SDU (with jumbo frame) is as high as \fB16298\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum SDU is \fB0\fR. The driver pads to the mandatory 60-octet minimum packet size.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBdlsap\fR address length is \fB8\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+MAC type is \fBDL_ETHER.\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBsap\fR length value is \fB\(mi2\fR, meaning the physical address component is followed immediately by a 2-byte \fBsap\fR component within the \fBDLSAP\fR address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The broadcast address value is Ethernet/IEEE broadcast address (\fBFF:FF:FF:FF:FF:FF\fR)\fB\&.\fR
+.RE
+.SH CONFIGURATION
+.sp
+.LP
+The \fBe1000g\fR driver does not support the use of shared RAM on the board.
+.sp
+.LP
+To configure the \fBe1000g\fR driver:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Use \fBprtconf -v | grep pci8086,[12][01][01][0-F]\fR to obtain the instance number of the driver. 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Use \fBifconfig e1000g\fIinstance\fR plumb\fR to plumb the controller.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Use \fBifconfig e1000g\fIinstance\fR inet \fIip_address\fR netmask + broadcast + -trailers up\fR to bring up the interface.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Use the \fBping\fR(1M) command to contact interfaces on the network to verify that the configuration is operational.
+.RE
+.SS "Configuration File Options"
+.sp
+.LP
+The following \fBe1000g.conf\fR configuration options are supported: 
+.sp
+.ne 2
+.mk
+.na
+\fBAutoNegAdvertised\fR
+.ad
+.sp .6
+.RS 4n
+This is a bitmap for the speeds advertised during auto-negotiation.
+.sp
+.in +2
+.nf
+Bit    |  7  |  6  |   5   |   4   |  3   |  2   |  1  |  0
+Setting| N/A | N/A | 1000F |  N/A  | 100F | 100H | 10F | 10H
+.fi
+.in -2
+.sp
+
+The adapter only auto-negotiates to a speed that is advertised. For example: \fBAutoNegAdvertised = 4\fR causes an adapter to only advertise auto-negotiation at 100 Mbps, full duplex. No other link speeds are accepted or given during auto-negotiation. \fBAutoNegAdvertised=47\fR advertises all speeds available, This is the same as using the default setting of \fB0\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR-\fB255\fR\fR
+.ad
+.RS 9n
+.rt  
+Allowed values
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 9n
+.rt  
+Default
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBForceSpeedDuplex\fR
+.ad
+.sp .6
+.RS 4n
+Specify the speed and duplex mode for each instance. 
+.sp
+If you set \fBForceSpeedDuplex=7,4\fR, the \fBe1000g0\fR is set to auto-negotiate and \fBe1000g1\fR is set to 100 Mbps, full duplex. Note that fiber optic ethernet adapters ignore this setting. 
+.sp
+Allowed values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+10 Megabits per second, Half Duplex.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+10 Megabits per second, Full Duplex.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+100 Megabits per second, Half Duplex.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+100 Megabits per second, Full Duplex.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB7\fR\fR
+.ad
+.RS 5n
+.rt  
+Auto-negotiate speed and duplex. (Default).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBMaxFrameSize\fR
+.ad
+.sp .6
+.RS 4n
+Upper limit on the maximum MTU size the driver allows. All Intel gigabit adapters (except the 82542-based Intel PRO/1000 adapter) allow the configuration of jumbo frames. 
+.sp
+For a Intel PRO/1000 adapter that is later than 82571 (including 82571) the maximum MTU accepted by the MAC is 9216. For others, the maximum MTU accepted by the MAC is 16298. Use \fBifconfig\fR(1M) to configure jumbo frames. Using ifconfig with the adapter instance and the mtu argument (\fBifconfig e1000g0 mtu 9216\fR) configures adapter e1000g0 for the maximum allowable jumbo frame size. 
+.sp
+Allowed values are:
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.RS 5n
+.rt  
+Standard ethernet frames with a MTU equal to \fB1500\fR. (Default).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB1\fR
+.ad
+.RS 5n
+.rt  
+Jumbo frames with a maximum MTU of \fB4010\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB2\fR
+.ad
+.RS 5n
+.rt  
+Jumbo frames with a maximum MTU of \fB8106\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB3\fR
+.ad
+.RS 5n
+.rt  
+Jumbo frames with a maximum MTU of \fB16298\fR.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBFlowControl\fR
+.ad
+.sp .6
+.RS 4n
+Flow control utilizes ethernet XON and unicast and multicast XOFF packets to allow ethernet equipment to slow down the stream of data between two ethernet devices.
+.sp
+Allowed values are: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Disable. Packets can get dropped in high-throughput situations, leading to reduced network performance. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+Receive only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+Transmit only.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+Receive and transmit. (Default).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+Use adapter's EEPROM-programmed factory default setting.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBTbiCompatibilityEnable\fR
+.ad
+.sp .6
+.RS 4n
+You must enable this feature on Intel 82543CG-based copper adapters to operate correctly with TBI mode ethernet hardware.
+.sp
+Allowed values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Disable.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+Enable. (Default).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSetMasterSlave\fR
+.ad
+.sp .6
+.RS 4n
+Controls the PHY master/slave setting. Manually forcing master or slave can reduce time needed to link with Planex 08TX and IO data switches. This setting should remain as the hardware default.
+.sp
+Allowed values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+Hardware default. (Default).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+Force master.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+Force slave.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+Force auto.
+.RE
+
+.RE
+
+.sp
+.LP
+By default, the following configuration options are not displayed in the \fBe1000g.conf\fR file. Although they are configurable, you should not change these options:
+.sp
+.ne 2
+.mk
+.na
+\fBNumRxDescriptors\fR
+.ad
+.RS 24n
+.rt  
+Number of available receive descriptors. Multiple receive descriptors increase receive performance, but decrease available memory.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB80\fR-\fB4096\fR\fR
+.ad
+.RS 11n
+.rt  
+Allowed values.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2048\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB< 4010\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1024\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB>= 4010\fR).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBNumTxDescriptors\fR
+.ad
+.RS 24n
+.rt  
+Number of transmit descriptors available to the driver. Multiple transmit descriptors increase transmit performance, but decrease available memory.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB80\fR-\fB4096\fR\fR
+.ad
+.RS 11n
+.rt  
+Allowed values.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2048\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB< 4010\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1024\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB>= 4010\fR).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBNumRxFreeList\fR
+.ad
+.RS 24n
+.rt  
+Number of pre-allocated buffers that the driver can use for received data. Pre-allocating buffers can improve receive performance but decrease available memory.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB60\fR-\fB4096\fR\fR
+.ad
+.RS 11n
+.rt  
+Allowed values.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4096\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB< 4010\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2048\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB>= 4010\fR).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBNumTxFreeList\fR
+.ad
+.RS 24n
+.rt  
+Number of pre-allocated buffers that the driver can use for transmit data. Pre-allocating buffers can improve transmit performance but decrease available memory.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB80\fR-\fB4096\fR\fR
+.ad
+.RS 11n
+.rt  
+Allowed values.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2304\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB< 4010\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1152\fR\fR
+.ad
+.RS 11n
+.rt  
+Default.  (MTU \fB>= 4010\fR).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBMaxNumReceivePackets\fR
+.ad
+.RS 24n
+.rt  
+Maximum number of receive packets that the driver can handle for each interrupt.
+.sp
+CPU utilization can be lowered through more efficient interrupt management. If this value is increased, the time needed by the CPU to process the individual interrupts increases, thereby nullifying any performance gains realized by handling less interrupts.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR-\fB1024\fR\fR
+.ad
+.RS 10n
+.rt  
+Allowed values. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB32\fR\fR
+.ad
+.RS 10n
+.rt  
+Default.
+.RE
+
+.RE
+
+.SS "Configuration Options Using dladm(1M)"
+.sp
+.LP
+In addition to the \fBe1000g.conf\fR file, you can also use the \fBdladm\fR(1M) command to configure the \fBe1000g\fR driver.
+.sp
+.LP
+To view supported configuration parameters, do the following step:
+.sp
+.LP
+# dladm show-linkprop e1000g0
+.sp
+.LP
+In addition, the current settings of the parameters can be found using \fBdladm show-ether\fR. Using \fBdladm\fR(1M), you can set the link speed/duplex using the enabled capability parameters supported by the \fBe1000g\fR device. Each parameter contains a boolean value that determines if the device enables that mode of operation. The \fBadv_autoneg_cap\fR parameter controls auto-negotiation. When \fBadv_autoneg_cap\fR is set to 0, the driver forces the mode of operation selected by the first non-zero parameter in priority order as shown below:
+.sp
+.in +2
+.nf
+en_1000fdx_cap          1000Mbps full duplex   
+en_100fdx_cap           100Mpbs full duplex    
+en_100hdx_cap           100Mpbs half duplex   
+en_10fdx_cap            10Mpbs full duplex     
+en_10hdx_cap            10Mpbs half duplex
+.fi
+.in -2
+
+.LP
+Note - 
+.sp
+.RS 2
+The link mode of 1000Mbps half duplex is not supported.
+.RE
+.sp
+.LP
+Forced link mode of 1000Mbps full duplex is not supported.
+.sp
+.LP
+Setting all the enabled link capabilities to 0 results in the link being reset to auto-negotiation with full link capabilities advertised.
+.sp
+.in +2
+.nf
+1                       10Mpbs half duplex
+2                       10Mpbs full duplex
+3                       100Mpbs half duplex
+4                       100Mpbs full duplex
+.fi
+.in -2
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdev/e1000g\fR\fR
+.ad
+.RS 30n
+.rt  
+Character special device.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/e1000g.conf\fR\fR
+.ad
+.RS 30n
+.rt  
+Driver configuration file.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/e1000g\fR\fR
+.ad
+.RS 30n
+.rt  
+64-bit driver binary (SPARC).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/e1000g\fR\fR
+.ad
+.RS 30n
+.rt  
+32-bit driver binary (x86)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/e1000g\fR\fR
+.ad
+.RS 30n
+.rt  
+64-bit driver binary. (x86).
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureSPARC, x86
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBifconfig\fR(1M), \fBkstat\fR(1M), \fBping\fR(1M), \fBattributes\fR(5), \fBdlpi\fR(7P)
+.sp
+.LP
+\fIIntel PRO/1000 Gigabit Adapter Driver Installation Notes for Solaris\fR
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR
+.sp
+.LP
+\fINetwork Interfaces Guide\fR

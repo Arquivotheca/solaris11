@@ -1,0 +1,251 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH mac 9F "26 Mar 2010" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+mac, mac_alloc, mac_free, mac_register, mac_unregister, mac_tx_update, mac_link_update, mac_rx, mac_init_ops, mac_fini_ops \- MAC driver service routines
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mac_provider.h>
+
+mac_register_t *mac_alloc(uint_t \fIversion\fR);
+.fi
+
+.LP
+.nf
+void mac_free(mac_register_t *\fImregp\fR);
+.fi
+
+.LP
+.nf
+int mac_register(mac_register_t *\fImregp\fR, mac_handle_t *\fImhp\fR);
+.fi
+
+.LP
+.nf
+int mac_unregister(mac_handle_t \fImh\fR);
+.fi
+
+.LP
+.nf
+void mac_tx_update(mac_handle_t \fImh\fR);
+.fi
+
+.LP
+.nf
+void mac_link_update(mac_handle_t \fImh\fR, link_state_t \fInew_state\fR);
+.fi
+
+.LP
+.nf
+void mac_rx(mac_handle_t \fImh\fR, void *\fIreserved\fR, mblk_t *\fImp_chain\fR);
+.fi
+
+.LP
+.nf
+void mac_init_ops(struct dev_ops *\fIops\fR, const char *\fIname\fR);
+.fi
+
+.LP
+.nf
+void mac_fini_ops(struct dev_ops *\fIops\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIversion\fR\fR
+.ad
+.RS 13n
+.rt  
+MAC version
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImh\fR\fR
+.ad
+.RS 13n
+.rt  
+MAC handle
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImhp\fR\fR
+.ad
+.RS 13n
+.rt  
+pointer to a MAC handle
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImregp\fR\fR
+.ad
+.RS 13n
+.rt  
+pointer to a mac_register_t(9S) structure
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIreserved\fR\fR
+.ad
+.RS 13n
+.rt  
+reserved argument
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImp_chain\fR\fR
+.ad
+.RS 13n
+.rt  
+chain of message blocks containing a received packet
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fInew_state\fR\fR
+.ad
+.RS 13n
+.rt  
+media link state
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIops\fR\fR
+.ad
+.RS 13n
+.rt  
+device operations structure
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.RS 13n
+.rt  
+device driver name
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris architecture specific (Solaris DDI)
+.SH DESCRIPTION
+.sp
+.LP
+The \fBmac_alloc()\fR function allocates a new \fBmac_register\fR(9S) structure and returns a pointer to it. The allocated structure may contain some MAC-private elements. These private elements are initialized by the MAC layer before \fBmac_alloc()\fR returns, and the other elements of the structure are initialized to 0. The device driver must initialize the structure members as described by \fBmac_register\fR before passing a pointer to the structure to \fBmac_register\fR.  The version argument should be set to \fBMAC_VERSION_V1\fR.
+.sp
+.LP
+The \fBmac_free()\fR function frees a \fBmac_register\fR structure previously allocated by \fBmac_alloc()\fR.
+.sp
+.LP
+The \fBmac_register()\fR function is called from the device driver's \fBattach\fR(9E) entry point, and is used to register the MAC-based device driver with the MAC layer. The \fBmac_register()\fR entry point is passed an instance of the \fBmac_register\fRstructure previously allocated by \fBmac_alloc()\fR.
+.sp
+.LP
+On success, \fBmac_register()\fR returns 0 and sets \fImhp\fR to point to a new MAC handle corresponding to the new MAC instance. This MAC handle is subsequently passed by the driver to the framework as an argument to other MAC routines such as the ones described here. The \fBattach()\fR entry point of the driver should return \fBDDI_SUCCESS\fR in this case.  On failure, \fBmac_register()\fR returns a non-zero error as described by \fBIntro\fR(2). The \fBattach()\fR entry point of the driver should return \fBDDI_FAILURE\fR in this case.
+.sp
+.LP
+The \fBmac_unregister()\fR function is called by the driver from its \fBdetach\fR(9E) entry point to unregister the instance from the MAC layer.  It should pass the MAC handle which was previously obtained from \fBmac_register()\fR. \fBmac_unregister()\fR returns 0 on success, in which case the driver's \fBdetach()\fR entry point should return \fBDDI_SUCCESS\fR. \fBmac_unregister()\fR returns a non-zero error as described by \fBIntro\fR(2) on failure. In this case the driver's \fBdetach()\fR entry point should return \fBDDI_FAILURE\fR.
+.sp
+.LP
+The \fBmac_tx_update()\fR function should be called by the driver to reschedule stalled outbound packets. Whenever the driver's \fBmc_tx\fR(9E) has returned a non-empty chain of packets, it must later \fBmac_tx_update()\fR to inform the MAC layer that it should retry the packets that previously could not be sent. \fBmac_tx_update()\fR should be called as soon as possible after resources are again available, to ensure that MAC resumes passing outbound packets to the driver's \fBmc_tx()\fR entry point.
+.sp
+.LP
+The \fBmac_link_update()\fR function is called by the device driver to notify the MAC layer of changes in the media link state. The \fInew_state\fR argument must be set to one of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK_STATE_UP\fR\fR
+.ad
+.RS 22n
+.rt  
+The media link is up.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK_STATE_DOWN\fR\fR
+.ad
+.RS 22n
+.rt  
+The media link is down.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK_STATE_UNKNOWN\fR\fR
+.ad
+.RS 22n
+.rt  
+The media link is unknown.
+.RE
+
+.sp
+.LP
+The \fBmac_rx()\fR function is called by the driver's interrupt handler to pass a chain of one or more packets to the MAC layer. Packets of a chain are linked with the \fIb_next\fR pointer. The driver should avoid holding mutex or other locks during the call to \fBmac_rx()\fR. In particular, locks that could be taken by a transmit thread may not be held during a call to \fBmac_rx()\fR.
+.sp
+.LP
+The \fBmac_init_ops()\fR function must be invoked from the \fB_init\fR(9E) entry point of the device driver before a call to \fBmod_install\fR(9F). It is passed a pointer to the device driver's operations structure, and the name of the device driver.
+.sp
+.LP
+The \fBmac_fini_ops()\fR function must be called from \fB_fini\fR(9E) before the driver is unloaded after invoking \fBmod_remove\fR(9F), or before returning from \fB_init()\fR in the case of an error returned by \fBmod_install()\fR.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBmac_alloc()\fR function returns a pointer to a new \fBmac_register\fR(9S) structure.
+.sp
+.LP
+The \fBmac_register()\fR and \fBmac_unregister()\fR functions return a non-zero error, as defined by \fBIntro\fR(2).
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/header
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBIntro\fR(2), \fBattributes\fR(5), \fBattach\fR(9E), \fBdetach\fR(9E), \fB_fini\fR(9E), \fB_init\fR(9E), \fBmac\fR(9E), \fBmc_tx\fR(9E), \fBmod_install\fR(9F), \fBmod_remove\fR(9F), \fBdev_ops\fR(9S), \fBmac_register\fR(9S)

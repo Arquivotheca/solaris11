@@ -1,0 +1,356 @@
+'\" te
+.\" 版权所有 (c) 2007，Oracle 和/或其附属公司。保留所有权利。￼
+.TH kmdb 1 "2009 年 10 月 28 日" "SunOS 5.11" "用户命令"
+.SH 名称
+kmdb \- 现场内核调试器中
+.SH 用法概要
+.SS "引导时装入"
+.sp
+.LP
+SPARC
+.LP
+.nf
+\fBok boot\fR [\fIdevice-specifier\fR] \fB-k\fR [\fB-d\fR] [\fIboot-flags\fR]
+.fi
+
+.LP
+.nf
+\fBok boot\fR [\fIdevice-specifier\fR] kmdb [\fB-d\fR] [\fIboot-flags\fR]
+.fi
+
+.sp
+.LP
+x86
+.LP
+.nf
+\fBkernel$\fR \fB/platform/i86pc/kernel/$ISADIR/unix\fR \fB-k\fR [\fB-d\fR] [\fIboot-flags\fR]
+.fi
+
+.SS "运行时装入"
+.LP
+.nf
+\fBmdb\fR \fB-K\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBkmdb\fR 是一个交互式内核调试器，可在即时内核上下文中实现 \fBmdb\fR(1) 的用户界面和功能。\fBkmdb\fR 提供允许控制内核执行以及检查与修改即时内核状态的功能。\fBkmdb\fR 可在引导会话开始时装入或者在引导系统之后装入。
+.sp
+.LP
+本手册页介绍 \fBkmdb\fR 独有的特性和功能、或者与 \fBmdb\fR(1) 相比 \fBkmdb\fR 中不同的特性和功能。有关 \fBmdb\fR(1) 的更多信息，或者有关 \fBkmdb\fR 所实现特性和功能的更多详细信息，请参见 \fBmdb\fR(1) 手册页和\fI《Oracle Solaris Modular Debugger Guide》\fR。
+.SS "装入和卸载"
+.sp
+.ne 2
+.mk
+.na
+\fB引导时装入\fR
+.ad
+.sp .6
+.RS 4n
+被请求时，内核运行时链接程序 (\fBkrtld\fR) 会在将控制权传送给内核之前先装入 \fBkmdb\fR。如果使用 \fB-d\fR 标志，调试器会在执行 \fBunix\fR 对象中的初始函数之前获取对系统的控制权。如果未使用 \fB-d\fR，会装入 \fBkmdb\fR，但要等到显式进入它时才会获取控制权。请参见下面的"调试器输入"一节。有关导致在引导时装入 \fBkmdb\fR 的引导命令列表，请参见上面的"说明"一节。有关在 SPARC 计算机上使用该命令指定在引导时始终装入 \fBkmbd\fR 的示例，请参见 \fBeeprom\fR(1M)。
+.sp
+只能以系统重新引导的方式卸载在引导时装入的 \fBkmdb\fR。
+.sp
+\fBkmdb\fR 的一些功能依赖于内核服务的存在，并且不会立即可供引导时装入的 \fBkmdb\fR 使用。特别是，直到初始化模块子系统后，dmod 的装入和卸载才可用。在得到处理前，请求会一直排队。同样，初始化 VM 系统之后，才可将虚拟地址转换为物理地址。尝试的转换将失败，直到转换工具可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB运行时装入\fR
+.ad
+.sp .6
+.RS 4n
+对 \fBmdb\fR(1) 使用 \fB-K\fR 标志，还可在引导系统后装入 \fBkmdb\fR。以这种方式装入时，它会立即获取对系统的控制权。可对 \fBmdb\fR(1) 使用 \fB-U\fR 标志卸载 运行时装入的 \fBkmdb\fR，或者对 \fB::quit dcmd\fR 使用 \fB-u\fR 标志将其从调试器内卸载。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB终端类型\fR
+.ad
+.sp .6
+.RS 4n
+装入时，\fBkmdb\fR 尝试确定系统控制台上使用中的正确终端类型。如果正在调试的系统连接了同时用于系统控制台的键盘和本地显示器，\fBkmdb\fR 会使用适用于计算机的终端类型：对于 SPARC 使用 'sun'；对于 x86 使用 'sun-color'。串行控制台处于使用中时，引导时装入的 \fBkmdb\fR 缺省为终端类型 'vt100'。运行时装入的 \fBkmdb\fR 缺省为由\fBmdb\fR(1) 请求的终端类型。\fBmdb\fR(1) 请求由 \fBTERM\fR 环境变量的值指定的终端类型，除非被 \fB-T\fR 标志覆盖。\fB::term\fR 可用于查看当前的终端类型。
+.RE
+
+.SS "调试器输入"
+.sp
+.LP
+可以显式或隐式请求调试器输入。"\fB执行控制\fR"一节中将讨论在使用断点或其他执行控制功能时遇到的隐式输入。
+.sp
+.LP
+显式调试器输入的主要方式是对于具有本地控制台的系统使用键盘中止序列，对于具有串行控制台的系统使用 BREAK 字符。具有本地控制台的 SPARC 系统的中止序列是 STOP-A 或 Shift-Pause，具有本地控制台的 x86 系统的中止序列是 F1A 或 Shift-Pause。有关中止序列的讨论以及有关禁用中止序列的说明，请参见 \fBkbd\fR(1)。
+.sp
+.LP
+请求输入到调试器中的第二种方式是使用 \fBmdb\fR(1) 命令。在装入调试器后使用 \fB-K\fR 标志调用\fBmdb\fR(1) 会触发调试器输入。
+.sp
+.LP
+如果内核出现紧急情况并且装入了 \fBkmdb\fR，缺省情况下，panic 例程会进入 \fBkmdb\fR 以进行即时调试。如果指定了转储设备，并且您输入了 \fB::cont\fR，则调试器会退出并且会执行故障转储。要在遇到紧急情况时阻止内核进入 \fBkmdb\fR，可将 \fBnopanicdebug\fR 变量设置为 \fB1\fR。使用 \fBkmdb\fR 或在 \fB/etc/system\fR 中包含以下一行，将 \fBnopanicdebug\fR 变量设置为 \fB1\fR： 
+.sp
+.in +2
+.nf
+set nopanicdebug = 1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果您希望确保保持装入 \fBkmdb\fR 但又始终希望紧急情况在不进入调试器的情况下触发故障转储，则这样做会很有帮助。
+.SS "执行控制"
+.sp
+.LP
+在大多数情况下，\fBkmdb\fR 为内核提供的执行控制功能会镜像由 \fBmdb\fR(1) 进程目标提供的那些执行控制功能。可使用断点 (\fB::bp\fR)、监视点 (\fB::wp\fR)、\fB::continue\fR 以及各种类型的 \fB::step\fR。
+.sp
+.LP
+与内核提供的无限制用户进程监视点相反，\fBkmdb\fR 仅限于一组 CPU 监视点，用于对允许的监视点数量、大小和类型进行限制。如果某个监视点与硬件支持的监视点不兼容，\fB::wp\fR 命令不允许创建该监视点。
+.SS "调试程序模块 (dmods)"
+.sp
+.LP
+与 \fBmdb\fR(1) 一样，\fBkmdb\fR 随许多特定于子系统的调试器模块或 dmod 一起安装。dmod 会随着它们支持的子系统的装入和卸载而自动装入和卸载。还可以使用 \fB::load\fR 和 \fB::unload\fR 显式装入和卸载 dmod。
+.sp
+.LP
+\fBkmdb\fR 使用内核功能装入和卸载 dmod，并且必须恢复系统执行才能执行每个请求的操作。dmod 装入或卸载完成时，系统会停止，而且会自动重新进入调试器。对于 dmod 装入，会在请求的 dmod 装入成功或失败时完成处理。在任一情况中都会提供状态消息。
+.SS "特定于处理器的功能"
+.sp
+.LP
+某些功能是个别处理器类型所特有的。此类功能的一个示例就是各种 x86 处理器提供的分支跟踪。随特定于处理器的 dcmd 一起提供对这些处理器特定功能的访问权限，这些 dcmd 只存在于支持它们的系统上。\fB::status dcmd\fR 的输出中指明了特定于处理器的支持的可用性。调试器依赖于内核来确定处理器类型。即使调试器可能为某个给定处理器类型提供支持，但此支持要到内核前进到处理器标识完成时才会公开。
+.SS "内核宏"
+.sp
+.LP
+调试器提供对一组预编译到调试器中的宏的访问权限。只有预编译的宏可用。与 \fBmdb\fR(1) 不同，\fB$< dcmd\fR 可能无法用于从任意位置装入宏。使用 \fB$M\fR 命令列出可用的宏。
+.SS "内置 dcmd"
+.sp
+.LP
+本节列出对于 \fBkmdb\fR 唯一的 dcmd，或与 \fBmdb\fR(1) 相比在 \fBkmdb\fR 中具有不同行为的 dcmd。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[\fR\fIaddress\fR]\fB::bp [+/-dDestT]\fR [\fB-c\fR \fIcmd\fR] [\fB-n\fR \fIcount\fR] \fIsym\fR ...\fR
+.ad
+.br
+.na
+\fB\fIaddress\fR \fB :b [\fR\fIcmd\fR \fB\&...]\fR\fR
+.ad
+.sp .6
+.RS 4n
+在指定位置设置断点。\fB::bp\fR dcmd 在每个指定的地址或符号处设置断点，包括 dcmd 前某个显式表达式指定的可选位置，以及 dcmd 之后的每个字符串或即时值。参数可能是符号名称或表示关注的特定虚拟地址的即时值。
+.sp
+如果指定了符号名称，此名称可能是指某个还无法被计算的符号。它可能包含某个尚未打开的装入对象中的对象名称和函数名称。在这种情况下，断点会被延迟，而且直到装入了与给定名称匹配的对象时断点才会在目标中处于活动状态。打开装入对象时会自动启用断点。
+.sp
+\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项具有与用于 \fB::evset\fR dcmd 时的相同意义。有关 \fB::evset\fR 的说明，请参见 \fBmdb\fR(1)。如果使用 \fB:b\fR 形式的 dcmd，则仅会在由 dcmd 之前的表达式指定的虚拟地址处设置断点。\fB:b\fR dcmd 之后的参数会串联在一起形成回调字符串。如果此字符串包含元字符，必须引用该字符串。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::branches\fR [\fB-v\fR]\fR
+.ad
+.br
+.na
+\fB（仅适用于 x86）\fR
+.ad
+.sp .6
+.RS 4n
+显示 CPU 采取的最后分支。此 dcmd 只在 x86 系统上受支持，而且仅当检测到并启用了特定于处理器的支持时才可用。显示的分支数量和类型取决于 CPU 提供的分支跟踪工具的功能。使用 \fB-v\fR 选项时，会显示给定分支之前的指令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIfunction\fR] \fB::call\fR [\fIarg\fR [\fIarg\fR ...]]\fR
+.ad
+.sp .6
+.RS 4n
+使用指定参数调用指定函数。被调用的函数必须列出为装入模块的符号表中的函数。字符串参数是通过引用传递的。调用完成时，会显示该函数的返回值。
+.sp
+使用此 dcmd 时务必格外谨慎。进行调用时将不会恢复内核。被调用的函数可能无法就任何内核服务的可用性做出任何假设，而且不能执行可能阻塞的操作或调用。用户还必须知晓被调用函数导致的任何负面影响，如内核稳定性可能受到影响。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIaddr\fR] \fB::cpuregs\fR [\fB-c\fR \fIcpuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+以 \fB::regs\fR 使用的格式显示为指定 CPU 设置的当前通用暂存器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fIaddr\fR] \fB::cpustack\fR [\fB-c\fR \fIcpuid\fR]\fR
+.ad
+.sp .6
+.RS 4n
+为指定 CPU 输出 C 栈回溯。显示的回溯针对进入指定 CPU 或该 CPU 被调试器停止时的点。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddr\fR[,\fIlen\fR] \fB::in\fR [\fB-L\fR \fIlen\fR]\fR
+.ad
+.br
+.na
+\fB（仅适用于 x86）\fR
+.ad
+.sp .6
+.RS 4n
+从 \fIaddr\fR 指定的 I/O 端口读取 \fIlen\fR 字节。\fB-L\fR 选项的值（如果提供）优先于重复计数的值。读取长度必须为 1、2 或 4 字节，端口地址的对齐方式必须与长度相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddr\fR[,\fIlen\fR] \fB::out\fR [\fB-L\fR \fIlen\fR] \fIvalue\fR\fR
+.ad
+.br
+.na
+\fB（仅适用于 x86）\fR
+.ad
+.sp .6
+.RS 4n
+将值写入 \fIaddr\fR 指定的 len-byte I/O 端口。\fB-L\fR 选项的值（如果提供）优先于重复计数的值。写入长度必须为 1、2 或 4 字节，端口地址的对齐方式必须与长度相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::quit\fR [\fB-u\fR]\fR
+.ad
+.br
+.na
+\fB\fB$q\fR\fR
+.ad
+.sp .6
+.RS 4n
+导致调试器退出。使用 \fB-u\fR 选项时，会恢复系统，并且会卸载调试器。如果调试器是在引导时装入的，\fB-u\fR 选项可能无法使用。不使用 \fB-u\fR 选项时，SPARC 系统将退出以引导 PROM \fBok\fR 提示。\fBgo\fR 命令可用于重新进入调试器。在 x86 系统上，会显示提示来请求重新引导计算机的权限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::step [over|out|branch]\fR\fR
+.ad
+.sp .6
+.RS 4n
+将目标步进一个指令。可选的 \fBover\fR 参数用于步过子例程调用。指定了可选 \fBout\fR 参数时，目标程序会继续，直到从当前函数返回控制权。
+.sp
+仅当检测到并启用了特定于处理器的支持时，才能在 x86 系统上使用可选的 \fBbranch\fR 参数。指定了 \fB::step branch\fR 时，目标程序会继续，直到遇到下个分支指令。
+.sp
+在 SPARC 系统上，\fB::step dcmd\fR 可能无法用于步进 'ta' 指令。同样，它可能无法用于在 x86 系统上步进 'int' 指令。如果步进导致调试器无法解析的陷阱，会输出有关该影响的消息，然后步进将失败。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcpuid::switch\fR\fR
+.ad
+.br
+.na
+\fB\fBcpuid:x\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定 CPU 用作代表。栈跟踪、通用暂存器转储和类似功能会将新的代表 CPU 用作数据源。完全执行控制功能可用于新的代表 CPU 上。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB::term\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示当前终端类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddr\fR\fB[,\fR\fIlen\fR]\fB::wp [+/-dDestT]\fR [\fB-rwx\fR] [\fB-pi\fR] [\fB-n\fR \fIcount\fR] [\fB-c\fR \fIcmd\fR]\fR
+.ad
+.br
+.na
+\fB\fB\fIaddr\fR[,\fIlen\fR]\fR\fB:a [\fIcmd\fR\fR \fB\&...]\fR\fR
+.ad
+.br
+.na
+\fB\fB\fIaddr\fR[,\fIlen\fR]\fR\fB:p [\fIcmd\fR\fR \fB ...]\fR\fR
+.ad
+.br
+.na
+\fB\fB\fIaddr\fR[,\fIlen\fR]\fR\fB:w [\fIcmd\fR\fR \fB\&...]\fR\fR
+.ad
+.sp .6
+.RS 4n
+在指定地址设置监视点，缺省情况下被解释为虚拟地址。如果使用 \fB-p\fR 选项，该地址被解释为物理地址。在 x86 平台上，可使用 \fB-i\fR 选项在 I/O 端口上设置监视点。使用 \fB-i\fR 选项时，该地址被解释为 I/O 端口的地址。
+.sp
+可通过在 dcmd 之前指定可选的重复计数来设置被监视区域的长度（以字节为单位）。如果没有显式设置长度，缺省值为一个字节。\fB::wp\fR dcmd 允许将监视点配置为在存在任何读取（\fB-r\fR 选项）、写入（\fB-w\fR 选项）或执行（\fB-x\fR 选项）访问的组合时触发。
+.sp
+\fB-d\fR、\fB-D\fR、\fB-e\fR、\fB-s\fR、\fB-t\fR、\fB-T\fR、\fB-c\fR 和 \fB-n\fR 选项具有与用于 \fB::evset\fR dcmd 时的相同意义。有关 \fB::evset\fR 的说明，请参见 \fBmdb\fR(1)。\fB:a\fR dcmd 可在指定地址处设置读取访问监视点。\fB:p\fR dcmd 可在指定地址处设置执行访问监视点。\fB:w\fR dcmd 可在指定地址处设置写入访问监视点。\fB:a\fR、\fB:p\fR 和 \fB:w\fR dcmd 之后的参数会串联在一起形成回调字符串。如果此字符串包含元字符，必须引用该字符串。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/kernel
+_
+developer/debug/mdb
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBmdb\fR(1)、\fBboot\fR(1M)、\fBdumpadm\fR(1M)、\fBeeprom\fR(1M)、\fBkernel\fR(1M)、\fBsystem\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Oracle Solaris Modular Debugger Guide》\fR
+.SS "仅适用于 SPARC"
+.sp
+.LP
+\fBkbd\fR(1)
+.SH 附注
+.SS "对可供调试器使用的内存的限制"
+.sp
+.LP
+装入调试器时，会分配可供调试器使用的内存区域，并在此时固定该区域。如果 dcmd 尝试分配超过可用量的内存，将终止这些 dcmd（如果可能）。调试器将尝试从内存不足的情况中正常恢复，但可能无法或者被强制终止系统。此约束在 32 位的 x86 系统上尤为严格。
+.SS "性能影响"
+.sp
+.LP
+装入 \fBkmdb\fR 会对系统性能造成负面影响，因为调试器会消耗内核内存以及其他有限的系统资源。
+.SS "引导到 \fBkmdb\fR 中以捕获 \fBpanic()\fR 栈"
+.sp
+.LP
+要对 SPARC 计算机上的 \fBpanic()\fR 进行故障排除，使用 \fBeeprom\fR(1M) 指定系统始终在引导时装入 \fBkmdb\fR 可能会很有用。紧急情况后，系统会开始重新引导，从而清除控制台中的 panic 栈。通过引导到 \fBkmdb\fR 中，可捕获和解释 panic 栈。有关指定在引导时装入 \fBkmdb\fR 的示例，请参见 \fBeeprom\fR(1M)。

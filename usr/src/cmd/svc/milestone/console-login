@@ -1,0 +1,143 @@
+#!/bin/ksh -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# This method script manages all vt logins including system
+# console login.
+#
+# For modifying parameters passed to ttymon, do not edit
+# this script. Instead use svccfg(1m) to modify the SMF
+# repository. For example:
+#
+# # svccfg
+# svc:> select system/console-login
+# svc:/system/console-login> setprop ttymon/terminal_type = "xterm"
+# svc:/system/console-login> exit
+
+. /lib/svc/share/smf_include.sh
+
+getproparg() {
+	val=$(svcprop -p $2 $SMF_FMRI)
+	[[ -n "$val" ]] && [[ "$val" != '""' ]] && echo $1 $val
+}
+
+args="-g"
+
+#
+# This is a wait service, which means infinite retries on all errors.
+# So we take the somewhat unusual measure of marking ourselves in the
+# maintenance state if we encounter an issue.  This should be cleaned up
+# if in the future wait services work a little better.
+#
+fail_and_goto_maint() {
+	print -u2 "$*"
+	print -u2 "NOTICE: Marking service as needing maintenance."
+	svcadm mark -t maintenance $SMF_FMRI
+	sleep 1
+	exit $SMF_EXIT_ERR_CONFIG
+}
+
+dev=$(svcprop -p ttymon/device $SMF_FMRI)
+if [[ -z "$dev" || "$dev" == '""' ]]; then
+	# If this is the console instance, we try to be nice, and recover.
+	if [[ $1 == "default" ]]; then
+		print -u2 "NOTICE: ttymon/device not set for default " \
+		    "instance.  Assuming /dev/console."
+		dev="/dev/console"
+	else
+		fail_and_goto_maint "ERROR: ttymon/device is not set." \
+		   "\nTo set, use the following:" \
+		   "\n   # svccfg -s $SMF_FMRI \"setprop ttymon/device =" \
+		   "astring: /path/to/device\"" \
+		   "\n   # svcadm refresh $SMF_FMRI"
+		   "\n   # svcadm clear $SMF_FMRI"
+	fi
+fi
+
+#
+# Perform a series of sanity checks for the device.
+#
+if [[ "$dev" == "/dev/vt/1" ]]; then
+	fail_and_goto_maint "ERROR: ttymon/device cannot be configured to " \
+            "/dev/vt/1.  This device is reserved as a control node, and is" \
+	    "not a terminal."
+fi
+
+if [[ ! -e "$dev" ]]; then
+	fail_and_goto_maint "ERROR: ttymon/device '$dev' does not exist." \
+	    "This service may not be applicable to this hardware configuration."
+fi
+
+if [[ ! -c "$dev" ]]; then
+	fail_and_goto_maint "ERROR: ttymon/device '$dev' exists but does" \
+            "not appear to be a character device."
+fi
+
+#
+# For vt services, we layer in an additional behavior.  If vt isn't supported
+# on this system, disable the service.
+#
+if [[ $(dirname $dev) == "/dev/vt" ]]; then
+	if smf_dont_configure_vt; then
+		print -u2 "Virtual console (vt) is not supported on this" \
+	            "system.  Disabling."
+		/usr/sbin/svcadm disable -t $SMF_FMRI
+		sleep 3
+		exit $SMF_EXIT_OK
+	fi
+fi
+
+args="$args -d $dev"
+
+args="$args $(getproparg -l ttymon/label)"
+
+args="$args $(getproparg -T ttymon/terminal_type)"
+
+args="$args $(getproparg -m ttymon/modules)"
+
+val=$(svcprop -p ttymon/nohangup $SMF_FMRI)
+[ "$val" = "true" ] && args="$args -h"
+
+val=$(svcprop -p ttymon/timeout $SMF_FMRI)
+[ -n "$val" -a "$val" != "0" ] && args="$args -t $val"
+
+val=$(svcprop -p ttymon/prompt $SMF_FMRI)
+if [ -n "$val" ]; then
+	prompt=$(eval echo $val)
+
+	/usr/sbin/ttymon -N $args -p "$(eval echo $prompt) "
+	if [[ $? -ne 0 ]]; then
+		fail_and_goto_maint "ERROR: ttymon: failed dry run; check" \
+		    "command arguments."
+	fi
+
+	exec /usr/sbin/ttymon $args -p "$(eval echo $prompt) "
+else
+	/usr/sbin/ttymon -N $args
+	if [[ $? -ne 0 ]]; then
+		fail_and_goto_maint "ERROR: ttymon: failed dry run; check" \
+		    "command arguments."
+	fi
+	exec /usr/sbin/ttymon $args
+fi

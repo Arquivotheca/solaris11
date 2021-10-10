@@ -1,0 +1,428 @@
+'\" te
+.\" Copyright (c) 2000 Sun Microsystems, Inc.  All Rights Reserved.
+.TH llc2 4 "7 Feb 2000" "SunOS 5.11" "File Formats"
+.SH NAME
+llc2 \- LLC2 Configuration file
+.SH SYNOPSIS
+.LP
+.nf
+/etc/llc2/default/llc2.*
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fIllc2\fR files contain information needed by LLC2 to establish the appropriate links to the underlying \fBMAC\fR layer drivers as well as the parameters necessary to configure the LLC (Logical Link Control) Class II Station Component structures for that link.
+.sp
+.LP
+The comments are made up of one or more lines starting with the "\fB#\fR" character in column 1.
+.sp
+.LP
+The main section consists of keyword/value pairs of the form \fIkeyword=value\fR, used to initialize the particular adapter.
+.sp
+.LP
+A sample of the \fIllc2\fR is presented below:
+.sp
+.in +2
+.nf
+devicename=/dev/dnet
+deviceinstance=1
+llc2_on=1         # LLC2: On/Off on this device
+deviceloopback=1
+timeinterval=0    # LLC2: Timer Multiplier
+acktimer=2        # LLC2: Ack Timer
+rsptimer=2        # LLC2: Response Timer
+polltimer=4       # LLC2: Poll Timer
+rejecttimer=6     # LLC2: Reject Timer
+rembusytimer=8    # LLC2: Remote Busy Timer
+inacttimer=30     # LLC2: Inactivity Timer
+maxretry=6        # LLC2: Maximum Retry Value
+xmitwindowsz=14   # LLC2: Transmit Window Size
+rcvwindowsz=14    # LLC2: Receive Window Size
+.fi
+.in -2
+.sp
+
+.SS "MAC specific Parameters"
+.sp
+.LP
+The  \fIllc2.ppa\fR file contains 4 parameters directly related to the underlying \fBMAC\fR-level driver. These are the name of the physical device, the instance of the device, whether LLC2 can be used with this device, and whether the device is capable of looping back data addressed to the node's unique \fBMAC\fR address, broadcast address, or multicast addresses.
+.sp
+.LP
+Setting the \fBllc2_on\fR parameter to \fB1\fR means that LLC2 can be used with this device; setting it to \fB0\fR means otherwise. Setting the loopback parameter to \fB1\fR means that the LLC2 module will loop back data addressed to this node's unique \fBMAC\fR address or to a broadcast/multicast address.
+.sp
+.LP
+The most likely use is for a media that cannot receive its own transmissions (for example, ethernet) or when the \fBMAC\fR-level driver intentionally does not loop back data addressed to the local node under the assumption that the upper layers have already done so.
+.SS "Host-Based LLC2 Parameters"
+.sp
+.LP
+The LLC2 contains ten parameters in the configuration file (\fB/etc/llc2/default/llc2.\fIppa\fR\fR) that apply to configurations using the Host-Based LLC2 component for connection-oriented operation over an Ethernet, Token Ring, or \fBFDDI\fR media.
+.sp
+.LP
+The ten parameters break down into the following four groups: 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Six parameters deal with timer settings for managing the flow of LLC elements of procedure (PDUs) on a data link connection.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+One parameter is the multiplier that is used to determine the period of the interval timer for the station. A value of \fB1\fR means that each tick count represents 100 milliseconds; \fB5\fR means each tick count is 500 milliseconds. Should the parameter be omitted, the default value is \fB5\fR, except for Token Ring links which use a default of \fB1\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+One parameter indicates how many times an operation should be retried on a data link connection.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Two parameters are for controlling the number of unacknowledged I PDUs  to send or receive on a data link connection.
+.RE
+.sp
+.LP
+Additional information on these parameters can be found in ISO 8802-2:1989, Section 7.8.
+.sp
+.LP
+The following table of \fBLogical Link Control Parameters\fR provides the LLC configuration parameter names, default values, and ranges.
+.sp
+
+.sp
+.TS
+tab();
+cw(1.29i) cw(2.59i) cw(.97i) cw(.65i) 
+lw(1.29i) lw(2.59i) lw(.97i) lw(.65i) 
+.
+\fBParameter\fR\fBDescription\fR\fBDefault\fR\fBRange\fR
+_
+\fBtimeinterval\fRT{
+The timer ticks in 100 ms intervals. This parameter is used to scale the following 5 timer parameters.
+T}5, except TPR - 10 - 10
+
+\fBacktimer\fRT{
+The connection acknowledgment timer length in (100 * \fBtimeinterval\fR) ms.
+T}2> 0
+
+\fBrsptimer\fRT{
+The response acknowledgment timer length in (100 * \fBtimeinterval\fR) ms.
+T}2> 0
+
+\fBpolltimer\fRT{
+The connection poll timer length  in (100 * \fBtimeinterval\fR) ms.
+T}4> 0
+
+\fBrejecttimer\fRT{
+The connection reject timer length in (100 * \fBtimeinterval\fR) ms.
+T}6> 0
+
+\fBrembusytimer\fRT{
+The connection remote busy timer length in (100 * \fBtimeinterval\fR) ms.
+T}8> 0
+
+\fBinacttimer\fRT{
+The connection inactivity timer length in (100 * \fBtimeinterval\fR) ms.
+T}30> 0
+
+\fBmaxretry\fRT{
+The maximum number of retries of an action on a connection.
+T}60 - 100
+\fBxmitwindowsz\fRT{
+The maximum number of unacknowledged I-format protocol data units that can be transmitted on a connection before awaiting an acknowledgment.
+T}140 - 127
+\fBrcvwindowsz\fRT{
+The maximum number of unacknowledged I-format protocol data units that can be received on a connection before an acknowledgment is sent.
+T}140 - 127
+.TE
+
+.sp
+.LP
+Default values are set when the following conditions are true:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The parameter is not set by the user.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The user requests a default \fB/etc/llc2/default/llc2.\fIinstance\fR\fR file, where \fIinstance\fR is the sequence number, starting with \fB0\fR, of the adapter as detected by \fBifconfig\fR(1M). For example, if there are 3 adapters on the machine, the default configuration files will be named in order as \fB/etc/llc2/default/llc2.0\fR, \fB/etc/llc2/default/llc2.1\fR, and \fB/etc/llc2/default/llc2.2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The user codes a value of \fB0\fR for a parameter.
+.RE
+.SS "Timer Parameter Descriptions"
+.sp
+.ne 2
+.mk
+.na
+\fBacktimer\fR
+.ad
+.RS 16n
+.rt  
+The \fBacktimer\fR parameter is used to manage the following sample sequences:
+.RS +4
+.TP
+1.
+Attempting to establish, reset, or disconnect a connection. 
+.sp
+.in +2
+.nf
+    SABME     start acknowledgment timer
+     or   -------------------------------->
+    DISC
+.fi
+.in -2
+.sp
+
+The acknowledgment timer expires before the receipt of a response.
+.sp
+.in +2
+.nf
+    SABME     start acknowledgment timer
+     or   -------------------------------->
+    DISC
+
+       stop acknowledgment timer
+    <-------------------------------- UA
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+Sending an \fBFRMR\fR in response to a received \fBPDU\fR of dubious distinction: 
+.sp
+.in +2
+.nf
+                         PDU with invalid N(R)
+                                 or
+                         I PDU with invalid N(S)
+                                 or
+    <------------------- PDU of invalid length
+                                 or
+                         unexpected UA PDU
+                                 or
+                         response PDU with
+                         invalid P/F setting 
+
+               start acknowledgment timer
+    FRMR  -------------------------------->
+.fi
+.in -2
+.sp
+
+Acknowledgment timer expires before the receipt of a \fBPDU\fR.
+.sp
+.in +2
+.nf
+               start acknowledgment timer
+    FRMR  -------------------------------->
+                                                      
+     stop acknowledgment timer           
+                                       SABME, FRMR
+    <-------------------------------   DISC, or DM
+
+\fI\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+3.
+There is also a special case of the acknowledgment timer, referred to in this implementation as the response acknowledgment timer (\fBrsptimer\fR). It is used when sending an I PDU. 
+.sp
+.in +2
+.nf
+       start response acknowledgement timer
+    I  -------------------------------------->
+.fi
+.in -2
+.sp
+
+Response acknowledgment timer expires before the receipt of an  acknowledgment.
+.sp
+.in +2
+.nf
+               start poll timer
+    RR  -------------------------------->
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBpolltimer\fR
+.ad
+.RS 16n
+.rt  
+The \fBpolltimer\fR parameter is used to manage situations where a Supervisory command \fBPDU\fR (RR, RNR, or REJ) is sent with the P/F bit set. This type of \fBPDU\fR is typically sent when:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+There has been a period of inactivity on a connection in information  transfer mode.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The remote node must be notified of a local busy condition occurring  in information transfer mode.
+.RE
+The expiration of the poll timer causes another Supervisory command \fBPDU\fR (which may be of a different type than the first) to be sent with the P/F bit set, provided the retry count has not exceeded the maximum retry value. This timer, then, provides an extended retry mechanism for a connection in information transfer mode.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrejecttimer\fR
+.ad
+.RS 16n
+.rt  
+The \fBrejecttimer\fR parameter controls the frequency with which a REJ PDU is sent to a remote node from which an I PDU with an unexpected N(S) was received and which has not corrected the situation by sending an I PDU with the expected N(S).
+.sp
+.in +2
+.nf
+       <-----------------------  I PDU with
+                                 unexpected N(S)
+             start reject timer
+    REJ  ------------------------>
+.fi
+.in -2
+.sp
+
+Reject timer expires before the receipt of an I PDU with an expected N(S). 
+.sp
+.in +2
+.nf
+          start reject and poll timer
+    REJ  ----------------------------->
+          stop reject and poll timer
+        <---------------------------   I PDU with
+                                       expected N(S)
+
+\fI\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrembusytimer\fR
+.ad
+.RS 16n
+.rt  
+The \fBrembusytimer\fR parameter is used to determine how long the local node should wait, after the remote node sends an \fBRNR\fR to indicate it is busy, before sending a Supervisory \fBPDU\fR with the P/F bit set to solicit the current state of the remote node. If the remote node indicates that it has cleared its busy condition before the timer expires, the local node stops the remote busy timer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinacttimer\fR
+.ad
+.RS 16n
+.rt  
+The \fBinacttimer\fR parameter controls how much time is allowed to elapse on a connection in information transfer mode between the issuing of command \fBPDU\fRs by the local node. If the inactivity timer expires because a command \fBPDU\fR has not been generated in the configured time interval, a Supervisory \fBPDU\fR with the P/F bit set is sent to the remote node to solicit its current state, provided that the connection is in information transfer mode. Each time a command \fBPDU\fR is sent by the local node, the inactivity timer is restarted.
+.RE
+
+.sp
+.LP
+The following rules of thumb should apply for the timer parameters:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBacktimer\fR, \fBrsptimer\fR, and  \fBpolltimer\fR parameters should have small relative values to allow for quick recovery from common transient error conditions on a connection.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBrejecttimer\fR and \fBrembusytimer\fR parameters should have intermediate  relative values to allow the local and remote nodes time to recover without resorting to possibly unnecessary polling cycles.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBinacttimer\fR parameter should be set to a large relative value to provide a safety net in information transfer mode.
+.RE
+.sp
+.LP
+You may need to shift the values for the timer parameters to higher values if bridges are included in the network or a user application requires a substantial amount of time to respond to connection establishment requests or handle information flow.
+.SS "Maximum Retry Parameter Description"
+.sp
+.LP
+The  \fBmaxretry\fR parameter determines the number of times a recovery operation is performed before notifying the user that an error has occurred on a connection. Typical examples of its use include the following:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+When the remote node fails to respond to a \fBSABME\fR sent by the local node to establish or reset the connection, the \fBSABME\fR is resent each time the acknowledgment timer expires, up to \fBmaxretry\fR number of times.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+In information transfer mode, if the response acknowledgment timer expires after an I PDU has been sent, an RR with the P/F bit set is sent (and resent each time the poll timer expires) until the remote node responds or \fBmaxretry\fR number of RRs have been sent.
+.RE
+.sp
+.LP
+In general, the \fBmaxretry\fR value should not need to be large. Since the acknowledgment and poll timers are typically used in recovery operations that involve the \fBmaxretry\fR parameter, the product of \fBmaxretry\fR and either \fBacktimer\fR, \fBrsptimer\fR, or \fBpolltimer\fR gives a rough estimate of the length of time allotted for the connection to attempt internal error recovery before notifying the user.
+.SS "Window Size Parameter Descriptions"
+.sp
+.ne 2
+.mk
+.na
+\fBrcvwindowsz\fR
+.ad
+.RS 16n
+.rt  
+The \fBrcvwindowsz\fR parameter is used to set the receive window size for I PDUs received locally on a connection. This value should agree with the transmit window size set for the connection at the remote node. If the local \fBrcvwindowsz\fR is greater than the remote transmit window size, I PDUs sent by the remote node are not acknowledged quickly. If the local \fBrcvwindowsz\fR is less than the remote transmit window size, there is a greater risk of the local node generating FRMR PDUs, requiring intervention by the user application when transient errors on the connection require the remote node to retransmit an I PDU. REJ PDUs are recovered internally.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBxmitwindowsz\fR
+.ad
+.RS 16n
+.rt  
+The \fBxmitwindowsz\fR parameter sets the local transmit window size for a connection. It denotes the number of unacknowledged I PDUs that the local node may have outstanding. The configured value should match the receive window size for the connection at the remote node, based on the same reasoning as for the \fBrcvwindowsz\fR parameter.
+.RE
+
+.sp
+.LP
+In many cases, the values assigned to \fBrcvwindowsz\fR and \fBxmitwindowsz\fR for adapters on a server node will depend on the transmit and receive window sizes specified for another LLC implementation on a client node. In cases where this LLC implementation is resident in both nodes, larger values for these parameters are useful in environments where much of the activity on a connection consists of file transfer operations. Smaller values are warranted if analysis of LLC2 connection component statistics reveals that connections  are entering local or remote busy state frequently.
+.SH FILES
+.sp
+.LP
+\fB/etc/llc2/default/llc2.*\fR
+.SH SEE ALSO
+.sp
+.LP
+\fBllc2_autoconfig\fR(1), \fBllc2_config\fR(1), \fBifconfig\fR(1M), \fBllc2\fR(7D) 

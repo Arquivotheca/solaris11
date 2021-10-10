@@ -1,0 +1,151 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zs_pset 3ZONESTAT "19 May 2011" "SunOS 5.11" "Zones Statistics Library Functions"
+.SH NAME
+zs_pset, zs_pset_list, zs_pset_walk, zs_pset_property, zs_pset_total_time, zs_pset_total_cpus, zs_pset_used_time, zs_pset_used_cpus, zs_pset_used_pct \- libzonestat pset accessor methods
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR ... ] \fIfile\fR... -lzonestat [ \fIlibary\fR ... ]
+#include <zonestat.h>
+
+int zs_pset_list(zs_usage_t \fIusage\fR, zs_pset_t *\fIpsetlist\fR, int \fInum\fR);
+.fi
+
+.LP
+.nf
+zs_pset_t zs_pset_walk(zs_usage_t \fIusage\fR, zs_pset_t \fIpset\fR);
+.fi
+
+.LP
+.nf
+zs_property_t zs_pset_property(zs_pset_t \fIpset\fR, zs_pset_property_t \fIprop\fR);
+.fi
+
+.LP
+.nf
+void zs_pset_total_time(zs_pset_t \fIpset\fR, timestruc_t *\fIts\fR);
+.fi
+
+.LP
+.nf
+uint64_t zs_pset_total_cpus(zs_pset_t \fIpset\fR);
+.fi
+
+.LP
+.nf
+void zs_pset_used_time(zs_pset_t \fIpset\fR, zs_user_t \fIuser\fR, timestruc_t *\fIts\fR);
+.fi
+
+.LP
+.nf
+uint64_t zs_pset_used_cpus(zs_pset_t \fIpset\fR, zs_user_t \fIuser\fR);
+.fi
+
+.LP
+.nf
+uint_t zs_pset_used_pct(zs_pset_t \fIpset\fR, zs_user_t \fIuser\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+These functions are used to access the processor sets (psets) in the usage object. These psets are the psets which existed at the time when the zs_usage_read was called, and returned the usage object.
+.sp
+.LP
+By default, the system has a single processor set which contains all cpus. Processor sets can be created by resource pools (pooladm(1M)), the psrset(1M) command, and by the zonecfg(1M) dedicated cpu resource.
+.sp
+.LP
+The zs_pset_list function returns the number of zs_pset_t objects contained within usage. If psetlist is non-NULL, the psetlist array will be filled with up to num zs_pset_t objects. The psetlist array must be first allocated by the caller. The first pset returned in the array will always be the default pset. The remaining pset will be in alphanumeric ordered by pset name.
+.sp
+.LP
+The zs_pset_walk function walks the psets contained in usage. If pset is NULL, the first pset is returned. The first pset is always the default pset. Otherwise, the psets are returned in alphanumeric order. NULL will be returned if there are no more psets.
+.sp
+.LP
+The zs_pset_property function will return the prop property of a pset. See libzonestat(3lib) for a description of the ZS_PSET_PROP_* property codes.
+.sp
+.LP
+The zs_pset_total_time function sets ts to the total cpu time that has been available in pset. For example, if a pset has 2 online cpus, and zs_open as called 30 seconds before zs_usage_read, then the total time available in the pset is 60 seconds. ts must be allocated by the caller.
+.sp
+.LP
+The zs_pset_total_cpus function returns the number of online cpus in pset * 100. For instance, if the number of online cpus is 4, the value returned will be 400.
+.sp
+.LP
+The zs_pset_used_time function sets ts to the total cpu time that has been used in pset, starting at zero from the point when zs_open was first called.
+.sp
+.LP
+The zs_pset_used_cpus function returns quantity of cpus used by user. The value returned is the number of cpus used * 100. For instance, if user ZS_USER_ZONES (which represents total pset usage by all zones) has used 2.5 cpus worth of cpu time, then the value returned is 250.
+.sp
+.LP
+The uint_t zs_pset_used_pct function returns the percentage of cpu time used by user.  The value returned is the percentage * 100. For example, if user ZS_USER_ALL (representing total cpu usage) is 50%, then the value returned will be 5000.
+.sp
+.LP
+All ZS_USER_* user codes are described in the libzonestat(3lib) manual page.
+.SH RETURN VALUES
+.sp
+.LP
+See Description
+.SH ERRORS
+.sp
+.LP
+If a \fBzs_pset_*()\fR function is called with an invalid user code, the function will abort with \fBabort\fR(3C).
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRRetrieve information about all psets in a usage object.
+.sp
+.LP
+The following example traverses all psets in a usage object, retrieving information about each pset.
+
+.sp
+.in +2
+.nf
+#include <zonestat.h>
+\&...
+extern zs_usage_t usage;        /* assume returned by zs_usage_read() */
+\&...
+zs_pset_t pset;
+zs_property_t prop;
+char * psetname;
+uint64_t online;
+uint64_t used;
+
+for (pset = zs_pset_first(usage); pset != NULL;
+    pset = zs_pset_next(usage, pset)) {
+
+/* Get psetname */
+prop = zs_pset_property(pset, ZS_PSET_PROP_NAME);
+psetname = strdup(zs_property_string(prop)));
+
+/*
+ * Get number of online cpus, and quantity of cpu used, both in
+ * number of cpus * 100.
+ */
+online = zs_pset_total_cpus(pset);
+used = zs_pset_used_cpus(pset, ZS_USER_ALL);
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBzonestat\fR(1), \fBpooladm\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBswap\fR(1M), \fBzoneadm\fR(1M), \fBzonestatd\fR(1M), \fBabort\fR(3C), \fBlibpool\fR(3LIB), \fBlibzonestat\fR(3LIB), \fBzs_open\fR(3ZONESTAT), \fBzs_property\fR(3ZONESTAT), \fBzs_pset_zone\fR(3ZONESTAT), \fBzs_resource\fR(3ZONESTAT), \fBzs_usage\fR(3ZONESTAT), \fBzs_zone\fR(3ZONESTAT), \fBattributes\fR(5), \fBresource_controls\fR(5)

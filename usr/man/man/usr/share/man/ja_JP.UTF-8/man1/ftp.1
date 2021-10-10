@@ -1,0 +1,1095 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ftp 1 "2006 年 6 月 6 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+ftp \- ファイル転送プログラム
+.SH 形式
+.LP
+.nf
+\fBftp\fR [\fB-adfginpstvx\fR] [\fB-m\fR \fIGSS Mech\fR] [\fB-T\fR \fItimeout\fR] 
+     [\fIhostname\fR [\fIport\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBftp\fR コマンドは、インターネット標準ファイル転送プロトコル (\fBFTP\fR) のユーザーインタフェースとして機能します。\fB\fR\fBこのコマンドを使用すると、リモートネットワークサイトとファイルをやりとりすることができます。\fR
+.sp
+.LP
+\fBftp\fR の通信相手であるホストおよびポート (任意指定) は、コマンド行に指定することができます。クライアントホスト名をコマンド行に指定した場合 \fBftp\fR は、ただちにそのホストの \fBFTP\fR サーバーとの接続を確立しようとします。ホスト名がコマンド行で指定されなかった場合は、コマンドインタプリタに制御が移り、ユーザーからの指示を待ちます。\fB\fR指示を待っている間、\fBftp>\fR というプロンプトが表示されます。\fB\fR
+.SH オプション
+.sp
+.LP
+以下に示すオプションは、コマンド行中に指定することも、コマンドインタプリタに対して指定することもできます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBGSSAPI\fR 認証だけを使用します。\fB\fRこの認証に失敗した場合、接続を閉じます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 14n
+.rt  
+デバッグ処理を実施します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 14n
+.rt  
+ローカルのセキュリティ証明書をリモートサーバーに転送します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.RS 14n
+.rt  
+ファイル名の "グロビング" (展開) 機能を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 14n
+.rt  
+複数ファイルの転送中に、対話形式のプロンプトを出力しないようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.RS 14n
+.rt  
+\fBGSS\fR-\fBAPI\fR メカニズムを使用することを指定します。デフォルトでは、kerberos_v5 メカニズムを使用します。サポートされる代替機構は、\fB/etc/gss/mech\fR に定義されています (\fBmech\fR(4) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 14n
+.rt  
+初期接続時に  "自動ログイン"を行いません。自動ログインが有効になっている場合、\fBftp\fR はユーザーのホームディレクトリ内の \fB\&.netrc\fR ファイルを検査し、リモートマシンにログインするアカウントが記述されているかどうかを確認し、アカウントが見つからない場合は、リモートマシン上のアカウントのログイン名の入力を要求します (デフォルトはローカルマシン上のログイン名)。さらに、もし必要であれば、パスワードとログインするアカウントの入力も要求します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 14n
+.rt  
+データ転送を受動モードで行います。このオプションは、ファイアウォールを介して接続されているリモートホストと通信する場合に便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 14n
+.rt  
+接続時にデフォルトですべてのリモートサーバーに送信される \fBSYST\fR コマンドをスキップします。このシステムコマンドは、プロトコルでデフォルトの ASCII モードではなくバイナリモードを自動的に使用できるようにします。 
+.sp
+一部の古いサーバーでは \fBftp\fR コマンドを処理できないため、そのようなサーバーとの相互運用性のためにこの指令が提供されています。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 14n
+.rt  
+パケットトレース機能を有効にします (この機能はまだ実装されていません)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItimeout\fR\fR
+.ad
+.RS 14n
+.rt  
+大域接続タイマーを有効にします (秒単位、10 進数で指定)。タイマーには、サーバーにデータが送信されるとリセットされ、クライアントシステムにユーザーの入力を求めるプロンプトが表示されている間は無効になるという制御接続用のタイマーと、着信方向または発信方向のデータ接続を監視するためのタイマーの 2 種類があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 14n
+.rt  
+データ転送統計情報のレポートとともに、リモートサーバーからのすべての応答を表示します。\fBftp\fR が対話形式で動作している場合は、この機能はデフォルトで有効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 14n
+.rt  
+認証と暗号化に \fBGSSAPI\fR の使用を試みます。データとコマンドのチャネル保護は「\fBprivate\fR」に設定されます。
+.RE
+
+.sp
+.LP
+以下に示すコマンドは、コマンドインタプリタに対して指定することができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIcommand\fR で指定したコマンドを、ローカルマシン上でシェルコマンドとして実行します。\fI\fR\fIcommand\fR を省略した場合、対話型シェルが呼び出されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$\fR \fImacro-name\fR [ \fIargs\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fImacro-name\fR で指定したマクロを実行します。このマクロは \fBmacdef\fR コマンドで定義したものです。引数 args は、そのままマクロに渡されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaccount\fR [ \fIpasswd\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+リモートシステムに正常にログイン完了した後、リソースのアクセスに必要な補助パスワードを指定します。password を省略した場合、ユーザーはアカウントのパスワードを入力するように要求されます。このとき、入力したパスワードは画面上には表示されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBappend\fR \fIlocal-file\fR [ \fIremote-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+[ remote-file ] local-file で指定したローカルファイルを、リモートマシン上の remote-file で指定したファイルの末尾に追加します。\fIremote-file\fRを省略した場合、ローカルファイル名が \fBntrans\fR または \fBnmap\fR の設定に従って変更され、リモートファイル名として使用されます。ファイル転送時、"表現タイプ"、"ファイル構造"、"転送モード" には、現在の設定値が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBascii\fR\fR
+.ad
+.sp .6
+.RS 4n
+"表現タイプ" を、デフォルトの "ネットワーク \fBASCII\fR" に設定します。これがデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbell\fR\fR
+.ad
+.sp .6
+.RS 4n
+各ファイル転送コマンドが終了するたびに、ベルを鳴らします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbinary\fR\fR
+.ad
+.sp .6
+.RS 4n
+"表現タイプ" を、"イメージ" に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbye\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートサーバーとの \fBFTP\fR セッションを終了し、\fBftp\fR コマンドの実行を終了します。なお \fBEOF\fR (ファイルの終わり) に到達した場合もセッションを終了し、コマンドの実行を終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcase\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmget\fR コマンドを実行している間、リモートコンピュータ上にあるファイル名の大文字と小文字を対応づける機能を有効にします (デフォルトでは無効になっています)。この機能を有効にすると、英大文字の名前を持つリモートコンピュータ上のファイルは、英小文字の名前でローカルディレクトリに書き込まれます。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcd\fR \fIremote-directory\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上の作業ディレクトリを、\fIremote-directory\fR で指定したディレクトリに変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcdup\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上の作業ディレクトリを、現在の作業ディレクトリの親ディレクトリに変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR\fR
+.ad
+.sp .6
+.RS 4n
+データ転送の保護レベルを「\fBclear\fR」に設定します。\fBADAT\fR コマンドが失敗した場合、これがデフォルトの保護レベルになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclose\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートサーバーとの \fBFTP\fR セッションを終了し、コマンドインタプリタに戻ります。定義されたマクロがあれば削除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcr\fR\fR
+.ad
+.sp .6
+.RS 4n
+"ネットワーク \fBASCII\fR" タイプのファイル検索中に復帰改行 (RETURN) を除去する処理のオン・オフの切り替えを行います。"ネットワーク \fBASCII\fR" タイプのファイル転送時には、復帰改行/改行 (RETURN/\fBLINEFEED\fR シーケンス) によってレコードが認識されます。\fBcr\fR がオン (デフォルト) のとき、復帰改行はこのシーケンスから取り除かれます。これにより、改行のみでレコードを区切っている UNIX システムの仕様に準拠できます。\fB\fRUNIX 以外のシステムのリモートホスト上のレコードには、改行のみを区切り記号として使用している場合があります。"ネットワーク \fBASCII\fR"タイプの転送を行なったとき、これらの改行文字は \fBcr\fR がオフの場合にのみレコード区切り記号とは 区別して扱われます。\fB\fR\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR \fIremote-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上の \fIremote-file\fR で示したファイルを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバッグモードのオン・オフの切り替えを行います。デバッグモードがオンのとき、\fBftp\fR はリモートマシンに送られたコマンドを、先頭に \fB->\fR を付加して印刷します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdir\fR [ \fIremote-directory\fR [ \fIlocal-file\fR ]]\fR
+.ad
+.sp .6
+.RS 4n
+\fIremote-directory\fR で示すリモートディレクトリの内容を出力します。出力先は \fIlocal-file\fR で示したローカルファイルです。remote-directory を省略した場合は、現在の作業ディレクトリの内容を出力します。ローカルファイルを省略した場合、または \fIlocal-file\fR として \fB\(mi\fR を指定した場合は、出力先は端末となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBclose\fR と同一機能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBform\fR [ \fIformat-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+"表現タイプ" のうちのキャリッジ制御 フォーマットサブタイプを、\fIformat-name\fR で示したフォーマットに設定します。なお \fIformat-name\fR として指定可能なものは \fBnon-print\fR だけです。これはデフォルトの "ノンプリント" サブタイプに対応します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR \fIremote-file\fR [ \fIlocal-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIremote-file\fR で示したリモートファイルを取り出し、local-file で示した名前でローカルマシン上に格納します。local-file を省略した場合、リモートマシン上のファイル名が \fBcase\fR、\fBntrans\fR、\fBnmap\fR 設定に従って変更され、ローカルファイル名として使用されます。ファイル転送時、"表現タイプ"、"ファイル構造"、"転送モード" に関しては、現在の設定値が用いられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBglob\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmdelete\fR、\fBmget\fR、\fBmput\fR 時のファイル名の展開、あるいは "グロビング" 機能のオン・オフの切り替えを行います。グロビング機能をオフにすると、ファイル名は展開されずそのまま使用されます。
+.sp
+\fBmput\fR 時のグロビングは、\fBsh\fR(1) での処理と同一です。\fBmdelete\fR と \fBmget\fR に関しては、各リモートファイル名はリモートマシン上で個々に展開され、リストはマージされません。
+.sp
+ディレクトリ名の展開は、通常ファイル名の展開とはかなり異なります。すなわちグロビングの結果は、リモートオペレーティングシステムと \fBFTP\fR サーバーにより決まります。その値は \fBmls\fR \fIremote-files \fR \(mi コマンドの実行によりあらかじめ得ることができます。
+.sp
+\fBmget\fR と \fBmput\fR は、ファイルのディレクトリサブツリーをすべて転送するためのものではありません。そのような転送を行いたいときは、\fBtar\fR(1) アーカイブをサブツリーに転送してください(その際には \fBbinary\fR コマンドの実行で設定される "イメージ" という "表現タイプ"を使用してください)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhash\fR\fR
+.ad
+.sp .6
+.RS 4n
+個々のデータブロックを転送するたびにハッシュサイン (\fB#\fR) を印刷する機能のオン・オフの切り替えを行います。各データブロックのサイズは 8192 バイトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [ \fIcommand\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIcommand\fR で示したコマンドの意味を説明するメッセージを出力します。command を省略した場合は、定義されているコマンドの一覧表が出力されます。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcd\fR [ \fIdirectory\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+ローカルマシン上の作業ディレクトリを、directory で示したディレクトリに変更します。\fIdirectory\fR を省略した場合は、ユーザーのホームディレクトリが指定されたものとみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBls\fR [ \fB-al\fR | \fIremote-directory\fR [ \fIlocal-file\fR ]]\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトでは remote-directory で示すリモートファイル上のディレクトリの内容を、要約した形式で出力します。このデフォルトの動作は \fBls\fR コマンドが \fBdir\fR コマンドと同じになるように変更できます。この変更を行うには、\fB/etc/default/ftp\fR または環境において、\fBFTP_LS_SENDS_NLST\fR を「\fBno\fR」に設定します。詳細については、\fBftp\fR(4) を参照してください。
+.sp
+\fB-a\fR オプションは、すべてのファイルを表示します。通常は表示されないドット (\fB\&.\fR) で始まるファイルも表示されます。\fB-l\fR オプションは、ファイルを詳細に表示します。各ファイルのモード、リンク数、所有者、グループ、サイズ (バイト数)、最後修正日時が表示されます。ファイルが特殊ファイルの場合、サイズフィールドには、サイズではなく、メジャーデバイス番号とマイナーデバイス番号が表示されます。ファイルがシンボリックリンクの場合は、ファイル名を出力したあとに、\fB\(->\fR に続いて参照されるファイルのパス名が出力されます。
+.sp
+\fIremote-directory\fR を省略した場合は、現在の作業ディレクトリの内容が出力されます。
+.sp
+ローカルファイルを省略した場合、または \fIlocal-file\fR として \fB\(mi\fR を指定した場合は、出力先は端末となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmacdef\fR \fImacro-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+マクロを定義します。後続の行で指定された内容が、\fImacro-name\fR という名前のマクロとして格納されます。マクロ定義の終わりは空の (NULL) 行 (ファイル中では連続した復帰改行 (\fBNEWLINE\fR) 文字、端末入力では連続した復帰改行 (RETURN) 文字) によって表されます。定義可能なマクロ数は最大 16 個、その合計文字数は最大 4096 文字です。いったん定義されたマクロは、\fBclose\fR コマンドが実行されるまで定義されたままとなります。
+.sp
+マクロプロセッサは、\fB$\fR と \fB\e\fR を特殊文字として解釈します。\fB$\fR1、$2、$3 ... のように $ の後に 1 個 (または複数個) の数値を指定すると、それは、マクロ呼び出しコマンド行内の対応する引数に置き換えられます。\fB$\fR の後に文字 \fBi\fR を指定すると、そのマクロはループされる旨がマクロプロセッサに通知されます。つまり最初のパスでは \fB$i\fR はマクロ呼び出しコマンド行内の 第 1 引数で置き換えられ、2 回目の実行時には 第 2 引数で置き換えられ、という方法で繰り返されます。\fB\e\fR の後に何らかの文字を指定すると、\e はその文字で置き換えられます。これにより、\fB$\fR を特殊文字ではなく通常の文字として使用することができます。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmdelete\fR \fIremote-files\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上にある、\fIremote-files\fR で示すファイルを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmdir\fR \fIremote-files local-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdir\fR と同機能ですが、複数のリモートファイル名を指定できる点が異なります。対話形式のプロンプトが有効な場合、最後の引数が \fBmdir\fR の出力先としてのターゲットのローカルファイルであることを確認するためのプロンプトを出力します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmget\fR \fIremote-files\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上にある、\fIremote-files\fR で示すファイル名を展開し、それにより生成された名前を持つ各ファイルに対して \fBget\fR を実行します。ファイル名の展開の詳細については、\fBglob\fR の説明を参照してください。生成されたファイル名は、\fBcase\fR、\fBntrans\fR、\fBnmap\fR の設定値に従って処理されます。ファイルはローカル作業ディレクトリに転送されます。ローカル作業ディレクトリは \fBlcd\fR \fIdirectory\fR により変更できます。新たなローカルディレクトリを作成するには、\fB! mkdir\fR \fIdirectory\fR を使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmkdir\fR \fIdirectory-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+directory-name で示したディレクトリをリモートマシン上に生成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmls\fR \fIremote-files local-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBls\fR(1) と同機能ですが、複数のリモートファイル名を指定できる点が異なります。対話形式のプロンプトが有効な場合、最後の引数が \fBmls\fR の出力先としてのターゲットのローカルファイルであることを確認するためのプロンプトを出力します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmode\fR [ \fImode-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+"転送モード" を、\fImode-name\fR に設定します。なお \fImode-name\fR として指定可能なものは \fBstream\fR だけです。これはデフォルトの "ストリーム" モードに対応します。現在のシステムでサポートしているモードは \fBstream\fR だけなので、これを指定しなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmput\fR \fIlocal-files\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlocal-files\fR で示したローカルファイル名のリスト中のワイルドカードを展開し、それにより生成された名前を持つ各ファイルに対して put を実行します。ファイル名展開の詳細については \fBglob\fR の説明を参照してください。生成されたファイル名は、\fBntrans\fR および \fBnmap\fR の設定値に従って処理されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnlist\fR [ \fB-al\fR | \fIremote-directory\fR [ \fIlocal-file\fR ]]\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上のディレクトリの内容を簡略に表示します。\fB-a\fR オプションまたは \fB-l\fR オプションを指定しない限り、表示されるファイルは \fBget\fR コマンドで取得できるファイルだけです。\fIremote-directory\fR を省略した場合は、現在の作業ディレクトリの内容が出力されます。
+.sp
+\fB-a\fR オプションは、すべてのファイルを表示します。通常は表示されないドット (\fB\&.\fR) で始まるファイルも表示されます。\fB-l\fR オプションは、ファイルを詳細に表示します。\fBls\fRコマンドの l オプションと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnmap\fR [ \fIinpattern outpattern\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+ファイル名マッピングメカニズムを 設定または解除します。引数を省略した場合は、解除となります。引数を指定した場合は、リモートファイル名は「対象のリモートファイル名指定のない \fBmput\fR および \fBput\fR コマンド」の実行時にマップされます。同様にローカルファイル名は 「対象のローカルファイル名指定のない \fBmget\fR および \fBget\fR コマンド」の実行時にマップされます。
+.sp
+このコマンドは、異なったファイル名規約を持つ、UNIX 以外のシステムのリモートホストに接続する場合に便利です。マッピング処理は、\fIinpattern\fR と \fIoutpattern\fR で設定されたパターンに従って行われます。\fIinpattern\fR は入力ファイル名 (すでに \fBntrans\fR および \fBcase\fR の設定により処理されている場合もある) 用のテンプレートです。\fBinpattern\fR 中に \fB$1\fR、$2 .\|.\|.\|、\fB$9\fR シーケンスを含めることにより、変数を使用したテンプレート処理も可能です。\fI\fR\fB$\fR を特殊文字ではなく通常の文字として扱う必要があれば、\fB\e\fR を使用してください。その他の文字はすべて入力されたとおりに処理され、\fBnmap\fR の \fIinpattern\fR 変数の値を決定するために用いられます。
+.sp
+たとえば、\fIinpattern\fR として \fB$1.$2\fR を指定し、リモートファイル名が \fBmydata.data\fR のとき、\fB$1\fR の値は \fBmydata\fR に、\fB$2\fR の値は \fBdata\fR になります。
+.sp
+\fIoutpattern\fR は、マッピングの結果生成されるファイル名を決定します。\fB$1\fR、\fB$2\fR、.\|.\|.\|、\fB$9\fR というシーケンスを指定すれば、\fIinpattern\fR のテンプレートから得られる値により置き換えられます。シーケンス \fB$0\fR は、元のファイル名に置き換えられます。さらに、[\fI\|seq1\|\fR,\fI\|seq2\|\fR]というシーケンスは、\fIseq1\fR が NULL でなければ \fIseq1\fR に、NULL であれば \fIseq2\fR に置き換えられます。
+.sp
+たとえば、\fBnmap $1.$2.$3 [$1,$2].[$2,file]\fR というコマンドを実行すると、入力ファイル名が \fBmyfile.data\fR または \fBmyfile.data.old\fR のときは出力ファイル名が \fBmyfile.data\fR になり、\fBmyfile\fR のときは \fBmyfile.file\fR になり、\fB\&.myfile\fR のときは \fBmyfile.myfile\fR になります。また、たとえば \fBnmap $1 | sed "s/ *$//" > $1\fR のように、\fIoutpattern\fR 中にスペース文字が含まれていても構いません。\fB\fR\fB$\fR、\fB[\fR、\fB]\fR、\fB,\fR の 4 つの各文字を、特殊文字ではなく通常の文字として扱う必要があれば、\fB\e\fR を使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBntrans\fR [ \fIinchars\fR [ \fIoutchars\fR ] ]\fR
+.ad
+.sp .6
+.RS 4n
+ファイル名の文字変換メカニズムを 設定または解除します。引数を省略した場合は、解除となります。引数を指定した場合は、リモートファイル名を構成する文字は「対象のリモートファイル名指定のない \fBmput\fR および \fBput\fR コマンド」の実行時に変換されます。同様にローカルファイル名の文字は「対象のローカルファイル名指定のない \fBmget\fR および \fBget\fR コマンド」の実行時に変換されます。
+.sp
+このコマンドは、異なったファイル名規約を持つ、UNIX 以外のシステムのリモートホストに接続する場合に便利です。\fIinchars\fR で指定した文字がファイル名に含まれていると、その文字は \fIoutchars\fR 中の対応する文字に変換されます。\fIinchars\fR 内におけるその文字の位置が \fIoutchars\fR の長さを超えている場合、その文字はファイル名から削除されます。
+.sp
+\fBntrans\fR コマンドを \fBftp\fR で使用すると 16 文字のみを変換します。全アルファベットを転換する場合には、\fBcase\fR (前述参照) を使います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBopen\fR \fIhost\fR [ \fIport\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fIhost\fR が示すホストの \fBFTP\fR サーバーとの接続を確立します。オプションであるポート番号を指定すると、\fBftp\fR はそのポートにおいて \fBFTP\fR サーバーと接続しようと試みます。また 自動ログインオプションが有効 (デフォルト値) のとき、\fBftp\fR はユーザーを自動的に \fBFTP\fR サーバーにログインしようと試みます。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpassive\fR\fR
+.ad
+.sp .6
+.RS 4n
+受動モードのオン・オフを切り替えます。受動モードがオンの場合、ftpクライアントは、データ接続用のポートをオープンし、そのポートのアドレスを返すことを要求する \fBPASV\fR コマンドを \fBFTP\fR サーバーに送信します。リモートサーバーはそのポートで待機し、クライアントはそのポートに接続します。受動モードがオフの場合、ftpクライアントは、リモートサーバーが接続するべきアドレスを指定する \fBPORT\fR コマンドを送信します。受動モードは、ftp クライアントへの接続が何らかの形で制御されている場合 (例: ファイアウォール配下にある場合など) に便利です。IPv6 対応の \fBFTP\fR サーバーに接続する場合は、\fBPASV\fR の代わりに \fBEPSV\fR、\fBPORT\fR の代わりに \fBEPRT\fR が使用される場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivate\fR\fR
+.ad
+.sp .6
+.RS 4n
+データ転送の保護レベルを「\fBprivate\fR」に設定します。データの転送の信頼性 (と整合性) は暗号化によって保護されます。\fBADAT\fR コマンドが失敗した場合、データ転送の保護レベルは「clear」になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+対話形式のプロンプトのオン・オフの切り替えを行います。オンに設定すれば、複数個のファイル転送を行う場合、読み書きの対象とするファイルを個別に選択することが可能となりますデフォルトはオンです。オフのときは、\fBmget\fR や \fBmput\fR コマンドはすべてのファイルを転送し、\fBmdelete\fR コマンドはすべてのファイルを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprotect\fR \fIprotection-level\fR\fR
+.ad
+.sp .6
+.RS 4n
+データ転送の保護レベルを \fIprotection-level\fR に設定します。有効な保護レベルは、「\fBclear\fR」(データ転送を保護しない)、「\fBsafe\fR」(データ転送の整合性を暗号チェックサムで保護する)、「\fBprivate\fR」(データ転送の信頼性と整合性を暗号化で保護する)です。\fBADAT\fR コマンドが失敗した場合、データ転送の保護レベルは「\fBclear\fR」のみになります。保護レベルを指定しない場合、現在の保護レベルが表示されます。デフォルトの保護レベルは「\fBclear\fR」です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBproxy\fR \fIftp-command\fR\fR
+.ad
+.sp .6
+.RS 4n
+二次制御接続上で \fBFTP\fR コマンドを実行します。すなわちこのコマンドは、2 つのリモート \fBFTP\fR サーバーに対して同時に接続を確立し、それらのサーバー間での転送を可能とします。最初に発行する \fBproxy\fR コマンドは、二次制御接続を確立するための \fBopen\fR コマンドでなければなりません。二次接続上で実行可能なその他のコマンドを知るには、\fBproxy\fR \fB?\fR コマンドを使用してください。\fB\fR
+.sp
+以下に述べるコマンドは、\fBproxy\fR を伴って入力された場合、次のように、通常とは異なった動作をします。 \fBopen\fR は自動ログイン処理中には新たなマクロの定義は行いません。\fBclose\fR は既存のマクロの削除は行いません。\fBget\fR および \fBmget\fR は一次制御接続上のホストから 二次制御接続上のホストへファイルを転送します。\fBput\fR、\fBmput\fR、および \fBappend\fR は、二次制御接続上のホストから一次制御接続上のホストへファイルを転送します。
+.sp
+第三者によるファイル転送は、二次制御接続上のサーバーが \fBPASV\fR コマンドをサポートしているか否かにより異なります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBput\fR \fIlocal-file\fR [ \fIremote-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+local-file で示すローカルファイルを、remote-file という名でリモートマシン上に格納します。\fIremote-file\fR を省略した場合は、ローカルファイル名が \fBntrans\fR または \fBnmap\fR 設定に従って変更され、リモートファイル名として使用されます。ファイル転送時、"表現タイプ"、"ファイル構造"、"転送モード" には、現在の設定値が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpwd\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の作業ディレクトリの名前を リモートマシン上に出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBbye\fR と同一機能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquote\fR \fIarg1 arg2\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+指定された引数をそのままリモート \fBFTP\fR サーバーに送信します。\fBFTP\fR からは応答コードが 1 つ返されます。(有効な引数の一覧を表示するには、\fBremotehelp\fR コマンドを使用してください。)
+.sp
+\fBquote\fR コマンドの使用は、FTP プロトコルを熟知している、経験豊かなユーザーだけに限るべきです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv\fR \fIremote-file\fR [ \fIlocal-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fBget\fR と同一機能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreget\fR \fIremote-file\fR [ \fIlocal-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fBreget\fR コマンドの動作は \fBget\fR コマンドと似ています。ただし、ローカルファイル (\fIlocal-file\fR) が存在し、かつ、そのサイズがリモートファイル (\fIremote-file\fR) より小さい場合は、\fIlocal-file\fR を転送中の \fIremote-file\fR の部分コピーであるとみなして、障害が発生したと考えられる時点から転送を継続するという点が異なります。このコマンドは、接続が途切れる可能性の高いネットワーク経由での大きなファイル転送に便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremotehelp\fR [ \fIcommand-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+リモート \fBFTP\fR サーバーのヘルプ機能を呼び出します。\fIcommand-name\fR が指定されていれば、それもサーバーに渡されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrename\fR \fIfrom to\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上に存在する \fIfrom\fR で示したファイルの名前を \fIto\fR という名前に変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset\fR\fR
+.ad
+.sp .6
+.RS 4n
+応答用のキューをクリアします。このコマンドは、コマンドと応答との順序を、リモート \fBFTP\fR サーバーに合わせ直します (再同期化)。リモートサーバーが \fBFTP\fR のプロトコルに違反する動作を行なった場合、この再同期化処理が必要となることがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrestart\fR [ \fImarker\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+指定したマーカー (marker) の値で、直後にある \fBget\fR または \fBput\fR を再起動します。UNIX システムでは、\fImarker\fR は通常ファイルへのバイトオフセットです。直後のコマンドが \fBmget\fRの場合、\fBrestart\fR は、1 つめの \fBget\fR に対して適用されます。\fImarker\fR に \fB0\fR を指定した場合は、再起動マーカーはクリアされます。引数を指定しなかった場合は、現在の再起動ステータスが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrmdir\fR \fIdirectory-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートマシン上の directory-name で示すディレクトリを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrunique\fR\fR
+.ad
+.sp .6
+.RS 4n
+ローカルシステムにファイルを格納する際に一意なファイル名を与える処理のオン・オフの切り替えを行います。この機能がオンのとき、\fBget\fR または \fBmget\fR コマンドの対象となるローカルファイルの名前と 同じファイル名がすでに存在していれば、ファイル名の終わりに \fB\&.1\fR を付加して一意な名前を新たに生成します。さらにその名前と同じファイル名もすでに存在していれば、\fB\&.2\fR を使用します。このようにして数値を増加させていき、\fB\&.99\fR に到達しても一意名を生成できない場合、ファイル転送は中止され、エラーメッセージが表示されます。一意なファイル名が生成できたら、その名前が報告されます。この \fBrunique\fR 機能は、シェルコマンドで生成する ローカルファイルの名前には影響を与えません。デフォルトはオフです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsafe\fR\fR
+.ad
+.sp .6
+.RS 4n
+データ転送の保護レベルを「\fBsafe\fR」に設定します。データ転送は、暗号チェックサムによって整合性が保護されます。\fBADAT\fR コマンドが失敗した場合、データ転送の保護レベルは「\fBclear\fR」のみになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsend\fR \fIlocal-file\fR [ \fIremote-file\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fBput\fR と同一機能です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsendport\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBPORT\fR コマンドの使用のオン・オフの切り替えを行います。デフォルトでは、\fBftp\fR は各データ転送処理に対して接続を確立する際に \fBPORT\fR コマンドの使用を試みます。複数のファイル転送を実施する場合に、\fBPORT\fR コマンドを用いると時間の遅れを防ぐことができます。\fBPORT\fR コマンド実行が失敗すると、\fBftp\fR はデフォルトのデータポートを使用します。\fBPORT\fR コマンドの使用がオフの (使用しない) 状態では、データ転送処理に対しての \fBPORT\fR コマンドの使用の試みは抑止されます。このオフ指定は、\fBPORT\fR コマンドを無視するのにもかかわらず受け入れた旨を(誤って) 表してしまうような \fBFTP\fR システムに接続されている場合に便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsite\fR \fIarg1\fR [ \fIarg2\fR ] ...\fR
+.ad
+.sp .6
+.RS 4n
+指定した引数をそのまま \fBSITE\fR コマンドとして、リモートの \fBFTP\fR サーバーに送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBftp\fR の現在のステータスを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstruct\fR [ \fIstruct-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+ファイル構造を \fIstruct-name\fR で示す値に設定します。なお \fIstruct-name\fR として指定可能なものは \fBfile\fR だけです。これはデフォルトの "ファイル" 構造にあたります。現在のシステムでサポートされている構造は \fBfile\fR だけで、これ以外は指定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsunique\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートシステムにファイルを格納する際に一意なファイル名を与える処理のオン・オフの切り替えを行います。この機能を使うには、リモート \fBFTP\fR サーバーが \fBSTOU\fR コマンドをサポートしていなければなりません。リモートサーバーは、生成した一意名を報告します。デフォルトはオフです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtcpwindow\fR [ \fIsize\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+データ接続に使用する \fBTCP\fR ウィンドウのサイズ (size) を設定します。\fB0\fR を指定すると、データ接続時の \fBTCP\fR ウィンドウサイズは明示的には設定されません。引数を指定しなかった場合は、現在の設定が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtenex\fR\fR
+.ad
+.sp .6
+.RS 4n
+"表現タイプ" を、\fBTENEX\fR マシンと通信するために必要な値に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrace\fR\fR
+.ad
+.sp .6
+.RS 4n
+パケットトレース機能のオン・オフの切り替えを行います (未実装)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR [ \fItype-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+"表現タイプ"を、\fItype-name\fR に設定します。\fItype-name\fR として指定可能なものは次のとおりです。"ネットワーク \fB ASCII\fR" の場合は \fBascii\fR、"イメージ" の場合は \fBbinary\fR または \fBimage\fR、バイト長が 8 の "ローカルバイトサイズ" の場合は \fBtenex\fR (\fBTENEX\fR マシンとの通信に使用)。type-name を省略した場合は、現在の表現タイプが表示されます。デフォルト時のタイプは "ネットワーク \fBASCII\fR" です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR \fIuser-name\fR [ \fIpassword\fR ] [ \fIaccount\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+リモート \fBFTP\fR サーバーに対して、ユーザー自身の名前などの属性を通知します。サーバーがパスワードを必要としているのに password を省略した場合は、\fBftp\fR はローカルエコーをオフにしてから パスワードの入力を要求します。同様にサーバーがアカウントを必要としているのに account 指定を省略した場合は、ftp はアカウントの入力を要求します。\fB\fRアカウントが指定された場合、(リモートサーバーがログイン時にアカウントを必要としなければ) ログイン処理完了後にアカウントコマンドが リモートサーバーに渡されます。この処理は、\fBftp\fR が "自動ログイン使用不可"状態で呼ばれた場合を除き、\fBFTP\fR サーバーへ最初に接続が行われた時点で 自動的に実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長表示モードのオン・オフの切り替えを行います。このモードがオンのとき、\fBFTP\fR サーバーからの応答はすべて表示されます。さらにファイル転送が終了するたびに、その転送処理の効率に関する統計データも報告されます。デフォルトは、\fBftp\fR のコマンドが端末から送られてくる場合はオン、それ以外の場合はオフです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR [ \fIcommand\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+\fBhelp\fR と同一機能です。
+.RE
+
+.sp
+.LP
+スペースを含んだコマンド引数は、引用符 (\fB"\fR) で囲むことができます。
+.sp
+.LP
+省略できないコマンド引数を指定しない場合、 \fBftp\fR はその引数の入力を要求するプロンプトを出力します。
+.SH ファイル転送の中止
+.sp
+.LP
+ファイル転送処理を中止したい場合、端末の割り込みキーを使用します。その転送処理が送信の場合は、ただちに中止されます。受信の場合には、リモートサーバーに対して \fBFTP\fR プロトコルの \fBABOR\fR コマンドを送信し、以後受信するデータを 破棄することにより中止されます。この処理に要する時間は、リモートサーバーが \fBABOR\fR 処理をサポートしているかどうかで違ってきます。リモートサーバーが \fBABOR\fR コマンドをサポートしていないと、要求されたファイルをリモートサーバーが完全に送信し終わるまで \fBftp>\fR というプロンプトは現れません。 
+.sp
+.LP
+\fBftp\fR がローカル処理を終えてリモートサーバーからの 応答を待っている状態の場合には、端末から割り込みキーを入力しても無視されます。このモードでは遅延時間が長くなることがあります。その場合の理由としては、前述の \fBABOR\fR 処理によるもの、またはリモートサーバー側の誤った動作 (たとえば、ftp プロトコル違反) によるものが考えられます。後者が原因の場合、ローカル \fBftp\fR プログラムを手動で終了させることが必要となります。
+.SH ファイル命名規約
+.sp
+.LP
+\fBftp\fR コマンドの引数として指定されたローカルファイル名は、以下の規則に従って処理されます。
+.sp
+.ne 2
+.mk
+.na
+\fB1)\fR
+.ad
+.RS 6n
+.rt  
+ファイル名として \fB\(mi\fR を指定すると、読み込みの場合は標準入力、書き出しの場合は標準出力が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB2)\fR
+.ad
+.RS 6n
+.rt  
+ファイル名の最初の文字が \fB|\fR の場合、引数の残りの部分はシェルコマンドであると解釈されます。\fBftp\fR はその引数を指定して \fBpopen\fR(3C) を使ってシェルを呼び出し、そのシェルの標準入力からデータを読み込みます (または標準出力にデータを書き出します)。シェルコマンドが空白文字を含んでいる場合には、引用符で囲む必要があります (たとえば、\fB| ls\fR \fB- lt\fR)。この機能の便利な使い方の典型的な例は \fB"dir | more"\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB3)\fR
+.ad
+.RS 6n
+.rt  
+前述の 2 種類に該当しないローカルファイル名は、グロビング(展開) メカニズムが有効な場合、\fBsh\fR(1) が使用する規則に従って展開されます (詳細は \fBglob\fR の項を参照)。\fBput\fR のようにローカルファイル名を 1 つだけ必要とする \fBftp\fR コマンドの場合には、グロビング処理で最初に生成されるファイル名だけが用いられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB4)\fR
+.ad
+.RS 6n
+.rt  
+\fBmget\fR または \fBget\fR コマンドに対してローカルファイル名を省略すると、リモートファイル名が \fBcase\fR、\fBntrans\fR、\fBnmap\fR の設定値に従って変更され、ローカルファイル名として使用されます。\fBrunique\fR がオンの場合は、その名前がさらに変更されることがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB5)\fR
+.ad
+.RS 6n
+.rt  
+\fBmput\fR または \fBput\fR コマンドに対してリモートファイル名を省略すると、ローカルファイル名が \fBntrans\fRおよび \fBnmap\fR の設定値に従って変更され、リモートファイル名として使用されます。\fBsunique\fR がオンの場合は、その名前をリモートサーバーがさらに変更することがあります。
+.RE
+
+.SH ファイル転送用パラメータ
+.sp
+.LP
+\fBFTP\fR 仕様では、ファイル転送に影響を与えうるパラメータをいくつか指定できます。
+.sp
+.LP
+"表現タイプ" として指定できる値は "ネットワーク \fBASCII\fR"、"\fBEBCDIC\fR"、"イメージ"、バイト長指定つきの "ローカルバイトサイズ"(おもに PDP10 および PDP20 シリーズ用) です。"ネットワーク \fBASCII\fR" および "\fBEBCDIC\fR" の場合には、さらにサブタイプ指定を伴います。このサブタイプは、垂直方向のフォーマット制御( 復帰改行 (\fBNEWLINE\fR) 文字やフォームフィードなど) がそのまま渡される ("ノンプリント") か、\fBTELNET\fR フォーマット中に存在する ("\fBTELNET\fR フォーマット制御")か、あるいは \fBASA\fR (\fBFORTRAN\fR) ("キャリッジ制御 (\fBASA\fR)") フォーマット中に存在するかを指定します。\fBftp\fR がサポートする表現タイプは、"ネットワーク \fBASCII\fR" (サブタイプは "ノンプリント" のみ)、"イメージ"、およびバイト長が 8 の "ローカルバイトサイズ" (\fBTENEX\fR マシンとの通信に使用) のみです。
+.sp
+.LP
+"ファイル構造" に指定可能な値は "\fBfile\fR" (レコード構造なし)、"\fBrecord\fR"、および "\fBpage\fR" です。\fBftp\fR はデフォルトである "\fBfile\fR" のみをサポートします。
+.sp
+.LP
+"転送モード" に指定できる値は "\fBstream\fR"、"\fBblock\fR"、および "\fBcompressed\fR" です。\fBftp\fR はデフォルトである "\fBstream\fR" のみをサポートします。
+.SH 使用法
+.sp
+.LP
+ファイルが 2 ギガバイト ( 2^31 バイト) 以上ある場合の \fBftp\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.sp
+.LP
+\fBftp\fR コマンドは IPv6 に対応しています。\fBip6\fR(7P) を参照してください。
+.SH ファイル
+.sp
+.LP
+\fB~/.netrc\fR
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件network/ftp
+_
+CSI有効
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBls\fR(1), \fBrcp\fR(1), \fBsh\fR(1), \fBtar\fR(1), \fBpopen\fR(3C), \fBftp\fR(4), \fBftpusers\fR(4), \fBmech\fR(4), \fBnetrc\fR(4), \fBattributes\fR(5), \fBlargefile\fR(5), \fBip6\fR(7P)
+.sp
+.LP
+『\fIRFC 2428, FTP Extensions for IPv6 and NATs\fR』、Allman, M., Ostermann, S., および Metz, C. 共著、The Internet Society 発行、1998 年 9 月
+.sp
+.LP
+『\fIRFC 2228, FTP Security Extensions\fR』、Lunt, S. J. 著インターネットドラフト、1993 年 11 月
+.sp
+.LP
+ 『\fIRFC 959, File Transfer Protocol (FTP )\fR』Postel,Jon, Joyce Reynolds 著、Network Information Center 発行、1985 年 10 月
+.sp
+.LP
+『\fIRFC 1639, FTP Operation Over Big Address Records (FOOBAR)\fR』、Piscitello, D 著、Network Working Group 発行、1994 年 6 月
+.SH 注意事項
+.sp
+.LP
+アカウントが \fB/etc/ftpusers\fR ファイルにリストされていると、リモート \fBFTP\fR サーバーに明示的に拒否されることが原因で、ログインに失敗する場合があります。\fBftpusers\fR(4) を参照してください。 
+.sp
+.LP
+多くのコマンドの実行が正常に行われるか否かは、リモートサーバーの動きによって決まります。
+.sp
+.LP
+以前は、表現タイプが "ネットワーク \fBASCII\fR" の場合の 4.2 \fBBSD\fR コードハンドリング転送においてキャリッジリターンの扱いに誤りがありましたが、この誤りは修正されました。ただしその修正の影響で、表現タイプが "ネットワーク \fBASCII\fR" のとき、4.2 \fBBSD\fR とのバイナリファイル転送が正しく行われないかも知れません。表現タイプとして "イメージ" を使用してください。

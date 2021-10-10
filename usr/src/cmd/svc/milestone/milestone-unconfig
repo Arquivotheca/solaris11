@@ -1,0 +1,406 @@
+#!/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+
+#
+# Establish PATH for non-built in commands
+#
+export PATH=/usr/bin:/usr/sbin
+
+# SMF properties associated with unconfig
+PROP_UNCONFIG_EXEC="unconfigure/exec"
+PROP_CONFIG_UNCONFIG_GRPS="sysconfig/unconfig_groups"
+PROP_CONFIG_CONFIG="sysconfig/configure"
+PROP_CONFIG_SHUTDOWN="sysconfig/shutdown"
+PROP_CONFIG_UNCONFIG="sysconfig/unconfigure"
+PROP_CONFIG_DESTRUCTIVE="sysconfig/destructive_unconfig"
+PROP_CONFIG_RECONFIG="sysconfig/reconfigurable"
+PROP_SVC_CONFIG_GRP="sysconfig/group"
+PROP_RESTARTER_LOGFILE="restarter/logfile"
+
+# default value for unconfigured properties
+SMF_UNCONFIGURED_VALUE=""
+
+SHUTDOWN="/usr/sbin/shutdown"
+SVCADM="/usr/sbin/svcadm"
+SVCCFG="/sbin/svccfg"
+SVCPROP="/usr/bin/svcprop"
+SED="/usr/bin/sed"
+
+SERVICE="svc:/milestone/unconfig"
+CONFIG_SERVICE="svc:/milestone/config:default"
+
+# smf site profile directory
+SMF_PROFILE_SITE_DIR=/etc/svc/profile/site
+# directory where sysconfig(1m) prepared SC profiles
+SMF_PROFILE_SC_DIR=/etc/svc/profile/sc
+
+# smf profile customizing process of configuration
+CONFIG_XML="enable_sci.xml"
+CONFIG_XML_DEST="${SMF_PROFILE_SITE_DIR}/${CONFIG_XML}"
+CONFIG_XML_SRC_DIR=/usr/share/auto_install/sc_profiles
+CONFIG_XML_SRC="${CONFIG_XML_SRC_DIR}/${CONFIG_XML}"
+# smf profile customizing process of unconfiguration
+UNCONFIG_XML="unconfig.xml"
+UNCONFIG_XML_DEST="${SMF_PROFILE_SITE_DIR}/${UNCONFIG_XML}"
+
+#
+# Binary tested for determining if we are in ROZR zone booted in ready-only
+# mode.
+#
+ROZR_TEST_BINARY="/sbin/sh"
+# ROZR error message
+ROZR_ERR_MSG="\nDetected ROZR zone booted in read-only mode. System \
+Configuration not permitted.\nPlease refer to mwac(5) man page \
+for additional information.\n"
+
+#
+# clean_up_configuration()
+#
+# Description:
+#     Clean up unconfiguration properties by deleting unconfiguration
+#     site-profile. site-profile configuration is unrolled by subsequent
+#     manifest-import.
+#     Abort in case of failure.
+#
+clean_up_configuration()
+{
+        if [[ -f $UNCONFIG_XML_DEST ]]; then
+            rm $UNCONFIG_XML_DEST
+        fi
+
+        if (( $? != 0 )) ; then
+            print -u2 "Could not remove $UNCONFIG_XML_DEST profile," \
+                "aborting."
+            exit $SMF_EXIT_ERR_FATAL
+        fi
+}
+
+
+#
+# clean_up_and_abort()
+#
+# Description:
+#     Ran into fatal error. Clean up configuration by deleting
+#     both configuration and unconfiguration site-profiles and abort
+#     (if unconfiguration process fails, there is no point to continue
+#     with configuration step).
+#     site-profile configuration is unrolled by subsequent manifest-import.
+#
+clean_up_and_abort()
+{
+	rm $CONFIG_XML_DEST
+        if (( $? != 0 )) ; then
+            print -u2 "Could not remove $CONFIG_XML_DEST profile."
+
+        fi
+
+	rm $UNCONFIG_XML_DEST
+        if (( $? != 0 )) ; then
+            print -u2 "Could not remove $UNCONFIG_XML_DEST profile."
+        fi
+
+	print -u2 "Aborting."
+	exit $SMF_EXIT_ERR_FATAL
+}
+
+
+#
+# check_rozr_and_abort()
+#
+# Description:
+#     If we are in ROZR non-global zone booted in read-only mode,
+#     log the error message and drop service into maintenance mode.
+#
+# Parameters:
+#     $1 - error message emitted if ROZR zone booted in read-only mode
+#          is detected.
+#
+check_rozr_and_abort()
+{
+	typeset err_msg="$1"
+
+	#
+	# Check if specified binary is writable. It is if ROZR zone is booted
+	# in writable mode. If that file is read-only, emit error message
+	# and drop service into maintenance mode.
+	#
+	if [[ ! -w "$ROZR_TEST_BINARY" ]] ; then
+		print -u1 "$err_msg" | smf_console
+
+		clean_up_and_abort
+	fi
+}
+
+
+#
+# get_smf_prop()
+#
+# Description:
+#     Retrieve value of SMF property.
+#     For 'astring' type of property, take care of removing quoting
+#     backslashes,
+#     since according to svcprop(1) man page, shell metacharacters
+#     (';', '&', '(', ')', '|', '^', '<', '>', newline, space, tab,
+#     backslash,
+#     '"', single-quote, '`') are quoted by backslashes (\).
+#
+# Parameters:
+#     $1 - SMF property name
+#
+# Returns:
+#     0 - property was configured in SC manifest
+#     1 - property was not configured in SC manifest
+#
+get_smf_prop()
+{
+    typeset prop_name="$1"
+    typeset service_name="$2"
+    typeset prop_value
+    typeset prop_type
+
+    #
+    # retrieve property.
+    #		
+    prop_value=$($SVCPROP -p "$prop_name" "$service_name")
+    if (( $? != 0 )); then
+        print -u2 "Failed to obtain value of <$prop_name> property" \
+            "which is suspicious, defaulting to" \
+            "<$SMF_UNCONFIGURED_VALUE>."
+        print -u1 $SMF_UNCONFIGURED_VALUE
+        return 1
+    fi
+	
+    # for 'astring' type, remove backslashes from quoted
+    # metacharacters
+    prop_type=$($SVCPROP -p "$prop_name" -t "$service_name" | nawk '{ print $2 }')
+
+    if [[ $prop_type == "astring" ]] ; then
+        prop_value=$(print $prop_value | $SED -e 's/\\//g')
+		
+        if (( $? != 0 )) ; then
+            print -u2 "Failed when trying to remove '\' from" \
+                "<$prop_name> property, defaulting to" \
+                "<$SMF_UNCONFIGURED_VALUE>."
+
+            print -u1 $SMF_UNCONFIGURED_VALUE
+            return 1
+        fi
+		
+        #
+        # Since according to svcprop(1) man page empty ASCII string
+        # value is presented as a pair of double quotes (""), we need
+        # to check for this combination and replace it
+        # with empty string.
+        #
+        [[ "$prop_value" == "\"\"" ]] && prop_value=""
+    fi
+	
+    print -u1 "$prop_value"
+    return 0
+}									
+			
+exec_unconfigure_method(){
+    typeset reconfig=false
+    typeset destruct=false
+    grpings=$(get_smf_prop $PROP_CONFIG_UNCONFIG_GRPS $SERVICE)
+    # If grouping is not provided, fatal error.
+    if [[ -z "$grpings" ]]; then
+        clean_up_and_abort
+    fi
+
+    #
+    # Initialize UNCONFIG_DESTRUCTIVE environment variable passed
+    # to unconfigure methods. It is set to true if destructive unconfiguration
+    # is requried, otherwise it is set to false.
+    #
+    destruct=$($SVCPROP -p $PROP_CONFIG_DESTRUCTIVE $SERVICE)
+
+    if [[ $? == 0 && $destruct == "true" ]]; then
+        UNCONFIG_DESTRUCTIVE=true
+    else
+        UNCONFIG_DESTRUCTIVE=false
+    fi
+
+    export UNCONFIG_DESTRUCTIVE
+
+    for u_svc in $($SVCPROP -p unconfigure/exec \* 2>/dev/null | /usr/bin/nawk -F "/:properties" '{print $1}'); do
+        # execute the unconfigure methods for the specified grouping
+	    for grp in $grpings; do
+	        # If the grouping is system, do all services with an
+	        # unconfiguration method.
+                if [ $grp == "system" ]; then
+                    exec_method=$(get_smf_prop $PROP_UNCONFIG_EXEC $u_svc)
+                    if [[ -z "exec_method" ]]; then
+                            clean_up_and_abort
+		    fi	
+
+		    # Get the log file for the service
+		    $SVCCFG cleanup -a
+                    svc_logfile=$(get_smf_prop $PROP_RESTARTER_LOGFILE $u_svc)
+		    if [ $? -ne 0 ] ; then
+			SMF_FMRI=$u_svc $exec_method
+		    else
+                        SMF_FMRI=$u_svc $exec_method >> $svc_logfile 2>&1
+		    fi
+
+		    if [ $? -ne 0 ] ; then
+                       msg="Unconfiguration failed for $u_svc"
+                       echo $msg | smf_console
+		    fi	
+                else
+                    # If the unconfiguration grouping is set to do a subsystem,
+                    # look at all services with an unconfigure method and see
+                    # what their configuration grouping is. If the same, execute
+                    # the unconfigure method.
+                    svc_grp=$(get_smf_prop $PROP_SVC_CONFIG_GRP $u_svc)
+		    if [[ -z "$svc_grp" ]]; then
+			continue
+		    fi	
+                    if [ $grp == $svc_grp ]; then
+
+                        # Check to see if the service can be configured without
+			# first being unconfigured. Reconfigure only if 
+			# configuration has been requested. 
+			do_config=$(get_smf_prop $PROP_CONFIG_CONFIG $CONFIG_SERVICE)
+			if $do_config ; then
+			    reconfig=$($SVCPROP -p $PROP_CONFIG_RECONFIG $u_svc)
+                            if (( $? == 0 )) ; then
+				    if $reconfig ; then
+					    continue
+				    fi
+                            fi      
+			fi
+
+                        # Run the unconfigure method for the service
+                        exec_method=$(get_smf_prop $PROP_UNCONFIG_EXEC $u_svc)
+		                if [[ -z "exec_method" ]]; then
+                                        clean_up_and_abort
+		                fi	
+
+                        # Get the logfile for the svc
+			$SVCCFG cleanup -a
+			svc_logfile=$(get_smf_prop $PROP_RESTARTER_LOGFILE $u_svc)
+                    	if [ $? -ne 0 ] ; then
+                        	SMF_FMRI=$u_svc $exec_method
+                    	else
+                        	SMF_FMRI=$u_svc $exec_method >> $svc_logfile 2>&1
+                    	fi
+
+                        if [ $? -ne 0 ]; then
+	                        msg="Unconfiguration failed for $u_svc"
+				echo $msg | smf_console
+			fi
+
+                    fi
+                fi  
+	    done	
+    done
+}	
+
+unconfigure_services() {
+    do_unconfig=$(get_smf_prop $PROP_CONFIG_UNCONFIG $SERVICE)
+    if [[ -z "$do_unconfig" ]]; then
+        clean_up_and_abort
+    fi	
+    if $do_unconfig; then
+        #
+        # Preserve profiles  in the /etc/svc/profile/site directory 
+	# which customize configuration process. All other profiles in that
+	# directory are removed. However profiles located in sub-directories
+	# of /etc/svc/profile/site are not altered. The command
+	# "find $SMF_PROFILE_SITE_DIR/* -prune" effectively equates to max
+	# depth 1, so only occurs in the $SMF_PROFILE_SITE_DIR.
+        #
+	find $SMF_PROFILE_SITE_DIR/* -prune -a ! -type d  \
+	    -a ! -name $CONFIG_XML ! -name $UNCONFIG_XML | xargs rm -f
+
+        # If the custom profile files exist, copy them to the site profile
+        # area so that system/config can apply it.
+        if [[ -x $SMF_PROFILE_SC_DIR ]] && \
+	  [[ -n $(find $SMF_PROFILE_SC_DIR -type f) ]]; then
+            mv ${SMF_PROFILE_SC_DIR}/* $SMF_PROFILE_SITE_DIR
+        fi
+
+        # Find the services with an unconfigure method
+        exec_unconfigure_method
+
+	# Save status of shutdown property before we clean up configuration.
+        shutdown=$(get_smf_prop $PROP_CONFIG_SHUTDOWN $SERVICE)
+
+        clean_up_configuration
+
+        if $shutdown; then
+            print -u1 "Shutting down system"
+            $SHUTDOWN -y -g 30 -i 5
+        fi
+    fi	
+}
+
+case "$1" in
+'start')
+    #
+    # If some system configuration parameters need to be unconfigured,
+    # skip for ROZR case. If configure action has been requested go to
+    # "milestone all" which will invoke SCI tool and allow the user to
+    # to configure the system parameters.
+    #
+
+    do_unconfig=$(get_smf_prop $PROP_CONFIG_UNCONFIG $SERVICE)
+    if $do_unconfig; then
+	#
+	# Unconfiguration not permitted in ROZR zone booted in read-only
+	# mode.
+	#
+	check_rozr_and_abort "$ROZR_ERR_MSG"
+
+	do_config=$(get_smf_prop $PROP_CONFIG_CONFIG $CONFIG_SERVICE)
+	unconfigure_services
+        if $do_config; then
+               /usr/sbin/svcadm milestone all
+		# Sleep 3 seconds to allow graph to settle and prevent
+		# svc.startd from prematurely invoking sulogin
+		sleep 3
+	else
+		# Following a system unconfiguration with no
+		# accompanying configuration, the system needs to be
+		# set up to allow configuration to occur upon reboot.
+		cp $CONFIG_XML_SRC $CONFIG_XML_DEST
+		print -u1 " " | smf_console
+		print -u1 "System is unconfigured." | smf_console
+		print -u1 "Login as root user at the prompt for system" \
+		    "maintenance." | smf_console
+		print -u1 "To configure the system, reboot." | smf_console
+		print -u1 " " | smf_console
+	fi
+    fi
+    ;;
+*)
+    echo "Usage: $0 { start }"
+    exit $SMF_EXIT_ERR_FATAL
+    ;;
+esac
+exit $SMF_EXIT_OK

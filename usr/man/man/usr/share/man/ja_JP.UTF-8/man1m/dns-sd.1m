@@ -1,0 +1,291 @@
+'\" te
+.\" Copyright (c) 2003-2004 Apple Computer, Inc. All Rights Reserved.
+.\" Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.See the License for the specific language governing permissions and limitations under the License.
+.\" Copyright (c) 2007, 2010, Oracle and/or its affiliates.All rights reserved.
+.TH dns-sd 1M "2007 年 8 月 21 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+dns-sd \- マルチキャスト DNS (mDNS) および DNS サービス検出 (DNS-SD) テストツール
+.SH 形式
+.LP
+.nf
+\fBdns-sd\fR \fB-R\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR [\fIkey\fR=\fIvalue\fR ...]
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-B\fR \fItype\fR \fIdomain\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-L\fR \fIname\fR \fItype\fR \fIdomain\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-Q\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-C\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-P\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR \fIhost\fR \fIIP\fR [\fIkey\fR=\fIvalue\fR ...]
+.fi
+
+.LP
+.nf
+\fBdns-sd\fR \fB-E\fR | \fB-F\fR | \fB-A\fR | \fB-U\fR | \fB-N\fR | \fB-T\fR | \fB-M\fR | \fB-I\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBdns-sd\fR コマンドは、\fBping\fR(1M) や \fBtraceroute\fR(1M) とほぼ同様のネットワーク診断ツールです。ただし、これらのツールとは異なり、その機能のほとんどが \fBdns-sd\fR 実行可能ファイル自体ではなく、すべてのアプリケーションで使用できるライブラリコード内に実装されています。\fBdns-sd\fR が使用しているライブラリ \fBAPI\fR は、\fB/usr/include/dns_sd.h\fR に記述されています。
+.sp
+.LP
+\fBdns-sd\fR コマンドは対話形式での使用を主に想定しています。そのコマンド行引数や出力形式は変更される可能性があるため、シェルスクリプトから呼び出した場合の結果は予測できません。また、\fBDNS\fR サービス検出の非同期の性質のために、スクリプト指向のプログラミングにはあまり適していません。このような非同期の対話が最適に機能するアプリケーションは、マルチスレッドのアプリケーションか、またはメインのイベント処理ループを使用してキーストローク、ネットワークデータ、およびその他の非同期イベント通知をそれらが発生した時点で受信するアプリケーションです。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR [\fIkey\fR=\fIvalue\fR ...]\fR
+.ad
+.sp .6
+.RS 4n
+指定のドメイン内にあり、指定の \fIname\fR と \fItype\fR を持ち、(現在のマシン上にある) 指定の \fIport\fR で待機しているサービスを登録 (通知) します。
+.sp
+\fIname\fR には、任意の有効な Unicode 文字 (ドット、スペース、スラッシュ、コロンなど (制限はなし)) を含む、\fBUTF-8\fR で最大 63 バイト長の任意の Unicode テキストを使用できます。
+.sp
+\fItype\fR は、「_app-proto._tcp」または「_app-proto._udp」の形式にする必要があります。ここで、「app-proto」は、\fBhttp://www.dns-sd.org\fR のサービスタイプ (RFC 2782) リンクに登録されているアプリケーションプロトコル名です。
+.sp
+\fIdomain\fR は、このサービスを登録するドメインです。現在の実装では、ローカルマルチキャストドメイン「local」のみがサポートされています。将来は、有効な \fBDNS\fR 更新サーバー (\fBRFC\fR 2136) を含む任意のドメイン内での登録がサポートされる予定です。ドメイン「.」は「妥当なデフォルト値の選択」の同義語で、現時点では「local」を意味します。
+.sp
+\fIport\fR は 0 - 65535 の数値で、サービスが待機している \fBTCP\fR または \fBUDP\fR ポート番号です。ポート 0 上にサービスを登録すると、アプリケーションはサービスの非可用性を明示的に通知できます。
+.sp
+必要に応じて、サービスの追加の属性をキー/値のペアで記述できます。このペアは、通知されるサービスの \fBDNS\fR \fBTXT\fR レコード内に格納されます。\fI\fR利用可能ななキーと値は、\fBhttp://www.dns-sd.org\fR のサービスタイプ (RFC 2782) リンクにあるサービス登録に一覧表示されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR \fItype\fR \fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdomain\fR 内のサービス \fItype\fR のインスタンスをブラウズします。
+.sp
+有効なタイプについては、\fBhttp://www.dns-sd.org\fR のサービスタイプ (RFC 2782) リンクを参照してください。ドメイン名を省略または「.」の使用は、「妥当なデフォルト値の選択」を意味します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR \fIname\fR \fItype\fR \fIdomain\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたサービスに接続して使用するために必要な情報を検索および表示します。この情報には、そのサービスが使用可能なマシンのホスト名、そのサービスが待機しているポート番号、およびそのサービスのプロパティーが記述されている \fBTXT\fR レコード属性 (もしあれば) が含まれます。
+.sp
+標準的なアプリケーションでは、ブラウズがまれにしか発生しないのに対し、検索 (または「解決」) はサービスが使用されるたびに発生します。たとえば、ユーザーがデフォルトのプリンタを選択するためにネットワークをブラウズすることはそれほど頻繁にはありませんが、デフォルトのプリンタがいったん選択されると、ユーザーが Cmd-P キーを押して出力するたびに、その指定されたサービスが現在の IP アドレスとポート番号に解決されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Q\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+任意のリソースレコードタイプおよびクラスに対する汎用のクエリー。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIFQDN\fR \fIrrtype\fR \fIrrclass\fR\fR
+.ad
+.sp .6
+.RS 4n
+任意のリソースレコードタイプおよびクラスに対する汎用のクエリー。このオプションでは、クエリーからの各結果も再確認されます。レコードの再確認では、\fBmdnsd\fR(1M) に対してレコードの有効性を確認するよう指示します。レコードが有効でない場合、\fBmdnsd\fR(1M) はこのデーモンのキャッシュだけでなく、ネットワーク上のほかの \fBmdnsd\fR(1M) キャッシュからもそのレコードをフラッシュします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIname\fR \fItype\fR \fIdomain\fR \fIport\fR \fIhost\fR \fIIP\fR [\fIkey\fR=\fIvalue\fR ...] \fR
+.ad
+.sp .6
+.RS 4n
+指定のドメイン内にあり、指定の \fIname\fR と \fItype\fR を持ち、指定のポートで待機し、別のホスト上でアクセス可能なサービスを登録 (通知) します。このオプションは、別のホスト上でアクセス可能なサービスをプロキシによって通知する場合に使用するようにしてください。このサービスにアクセスするためのホスト名と \fBIPv4\fR アドレスを指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.sp .6
+.RS 4n
+推奨される登録ドメインを検出します。このオプションを使用すると、サービスを登録するための推奨ドメインが返されます。推奨される登録ドメインは、\fBresolv.conf\fR(4) でネームサーバーに対してクエリーを実行することによって返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+推奨されるブラウズドメインを検出します。このオプションを使用すると、サービスをブラウズするための推奨ドメインが返されます。推奨されるブラウズドメインは、\fBresolv.conf\fR(4) でネームサーバーに対してクエリーを実行することによって返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+マルチキャスト \fBDNS\fR へのサービスの登録をテストしたあと、マルチキャスト \fBDNS\fR への \fBDNS\fR レコードの追加、更新、および削除操作をテストします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+マルチキャスト \fBDNS\fR へのサービスの登録をテストしたあと、マルチキャスト \fBDNS\fR に登録されたサービスの \fBDNS\fR \fBTXT\fR レコードの更新をテストします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR\fR
+.ad
+.sp .6
+.RS 4n
+マルチキャスト \fBDNS\fR に登録されたサービスの大きな \fBNULL\fR レコードの追加をテストします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+マルチキャスト \fBDNS\fR に登録されたサービスの大きな \fBTXT\fR レコードの追加をテストします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-M\fR\fR
+.ad
+.sp .6
+.RS 4n
+複数の \fBTXT\fR レコードでの登録の作成をテストします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR\fR
+.ad
+.sp .6
+.RS 4n
+登録と、登録直後の \fBTXT\fR レコードの更新をテストします。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR印刷サービスの通知
+.sp
+.LP
+次のコマンドは、このマシンのポート 515 上に \fBLPR\fR 印刷サービスが存在することを通知し、\fBDNS-SD\fR と互換性がある印刷クライアントからこのサービスを使用できるようにします。
+
+.sp
+.in +2
+.nf
+dns-sd -R "My Test" _printer._tcp. . 515 pdl=application/postscript
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この登録を有効にするには、LPR サービスをポート 515 上で使用できるようにしてください。存在しないサービスを通知しても、あまり意味はありません。
+.LP
+\fB例 2 \fRWeb ページの通知
+.sp
+.LP
+次のコマンドは、Web ページがこのマシンのポート 80 上で \fBHTTP\fR サーバーから提供されていることを通知し、Safari やそのほかの DNS-SD と互換性がある Web クライアントの Bonjour リストにこのページが表示されるようにします。 
+
+.sp
+.in +2
+.nf
+dns-sd -R "My Test" _http._tcp . 80 path=/path-to-page.html
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRローカルネットワーク上で通知される Web ページの検索
+.sp
+.LP
+次のコマンドは、ローカルネットワーク上で通知される Web ページ (Safari で表示されるリストと同じもの) を検索します。
+
+.sp
+.in +2
+.nf
+dns-sd -B _http._tcp
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、 \fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/network/dns/mdns
+_
+インタフェースの安定性「流動的」
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBmdnsd\fR(1M), \fBping\fR(1M), \fBtraceroute\fR(1M), \fBresolv.conf\fR(4), \fBattributes\fR(5)

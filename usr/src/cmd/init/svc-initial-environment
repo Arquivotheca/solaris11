@@ -1,0 +1,250 @@
+#!/bin/ksh -p
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+#
+
+# This script does either of the following:
+#
+# 1. Import environment from /etc/default/init file to environment:init
+# SMF service.
+#
+# 2. In case some property gets modified in environment:init SMF service, export
+# updated environment variables from environment:init SMF service to
+# /etc/default/init file.
+
+PATH=/usr/sbin:/usr/bin; export PATH
+DEFINIT=/etc/default/init
+
+. /lib/svc/share/smf_include.sh
+
+function fatal
+{
+	echo $1
+	exit $SMF_EXIT_ERR_FATAL
+}
+
+TMPINIT=$(/usr/bin/mktemp /system/volatile/init.XXXXXX)
+[[ -z "$TMPINIT" ]] && fatal "$0: Could not create temporary file."
+
+# On importing environment from /etc/default/init to SMF, 
+# the service has to be refreshed so that the values get
+# committed to SMF repository. This lockfile is to ensure
+# that the service does not go into SMF refresh loop.
+LOCKFILE=/system/volatile/.initlock
+
+TIMEZONE_FMRI=svc:/system/timezone:default
+
+# Check if /etc is writable
+if [ ! -w "/etc" ]; then
+	svcadm disable -t "$SMF_FMRI"
+	echo "$SMF_FMRI is disabled because /etc is not writable."
+	exit $SMF_EXIT_OK
+fi 
+
+# Dump Copyright and CDDL block to TMPINIT
+function dump_init_header
+{
+
+	cat > $TMPINIT << EOF
+#__GENERATED__V1__
+#
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# This file is /etc/default/init.  /etc/TIMEZONE is a symlink to this
+# file.
+#
+# READERS OF THIS FILE: This file is Obsolete.  Migrate to reading
+# properties from svc:/system/environment:init.  This file may be
+# removed in future releases.
+#
+# WRITERS OF THIS FILE: This file is no longer user editable.  To
+# effect changes to the configuration contained in this file, an 
+# administrator with the "System Administrator" or "System
+# Configuration" Rights Profile may set the corresponding
+# properties of the svc:/system/environment:init service
+# instance and refresh the instance.
+# See <MAN_PAGE_TBD> for further details.
+#
+# WARNING: CHANGES TO THIS FILE WILL BE OVERWRITTEN BY THE SYSTEM.
+#
+EOF
+
+}
+
+# import SMF properties from /etc/default/init file
+function init_file_to_smf {
+
+	# A LOCKFILE is being used to make sure the environment gets
+	# imported just once.
+
+	# If LOCKFILE exists and is owned by root then exit because
+	# the environment has already been imported.
+	if [ -O "$LOCKFILE" ]; then
+		rm $LOCKFILE
+		[[ -f $TMPINIT ]] && rm $TMPINIT || return $?
+		exit $SMF_EXIT_OK
+	fi
+
+	echo "$0: Importing environment from /etc/default/init to SMF."
+
+	# Read key value pair from /etc/default/init file and
+	# set the property in environment:init SMF service.
+	nawk '!/^#/ { gsub(" ", "\n"); gsub("=", " "); print $0}' $DEFINIT |
+	while read key value; do
+		# if key = CMASK then umask/umask = $value
+		if [ "$key" = "CMASK" ]; then
+			svccfg -s $SMF_FMRI setprop \
+			     umask/umask= astring: "$value"
+		elif [ "$key" = "TZ" ]; then
+			# If 'TZ' is not set to 'localtime' in
+			# /etc/default/init, then set the timezone/localtime
+			# property of timezone SMF service to $value.
+			if [ "$value" != "localtime" ]; then
+				svccfg -s $TIMEZONE_FMRI setprop \
+				    timezone/localtime="$value"
+				svcadm refresh $TIMEZONE_FMRI
+			fi
+			svccfg -s $SMF_FMRI setprop \
+			    environment/TZ= astring: "$value"
+		elif [ "$value" != "" ]; then 
+			svccfg -s $SMF_FMRI setprop \
+			    environment/"$key"= astring: "$value"
+		else 
+			svccfg -s $SMF_FMRI setprop \
+			    environment/"$key"= astring: \"\"
+		fi
+
+		[[ $? -ne 0 ]] && return $?
+	done
+
+	# LOCKFILE is being created to make sure the environment
+	# gets imported just once.
+	touch $LOCKFILE || return $?
+
+	# refresh only if something is modified
+	svcadm refresh $SMF_FMRI
+
+	return $?
+}
+
+# export SMF properties to /etc/default/init file
+function smf_to_init_file {
+
+	# In case the marker is missing in init file, init_file_to_smf
+	# function gets called and the marker is added.
+	# SMF refresh in init_file_to_smf function would call smf_to_init_file
+	# function which should not export SMF properties in this case.
+	# So, a LOCKFILE is being used to handle the above scenario.
+
+	# Existence of LOCKFILE means this function is called as a result of 
+	# refresh in init_file_to_smf. So, don't export SMF properties and
+	# just exit.
+	if [ -O "$LOCKFILE" ]; then
+		rm $LOCKFILE
+		[[ -f $TMPINIT ]] && rm $TMPINIT || return $?
+		exit $SMF_EXIT_OK
+	fi
+
+	echo "$0: Exporting environment from SMF to /etc/default/init."
+
+	dump_init_header
+
+	# Read CMASK from umask property group and other properties from
+	# environment property group.
+	svcprop -p umask/umask $SMF_FMRI | \
+	    nawk '{ printf "CMASK="$1"\n" }' >> $TMPINIT || return $?
+
+	svcprop -p environment $SMF_FMRI | \
+	    nawk '!/value_authorization/ { sub("environment/",""); \
+		if ($3 !~ /""/) printf $1"="$3"\n" }' >> $TMPINIT || return $?
+
+	# Compare /etc/default/init and $TMPINIT 
+	cmp $TMPINIT $DEFINIT >/dev/null
+
+	# In case the files differ, replace /etc/default/init with $TMPINIT
+	# and send a SIGHUP to init(1M) triggering it to reread its 
+	# environment from /etc/default/init. 
+	if [ $? -ne 0 ]; then
+		# Send SIGHUP to init
+		cp $TMPINIT $DEFINIT || return $?
+		chmod 0444 $DEFINIT || return $?
+		rm $TMPINIT || return $?
+		init q || return $?
+		return $?
+	fi
+
+	[[ -f $TMPINIT ]] && rm $TMPINIT || return $?
+
+	return 0
+
+}
+
+case $1 in
+start|refresh)
+
+	# If /etc/default/init file is missing then create it from SMF service.
+	if [ ! -f "$DEFINIT" ]; then
+		smf_to_init_file || fatal "$0: Could not export environment \
+		    variables to $DEFINIT"
+		exit $SMF_EXIT_OK
+	fi
+
+	head -1 $DEFINIT | grep "__GENERATED__V1__" > /dev/null 2>&1
+
+	# In case marker is absent, import environment from
+	# /etc/default/init to SMF and add the marker.
+	if [ $? -ne 0 ]; then
+		init_file_to_smf || fatal "$0: Could not import \
+		    environment from $DEFINIT"
+
+		# Add the marker to /etc/default/init
+		echo "#__GENERATED__V1__" | cat - $DEFINIT > $TMPINIT &&
+		    cp $TMPINIT $DEFINIT && rm $TMPINIT
+
+		[[ $? -ne 0 ]] && fatal "$0: Could not import SMF \
+		    properties from $DEFINIT"
+
+	else
+		# In case marker is present, export environment from
+		# SMF to /etc/default/init
+		smf_to_init_file || fatal "$0: Could not export \
+		    environment variables to $DEFINIT"
+	fi
+	;;
+
+unconfigure)
+	# Reset SMF properties to their default values
+	/usr/sbin/svccfg -s $SMF_FMRI delcust
+
+	if [ $? -ne 0 ]; then
+		echo "Failed to unroll administrative customizations for $SMF_FMRI"
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+
+	/usr/sbin/svcadm refresh $SMF_FMRI
+	;;
+
+esac
+
+exit $SMF_EXIT_OK

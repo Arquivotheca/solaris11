@@ -1,0 +1,737 @@
+'\" te
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH cfgadm 1M "2004 年 10 月 25 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm \- 配置管理
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-c\fR \fIfunction\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-f\fR] [\fB-y\fR | \fB-n\fR] [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR]
+     \fB-x\fR \fIhardware_function\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-a\fR] [\fB-s\fR \fIlisting_options\fR] 
+     [\fB-o\fR \fIhardware_options\fR] [\fB-l\fR [\fIap_id\fR | \fIap_type\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-t\fR \fIap_id\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-v\fR] [\fB-o\fR \fIhardware_options\fR] \fB-h\fR 
+     [\fIap_id\fR | \fIap_type\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBcfgadm\fR 命令提供了针对动态可重新配置的硬件资源的配置管理操作。这些操作包括显示状态 (\fB-l\fR)、启动测试 (\fB-t\fR)、调用配置状态更改 (\fB-c\fR)、调用特定于硬件的函数 (\fB-x\fR) 以及获取配置管理帮助消息 (\fB-h\fR)。配置管理操作在\fB挂接点\fR上执行，这些位置的系统软件支持在继续运行 Solaris 的过程中动态重新配置硬件资源。
+.sp
+.LP
+配置管理会区分计算机上实际存在的硬件资源和对 Solaris 可见的已配置硬件资源。配置管理函数本性是特定于硬件的，可通过调用特定于硬件的库来执行。
+.sp
+.LP
+配置管理在\fB挂接点\fR上运行。位于挂接点处的硬件资源在系统运行期间可能是物理上可替换的，也可能是物理上不可替换的，但可通过配置管理界面动态重新配置。 
+.sp
+.LP
+挂接点定义了两个唯一的元素，这些元素不同于位于挂接点之外的硬件资源。挂接点的两个元素是\fB插口\fR和\fB插卡\fR。物理插入或移除硬件资源通常在挂接点上执行，这些操作会导致获得插口或失去插卡。配置管理支持在挂接点上执行物理插入和移除操作以及其他配置管理函数。
+.sp
+.LP
+挂接点具有相关联的状态和状况信息。配置管理界面可用于控制挂接点状态的转换。插口可按以下三种状态之一的形式存在：\fBempty\fR（空）、\fBdisconnected\fR（断开）或 \fBconnected\fR（已连接），而插卡则按以下两种状态之一的形式存在：\fBconfigured\fR（已配置）或 \fBunconfigured\fR（未配置）。
+.sp
+.LP
+插口可提供 \fBempty\fR（空）状态，这是挂接点不包含任何插卡时插口的常规状态。如果插口具有将其插卡与常规系统访问隔离的功能，则还可以提供 \fBdisconnected\fR（断开）状态。通常情况下，此状态用于在系统将插卡资源完全投入使用之前进行各种特定于硬件的测试，或作为准备物理移除或重新配置插卡的步骤之一。处于 disconnected 状态的插口会尽量在硬件允许的范围内将其插卡与系统隔离开，但也会提供针对测试和设置的访问。插口必须提供 \fBconnected\fR（已连接）状态，这样才能允许对插卡内包含的硬件资源进行常规访问。对于包含插卡且当前未执行配置管理操作的插口，connected（已连接）状态是其常规状态。
+.sp
+.LP
+处于 \fBunconfigured\fR（未配置）状态的插卡上所包含的硬件资源不会用常规 Solaris 数据结构表示，因此不能供 Solaris 使用。未配置插卡上允许执行的操作仅限于配置管理操作。处于 \fBconfigured\fR（已配置）状态的插卡的硬件资源用常规 Solaris 数据结构表示，因此其中部分或全部硬件资源均可供 Solaris 使用。所有插卡都提供 \fBconfigured\fR（已配置）和 \fBunconfigured\fR（未配置）两种状态。
+.sp
+.LP
+挂接点可处于以下五种状况之一：\fBunknown\fR（未知）、\fBok\fR（正常）、\fBfailing\fR（即将失败）、\fBfailed\fR（失败）或 \fBunusable\fR（不可用）。挂接点可在任何状况下进入系统，具体取决于加电自检和非易失性记录保存的结果。
+.sp
+.LP
+包含处于 \fBconfigured\fR（已配置）状态的插卡的挂接点处于以下四种状况之一：\fBunknown\fR（未知）、\fBok\fR（正常）、\fBfailing\fR（即将失败）或 \fBfailed\fR（失败）。如果状况不为 \fBfailing\fR（即将失败）或 \fBfailed\fR（失败），挂接点会在因超出与硬件有关的可恢复错误阈值而执行的操作期间更改为 \fBfailing\fR（即将失败）。如果状况不为 \fBfailed\fR（失败），挂接点可在因不可恢复错误而导致的操作期间更改为 \fBfailed\fR（失败）。
+.sp
+.LP
+具有处于 \fBunconfigured\fR（未配置）状态的插卡的挂接点可处于已定义的任何一种状况。在与计算机有关的时间阈值过后，具有 \fBunconfigured\fR（未配置）插卡的挂接点的状况会从 \fBok\fR（正常）衰退为 \fBunknown\fR（未知）。启动测试函数会将挂接点的状况更改为 \fBok\fR（正常）、\fBfailing\fR（即将失败）或 \fBfailed\fR（失败），具体更改为哪种状况取决于测试结果。对于未提供测试函数的挂接点，可将其置于 \fBunknown\fR（未知）状况。如果测试中断，可将挂接点状况设置为上一个状况，即 \fBunknown\fR（未知）或 \fBfailed\fR（失败）。可对处于 \fBunknown\fR（未知）、\fBok\fR（正常）、\fBfailing\fR（即将失败）或 \fBfailed\fR（失败）状况的挂接点进行重新测试。
+.sp
+.LP
+挂接点可能会因为多种原因而处于 \fBunusable\fR（不可用）状况，例如插口的电力不足或冷却不够、插卡无法识别、不受支持或配置错误等。处于 \fBunusable\fR（不可用）状况的挂接点绝对无法供系统使用。挂接点通常会始终处于这种状况，直到物理方面的问题被修复。
+.sp
+.LP
+挂接点还会保持指示正在执行状态更改或重新评估状况的忙信息。
+.sp
+.LP
+挂接点可使用特定于硬件的标识符 (\fIap_id\fR) 来引用，这些标识符与挂接点在系统设备分层结构中的类型和位置相关。\fIap_id\fR 不能有歧义，必须能够确定单个挂接点。支持两种类型的 \fIap_id\fR 规范：物理和逻辑。物理 \fIap_id\fR 包含完全指定的路径名，逻辑 \fIap_id\fR 包含以更用户友好的方式来标识挂接点的缩略表示法。 
+.sp
+.LP
+例如，代表系统底板槽号 \fB7\fR 的挂接点包含的物理 \fIap_id\fR 为 \fB/devices/central/fhc/sysctrl:slot7\fR，而逻辑 \fIap_id\fR 为 \fBsystem:slot7\fR。再如，系统的第二个 \fBPCI I/O\fR 总线上的第三个插口可能包含的逻辑 \fIap_id\fR 为 \fBpci2:plug3\fR。 
+.sp
+.LP
+挂接点也可以动态创建。动态挂接点是相对于系统中包含的基本挂接点而命名的。动态挂接点的 \fBap_id\fR 由基本组件后接两个冒号 (\fB::\fR) 和动态组件组成。基本组件即基本挂接点 \fBap_id\fR。动态组件是特定于硬件的，由相应的特定于硬件的库生成。
+.sp
+.LP
+例如，考虑一个用 \fBSCSI HBA\fR 表示的基本挂接点，此挂接点包含物理 \fBap_id\fR \fB/devices/sbus@1f,0/SUNW,fas@e,8800000:scsi\fR 和逻辑 \fBap_id c0\fR。连接至此 \fBSCSI HBA\fR 的磁盘可用包含逻辑 \fBap_id\fR \fBc0::dsk/c0t0d0\fR 的动态挂接点表示，其中 \fBc0\fR 是基本组件，\fBdsk/c0t0d0\fR 是特定于硬件的动态组件。与之类似，此动态挂接点的物理 \fBap_id\fR 应该是：\fB/devices/sbus@1f,0/SUNW,fas@e,8800000:scsi::dsk/c0t0d0\fR。 
+.sp
+.LP
+\fIap_type\fR 是逻辑 \fBap_id\fR 的部分形式，可能存在歧义，无法指定特定的挂接点。\fIap_type\fR 最多只是逻辑 \fBap_id\fR 部分的子字符串，但不包含冒号 (\fB:\fR) 分隔符。例如，\fIap_type\fR 为 \fBpci\fR 应该会显示所有具有以 \fBpci\fR 开头的逻辑 \fIap_id\fR 的挂接点。
+.sp
+.LP
+建议不要使用 \fIap_type\fR。\fB-s\fR 选项的新的 select 子选项为选择挂接点提供了更为通用和灵活的机制。请参见"选项"部分\fB\fR。 
+.sp
+.LP
+\fBcfgadm\fR 命令主要与特定于硬件的库中包含的与硬件有关的函数进行交互，因此其行为也与硬件有关。
+.sp
+.LP
+每个配置管理操作可能都需要服务中断。完成请求的函数需要对交互用户执行明显的服务中断，在标准输入上确认的标准错误输出中将会出现提示，然后才会启动函数。始终使用 \fB-y\fR 或 \fB-n\fR 选项来分别回答是或否，即可覆盖确认。特定于硬件的选项，例如测试级别，将所作为使用 \fB-o\fR 选项的子选项提供。
+.sp
+.LP
+更改系统配置状态的操作由系统日志守护进程 \fBsyslogd\fR(1M) 进行审计。
+.sp
+.LP
+此命令的参数符合 \fBgetopt\fR(3C) 和 \fBgetsubopt\fR(3C) 语法约定。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 \fB-l\fR 选项也必须列出动态挂接点。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fIap_id\fR 指定的挂接点上执行状态更改 \fIfunction\fR。
+.sp
+将 \fIfunction\fR 指定为 \fBinsert\fR、\fBremove\fR、\fBdisconnect\fR、\fBconnect\fR、\fBconfigure\fR 或 \fBunconfigure\fR。这些函数可通过调用特定于硬件的库例程来在挂接点上执行状态转换，以下列表对其进行了定义。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsert\fR\fR
+.ad
+.RS 15n
+.rt  
+执行相应的操作以允许用户手动插入插卡，或激活可执行物理插入的硬件提供机制。\fBinsert\fR 可能产生特定于硬件的副作用，即会临时暂停部分系统活动。在这种情况下，特定于硬件的库会生成相应的警告消息，并告知用户专门针对相应硬件的特殊注意事项或操作过程。各种特定于硬件的错误都可导致此函数运行失败，并将插口状况设置为 \fBunusable\fR（不可用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR\fR
+.ad
+.RS 15n
+.rt  
+执行相应的操作以允许用户手动移除插卡，或激活可执行物理移除的硬件提供机制。\fBremove\fR 可能产生特定于硬件的副作用，即会临时暂停部分系统活动。在这种情况下，特定于硬件的库会生成相应的警告消息，并告知用户专门针对相应硬件的特殊注意事项或操作过程。各种特定于硬件的错误都可导致此函数运行失败，并将插口状况设置为 unusable（不可用）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnect\fR\fR
+.ad
+.RS 15n
+.rt  
+执行特定于硬件的操作，以将插口置于 disconnected（断开）状态，这样可以避免插卡通过此插口在正常情况下运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnect\fR\fR
+.ad
+.RS 15n
+.rt  
+执行特定于硬件的操作，以将插口置于 \fBconnected\fR（已连接）状态，这样可以允许插卡通过此插口在正常情况下运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfigure\fR\fR
+.ad
+.RS 15n
+.rt  
+执行特定于硬件的操作，以允许 Solaris 使用插卡的硬件资源。已配置的插卡是系统配置的组成部分，可通过 Solaris 设备处理维护命令（例如 \fBpsradm\fR(1M)、\fBmount\fR(1M)、\fBifconfig\fR(1M)）来进行处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunconfigure\fR\fR
+.ad
+.RS 15n
+.rt  
+执行特定于硬件的操作，以从系统中逻辑移除插卡的硬件资源。插卡必须现在配置，且其硬件资源当前不能由 Solaris 使用。
+.RE
+
+状态转换函数可能因挂接点的状况或其他与硬件有关的注意事项而失败。当挂接点处于 \fBok\fR（正常）或 \fBunknown\fR（未知）状况时，所有旨在添加资源的状态更改 \fIfunction\fR（\fBinsert\fR、\fBconnect\fR 和 \fBconfigure\fR）均会传送到特定于硬件的库。所有其他状况都需要使用强制选项，才能够将这些 \fIfunction\fR 传送到特定于硬件的库。挂接点状况不会阻止调用特定于硬件的库以从系统中执行与移除（\fBremove\fR、\fBdisconnect\fR 和 \fBunconfigure\fR）硬件资源相关的操作。如果挂接点处于 \fBunknown\fR（未知）状况，特定于硬件的库可以拒绝状态更改 \fIfunction\fR。
+.sp
+挂接点的状况不一定是状态更改函数更改的，但如果状态更改操作期间出错，就会更改挂接点的状况。通过指定强制选项 (\fB-f\fR)，即可尝试覆盖状况以及强制执行可能会失败的状态更改操作。特定于硬件的安全性和完整性检查可以避免强制选项产生任何影响。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制执行指定的操作。通常情况下，这会覆盖与硬件有关的安全功能。强制执行状态更改操作，即可根据任何与硬件有关的安全性检查，使用未处于 \fBok\fR（正常）或 \fBunknown\fR（未知）状况的插卡的硬件资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-h\fR [\fIap_id\fR | \fIap_type\fR \|.\|.\|. ]\fR
+.ad
+.sp .6
+.RS 4n
+输出帮助消息文本。如果已指定 \fIap_id\fR 或 \fIap_type\fR，则会为用此参数表示的挂接点调用特定于硬件的库的帮助例程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-l\fR [\fIap_id\fR | \fIap_type\fR \|.\|.\|. ]\fR
+.ad
+.sp .6
+.RS 4n
+列出指定挂接点的状态和状况。可使用 \fB-s\fR 选项和 \fBselect\fR 子选项来过滤挂接点。调用不含任何一个操作选项的 \fBcfgadm\fR 等同于调用不含参数的 \fB-l\fR。列表的显示格式由 \fB-v\fR 和 \fB-s\fR 选项控制。如果指定了 \fB-a\fR 选项，挂接点便会动态扩展。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+抑制任何交互式确认，并假定回答结果为 \fIno\fR（否）。如果未指定 \fB-n\fR 或 \fB-y\fR，则会通过标准错误输出和标准输入来获取交互式确认。如果上述任何标准通道均未响应终端（由 \fBisatty\fR(3C) 确定），则会假定使用 \fB-n\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fIhardware_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+向主命令选项提供特定于硬件的选项。此硬件选项字符串的格式和内容完全是特定于硬件的。选项字符串 \fIhardware_options\fR 符合 \fBgetsubopt\fR(3C) 语法约定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fIlisting_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+向列表 (\fB-l\fR) 命令提供列表选项。\fIlisting_options\fR 符合 \fBgetsubopt\fR(3C) 语法约定。此子选项用于指定挂接点选择条件 (\fBselect\fR=\fIselect_string\fR)、所需的匹配类型 (\fBmatch\fR=\fImatch_type\fR)、列表顺序 (\fBsort\fR=\fIfield_spec\fR)、显示的数据（\fBcols=\fR\fIfield_spec\fR 和 \fBcols2=\fR\fIfield_spec\fR）、列分界符 (\fBdelim=\fR\fIstring\fR) 以及是否抑制列标题 (\fBnoheadings\fR)。 
+.sp
+如果指定了 \fBselect\fR 子选项，则只会列出符合指定条件的挂接点。\fBselect\fR 子选项具有以下语法： 
+.sp
+.in +2
+.nf
+cfgadm \fB-s\fR select=attr1(value1):attr2(value2)... 
+.fi
+.in -2
+.sp
+
+其中 \fIattr\fR 是 \fBap_id\fR、\fBclass\fR 或 \fBtype\fR 其中的一个。\fBap_id\fR 是指逻辑 \fIap_id\fR 字段，\fBclass\fR 是指挂接点类，\fBtype\fR 是指类型字段。\fIvalue1\fR、\fIvalue2\fR 等是要匹配的相应值。匹配类型可由 \fBmatch\fR 子选项按以下方式指定： 
+.sp
+.in +2
+.nf
+cfgadm \fB-s\fR match=\fImatch_type\fR,select=attr1(value1)...
+.fi
+.in -2
+.sp
+
+其中，\fImatch_type\fR 可以是 \fBexact\fR 或 \fBpartial\fR。缺省值为 \fBexact\fR。
+.sp
+\fBselect\fR 子选项的参数可用引号引起来，以免被 shell 调用。
+.sp
+\fIfield_spec\fR 是用冒号 (\fB:\fR) 串联起来的一个或多个 \fIdata-field\fR，例如 \fIdata-field\fR:\fIdata-field\fR:\fIdata-field\fR。\fIdata-field\fR 是 \fBap_id\fR、\fBphysid\fR、\fBr_state\fR、\fBo_state\fR、\fBcondition\fR、\fBtype\fR、\fBbusy\fR、\fBstatus_time\fR、\fBstatus_time_p\fR、\fBclass\fR 和 \fB info\fR 中的其中一个。\fBap_id\fR 字段的输出是挂接点的逻辑名称，\fBphysid\fR 字段则包含物理名称。\fBr_state\fR 字段可以是 \fBempty\fR（空）、\fBdisconnected\fR（断开）或 \fBconnected\fR（已连接）。\fBo_state\fR 字段可以是 \fBconfigured\fR（已配置）或 \fBunconfigured\fR（未配置）。如果挂接点正忙，\fBbusy\fR（忙）字段为 \fBy\fR；如果不忙，则为 \fBn\fR。\fBtype\fR（类型）和 \fBinfo\fR（信息）字段均是特定于硬件的。\fBstatus_time\fR 字段会提供 \fBr_state\fR、\fBo_state\fR 或挂接点状况上次更改的时间。\fBstatus_time_p\fR 字段是 \fBstatus_time \fR 字段的可解析版本。如果挂接点具有关联的类，\fBclass\fR（类）字段会列出类名。如果挂接点没有关联的类，\fBclass\fR（类）字段会列出 \fBnone\fR（无）。
+.sp
+\fIfield_spec\fR 中的字段顺序非常重要：对于 \fBsort\fR 子选项，提供的第一个字段是主排序键。对于 \fBcols\fR 和 \fBcols2\fR 子选项，会按照请求的顺序输出这些字段。通过在 \fBsort\fR 子选项的 \fIfield_sec\fR 内 \fIdata-field\fR 名称之前添加减号 (\fB\(mi\fR)，即可保留 \fIdata-field\fR 上的排序顺序。\fBsort\fR 的缺省值为 \fBap_id\fR。\fBcols\fR 和 \fBcols2\fR 的缺省值取决于是否提供 \fB-v\fR 选项，如果未提供，\fBcols\fR 的值为 \fBap_id:r_state:o_state:condition\fR，\fBcols2\fR 未设置任何值。如果提供 \fB-v\fR，\fBcols\fR 的值为 \fBap_id:r_state:o_state:condition:info\fR，\fBcols2\fR 的值为 \fBstatus_time:type:busy:physid:\fR。\fBdelim\fR 的缺省值是单个空格。\fBdelim\fR 的值可以是任意长度的字符串。分界符不能包含逗号 (\fB,\fR) 字符，请参见 \fBgetsubopt\fR(3C)。这些列表选项可用于创建可解析的输出。请参见"说明"部分\fB\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+对一个或多个挂接点执行测试。测试函数用于重新评估挂接点的状况。如果 \fIhardware_options\fR 不含测试级别说明符，则会使用可确定硬故障的最快测试。
+.sp
+更全面的测试均是特定于硬件的，并且使用 \fIhardware_options\fR 进行选择。
+.sp
+测试结果用于更新指定插卡的状况，如果找不到故障，则更新为 \fBok\fR（正常）；如果找到了可恢复的故障，则更新为 \fBfailing\fR（即将失败）；如果找到了不可恢复的故障，则更新为 \fBfailed\fR（失败）。
+.sp
+如果测试被中断，挂接点的状况可恢复为上一个值，如果未找到任何错误，可设置为 \fBunknown\fR（未知）；如果只找到可恢复的错误，可设置为 \fBfailing\fR（即将失败）；如果找到了任何不可恢复的错误，则设置为 \fBfailed\fR（失败）。如果测试正常完成且没有出现任何错误，应只将挂接点设置为 \fBok\fR（正常）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+在详细模式下执行。对于 \fB-c\fR、\fB-t\fR 和 \fB-x\fR 选项，将会输出提供每个尝试操作结果的消息。对于 \fB-h\fR 选项，将会输出详细的帮助信息。对于 \fB-l\fR 选项，将会输出每个挂接点的详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fIhardware_function\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行特定于硬件的函数。特定于硬件的专用函数可以更改插口或插卡的状态。挂接点状况会因为在特定于硬件的专用函数运行期间出现错误而更改。\fIhardware_function\fR 字符串的格式和内容完全是特定于硬件的。选项字符串 \fIhardware_function\fR 符合 \fBgetsubopt\fR(3C) 语法约定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-y\fR\fR
+.ad
+.sp .6
+.RS 4n
+抑制任何交互式确认，并假定回答结果为 \fByes\fR（是）。
+.RE
+
+.SH 用法
+.sp
+.LP
+使用此命令所需的特权取决于硬件。通常情况下，缺省系统配置会限制除超级用户的列出选项之外的所有选项。
+.SH 示例
+.LP
+\fB示例 1 \fR在设备树中列出挂接点
+.sp
+.LP
+以下示例列出了除动态挂接点之外的所有挂接点。 
+
+.sp
+.in +2
+.nf
+example# cfgadm
+
+  Ap_Id         Type        Receptacle      Occupant       Cond
+system:slot0    cpu/mem     connected       configured     ok
+system:slot1    sbus-upa    connected       configured     ok
+system:slot2    cpu/mem     connected       configured     ok
+system:slot3    unknown     connected       unconfigured   unknown
+system:slot4    dual-sbus   connected       configured     failing
+system:slot5    cpu/mem     connected       configured     ok
+system:slot6    unknown     disconnected    unconfigured   unusable
+system:slot7    unknown     empty           unconfigured   ok
+c0              scsi-bus    connected       configured     unknown
+c1              scsi-bus    connected       configured     unknown
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR列出所有可配置的硬件信息
+.sp
+.LP
+以下示例列出了当前所有可配置的硬件信息，包括由动态挂接点表示的硬件信息：
+
+.sp
+.in +2
+.nf
+example# cfgadm -al
+
+  Ap_Id            Type         Receptacle      Occupant        Cond
+system:slot0       cpu/mem      connected       configured      ok
+system:slot1       sbus-upa     connected       configured      ok
+system:slot2       cpu/mem      connected       configured      ok
+system:slot3       unknown      connected       unconfigured    unknown
+system:slot4       dual-sbus    connected       configured      failing
+system:slot5       cpu/mem      connected       configured      ok
+system:slot6       unknown      disconnected    unconfigured    unusable
+system:slot7       unknown      empty           unconfigured    ok
+c0                 scsi-bus     connected       configured      unknown
+c0::dsk/c0t14d0    disk         connected       configured      unknown 
+c0::dsk/c0t11d0    disk         connected       configured      unknown 
+c0::dsk/c0t8d0     disk         connected       configured      unknown
+c0::rmt/0          tape         connected       configured      unknown 
+c1                 scsi-bus     connected       configured      unknown
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR根据挂接点属性有选择性地列出
+.sp
+.LP
+以下示例列出了包含以 \fBscsi\fR 开头的类、以 \fBc\fR 开头的 \fBap_id\fR 和以 \fBscsi\fR 开头的 \fBtype\fR（类型）字段的所有挂接点。\fB-s\fR 选项的参数可用引号引起来，以免被 shell 调用。
+
+.sp
+.in +2
+.nf
+example# cfgadm -s "match=partial,select=class(scsi):ap_id(c):type(scsi)"
+
+Ap_Id         Type          Receptacle      Occupant           Cond
+ c0          scsi-bus      connected       configured         unknown
+ c1          scsi-bus      connected       configured         unknown
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR在详细模式下列出当前可配置的硬件信息
+.sp
+.LP
+以下示例为详细模式下的 \fIap-type\fR \fBsystem\fR 列出了当前可配置的硬件信息。
+
+.sp
+.in +2
+.nf
+example# cfgadm -v -l system
+Ap_Id                      Receptacle Occupant   Condition Information
+When         Type      Busy     Phys_Id
+system:slot1               connected  configured ok
+Apr  4 23:50 sbus-upa  n        /devices/central/fhc/sysctrl:slot1
+system:slot3               connected  configured ok        non-detachable
+Apr 17 11:20 cpu/mem   n        /devices/central/fhc/sysctrl:slot3
+system:slot5               connected  configured ok
+Apr  4 23:50 cpu/mem   n        /devices/central/fhc/sysctrl:slot5
+system:slot7               connected  configured ok
+Apr  4 23:50 dual-sbus n        /devices/central/fhc/sysctrl:slot7
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBWhen\fR 列表示 \fBstatus_time\fR 字段。
+.LP
+\fB示例 5 \fR使用特定于硬件的 \fBExtended\fR 测试来测试两个插卡
+.sp
+.LP
+以下示例使用特定于硬件的 \fBextended\fR 测试来测试两个插卡：
+
+.sp
+.in +2
+.nf
+example# cfgadm -v -o extended -t system:slot3 system:slot5
+Testing attachment point system:slot3 ...  ok
+Testing attachment point system:slot5 ...  ok
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR使用强制选项配置插卡
+.sp
+.LP
+以下示例使用强制选项将处于 \fBfailing\fR（即将失败）状态的插卡配置到系统：
+
+.sp
+.in +2
+.nf
+example# cfgadm -f -c configure system:slot3
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR从系统中取消配置插卡
+.sp
+.LP
+以下示例从系统中取消配置了插卡：
+
+.sp
+.in +2
+.nf
+example# cfgadm -c unconfigure system:slot4
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR在挂接点上配置插卡
+.sp
+.LP
+以下示例配置了插卡：
+
+.sp
+.in +2
+.nf
+example# cfgadm -c configure c0::dsk/c0t0d0
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+请参见 \fBenviron\fR(5)，了解影响 \fBcfgadm\fR 执行情况的以下环境变量的描述：\fBLC_TIME\fR、\fB LC_MESSAGES\fR、\fBNLSPATH\fR 和 \fBTZ\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.RS 15n
+.rt  
+确定 \fBcfgadm\fR 如何显示列标题和错误消息。输出数据的列出方式不受此变量的设置影响。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_TIME\fR\fR
+.ad
+.RS 15n
+.rt  
+确定 \fBcfgadm\fR 如何显示可读的状态更改时间 (\fBstatus_time\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR\fR
+.ad
+.RS 15n
+.rt  
+指定转换状态更改的时间时所使用的时区。这也适用于可读 (\fBstatus_time\fR) 和可解析 (\fBstatus_time_p\fR) 格式。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+指定目标上不支持配置管理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+用法错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm_fp\fR(1M)、\fBcfgadm_ib\fR(1M)、\fBcfgadm_pci\fR(1M)、\fBcfgadm_sata\fR(1M)、\fBcfgadm_sbd\fR(1M)、\fBcfgadm_scsi\fR(1M)、\fBcfgadm_usb\fR(1M)、\fBifconfig\fR(1M)、\fBmount\fR(1M)、\fBprtdiag\fR(1M)、\fBpsradm\fR(1M)、\fBsyslogd\fR(1M)、\fBconfig_admin \fR(3CFGADM)、\fBgetopt\fR(3C)、\fBgetsubopt \fR(3C)、\fBisatty\fR(3C)、\fBattributes \fR(5)、\fBenviron\fR(5)
+.SH 诊断
+.sp
+.LP
+诊断消息会出现在标准错误输出中。以下内容不是选项和用法错误，而是此实用程序生成的诊断消息：
+.sp
+.in +2
+.nf
+cfgadm: Configuration administration not supported on\fIap_id\fR
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: No library found for \fIap_id\fR
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIap_id\fRis ambiguous
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Insufficient privileges
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: Attachment point is busy, try again
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: No attachment points with specified attributes found
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: System is busy, try again
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Operation requires a service interruption
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Data error: \fIerror_text\fR
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+cfgadm: \fIoperation\fR: Hardware specific failure: \fIerror_text\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关错误消息的其他详细信息，请参见 \fBconfig_admin\fR(3CFGADM)。
+.SH 附注
+.sp
+.LP
+硬件资源以特定于硬件的方式进入取消配置的池。这种情况会出现多次，例如系统初始化或执行取消配置操作之后。处于 \fBunconfigured\fR（未配置）状态的插卡不能供系统使用，除非进行特别干预。这种干预可表现为操作者发出命令或通过自动配置机制的形式干预。
+.sp
+.LP
+\fBcfgadm\fR 命令的列表选项可用于为其他命令提供可解析输入，例如在 shell 脚本内。对于可解析输出，\fB-s\fR 选项必须用于选择所需的字段。\fB-s\fR 选项还可用于抑制列标题。下列字段会始终生成可解析的输出：\fBap_id\fR、\fBphysid\fR、\fBr_state\fR、\fBo_state\fR、\fBcondition\fR、\fBbusy\fR、\fBstatus_time_p\fR、\fBclass\fR 和 \fBtype\fR。可解析的输出决不能在字段值中插入空白字符。
+.sp
+.LP
+以下 shell 脚本片段会查找第一个运行良好的 \fBCPU\fR 类型的 \fBunconfigured\fR（未配置）插卡。
+.sp
+.in +2
+.nf
+found=
+cfgadm -l -s "noheadings,cols=ap_id:r_state:condition:type" | \e
+while read ap_id r_state cond type
+do
+     if [ "$r_state" = unconfigured -a "$cond" = ok -a "$type" = CPU ]
+     then
+          if [ -z "$found" ]
+          then
+               found=$ap_id
+          fi
+     fi
+done
+if [ -n "$found" ]
+then
+         echo "Found CPU $found"
+fi
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可解析时间字段 (\fBstatus_time_p\fR) 的格式为 \fIYYYYMMDDhhmmss\fR，以适于字符串比较的格式提供年、月、日、时、分和秒。
+.sp
+.LP
+若要了解系统配置管理支持的详细信息，应该参考特定于硬件的文档。

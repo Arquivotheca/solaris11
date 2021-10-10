@@ -1,0 +1,163 @@
+'\" te
+.\" Copyright (c) 2000, Sun Microsystems, Inc., All Rights Reserved
+.TH aphysio 9F "9 Nov 1994" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+aphysio, aminphys \- perform asynchronous physical I/O
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/types.h>
+#include <sys/buf.h>
+#include <sys/uio.h>
+#include <sys/aio_req.h>
+#include <sys/ddi.h>
+#include <sys/sunddi.h>
+
+
+
+\fBint\fR  \fBaphysio\fR(\fBint\fR (\fI*strat\fR)( \fIstruct buf *\fR), \fBint\fR (\fI*cancel\fR)(\fIstruct buf *\fR), 
+     \fBdev_t\fR \fIdev\fR, \fBint\fR \fIrw\fR, \fBvoid\fR (\fI*mincnt\fR)(\fIstruct buf *\fR), 
+     \fBstruct  aio_req *\fR\fIaio_reqp\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstrat\fR \fR
+.ad
+.RS 13n
+.rt  
+Pointer to device strategy routine.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcancel\fR \fR
+.ad
+.RS 13n
+.rt  
+Pointer to driver cancel routine.  Used to cancel a submitted request. The driver must pass the address of the function \fBanocancel\fR(9F) because cancellation is not supported.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdev\fR \fR
+.ad
+.RS 13n
+.rt  
+The device number.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrw\fR \fR
+.ad
+.RS 13n
+.rt  
+Read/write flag. This is either  \fBB_READ\fR when reading from the device or \fBB_WRITE\fR when writing to the device.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImincnt\fR \fR
+.ad
+.RS 13n
+.rt  
+Routine which bounds the maximum transfer unit size.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaio_reqp\fR \fR
+.ad
+.RS 13n
+.rt  
+Pointer to the  \fBaio_req\fR(9S) structure which describes the user\fB I/O\fR request.
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris  DDI specific (Solaris DDI).
+.SH DESCRIPTION
+.sp
+.LP
+\fBaphysio()\fR performs asynchronous  \fBI/O \fRoperations between the device and the address space described by \fIaio_reqp\(->aio_uio\fR. 
+.sp
+.LP
+Prior to the start of the transfer,  \fBaphysio()\fR verifies the requested operation is valid.  It then locks the pages involved in the  \fBI/O \fRtransfer so they can not be paged out.  The device strategy routine,  \fIstrat\fR, is then called one or more times to  perform the physical  \fBI/O \fRoperations.   \fBaphysio()\fR does not wait for each transfer to complete, but returns as soon as the necessary requests have been made. 
+.sp
+.LP
+\fBaphysio()\fR calls  \fImincnt\fR to bound the maximum transfer unit size to a sensible default for the  device and the system. Drivers which do not provide their own local \fImincnt\fR routine should call  \fBaphysio()\fR with \fBminphys\fR(9F). \fBminphys\fR(9F) is the system  \fImincnt\fR routine.   \fBminphys\fR(9F) ensures the transfer  size does not exceed any system limits.
+.sp
+.LP
+If a driver supplies a local  \fImincnt\fR routine, this routine should perform the following actions:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+If \fIbp\(->b_bcount\fR exceeds a device limit, \fBphysio()\fR returns \fBENOTSUP\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Call \fBaminphys\fR(9F) to ensure that the driver does not circumvent additional system limits. If \fBaminphys\fR(9F) does not return 0, return \fBENOTSUP\fR.
+.RE
+.SH RETURN VALUES
+.sp
+.LP
+\fBaphysio()\fR returns:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+Upon success.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnon-zero\fR\fR
+.ad
+.RS 12n
+.rt  
+Upon failure.
+.RE
+
+.SH CONTEXT
+.sp
+.LP
+\fBaphysio()\fR can be called from user context only.
+.SH SEE ALSO
+.sp
+.LP
+\fBaread\fR(9E), \fBawrite\fR(9E), \fBstrategy\fR(9E), \fBanocancel\fR(9F), \fBbiodone\fR(9F), \fBbiowait\fR(9F), \fBminphys\fR(9F), \fBphysio\fR(9F), \fBaio_req\fR(9S), \fBbuf\fR(9S), \fBuio\fR(9S) 
+.sp
+.LP
+\fIWriting Device Drivers\fR 
+.SH WARNINGS
+.sp
+.LP
+It is the driver's responsibility to call  \fBbiodone\fR(9F) when the transfer is complete.
+.SH BUGS
+.sp
+.LP
+Cancellation is not supported in this release.   The address of the function \fBanocancel\fR(9F) must be used as the  \fIcancel\fR argument.

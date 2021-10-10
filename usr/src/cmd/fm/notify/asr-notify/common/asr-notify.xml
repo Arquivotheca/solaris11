@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+ NOTE:  This service manifest is not editable; its contents will
+ be overwritten by package or patch operations, including
+ operating system upgrade.  Make customizations in a different
+ file.
+ 
+-->
+
+<service_bundle type='manifest' name='SUNWckr:fmd'>
+
+<service
+    name='system/fm/asr-notify'
+    type='service'
+    version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance/>
+
+	<dependency
+	    name='startup_req'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri value='svc:/milestone/multi-user:default' />
+		<service_fmri value='svc:/system/fmd:default' />
+	</dependency>
+
+	<exec_method
+	    type='method'
+	    name='start'
+	    exec='/usr/lib/fm/notify/asr-notify'
+	    timeout_seconds='60'/>
+
+	<exec_method
+	    type='method'
+	    name='refresh'
+	    exec=':kill -HUP'
+	    timeout_seconds='60' />
+
+	<exec_method
+	    type='method'
+	    name='stop'
+	    exec=':kill'
+	    timeout_seconds='600' />
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring'
+		    value='contract' />
+	</property_group>
+
+	<!-- to start/stop/manage asr service -->
+	<property_group name='general' type='framework'>
+		<propval name='action_authorization' type='astring'
+		    value='solaris.smf.manage.asr-notify'/>
+		<propval name='value_authorization' type='astring'
+		    value='solaris.smf.value.asr-notify'/>
+	</property_group>
+
+	<property_group name='config' type='application'>
+		<propval name='debug' type='boolean' value='false'/>
+		<propval name='rootdir' type='astring' value='/'/>
+		<propval name='http_timeout' type='integer' value='60'/>
+		<propval name='endpoint' type='astring'
+		    value="https://transport.oracle.com"/>
+		<propval name='data_dir' type='astring' value='var/fm/asr/'/>
+		<propval name='poll' type='integer' value='300'/>
+		<propval name='audit_interval' type='integer' value='168'/>
+		<propval name='heartbeat_interval' type='integer' value='24'/>
+		<propval name='index_file' type='astring'
+		    value='var/fm/asr/reg_index'/>
+		<propval name="data_file" type='astring'
+		    value='var/fm/asr/reg_data'/>
+		<propval name='value_authorization' type='astring'
+		    value='solaris.smf.value.asr-notify' />
+	</property_group>
+
+	<stability value='Unstable'/>
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+Solaris ASR Notification Agent
+			</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='asr-notify' section='1M'
+			    manpath='/usr/share/man' />
+		</documentation>
+		<pg_pattern name='config' type='application' target='this'
+		    required='false'>
+			<prop_pattern name='debug' type='boolean'
+			    required='false'>
+				<description>
+					<loctext xml:lang='C'>
+When set to true, asr-notify will spool debug messages to the SMF log
+					</loctext>
+				</description>
+				<visibility value='readwrite'/>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='rootdir' type='astring'
+			    required='false'>
+				<description>
+					<loctext xml:lang='C'>
+The root directory that will be used for all pathnames evaluated by asr-notify
+					</loctext>
+				</description>
+				<visibility value='readwrite'/>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+</service>
+
+</service_bundle>
+

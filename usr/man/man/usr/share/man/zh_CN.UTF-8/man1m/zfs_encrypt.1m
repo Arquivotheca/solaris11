@@ -1,0 +1,854 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH zfs_encrypt 1M "2011 年 7 月 15 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+zfs_encrypt \- 对 ZFS 文件系统进行加密
+.SH 用法概要
+.LP
+.nf
+\fBzfs\fR [\fB-?\fR]
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBhelp\fR \fIsubcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBcreate\fR \fB-o encryption=on\fR  [\fB-o keysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fIprompt\fR | \fIfile://\fR\fB|pkcs11:|https://\fR] ... \fIdataset\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBclone\fR [\fB-p\fR] [\fB-K\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIsnapshot\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR [\fB-r\fR|\fB-d\fR \fIdepth\fR][\fB-Hp\fR][\fB-o\fR all | \fIfield\fR[,...]] [\fB-s\fR \fIsource\fR[,...]]
+     all | \fIproperty\fR[,...] \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR\fB-l\fR | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-u\fR [\fB-f\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-c\fR [\fB-o\fR \fIkeysource\fR=\fIvalue\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-K\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBmount\fR 
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBmount\fR [\fB-vO\fR] [\fB-o \fIoptions\fR\fR] \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunmount\fR [\fB-f\fR] \fB-a\fR | \fIfilesystem\fR|\fImountpoint\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzfs create -o encryption\fR 命令可对 \fBZFS\fR 存储池中新创建的 \fBZFS\fR 数据集进行加密，如 \fBzpool\fR(1M) 中所述。 
+.SS "加密"
+.sp
+.LP
+加密是对数据进行编码以实现保密性的过程，数据拥有者需要使用密钥才能访问编码的数据。您可以在创建 ZFS 数据集时设置加密策略，但是该策略不可进行更改。有关详细信息，请参见"本机属性"中的 \fBencryption\fR 和 \fBkeysource\fR 属性说明。
+.sp
+.LP
+数据集加密将被永久继承，在数据集克隆期间无法删除。接收重复的数据集流时，如果希望加密，则目标数据集必须启用加密。否则，数据将以明文形式存储。完全复制加密的数据集流可以使数据集得以加密，但会采用新生成的密钥，并且流本身不会被加密。
+.SS "本机 ZFS 加密属性"
+.sp
+.LP
+以下与 ZFS 加密相关的本机属性包含有关数据集的只读统计信息。无法设置或继承这些属性。除非另有说明，否则本机属性适用于所有数据集类型。有关 ZFS 本机属性的完整描述和列表，请参见 \fBzfs\fR(1M)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeystatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识数据集的加密密钥状态。通过显示 \fBavailable\fR 或 \fBunavailable\fR 的状态，可指明数据集密钥的可用性。对于没有启用加密的数据集，则显示 \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmounted\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于文件系统，指示当前是否已挂载文件系统。此属性可以是 \fByes\fR 或 \fBno\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrekeydate\fR\fR
+.ad
+.sp .6
+.RS 4n
+上次因对此数据集执行 \fBzfs key\fR \fB-K\fR 或 \fBzfs clone\fR \fB-K\fR 操作而导致数据加密密钥发生更改的日期。如果未执行密钥更新操作，则 \fBrekeydate\fR 与 \fBcreation\fR 日期相同。
+.RE
+
+.sp
+.LP
+在创建文件系统后无法更改以下属性，因此在创建文件系统时应设置这些属性。如果未使用 \fBzfs create\fR 或 \fBzpool create\fR 命令设置属性，则从父数据集继承这些属性。如果在这些功能获得支持以前已创建的父数据集缺少这些属性，则新文件系统将为这些属性采用缺省值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencryption\fR=\fBoff\fR | \fBon\fR | \fBaes-128-ccm\fR | \fBaes-192-ccm\fR | \fBaes-256-ccm\fR | \fBaes-128-gcm\fR | \fBaes-192-gcm\fR | \fBaes-256-gcm\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义用于加密数据集的加密算法和密钥长度。\fBon\fR 值等于 \fBaes-128-ccm\fR。缺省值为 \fBoff\fR。将加密设置为 \fBoff\fR 以外的值时，\fBchecksum\fR 属性被设置为 \fBsha256+mac\fR 并且变为 \fBreadonly\fR。
+.RE
+
+.sp
+.LP
+在创建时必须指定以下属性，并可以使用特殊命令修改这些属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fIprompt\fR | \fIfile://\fR\fB|pkcs11:|https://\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义包含数据集密钥的密钥格式和位置。使用 \fBzfs key\fR \fB-l\fR 命令创建、挂载或装入数据集时，必须提供密钥。
+.sp
+\fBkeysource\fR 属性接受两个值：\fBformat\fR，确定提供密钥的方式；\fBlocator\fR，标识密钥的来源位置。
+.sp
+\fBformat\fR 接受三个值：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIraw\fR：原始的密钥字节
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIhex\fR：十六进制密钥字符串
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIpassphrase\fR：生成密钥的字符串
+.RE
+\fBlocator\fR 接受两个值：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBprompt\fR：创建或挂载数据集时提示您输入密钥
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfile:///\fR\fIfilename\fR：文件系统中的密钥文件位置
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpkcs11\fR：描述 PKCS#11 标记中密钥位置的 URI
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBhttps://\fR\fIlocation\fR：安全的服务器上的密钥文件位置
+.RE
+有关使用 \fBhttps://\fR 定位器创建密钥的示例，请参见"示例"。
+.sp
+要更改包装密钥值或密钥，必须运行 \fBzfs key\fR \fB-c\fR 命令。如果只需要更改密钥位置（例如，文件名更改），则使用 \fBzfs set\fR 命令及 \fBkeysource\fR 属性。请注意，当只使用 \fBzfs set\fR 命令更改密钥位置时，ZFS 不会执行检查，如新位置是否具有有效的包装密钥。
+.sp
+如果未指定和未继承 \fBkeysource\fR，则对于已启用加密的数据集，缺省的 \fBkeysource\fR 将设置为 \fBpassphrase\fR,\fBprompt\fR；对于已禁用加密的数据集，该属性将设置为 \fBnone\fR。
+.RE
+
+.SH 子命令
+.sp
+.LP
+修改状态的所有子命令将以原始形式永久记录到池中。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示帮助消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBzfs\fR 命令的用法信息。可以显示特定命令、属性或委托权限的帮助。如果显示特定命令或属性的帮助，将显示命令语法或属性值。在不带任何参数的情况下使用 \fBzfs help\fR 将显示完整的 \fBzfs\fR 命令列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-p\fR] [\fB-o\fR \fIencryption\fR=\fIon\fR] [\fB-o keysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fI prompt\fR | \fIfile://\fR\fB|pkcs11:|https://\fR] ... \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建新的 \fBZFS\fR 文件系统并启用加密，它使用 \fBaes-128-ccm\fR。有关支持的加密算法的列表，请参见加密属性描述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建所有非现有的父数据集。以这种方式创建的数据集会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。在命令行上使用 \fB-o\fR 选项指定的任何属性将被忽略。如果目标文件系统已经存在，则会成功完成此操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIencryption\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+将加密属性设置为 \fIvalue\fR。可以指定多个 \fB-o\fR 选项。如果在多个 \fB-o\fR 选项中指定了相同的属性，则会导致错误。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs clone\fR [\fB-p\fR] [\fB-K\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIsnapshot\fR \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建给定快照的克隆。有关详细信息，请参见"克隆"一节。目标数据集可以位于 \fBZFS\fR 分层结构中的任意位置，并且创建为与原始数据集相同的数据类型。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建所有非现有的父数据集。以这种方式创建的数据集会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。如果目标文件系统或卷已存在，则操作将成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定的属性；有关详细信息，请参见 \fBzfs create\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+在此数据集的钥匙串中创建一个新的数据加密密钥。写入克隆中的数据将使用新的数据加密密钥，该密钥与其原始快照不同。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set\fR \fBkeysource=\fR\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR| ...\fR
+.ad
+.sp .6
+.RS 4n
+对每个数据集将 \fBkeysource\fR 属性设置为给定值。只能更改 \fBkeysource\fR 位置。如果要更改包装密钥值，请使用 \fBzfs key\fR \fB-c\fR 命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+在子数据集的整个子树中递归应用设置的有效值。根据属性，可以设置或继承有效值。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs get\fR encryption | keysource | keystatus | rekeydate \fIfilesystem\fR|\fIvolume\fR| ...\fR
+.ad
+.sp .6
+.RS 4n
+显示给定数据集的属性。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归显示任何子项的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdepth\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归显示数据集的任何子项，并将递归限制为 \fIdepth\fR。深度为 \fB1\fR 时将仅显示数据集及其直接子项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+以更容易被脚本解析的格式显示输出。将省略所有标题，并通过单个制表符而不是任意数量的空格显式分隔各个字段。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-l\fR | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+装入一个数据集以及继承该密钥的任何数据集的加密密钥。通过该命令提供的密钥不是用于加密数据集的实际密钥。它是数据集的数据加密密钥集的包装密钥。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+装入包装密钥以取消加密数据集和继承该密钥的数据集的锁定。该命令基于数据集的 \fBkeysource\fR 属性定义的内容装入密钥。
+.sp
+在池导入期间，在挂载数据集时执行密钥装入操作。在引导期间，如果包装密钥可用并且 \fBkeysource\fR 未设置为 \fBprompt\fR，将执行密钥装入操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+应用于系统上所有池中的所有数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+将该操作递归应用于命名文件系统或卷下的所有数据集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-u\fR [\fB-f\fR] | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+卸载一个数据集以及继承该密钥的任何数据集的加密密钥。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+先取消挂载数据集，然后尝试卸载加密数据集以及继承密钥的数据集的包装密钥。如果卸载成功，数据集将无法访问并且已取消挂载。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+在尝试卸载密钥前尝试强制取消挂载数据集。如果未指定，将尝试正常取消挂载。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+应用于系统上所有池中的所有数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+将该操作递归应用于命名文件系统或卷下的所有数据集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-c\fR [\fB-o\fR \fBkeysource=\fR\fIvalue\fR] | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+更改包装密钥。如果新密钥具有不同的格式或定位器，\fBkeysource\fR 属性必须包含在该命令中。仅 \fBzfs key\fR \fB-c\fR 命令中包含的 \fBkeysource\fR 属性可以更改。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+更改加密数据集和继承包装密钥的数据集的包装密钥。现有密钥必须装入之后，密钥更改操作才能发生。ZFS 不会提示您输入现有口令短语。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty=value\fR\fR
+.ad
+.sp .6
+.RS 4n
+密钥更改操作中包含的要更改的属性。\fBkeysource\fR 属性是唯一一个可以在密钥更改操作中更改的选项。
+.sp
+您必须具有更改 \fBkeysource\fR 属性的权限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+应用于系统上所有池中的所有数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+将该操作递归应用于命名文件系统或卷下的所有数据集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-K\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+创建新的数据加密密钥。新的数据加密密钥由与该数据集的任何现有数据加密密钥相同的包装密钥包装。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+为该数据集创建新的数据加密密钥。在该操作之后写入的数据将使用新的数据加密密钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+应用于系统上所有池中的所有数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+将该操作递归应用于命名文件系统或卷下的所有数据集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs mount\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs mount\fR [\fB-vO\fR] [\fB-o\fR \fIoptions\fR] \fB-a\fR | \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载 \fBZFS\fR 文件系统。自动在引导过程中调用。有关 \fBzfs mount\fR 语法的完整描述，请参见 \fBzfs\fR(1M)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载指定的文件系统。
+.sp
+已加密数据集的 \fBzfs mount\fR 操作可能会提示您输入密钥，具体取决于 \fBkeysource\fR 属性值。例如，如果 \fBkeysource\fR 定位器设置为 \fBprompt\fR，可能会发生这种情况。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unmount\fR [\fB-f\fR] \fB-a\fR | \fIfilesystem\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载当前挂载的 \fBZFS\fR 文件系统。自动在关闭过程中调用。有关 \fBzfs unmount\fR 语法的完整描述，请参见 \fBzfs\fR(1M)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载指定的文件系统。也可以为该命令指定系统上 \fBZFS\fR 文件系统挂载点的路径。
+.sp
+对于已加密的数据集，卸载文件系统时，不会卸载密钥。要卸载密钥，请参见 \fBzfs key\fR。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建加密数据集
+.sp
+.LP
+以下示例显示如何使用 \fBpassphrase\fR 提示符（即 \fBkeysource\fR 属性的缺省值）创建加密数据集。该示例假定 \fBtank/home\fR 数据集未加密。
+
+.sp
+.in +2
+.nf
+# \fBzfs create -o encryption=on tank/home/bob\fR
+Enter passphrase for 'tank/home/bob/': \fB**********\fR
+Enter again: \fB**********\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+在以下示例中，\fBpktool\fR(1) 命令用于生成文件的原始密钥。接下来，通过 \fBaes-256-ccm\fR 算法和 \fBpktool\fR 生成的原始密钥文件创建加密数据集 (\fBtank/home/anne\fR)。
+
+.sp
+.in +2
+.nf
+# \fBpktool genkey keystore=file outkey=/media/stick/mykey \e\fR
+\fBkeytype=aes keylen=256\fR
+# \fBzfs create encryption=aes-256-ccm \e
+-o keysource=raw,file:///rmdisk/stick/mykey tank/home/anne\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+该示例显示如何创建提示您密钥存储在 \fBhttp\fR 位置的 ZFS 加密文件系统。
+
+.sp
+.in +2
+.nf
+# \fBzfs create -o encryption=on \e\fR
+\fB-o keysource=passphrase,https://keys.example.com/keys/42 tank/home/fs1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+该示例显示如何生成 PKCS#11 令牌中的原始密钥。然后，使用从 \fBpktool\fR 生成的原始 PKCS#11 密钥创建加密数据集。
+
+.sp
+.in +2
+.nf
+# \fBpktool genkey keystore=pkcs11 keytype=aes keylen=128 label=fs2\fR
+Enter PIN for Sun Software PKCS#11 softtoken: \fBxxxxx\fR
+# \fBzfs create -o encryption=on -o keysource=raw,pkcs11:object=fs2 \e\fR
+\fBtank/home/fs2\fR
+Enter PKCS#11 token PIN for 'tank/home/fs2': \fBxxxxx\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+该示例显示如何生成 KMS 令牌中的原始密钥。然后，使用从 \fBpktool\fR 生成的原始 KMS 密钥创建加密数据集。
+
+.sp
+.in +2
+.nf
+# \fBpktool genkey keystore=pkcs11 keytype=aes keylen=256 token=KMS \e\fR
+\fBlabel=fs3\fR
+Enter PIN for KMS: \fBxxxxx\fR
+# \fBzfs create -o encryption=aes-256-ccm \e\fR
+\fB-o keysource="raw,pkcs11:token=KMS;object=fs3" tank/home/fs3\fR
+Enter 'KMS' PKCS#11 token PIN for 'tank/home/fs3': \fBxxxxx\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR通过不同的加密算法创建加密数据集
+.sp
+.LP
+在该示例中，所有 \fBtank/home\fR 数据集都继承 \fBkeysource\fR 属性，但使用不同的加密算法创建 \fBtank/home/bob\fR 数据集。
+
+.sp
+.in +2
+.nf
+# \fBzpool create tank ....\fR
+# \fBzfs create -o encryption=on tank/home\fR
+# \fBzfs get keystatus tank/home\fR
+NAME       PROPERTY   VALUE        SOURCE
+tank/home  keystatus  available    -
+
+# \fBzfs create -o encryption=aes-256-ccm tank/home/bob\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR继承加密和密钥源属性
+.sp
+.LP
+在该示例中，所有的 \fBtank/home\fR 数据集都继承 \fBencryption\fR 和 \fBkeysource\fR 属性。
+
+.sp
+.in +2
+.nf
+# \fBzpool create -o encryption=on -o keysource=raw,file:///... tank ...\fR
+# \fBzfs create tank/home\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR更改加密数据集的包装密钥和密钥源
+.sp
+.LP
+该示例显示如何将数据集的包装密钥更改为数据集的 \fBkeysource\fR 属性定义的新密钥。
+
+.sp
+.in +2
+.nf
+# \fBzfs get keysource tank/home/bob\fR
+NAME  PROPERTY         VALUE                    SOURCE
+tank  keysource        raw,file:///etc/keyfile  default
+
+# \fBzfs key -c -o keysource=passphrase,prompt  tank/home/bob\fR
+Enter passphrase for 'tank/home/bob/': \fB**********\fR
+Enter again: \fB**********\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下示例显示如何更改数据集的包装密钥的 \fBhttp\fR 位置。
+
+.sp
+.in +2
+.nf
+# \fBzfs get keysource tank/home/bob\fR
+NAME           PROPERTY   VALUE              SOURCE
+tank/home/bob  keysource  passphrase,prompt  local
+
+# \fBzfs set keysource=passphrase,https://internal.example.com/keys/bob/zfs \\fR
+\fBtank/home/bob\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+您必须具有委托的 \fBkey\fR 和 \fBkeychange\fR 权限才能更改 \fBkeysource\fR 属性。
+
+.LP
+\fB示例 5 \fR重设数据集的加密密钥
+.sp
+.LP
+该示例显示如何更改您或管理员既看不到也未管理的数据集加密密钥。数据集的加密密钥由 \fBkeysource\fR 属性中指定的密钥包装（加密）。
+
+.sp
+.in +2
+.nf
+# \fBzfs key -K tank/project42\fR
+# \fBzfs get rekeydate,creation tank/project42\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+您必须具有委托的 \fBkeychange\fR 权限才能执行密钥更改操作。
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的命令行选项无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/zfs
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBchmod\fR(1)、\fBchown\fR(1)、\fBpktool\fR(1)、\fBssh\fR(1)、\fBmount\fR(1M)、\fBzfs\fR(1M)、\fBzpool\fR(1M)、\fBchmod\fR(2)、\fBchown\fR(2)、\fBstat\fR(2)、\fBwrite\fR(2)、\fBattributes\fR(5)
+.sp
+.LP
+有关使用其他 \fBZFS\fR 功能的信息，请参见 \fBzfs_allow\fR(1M)、\fBzfs_share\fR(1M)、\fBzfs\fR(1M) 和\fI《Solaris ZFS Administration Guide》\fR。

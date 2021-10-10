@@ -1,0 +1,136 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH rmvolmgr 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+rmvolmgr \- HAL 対応リムーバブルボリュームマネージャー
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/rmvolmgr\fR [\fB-chns\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBrmvolmgr\fR コマンドは、リムーバブルメディアとホットプラグ可能なストレージのマウントおよびマウント解除を自動的に行うことができるボリュームマネージャーです。デフォルトのマウントポイントは \fB/media\fR です。
+.sp
+.LP
+\fBrmvolmgr\fR は、Solaris オペレーティングシステムに付属する多数のハードウェア抽象化レイヤー (HAL) 対応ツールの 1 つです。\fBhald\fR(1M) を参照してください。
+.sp
+.LP
+\fBrmvolmgr\fR の複数のインスタンスを同時に実行できます。\fBrmvolmgr\fR のシステムインスタンスは、デフォルトでサービス管理機能 (SMF) サービスとして実行されます (\fBsmf\fR(5) を参照)。障害管理リソース識別子 (FMRI) は次のとおりです。
+.sp
+.in +2
+.nf
+svc:/system/filesystem/rmvolmgr
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBrmvolmgr\fR を \fB\&.xinitrc\fR ファイルまたは同様のセッション起動スクリプトに追加すれば、ユーザー独自のインスタンスを実行できます。この場合、\fBsystem\fR \fBrmvolmgr\fR インスタンスは、起動スクリプトの所有者であるユーザーに属するボリュームを管理しません。たとえば、ワークステーションコンソール (\fB/dev/console\fR) にログオンしたユーザーで、\fBrmvolmgr\fR の自身のインスタンスを呼び出したユーザーは、CD-ROM ドライブや、ローカル USB または FireWire ポートに接続したデバイスなどのローカルで接続したデバイスを所有します。
+.sp
+.LP
+\fB/media\fR の下にボリュームをマウントする以外に、\fBrmvolmgr\fR は、\fB/cdrom\fR および \fB/rmdisk\fR の下にレガシーシンボリックリンクも作成します。
+.sp
+.LP
+\fBrmvolmgr\fR はまた、\fB/tmp/.removable\fR の下の通知ファイルを管理することにより、CDE リムーバブルメディアインタフェースとの下位互換性を確保しています。この機能は、\fB-c\fR オプションを使用して無効にできます。
+.sp
+.LP
+\fB-c\fR および \fB-n\fR オプションも、SMF プロパティーとして指定できます。「使用例」を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+CDE 互換性を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 6n
+.rt  
+ヘルプ情報を表示して終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 6n
+.rt  
+レガシーマウントポイントシンボリックリンクを作成しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+システムインスタンスモードで呼び出します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRSMF プロパティーを使用してオプションを設定する
+.sp
+.LP
+次の \fBsvccfg\fR(1M) コマンドおよびサブコマンドは、SMF プロパティーを使用して、\fB-c\fR および \fB-n\fR オプションを設定します。
+
+.sp
+.in +2
+.nf
+example# \fBsvccfg\fR
+svc:> \fBselect rmvolmgr\fR
+svc:/system/filesystem/rmvolmgr> \fBlistprop rmvolmgr/*\fR
+rmvolmgr/legacy_mountpoints     boolean  true
+rmvolmgr/cde_compatible         boolean  true
+svc:/system/filesystem/rmvolmgr> \fBsetprop \e
+  rmvolmgr/legacy_mountpoints=false\fR
+svc:/system/filesystem/rmvolmgr> \fBsetprop rmvolmgr/cde_compatible=false\fR
+svc:/system/filesystem/rmvolmgr> \fBexit\fR
+example#
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/storage/media-volume-manager
+_
+インタフェースの安定性流動的
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBhald\fR(1M), \fBsvccfg\fR(1M), \fBattributes\fR(5), \fBhal\fR(5), \fBsmf\fR(5)

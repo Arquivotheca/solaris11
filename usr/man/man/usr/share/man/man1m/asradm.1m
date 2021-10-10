@@ -1,0 +1,260 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH asradm 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+asradm \- Auto Service Request registration utility
+.SH SYNOPSIS
+.LP
+.nf
+\fBasradm\fR list
+.fi
+
+.LP
+.nf
+\fBasradm\fR send [\fB-n\fR] [activate|audit|deactivate|fault|heartbeat|test]
+.fi
+
+.LP
+.nf
+\fBasradm\fR register \fB-u\fR \fIusername\fR [\fB-p\fR \fIpassword-file\fR] [\fB-e\fR \fIendpoint_URL\fR]
+.fi
+
+.LP
+.nf
+\fBasradm\fR set-proxy [\fB-i\fR] | [\fB-h\fR \fIhost\fR[:\fIport\fR]] [\fB-u\fR \fIusername\fR] [\fB-p\fR \fIpassword-file\fR]
+.fi
+
+.LP
+.nf
+\fBasradm\fR unregister
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBasradm\fR utility is used by a privileged system administrator to register hosts for enrollment in the Oracle Auto Service Request (ASR) for Oracle Sun systems.  Using auto-case generation improves system availability and expedites the diagnostic process when specific hardware faults occur.
+.sp
+.LP
+Once the system has been registered with a valid My Oracle Support (MOS) account the \fBsmf\fR(5) service, \fBasr-notify\fR, will start to send HTTPS/XML telemetry either directly to the configured endpoint or through an optional HTTP proxy.
+.sp
+.LP
+The \fBasradm\fR utility can also list the current registration state as seen from the registered server. This only confirms that messages are being sent to the Oracle ASR service and does not mean the system is actively being monitored. The user must log into their MOS account and activate the service for the system. An email should be sent to the user after registration that will describe the specific details needed to complete enrollment.
+.sp
+.LP
+ASR messages can be sent manually using the \fBsend\fR subcommand. The content of ASR messages can also be viewed without actually sending the messages as well. The generation of messages can be done even if the system has not been registered.
+.sp
+.LP
+The system can also be unregistered from the ASR service, which will remove the system from being monitored and will disable all telemetry sent by the system.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIendpoint_URL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the endpoint URL used for registration and all message telemetry. The default value is \fBtransport.sun.com\fR sends all telemetry directly to Oracle service. A different URL can be used to support a local instance of an ASR Manager solution. The local ASR Manager can be used to aggregate telemetry from many hosts instances.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost\fR[:\fIport\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Sets the HTTPS proxy host and optional port number to use for connecting to the internet. If a port is not specified, the default port value of \fB80\fR is used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the HTTPS connection to be a direct internet connection and thus not use any proxy host. This option will clear any previously set HTTPS proxy information.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+Do a dry run of sending an event, which displays the message data to stdout that would have been sent.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIusername\fR\fR
+.ad
+.sp .6
+.RS 4n
+When used with the \fBregister\fR subcommand, this specifies the MOS user name to be associated with registrations of products on this system. When used with the \fBset-proxy\fR subcommand this specifies the HTTPS proxy user name used for message transport.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpassword-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+This should be a single-line file containing a password value. It can be immediately removed after running this command. When used with the \fBregister\fR subcommand, this specifies the password associated with the MOS user name. When used with the \fBset-proxy\fR subcommand, this option specifies the password associated with the HTTPS proxy used to connect to the internet. If the \fB-p\fR option is not entered and the \fB-u\fR option was set, the user will be prompted for the password.
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+The \fBasradm\fR subcommands are described as follows.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBregister\fR\fR
+.ad
+.sp .6
+.RS 4n
+Registers the system with MOS using the supplied authentication credentials. The MOS password will be used only for initial registration, to obtain a token used for all future telemetry and will not be stored anywhere on the system.
+.sp
+If the host system is behind a firewall, then the HTTP proxy settings must be set using the set-proxy command before registering the system.
+.sp
+Once registered, an ASR activation message will be sent that will request support for automated support call generation. Subsequently, an email will be sent to the registered user giving the status of the service request.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+Shows the current authenticated MOS user name and the network connectivity information needed for HTTPS communication with MOS. If no registration has yet been done (by means of the \fBregister\fR command), then the status of \fBUnregistered\fR is displayed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-proxy\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets up the HTTPS connection information to be used for sending all ASR messages. Either a direct connection can be made or an HTTPS proxy can be defined.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunregister\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sends an ASR deactivation event and removes all configured registration information. No further telemetry will be sent and the Oracle ASR service will no longer generate any automated support calls.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsend\fR\fR
+.ad
+.sp .6
+.RS 4n
+Manually sends a specified ASR message to the Oracle ASR service or, with the dry run option (\fB-n\fR), display ASR messages.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSetup Internet Connection to Use an HTTPS Proxy
+.sp
+.LP
+The following command will route all messages through an HTTPS proxy host \fBwebproxy.example.com\fR on port 8080.
+
+.sp
+.in +2
+.nf
+# \fBasradm set-proxy -h webproxy.example.com:8080\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRRegistering an MOS ID
+.sp
+.LP
+The following command is used to interactively authenticate and register this system with the given MOS ID for use with ASR. Following this, you will be prompted for your support user name and password.
+
+.sp
+.in +2
+.nf
+# \fBasradm register\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRAuthenticating Non-interactively
+.sp
+.LP
+This is similar to \fBset\(emproxy\fR example, above. The difference is that the MOS user name and password are specified by means of the command line.
+
+.sp
+.in +2
+.nf
+# \fBasradm register -u joe.admin@example.com -p mypassword\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRViewing Contents of Audit Message
+.sp
+.LP
+The command below will display an audit message without sending the event. This will work even if the ASR service has not been registered.
+
+.sp
+.in +2
+.nf
+# \fBasradm send -n audit\fR
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/fault-management/asr-notify
+_
+Interface StabilityUncommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBsvcs\fR(1), \fBasr-notify\fR(1M), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)

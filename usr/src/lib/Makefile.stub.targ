@@ -1,0 +1,80 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Included to augment Makefile.targ with rules for producing
+# stub shared objects.
+#
+
+#
+# This makefile must be preceded by an include of Makefile.lib
+#
+$(MAKEFILE_LIB_INCLUDED).INIT: makefile_stub_targ_fail
+$(MAKEFILE_LIB_INCLUDED)makefile_stub_targ_fail:
+$(MAKEFILE_LIB_INCLUDED)	@print Makefile.stub.targ requires Makefile.lib
+$(MAKEFILE_LIB_INCLUDED)	@false
+
+
+$(STUBROOTLIBDIR)/%: stubs/%
+	$(INS.file)
+$(STUBROOTLIBDIR64)/%: stubs/%
+	$(INS.file)	
+
+$(STUBROOTFS_LIBDIR)/%: stubs/%
+	$(INS.file)
+$(STUBROOTFS_LIBDIR64)/%: stubs/%
+	$(INS.file)	
+
+$(STUBROOTLIBDIR)/$(LIBLINKS): $(STUBROOTLIBDIR)/$(LIBLINKS)$(VERS)
+	$(INS.liblink)
+$(STUBROOTLIBDIR64)/$(LIBLINKS): $(STUBROOTLIBDIR64)/$(LIBLINKS)$(VERS)
+	$(INS.liblink64)
+
+$(STUBROOTLIBDIR)/$(LIBLINKSCCC): $(STUBROOTLIBDIR)/$(LIBLINKSCCC)$(VERS)
+	$(INS.liblinkccc)
+$(STUBROOTLIBDIR64)/$(LIBLINKSCCC): $(STUBROOTLIBDIR64)/$(LIBLINKSCCC)$(VERS)
+	$(INS.liblinkccc64)
+
+
+STUBDYNLIB=		$(DYNLIB:%=stubs/%)
+STUBLIBLINKS=		$(LIBLINKS:%=stubs/%)
+
+STUBDYNLIBCCC=		$(DYNLIBCCC:%=stubs/%)
+STUBLIBLINKSCCC=	$(LIBLINKSCCC:%=stubs/%)
+
+stubs/$(DYNLIB) stubs/$(DYNLIBCCC): $$(MAPFILES)
+
+$(STUBDYNLIB) $(STUBDYNLIBCCC): stubs
+	$(STUBBUILD.SO)
+	$(POST_PROCESS_STUB)
+
+$(STUBLIBLINKS): stubs
+	$(RM) $@
+	$(SYMLINK) $(DYNLIB) $@
+
+$(STUBLIBLINKSCCC): stubs
+	$(RM) $@
+	$(SYMLINK) $(DYNLIBCCC) $@
+
+stub: $(STUBDYNLIB) $(STUBLIBLINKS) $(STUBDYNLIBCCC) $(STUBLIBLINKSCCC)

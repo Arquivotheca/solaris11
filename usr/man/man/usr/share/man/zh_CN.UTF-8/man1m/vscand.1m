@@ -1,0 +1,100 @@
+'\" te
+.\" 版权所有 (c) 2007 Oracle 和/或其附属公司。保留所有权利。
+.TH vscand 1M "2007 年 11 月 6 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+vscand \- vscan 服务守护进程
+.SH 用法概要
+.LP
+.nf
+\fB/usr/lib/vscan/vscand\fR 
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBvscand\fR 是一种守护进程，可处理文件系统发出的针对文件打开和文件关闭操作的病毒扫描请求。文件系统可以在每一个数据集的基础上，使用其管理命名（例如 \fBzfs\fR(1M)）来支持启用和禁用病毒扫描。
+.sp
+.LP
+如果文件状态或扫描策略（请参见 \fBvscanadm\fR(1M)）要求扫描某个文件，\fBvscand\fR 将使用 Internet 内容适配协议（\fBICAP\fR，\fBRFC\fR 3507）与外部第三方病毒扫描程序（扫描引擎）通信，以便对文件进行扫描。
+.sp
+.LP
+如果在最后一次扫描某个文件后又对其进行了修改，或者尚未使用最新的扫描引擎配置（病毒定义）扫描该文件，则会将其提交给扫描引擎。文件的 modified 属性和 \fBscanstamp\fR 属性可用于存储该信息。完成文件扫描以后，将清除 modified 属性并更新 \fBscanstamp\fR 属性。
+.sp
+.LP
+如果发现文件包含病毒，则会将病毒记录在 \fBsyslogd\fR(1M) 中，同时编写审计记录并将文件隔离起来（只需设置文件的 quarantine 属性即可）。隔离某个文件以后，文件系统将拒绝针对该文件的读取、执行或重命名操作。\fBsyslogd\fR(1M) 项和审计记录描述了受感染文件的名称以及在文件中检测到的违规。将按"ID - 威胁描述"这样的形式来描述每一项违规，其中，\fBID\fR 和威胁描述均在 \fBICAP\fR \fBRFC\fR 3507; 扩展的 X-Infection-Found-Header 中定义。
+.sp
+.LP
+缺省情况下，\fBvscand\fR 通过端口 1344 连接到扫描引擎。端口和其他服务配置参数可使用 \fBvscanadm\fR(1M) 进行配置。
+.sp
+.LP
+\fBvscan\fR 服务缺省情况下禁用，但可通过 \fBsvcadm\fR(1M) 启用。
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 10n
+.rt  
+守护进程启动成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB非零\fR\fR
+.ad
+.RS 10n
+.rt  
+守护进程启动失败。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/storage/virus-scan
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBps\fR(1)、 \fBsvcs\fR(1)、 \fBlogadm\fR(1M)、 \fBsvcadm\fR(1M)、 \fBsyslogd\fR(1M)、 \fBvscandadm\fR(1M)、 \fBzfs\fR(1M)、 \fBattributes\fR(5)、 \fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+如果使用不调用文件系统打开和关闭操作的协议（例如 \fBNFSv3\fR）来访问文件，则不会启动针对该文件的病毒扫描。
+.sp
+.LP
+文件内容将以 \fBcleartext\fR 数据形式传输到扫描引擎。
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对 \fBvscan\fR 服务的管理操作，如启用、禁用或请求重新启动。可以使用 \fBsvcs\fR(1) 命令来查询 \fBvscan\fR 服务的状态。
+.sp
+.LP
+\fBvscan\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为： 
+.sp
+.in +2
+.nf
+svc:/system/filesystem/vscan
+.fi
+.in -2
+.sp
+

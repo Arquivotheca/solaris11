@@ -1,0 +1,1114 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH tar 1 "2010 年 7 月 19 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+tar \- テープアーカイブの作成およびファイルの追加または抽出
+.SH 形式
+.LP
+.nf
+\fBtar\fR c[BDEFhijlnopPTvwzZ@/[0-7]][bf][X...] [\fIblocksize\fR] 
+     [\fItarfile\fR] [\fIsize\fR] [\fIexclude-file\fR]... 
+     {\fIfile\fR | \(miI \fIinclude-file\fR | \(miC \fIdirectory\fR \fIfile\fR}...
+.fi
+
+.LP
+.nf
+\fBtar\fR r[BDEFhijlnTvwzZ@/[0-7]][bf] [\fIblocksize\fR] [\fItarfile\fR] 
+     [\fIsize\fR] 
+     {\fIfile\fR | \(miI \fIinclude-file\fR | \(miC \fIdirectory\fR \fIfile\fR}...
+.fi
+
+.LP
+.nf
+\fBtar\fR t[BFhijlnTvzZ[0-7]][f][X...] [\fItarfile\fR] [\fIsize\fR] 
+     [\fIexclude-file\fR]... {\fIfile\fR | \(miI \fIinclude-file\fR}...
+.fi
+
+.LP
+.nf
+\fBtar\fR u[BDEFhijlnTvwzZ@/[0-7]][bf] [\fIblocksize\fR] [\fItarfile\fR] 
+     [\fIsize\fR] \fIfile\fR...
+.fi
+
+.LP
+.nf
+\fBtar\fR x[BFhilmnjopTvwzZ@/[0-7]][f][X...] [\fItarfile\fR] [\fIsize\fR] 
+     [\fIexclude-file\fR]... [\fIfile\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtar\fR コマンドは、複数のファイルを \fItarfile\fR と呼ばれる 1 つのファイルに保管したり、抽出したりします。通常、 tarfile は磁気テープですが、その他のファイルであってもかまいません。\fBtar\fR の動作は、キー (\fIkey\fR) 引数によって制御されます。\fIkey\fR は、1 個の機能文字 (\fBc\fR、\fBr\fR、\fBt\fR、\fBu\fR、または \fBx\fR) と、この機能文字に応じた 0 個以上の機能修飾子 (文字または数字) からなる文字列です。\fIkey\fR 文字列はスペース文字を含みません。機能修飾子に対する引数は \fIkey\fR 文字列で使用した順序で コマンド行に指定します。
+.sp
+.LP
+\fB\(miI\fR \fIinclude-file\fR、\fB\(miC\fR \fIdirectory file\fR、\fIfile\fR 引数は、どのファイルまたはディレクトリを保管または抽出するかを指定します。いずれの場合も、ディレクトリ名を使用すると、そのディレクトリのすべてのファイルやサブディレクトリを (再帰的に) 参照します。中括弧 (\fB{ }\fR) で囲まれた引数は、そのうちのどれか 1 つの引数を指定することを示します。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(miC\fR \fIdirectory file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdirectory\fR への \fBchdir\fR (\fBcd\fR(1) を参照) 操作を行なった上、\fBc\fR (作成) 操作または \fBr\fR(置換) 操作を \fIfile\fR に対して行います。\fIfile\fR には、短い相対パス名を使用します。\fIfile\fR が「\fB\&.\fR」の場合、\fIdirectory\fR 内のすべてのファイルを保存します。このオペランドを使用すると、共通の親を持たない複数のディレクトリ内にあるファイルを保管できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(miI\fR \fIinclude-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 行につき 1 つのファイル名からなるファイルの一覧を含んだ \fIinclude-file\fR をオープンし、各ファイルがコマンド行で 指定されたのと同様に処理します。include-file の行末に不要なスペースを置かないように注意してください。また、各行頭にも不要なスペースを置かないように注意してください。組み込むファイルの最初の文字列に対する一致には、改行で分かれている行全体が使用されます。除外されたファイルが存在する場合には (\fBX\fR 機能修飾子を参照)、除外されたファイルは組み込まれたファイルよりも優先されます。あるファイルが \fIexclude-file\fR と \fIinclude-file\fR の両方のファイル (またはコマンド行上) で指定されていれば、そのファイルは除外されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+保存 (\fBc\fR、\fBr\fR、または \fBu\fR機能を指定した場合) 、抽出 (\fBx\fR) 、または表示 (\fBt\fR) される通常ファイルまたはディレクトリのパス名。\fIfile\fR がディレクトリのパス名である場合、動作はそのディレクトリ以下のすべてのファイルと (再帰的に) サブディレクトリに適用します。
+.sp
+ファイルがアーカイブで、\fBE\fR フラグ (「機能修飾子」を参照) が指定されていない場合、ファイル名は 256 文字を超えることはできません。\fB\fRさらに、親ディレクトリ名との間を分割して考えると、ディレクトリ名部分は 155 文字、ファイル名部分は 100文字を超えることはできません。\fBE\fR フラグが指定されている場合、\fIPATH_MAX\fR で指定されている文字までファイル名に指定できます。
+.sp
+たとえば、ファイル名部分が 100 文字を超えるファイルは、\fBE\fR フラグを指定しないと保存されない可能性があります。ディレクトリ名部分が200 文字で、ファイル名部分が 50  文字であるファイルは、ディレクトリ名の 151 文字目から 156 文字目のどこかにスラッシュが 1 つ入っていれば、\fBE\fR フラグを指定しなくても保存されます。
+.RE
+
+.SS "機能文字"
+.sp
+.LP
+キーの機能部分は、次の文字のいずれか 1 つで指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.sp .6
+.RS 4n
+作成。tarfile  の最初から書き込みます。最後からではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.sp .6
+.RS 4n
+置換。指定した \fIfile\fR を tarfile の最後に書き込みます。拡張ヘッダーを付けて作成したファイルは、拡張ヘッダーを付けて更新する必要があります (「機能修飾子」の \fBE\fR フラグの説明を参照)。\fB\fR拡張ヘッダーなしで作成したファイルは、拡張ヘッダーを付けて修正することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.sp .6
+.RS 4n
+内容の一覧表示。指定されたファイルがtarfile に検出されるごとに、ファイル名が表示されます。\fIfile\fR 引数を指定していない場合は、tarfile のファイル名全部と関連する拡張属性が表示されます。\fBv\fR 機能修飾子をともに指定すると、指定したファイルの追加情報が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR\fR
+.ad
+.sp .6
+.RS 4n
+更新。指定された \fIfile\fR が tarfile にまだ入っていない場合、または最後に tarfile へ書き込まれて以来変更があった場合は、file は tarfile の最後に追加されます。更新には時間のかかる場合があります。SunOS 5.x システム上で作成されたtarfile は SunOS 4.x システム上では更新できません。拡張ヘッダーを付けて作成したファイルは、拡張ヘッダーを付けて更新する必要があります (「機能修飾子」の \fBE\fR フラグの説明を参照)。\fB\fR拡張ヘッダーなしで作成したファイルは、拡張ヘッダーを付けて修正することはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBx\fR\fR
+.ad
+.sp .6
+.RS 4n
+抽出または復元。指定された \fIfile\fR が tarfile から抽出され、( 現在のディレクトリからの相対パスで ) tarfile で指定されたディレクトリに書き込まれます。抽出するファイルとディレクトリには、相対パス名を使用してください。
+.sp
+tar アーカイブに含まれる絶対パス名を復元するときには、絶対パス名を使用します。つまり、先頭のスラッシュ (\fB/\fR) は取り除かれません。\fB\fR
+.sp
+デフォルトでは、絶対パス名 (スラッシュ \fB/\fR で始まる) の先頭のスラッシュは削除されます。したがって、このようなファイルやディレクトリは現在のディレクトリと相対的に抽出されます。
+.sp
+指定されたファイルが、ディレクトリで内容が  tarfile に書き込まれている場合は、このディレクトリは再帰的に抽出されます。可能な場合、所有者、変更時刻、およびモードが復元されます。それ以外の場合、所有者を復元するにはスーパーユーザーになる必要があります。文字型特殊デバイスと ブロック型特殊デバイス(\fBmknod\fR(1M) で作成) は、スーパーユーザーによってのみ抽出できます。\fIfile\fR 引数が指定されない場合は、tarfile の全体の内容を抽出します。tarfile に同じ名前のファイルが複数ある場合、各ファイルがパス名どおりのディレクトリに書き込まれ、それ以前のファイルを上書きします。アーカイブからファイルを抽出する場合は、ファイル名にワイルドカードを使用することはできません。この場合には、次の形式のコマンドを使用してください。
+.sp
+.in +2
+.nf
+\fBtar xvf ... /dev/rmt/0 \(gatar tf ... /dev/rmt/0 | \e
+     grep '\fIpattern\fR' \(ga\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+\fBr\fR または \fBu\fR 機能を使って作成した tarfile から抽出した場合、ディレクトリ修正時刻が正しく設定されないことがあります。また、これらの機能は、バックスペースや追加などの機能がないというテープドライブの制限のために、多くのテープドライブでは使用できません。
+.sp
+.LP
+\fBr\fR、\fBu\fR、または \fBx\fR 機能、あるいは \fBX\fR 機能修飾子を使用する場合には、\fItarfile\fR 中の対応するファイルとパス名が一致している必要があります。たとえば、\fB\&./\fR\fI thisfile\fR を抽出するためには、\fB\&./\fR\fIthisfile\fR を指定する必要があります。\fIthisfile\fR ではありません。\fBt\fR 機能はどのように各ファイルが保存されているかを表示します。
+.SS "機能修飾子"
+.sp
+.LP
+次の文字は、使用する機能文字に付けて使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR \fIblocksize\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブロック化因数。生の磁気テープアーカイブに読み取り、または書き込みを する場合に使用します (下記の \fBf\fR を参照) 。\fIblocksize\fR 引数では tarfile 上で実行した読み取りや書き込みの各操作で含まれる 512 バイトの テープブロックの数を指定します。最小は \fB1\fR、デフォルトは \fB20\fR です。最大値は使用可能なメモリーの総量と使用するテープデバイス固有のブロック化条件によって決まります (詳細は \fBmtio\fR(7I) を参照)。最大値は \fBINT_MAX\fR/512 (\fB4194303\fR) を超えることはできません。
+.sp
+テープアーカイブを読み取る場合は、実際のブロック化因数が自動的に検出され、名目上のブロック化因数 (\fBb\fR 修飾子を指定していない場合は、\fIblocksize\fR 引数の値かデフォルト値) よりも少ないか、あるいは等しい値が割り当てられます。実際のブロック化因数が名目上のブロック化因数よりも大きい場合、結果は読み取りエラーになります。「使用例」の「例 5」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBB\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブロック。\fBtar\fR は、(必要であれば) 複数の読み取り操作を実行し、ブロックを埋めるのに十分なバイト数だけを読み取ります。パイプやソケットは、それ以降の入力がある場合でもブロックを部分的に返すので、この機能修飾子は \fBtar\fR がイーサネットを介して動作することを可能にしています。標準入力 (\fB\(mi\fR) から読み取る場合、\fBtar\fR がブロックを埋めるのに十分なバイト数を読み取れるようにこの機能修飾子がデフォルトで選択されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBD\fR\fR
+.ad
+.sp .6
+.RS 4n
+データ変更の警告。\fBc\fR、\fBr\fR、または \fBu\fR 機能文字と一緒に使用します。\fBt\fR または \fBx\fR 機能文字と一緒に使用した場合は、無視されます。ファイルのアーカイブ中にファイルのサイズが変わった場合には、この状態はエラーではなく警告と見なしてください。メッセージは書き込まれますが、終了ステータスには影響しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+拡張ヘッダーを付けて tarfile を書き込みます (\fBc\fR、\fBr\fR、\fBu\fR オプションで使用可能、\fBt\fR または \fBx\fR 機能文字と一緒に使用した場合は、無視されます)。tarfile が拡張ヘッダー付きで書き込まれた場合、その修正時刻は秒単位ではなくマイクロ秒単位で続けられます。さらにファイル名の文字数が \fBPATH_MAX\fR 文字 (保存には \fBE\fR フラグが必要) 以下で、ファイルサイズが \fB8G\fR バイトを超えるファイルの場合もサポートします。\fBE\fR フラグは、サイズの大きいファイルや名前の長いファイル、またはその両方の場合、あるいはユーザー ID またはグループ ID が \fB2097151\fR を超えるときに保存したい場合、マイクロ秒単位の時間を取りたい場合に有用です。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイル。tarfile の名前として \fItarfile\fR 引数を使用します。\fBf\fR を指定すると、\fB/etc/default/tar\fR を検索しません。\fBf\fR を省略した場合には、\fBtar\fR は \fBTAPE\fR 環境変数 (設定されている場合) が示すデバイスを使用します。そうでない場合、\fBtar\fR は、\fB/etc/default/tar\fR に定義されているデフォルト値を使用します。\fBarchive\fR\fIN\fR 文字列に一致する数字が出力デバイスとして、ファイル内のブロック化とサイズの指定とともに使用されます。たとえば、次のように指定します。
+.sp
+.in +2
+.nf
+\fBtar -c 2/tmp/*\fR
+.fi
+.in -2
+.sp
+
+このコマンドは、\fB/etc/default/tar\fR において \fBarchive2\fR に指定されているデバイスに出力を書き込みます。
+.sp
+tarfile の名前が \fB\(mi\fR である場合は、\fBtar\fR は標準出力への書き込みあるいは標準入力からの読み取りのいずれか適当な操作を行います。\fBtar\fR はパイプラインの先頭もしくは末尾として使用することができます。また、次のコマンドを使えば、\fBtar\fR は、ディレクトリ階層を移動するためにも使用することができます。
+.sp
+.in +2
+.nf
+example% \fBcd fromdir; tar cf \(mi .| (cd todir; tar xfBp \(mi)\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBF\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBF\fR 引数を 1 つ指定すると、\fBtar\fR は tarfile から \fBSCCS\fR および \fBRCS\fR の名前のついたすべてのディレクトリを除外します。\fBFF\fR のように引数を 2 つ指定すると、\fBtar\fR は SCCS および RCS の名前のついたすべてのディレクトリ、接尾辞として \fB\&.o\fR を持つすべてのファイル、および \fBerrs\fR、\fBcore\fR、\fBa.out\fR という名前のファイルをすべて除外します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.sp .6
+.RS 4n
+シンボリックリンクをたどり、通常ファイルあるいはディレクトリとして扱います。通常、\fBtar\fR はシンボリックリンクをたどりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディレクトリ・チェックサム・エラーを無視します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBj\fR\fR
+.ad
+.sp .6
+.RS 4n
+c モードのみ。生成されたアーカイブを \fBbzip2\fR で圧縮します。抽出またはリストモードでは、このオプションは無視されます。この実装では、アーカイブの読み取り時に \fBbzip2\fR 圧縮タイプが自動的に認識されます。アップグレード/置換は、まず圧縮解除してから、同じメカニズムを適用して自動的にアーカイブを圧縮します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+リンク。保管されるファイルのリンクで、tar が解決できないものがある場合、エラーメッセージを出力します。\fBl\fR が指定されない場合は、エラーメッセージは表示されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.sp .6
+.RS 4n
+修正。ファイルの変更時刻を抽出した際の時刻に設定します。この機能修飾子は、\fBx\fR 機能とともに用いた場合のみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBn\fR\fR
+.ad
+.sp .6
+.RS 4n
+テープデバイスにないファイルを読み込みます。\fBtar\fR は、アーカイブ内部を読み取り専用で探すことができるため、アーカイブの読み込みは速くなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.sp .6
+.RS 4n
+オーナーシップ。抽出されたファイルに、tarfile 上のユーザー識別子やユーザーのグループ識別子を使用する代わりに、プログラムを実行するユーザーのユーザー識別子や グループ識別子を割り当てます。これは、ルートではないユーザーに対してデフォルトで行われます。\fBo\fR 機能修飾子が設定されておらず、さらにユーザーがルートである場合、抽出されたファイルは、tarfile 上のファイルのグループ識別子とユーザー識別子を使用します (詳細は、\fBchown\fR(1) を参照)。\fBo\fR 機能修飾子は、\fBx\fR 機能とともに用いた場合のみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の \fBumask\fR(1) を無視して、指定されたファイルを元のモード、および ACL が有効であれば、ACL を戻します。\fB\fRスーパーユーザーとして \fBx\fR 機能文字を指定して起動した場合は、これがデフォルトの動作になります。スーパーユーザーである場合は、SETUID およびスティッキ情報も抽出し、ファイルはスーパーユーザーの所有ではなく、元の所有者とアクセス権に復元されます。\fB\fRこの機能修飾子を、\fBc\fR 機能とともに使用した場合、\fBACL\fR はほかの情報とともに tarfile に作成されます。\fBACL\fR の入った tarfile が \fBtar\fR の前のバージョンによって抽出された場合、エラーが起こることがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.sp .6
+.RS 4n
+アーカイブ作成の場合、アーカイブのディレクトリエントリに最後のスラッシュ (\fB/\fR) を追加しません。 
+.sp
+アーカイブ抽出の場合、パス名を保持します。デフォルトでは、アーカイブ抽出時に絶対パス名 (スラッシュ \fB/\fR 文字で始まる) の先頭のスラッシュが削除されます。また、tar はパス名に次が含まれるアーカイブエントリの抽出を拒否します: \fB\&..\fR。このオプションは、これらの動作を無効にします。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBT\fR\fR
+.ad
+.sp .6
+.RS 4n
+この修飾子を使用できるのは、システムが Trusted Extensions で構成されている場合だけです。 
+.sp
+この修飾子を機能文字 \fBc\fR、\fBr\fR、または \fBu\fR と併用して tarfile の作成、置換、または更新を行う場合、 保存対象の各ファイルやディレクトリに関連付けられた機密ラベルが、tarfile 内に格納されます。 
+.sp
+\fBT\fR を指定すると、機能修飾子 \fBp\fR も指定されたものとみなされます。
+.sp
+機能文字 \fBx\fR と併用して tarfile の抽出を行う場合、tar プログラムは、アーカイブ内に指定されたファイルの機密ラベルが抽出先ディレクトリの機密ラベルに等しいかどうかを確認します。等しくない場合、ファイルは復元されません。この操作は大域ゾーンから起動してください。アーカイブ内のファイルが相対パス名を持つ場合、そのファイルは、同じラベルを持つ対応するディレクトリが使用できるときには、そのディレクトリに復元されます。これは、そのファイルに等しいラベルを持つゾーンのルートパス名を、現在の抽出先ディレクトリの前に付加することで実現されます。そのようなゾーンが存在しない場合、ファイルは復元されません。 
+.sp
+Trusted Solaris 8 のラベル付きアーカイブの抽出については、限定されたサポートが提供されます。機密ラベルとマルチレベルディレクトリ指定のみが解釈されます。特権指定と監査属性フラグは自動的に無視されます。シングルレベルディレクトリへのシンボリックリンクを含むマルチレベルディレクトリ指定は、同じラベルを持つゾーンが使用可能な場合には、そのゾーンの相対パス名へとマップされます。このサポートの目的は、ホームディレクトリの移行を行いやすくすることです。アーキテクチャーが異なるため、Trusted Solaris 8 の任意のラベル付きファイルを Trusted Extensions の同一パス名に抽出することはできません。ファイルを抽出できるのは、そのアーカイブ上のラベルが抽出先のラベルに一致する場合だけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBv\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長。機能文字に続けて、各ファイル名を出力します。\fBt\fR 機能とともに使用すると、\fBv\fR は、tarfile エントリに関する詳しい情報も提供します。表示は \fBls\fR(1) コマンドの \fB-l\fR オプションによる出力形式に似ています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBw\fR\fR
+.ad
+.sp .6
+.RS 4n
+処理の指示。とるべき処理とファイル名を出力し、ユーザーの確認を待ちます。応答が肯定である場合、この動作が実行されます。そうでない場合には処理は行われません。この機能修飾子は、\fBt\fR 機能と同時には使えません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBX\fR\fR
+.ad
+.sp .6
+.RS 4n
+除外。機能 \fBc\fR、\fBx\fR、または、\fBt\fR を使用した場合に、tarfile から除外されるファイル (あるいはディレクトリ) の相対パス名のリストを収めたファイルとして、\fIexclude-file\fR 引数を使用します。include-file の行末に不要なスペースを置かないように注意してください。また、各行頭にも不要なスペースを置かないように注意してください。除外するファイルの最初の文字列に対する一致には、改行で分かれている行全体が使用されます。exclude-file 内の行は厳密に照合されます。したがって、\fBtar\fR が相対パス名をバックアップしている場合、「\fB/var\fR」のようなエントリを指定しても、\fB/var\fR ディレクトリは除外されません。\fB\fRこのような状況では、エントリを「\fB\&./var\fR」と指定する必要があります。\fBtar\fR コマンドは、exclude-file 内にあるシェルのメタ文字を展開しません。したがって、「\fB*.o\fR」のようなエントリを指定しても、名前に接尾辞「\fB\&.o\fR」が付いたすべてのファイルを除外するような効果はありません。複雑なファイルのリストを除外する場合は、\fBfind\fR(1) コマンドを適切な条件で使用するなどして、exclude-file を生成する必要があります。
+.sp
+引数 1 つにつき 1 つの \fIexclude-file\fR で、複数の \fBX\fR 引数を使用できます。この場合、組み込まれたファイルが存在する場合には (\fB\(miI\fR \fIinclude-file\fR オペランドを参照)、除外されたファイルは組み込まれたファイルよりも優先されます。あるファイルが \fIexclude-file\fR と \fIinclude-file\fR の両方のファイル (またはコマンド行上) で指定されていれば、そのファイルは除外されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBz\fR\fR
+.ad
+.sp .6
+.RS 4n
+c モードのみ。生成されたアーカイブを \fBgzip\fR で圧縮します。抽出またはリストモードでは、このオプションは無視されます。この実装では、アーカイブの読み取り時に \fBgzip\fR 圧縮タイプが自動的に認識されます。アップグレード/置換は、まず圧縮解除してから、同じメカニズムを適用して自動的にアーカイブを圧縮します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+c モードのみ。生成されたアーカイブを \fBcompress\fR で圧縮します。\fBcompress\fR(1) を参照してください。抽出またはリストモードでは、このオプションは無視されます。この実装では、アーカイブの読み取り時に \fBcompress\fR 圧縮タイプが自動的に認識されます。アップグレード/置換は、まず圧縮解除してから、同じメカニズムを適用して自動的にアーカイブを圧縮します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB@\fR\fR
+.ad
+.sp .6
+.RS 4n
+拡張属性をアーカイブに取り込みます。デフォルトでは、\fBtar\fR は拡張属性をアーカイブに取り込みません。このフラグを使用すると、\fBtar\fR はファイルが拡張属性を持っているかどうかを調べて、持っていれば、拡張属性をアーカイブに取り込みます。アーカイブにおいて、拡張属性は特殊な種類のラベルを持つ特殊なファイルとして格納されます。この修飾子を \fBx\fR 機能と一緒に使用すると、拡張属性は通常のファイルのデータと一緒にテープから抽出されます。拡張属性ファイルは、通常のファイルのデータの一部としてのみ抽出できます。拡張属性ファイルだけを明示的に抽出しようとすると無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/\fR\fR
+.ad
+.sp .6
+.RS 4n
+拡張システム属性をアーカイブに取り込みます。デフォルトでは、\fBtar\fR は拡張システム属性をアーカイブに取り込みません。このフラグを使用すると、\fBtar\fR はファイルが拡張システム属性を持っているかどうかを調べて、持っていれば、拡張属性をアーカイブに取り込みます。アーカイブにおいて、拡張システム属性は特殊な種類のラベルを持つ特殊なファイルとして格納されます。この修飾子を \fBx\fR 機能と一緒に使用すると、拡張システム属性は通常のファイルのデータと一緒にテープから抽出されます。拡張システム属性ファイルは、通常のファイルのデータの一部としてのみ抽出できます。拡張属性ファイルだけを明示的に抽出しようとすると無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB[0-7]\fR\fR
+.ad
+.sp .6
+.RS 4n
+テープをマウントする代替ドライブを選択します。デフォルトは、\fB/etc/default/tar\fR に指定されています。数字または \fBf\fR 機能修飾子が指定されなければ、\fB0\fR を持つ \fB/etc/default/tar\fR 中のエントリがデフォルトになります。
+.RE
+
+.SH 使用法
+.sp
+.LP
+検出するファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBtar\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.sp
+.LP
+実際のブロック化因数の自動決定は、パイプやソケットからの読み取り時には正しく行われないことがあります (\fBB\fR 機能修飾子を参照)。
+.sp
+.LP
+1/4 インチのストリームテープは 512 バイト単位のブロック化因数を持ちます。すべてのブロック化因数を使用して、読み取りまたは書き込みが可能です。
+.sp
+.LP
+この機能修飾子は、ディスクファイルや ブロック型特殊デバイス上の アーカイブに対して動作しますが、主としてテープデバイス用を目的としています。
+.sp
+.LP
+\fBtar\fR のヘッダー形式の情報については、\fBarchives.h\fR(3HEAD) を参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fRユーザーのホームディレクトリのアーカイブを作成する
+.sp
+.LP
+\fBtar\fR を使用して、ドライブ \fB/dev/rmt/0\fR にマウントされたテープにユーザーのホームディレクトリのアーカイブを作成する例を示します。
+
+.sp
+.in +2
+.nf
+example% \fBcd\fR
+example% \fBtar cvf /dev/rmt/0\fR .
+\fImessages from\fR tar 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBc\fR 機能文字は、アーカイブの作成を意味します。\fBv\fR 機能修飾子は、\fBtar\fR の動作状況を説明するメッセージを出力します。\fBf\fR 機能修飾子は、tarfile を指定している (この例では \fB/dev/rmt/0\fR) ことを示します。コマンド行の最後のドット (\fB\&.\fR) は現在のディレクトリを示し、\fBf\fR 機能修飾子の引数になります。
+
+.sp
+.LP
+次のコマンドで、 tarfile の内容の一覧を表示します。
+
+.sp
+.in +2
+.nf
+example% \fBtar tvf /dev/rmt/0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+POSIX ロケールでは、次のように出力されます。
+
+.sp
+.in +2
+.nf
+rw\(mir\(mi\(mir\(mi\(mi   1677/40    2123    Nov  7 18:15 1985    ./test.c
+\&...
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+各カラムは次の意味を持ちます。
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+カラム 1 は、\fB\&./test.c\fR へのアクセス権
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+カラム 2 は、\fI\fR\fI\fR\fB\&./test.c\fR のユーザー ID またはグループ ID
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+カラム 3 は、\fB\&./test.c\fR のバイトサイズ
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+カラム 4 は、\fB\&./test.c\fR の修正時刻。\fBLC_TIME\fR カテゴリが POSIX ロケールに設定されていない場合、形式や日付順フィールドが異なって使用されることがあります。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+カラム 5 は、\fB\&./test.c\fR の名前
+.RE
+.sp
+.LP
+アーカイブから、ファイルを 抽出するためには、次を使用します。
+
+.sp
+.in +2
+.nf
+example% \fBtar xvf /dev/rmt/0\fR
+\fImessages from\fR tar
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+テープ上に複数のアーカイブファイルがある場合は、それぞれのファイルは、 EOF マーカによって次のファイルと区切られます。\fBtar\fR を使用して複数のアーカイブファイルが入っているテープから 1 番目と 2 番目のアーカイブファイルを読ませる場合、以下のように \fBf\fR 機能修飾子として渡すテープデバイス名は \fInon-rewind\fR 指定のある方を使用してください。
+
+.sp
+.in +2
+.nf
+example% \fBtar xvfp /dev/rmt/0n \fIread first archive from tape\fR\fR
+\fImessages from\fR tar
+example% \fBtar xvfp /dev/rmt/0n \fIread second archive from tape\fR\fR
+\fImessages from\fR tar
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以前のリリースでは、前述の処理が正しく動作しなかったり、\fBmt\fR(1) と \fBtar\fR の実行との間に調整が必要になったりする場合が ありますので注意してください。以前のリリースでの動作をエミュレートするには、BSD 用の動作を行う \fBb\fR 文字を含んだ non-rewind のデバイス名を 使用してください。詳細については \fBmtio\fR(7I) マニュアルページの「\fBClose Operations\fR」の項を参照してください。
+
+.LP
+\fB例 2 \fRデフォルトのテープドライブ 0 への /usr/include および /etc からのファイルのアーカイブ
+.sp
+.LP
+デフォルトのテープドライブ \fB0\fR に \fB/usr/include\fR のファイルおよび \fB/etc\fR のファイルを保存するためには、次を使用します。
+
+.sp
+.in +2
+.nf
+example% \fBtar c -C /usr include -C /etc .\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドによって保存された tarfile からの内容の一覧を表示すると、たとえば次のようになります。
+
+.sp
+.in +2
+.nf
+include/ 
+include/a.out.h
+\fIand all the other files in\fR \fB/usr/include ...\fR
+\&./chown \fIand all the other files in\fR /etc 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBinclude\fR の下にあるすべてのファイルを抽出するためには、次を使用します。
+
+.sp
+.in +2
+.nf
+example% \fBtar xv include
+x include/, 0 bytes, 0 tape blocks \e 
+    \fIand all files under\fR include ...\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRネットワークを介してのファイルの転送
+.sp
+.LP
+\fBtar\fR を使用して、ネットワークを介してファイルを転送する例を示します。最初に、ローカルマシン (\fBexample\fR) からリモートシステム (\fBhost\fR) 上のテープへファイルを保管する方法を示します。
+
+.sp
+.in +2
+.nf
+example% \fBtar cvfb \(mi 20 \fIfiles\fR| \e
+    rsh \fIhost\fR dd of=/dev/rmt/0 obs=20b\fR
+\fImessages from\fR tar
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の例では、\fBc\fR キー文字を使用して \fItarfile\fR を作成し、\fBv\fR 機能修飾子により \fBtar\fR からの冗長出力を要求し、\fBf\fR機能修飾子を用いて出力 \fItarfile\fR の名前を指定し (\fB\(mi\fR で、標準出力を指定)、\fBb\fR 機能修飾子によりブロックサイズ (\fB20\fR) を指定しています。\fI\fR\fI\fR\fI\fRユーザーがブロックサイズを変更したい場合は、ユーザーは、\fBtar\fR コマンドおよび \fBdd\fR コマンド両方のブロックサイズ引数を変更する必要があります。\fI\fR
+
+.LP
+\fB例 4 \fRリモートシステム上のテープからローカルシステムへファイルを戻す
+.sp
+.LP
+次に、\fBtar\fR を使用して、リモートシステム上のテープから ローカルシステムへファイルを戻す例を示します。
+
+.sp
+.in +2
+.nf
+example% \fBrsh -n host dd if=/dev/rmt/0 bs=20b | \e
+    tar xvBfb \(mi 20 \fIfiles\fR\fR
+\fImessages from\fR tar
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の例では、\fBx\fR キー文字を使用して \fItarfile\fR からファイルの抽出を行い、\fBv\fR 機能修飾子により \fBtar\fR からの冗長出力を要求し、\fBB\fR 機能修飾子によりパイプから読み取りを行うように \fBtar\fR に指示し、\fBf\fR 機能修飾子を用いて入力 \fItarfile\fR の名前を指定し (\fB\(mi\fR で、標準入力を指定)、\fBb\fR 機能修飾子によりブロックサイズ (\fB20\fR) を指定しています。\fI\fR\fI\fR\fI\fR\fI\fR\fI\fR
+
+.LP
+\fB例 5 \fRホームディレクトリのアーカイブの作成
+.sp
+.LP
+次に実際のブロック化因数を \fB19\fR にして \fB/dev/rmt/0\fR 上にホームディレクトリのアーカイブを作成する例を示します。
+
+.sp
+.in +2
+.nf
+example% \fBtar cvfb /dev/rmt/0 19 $HOME\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBb\fR 機能修飾子を使用しないでアーカイブの実際のブロック化因数を 認識するためには、次を使用します。
+
+.sp
+.in +2
+.nf
+example% \fBtar tvf /dev/rmt/0\fR
+tar: blocksize = 19
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+実際のブロック化因数 よりも大きい名目上のブロック化因数を使用して、アーカイブの実際のブロック化因数を 認識するためには、次を使用します。
+
+.sp
+.in +2
+.nf
+example% \fBtar tvf /dev/rmt/0 30\fR
+tar: blocksize = 19
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+実際のブロック化因数に対して 小さすぎる名目上のブロック化因数を使用して、アーカイブの実際のブロック化因数を 認識しようとした場合は次のようになります。
+
+.sp
+.in +2
+.nf
+example% \fBtar tvf /dev/rmt/0 10\fR
+tar: tape read error
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR圧縮アーカイブの作成
+.sp
+.LP
+次の例では、\fBbzip\fR を使用して圧縮アーカイブを作成します。
+
+.sp
+.in +2
+.nf
+example% \fBtar cjf tarfile /tmp/*\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+圧縮ファイルの名前は \fBtarfile.bz2\fR です。 
+
+.sp
+.LP
+この場合、代わりに次のコマンドシーケンスを使用しても、同じ圧縮アーカイブが作成されます。
+
+.sp
+.in +2
+.nf
+example% \fBtar cf tarfile /tmp/*\fR
+example% \fBbzip2 tarfile\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ただし、中間ファイルの作成および削除は行われません。機能修飾子 \fBz\fR および \fBZ\fR も同様に動作しますが、それぞれ \fBgzip\fR および \fBcompress\fR を使用します。
+
+.sp
+.LP
+次の例では、\fBcompress\fR を使用して圧縮アーカイブを作成します。
+
+.sp
+.in +2
+.nf
+example% \fBtar cZf tarfile /tmp/*\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+圧縮ファイルの名前は \fBtarfile.Z\fR です。
+
+.sp
+.LP
+次の例では、\fBgzip\fR を使用して圧縮アーカイブを作成します。
+
+.sp
+.in +2
+.nf
+example% \fBtar czf tarfile /tmp/*\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+圧縮ファイルの名前は \fBtarfile.gz\fR です。
+
+.LP
+\fB例 7 \fR圧縮アーカイブからのファイルの抽出
+.sp
+.LP
+次の例では、圧縮アーカイブからファイルを抽出します。\fBbzip2\fR 圧縮モードを使用してアーカイブを圧縮した場合
+
+.sp
+.in +2
+.nf
+example% \fBtar xvf tarfile.bz2\fR
+example% \fBtar xvfj tarfile.bz2\fR
+example% \fBbzcat tarfile.bz2 | tar xvf -\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBcompress\fR 圧縮モードを使用してアーカイブを圧縮した場合
+
+.sp
+.in +2
+.nf
+example% \fBtar xvf tarfile.Z\fR
+example% \fBtar xvfZ tarfile.Z\fR
+example% \fBzcat tarfile.Z | tar xvf -\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBgzip\fR 圧縮モードを使用してアーカイブを圧縮した場合
+
+.sp
+.in +2
+.nf
+example% \fBtar xvf tarfile.gz\fR
+example% \fBtar xvfz tarfile.gz\fR
+example% \fBgzcat tarfile.gz | tar xvf -\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTMPDIR\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトでは、一時ファイルは \fB/tmp\fR に作成されます。それ以外の場合、\fBtar\fR は \fBTMPDIR\fR で指定したディレクトリを使用します。
+.RE
+
+.sp
+.LP
+\fBtar\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBTZ\fR、および \fBNLSPATH\fR。
+.sp
+.LP
+肯定応答は、ユーザーのロケールの \fBLC_MESSAGES\fR カテゴリの \fByesexpr\fR キーワードで定義されている拡張正規表現を使用して処理されます。\fBLC_COLLATE\fR カテゴリに指定されているロケールは、\fByesexpr\fR に定義されている式に使用される範囲、同等クラス、および複数文字照合要素の動作を定義します。\fBLC_CTYPE\fR に指定されているロケールは、テキストデータのバイト列を文字として解釈するロケールや、\fByesexpr\fR に定義されている式に使用される文字クラスの動作を定義します。\fBlocale\fR(5) を参照してください。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rmt/[0-7][b][n]\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rmt/[0-7]l[b][n]\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rmt/[0-7]m[b][n]\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rmt/[0-7]h[b][n]\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rmt/[0-7]u[b][n]\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/rmt/[0-7]c[b][n]\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/tar\fR\fR
+.ad
+.sp .6
+.RS 4n
+設定は次のようになります。
+.br
+.in +2
+\fBarchive0=/dev/rmt/0\fR
+.in -2
+.br
+.in +2
+\fBarchive1=/dev/rmt/0n\fR
+.in -2
+.br
+.in +2
+\fBarchive2=/dev/rmt/1\fR
+.in -2
+.br
+.in +2
+\fBarchive3=/dev/rmt/1n\fR
+.in -2
+.br
+.in +2
+\fBarchive4=/dev/rmt/0\fR
+.in -2
+.br
+.in +2
+\fBarchive5=/dev/rmt/0n\fR
+.in -2
+.br
+.in +2
+\fBarchive6=/dev/rmt/1\fR
+.in -2
+.br
+.in +2
+\fBarchive7=/dev/rmt/1n\fR
+.in -2
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/tmp/tar*\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBar\fR(1), \fBbasename\fR(1), \fBcd\fR(1), \fBchown\fR(1), \fBcompress\fR(1), \fBcpio\fR(1), \fBcsh\fR(1), \fBdirname\fR(1), \fBfind\fR(1), \fBls\fR(1), \fBmt\fR(1), \fBpax\fR(1), \fBsetfacl\fR(1), \fBumask\fR(1), \fBmknod\fR(1M), \fBarchives.h\fR(3HEAD), \fBattributes\fR(5), \fBenviron\fR(5), \fBfsattr\fR(5), \fBlargefile\fR(5), \fBmtio\fR(7I)
+.SH 診断
+.sp
+.LP
+キー文字の誤りとテープ読み取り/書き込みエラー、およびリンクテーブルを保持する十分なメモリーがないという 診断メッセージが出力されます。
+.SH 注意事項
+.sp
+.LP
+ファイルの \fIn\fR 番目に現れるものをアクセスする方法がありません。
+.sp
+.LP
+テープエラーの処理は不十分です。
+.sp
+.LP
+\fBtar\fR アーカイブ形式ではアーカイブヘッダーにユーザー ID およびグループ ID を \fB2097151\fR まで格納することができます。\fB\fR\fB\fRこの値よりも大きい \fBUID\fR および \fBGID\fR を持つファイルは \fB60001\fR の \fBUID\fR および \fBGID\fR で格納されます。
+.sp
+.LP
+アーカイブを作成するときに、複数のロケールで実行している処理によってファイル名を作成したファイルを含んでいる場合、アーカイブの作成とアーカイブからのファイルの抽出のどちらも、フル 8 ビットコードセットを使用するロケール (たとえば、\fBen_US\fR ロケール) 上で使用すべきです。
+.sp
+.LP
+1/4 インチのアーカイブテープ用のテープドライブはバックスペースできないので、このようなテープでは \fBr\fR オプションと \fBu\fR オプションは使用できません。
+.sp
+.LP
+\fBtar\fR にはオプションがないため、標準の「\fB\(mi\(mi\fR」引数は必要ありません。ほかのユーティリティーでは、この引数は通常、オプションの認識を停止するために使用されます。tar に指定した場合、この引数は最初の引数として認識されるだけで、無視されます。
+.sp
+.LP
+\fB\(miC\fR \fIdirectory\fR \fIfile\fR と \fB\(miI\fR \fIinclude-file\fR は複数の引数オペランドをとります。したがって、「\fB\(miC\fR」または「\fB\(miI\fR」という名前のファイルを保管または抽出するには、次のいずれかの方法を使用します。
+.RS +4
+.TP
+1.
+これらのファイルを、スラッシュ (\fB/\fR) 文字を含む file オペランドとしてコマンド行に指定します。たとえば、「\fB/home/joe/\(miC\fR」や「\fB\&./\(miI\fR」です。
+.RE
+.RS +4
+.TP
+2.
+これらのファイルを含む include-file を作成して、\fB\(miI\fR \fIinclude-file\fR オプションで指定します。
+.RE
+.RS +4
+.TP
+3.
+これらのファイルが存在するディレクトリを指定します。
+.sp
+.in +2
+.nf
+\fB-C \fIdirectory\fR -C\fR
+.fi
+.in -2
+.sp
+
+または
+.sp
+.in +2
+.nf
+\fB-C \fIdirectory\fR -I\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+4.
+これらのファイルが存在するディレクトリ全体を指定します。
+.sp
+.in +2
+.nf
+\fB-C \fIdirectory\fR .\fR
+.fi
+.in -2
+.sp
+
+.RE

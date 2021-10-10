@@ -1,0 +1,113 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH audio_engine_chinfo 9E "16 Apr 2010" "SunOS 5.11" "Driver Entry Points"
+.SH NAME
+audio_engine_chinfo \- return channel layout information for an audio engine
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/audio/audio_driver.h>
+
+void prefix_chinfo(void *\fIstate\fR, int \fIchan\fR, unsigned *\fIoffsetp\fR,
+     unsigned *\fIincrementp\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstate\fR\fR
+.ad
+.RS 14n
+.rt  
+pointer to driver supplied soft state
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIchan\fR\fR
+.ad
+.RS 14n
+.rt  
+a channel number
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIoffsetp\fR\fR
+.ad
+.RS 14n
+.rt  
+pointer to an unsigned integer where the driver stores the offset of the channel within the first sample 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIincrementp\fR\fR
+.ad
+.RS 14n
+.rt  
+pointer to an unsigned integer where the driver stores the increment for the channel between samples
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris DDI specific (Solaris DDI)
+.SH DESCRIPTION
+.sp
+.LP
+The \fBaudio_engine_chinfo()\fR function is used by the framework to determine the layout of channel data within the audio stream.
+.sp
+.LP
+The offset indicates the index to the channel's sample data within an audio frame.
+.sp
+.LP
+The increment is the number of samples separating the channel between adjacent frames.
+.sp
+.LP
+Both offset and increment are in units of the individual sample size. For example, for signed 16-bit linear PCM, the units are given as \fBint16_t\fR. This is true regardless of whether the engine is monophonic, stereophonic, or in some other configuration.
+.sp
+.LP
+For engines with typical interleaved samples, the offset value is the same as the channel number, and the increment value is the number of channels for which the engine is configured. If \fINULL\fR is provided for this entry point, then this simple interleaved layout is assumed.
+.sp
+.LP
+Other layouts can be used to reorder the channels (by changing the offset value) or interleave data from separate buffers together (by changing the increment value.) This can be used to achieve a functionality similar to the "remux" feature of other audio systems.
+.sp
+.LP
+This entry point is only supported for playback.
+.sp
+.LP
+An audio engine may not change the layout of its buffers while it is open
+.SH CONTEXT
+.sp
+.LP
+This function may be called from user or kernel context.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBaudio\fR(7D), \fBaudio_engine_ops\fR(9S)

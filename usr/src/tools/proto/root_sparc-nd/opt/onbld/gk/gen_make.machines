@@ -1,0 +1,31 @@
+#!/usr/bin/ksh93
+#
+# 
+#
+#
+# Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
+# 
+# script to generate example .make.machines for build users
+#
+
+
+PATH=/usr/bin:/usr/sbin
+
+THISHOST=$(uname -n)
+
+cpus=$(psrinfo | grep on-line | wc -l)
+max=$(((cpus + 1) * 2))
+
+EXISTING=$(grep "^$THISHOST" $HOME/.make.machines |awk -F"=" '{print $2}')
+
+if [[ -n "$EXISTING" ]] then
+	printf "Your existing \$HOME/.make.machines has a concurrency "
+	printf "setting of $EXISTING for host\n"
+	printf "$THISHOST. If you wish to change the setting then this "
+	printf "script suggests\nsetting concurrency to $max for a single-user "
+	printf "machine. Multi-user machines might\nrequire different values.\n"
+else
+	printf "$THISHOST max=$max\n" >> $HOME/.make.machines
+	printf "dmake concurrency for host $THISHOST set to $max.\n"
+fi

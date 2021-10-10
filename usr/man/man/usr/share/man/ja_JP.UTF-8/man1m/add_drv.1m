@@ -1,0 +1,608 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH add_drv 1M "2010 年 10 月 12 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+add_drv \- システムへの新しいデバイスドライバの追加
+.SH 形式
+.LP
+.nf
+\fBadd_drv\fR [\fB-b\fR \fIbasedir\fR] [\fB-c\fR \fIclass_name\fR] 
+     [\fB-i\fR '\fIidentify_name\fR...'] [\fB-m\fR '\fIpermission\fR','...'] 
+     [\fB-p\fR '\fIpolicy\fR'] [\fB-P\fR \fIprivilege\fR] [\fB-n\fR] [\fB-f\fR] [\fB-u\fR] [\fB-v\fR] \fIdevice_driver\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBadd_drv\fR コマンドは、新たにインストールされたデバイスドライバについてシステムに通知するために使われます。
+.sp
+.LP
+システム上の各デバイスには名前が関連付けられています。この名前は、デバイスの \fBname\fR プロパティーによって表されます。同様に、デバイスにはドライバ名のリストが関連付けられていることもあります。このリストは、デバイスの \fBcompatible\fR プロパティーによって表されます。
+.sp
+.LP
+システムは、各デバイスの \fBname\fR プロパティーと \fBcompatible\fR プロパティー (存在する場合) の内容を調べることで、追加されるドライバによってどのデバイスが管理されるのかを判断します。\fBname\fR プロパティーの値が追加されるドライバと一致しない場合は、\fBcompatible\fR プロパティーの各エントリが順番に試され、一致するエントリが見つかるか、\fBcompatible\fR プロパティーのエントリがなくなるまで行われます。
+.sp
+.LP
+場合によっては、新しいドライバを追加する際に再起動 (boot-r) が必要になることがあります。「注意事項」の節を参照してください。\fB\fR
+.sp
+.LP
+エイリアスに数字が含まれている場合は、エイリアスを二重引用符で囲む必要があることがあります。「\fB使用例\fR」を参照してください。
+.SS "\fB/etc/minor_perm\fR ファイル"
+.sp
+.LP
+\fBadd_drv\fR および \fBupdate_drv\fR(1M) は、\fB/etc/minor_perm\fR ファイルを読み取ってアクセス権の情報を取得します。指定されたアクセス権は、ドライバにバインドされたデバイスが接続されるときに作成される、一致するマイナーノードに適用されます。マイナーノードのアクセス権は、\fBchmod\fR(1) によって手動で変更できます。このようなノードの場合、指定されたアクセス権が適用されて、\fBadd_drv\fR または \fBupdate_drv\fR(1M) によって指定されたデフォルトのアクセス権が置き換えられます。
+.sp
+.LP
+\fB/etc/minor_perm\fR ファイルの形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fIname\fR\fB:\fR\fIminor_name permissions owner group\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIminor_name\fR にはマイナーノードの実際の名前を指定することも、いくつかのマイナーノードを表すシェルのメタキャラクタを含めることもできます (\fBsh\fR(1) を参照)。
+.sp
+.LP
+例: 
+.sp
+.in +2
+.nf
+sd:* 0640 root sys
+zs:[a-z],cu 0600 uucp uucp
+mm:kmem 0640 root bin
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+最初の行では、\fBsd\fR ノードによってエクスポートされるすべてのデバイスに、所有者 \fBroot\fR、グループ \fBsys\fR を持つ \fB0640\fR アクセス権が設定されます。2 番目の行では、\fBzs\fR ドライバによってエクスポートされる \fBa,cu\fR \fBや\fR \fBz,cu\fR などのデバイスに、所有者 \fBuucp\fR、グループ \fBuucp\fR を持つ \fB0600\fR アクセス権が設定されます。3 番目の行では、\fBmm\fR ドライバによってエクスポートされる \fBkmem\fR デバイスに、所有者 \fBroot\fR、グループ \fBbin\fR を持つ \fB0640\fR アクセス権が設定されます。
+.SS "\fBpostinstall\fR スクリプトからの \fBadd_drv\fR の実行"
+.sp
+.LP
+パッケージの postinstall スクリプトのコンテキスト内から \fBadd_drv\fR を実行するときは、そのパッケージがシステムイメージに追加されるのか、実行中のシステムに追加されるのかについて考慮する必要があります。パッケージをシステムイメージにインストールする場合、\fBBASEDIR\fR 変数はイメージのベースディレクトリを指します。この状況では、\fB-b\fR \fB$BASEDIR\fR を指定して \fBadd_drv\fR を起動するようにしてください。これにより、\fBadd_drv\fR はイメージのシステムファイルの更新だけを行います。ドライバを操作可能にするためには、システムまたはクライアントをリブートする必要があります。
+.sp
+.LP
+パッケージが実行中のシステムそのものにインストールされる場合、前述の場合と同様に、システムファイルを更新する必要があります。ただし、リブートを行わなくても新しいドライバが存在することを実行中のカーネルに通知することができます。このためには、postinstall スクリプトが \fB-b\fR オプションなしで \fBadd_drv\fR を起動する必要があります。したがって、\fBadd_drv\fR を起動する \fBpostinstall\fR スクリプトを次のように記述してください。
+.sp
+.in +2
+.nf
+if [ "${BASEDIR:=/}" = "/" ]
+then
+        ADD_DRV="add_drv"
+else
+        ADD_DRV="add_drv -b ${BASEDIR}"
+fi
+$ADD_DRV [<options>] \fI<driver>\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+あるいは、次のように記述してください。
+.sp
+.in +2
+.nf
+if [ "${BASEDIR:=/}" != "/" ]
+then
+         BASEDIR_OPT="-b $BASEDIR"
+fi
+         add_drv $BASEDIR_OPT [<options>] \fI<driver>\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-b\fR オプションについては、このあと説明します。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIbasedir\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドライバを、\fBadd_drv\fR を実行しているシステムにインストールするのではなく、\fIbasedir\fR というルートディレクトリを持つシステムにインストールします。このオプションは通常、\fBpkgadd\fR コマンドを実行しているシステムにパッケージがインストールされない場合に、パッケージのインストール後処理スクリプトで使われます。\fIbasedir\fR をルートディレクトリとして使用するシステムは、リブートを行なってドライバのインストールを完了する必要があります。
+.LP
+注 - 
+.sp
+.RS 2
+\fB-b\fR オプションを使って、非大域ゾーンのルートファイルシステムを参照しないでください。この操作によって、大域ゾーンのファイルシステムを損傷したり、大域ゾーンのセキュリティーを損ねたり、非大域ゾーンのファイルシステムを損傷したりする可能性があります。\fBzones\fR(5) を参照してください。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムに追加されるドライバによってクラス \fIclass_name\fR がエクスポートされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+通常、システムへのドライバの設定を完了するために再起動 (boot-r) が必要な場合、\fBadd_drv\fR はドライバを追加しません。強制 (force) フラグは、再起動 (boot-r) が必要な場合でも、\fBadd_drv\fR に強制的にドライバを追加させます。\fB-v\fR フラグを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fB\&'\fR\fIidentify_name\fR\fB\&'\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドライバ \fIdevice_driver\fR のエイリアスをスペースで区切ったリスト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fB\&'\fR\fIpermission\fR\fB\&'\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice_driver\fR のためにシステムが作成したデバイスノードのファイルシステムアクセス権を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdevice_driver\fR のロードや接続を試みず、\fIdevice_driver\fR のシステム構成ファイルの変更だけを行います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR '\fIpolicy\fR\fB\&'\fR\fR
+.ad
+.sp .6
+.RS 4n
+追加のデバイスセキュリティーポリシーを指定します。 
+.sp
+デバイスセキュリティーポリシーは、スペースで区切られたいくつかのトークンから構成されます。
+.sp
+.in +2
+.nf
+{\fIminorspec\fR {token=value}+}+
+.fi
+.in -2
+.sp
+
+\fIminorspec\fR は、マイナーデバイスの単純なワイルドカードパターンです。1 つの \fB*\fR はすべてのマイナーデバイスに適合します。パターンには、\fB*\fR を 1 つしか指定できません。
+.sp
+パターンは、次の順序で照合されます。 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ワイルドカードのないエントリ
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ワイルドカードのあるエントリ (長いワイルドカードから先に照合される)
+.RE
+定義されるトークンは、\fBread_priv_set\fR と \fBwrite_priv_set\fR です。\fBread_priv_set\fR は、読み取り用にデバイスを開くときに呼び出し側プロセスの実効セットで表明される必要がある特権を定義します。\fBwrite_priv_set\fR は、書き込み用にデバイスを開くときに呼び出し側プロセスの実効セットで表明される必要がある特権を定義します。\fBprivileges\fR(5) を参照してください。 
+.sp
+マイナーデバイス仕様 (minorspec) を指定しない場合は、\fB*\fR として解釈されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR '\fIprivilege\fR\fB\&'\fR\fI\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドライバによって使用される追加の特権をコンマで区切って指定します。デバイスのポリシーに含まれる特定の特権を使用することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドライバをシステムに追加し、あとで \fBdevfsadm\fR(1M) \fB-u\fR を使用して構成するためにアクティブではない状態のままにします。\fB-u\fR の動作が \fB-n\fR と異なるのは、\fB-n\fR はシステムファイルを更新するだけで、ドライバを接続するためにはリブートが必要になる点です。\fB-u\fR を指定して追加されたドライバは、\fBdevfsadm\fR \fB-u\fR を実行することにより、リブートせずに接続できます。ドライバライターは、ドライバのこの動作について検証するようにしてください。その他の考慮事項については、「注意事項」を参照してください。\fB\fR\fB-u\fR オプションは \fB-n\fR または \fB-b\fR と同時に指定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長フラグを指定すると、\fBadd_drv\fR はシステムへのドライバの設定の成功または失敗に関する追加情報を提供します。「使用例」の節を参照してください。\fB\fR
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRSUNW Example ドライバをシステムに追加する
+.sp
+.LP
+次の例では、\fBSUNW,alias\fR というエイリアス名を使って、\fBSUNW,example\fR ドライバを 32 ビットシステムに追加します。ドライバは \fB/usr/kernel/drv\fR にすでにコピーされているものとします。
+
+.sp
+.in +2
+.nf
+example# add_drv \fB-m\fR '* 0666 bin bin','a 0644 root sys' \e
+      \fB-p\fR 'a write_priv_set=sys_config  * write_priv_set=none' \e
+      \fB-i\fR 'SUNW,alias' SUNW,example
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBSUNW,example\fR ドライバのためにシステムが作成する各マイナーノードは、アクセス権 \fB0666\fR が与えられ、グループ \fBbin\fR のユーザー \fBbin\fR によって所有されます。ただし、マイナーデバイス \fBa\fR は例外であり、こちらはグループ \fBsys\fR のユーザー \fBroot\fR によって所有され、アクセス権 \fB0644\fR が与えられます。指定されたデバイスポリシーでは、すべてのマイナーモードを開くために追加の特権は必要ありませんが、マイナーデバイス \fBa\fR は例外であり、こちらは書き込み用にデバイスを開くときに \fBsys_config\fR 特権が必要です。
+
+.LP
+\fB例 2 \fRドライバをクライアント \fB/export/root/sun1\fR に追加する
+.sp
+.LP
+次の例では、ドライバをクライアント \fB/export/root/sun1\fR に追加します。クライアントマシン \fBsun1\fR がリブートされると、ドライバがインストールされてロードされます。2 番目の例では、最初の例と同じ結果が得られますが、変更がディスクレスクライアント\fBsun1\fR 上に置かれ、ドライバをインストールするためにはクライアントをリブートする必要がある点が異なります。
+
+.sp
+.in +2
+.nf
+example# add_drv \fB-m\fR '* 0666 bin bin','a 0644 root sys' \e
+        \fB-i\fR 'SUNW,alias' -b /export/root/sun1 \e
+	SUNW,example
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の \fB-b\fR オプションの説明に含まれる注意事項 (このオプションを Solaris ゾーン機能とともに使用する場合の注意事項が示されている) を参照してください。
+
+.LP
+\fB例 3 \fR既存のドライバによってすでに管理されているデバイスに対してドライバを追加する
+.sp
+.LP
+次の例は、既存のドライバによってすでに管理されているデバイスに対して新しいドライバが追加される場合を示しています。デバイスがドライバ \fBdumb_framebuffer\fR によって現在管理されているとします。このデバイスの \fBname\fR および \fBcompatible\fR プロパティーは、次のとおりです。
+
+.sp
+.in +2
+.nf
+name="display"
+compatible="whizzy_framebuffer", "dumb_framebuffer"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBwhizzy_framebuffer\fR ドライバを追加するために \fBadd_drv\fR を使用した場合は、次のような結果になります。
+
+.sp
+.in +2
+.nf
+example# add_drv whizzy_framebuffer
+Error: Could not install driver (whizzy_framebuffer)
+Device managed by another driver.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-v\fR フラグを指定した場合は、次のような結果になります。
+
+.sp
+.in +2
+.nf
+example# add_drv -v whizzy_framebuffer
+Error: Could not install driver (whizzy_framebuffer)
+Device managed by another driver.
+Driver installation failed because the following
+entries in /devices would be affected:
+
+        /devices/iommu@f,e0000000/sbus@f,e0001000/display[:*]
+        (Device currently managed by driver "dumb_framebuffer")
+
+The following entries in /dev would be affected:
+
+        /dev/fbs/dumb_framebuffer0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fB-v\fR および \fB-f\fR フラグを指定した場合は、ドライバが追加されて、次のような結果になります。
+
+.sp
+.in +2
+.nf
+example# add_drv -vf whizzy_framebuffer
+A reconfiguration boot must be performed to complete the
+installation of this driver.
+
+The following entries in /devices will be affected:
+
+        /devices/iommu@f,e0000000/sbus@f,e0001000/display[:*]
+        (Device currently managed by driver "dumb_framebuffer"
+
+The following entries in /dev will be affected:
+
+        /dev/fbs/dumb_framebuffer0
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述の例は、現在のところ、汎用デバイス名をエクスポートするデバイスにのみ当てはまります。
+
+.LP
+\fB例 4 \fRドライバエイリアスを指定する際に二重引用符を使用する
+.sp
+.LP
+次の例では、数字が含まれるドライバエイリアスを指定する際に二重引用符を使用しています。
+
+.sp
+.in +2
+.nf
+example# add_drv -i '"pci10c5,25"' smc
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+\fBadd_drv\fR は、成功すると \fB0\fR を返し、失敗すると \fB1\fR を返します。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv\fR\fR
+.ad
+.sp .6
+.RS 4n
+32 ビットブートデバイスドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビット SPARC ブートデバイスドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビット x86 ブートデバイスドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/kernel/drv\fR\fR
+.ad
+.sp .6
+.RS 4n
+潜在的にプラットフォーム間で共有できる他の 32 ビットドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/kernel/drv/sparcv9\fR\fR
+.ad
+.sp .6
+.RS 4n
+潜在的にプラットフォーム間で共有できる他の 64 ビット SPARC ドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/kernel/drv/amd64\fR\fR
+.ad
+.sp .6
+.RS 4n
+潜在的にプラットフォーム間で共有できる他の 64 ビット x86 ドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/`uname\fR \fB-i`/kernel/drv\fR\fR
+.ad
+.sp .6
+.RS 4n
+32 ビットプラットフォーム依存のドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/`uname\fR \fB-i`/kernel/drv/sparcv9\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビット SPARC プラットフォーム依存のドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/platform/`uname\fR \fB-i`/kernel/drv/amd64\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 ビット x86 プラットフォーム依存のドライバ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/driver_aliases\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドライバエイリアスファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/driver_classes\fR\fR
+.ad
+.sp .6
+.RS 4n
+ドライバクラスファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/minor_perm\fR\fR
+.ad
+.sp .6
+.RS 4n
+マイナーノードのアクセス権
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/name_to_major\fR\fR
+.ad
+.sp .6
+.RS 4n
+メジャー番号のバインディング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/device_policy\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスポリシー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/extra_privs\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイス特権
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBboot\fR(1M), \fBchmod\fR(1), \fBdevfsadm\fR(1M), \fBkernel\fR(1M), \fBmodinfo\fR(1M), \fBrem_drv\fR(1M), \fBupdate_drv\fR(1M), \fBdriver.conf\fR(4), \fBsystem\fR(4), \fBattributes\fR(5), \fBprivileges\fR(5), \fBdevfs\fR(7FS), \fBddi_create_minor_node\fR(9F)
+.sp
+.LP
+\fI\fR
+.SH 注意事項
+.sp
+.LP
+別のドライバによってすでに管理されているデバイスに対してドライバを追加することが可能です。その場合、追加されるドライバは、デバイスの \fBcompatible\fR リストの現在のドライバの前に表示されます。このような場合は、再起動 (boot-r) が必要です (\fBboot\fR(1M) および \fBkernel\fR(1M) を参照)。再起動 (boot-r) のあとは、\fB/dev\fR 内のデバイスリンクと、これらのファイルへの参照が無効になる場合があります (\fB-v\fR フラグを参照)。ドライバのインストールを完了するために再起動 (boot-r) が必要になる場合、\fB-f\fR オプションを指定しないかぎり、\fBadd_drv\fR は失敗します。「使用例」の節の「例 3」を参照してください。\fB\fR \fB\fR\fB\fR
+.sp
+.LP
+デバイスポリシーの導入によって、一部のドライバのマイナーアクセス権が変更されたり、デバイスポリシーがインストールされたりします。一般的なネットワークドライバには、次のデバイスポリシーを使用するようにしてください。
+.sp
+.in +2
+.nf
+add_drv -p 'read_priv_set=net_rawaccess\e
+   write_priv_set=net_rawaccess' -m '* 666 root sys'\e
+   mynet
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このマニュアルは、API を構成するものではありません。\fB/etc/minor_perm\fR、\fB/etc/name_to_major\fR、\fB/etc/driver_classes\fR、および \fB/devices\fR は、将来のリリースで削除されたり、内容や解釈が異なっていたりすることがあります。ここに記載された通知は、この通知のない他のドキュメントが API を構成していることを意味するものではありません。
+.sp
+.LP
+\fB/etc/minor_perm\fR は、\fBadd_drv\fR(1M)、\fBrem_drv\fR(1M)、または \fBupdate_drv\fR(1M) によってのみ更新できます。
+.sp
+.LP
+現在のバージョンの \fBadd_drv\fR は、コマンド行から使用する場合、別名を指定するための二重引用符の使用は省略できます。ただし、パッケージスクリプトから \fBadd_drv\fR を使用する場合は、二重引用符を引き続き使用して別名を指定する必要があります。
+.sp
+.LP
+いくつかのドライバは、システムに直接追加および構成せずに、システムブートとしてのみ構成してください。この制限の理由には、ブート初期の構成にドライバの依存性があるため、またはドライバの追加と同時にインストールまたは更新されるいくつかのカーネルコンポーネントに依存性があるためなどがあります。そのようなドライバは、システムのリブート時のみにドライバがロードおよび構成されるように、必ず \fB-n\fR フラグを指定してシステムに追加する必要があります。これにより、ドライバを適切に構成できる環境が保証されます。
+.SH 使用上の留意点
+.sp
+.LP
+旧バージョンの \fBadd_drv\fR は、\fIdevice_driver\fR のパス名を受け入れていました。この機能はもうサポートされていないため、結果的にエラーが発生します。

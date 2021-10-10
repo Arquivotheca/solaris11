@@ -1,0 +1,553 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright 1994-2008 The FreeBSD Project. All rights reserved.
+.\" Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.TH mount_smbfs 1M "2011 年 4 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+mount_smbfs, umount_smbfs \- 共有リソースを SMB ファイルサーバーからマウントおよびマウント解除する
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR]
+     [\fB-O\fR] \fIresource\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR]
+     [\fB-O\fR] \fImount-point\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR] 
+     [\fB-O\fR] \fIresource\fR \fImount-point\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/umount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] \fImount-point\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmount\fR ユーティリティーは、指定されたリソース \fIresource\fR をファイルシステム階層内のパス名 \fImount-point\fR の場所に接続します。このパス名は、すでに存在している場所でなければなりません。
+.sp
+.LP
+\fBmount\fR 操作の実行前の時点で \fImount-point\fR に内容が含まれる場合、これらの内容はリソースがマウント解除されるまで非表示のままになります。\fBSYS_MOUNT\fR 特権を持つ承認されたユーザーが \fBmount\fR 操作を実行できます。また、ユーザーは、自身の所有するディレクトリ上で SMBFS マウント操作を実行できます。
+.sp
+.LP
+\fB/etc/vfstab\fR ファイルにリソースの一覧が記述されている場合、\fIresource\fR と \fImount-point\fR のいずれかを指定できます。これは、\fBmount\fR コマンドが \fB/etc/vfstab\fR ファイルで詳細情報を参照するためです。\fB-F\fR オプションを省略すると、\fBmount\fR は \fB/etc/vfstab\fR ファイル内のエントリからファイルシステムのタイプを取得します。
+.sp
+.LP
+リソースの一覧が \fB/etc/vfstab\fR ファイルに記述されていない場合は、コマンド行に \fIresource\fR と \fImount-point\fR の両方を指定する必要があります。
+.sp
+.LP
+\fBumount\fR ユーティリティーは、マウントしたファイルシステムをファイルシステム階層から切り離します。\fBSYS_MOUNT\fR 特権を持つ承認されたユーザーが \fBumount\fR 操作を実行できます。また、ユーザーは、自身の所有するディレクトリ上で SMBFS マウント解除操作を実行できます。
+.sp
+.LP
+SMB 共有のマウントに成功するには、\fBnetwork/smb/client\fR サービスが有効になっている必要があります。このサービスは、デフォルトで有効になっています。
+.sp
+.LP
+サービスを有効にするには、次の \fBsvcadm\fR(1M) コマンドを入力します。
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/smb/client\fR
+.fi
+.in -2
+.sp
+
+.SS "オペランド"
+.sp
+.LP
+\fBmount\fR コマンドでは次のオペランドをサポートしています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIresource\fR //\fIserver\fR/\fIshare\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.LP
+マウントするリソースの名前。名前に加えて、リソースに関する次の情報も指定できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIserver\fR は、リモートコンピュータの DNS または NetBIOS 名です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIshare\fR は、リモートサーバー上のリソース名です。
+.RE
+ユーザーアカウントも指定できます。「オプション」の節を参照してください。
+.sp
+\fBmount\fR コマンドは、ユーザーアカウントの標準入力からパスワードを読み取ることができます。パスワードが指定されない場合、\fBmount\fR は最初に、\fBsmbadm add-key\fR コマンドによって格納されたパスワード (存在する場合) の使用を試みます。そのパスワードが認証に失敗した場合、標準入力が TTY であれば、\fBmount_smbfs\fR コマンドがパスワードの入力をユーザーに求めます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImount-point\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムをマウントまたはマウント解除する場所へのパス。\fBmount\fR コマンドは、マウントしたファイルシステムのテーブルを \fB/etc/mnttab\fR ファイル内で管理します。\fBmnttab\fR(4) のマニュアルページを参照してください。
+.RE
+
+.SH オプション
+.sp
+.LP
+サポートされる \fIgeneric-options\fR のリストについては、\fBmount\fR(1M) のマニュアルページを参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR または\fR
+.ad
+.br
+.na
+\fB\fB-o\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステム固有のプロパティーを設定します。複数の名前-値ペアを、コンマ区切りのリストで指定できます。リストにスペースを含めることはできません。プロパティーは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacdirmax\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャッシュした属性を保持する時間は、ディレクトリの更新後 \fIn\fR 秒以内です。デフォルト値は \fB60\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacdirmin\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャッシュした属性を保持する時間は、ディレクトリの更新後 \fIn\fR 秒以上です。デフォルト値は \fB30\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacregmax\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャッシュした属性を保持する時間は、ファイルの変更後 \fIn\fR 秒以内です。デフォルト値は \fB60\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacregmin\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+キャッシュした属性を保持する時間は、ファイルの変更後 \fIn\fR 秒以上です。デフォルト値は \fB3\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactimeo\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+通常のファイルおよびディレクトリの最小と最大の時間値を \fIn\fR 秒に設定します。このオプションを \fB0\fR に設定した場合の効果については、後述の「ファイル属性」を参照してください。
+.RE
+
+\fBmount\fR コマンド行で \fBacdirmax\fR、\fBacdirmin\fR、\fBacregmax\fR、\fBacregmin\fR、および \fBactimeo\fR が解析される方法については、後述の「属性キャッシュ期間オプションの値の指定」を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdirperms=\fR\fIoctaltriplet\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディレクトリに割り当てるアクセス権を設定します。値は 3 つの 8 進数で指定する必要があります (例: \fB755\fR)。ディレクトリモードのデフォルト値は \fBfileperms\fR 設定から取得され、\fBfileperms \fR が読み取り権を持つ場所に実行権が追加されます。
+.sp
+これらのアクセス権は、SMB サーバーにより許可される権限とは無関係です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdomain\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザー名が定義されているワークグループまたは Windows ドメインの名前を指定します。ドメイン名を指定しない場合、デフォルトのシステムの SMB ドメインが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfileperms=\fR\fIoctaltriplet\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルに割り当てるアクセス権を設定します。値は 3 つの 8 進数で指定する必要があります (例: \fB644\fR)。デフォルト値は \fB700\fR です。
+.sp
+これらのアクセス権は、SMB サーバーにより許可される権限とは無関係です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid=\fR\fIgroupid\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したグループ ID をファイルに割り当てます。デフォルト値は、ボリュームがマウントされているディレクトリのグループ ID です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBintr\fR|\fBnointr\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーが呼び出し元のスレッドに割り込みを行なった場合 (たとえば、操作の実行中に Ctrl-C キーを押した場合) に、\fBsmbfs\fR(7FS) I/O 操作の取り消しを有効 (または無効) にします。デフォルトは \fBintr\fR (割り込み有効) で、通常は取り消しが許可されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoac\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性のキャッシュを抑制します。ローカルの \fBstat\fR(2) 呼び出しでは、常に SMB サーバーに属性を要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+共有のマウント時でのパスワードの入力要求を抑制します。このプロパティーを指定すると、共有への匿名アクセスが可能になります。匿名アクセスでは、パスワードは不要です。
+.sp
+\fBmount\fR 操作が失敗するのは、パスワードが必須で、\fBnoprompt\fR プロパティーが設定されており、\fBsmbadm add-key\fR コマンドによって格納されたパスワードがない場合です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBretry_count=\fR\fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+接続に切断のマークが付けられるまでの SMBFS の再試行回数を指定します。デフォルトの試行回数は 4 回です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout=\fR\fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+SMB 要求のタイムアウトを指定します。デフォルトでは、タイムアウトは 15 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid=\fR\fIuserid\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したユーザー ID をファイルに割り当てます。デフォルト値は、ボリュームがマウントされているディレクトリの所有者 ID です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIuser\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモートユーザー名を指定します。ユーザーを省略した場合、ログインしているユーザー ID が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxattr\fR|\fBnoxattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+このマウントポイントで Solaris 拡張属性を有効 (または無効) にします。このオプションのデフォルトは \fBxattr\fR (拡張属性の有効化) ですが、SMB サーバーが SMB の「名前付きストリーム」に対応していない場合、\fBsmbfs\fR(7FS) はこのオプションを強制的に \fBnoxattr\fR に設定します。mount コマンドに \fBnoxattr\fR オプションが指定されている場合、Solaris 拡張属性の使用は EINVAL で失敗します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.sp .6
+.RS 4n
+マウントをオーバーレイします。既存のマウントポイント上にファイルシステムをマウントできます。これより基礎となるファイルシステムにはアクセスできなくなります。このフラグを設定せずに既存のマウントポイント上にファイルシステムをマウントしようとすると、マウントは失敗して、device busy というエラーメッセージが表示されます。
+.RE
+
+.SH ファイル属性
+.sp
+.LP
+\fBsmbfs\fR のパフォーマンスを改善するために、ファイル属性がキャッシュされます。ローカルで変更が行われると、常にファイルの変更時間が更新されます。ただし、ファイルのアクセス時間は、キャッシュが更新されるまで一時的に古いままになることがあります。
+.sp
+.LP
+属性のキャッシュには、クライアント上のファイル属性が保持されます。ファイルの属性には、フラッシュされる時間が割り当てられます。フラッシュの時間より前にファイルが変更された場合、(最近変更されたファイルはまもなく変更されるだろうという仮定に基づき) 最終変更以降の時間だけフラッシュの時間が延長されます。通常ファイルおよびディレクトリの場合、フラッシュの延長時間には最小値と最大値があります。\fBactimeo=\fR\fIn\fR を設定すると、通常ファイルとディレクトリの両方で、フラッシュ時間が \fIn\fR 秒に設定されます。
+.sp
+.LP
+\fBactimeo=\fR\fIn\fR を設定すると、クライアントでの属性のキャッシュが無効になります。これは、属性を参照すると、そのすべての情報がサーバーから直接送られることを意味します。これにより、クライアントが常にサーバーから最新のファイル属性を入手することが保証されますが、待ち時間、ネットワークの負荷、およびサーバーの負荷が増加するため、パフォーマンスが悪影響を受けます。
+.sp
+.LP
+\fBnoac\fR オプションを設定しても、属性のキャッシュが無効になります。\fBsmbfs\fR を拡張して書き込みキャッシュをサポートしている場合、このオプションにより書き込みキャッシュも無効になります。
+.SH 属性キャッシュ期間オプションの値の指定
+.sp
+.LP
+前述の「オプション」で説明したように、属性キャッシュ期間オプションには \fBacdirmax\fR、\fBacdirmin\fR、\fBacregmax\fR、\fBacregmin\fR、および \fBactimeo\fR があります。\fB\fR\fBactimeo\fR に設定した値は、\fBmount\fR コマンド行の \fBactimeo\fR のあとに指定されたオプションを除き、すべての属性キャッシュ期間オプションに適用されます。たとえば、次のコマンドについて考えてみます。
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o acdirmax=10,actimeo=1000 \e\fR
+     \fB//server/share  /mountpoint\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBactimeo\fR はコマンド行の末尾に記述された期間オプションであるため、その値 (\fB1000\fR) が \fBacdirmax\fR を含む、すべての期間オプションの設定になります。次について考えてみます。
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o actimeo=1000,acdirmax=10 \e\fR
+     \fB//server/share  /mountpoint\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBacdirmax\fR オプションはコマンド行で \fBactimeo\fR のあとに配置されているため、このオプションには指定された値 (\fB10\fR) が割り当てられます。残りの期間オプションには、\fBactimeo\fR (\fB1000\fR) の値が設定されます。
+.SH 使用例
+.LP
+\fB例 1 \fRSMBFS 共有をマウントする
+.sp
+.LP
+次の例では、\fBSALES\fR ワークグループの \fBnano\fR サーバー上にある \fB/tmp\fR 共有を、ローカルの \fB/mnt\fR マウントポイントにマウントする方法を示します。マウント操作に成功するには、\fBroot\fR ユーザーのパスワードを指定する必要があります。
+
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o user=root,domain=SALES //nano.sfbay/tmp /mnt\fR
+Password:
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRSMBFS ファイルシステムがマウントされていることを確認する
+.sp
+.LP
+次の例では、\fBnano\fR サーバーの \fB/tmp\fR 共有をローカルの \fB/mnt\fR マウントポイントにマウントする方法を示します。マウント操作に成功するには、\fBroot\fR ユーザーのパスワードを指定する必要があります。
+
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o user=root //nano.sfbay/tmp /mnt\fR
+Password:
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の方法で、共有がマウントされていることを確認できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB/etc/mnttab\fR ファイルでファイルシステムのエントリを参照します。
+.sp
+.in +2
+.nf
+# \fBgrep mnt /etc/mnttab\fR
+//nano.sfbay/tmp   /mnt    smbfs   dev=4900000     1177097833
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBmount\fR コマンドの出力を参照します。
+.sp
+.in +2
+.nf
+# \fBmount | grep mnt\fR
+mnt on //nano.sfbay/tmp read/write/setuid/devices/dev=4900000 on
+Tue Apr 20 13:37:13 2010
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBdf /mnt\fR コマンドの出力を参照します。
+.sp
+.in +2
+.nf
+# \fBdf /mnt\fR
+/mnt            (//nano.sfbay/tmp): 3635872 blocks     -1 files
+.fi
+.in -2
+.sp
+
+.RE
+.sp
+.LP
+\fBdf -k /mnt\fR コマンドの出力を参照して、マウント済みの共有に関する情報を取得します。
+
+.sp
+.in +2
+.nf
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+//nano.sfbay/tmp
+                      1882384   64448 1817936     4%    /mnt
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRSMB 共有をマウント解除する
+.sp
+.LP
+この例では、SMB 共有が \fB/mnt\fR マウントポイントにマウントされているものとします。次のコマンド行により、共有がマウントポイントからマウント解除されます。
+
+.sp
+.in +2
+.nf
+# \fBumount /mnt\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mnttab\fR\fR
+.ad
+.sp .6
+.RS 4n
+マウントされているファイルシステムのテーブル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/fstypes\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトの分散ファイルシステムタイプ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動的にマウントされたリソースのテーブル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/smb/smbfspasswd\fR\fR
+.ad
+.sp .6
+.RS 4n
+Solaris SMB クライアントのユーザーごとの設定を格納します。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) のマニュアルページを参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/smb
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBmount\fR(1M), \fBmountall\fR(1M), \fBsmbadm\fR(1M), \fBsvcadm\fR(1M), \fBacl\fR(2), \fBfcntl\fR(2), \fBlink\fR(2), \fBmknod\fR(2), \fBmount\fR(2), \fBstat\fR(2), \fBsymlink\fR(2), \fBumount\fR(2), \fBmnttab\fR(4), \fBsmb\fR(4), \fBvfstab\fR(4), \fBattributes\fR(5), \fBpcfs\fR(7FS), \fBsmbfs\fR(7FS)
+.SH 注意事項
+.sp
+.LP
+Solaris SMB クライアントは、\fBgethostbyname()\fR を使用してホスト名を解決することを常に試みます。ホスト名を解決できない場合、SMB クライアントは NetBIOS 名前解決 (NBNS) を使用します。Solaris SMB クライアントでは、Windows 環境の Solaris SMB クライアントが追加の設定なしで動作できるように NBNS の使用を許可しています。
+.sp
+.LP
+ファイルシステムがマウントされるディレクトリがシンボリックリンクの場合、ファイルシステムは、シンボリックリンク自身ではなく、シンボリックリンクが参照するディレクトリ上にマウントされます。

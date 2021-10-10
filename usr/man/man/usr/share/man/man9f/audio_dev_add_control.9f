@@ -1,0 +1,664 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH audio_dev_add_control 9F "21 Apr 2010" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+audio_dev_add_control, audio_dev_del_control, audio_dev_update_controls, audio_dev_add_soft_volume, audio_control_read, audio_control_write \- audio device control functions
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/audio/audio_driver.h>
+
+typedef int (*audio_ctrl_wr_t)(void *, uint64_t);
+        typedef int (*audio_ctrl_rd_t)(void *, uint64_t *);
+
+audio_ctrl_t *audio_dev_add_control(audio_dev_t *\fIadev\fR,
+     audio_ctrl_desc_t *\fIdesc\fR, audio_ctrl_rd_t \fIreadfn\fR,
+     audio_ctrl_wr_t \fIwritefn\fR, void *\fIdata\fR);
+.fi
+
+.LP
+.nf
+void audio_dev_del_control(audio_ctrl_t *\fIctrl\fR);
+.fi
+
+.LP
+.nf
+void audio_dev_update_controls(audio_dev_t *\fIadev\fR);
+.fi
+
+.LP
+.nf
+void audio_dev_add_soft_volume(audio_dev_t *\fIadev\fR);
+.fi
+
+.LP
+.nf
+int audio_control_read(audio_ctrl_t *\fIctrl\fR, uint64_t *\fIvaluep\fR);
+.fi
+
+.LP
+.nf
+int audio_control_write(audio_ctrl_t *\fIctrl\fR, uint64_t \fIvalue\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIadev\fR\fR
+.ad
+.RS 11n
+.rt  
+pointer to an audio device allocated with \fBaudio_dev_alloc\fR(9F)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdesc\fR\fR
+.ad
+.RS 11n
+.rt  
+pointer to an structure describing the control. The structure has the following definition:
+.sp
+.in +2
+.nf
+struct audio_ctrl_desc {
+    const char   *acd_name;       /* Controls Mnemonic */
+    uint32_t     acd_type;        /* Entry type */
+    uint64_t     acd_flags;       /* Characteristics */
+    uint64_t     acd_maxvalue;    /* Max value control */
+    uint64_t     acd_minvalue;    /* Min value control */
+    const char   *acd_enum[64];   /* Enum values */
+};
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIreadfn\fR\fR
+.ad
+.RS 11n
+.rt  
+pointer to a function used to read the value of the control
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIwritefn\fR\fR
+.ad
+.RS 11n
+.rt  
+pointer to a function used to write the value of the control
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdata\fR\fR
+.ad
+.RS 11n
+.rt  
+driver private data pointer passed to read and write functions
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIctrl\fR\fR
+.ad
+.RS 11n
+.rt  
+opaque handle to audio control previously returned by \fBaudio_dev_add_control()\fR
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris DDI specific (Solaris DDI)
+.SH DESCRIPTION
+.sp
+.LP
+Controls for audio devices are adjustable values that affect the operation of the device. The most common use of a control is to affect volume settings.
+.sp
+.LP
+The \fBaudio_dev_add_control()\fR function registers a control for the audio device and associates handlers with it.
+.sp
+.LP
+The \fIdesc\fR parameter describes the control in more detail. It has the following structure:
+.sp
+.in +2
+.nf
+struct audio_ctrl_desc {
+    const char  *acd_name;      /* Controls Mnemonic */
+    uint32_t    acd_type;       /* Entry type */
+    uint64_t    acd_flags;      /* Characteristics */
+    uint64_t    acd_maxvalue;   /* Max value control */
+    uint64_t    acd_minvalue;   /* Min value control */
+    const char  *acd_enum[64];  /* Enum values */
+};
+.fi
+.in -2
+
+.sp
+.LP
+The \fIacd_name\fR field is a simple ASCII string identifying the control. The convention is to follow the same naming rules as used for C identifiers.
+.sp
+.LP
+The following predefined control names are available and should be used when possible. Other names may be used, but might not be presented consistently to all users in all locales, so they should be used with caution.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_VOLUME\fR\fR
+.ad
+.RS 27n
+.rt  
+Master play back volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_LINEOUT\fR\fR
+.ad
+.RS 27n
+.rt  
+Volume on the line out jack
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_FRONT\fR\fR
+.ad
+.RS 27n
+.rt  
+Front speaker volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_REAR\fR\fR
+.ad
+.RS 27n
+.rt  
+Rear speaker volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_HEADPHONE\fR\fR
+.ad
+.RS 27n
+.rt  
+Headphone volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_CENTER\fR\fR
+.ad
+.RS 27n
+.rt  
+Center speaker volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_LFE\fR\fR
+.ad
+.RS 27n
+.rt  
+Low-frequency effect volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_SPEAKER\fR\fR
+.ad
+.RS 27n
+.rt  
+Built-in speaker volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_MIC\fR\fR
+.ad
+.RS 27n
+.rt  
+Microphone gain
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_CD\fR\fR
+.ad
+.RS 27n
+.rt  
+CD input gain
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_LINEIN\fR\fR
+.ad
+.RS 27n
+.rt  
+Line input gain
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_RECGAIN\fR\fR
+.ad
+.RS 27n
+.rt  
+Master record gain
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_MONGAIN\fR\fR
+.ad
+.RS 27n
+.rt  
+Monitor gain
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_ID_RECSRC\fR\fR
+.ad
+.RS 27n
+.rt  
+Record source
+.RE
+
+.sp
+.LP
+The \fIacd_type\fR field indicates the type of control. The following types are available:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_TYPE_BOOLEAN\fR\fR
+.ad
+.RS 27n
+.rt  
+A simple boolean on/off value
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_TYPE_STEREO\fR\fR
+.ad
+.RS 27n
+.rt  
+A stereophonic control. The value for the right channel is in the low order byte, and for the right channel is in the 2nd least significant byte.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_TYPE_MONO\fR\fR
+.ad
+.RS 27n
+.rt  
+A monophonic value
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_TYPE_ENUM\fR\fR
+.ad
+.RS 27n
+.rt  
+An enumeration
+.RE
+
+.sp
+.LP
+The \fIacd_flags\fR field is a bitmask that provides additional detail about the control. The following bits are defined; all other bits are reserved and must not be set by the driver:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_READABLE\fR\fR
+.ad
+.RS 29n
+.rt  
+Control readable
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_WRITEABLE\fR\fR
+.ad
+.RS 29n
+.rt  
+Control writable
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_RW\fR\fR
+.ad
+.RS 29n
+.rt  
+Read/writable
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_MAINVOL\fR\fR
+.ad
+.RS 29n
+.rt  
+Main analog volume control
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_PCMVOL\fR\fR
+.ad
+.RS 29n
+.rt  
+PCM output volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_RECVOL\fR\fR
+.ad
+.RS 29n
+.rt  
+Record volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_MONVOL\fR\fR
+.ad
+.RS 29n
+.rt  
+Monitor volume
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_PLAY\fR\fR
+.ad
+.RS 29n
+.rt  
+Control relates to playback
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_REC\fR\fR
+.ad
+.RS 29n
+.rt  
+Control relates to recording
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_MONITOR\fR\fR
+.ad
+.RS 29n
+.rt  
+Control relates to monitoring
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAUDIO_CTRL_FLAG_MULTI\fR\fR
+.ad
+.RS 29n
+.rt  
+Enumeration is a bitmask that allows multiple selections
+.RE
+
+.sp
+.LP
+The \fIacd_minvalue\fR and \fIacd_maxvalue\fR fields constrain the values that the control can take. For boolean values, they should be 0 and 1. For monophonic and stereophonic controls, they are the values for one channel, and must not exceed 255. For enumerations, \fIacd_minvalue\fR indicates enumeration values that may be changed and \fIacd_maxvalue\fR indicates the full mask of possible options. It is nonsensical for \fIacd_minvalue\fR to have value different from \fIacd_maxvalue\fR if \fBAUDIO_CTRL_FLAG_MULTI\fR is not set. If a bit is present in \fIacd_maxval\fR but not in \fIacd_minvalue\fR, then the corresponding bit must always be set in the value.
+.sp
+.LP
+The \fIacd_enum\fR field is used with \fBAUDIO_CTRL_TYPE_ENUM\fR and provides ASCII strings identifying each bit in the enumeration. The following definitions are available for use and should be used whenever possible.
+.br
+.in +2
+\fBAUDIO_PORT_MIC\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_CD\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_VIDEO\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_AUX1OUT\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_AUX2OUT\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_LINEOUT\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_LINEIN\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_AUX1IN\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_AUX2IN\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_HEADPHONES\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_SPDIFIN\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_SPDIFOUT\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_DIGOUT\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_DIGIN\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_PORT_HDMI\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_ON\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_OFF\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_VERYLOW\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_LOW\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_MEDIUM\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_HIGH\fR
+.in -2
+.br
+.in +2
+\fBAUDIO_VALUE_VERYHIGH\fR
+.in -2
+.sp
+.LP
+The \fBreadfn()\fR function takes the supplied driver private data as its first argument and a pointer to receive the controls current value as its second argument. It returns 0 on success, or an \fBerrno\fR on failure. It may be called in interrupt context and must not block.
+.sp
+.LP
+The \fBwritefn()\fR function takes the supplied driver private data as its first argument and a new value to set for the control as its second argument. It return 0 on success or an \fBerrno\fR on failure. It may be called in interrupt context and must not block.
+.sp
+.LP
+The data argument is a pointer to driver private state passed as is to the \fBreadfn()\fR and \fBwritefn()\fR functions.
+.sp
+.LP
+If a control with the supplied name is already present, the previously associated control is automatically removed and its resources released.
+.sp
+.LP
+The \fBaudio_dev_del_control()\fR function removes the supplied control from the audio device and frees any related resources.
+.sp
+.LP
+The \fBaudio_dev_update_controls()\fR function is called by the audio driver to indicate that the value for one or more of the controls on the audio device has changed asynchronously.
+.sp
+.LP
+The \fBaudio_dev_add_soft_volume()\fR function is used to create a synthetic volume control for the audio device. It can be used for audio devices that lack any physical volume control capability. The control is registered using \fBAUDIO_CTRL_ID_VOLUME\fR.
+.sp
+.LP
+The \fBaudio_control_read()\fR function is used by a driver to call the read function for the control. This can be useful when used with layered systems which override control functions.
+.sp
+.LP
+The \fBaudio_control_write()\fR function is used by a driver to call the write function for the control. This can be useful when used with layered systems that override control functions.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBaudio_dev_add_control()\fR function returns an opaque handle to the control.
+.sp
+.LP
+The control read and write functions return 0 on success or an error number on failure.
+.SH CONTEXT
+.sp
+.LP
+The \fBaudio_dev_add_control()\fR, \fBaudio_dev_del_control()\fR, and \fBaudio_dev_add_soft_volume()\fR functions may be called from user or kernel context only.
+.sp
+.LP
+The \fBaudio_dev_update_controls()\fR, \fBaudio_control_read()\fR, and \fBaudio_control_write()\fR functions can be called from user, kernel, or interrupt context.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBaudio\fR(7D), \fBaudio_dev_alloc\fR(9F), \fBaudio_dev_register\fR(9F), \fBaudio_dev_suspend\fR(9F)
+.SH NOTES
+.sp
+.LP
+The audio framework provides the following synchronization guarantees for audio controls:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Only one thread will be executing an audio control accessor function for a given audio device at any one time.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+No threads will be executing any audio control accessor functions for a given audio device if that device is suspended. See \fBaudio_dev_suspend\fR(9F).
+.RE
+.sp
+.LP
+Each control must have a unique name. An attempt to register a control with a name that is already in use will overwrite the previous control and return the same handle that was obtained originally. This can be used to reconfigure the settings of a control. However, care must be taken to ensure that the control is only deleted once during cleanup, or else a system crash will probably result.
+.sp
+.LP
+Any controls added to an audio engine with \fBaudio_dev_add_control()\fR must be destroyed with \fBaudio_dev_del_control()\fR before the device itself is freed with \fBaudio_dev_free\fR(9F).
+.sp
+.LP
+If \fBaudio_dev_add_soft_volume()\fR is performed for a device, the caller must ensure that no \fBAUDIO_CTRL_ID_VOLUME\fR controls are created for it using \fBaudio_dev_add_control()\fR. Unlike other controls, the soft volume control is destroyed automatically during the execution of \fBaudio_dev_free()\fR.

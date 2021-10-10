@@ -1,0 +1,1009 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1982-2007 AT&T Knowledge Ventures
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH history 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+history, fc, hist \- コマンドの履歴リストの処理
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/fc\fR [\fB-r\fR] [\fB-e\fR \fIeditor\fR] [\fIfirst\fR [\fIlast\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/fc\fR \fB-l\fR [\fB-nr\fR] [\fIfirst\fR [\fIlast\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/fc\fR \fB-s\fR [\fIold\fR = \fInew\fR] [\fIfirst\fR]
+.fi
+
+.SS "csh"
+.LP
+.nf
+\fBhistory\fR [\fB-hr\fR] [\fIn\fR]
+.fi
+
+.SS "ksh88"
+.LP
+.nf
+\fBfc\fR \fB-e\fR \fB-\fR [\fIold\fR = \fInew\fR] [\fIcommand\fR]
+.fi
+
+.LP
+.nf
+\fBfc\fR \fB-s\fR [\fIold\fR = \fInew\fR] [\fIcommand\fR]
+.fi
+
+.LP
+.nf
+\fBfc\fR [\fB-e\fR \fIename\fR] [\fB-nlr\fR] [\fIfirst\fR [\fIlast\fR]]
+.fi
+
+.SS "ksh"
+.LP
+.nf
+\fBhist\fR [\fB-lnprs\fR] [\fB-e\fR \fIeditor\fR][\fB-N\fR \fInum\fR][\fIfirst\fR[\fIlast\fR]]
+.fi
+
+.SH 機能説明
+.SS "/usr/bin/fc"
+.sp
+.LP
+\fBfc\fR ユーティリティーは、以前に対話型 \fBsh\fR に入力されたコマンドの一覧表示、または 編集と再実行を行います。
+.sp
+.LP
+コマンドの履歴リストは、番号によってコマンドを参照します。リスト中の最初の番号は任意に選択できます。番号とコマンドとの関係は変わることはありません。ただしユーザーがログインしたときに、どのプロセスもリストをアクセスしていない場合を除きます。この場合には、システムは番号をリセットするので、保存されているもっとも古いコマンドは別の番号 (通常は 1) で開始できます。番号が、\fBHISTSIZE\fR の値と \fB32767\fR の大きい方の値に到達したとき、シェルは番号を循環させるので、次のコマンドはより小さい数字 (通常は 1) で開始できます。ただし、このように番号が循環しても、\fBfc\fR は時間の順序は把握しています。たとえば 4 つのコマンドにそれぞれ 32\|766 、32\|767、1 (循環後)、2 という番号が与えられたとき、32\|767 は 1 よりも大きい値であっても 1 以前に実行されたものであると認識しています。
+.sp
+.LP
+コマンドが編集されたとき (\fB-l\fR オプション省略時) 、結果として生成された行が履歴リストの最後尾に記録され、\fBsh\fR によって再実行されます。編集作業を起動した \fBfc\fR コマンド自身は履歴リストには記録されません。エディタがゼロ以外の終了ステータスを返した場合、履歴リストへの記録や再実行は抑制されます。\fBfc\fR コマンドに指定したコマンド行変数割り当てやリダイレクト演算子は、\fBfc\fR コマンド自身および生成されるコマンドの両方に対して有効です。次の例を見てください。
+.sp
+.in +2
+.nf
+\fBfc -s -- -1 2>/dev/null\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は以前のコマンドを再度呼び出すものですが、\fBfc\fR および以前のコマンドの両方に対して標準エラー出力を抑制します。
+.SS "csh"
+.sp
+.LP
+履歴のリストを表示します。\fIn\fR を指定すると、\fIn\fR 個の最新の履歴を表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fR
+.ad
+.RS 7n
+.rt  
+出力を、古い履歴からではなく最近の履歴から順に並べ変えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fR
+.ad
+.RS 7n
+.rt  
+先頭に番号を付加せずに履歴のリストを出力します。\fB-h\fR オプションを使用することにより、\fBcsh\fR 組み込みコマンドの \fBsource\fR(1) の入力に適したファイルを出力できます。
+.RE
+
+.SS "履歴置換: "
+.sp
+.LP
+履歴置換を使用すれば、以前入力したコマンド行のワードを、これから入力するコマンド行で使用できます。これにより、綴りの訂正、複雑なコマンドや引数の繰り返し入力が簡単になります。コマンド行は履歴リストに保存されます。履歴リストのサイズは \fBhistory\fR 変数によって変更できます。\fBhistory\fR シェル変数は、履歴ファイルに保存されるコマンド行の最大数に設定されます。たとえば
+.sp
+.in +2
+.nf
+set history = 200
+.fi
+.in -2
+
+.sp
+.LP
+は、履歴リストに最新の 200 コマンド行のトラックを保管します。設定を行わない場合、C シェルは最新のコマンドだけを保存します。
+.sp
+.LP
+履歴置換の指定は \fB!\fR で始まり (\fBhistchars\fR 変数によりほかの文字に変更可能)、コマンド行のどこに現われてもかまいません。ただし履歴置換のネストはできません。\fB!\fR を \fB\e\fR でエスケープすれば、その特別な意味を抑制できます。
+.sp
+.LP
+履歴置換を含んだ入力行は、展開されたあとで、ほかの置換が起こる前またはコマンドが実行される前に、端末上に表示されます。
+.SS "イベント指示子"
+.sp
+.LP
+イベント指示子は、履歴リスト内の コマンド行エントリを参照するものです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fR
+.ad
+.sp .6
+.RS 4n
+次の文字がスペース文字、タブ、復帰改行、\fB=\fR、または \fB(\fR でなければ、履歴置換を開始します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!!\fR\fR
+.ad
+.sp .6
+.RS 4n
+直前のコマンドを指します。ほかの文字を加えずにこれだけを入力すると、直前のコマンドを繰り返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIn\fR 番のコマンド行を指します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+入力中のコマンドから \fIn\fR 個前のコマンドを指します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!\fR\fIstr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIstr\fR で始まる最新のコマンドを指します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!?\fR\fIstr\fR\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIstr\fR を含む最新のコマンドを指します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!?\fR\fIstr\fR\fB?\fR \fIadditional\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIstr\fR を含む最新のコマンドを指し、その参照コマンドに \fIadditional\fR を追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB!{\fR\fBcommand\fR\fB} \fR\fIadditional\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcommand\fR で始まる最新のコマンドを指し、その参照コマンドに \fIadditional\fR を追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB^\fR\fIprevious_word\fR\fB^\fR\fIreplacement\fR\fB^\fR\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIprevious_word\fR を文字列 \fIreplacement\fR に置き換えて、直前のコマンド行を繰り返します。これは履歴置換と同等です。
+.sp
+文字列 \fIprevious_word\fR を文字列 \fIreplacement\fR に置き換えて、直前のコマンド行を繰り返します。これは履歴置換と同等です。
+.sp
+.in +2
+.nf
+\fB!:s/\fR\fIprevious_word\fR\fB/\fR\fIreplacement\fR\fB/\fR.
+.fi
+.in -2
+
+以前の特定のコマンドを再実行し、さらに同じような置換を行う場合、たとえば 6 番目のコマンドを再実行するには、次のようにします。\fB\fR
+.sp
+.in +2
+.nf
+\fB!:6s/\fR\fIprevious_word\fR\fB/\fR\fIreplacement\fR\fB/\fR.
+.fi
+.in -2
+
+.RE
+
+.SS "ワード指示子:"
+.sp
+.LP
+A `\fB:\fR' (コロン) はイベント指示子とワード指示子とを区切ります。ワード指示子が \fB^\fR、\fB$\fR、\fB*\fR、\fB-\fR、または \fB%\fR で始まるときは省略できます。直前のコマンドからワードを選択する場合、イベント指示子の 2 番目の \fB!\fR は省略できます。たとえば、\fB!!:1\fR と \fB!:1\fR は、両方とも直前のコマンドの最初のワードを指します。また、\fB!!$\fR と \fB!$\fR は、両方とも直前のコマンドの最後のワードを指します。ワード指示子には次のものがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB#\fR\fR
+.ad
+.RS 7n
+.rt  
+今までに入力したすべてのコマンド行
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 7n
+.rt  
+最初に入力したワード (コマンド)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIn\fR \fR
+.ad
+.RS 7n
+.rt  
+\fIn\fR 番目の引数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB^\fR\fR
+.ad
+.RS 7n
+.rt  
+最初の引数。\fB1\fR と同じ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$\fR\fR
+.ad
+.RS 7n
+.rt  
+最後の引数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%\fR\fR
+.ad
+.RS 7n
+.rt  
+最新の \fB?\fR\fIs\fR による検索で一致したワード
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIx\fR\fB-\fR\fIy\fR\fR
+.ad
+.RS 7n
+.rt  
+ワードの範囲。\fB-\fR\fIy\fR は \fB0-\fR\fIy\fR の省略形
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB*\fR\fR
+.ad
+.RS 7n
+.rt  
+すべての引数。イベント中に 1 ワードしか存在しないときは NULL
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIx\fR\fB*\fR\fR
+.ad
+.RS 7n
+.rt  
+\fIx\fR\fB-$\fR\fIの省略形\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIx\fR\fB-\fR\fR
+.ad
+.RS 7n
+.rt  
+\fIx\fR\fB*\fR と同じであるが、ワード \fB$\fR を省略
+.RE
+
+.SS "修飾子:"
+.sp
+.LP
+オプションのワード指示子の後に、\fB:\fR で始まる 1 つ以上の修飾子を追加できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.RS 29n
+.rt  
+パス名の後部分のコンポーネントを除去して、前部分を残します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 29n
+.rt  
+`\fB\&.\fR\fIxxx\fR' の形の接尾辞を除去して、ベース名を残します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 29n
+.rt  
+接尾辞以外はすべて除去して、拡張部分を残します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs/\fR\fIoldchars\fR\fB/\fR\fIreplacements\fR\fB/\fR \fR
+.ad
+.RS 29n
+.rt  
+\fIreplacements\fR を \fIoldchars\fR に置換します。\fIoldchars\fR は組み込まれたスペースを含む文字列ですが、イベント指示子にある \fIprevious_word\fR はスペースを含みません。
+.sp
+.in +2
+.nf
+\fB^\fR\fIoldchars\fR\fB^\fR\fIreplacements\fR\fB^\fR
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 29n
+.rt  
+パス名の前部分のコンポーネントを除去して、後部分を残します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB&\fR\fR
+.ad
+.RS 29n
+.rt  
+前の置換を繰り返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBg\fR\fR
+.ad
+.RS 29n
+.rt  
+各ワード内の最初の一致が発生した箇所を、前述のオプションに接頭辞を付けて変更します (たとえば \fBg&\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 29n
+.rt  
+新しいコマンドを表示するだけで、実行はしません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 29n
+.rt  
+置換されたワードをクォートして、それ以上の置換をエスケープします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBx\fR\fR
+.ad
+.RS 29n
+.rt  
+\fBq\fR と同じですが、スペース文字、タブ、復帰改行文字 (NEWLINE) ごとにワードに分割します。
+.RE
+
+.sp
+.LP
+\fBg\fR を先頭に付加しないと、\fIoldchars\fR に一致する最初の文字列だけが変更されます。一致する文字列がなければ、エラーとなります。
+.sp
+.LP
+置換部分の左側は正規表現ではなく文字列です。\fB/\fR の箇所には、区切り文字としてどのような文字でも使用できます。区切り文字用の文字はバックスラッシュで囲まれます。右側の \fB&\fR 文字は、左側のテキストで置換されます。\fB&\fR はバックスラッシュでクォートできます。\fIoldchars\fR が NULL のとき、直前の文字列における \fIoldchars\fR、または !?s における文脈検索文字列 \fIs\fR を使用します。\fB\fR\fI\fR 同様に \fIreplacements\fR の直後に復帰改行がある場合、文脈検索の最右にある \fB?\fR は省略できます。
+.sp
+.LP
+イベントが指定されないと、履歴リファレンスは前のコマンドか、(もしあれば) そのコマンド行上での前の履歴リファレンスを参照します。
+.SS "ksh88"
+.sp
+.LP
+次の形式で \fBfc\fR を指定します。
+.sp
+.in +2
+.nf
+\fBfc -e \(mi [\fIold\fR=\fInew\fR] [\fIcommand\fR],\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+または
+.sp
+.in +2
+.nf
+\fBfc -s [\fIold\fR=\fInew\fR] [\fIcommand\fR],\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、\fIold\fR\fB=\fR\fInew\fR の置換を行なったあとで \fIcommand\fR が再実行されます。\fIcommand\fR 引数を省略すると、最後に行なったコマンドが実行されます。
+.sp
+.LP
+次の形式で \fBfc\fR を指定します。
+.sp
+.in +2
+.nf
+\fBfc [-e \fIename\fR] [-nlr ] [\fIfirst\fR [\fIlast\fR]],\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、端末から最近入力された \fBHISTSIZE\fR 個のコマンドの中から、\fIfirst\fR から \fIlast\fR までの範囲のコマンドを選択します。\fIfirst\fR と \fIlast\fR の両引数は、数値または文字列で指定できます。文字列の場合、その文字列で始まる最新のコマンドを見つけます。負の数値は、現在のコマンド番号からのオフセットとなります。\fB-l\fR オプションを指定すると、標準出力上にコマンドを一覧表示します。\fB-l\fR を指定しないと、これらのキーボードコマンドの入ったファイル上で \fIe\fR ename で示すエディタプログラムを起動します。\fIename\fR が省略されていると、変数 \fBFCEDIT\fR (デフォルトは \fB/bin/ed\fR) の値をエディタとして使用します。編集が完了すると、編集されたコマンドを実行します。\fBlast\fR を指定しない場合、 \fIfirst\fR と同一値に設定されます。\fIfirst\fR を指定しない場合、 デフォルトは、編集については直前のコマンドに、一覧表示については -16 になります。\fB-r\fR フラグはコマンドの順序を逆にします。\fB-n\fR フラグは一覧表示時にコマンド番号の出力を抑制します。(コマンド行編集の詳細については \fBksh88\fR(1) を参照)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHISTFILE\fR\fR
+.ad
+.RS 12n
+.rt  
+シェルの起動時にこの変数が設定されていると、その値はコマンド履歴を格納するために使用されるファイルのパス名になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHISTSIZE\fR\fR
+.ad
+.RS 12n
+.rt  
+シェルの起動時にこの変数が設定されていると、このシェルで使用可能な入力済みコマンドの数がこの値以上になります。デフォルト値は \fB128\fR です。
+.RE
+
+.SS "コマンド再入力:"
+.sp
+.LP
+端末装置から最近入力された \fBHISTSIZE\fR が示す個数 (デフォルトは 128 個) のコマンドのテキストは、履歴ファイルに保存されています。\fB\fR\fB$HOME/.sh_history\fR というファイルは、\fBHISTFILE\fR 変数が設定されていない場合、または変数が示すファイルが書き込み不可能な場合に使用されます。シェルは、同じ名前の \fBHISTFILE\fR を使用する\fI対話型\fRシェルすべてのコマンド履歴を使用できます。\fBfc\fR という特殊コマンドは、このファイルの一部をリスト表示または編集するときに使用します。編集またはリスト表示されるファイルの部分は、番号か、またはコマンドの最初の文字を指定することによって選択できます。単一のコマンドを指定することも、コマンドの範囲を指定することも可能です。\fBfc\fR の引数としてエディタプログラムが指定されていないと、\fBFCEDIT\fR という変数の値が使用されます。\fBFCEDIT\fR が未定義の場合は、\fB/bin/ed\fR が使われます。編集されたコマンドは、エディタを終了した時点で 表示および再実行されます。エディタ名に \fB-\fR を指定すると、編集段階が省かれ、コマンドが再実行されます。この場合、\fIold\fR\fB=\fR\fInew\fR という形式の代入パラメータを使用すれば、実行前にコマンドを変更できます。たとえば、\fBr\fR が \fB\&'fc\fR \fB-e\fR \fB\(mi a\'\fR の別名として定義されているとき \fB`r\fR \fBbad=good\fR \fB c'\fR と入力すると、\fBc\fR という文字で始まるコマンドのうち最新のものが、その記述中の最初の \fBbad\fR という 文字列を \fBgood\fR に置き換えられて再実行されます。
+.sp
+.LP
+複合コマンドの中に \fBfc\fR 組み込みコマンドを指定すると、すべてのコマンドが履歴ファイルから削除されます。
+.SS "ksh"
+.sp
+.LP
+\fBhist\fR は、現在のシェル環境に以前に入力されたコマンドの一覧表示、編集、または再実行を行います。
+.sp
+.LP
+コマンドの履歴リストは、番号によってコマンドを参照します。リスト中の最初の番号は任意に選択できます。ログインセッション中は、番号とそのコマンドの関係が変わることはありません。番号は \fB32767\fR に達すると \fB1\fR に戻りますが、順序は維持されます。
+.sp
+.LP
+\fBl\fR オプションが指定されておらず、コマンドが編集された場合、結果の行は、履歴リストの末尾に入力され、現在のシェルによって再実行されます。編集作業を起動した \fBhist\fR コマンド自身は履歴リストには記録されません。エディタがゼロ以外 (\fBnon-zero\fR) の終了ステータスを返した場合、履歴リストへの記録や再実行は抑制されます。コマンド行変数代入とリダイレクトは、\fBhist\fR コマンドおよび再実行されるコマンドの両方に対して有効です。 
+.sp
+.LP
+\fIfirst\fR と \fIlast\fR は、コマンドの範囲を定義します。\fIfirst\fR と \fIlast\fR には、次のいずれかを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fInumber\fR\fR
+.ad
+.RS 11n
+.rt  
+コマンド番号を表す正の整数。\fB+\fR 記号を \fInumber\fR の前に指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fInumber\fR\fR
+.ad
+.RS 11n
+.rt  
+いくつ前のコマンドかを示す負の数。\fI\fRたとえば前回実行したコマンドなら \fB-1\fR となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstring\fR\fR
+.ad
+.RS 11n
+.rt  
+\fIstring\fR は、\fIstring\fR で始まるコマンドのうち、最後に実行したコマンドを示します。\fIstring\fR には \fB=\fR を含めないようにしてください。
+.RE
+
+.sp
+.LP
+\fIfirst\fR を省略すると、前回のコマンドが使用されます。ただし、\fB-l\fR を指定した場合は、デフォルトで first は \fB-16\fR になり、last は \fB-1\fR になります。
+.sp
+.LP
+\fIfirst\fR を指定し、\fIlast\fR を省略した場合、\fIlast\fR はデフォルトで \fIfirst\fR になります。ただし、\fB-l\fR を指定した場合は、デフォルトで \fB-1\fR になります。
+.sp
+.LP
+エディタを指定しない場合、\fBHISTEDIT\fR 変数 (設定されている場合) または \fBFCEDIT\fR 変数 (設定されている場合) によって指定されたエディタが使用されます。それ以外の場合は、\fBed\fR が使用されます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-e\fR \fIeditor\fR\fR
+.ad
+.RS 13n
+.rt  
+\fIeditor\fR が示すエディタを使ってコマンドを編集します。文字列 \fIeditor\fR はユーティリティー名で、\fBPATH\fR 変数の値に従って検索されます。\fB-e\fR を指定しない場合、 \fBFCEDIT\fR 変数の値がデフォルトとして用いられます。\fBFCEDIT\fR の値が NULL または未設定のときは、エディタとして \fBed\fR が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 13n
+.rt  
+(小文字のエル)エディタを呼び出して編集する代わりに、コマンドを一覧表示します。\fIfirst\fR と \fIlast\fR の両オペランドで指定した範囲のコマンドを、\fB-r\fR オプションがあればそれに従って、順番にコマンド番号付きで表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 13n
+.rt  
+\fB-l\fR オプションによる一覧表示において、コマンド番号を出力しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fR
+.ad
+.RS 13n
+.rt  
+コマンドの一覧表示 (\fB-l\fR 指定時\fB)\fR または編集 (\fB-l\fR および \fB-s\fR 省略時) において、順序を逆にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fR
+.ad
+.RS 13n
+.rt  
+エディタを呼び出さずにコマンドを再実行します。
+.RE
+
+.SS "ksh"
+.sp
+.LP
+\fBksh\fR では次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIeditor\fR\fR
+.ad
+.RS 13n
+.rt  
+history コマンドの編集に使用するエディタを指定します。\fIeditor\fR の値 \fB-\fR は、\fB-s\fR オプションを指定するのと同等です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 13n
+.rt  
+コマンドの編集および再実行を行わずに、コマンドを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fInum\fR\fR
+.ad
+.RS 13n
+.rt  
+\fInum\fR コマンド前から開始します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 13n
+.rt  
+コマンドを一覧表示するときに、コマンド番号を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 13n
+.rt  
+各オペランドの履歴展開の結果を標準出力に書き込みます。その他のすべてのオプションは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 13n
+.rt  
+コマンドの順序を逆にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 13n
+.rt  
+エディタを呼び出さずにコマンドを再実行します。この場合、\fIold=new\fR 形式のオペランドを指定すると、コマンドで最初に出現した文字列 \fIold\fR を \fInew\fR に変更してからコマンドを再実行できます。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfirst\fR\fR
+.ad
+.br
+.na
+\fB\fIlast\fR\fR
+.ad
+.RS 9n
+.rt  
+表示または編集するコマンドを選択します。いくつまでさかのぼってコマンドをアクセスできるかは、\fBHISTSIZE\fR 変数の値により決まります。\fIfirst\fR と \fIlast\fR の値は、それぞれ次のいずれかです。
+.sp
+.ne 2
+.mk
+.na
+\fB[\fB+\fR]\fInumber\fR\fR
+.ad
+.RS 14n
+.rt  
+コマンド番号を表す正の整数。過去に実行した各コマンドの番号は、\fB-l\fR オプションを使えば確認できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\fR\fInumber\fR\fR
+.ad
+.RS 14n
+.rt  
+いくつ前のコマンドかを示す負の整数。\fI\fRたとえば直前に実行したコマンドなら \fB\(mi1\fR となります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstring\fR\fR
+.ad
+.RS 14n
+.rt  
+指定した文字列で始まっていたコマンドのうち、最後に実行したコマンド。\fIold=new\fR オペランドが \fB-s\fR オプションなしで指定された場合、文字列形式の \fIfirst\fR オペランドを使用するなら、その文字列中に等記号を含めることはできません。
+.sp
+「形式」の節で示した形式で、\fB-s\fR を指定する場合、\fIfirst\fR を省略すると、直前のコマンドが使用されます。
+.sp
+「形式」の項で示した形式で、\fB-s\fR を指定しない場合、\fB\fR
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIlast\fR を省略すると、デフォルト値は \fIl\fR 指定時は直前のコマンドとなり、\fB-l\fR 省略時は \fIfirst\fR の値となります。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIfirst\fR と \fIlast\fR の両方を省略すると、\fB-l\fR 指定時は直前の 16 個のコマンドの表示、l 省略時は直前の 1 つのコマンドの編集となります。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIfirst\fR と \fIlast\fR の両方を指定すると、\fIfirst\fR から \fIlast\fR までのすべてのコマンドが表示 (\fB-l\fR 指定時\fB)\fR または編集 (\fB-l\fR 省略時) されます。複数のコマンドを一度に、それぞれを新たな行で開始してエディタに渡せば、複数コマンドの編集が可能です。\fIfirst\fR が示すコマンドが \fIlast\fR が示すものより新しい場合、\fB-r\fR 指定時と同じように逆の順序で表示または編集されます。次の例では、1 行目のコマンドは、2 行目の対応するコマンドと同等です。
+.sp
+.in +2
+.nf
+fc -r 10 20     fc    30 40 
+fc   20 10      fc -r 40 30
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+コマンドの範囲を使用する場合、履歴リストに存在していない値を \fIfirst\fR や \fIlast\fR に指定してもエラーとはなりません。\fBfc\fR は、存在しているもっとも古いまたは新しい番号を、その代わりに使用します。たとえば、履歴リスト中に 10 個のコマンドが記録されていて、そのコマンド番号が 1 から 10 となっているとします。
+.sp
+.in +2
+.nf
+fc -l 
+fc 1 99
+.fi
+.in -2
+
+この場合、いずれも 10 個のコマンドすべてを表示または編集することになります。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIold=new\fR\fR
+.ad
+.RS 14n
+.rt  
+再実行対象のコマンド中に最初に現れた文字列 \fIold\fR を、ほかの文字列 \fInew\fR に置き換えます。
+.RE
+
+.RE
+
+.SH 出力
+.sp
+.LP
+\fB-l\fR オプションを使ってコマンドを表示する場合、その出力形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fB"%d\et%s\en", <\fR\fIline number\fR\fB>, <\fR\fIcommand\fR\fB>\fR
+.fi
+.in -2
+
+.sp
+.LP
+\fB-l\fR と \fB-n\fR の両オプションを指定すると、各コマンドの出力形式は 次のようになります。
+.sp
+.in +2
+.nf
+\fB"\et%s\en", <\fR\fIcommand\fR\fB>\fR
+.fi
+.in -2
+
+.sp
+.LP
+\fIcommand\fR が複数の行で構成されている場合、2 行目以降は次のように表示されます。\fI\fR
+.sp
+.in +2
+.nf
+\fB"\et%s\en", <\fR\fIcontinued-command\fR\fB>\fR
+.fi
+.in -2
+
+.SH 使用例
+.LP
+\fB例 1 \fRhistory と fc の使用例
+.sp
+.in +2
+.nf
+             csh                                     ksh88
+
+% history                               $ fc -l
+  1   cd /etc                             1   cd /etc
+  2   vi passwd                           2   vi passwd
+  3   date                                3   date
+  4   cd                                  4   cd
+  5   du .                                5   du .
+  6   ls -t                               6   ls -t
+  7   history                             7   fc -l
+
+% !d                                    $ fc -e - d
+  du .                                    du .
+  262   ./SCCS                            262   ./SCCS
+  336   .                                 336   .
+
+% !da                                   $ fc -e - da
+  Thu Jul 21 17:29:56 PDT 1994            Thu Jul 21 17:29:56 PDT 1994
+
+%                                       $ alias \e!='fc -e -'
+
+% !!                                    $ !
+  date                                    alias ='fc -e -'
+  Thu Jul 21 17:29:56 PDT 1994
+.fi
+.in -2
+
+.SH 環境
+.sp
+.LP
+\fBfc\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFCEDIT\fR\fR
+.ad
+.RS 12n
+.rt  
+この変数は、シェルによって展開されると、\fB-e\fR \fIeditor\fR オプションの \fIeditor\fR のデフォルト値を定義します。\fBFCEDIT\fR の値が NULL または未設定のときは、エディタとして \fBed\fR(1) が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHISTFILE\fR\fR
+.ad
+.RS 12n
+.rt  
+コマンドの履歴ファイル名を表すパス名を定義します。\fBHISTFILE\fR 変数が設定されていないと、シェルはユーザーのホームディレクトリ内で \fB\&.sh_history\fR というファイルをアクセスまたは生成しようとします。この履歴ファイルへの読み込みおよび書き込みアクセスができない、または生成できない場合、シェルは何らかのメカニズムを使って履歴が正しくとれるようにします。(この項で述べる履歴ファイルの参照とは、このメカニズムが使用される場合があることを前提としています。)履歴ファイルの初期化時にのみ \fBfc\fR をアクセスするようにすることもできます。初期化は、\fBfc\fR または \fBsh\fR がユーザーからのコマンドに従って、最初にこのファイル、または \fBENV\fR 変数が指定するファイル、または \fB/etc/profile\fR のようなシステム起動ファイルからのエントリ検索もしくはエントリの追加を試みたときに発生します。(なお履歴ファイル用の初期化処理は、システム起動ファイルの内容に依存させることもできます。つまり、ユーザーが設定した \fBHISTFILE\fR や \fBHISTSIZE\fR 値を効果的に上書きするようなコマンドを、このファイルに記述することが可能です。たとえば \fBset\fR \fB-o\fR \fBnolog\fR オプションが設定されていなければ、関数定義コマンドが履歴ファイルに記録されます。\fBENV\fR ファイルの前に呼び出されるシステムスタートアップファイル中に、システム管理者が関数定義を記述しておけば、ユーザーが履歴ファイルの属性を変更するような動作が可能になる前に、履歴ファイルが初期化されます。)シェルが呼び出されると、最初に \fBHISTFILE\fR 変数が参照されます。ほかのシェルが呼び出されるまでは、\fBHISTFILE\fR に対する変更は反映されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHISTSIZE\fR\fR
+.ad
+.RS 12n
+.rt  
+以前のコマンドを最大いくつまでさかのぼってアクセスできるかを 10 進数を使って定義します。この変数が設定されていないと、128 以上の不特定の値がデフォルトとして用いられます。シェルが呼び出されると、最初に \fBHISTSIZE\fR 変数が参照されます。ほかのシェルが呼び出されるまでは、\fBHISTSIZE\fR に対する変更は反映されません。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+一覧表示の正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.LP
+それ以外の場合、終了ステータスは、\fBfc\fR または \fBhist\fR によって実行されたコマンドの終了ステータスとなります。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBed\fR(1), \fBksh\fR(1), \fBksh88\fR(1), \fBset\fR(1), \fBsh\fR(1), \fBsource\fR(1), \fBattributes\fR(5), \fBenviron\fR(5)

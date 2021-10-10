@@ -1,0 +1,813 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH beadm 1M "16 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+beadm \- manage ZFS boot environments
+.SH SYNOPSIS
+.LP
+.nf
+\fBbeadm\fR \fBcreate\fR [\fB-a\fR] [\fB-d\fR \fIdescription\fR]
+     [\fB-e\fR \fInon-activeBeName\fR | \fIbeName\fR@\fIsnapshot\fR]
+     [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... [\fB-p\fR \fIzpool\fR] \fIbeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBcreate\fR \fIbeName\fR@\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBdestroy\fR [\fB-fF\fR] \fIbeName\fR | \fIbeName\fR@\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBlist\fR [\fB-a\fR | \fB-ds\fR] [\fB-H\fR] [\fIbeName\fR]
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBmount\fR \fIbeName\fR \fImountpoint\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBunmount\fR [\fB-f\fR] \fIbeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBrename\fR \fIbeName\fR \fInewBeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBactivate\fR \fIbeName\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBbeadm\fR command is the user interface for managing ZFS Boot Environments (BEs). This utility is intended to be used by system administrators who want to manage multiple Oracle Solaris instances on a single system.
+.sp
+.LP
+Using \fBbeadm\fR, you can do the following:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Create a new BE, based on the active BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Create a new BE, based on an inactive BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Create a snapshot of an existing BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Create a new BE, based on an existing snapshot.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Create a new BE, and copy it to a different zpool.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Activate an existing, inactive BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Mount a BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Unmount a BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Destroy a BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Destroy a snapshot of a BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Rename an existing, inactive BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Display information about your snapshots and datasets.
+.RE
+.SH SUB-COMMANDS
+.sp
+.LP
+The \fBbeadm\fR command has the subcommands and options listed below. Usage of many of these subcommands and options is illustrated in \fBEXAMPLES\fR, below.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fI(no arguments)\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays command usage.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR  \fBcreate\fR [\fB-a\fR] [\fB-d\fR \fIdescription\fR] [\fB-e\fR \fInon-activeBeName\fR | \fIbeName\fR@\fIsnapshot\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... [\fB-p\fR \fIzpool\fR] \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+Creates a new boot environment named \fIbeName\fR. If the \fB-e\fR option is not provided, the new boot environment will be created as a clone of the currently running boot environment. If the \fB-d\fR option is provided, then the description is also used as the title for the BE's entry in the GRUB menu for x86 systems or in the boot menu for SPARC systems. If the \fB-d\fR option is not provided, \fIbeName\fR will be used as the title. Nested BEs do not support the use of the \fB-p\fR option. Also, non-bootable, nested BEs and snapshots of non-bootable, nested BEs cannot be used with the \fB-e\fR option.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Activate the newly created BE upon creation. The default is to not activate the newly created BE.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create a new BE with a description associated with it.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fInon-activeBeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create a new BE from an existing inactive BE. In a nested BE, only bootable BEs can be used with this option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create a new BE from an existing snapshot of the BE named \fIbeName\fR. In a nested BE, only snapshots of bootable BEs can be used with this option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create the datasets for a new BE with specific ZFS properties. Multiple \fB-o\fR options can be specified. See \fBzfs\fR(1M) for more information on the \fB-o\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIzpool\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create the new BE in the specified \fIzpool\fR. If this is not provided, the default behavior is to create the new BE in the same pool as the origin BE. This option is not supported inside of a nested BE.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR  \fBcreate\fR \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+Creates a snapshot of the existing BE named \fIbeName\fR. Inside a nested BE, only bootable BEs can be snapshotted. When inside of a nested BE, only BEs that are bootable or BEs that are not bootable but are not marked as active on reboot can be destroyed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR  \fBdestroy\fR [\fB-fF\fR] \fIbeName\fR | \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+Destroys the boot environment named \fIbeName\fR or destroys an existing snapshot of the boot environment named \fIbeName\fR@\fIsnapshot\fR. Destroying a boot environment will also destroy all snapshots of that boot environment. Use this command with caution.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+Forcefully unmount the boot environment if it is currently mounted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+Force the action without prompting to verify the destruction of the boot environment.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR  \fBlist\fR [\fB-a\fR | \fB-ds\fR] [\fB-H\fR] [\fIbeName\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Lists information about the existing boot environment named \fIbeName\fR, or lists information for all boot environments if \fIbeName\fR is not provided. The \fBActive\fR field indicates whether the boot environment is active now, represented by \fBN\fR; active on reboot, represented by \fBR\fR; or both, represented by \fBNR\fR. Unbootable BEs inside of a nested BE are represented by an exclamation point (\fB!\fR)
+.sp
+Each line in the machine-parsable output has the boot environment name as the first field. The \fBSpace\fR field is displayed in bytes and the \fBCreated\fR field is displayed in UTC format. The \fB-H\fR option used with no other options gives the boot environment's UUID in the second field. This field will be blank if the boot environment does not have a UUID. See the \fBEXAMPLES\fR section. Inside of a nested BE, the UUID field actually represents the parent id with which the nested BE is associated.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Lists all available information about the boot environment. This includes subordinate file systems and snapshots.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+Lists information about all subordinate file systems belonging to the boot environment.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+Lists information about the snapshots of the boot environment.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+Do not list header information. Each field in the list information is separated by a semicolon.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBmount\fR \fIbeName\fR \fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+Mounts a boot environment named \fIbeName\fR at \fImountpoint\fR. \fImountpoint\fR must be an already existing empty directory.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBunmount\fR [\fB-f\fR] \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unmounts a boot environment named \fIbeName\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+Forcefully unmount the boot environment even if it is currently busy.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBrename\fR \fIbeName\fR \fInewBeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+Renames the boot environment named \fIbeName\fR to \fInewBeName\fR. In a nested BE, only bootable BEs can be renamed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBactivate\fR \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+Makes \fIbeName\fR the active BE on next reboot. In a nested BE, only bootable BEs can be activated.
+.RE
+
+.SS "Nested BE Support"
+.sp
+.LP
+\fBbeadm\fR supports the concept of a nested BE, specifically, as it pertains to BEs for non-global zones. Currently, \fBbeadm\fR can only manage nested BEs from inside of a non-global zone.
+.sp
+.LP
+\fBbeadm\fR functions inside of a non-global zone much the same as it does from the global zone, with a few exceptions. First, the \fB-p\fR (alternate pool) option to \fBbeadm\fR \fBcreate\fR is not supported within a non-global zone. Second, there is a distinction made for any given nested BE (or snapshot of a BE) to determine if it is bootable or not bootable. A nested BE is bootable if it is associated (that is, shares the same parent id as the active global zone BE's UUID) with the currently active global zone BE. It is unbootable\(emand marked with an '\fB!\fR' in the active column in \fBbeadm list\fR)\(emotherwise. Note that, while the non-global zone administrator could mark such a BE as active by means of \fBbeadm activate\fR, rebooting the non-global zone would not result in the BE being loaded, because the BE is associated with a non-active global zone BE. Based on these conditions, \fBbeadm\fR restricts some actions on unbootable BEs thusly:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You cannot destroy a nested BE that is both unbootable and marked as active on reboot.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You cannot activate an unbootable BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You cannot snapshot an unbootable BE.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You cannot use an unbootable BE or BE snapshot with the \fB-e\fR option to \fBbeadm create\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You cannot rename an unbootable BE.
+.RE
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCreating a New BE Using Active BE
+.sp
+.LP
+The following command creates a new BE, \fBBE1\fR, by cloning the current BE.
+
+.sp
+.in +2
+.nf
+# \fBbeadm create BE1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRCreating a New BE Using Inactive BE
+.sp
+.LP
+The following command creates a new BE, \fBBE2\fR, by cloning the existing inactive BE named \fBBE1\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm beadm create -e BE1 BE2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRCreating a Snapshot of Existing BE
+.sp
+.LP
+The following command creates a snapshot named now of the existing BE named \fBBE1\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm create BE1@now\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRCloning a Snapshot to Create a New BE
+.sp
+.LP
+The following command creates a new BE named \fBBE3\fR, by cloning an existing snapshot of \fBBE1\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -e BE1@now BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRCreating a New BE in Specified zpool
+.sp
+.LP
+The following command creates a new BE named \fBBE4\fR, based on the currently running BE. The command creates the new BE in the zpool \fBrpool2\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -p rpool2 BE4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRCreating a New BE in Specified zpool with Compression Enabled
+.sp
+.LP
+The following command creates a new BE named \fBBE5\fR, based on the currently running BE. The command creates the new BE in the zpool \fBrpool2\fR and creates its datasets with compression turned on.
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -p rpool2 -o compression=on BE5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 7 \fRCreating a New BE and Providing a Description
+.sp
+.LP
+The following command creates a new BE named \fBBE6\fR, based on the currently running BE, and provides a description for it.
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -d "BE6 used as test environment" BE6\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fRActivating a BE
+.sp
+.LP
+The following command activates an existing, inactive BE named \fBBE3\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm activate BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 9 \fRMounting a BE
+.sp
+.LP
+The following command mounts the BE named \fBBE3\fR at \fB/mnt\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm mount BE3 /mnt\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 10 \fRUnmounting a BE
+.sp
+.LP
+The following command unmounts the BE named \fBBE3\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm unmount BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 11 \fRDestroying a BE
+.sp
+.LP
+The following command destroys the BE named \fBBE3\fR without asking for confirmation.
+
+.sp
+.in +2
+.nf
+# \fBbeadm destroy -F BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 12 \fRDestroying a Snapshot
+.sp
+.LP
+The following command destroys the snapshot named \fBnow\fR of \fBBE1\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm destroy BE1@now\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 13 \fRRenaming a BE
+.sp
+.LP
+The following command renames the existing, inactive BE named \fBBE1\fR to \fBBE3\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm rename BE1 BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 14 \fRListing All BEs
+.sp
+.LP
+The following command lists all existing BEs.
+
+.sp
+.in +2
+.nf
+# \fBbeadm list\fR
+BE  Active Mountpoint Space  Policy Created
+--  ------ ---------- -----  ------ -------
+BE2 -      -          72.0K  static 2008-05-21 12:26
+BE3 -      -          332.0K static 2008-08-26 10:28
+BE4 -      -          15.78M static 2008-09-05 18:20
+BE5 NR     /          7.25G  static 2008-09-09 16:53
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 15 \fRListing All BEs with Dataset and Snapshot Info
+.sp
+.LP
+The following command lists all existing BEs and list all dataset and snapshot information about those boot         environments.
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -d -s\fR
+BE/Dataset/Snapshot     Active Mountpoint Space   Policy Created
+-------------------     ------ ---------- -----   ------ -------
+BE2
+   p/ROOT/BE2           -      -          36.0K   static 2008-05-21 12:26
+   p/ROOT/BE2/opt       -      -          18.0K   static 2008-05-21 16:26
+   p/ROOT/BE2/opt@now   -      -          0       static 2008-09-08 22:43
+   p/ROOT/BE2@now       -      -          0       static 2008-09-08 22:43
+BE3
+   p/ROOT/BE3           -      -          192.0K  static 2008-08-26 10:28
+   p/ROOT/BE3/opt       -      -          86.0K   static 2008-08-26 10:28
+   p/ROOT/BE3/opt/local -      -          36.0K   static 2008-08-28 10:58
+BE4
+   p/ROOT/BE4           -      -          15.78M  static 2008-09-05 18:20
+BE5
+   p/ROOT/BE5           NR     /          6.10G   static 2008-09-09 16:53
+   p/ROOT/BE5/opt       -      /opt       24.55M  static 2008-09-09 16:53
+   p/ROOT/BE5/opt@bar   -      -          18.38M  static 2008-09-10 00:59
+   p/ROOT/BE5/opt@foo   -      -          18.38M  static 2008-06-10 16:37
+   p/ROOT/BE5@bar       -      -          139.44M static 2008-09-10 00:59
+   p/ROOT/BE5@foo       -      -          912.85M static 2008-06-10 16:37
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 16 \fRListing Dataset and Snapshot Info for a BE
+.sp
+.LP
+The following command lists all dataset and snapshot information about \fBBE5\fR.
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -a BE5\fR
+BE/Dataset/Snapshot   Active Mountpoint Space   Policy Created
+-------------------   ------ ---------- -----   ------ -------
+BE5
+   p/ROOT/BE5         NR     /          6.10G   static 2008-09-09 16:53
+   p/ROOT/BE5/opt     -      /opt       24.55M  static 2008-09-09 16:53
+   p/ROOT/BE5/opt@bar -      -          18.38M  static 2008-09-10 00:59
+   p/ROOT/BE5/opt@foo -      -          18.38M  static 2008-06-10 16:37
+   p/ROOT/BE5@bar     -      -          139.44M static 2008-09-10 00:59
+   p/ROOT/BE5@foo     -      -          912.85M static 2008-06-10 16:37
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 17 \fRListing in Machine-Parseable Format
+.sp
+.LP
+The following command lists information about all BEs in machine-parseable format.
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -H\fR
+BE2;;;;55296;static;1211397974
+BE3;;;;339968;static;1219771706
+BE4;;;;16541696;static;1220664051
+BE5;215b8387-4968-627c-d2d0-f4a011414bab;NR;/;7786206208;static;1221004384
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 18 \fRDisplaying Non-bootable BEs
+.sp
+.LP
+The following command lists all BEs. When run inside of a non-global zone, it displays both bootable and non-bootable BEs. Non-bootable BEs are designated with an exclamation point (\fB!\fR) in the active column.
+
+.sp
+.in +2
+.nf
+# \fBbeadm list\fR
+BE    Active Mountpoint Space   Policy Created
+--    ------ ---------- -----   ------ -------
+zbe-0 -      -          29.22M  static 2011-03-04 09:14
+zbe-1 NR     /          815.10M static 2011-03-04 09:28
+zbe-2 -      -          35.0K   static 2011-03-04 09:28
+zbe-3 -      -          35.0K   static 2011-03-04 09:28
+zbe-4 -      -          35.0K   static 2011-03-04 09:28
+zbe-5 !      -          35.0K   static 2011-03-04 11:47
+zbe-6 !      -          54.0K   static 2011-03-07 14:37
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Success.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Failure.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/log/beadm/\fIbeName\fR/create.log.\fIyyyymmdd_hhmmss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Log used for capturing \fBbeadm create\fR output. The time designation portion of the file name is explained as follows.
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIyyyymmdd_hhmmss\fR \(em for example, \fB20071130_140558\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIyyyy\fR \(em year, \fB2007\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fImm\fR \(em month, \fB11\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIdd\fR \(em day, \fB30\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIhh\fR \(em hour, \fB14\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fImm\fR \(em minute, \fB05\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIss\fR \(em second, \fB58\fR
+.RE
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/boot-environment-utilities
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBzfs\fR(1M), \fBattributes\fR(5)

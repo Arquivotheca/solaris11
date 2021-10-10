@@ -1,0 +1,881 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH libzonestat 3LIB "19 May 2011" "SunOS 5.11" "Interface Libraries"
+.SH NAME
+libzonestat \- zones statistics library
+.SH SYNOPSIS
+.LP
+.nf
+cc [\fIflag\fR ...] \fIfile\fR -lzonestat [\fIlibrary\fR... ]
+#include <zonestat.h>
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+Functions in this library provide a general purpose mechanism for providing zone related resource usage statistics.
+.sp
+.LP
+The \fBzonestat\fR library reports system wide and per-zone utilization of physical memory, virtual memory, and CPU resources.
+.sp
+.LP
+Physical memory usage is reported for both RSS and locked memory. Resident set size (RSS) is the quantity of physical memory that is in use by each zone. Locked memory is physical memory pinned by applications in zones, usually for performance purposes. Physical memory which is locked cannot be paged out to disk when there is memory pressure.
+.sp
+.LP
+The virtual memory reported is the total memory allocated by each zone. This includes both anonymous memory allocated by processes (heap, stack, anon), system V shared memory, and memory consumed by \fBtmpfs\fR file systems (\fB/tmp\fR). The system's total virtual memory is the sum of its physical memory (RAM) and disk swap devices.
+.sp
+.LP
+CPU utilization is reported both in terms of total CPU as well as relative to any processor sets. Processor sets can be created by \fBpsrset\fR(1M), resource pools (\fBpoolcfg\fR(1M)), and by dedicated CPU resources created via \fBzonecfg\fR(1M). It is possible for a zone to consume CPU time in more than one processor set. This can be due a zone's processes being bound to multiple processor sets, or due to an entire zone being rebound from one processor set to another.
+.sp
+.LP
+For each physical resource, overall usage is reported, as well as system usage, aggregate usage by all zones, and per-zone usage. system usage reflects usage by the system which cannot be attributed to a particular zone, such as resource usage by service threads in the kernel.
+.sp
+.LP
+In addition to usage of physical resources, \fBlibzonestat\fR also reports resource usage relative to each zone's configured resource limits.
+.sp
+.LP
+This library depends on the zones monitoring service:
+.sp
+.in +2
+.nf
+svc:/system/zones-monitoring:default
+.fi
+.in -2
+
+.sp
+.LP
+The library will fail to open and read resource usage information if this service is not online.  From within a NGZ, the global zone must have an online zones monitoring service for the library to function.
+.SS "Reading Utilization"
+.sp
+.LP
+The \fBzs_open\fR(3ZONESTAT) function is used to create a handle to the zones monitoring service. The \fBzs_usage_read\fR(3ZONESTAT) function is used to read the current usage information. This usage information can then be inspected using the remaining library functions. There are also library functions for comparing two usage readings. These are the \fBzs_usage_*()\fR functions.
+.SS "Resources"
+.sp
+.LP
+Each usage reading contains usage information on a variety of resource types. The \fBzs_resource_*()\fR functions can be used to access the usage of each resource stored in a usage reading. The following resource types are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_CPU\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's online CPUs. This includes all CPUs that \fBon-line\fR or \fBno-intr\fR state.
+.sp
+This resource is an increasing resource, with values reflecting utilization since \fBzs_open()\fR was first called.
+.sp
+The CPU resource in term of \fIncpus\fR * 100 is retrieved via \fBzs_resource_*_int64()\fR. These values will reflect the quantity of CPUs used since \fBzs_open()\fR was first called.
+.sp
+The \fBzs_resource_total_time()\fR, \fBzs_resource_used_time()\fR, and \fBzs_resource_zone_used_time()\fR functions return increasing utilization values. These values continually increase, starting from zero at the point when \fBzs_open()\fR was first called.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_RAM_RSS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's physical memory usage in terms of resident pages (RSS).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_RAM_LOCKED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's physical memory usage in terms of locked (unpageable) pages.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_VM\fR\fR
+.ad
+.sp .6
+.RS 4n
+Reserved virtual memory. Virtual memory is comprised of the system's RAM and disk swap devices. Virtual memory is reserved when applications allocate memory, such as via \fBbrk\fR(2), \fBmalloc\fR(3C), \fBmmap\fR(\fBMAP_ANON\fR), or \fBshmget\fR(2).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_DISK_SWAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+The amount of space allocated on disk swap devices. This is the amount of memory that is currently paged out to swap devices. Only \fBZS_USER_ALL\fR and \fBZS_FREE\fR is available for the disk swap resource (see user options below). \fBlibzonestat\fR does not report a disk swap usage breakdown by the system and zones.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_LWPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of lightweight processes allocated. There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_PROCESSES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of processes allocated. This includes zombie processes. There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_SHM_MEMORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total size of all System V shared memory segments created. There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_SHM_IDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total number all System V shared memory segments created. There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_SEM_IDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total number of System V semaphores created. There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_MSG_IDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total number of System V message queues created.  There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.LP
+The following resource properties are defined:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_PROP_CPU_TOTAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total number of CPUs.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total number of CPUs in either the \fBon-line\fR or \fBno-intr\fR state.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_PROP_CPU_LOAD_1MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's 1 minute load average.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_PROP_CPU_LOAD_5MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's 5 minute load average.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_PROP_CPU_LOAD_15MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's 15 minute load average.
+.RE
+
+.sp
+.LP
+Each resource has a type defining the unit of measurement that of the data returned.  The supported types are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_TYPE_TIME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The resource is defined as time. A \fBtimestruc_t\fR is used to store the value in seconds and nanoseconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_TYPE_COUNT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The resource is defined  as an integer number representing a quantity. A \fBuint64_t\fR is used to store the value.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_RESOURCE_TYPE_BYTES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The resource is defined as an integer number of bytes. A \fBuint64_t\fR is used to store the value.
+.RE
+
+.sp
+.LP
+Resource usage can be queried for the following users:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_USER_ALL\fR\fR
+.ad
+.RS 18n
+.rt  
+Total resource used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_USER_SYSTEM\fR\fR
+.ad
+.RS 18n
+.rt  
+Resource used by the system. This is any resource usage which cannot be associated with a particular zone, such as resource usage by the kernel.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_USER_ZONES\fR\fR
+.ad
+.RS 18n
+.rt  
+Aggregate resource used by all zones.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_USER_FREE\fR\fR
+.ad
+.RS 18n
+.rt  
+Resource not used.
+.RE
+
+.sp
+.LP
+See individual resource descriptions above for user restrictions on individual resources.
+.SS "Zones"
+.sp
+.LP
+Each usage read via \fBzs_usage_read()\fR contains a list of the zone which are running at the time the usage was read. The \fBzs_zone_*()\fR functions provide access to this list of zones, and to the following properties and resource limits for each zone:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_NAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the zone. The string will be up to length \fBZS_ZONENAME_MAX\fR, including the null terminating character.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_ID\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fIzoneid\fR of the zone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_IPTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The IP networking type of the zone. This property will have a value of \fBZS_IPTYPE_SHARED\fR or \fBZS_IPTYPE_EXCLUSIVE\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_CPUTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The CPU type of the zone. If the zone has a dedicated CPU resource configured, the CPU type will be \fBZS_CPUTYPE_DEDICATED\fR. Otherwise the CPU type will be \fBZS_CPUTYPE_SHARED\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_DEFAULT_SCHED\fR\fR
+.ad
+.sp .6
+.RS 4n
+The default scheduling class of the zone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_SCHEDULERS\fR\fR
+.ad
+.sp .6
+.RS 4n
+A list of scheduling classes that are found running inside the zone.  The value is a set of flags defined as \fBZS_SCHED_\fR*. If the \fBZS_SCHED_CONFLICT\fR flag is included, this means the zone has processes in both FSS, as well as TS, IA, or FX, with priority less than 60. The behavior of the FSS class is undefined in this scenario.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_CPU_SHARES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The quantity of CPU shares allocated to zone. If the zone has no processes running in the FSS scheduling class, the value will be \fBZS_LIMIT_NONE\fR. If the zone has processes running in FSS, the value will be between 0 and \fBZS_SHARES_UNLIMITED\fR, inclusive.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_POOLNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the resource pool to which the zone is bound. If resource pools are not enabled, the value will be \fBpool_default\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_ZONE_PROP_PSETNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the pool pset to which the zone is bound. If resource pools are disabled, the value will be \fBpset_default\fR.
+.RE
+
+.SS "Zone limits"
+.sp
+.LP
+Each usage reading contains usage information on a variety of resource types. The \fBzs_resource_*()\fR functions can be used to access the usage of each resource stored in a usage reading. The following resource types are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_CPU\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone can be limited to a decimal number of CPUs worth of CPU time. The value of the CPU cap is 100 times the number of CPUs to cap. For instance, a CPU cap of 50 is a limit to 0.50 CPUs worth of CPU time.
+.sp
+The usage values for this limit are increasing, starting at zero when \fBzs_open()\fR is first called.
+.sp
+The limit in term of \fIncpus\fR * 100 is retrieved via \fBzs_zone_limit_int64()\fR and \fBzs_zone_limit_used_uin64()\fR. These values will reflect the quantity of CPUs used since \fBzs_open()\fR was first called.
+.sp
+The amount of CPU time available and used under the limit is retrieved via \fBzs_zone_limit_time()\fR and \fBzs_zone_limit_used_time()\fR. These functions return increasing utilization values. These values continually increase, starting from zero at the point when \fBzs_open()\fR was first called, or from the point when the zone or pset was first booted or created.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_RAM_RSS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's limit of resident pages of physical memory in bytes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_RAM_LOCKED\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's limit of locked pages of physical memory in bytes.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_VM\fR\fR
+.ad
+.sp .6
+.RS 4n
+The zone's limit of virtual memory (swap) reservation in bytes. Each zone's swap reservations are backed by both physical memory and disk swap devices.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_LWPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of lightweight processes (lwps) executing in each zone.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_PROCESSES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of processes executing in each zone, including zombie processes, which are exited processes that have not been waited upon by their parent process.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_SHM_MEMORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's total size of all System V shared memory segments created. There is no \fBZS_USER_SYSTEM()\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_SHM_IDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's number all System V shared memory segments created. There is no \fBZS_USER_SYSTEM()\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_SEM_IDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's number of System V semaphores created. There is no \fBZS_USER_SYSTEM()\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_MSG_IDS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's total number of System V message queues created. There is no \fBZS_USER_SYSTEM\fR user for this resource.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_LIMIT_MAX_LOFI\fR\fR
+.ad
+.sp .6
+.RS 4n
+Each zone's total number of lofi devices created. See \fBlofiadm\fR(1M).
+.RE
+
+.SS "Psets"
+.sp
+.LP
+Each usage read via \fBzs_usage_read()\fR contains a list of the processor sets which existed at the time the usage was read. The \fBzs_pset_t*()\fR functions provide access to this list of pset, and to the following properties defined for each pset:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_NAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the processor set. The string will be up to length \fBZS_PSETNAME_MAX\fR, including the null terminating character.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_ID\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fIpsetid\fR of the processor set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_CPUTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+If the processor set was created by a \fBzonecfg\fR add dedicated-CPU resource, the type will be \fBZS_CPUTYPE_DEDICATED\fR. Otherwise, the type is \fBZS_CPUTYPE_SHARED\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_SIZE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number CPUs assigned to the processor set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_ONLINE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of CPUs assigned to the processor set which are in the \fBon-line\fR or \fBno-intr\fR state.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The minimum number of CPUs that the system may assign to the processor set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_MAX\fR\fR
+.ad
+.sp .6
+.RS 4n
+The maximum number of CPUs that the system may assign to the processor set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_CPU_SHARES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The total number of CPU shares of all zones running in the processor set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_SCHEDULERS\fR\fR
+.ad
+.sp .6
+.RS 4n
+A list of scheduling classes that are found running inside the processor set. The value is a set of flags defined as \fBZS_SCHED_\fR*. If the \fBZS_SCHED_CONFLICT\fR flag is included, this means the zone has processor set has processes both in FSS, as well as TS, IA, or FX, with priority less than 60. The behavior of the FSS class is undefined in this scenario.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_LOAD_1MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's 1 minute load average.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_LOAD_5MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's 5 minute load average.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PSET_PROP_LOAD_15MIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The system's 15 minute load average.
+.RE
+
+.sp
+.LP
+In addition to properties, the \fBzs_pset_used_*()\fR functions provide total time, CPU used, percent used, and CPU time used of each processor set.
+.SS "Pset Per-Zone Utilization"
+.sp
+.LP
+Each processor set can be in use by one or more zones. The \fBzs_pset_zone_*()\fR functions provide per-zone usage information for each pset. It is also possible for an individual zone to be using more than one pset. In this case, the given zone will appear in the per-zone usage information for every pset that it is using.
+.sp
+.LP
+The following properties exist on each per-zone pset usage:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PROP_SCHEDULERS\fR\fR
+.ad
+.sp .6
+.RS 4n
+A list of scheduling classes that are found running within the zone inside the given pset. The value is a set of flags defined as \fBZS_SCHED_\fR*. If the \fBZS_SCHED_CONFLICT\fR flag is included, this means the zone has processes in TS, IA, or FX, with priority less than 60, while other zones using the processor set are using FSS.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PROP_CPU_SHARES\fR\fR
+.ad
+.sp .6
+.RS 4n
+The number of CPU shares of the zone running in the pset. The value will be \fBZS_LIMIT_NONE\fR if the zone is not running in the FSS scheduling class. If the zone has processes running in FSS in the processor set, the value will be between 0 and \fBZS_SHARES_UNLIMITED\fR, inclusive.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PROP_CPU_CAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+The CPU cap of the zone. See \fBZS_LIMIT_CPU\fR for description.
+.RE
+
+.sp
+.LP
+In addition to properties, the \fBzs_pset_zone_used_*()\fR functions provide to per-zone CPUs used, percent used, and CPU time of each processor set. Percent of CPU share, and percent of CPU share used is also provided:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PCT_PSET\fR\fR
+.ad
+.sp .6
+.RS 4n
+The percentage of the pest used by a zone. The value is \fIpct\fR * 100, with 10000 meaning 100%.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PCT_CPU_CAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+The percentage of a zone's CPU cap that is used by the zone in this pset. The value is \fIpct\fR * 100, with 10000 meaning 100%.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PCT_PSET_SHARESZS_PZ_PCT_PSET_SHARES\fR\fR
+.ad
+.sp .6
+.RS 4n
+Of the total CPU shares of all zones running in the pset, the percent that belong to this zone. The value is \fIpct\fR * 100, with 10000 meaning 100%.
+.sp
+For example, if there are four zones in the pset, each with 10 CPU shares, each would have a value of 2500 (25% * 100).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZS_PZ_PCT_CPU_SHARE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Of a zones CPU shares, the percent of them that are being used by the zone's CPU utilization in this pset. The value is \fIpct\fR * 100, with 10000 meaning 100%. This value can exceed 100% (10000) as a zone can use more that its CPU share if there is no contention by other zones.
+.RE
+
+.SH INTERFACES
+.sp
+.LP
+The shared object \fBlibcpc.so.1\fR provides the public interfaces defined below. See \fBIntro\fR(3) for additional information on shared object interfaces.
+.sp
+
+.sp
+.TS
+tab();
+lw(2.75i) lw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+\fBzs_close\fR\fBzs_open\fR
+\fBzs_property_double\fR\fBzs_property_int\fR
+\fBzs_property_int64\fR\fBzs_property_string\fR
+\fBzs_property_type\fR\fBzs_property_uint\fR
+\fBzs_property_uint64\fR\fBzs_pset_list\fR
+\fBzs_pset_property\fR\fBzs_pset_total_cpus\fR
+\fBzs_pset_total_time\fR\fBzs_pset_used_cpus\fR
+\fBzs_pset_used_pct\fR\fBzs_pset_used_time\fR
+\fBzs_pset_walk\fR\fBzs_pset_zone_get_pset\fR
+\fBzs_pset_zone_get_zone\fR\fBzs_pset_zone_list\fR
+\fBzs_pset_zone_property\fR\fBzs_pset_zone_used_cpus\fR
+\fBzs_pset_zone_used_pct\fR\fBzs_pset_zone_used_time\fR
+\fBzs_pset_zone_walk\fR\fBzs_resource_property\fR
+\fBzs_resource_total_time\fR\fBzs_resource_total_uint64\fR
+\fBzs_resource_type\fR\fBzs_resource_used_pct\fR
+\fBzs_resource_used_time\fR\fBzs_resource_used_uint64\fR
+\fBzs_resource_used_zone_pct\fR\fBzs_resource_used_zone_time\fR
+\fBzs_resource_used_zone_uint64\fR\fBzs_usage_diff\fR
+\fBzs_usage_free\fR\fBzs_usage_read\fR
+\fBzs_zone_limit_time\fR\fBzs_zone_limit_typ\fR
+\fBzs_zone_limit_uint64\fR\fBzs_zone_limit_used_pct\fR
+\fBzs_zone_limit_used_time\fR\fBzs_zone_limit_used_uint64\fR
+\fBzs_zone_list\fR\fBzs_zone_property\fR
+\fBzs_zone_walk\fR
+.TE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/libzonestat.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+shared object
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/libzonestat.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+64-bit shared object
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface Stabilitysystem/zones
+_
+Interface StabilityCommitted
+_
+MT-LevelSee below.
+.TE
+
+.sp
+.LP
+The \fBzs_open()\fR function is MT-Safe. The remaining \fBzs_*()\fR functions are MT-Safe with the exception that only one thread may actively use a \fBzs_ctl_t\fR object at any time. Synchronization is left to the application.
+.SH SEE ALSO
+.sp
+.LP
+\fBzonestat\fR(1), \fBpooladm\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBswap\fR(1M), \fBzoneadm\fR(1M), \fBzonecfg\fR(1M), \fBzonestatd\fR(1M), \fBlibpool\fR(3LIB), \fBzs_open\fR(3ZONESTAT), \fBzs_pset\fR(3ZONESTAT), \fBzs_property\fR(3ZONESTAT), \fBzs_pset_zone\fR(3ZONESTAT), \fBzs_resource\fR(3ZONESTAT), \fBzs_usage\fR(3ZONESTAT), \fBzs_zone\fR(3ZONESTAT), \fBattributes\fR(5), \fBresource_controls\fR(5)
+.SH NOTES
+.sp
+.LP
+The service \fBsvc:/system/zones-monitoring:default\fR must be enabled in the global zone in order for \fBzs_open()\fR and \fBzs_read_usage()\fR to succeed. This requirement exists for use of \fBlibzonestat\fR in both the global zone and non-global zones.

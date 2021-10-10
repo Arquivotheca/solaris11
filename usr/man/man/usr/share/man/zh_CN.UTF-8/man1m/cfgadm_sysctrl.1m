@@ -1,0 +1,282 @@
+'\" te
+.\" 版权所有 (c) 1999 Oracle 和/或其附属公司。保留所有权利。
+.TH cfgadm_sysctrl 1M "1999 年 3 月 10 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+cfgadm_sysctrl \- EXX00 系统板管理
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-c\fR \fIfunction\fR [\fB-f\fR] 
+     [\fB-o\fR disable-at-boot | enable-at-boot] [\fB-n\fR | \fB-y\fR] sysctrl0:slot# ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR quiesce-test sysctrl0:slot# 
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR insert-test | remove-test sysctrl0:slot# ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR \fB-x\fR set-condition-test=# sysctrl0:slot# ...
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/cfgadm\fR [\fB-l\fR]
+     \fB-o\fR disable-at-boot | enable-at-boot sysctrl0:slot# ...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsysctrl\fR 硬件特定库 \fB/usr/platform/sun4u/lib/cfgadm/sysctrl.so.1\fR 提供动态重新配置功能，用于在 \fBE6X00\fR、\fBE5X00\fR、\fBE4X00\fR 以及 \fBE3X00\fR 系统中配置和断开系统板。可将 \fBI/O\fR 板和 \fBCPU\fR 板插入针对 Solaris 配置的运行中系统上的插槽，而无需重新引导。也可以从正在运行的系统断开和移除这两种类型的板，而无需重新引导。 
+.sp
+.LP
+系统插槽在设备树中显示为挂接点，系统机箱中的每个实际插槽对应一个挂接点。如果插槽中没有插入板，则插口状态为 \fBempty\fR（空）。如果板已断电并可随时移除，则插口状态为 \fBdisconnected\fR（断开）。如果板已通电并连接到系统总线，则插口状态为 \fBconnected\fR（已连接）。
+.sp
+.LP
+ 插口状态为 \fBempty\fR（空）或 \fBdisconnected\fR（断开）时，插卡状态为 \fBunconfigured\fR（未配置）。插口状态为 \fBconnected\fR（已连接）时，插卡状态为 \fBunconfigured\fR（未配置）或 \fBconfigured\fR（已配置）。 
+.sp
+.LP
+处于 \fBconfigured\fR（已配置）状态时，板上的设备可供 Solaris 使用。处于 \fBunconfigured\fR（未配置）状态时，板上的设备不可用。 
+.sp
+.LP
+插入板会使插口状态从 \fBempty\fR（空）更改为 \fBdisconnected\fR（断开）。移除板会使插口状态从 \fBdisconnected\fR（断开）更改为 \fBempty\fR（空）。移除处于 \fBconnected\fR（已连接）状态的板会导致操作系统崩溃，并可能导致系统的永久性损坏。 
+.SH 选项
+.sp
+.LP
+有关选项的更完整的描述，请参见 \fBcfgadm\fR(1M)。
+.sp
+.LP
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIfunction\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行状态更改函数。将\fI\fR函数指定为 \fBconnect\fR、\fBdisconnect\fR、\fBconfigure\fR 或 \fBunconfigure\fR。
+.sp
+.ne 2
+.mk
+.na
+\fBconfigure\fR
+.ad
+.RS 15n
+.rt  
+将插卡状态更改为 \fBconfigured\fR（已配置）。 
+.sp
+如果插口状态为 \fBdisconnected\fR（断开），\fBconfigure\fR 函数会首先尝试连接该插口。\fBconfigure\fR 函数可遍历 \fBconnect\fR 函数创建的 \fBOBP\fR 设备树，并创建 Solaris 设备树节点，从而根据需要连接设备。对于 \fBCPU\fR/内存板，\fBconfigure\fR 会将 \fBCPU\fR 添加到处于 \fBpowered-off\fR（已断电）状态的 \fBCPU\fR 列表中。这些操作对于 \fBpsrinfo\fR(1M) 和 \fBpsradm\fR(1M) 命令是可见的。为 CPU/内存板发布了两个内存挂接点。通过 \fBmount\fR(1M) 和 \fBifconfig\fR(1M) 可使用新板上的 \fBI/O\fR 设备。要使用 \fBCPU\fR，请使用 \fBpsradm\fR \fB-n\fR 使新处理器联机。使用 \fBcfgadm_ac\fR(1M) 可测试和配置内存区。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBconnect\fR
+.ad
+.RS 15n
+.rt  
+将插口状态更改为 \fBconnected\fR（已连接）。 
+.sp
+当总线信号已连接并且板已测试时，要更改插口状态必须冻结系统总线。可通过执行 \fBquiesce\fR 操作冻结总线，该操作会停止所有进程活动并暂停所有驱动程序。由于 \fBquiesce\fR 操作以及随后的恢复操作比较耗时，而且并非所有驱动程序都支持这些操作，因此提供了 \fB-x\fR \fBquiesce-test\fR。当系统总线冻结时，固件会对正在连接的板进行测试。对于 \fBI/O\fR 板，该操作可在很短的时间内完成，而对于 \fBCPU\fR/内存板，由于需要进行 CPU 外部高速缓存测试，因此比较耗时。该操作过程中不进行内存测试。系统在 \fBquiesce\fR 操作开始前会提示用户进行确认。使用 \fB-y\fR 或 \fB-n\fR 选项应答该提示。如果板标记为 \fBdisabled-at-boot\fR，则 \fBconnect\fR 操作被拒绝，除非指定了强制标志 \fB-f\fR 或引导时启用标志 \fB-o\fR \fBenable-at-boot\fR。请参见 \fB-l\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisconnect\fR
+.ad
+.RS 15n
+.rt  
+ 将插口状态更改为 \fBdisconnected\fR（断开）。 
+.sp
+如果插卡状态为 \fBconfigured\fR（已配置），\fBdisconnect\fR 函数会首先尝试取消对该插卡的配置。\fBdisconnect\fR 操作不要求执行 \fBquiesce\fR 操作，因此耗时较短。板会断电，可随时移除。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBunconfigure\fR
+.ad
+.RS 15n
+.rt  
+将插卡状态更改为 \fBunconfigured\fR（未配置）。 
+.sp
+在此过程中，会使板上的设备对 Solaris 不可见。\fBI/O\fR 板上的 \fBI/O\fR 设备将从 Solaris 设备树中删除。对于任何正在使用中的设备，会停止取消配置过程并报告设备正在使用。必须在使设备处于不忙状态后重试取消配置操作。对于 \fBCPU\fR/内存板，发出板取消配置操作前，必须已将内存更改为未配置状态。板上的 \fBCPU\fR 会脱机、断电并从 Solaris \fBCPU\fR 列表中删除。不能使与进程绑定的 \fBCPU\fR 脱机。有关使 \fBCPU\fR 脱机的更多信息，请参见\fBpsradm\fR(1M)、\fBpsrinfo \fR(1M)、\fBpbind\fR(1M) 和 \fBp_online \fR(2)。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ 强制将块连接到 \fBdisabled-board-list\fR 非易失性变量中标记为 \fBdisabled-at-boot\fR 的板。请参见\fI《Platform Notes: Sun Enterprise 6x00/5x00/4x00/3x00 Systems》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出选项。按 \fBcfgadm\fR(1M)cfgadm(1M) 中的描述支持该选项。 
+.sp
+\fItype\fR 字段可以是 \fBcpu/mem\fR、\fBmem\fR、\fBdual-sbus\fR、\fBsbus-upa\fR、\fBdual-pci\fR、\fBsoc+sbus\fR、\fBsoc+upa\fR、\fBdisk\fR 或 \fBunknown\fR 之一。 
+.sp
+硬件特定的 info 字段的设置如下：\fB[disabled at boot] [non-detachable] [100 MHz capable]\fR
+.sp
+对于 \fBsbus-upa\fR 和 \fBsoc+upa\fR 类型的板，首先显示以下附加信息：[\fBsingle buffered\fR \fBffb|double\fR \fBbuffered\fR \fBffb|no\fR \fBffb installed\fR] 对于磁盘类型的板，首先显示以下附加信息：\fB{target: # | no disk} {target: # | no disk}\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR disable-at-boot | enable-at-boot\fR
+.ad
+.sp .6
+.RS 4n
+修改 \fBdisabled-board-list\fR 非易失性变量的状态。将 \fB-o\fR 选项与 \fB-c\fR \fIfunction\fR 或 \fB-l\fR 选项结合使用。
+.sp
+将 \fB-o\fR \fBenable-at-boot\fR 与 \fB-c\fR \fBconnect\fR 结合使用可在连接 \fBdisabled-at-boot\fR 板时覆盖块。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR insert-test | remove-test\fR
+.ad
+.sp .6
+.RS 4n
+执行测试。 
+.sp
+ 指定 \fBremove-test\fR 将指定插槽的驱动程序状态从 \fBdisconnected\fR（断开）更改为 \fBempty\fR（空），而无需在自动测试过程中物理移除板。 
+.sp
+指定 \fBinsert-test\fR 将通过 \fBremove-test\fR 命令显示为 empty（空）的插槽的驱动程序状态更改为 \fBdisconnected\fR（断开），就好像之前插入过板一样。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR quiesce-test sysctrl0:slot1\fR
+.ad
+.sp .6
+.RS 4n
+执行测试。
+.sp
+允许执行板的连接操作所需的 \fBquiesce\fR 操作。执行该测试可确认在当前软件和硬件配置下，可以停止系统。不能停止的设备或进程的名称将显示在错误消息中。该命令适用于任何有效的板挂接点，但由于所有系统都有插槽 1，因此推荐采用给定的形式。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR set-condition-test=# \fR
+.ad
+.sp .6
+.RS 4n
+执行测试。
+.sp
+允许设置系统板挂接点的状态，以便测试状态更改命令的策略逻辑。新的设置为指示如下状态值之一的数字： 
+.sp
+.in +2
+.nf
+0      unknown
+1      ok 
+2      failing
+3      failed
+4      unusable
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fBsysctrl0:slot\fI#\fR\fR
+.ad
+.RS 28n
+.rt  
+\fBEXX00\fR 系统板的挂接点由 \fBsysctrl\fR 驱动程序的实例 \fB0\fR (\fBsysctrl0\fR) 发布。挂接点名称的编号为 \fBslot0\fR 到 \fBslot15\fR。将 \fI#\fR 指定为 \fB0\fR 到 \fB15\fR 之间的数字，表示槽号。此格式符合 \fBcfgadm\fR(1M) 中提供的逻辑 \fBap_id\fR 规范。对应的物理 \fBap_id\fR 已在"文件"\fBFILES\fR 部分中列出。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB/usr/platform/sun4u/lib/cfgadm/sysctrl.so.1\fR
+.ad
+.sp .6
+.RS 4n
+硬件特定库 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB/devices/central@1f,0/fhc@0,f8800000/clock-board@0,900000:slot*\fR
+.ad
+.sp .6
+.RS 4n
+挂接点
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/library/platform
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcfgadm\fR(1M)、\fBcfgadm_ac\fR(1M)、\fBifconfig\fR(1M)、\fBmount\fR(1M)、\fBpbind\fR(1M)、\fBpsradm\fR(1M)、\fBpsrinfo\fR(1M)、\fBconfig_admin\fR(3CFGADM)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Sun Enterprise 6x00, 5x00, 4x00 and 3x00 Systems Dynamic Reconfiguration User's Guide》\fR
+.sp
+.LP
+\fI《Platform Notes: Sun Enterprise 6x00/5x00/4x00/3x00 Systems》\fR
+.SH 附注
+.sp
+.LP
+有关 EXX00 系统 CPU/内存板动态重新配置的更多详细信息，请参见\fI《Sun Enterprise 6x00, 5x00, 4x00 and 3x00 Systems Dynamic Reconfiguration User's Guide》\fR。 

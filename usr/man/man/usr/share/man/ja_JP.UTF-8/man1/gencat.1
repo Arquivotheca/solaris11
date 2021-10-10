@@ -1,0 +1,210 @@
+'\" te
+.\"  Copyright 1989 AT&T Copyright (c) 1995, Sun Microsystems, Inc. All Rights Reserved Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH gencat 1 "1995 年 2 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+gencat \- 書式付きメッセージカタログの生成
+.SH 形式
+.LP
+.nf
+\fBgencat\fR \fIcatfile\fR \fImsgfile\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBgencat\fR コマンドは、\fImsgfile\fR というメッセージテキストのソースファイルを \fIcatfile\fR   という書式付きメッセージデータベースにマージします。\fIcatfile\fR データベースがまだ存在していない場合は、データベースが作成されます。\fIcatfile\fR が存在する場合、そのメッセージは新しい \fIcatfile\fR に挿入されます。セット番号とメッセージ番号が衝突する場合、\fImsgfile\fR に定義された新しいメッセージテキストが \fIcatfile\fR に現在入っている古いメッセージテキストと置き換わります。\fBgencat\fR に対するメッセージテキストのソースファイル (またはファイルのセット) 入力には、セット番号とメッセージ番号の両方、またはメッセージ番号だけを含めることができます。後者の場合、\fBNL_SETD\fR (\fBnl_types.h\fR(3HEAD) 参照) というセットが想定されます。
+.SS "メッセージテキストのソースファイルフォーマット"
+.sp
+.LP
+メッセージテキストのソースファイルのフォーマットは次のとおりに定義します。メッセージテキストのソース行のフィールドは、\fBASCII\fR スペース文字またはASCII タブ文字 1 つで区切ることに注意してください。他の \fBASCII\fR スペースまたは ASCII タブは、後続のフィールドの一部と見なされます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$set\fR \fIn comment\fR \fR
+.ad
+.RS 22n
+.rt  
+ここで、\fIn\fR は次の  \fB$set\fR、\fB$delset\fR、またはファイルの終わりまでの後続メッセージのセット識別子を指定します。\fIn\fRは (\fB1\fR-{\fBNL_SETMAX\fR}) の範囲内の数にする必要があります。1 個のソースファイル内のセット識別子は連続する必要はありません。セット識別子の後の文字列はコメントと見なされます。メッセージテキストのソースファイルに \fB$set\fR 宣言を指定しないと、メッセージはすべてデフォルトのメッセージセット、\fBNL_SETD\fR に入ります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$delset\fR \fIn comment\fR \fR
+.ad
+.RS 22n
+.rt  
+既存のメッセージカタログから  \fIn\fR というメッセージセットを削除します。セット番号の後の文字列はコメントと見なされます。\fB注意:\fR \fIn\fR は、有効なセットでない場合、無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$\fR\fIcomment\fR \fR
+.ad
+.RS 22n
+.rt  
+ドル記号の \fB$\fR で始まり、その後に \fBASCII\fR スペース文字またはASCII タブ文字が続く行は、コメントと見なされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm\fR \fImessage-text\fR \fR
+.ad
+.RS 22n
+.rt  
+\fIm\fR はメッセージ識別子であり、(\fB1\fR-{\fBNL_MSGMAX\fR}) の範囲内の数になります。\fImessage-text\fR は直前の \fB$set\fR 宣言で指定されたセット識別子とメッセージ識別子の \fIm\fR とともにメッセージカタログに格納されます。\fImessage-text\fR が空で、\fBASCII\fR スペースまたは ASCII タブのフィールドセパレータが存在する場合は、メッセージカタログに空の文字列を格納します。メッセージソース行にメッセージ番号があるが、フィールドセパレータも \fImessage-text\fR もない場合、カタログからその番号(もしあれば)の既存のメッセージを削除します。メッセージ識別子は連続する必要はありません。\fImessage-text\fR の長さは、(\fB0\fR-{\fBNL_TEXTMAX\fR}) の範囲内にする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$quote\fR \fIc\fR \fR
+.ad
+.RS 22n
+.rt  
+この行は、オプションの引用符文字である \fIc\fR を指定します。この文字を使用して \fImessage-text\fR を囲めば、メッセージソース行において後方のスペースまたはNULL (空) メッセージが見えるようにすることができます。デフォルト時、または空の \fB$quote\fR 宣言を指定するとき、\fImessage-text\fR の引用は認識されません。
+.RE
+
+.sp
+.LP
+メッセージテキストのソースファイル内の空の行は無視されます。
+.sp
+.LP
+テキスト文字列には、下記の表に定義された特殊文字およびエスケープシーケンスを入れることができます。
+.sp
+
+.sp
+.TS
+tab() box;
+lw(1.83i) lw(1.83i) lw(1.83i) 
+lw(1.83i) lw(1.83i) lw(1.83i) 
+.
+機能説明シンボルシーケンス
+改行NL(LF)\en
+水平タブHT\et
+垂直タブVT\ev
+バックスペースBS\eb
+キャリッジリターンCR\er
+フォームフィードFF \ef
+バックスラッシュ\e\e\e
+ビットパターンddd\eddd
+.TE
+
+.sp
+.LP
+\fB\e\fR\fIddd\fR というエスケープシーケンスは、バックスラッシュと、それに続く1 つ、2 つ、または 3 つの 8 進数からなります。これらの数字は、希望の文字の値を指定するのに使用します。バックスラッシュの後の文字が、指定された文字のいずれでもない場合、バックスラッシュは無視されます。
+.sp
+.LP
+また、バックスラッシュの後に \fBASCII\fR 改行文字を指定すれば、後続の行に文字列を継続できます。したがって、下記の 2 行は単一のメッセージ文字列を記述します。
+.sp
+.in +2
+.nf
+1 This line continues \e
+to the next line
+.fi
+.in -2
+
+.sp
+.LP
+これは、次の行と等価です。
+.sp
+.in +2
+.nf
+    1 This line continues to the next line
+.fi
+.in -2
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcatfile\fR \fR
+.ad
+.RS 12n
+.rt  
+フォーマットされたメッセージカタログのパス名。\(mi を指定すると、標準出力とみなされる。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImsgfile\fR \fR
+.ad
+.RS 12n
+.rt  
+メッセージテキストのソースファイルのパス名。\fImsgfile\fR の例として \(mi を指定すると、標準入力とみなされる。メッセージテキストソースファイルの書式は前述の「メッセージテキストのソースファイルフォーマット」で定義されています。\fB\fR
+.RE
+
+.SH 環境
+.sp
+.LP
+\fBgencat\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件text/locale
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBmkmsgs\fR(1), \fBcatgets\fR(3C), \fBcatopen\fR(3C), \fBgettxt\fR(3C), \fBnl_types.h\fR(3HEAD), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)

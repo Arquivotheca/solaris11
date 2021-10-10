@@ -1,0 +1,181 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH cron 1M "2009 年 2 月 4 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+cron \- クロックデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/cron\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcron\fR は、指定された日時にコマンドを実行するプロセスを開始します。 
+.sp
+.LP
+\fB/var/spool/cron/crontabs\fR ディレクトリの \fBcrontab\fR ファイルにある指示に従って、定期的にスケジュールされたコマンドを \fBcron\fR に指定できます。\fBcrontab\fR(1) コマンドを使用すると、ユーザー固有の \fBcrontab\fR ファイルを生成できます。一度だけ実行するコマンドは、\fBat\fR(1) コマンドを使用して投入できます。
+.sp
+.LP
+\fBcron\fR は、それ自体のプロセス初期化フェーズの際、および \fBcrontab\fR または \fBat\fR コマンドが実行されるときにのみ、\fBcrontab\fR または \fBat\fR コマンドファイルを検査します。これにより、定期的にスケジュールされた間隔で新しいファイルまたは変更されたファイルをチェックするオーバーヘッドが減少します。
+.sp
+.LP
+\fBcron\fR は終了することがないため、一度だけ実行してください。これは、通常の手順では \fBsvc:/system/cron:default\fR サービスによって実行されているものです。複数の \fBcron\fR インスタンスが実行されないように、ロックファイルとして \fB/etc/cron.d/FIFO\fR ファイルが使用されます。
+.sp
+.LP
+\fBcron\fR は、ジョブの \fBstdout\fR および \fBstderr\fR ストリームの出力を取得し、空でない場合は、出力をユーザーにメールで送信します。ジョブが出力を生成しなかった場合、ユーザーにメールは送信されません。例外は、ジョブが \fBat\fR(1) ジョブで、ジョブが実行されたときに \fB-m\fR オプションが指定された場合です。
+.sp
+.LP
+ユーザーのアカウントがロックされていると、\fBcron\fR ジョブおよび \fBat\fR ジョブは実行されません。ジョブとプロセスは実行されます。\fBshadow\fR(4) ファイルにはロックされていないアカウントが定義されており、それらのアカウントのジョブとプロセスは実行されます。
+.SS "複数のタイムゾーンの cron ジョブを設定"
+.sp
+.LP
+\fBcron\fR デーモンのタイムゾーンは、\fBcron\fR エントリのシステム全体のタイムゾーンとして設定されます。また、さらに \fB/etc/default/init\fR を使用してシステム全体のデフォルトタイムゾーンとして設定されます。\fBcron\fR エントリのタイムゾーンはユーザーの crontab ファイルで上書きできます。\fBcrontab\fR(1) を参照してください。 
+.sp
+.LP
+夏時間や冬時間などが有効になっている場合には、切り替え期間に予定されているジョブは、1 回だけ実行されたり、2 回実行されたり、またはまったく実行されないこともあります。\fB\fR\fB\fR
+.SS "cron のデフォルトの設定"
+.sp
+.LP
+\fBcron\fR によって実行されるすべての操作のログを保存するには、\fB/etc/default/cron\fR ファイルで \fBCRONLOG=YES\fR を指定する必要があります。\fBCRONLOG=NO\fR を指定すると、ログの記録は行われません。通常、\fBcron\fR は非常に大きなログファイルを作成するため、ログの保存はユーザーが構成可能なオプションとなっています。
+.sp
+.LP
+ユーザーの cron ジョブの \fBPATH\fR を設定するには、\fB/etc/default/cron\fR に \fBPATH\fR\fB=\fR を指定します。\fB\fR\fBroot\fR ユーザーの cron ジョブの \fBPATH\fR を設定するには、\fB/etc/default/cron\fR に \fBSU\fR\fBPATH\fR\fB =\fR を指定します。\fBPATH\fR および \fBSUPATH\fR を設定した場合のセキュリティーへの影響を十分に考慮してください。
+.sp
+.LP
+\fB/etc/default/cron\fR ファイルの例
+.sp
+.in +2
+.nf
+CRONLOG=YES
+PATH=/usr/bin:/usr/ucb:
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例のファイルは、ログの記録を有効にし、root ユーザー以外のジョブによって使用されるデフォルトの \fBPATH\fR を \fB/usr/bin:/usr/ucb:\fR に設定します。root ユーザーのジョブは、引き続き \fB/usr/sbin:/usr/bin\fR を使用します。
+.sp
+.LP
+\fBcron\fR のログファイルは、\fBlogadm\fR(1M) によって定期的にローテーションされます。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cron.d\fR\fR
+.ad
+.RS 25n
+.rt  
+主 \fBcron\fR ディレクトリ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cron.d/FIFO\fR\fR
+.ad
+.RS 25n
+.rt  
+ロックファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/cron\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBcron\fR のデフォルト設定ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/cron/log\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBcron\fR の履歴情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/spool/cron\fR\fR
+.ad
+.RS 25n
+.rt  
+スプール領域
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/cron.d/queuedefs\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBat\fR、\fBbatch\fR、および \fBcron\fR の待ち行列記述ファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/logadm.conf\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBlogadm\fR の構成ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBat\fR(1), \fBcrontab\fR(1), \fBsh\fR(1), \fBlogadm\fR(1M), \fBsvcadm\fR(1M), \fBqueuedefs\fR(4), \fBshadow\fR(4), \fBattributes\fR(5), \fBrbac\fR(5), \fBsmf\fR(5), \fBsmf_security\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBcron\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/system/cron:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。ほとんどの管理操作は、\fBsolaris.smf.manage.cron\fR 承認を持つユーザーに委任できます (\fBrbac\fR(5) および \fBsmf_security\fR(5) を参照)。
+.SH 診断
+.sp
+.LP
+\fBcron\fR によって行われたすべての操作の履歴は、\fB/var/cron/log\fR および場合によっては \fB/var/cron/olog\fR に格納されます。

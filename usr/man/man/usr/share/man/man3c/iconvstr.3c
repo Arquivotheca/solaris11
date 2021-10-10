@@ -1,0 +1,275 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH iconvstr 3C "5 May 2011" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+iconvstr \- string-based code conversion function
+.SH SYNOPSIS
+.LP
+.nf
+size_t iconvstr(const char *\fItocode\fR, const char *\fIfromcode\fR,
+    char *\fIinarray\fR, size_t *\fIinlen\fR, char *\fIoutarray\fR, size_t *\fIoutlen\fR,
+    int \fIflag\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fItocode\fR\fR
+.ad
+.sp .6
+.RS 4n
+Pointer to a target codeset name string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfromcode\fR\fR
+.ad
+.sp .6
+.RS 4n
+Pointer to a source codeset name string.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinarray\fR\fR
+.ad
+.sp .6
+.RS 4n
+Pointer to a byte array containing a sequence of character bytes in \fIfromcode\fR codeset to be converted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinlen\fR\fR
+.ad
+.sp .6
+.RS 4n
+As input argument, the number of bytes to be converted in \fIinarray\fR. As output argument, the number of bytes in \fIinarray\fR still not converted after the conversion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIoutarray\fR\fR
+.ad
+.sp .6
+.RS 4n
+Pointer to a byte array where converted character bytes in \fItocode\fR codeset can be saved.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIoutlen\fR\fR
+.ad
+.sp .6
+.RS 4n
+As input argument, the number of available bytes at \fIoutarray\fR where converted character bytes can be saved. As output argument, after the conversion, the number of bytes still available at \fIoutarray\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflag\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates possible conversion options constructed by a bitwise-inclusive-OR of the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBICONV_IGNORE_NULL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Normally \fBiconvstr()\fR stops the conversion if it encounters a string terminating null character of fromcode from \fIinarray\fR even if the value of \fIinlen\fR indicates there are more bytes in \fIinarray\fR.
+.sp
+With this option, the null character does not stop the conversion and the conversion continues until \fIinlen\fR pointed amount of \fIinarray\fR bytes are all consumed for conversion or an error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBICONV_REPLACE_INVALID\fR\fR
+.ad
+.sp .6
+.RS 4n
+Normally \fBiconvstr()\fR stops the conversion if it encounters illegal or incomplete characters from \fBinarray()\fR with a corresponding \fIerrno\fR value.
+.sp
+When this option is set, \fBiconvstr()\fR does not stop the conversion and instead treats such characters as non-identical conversion cases.
+.RE
+
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBiconvstr()\fR function converts the sequence of characters from one codeset, in the array specified by \fIinarray\fR, into a sequence of corresponding characters in another codeset, in the array specified by \fIoutarray\fR. The codesets are those specified in \fIfromcode\fR and \fItocode\fR arguments.
+.sp
+.LP
+Unless \fBICONV_IGNORE_NULL\fR is specified in \fIflag\fR, \fBiconvstr()\fR normally stops when it encounters a string terminating null character of \fIfromcode\fR from \fIinarray\fR regardless of the current \fIinlen\fR value; in that case, it does not copy over the null character to \fIoutarray\fR.
+.sp
+.LP
+If \fBICONV_REPLACE_INVALID\fR is not specified in \fIflag\fR and if a sequence of input bytes does not form a valid character in the specified codeset, conversion stops after the previous successfully converted character.
+.sp
+.LP
+If \fBICONV_REPLACE_INVALID\fR is not specified in \fIflag\fR and if the input array ends with an incomplete character or shift sequence, conversion stops after the previous successfully converted bytes.
+.sp
+.LP
+If the output array is not large enough to hold the entire converted input, conversion stops just prior to the input bytes that would cause the output array to overflow.
+.sp
+.LP
+The value pointed to by \fIinlen\fR is decremented to reflect the number of bytes still not converted in the input array. The value pointed to by \fIoutlen\fR is decremented to reflect the number of bytes still available in the output array.
+.sp
+.LP
+If \fBiconvstr()\fR encounters a character in the input array that is legal, but for which an identical character does not exist in the target codeset, \fBiconvstr()\fR performs an implementation-defined conversion, i.e., non-identical conversion, on this character.
+.sp
+.LP
+If \fBICONV_REPLACE_INVALID\fR is specified in \fIflag\fR and if \fBiconvstr()\fR encounters illegal or incomplete characters in the input array, instead of stopping the conversion, \fBiconvstr()\fR treats such characters as if they are non-identical characters and does non-identical conversions on such character bytes.
+.SH RETURN VALUES
+.sp
+.LP
+The \fBiconvstr()\fR function updates the values pointed to by \fIinlen\fR and \fIoutlen\fR arguments to reflect the extent of the conversion and returns the number of non-identical conversions performed. If the entire string in the input array is converted, the value pointed to by \fIinlen\fR will be 0.  If the input conversion is stopped due to any conditions mentioned above, the value pointed to by \fIinlen\fR will be non-zero and \fIerrno\fR is set to indicate the condition. If an error occurs, \fBiconvstr()\fR returns (\fBsize_t\fR) - 1 and sets \fIerrno\fR to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBiconvstr()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBE2BIG\fR\fR
+.ad
+.RS 10n
+.rt  
+Input conversion stopped due to lack of space in the output array.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEBADF\fR\fR
+.ad
+.RS 10n
+.rt  
+Requested conversion is not supported.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEILSEQ\fR\fR
+.ad
+.RS 10n
+.rt  
+Input conversion stopped due to an input byte that does not belong to the input codeset.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+Input conversion stopped due to an incomplete character or shift sequence at the end of the input array.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCode conversion from ISO8859-2 to UTF-8
+.sp
+.LP
+The following example converts null-terminated ISO8859-2 pathname string to UTF-8 string and, in doing so, treats illegal and incomplete characters as non-identical conversion cases. It also does not stop the conversion even if it encounters a null byte from the input array.
+
+.sp
+.in +2
+.nf
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
+        :
+
+size_t ret;
+char ib[MAXPATHLEN];
+char ob[MAXPATHLEN];
+size_t il, ol;
+
+        :
+
+/*
+ * We got the pathname from somewhere.
+ *
+ * Calculate the length of input string including the terminating
+ * NULL byte and prepare other arguments for the conversion.
+ */
+(void) strlcpy(ib, pathname, MAXPATHLEN);
+il = strlen(ib) + 1;
+ol = MAXPATHLEN;
+
+/*
+ * Do the conversion. If the ret > 0, that's the number of
+ * non-identical character conversions happened during the conversion.
+ * Regardless of whether we have conversion failure or not,
+ * outarray could contain some converted characters.
+ */
+ret = iconvstr("UTF-8", "ISO-8859-2", ib, &il, ob, &ol,
+        (ICONV_IGNORE_NULL|ICONV_REPLACE_INVALID));
+if (ret == (size_t)-1) {
+    /* Code conversion not supported? */
+    if (errno == EBADF)
+        return (-1);
+
+    /* Output array too small? */
+    if (errno == E2BIG)
+        return (-2);
+
+    /* Unknown error which isn't possible BTW. */
+    return (-3);
+}
+
+        :
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBgeniconvtbl\fR(1), \fBiconv\fR(1), \fBiconv\fR(3C), \fBiconv_close\fR(3C), \fBiconv_open\fR(3C), \fBiconvctl\fR(C), \fBiconv.h\fR(3HEAD), \fBgeniconvtbl\fR(4), \fBattributes\fR(5), \fBiconv\fR(5), \fBiconv_unicode\fR(5), \fBiconv\fR(5), \fBstandards\fR(5)

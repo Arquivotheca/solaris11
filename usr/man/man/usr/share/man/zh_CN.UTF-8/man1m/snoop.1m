@@ -1,0 +1,1068 @@
+'\" te
+.\" 版权所有 (c) 2001，2011，Oracle 和/或其附属公司。保留所有权利。
+.TH snoop 1M "2011 年 3 月 14 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+snoop \- 捕获并检查网络包
+.SH 用法概要
+.LP
+.nf
+\fBsnoop\fR [\fB-aqrCDINPSvV\fR] [\fB-t\fR [r | a | d]] [\fB-c\fR \fImaxcount\fR]
+ [\fB-d\fR \fIdevice\fR] [\fB-i\fR \fIfilename\fR] [\fB-n\fR \fIfilename\fR] [\fB-o\fR \fIfilename\fR]
+ [\fB-p\fR \fIfirst\fR [, \fIlast\fR]] [\fB-s\fR \fIsnaplen\fR] [\fB-x\fR \fIoffset\fR [, \fIlength\fR]]
+ [\fIexpression\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBsnoop\fR 从数据链路或 IP 接口捕获包并显示其内容。如果未指定数据链路或 IP 接口，\fBsnoop\fR 将选取要使用的数据链路，并优先使用检测到 IP 通信的数据链路。\fBsnoop\fR 使用 \fBpfmod\fR(7M) 和 \fBbufmod\fR(7M) STREAMS 模块从网络有效捕获包。捕获的包可在接收或保存到文件（该文件符合 \fIRFC 1761\fR）时显示，以便在以后检查。
+.sp
+.LP
+\fBsnoop\fR 可在单行汇总表单或详细多行表单中显示这些包。在汇总表单中，除某些 VLAN 包以外，仅显示与最高级别的协议相关的数据。如果包具有一个 VLAN 头，并且其 VLAN ID 为非零，\fBsnoop\fR 将显示此包带有 VLAN 标记。例如，\fBNFS\fR 包将仅显示 \fBNFS\fR 信息。除刚才介绍的条件下的 VLAN 信息以外，系统将隐藏底层 \fBRPC\fR、\fBUDP\fR、\fBIP\fR 和以太网帧信息，但是，如果选择某个详细选项，则可以显示这些信息。
+.sp
+.LP
+如果缺少名称服务（例如，LDAP 或 NIS），\fBsnoop\fR 会将主机名显示为数字 IP 地址。
+.sp
+.LP
+\fBsnoop\fR 需要交互式接口。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出根据内核包过滤器或 \fBsnoop\fR 自己的过滤器的过滤器表达式生成的代码。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+在汇总行中显示捕获时删除的包的数目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据捕获文件创建 \fBIP\fR 地址-名称文件。这必须与指定捕获文件的 \fB-i\fR 选项一起设置。地址-名称文件的名称与捕获文件相同，并附加了 \fB\&.names\fR。此文件在捕获站点记录 \fBIP\fR 地址到主机名的映射，并提高了捕获文件的可移植性。如果要在其他位置分析捕获文件，则生成一个 \fB\&.names\fR 文件。使用此标记时，不会显示包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fIinterface\fR 指定的 IP 接口（例如，\fBlo0\fR）捕获网络中的 IP 包。\fBipadm\fR(1M) 命令可用于列出可用 IP 接口。\fB-I\fR 选项和 \fB-d\fR 选项相互排斥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR\fR
+.ad
+.sp .6
+.RS 4n
+在非混杂模式下捕获包。仅显示发往主机的广播、多播或包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+在汇总行中显示整个链路层帧的大小（以字节为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细汇总模式。从详细程度而言，此模式介于汇总模式和详细模式之间。此模式为包中的每个协议层显示一个汇总行，而不是仅为包中最高级别的协议显示汇总行。例如，对于 \fBNFS\fR 包，它将为 \fBETHER\fR、\fBIP\fR、\fBUDP\fR、\fBRPC\fR 和 \fBNFS\fR 层各显示一行。通过 \fBgrep\fR 可以轻松传输详细汇总模式输出以提取相关包。例如，要仅查看 \fBRPC\fR 汇总行，请输入以下内容：\fBexample#\fR \fBsnoop -i rpc.cap -V | grep RPC\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fB/dev/audio\fR 上侦听包（警告：可能有杂音）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fImaxcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+在捕获 \fImaxcount\fR 包后退出。否则继续捕获，直到没有剩余磁盘空间或使用 Ctrl-C 中断为止。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdatalink\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fIdatalink\fR 指定的 DLPI 数据链路（例如，\fBbge0\fR 或 \fBnet0\fR）从网络中捕获链路层包。\fBdladm\fR(1M) \fBshow-link\fR 子命令可用于列出可用数据链路。\fB-d\fR 选项和 \fB-I\fR 选项相互排斥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fIfilename\fR 中以前捕获的包。如果没有此选项，\fBsnoop\fR 将从网络接口读取包。如果存在 \fIfilename\fR\fB\&.names\fR 文件，则会将其自动装载到 \fBsnoop\fR \fBIP\fR 地址-名称映射表（请参见 \fB-N\fR 标志）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用 \fIfilename\fR 作为 \fBIP\fR 地址-名称映射表。此文件的格式必须与 \fB/etc/hosts\fR 文件的格式相同（后跟有主机名的 IP 地址）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfilename\fR\fR
+.ad
+.sp .6
+.RS 4n
+在捕获包时将捕获到的包保存到 \fIfilename\fR 中。（此 \fIfilename\fR 称为"捕获文件"。）捕获文件的格式符合 RFC 1761。捕获包期间，将显示保存在此文件中的包的计数。如果您仅希望计算包的数目，而不保存到文件，请指定文件 \fB/dev/null\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIfirst\fR [ , \fBlast\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+从捕获文件中选择一个或多个要显示的包。此文件中的 \fIfirst\fR 包即为第 1 个包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.sp .6
+.RS 4n
+将网络包捕获到文件中时，不会显示包计数。这可以提高捕获包的性能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+不会将 \fBIP\fR 地址解析为符号名称。这会防止 \fBsnoop\fR 在捕获和显示包时生成网络通信。但是，如果使用 \fB-n\fR 选项，并在映射文件中找到某个地址，则将使用其相应名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsnaplen\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fIsnaplen\fR 字节后截断各个包。通常捕获整个包。仅当需要某些包头信息时，此选项才会有用。包截断操作是在内核中完成的，使您可以更好地利用流包缓冲区。这意味着，在高通信期间，因缓冲区溢出而删除包的可能性较小。此选项还会在将大型跟踪捕获到捕获文件时节省磁盘空间。要仅捕获 \fBIP\fR 头（无选项），请使用 \fIsnaplen\fR 34。对于 \fBUDP\fR，请使用 42，对于 \fBTCP\fR，请使用 54。您可以使用包含 80 个字节的 \fIsnaplen\fR 捕获 \fBRPC\fR 头。可以 120 个字节为单位捕获 \fBNFS\fR 头。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR [ \fBr\fR | \fBa\fR | \fBd\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+时间戳显示。时间戳精确至 4 微秒以内。缺省设置是以 \fBd\fR（增量）格式显示时间（自收到上一个包以来的时间）。选项 \fBa\fR（绝对）提供墙上时钟时间。选项 \fBr\fR（相对）提供相对于显示的第一个包的时间。此选项可以与 \fB-p\fR 选项配合使用，以便显示相对于任何选定包的时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。详细输出包头。此显示针对每个包使用多个行，并且只能用于选定包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fR\fB-x\fR\fIoffset\fR [ , \fIlength\fR]\fR
+.ad
+.sp .6
+.RS 4n
+以十六进制和 \fBASCII\fR 格式显示包数据。\fIoffset\fR 和 \fIlength\fR 值选择要显示的包的部分。要显示整个包，请使用 \fIoffset\fR 0。如果未提供 \fIlength\fR 值，则会显示包的其余部分。
+.RE
+
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fB\fI表达式\fR\fR
+.ad
+.sp .6
+.RS 4n
+从网络或捕获文件中选择包。仅选择表达式为 true 的包。如果未提供表达式，则假定它为 true。
+.sp
+如果给定过滤器表达式，\fBsnoop\fR 将为内核包过滤器或其自己的内部过滤器生成代码。如果使用网络接口捕获包，则将生成适用于内核包过滤器的代码。此过滤器作为流模块（即缓冲区模块的上游）实现。缓冲区模块会一直累积包，直到其已满为止，并将这些包传递到 \fBsnoop\fR。在内核中不需要的包到达包缓冲区或 \fBsnoop\fR 之前，内核包过滤器会拒绝这些包，因此此过滤器非常有效。内核包过滤器具有某些实现限制；它可以构建无法处理的过滤器表达式。此种情况下，\fBsnoop\fR 会尝试拆分过滤器，并在内核中执行尽可能多的过滤操作。对于 \fBsnoop\fR，其余过滤操作都由包过滤器完成。\fB-C\fR 标志可用于查看为内核包过滤器或 \fBsnoop\fR 的包过滤器生成的代码。如果使用 \fB-i\fR 选项从捕获文件读取包，则仅使用 \fBsnoop\fR 的包过滤器。
+.sp
+过滤器 \fIexpression\fR 包含一个或多个布尔基元序列，这些基元可使用布尔运算符（\fBAND\fR、\fBOR\fR 和 \fBNOT\fR）组合在一起。应用布尔运算符的常规优先级规则。使用括号可以控制这些运算符的计算顺序。由于 shell 已知括号和其他过滤器表达式字符，因此通常需要将过滤器表达式包含在引号中。有关如何设置更有效的过滤器的信息，请参阅。
+.sp
+这些基元包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhost\fR \fIhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果源或目标地址是 \fBhostname\fR 的源或目标地址，则为 True。\fIhostname\fR 参数可以为文本地址。如果此名称不与其他表达式基元的名称冲突，则可以忽略关键字 \fBhost\fR。例如，\fBpinky\fR 选择传送到主机 \fBpinky\fR 或从该主机接收的包，而 \fBpinky and dinky\fR 选择在主机 \fBpinky AND dinky\fR 之间交换的包。 
+.sp
+使用的地址类型取决于 \fBhost\fR 基元前面的基元。可能的限定符包括 \fBinet\fR、\fBinet6\fR、\fBether\fR，或没有限定符。下面讨论了这三个基元。不提供任何基元等效于"inet host hostname or inet6 host hostname"。换言之，snoop 尝试根据与主机名关联的所有 IP 地址进行过滤。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinet\fR 或 \fIinet6\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改后面的 \fBhost\fR 基元的限定符。如果为 \fIinet\fR，\fBsnoop\fR 尝试根据名称查找返回的所有 IPv4 地址进行过滤。如果为 \fIinet6\fR，\fBsnoop\fR 尝试根据名称查找返回的所有 IPv6 地址进行过滤。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIipaddr\fR、\fIatalkaddr\fR 或 \fIetheraddr\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以识别文本地址、\fBIP\fR 点分地址、AppleTalk 点分地址和以太网冒号地址。例如， 
+.RS +4
+.TP
+.ie t \(bu
+.el o
+"\fB172.16.40.13\fR"与采用该 \fBIP\fR 的所有包匹配 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+"\fB2::9255:a00:20ff:fe73:6e35\fR"与采用此 IPv6 地址作为源或目标的所有包匹配；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+"\fB65281.13\fR"与采用此 AppleTalk 地址的所有包匹配；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+"\fB8:0:20:f:b1:51\fR"与采用此以太网地址作为源或目标的所有包匹配。
+.RE
+以字母开头的以太网地址解释为主机名。为了避免此种情况，请在指定地址时在此地址前面添加一个零。例如，如果以太网地址为 \fBaa:0:45:23:52:44\fR，通过添加一个前导零将此地址指定为 \fB0aa:0:45:23:52:44\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfrom\fR 或 \fBsrc\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改以下的 \fBhost\fR、\fBnet\fR、\fIipaddr\fR、\fIatalkaddr\fR、\fIetheraddr\fR、\fBport\fR 或 \fBrpc\fR 基元以便仅与源地址、端口或 \fBRPC\fR 回复匹配的限定符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBto\fR 或 \fBdst\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改以下的 \fBhost\fR、\fBnet\fR、\fIipaddr\fR、\fIatalkaddr\fR、\fIetheraddr\fR、\fBport\fR 或 \fBrpc\fR 基元以便仅与目标地址、端口或 \fBRPC\fR 调用匹配的限定符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBether\fR\fR
+.ad
+.sp .6
+.RS 4n
+修改以下的 \fBhost\fR 基元以便将名称解析为以太网地址的限定符。通常执行 \fBIP\fR 地址匹配操作。IPoIB (IP over InfiniBand) 等介质上不支持此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBethertype\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果以太网类型字段的值为 \fInumber\fR，则为 True。如果 \fInumber\fR 不为 0x8100 (VLAN)，并且包带有 VLAN 标记，表达式将与封装的以太网类型相匹配。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip\fR、\fBip6\fR、\fBarp\fR、\fBrarp\fR、\fBpppoed\fR、\fBpppoes\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包是适当的 ethertype，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlan\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包 \fBethertype\fR 为 VLAN，并且 VLAN ID 不为零，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvlan-id\fR \fIid\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 ethertype 为 VLAN 且 ID 为 \fIid\fR 的包，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpppoe\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包 ethertype 为 \fBpppoed\fR 或 \fBpppoes\fR，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbroadcast\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为广播包，则为 True。对于以太网，等效于 \fBether[2:4] = 0xffffffff\fR。IPoIB (IP over InfiniBand) 等介质上不支持此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmulticast\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为多播包，则为 True。在以太网上等效于"\fBether[0] & 1 = 1\fR"。IPoIB (IP over InfiniBand) 等介质上不支持此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbootp\fR, \fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包是未分段的 IPv4 UDP 包，并且其源端口为 \fBBOOTPS (67)\fR 且目标端口为 \fBBOOTPC (68)\fR，或者源端口为 \fBBOOTPC (68)\fR 且目标为 \fBBOOTPS (67)\fR，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp6\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包是未分段的 IPv6 UDP 包，并且其源端口为 \fBDHCPV6-SERVER\fR (547) 且目标端口为 \fBDHCPV6-CLIENT\fR (546)，或者源端口为 \fBDHCPV6-CLIENT\fR (546) 且目标为 \fBDHCPV6-SERVER\fR (547)，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBapple\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为 Apple Ethertalk 包，则为 True。等效于"\fBethertype 0x809b or ethertype 0x80f3\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdecnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为 \fBDECNET\fR 包，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgreater\fR \fIlength\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包长于 \fIlength\fR，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBless\fR \fIlength\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包短于 \fIlength\fR，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBudp\fR, \fBtcp\fR, \fBicmp\fR, \fBicmp6\fR, \fBah\fR, \fBesp\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBIP\fR 或 IPv6 协议为适当的类型，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR \fInet\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fBIP\fR 源或目标地址的网络号为 \fInet\fR，则为 True。\fBfrom\fR 或 \fBto\fR 限定符可用于选择网络号仅存在于源或目标地址中的包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBport\fR \fIport\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果源或目标端口为 \fIport\fR，则为 True。\fIport\fR 可以是来自 \fB/etc/services\fR 的端口号或名称。\fBtcp\fR 或 \fBudp\fR 基元只能用于选择 \fBTCP\fR 或 \fBUDP\fR 端口。\fBfrom\fR 或 \fBto\fR 限定符可用于选择 \fIport\fR 仅作为源或目标的包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrpc\fR \fIprog\fR [ , \fIvers\fR [ , \fBproc\fR ] ]\fR
+.ad
+.sp .6
+.RS 4n
+如果包是 \fBRPC\fR 调用或 \fIprog\fR 标识的协议的回复包，则为 True。\fIprog\fR 可以是来自 \fB/etc/rpc\fR 的 \fBRPC\fR 协议的名称，也可以是程序编号。\fIvers\fR 和 \fBproc\fR 可用于进一步限定程序 \fIversion\fR 和 \fIprocedure\fR 编号，例如，\fBrpc nfs,2,0\fR 选择 \fBNFS\fR 空过程的所有调用和回复。\fBto\fR 或 \fBfrom\fR 限定符可用于仅选择调用或回复包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzone\fR \fIzoneid\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fIzoneid\fR 与 \fBipnet\fR 设备上接收到的包的源或目标 \fIzoneid\fR 匹配，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBldap\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包是端口 389 上的 \fBLDAP\fR 包，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgateway\fR \fIhost\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包已使用 \fIhost\fR 作为网关，也即，以太网源或目标地址用于 \fIhost\fR（而非 \fBIP\fR 地址），则为 True。等效于"\fBether host\fR \fIhost\fR and not host \fIhost\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnofrag\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包未分段或是 \fBIP\fR 分段序列中的第一个包，则为 True。等效于 \fBip[6:2] & 0x1fff = 0\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr\fR \fIrelop\fR \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果保持关系，其中 \fIrelop\fR 为 \fB>\fR、\fB<\fR、\fB>=\fR、\fB<=\fR、\fB=\fR、\fB!=\fR 之一，并且 \fBexpr\fR 是由数字、包字段选择器、\fBlength\fR 基元和算术运算符 \fB+\fR、\fB\(mi\fR、\fB*\fR、\fB&\fR、\fB|\fR、\fB^\fR 和 \fB%\fR 组成的算术表达式，则为 True。在算术运算符之间应用关系运算符和常规优先级规则之前，系统会先计算 \fBexpr\fR 中的算术运算符，例如，在执行加法运算之前先执行乘法运算。括号可用于控制计算顺序。要使用包中某个字段的值，请使用下面的语法： 
+.sp
+.in +2
+.nf
+\fIbase\fR[\fBexpr\fR [\fB:\fR \fBsize\fR ] ]
+.fi
+.in -2
+.sp
+
+其中 \fBexpr\fR 计算包中离 \fIbase\fR 偏移量的偏移量的值，前一个偏移量可以为 \fBether\fR、\fBip\fR、\fBip6\fR、\fBudp\fR、\fBtcp\fR 或 \fBicmp\fR。\fBsize\fR 值指定字段大小。如果未指定，则假定为 1。其他合法值为 2 和 4。例如， 
+.sp
+.in +2
+.nf
+ether[0] & 1 = 1
+.fi
+.in -2
+
+等效于 \fBmulticast\fR
+.sp
+.in +2
+.nf
+ether[2:4] = 0xffffffff
+.fi
+.in -2
+
+等效于 \fBbroadcast\fR。
+.sp
+.in +2
+.nf
+ip[ip[0] & 0xf * 4 : 2] = 2049
+.fi
+.in -2
+
+等效于 \fBudp[0:2] = 2049\fR
+.sp
+.in +2
+.nf
+ip[0] & 0xf > 5
+.fi
+.in -2
+
+使用选项选择 \fBIP\fR 包。
+.sp
+.in +2
+.nf
+ip[6:2] & 0x1fff = 0
+.fi
+.in -2
+
+消除 \fBIP\fR 分段。
+.sp
+.in +2
+.nf
+udp and ip[6:2]&0x1fff = 0 and udp[6:2] != 0
+.fi
+.in -2
+
+使用 \fBUDP\fR 校验和查找所有包。
+.sp
+\fBlength\fR 基元可用于获取包的长度。例如，"\fBlength > 60\fR"等效于"\fBgreater 60\fR"，"\fBether[length \(mi 1]\fR"获取包中最后一个字节的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB与\fR\fR
+.ad
+.sp .6
+.RS 4n
+在两个布尔值之间执行逻辑 \fBAND\fR 运算。通过并列的两个布尔表达式来暗指 \fBAND\fR 运算，例如，"\fBdinky pinky\fR"与"\fBdinky AND pinky\fR"相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBor\fR 或 \fB,\fR\fR
+.ad
+.sp .6
+.RS 4n
+在两个布尔值之间执行逻辑 \fBOR\fR 运算。可改用逗号，例如，"\fBdinky,pinky\fR"与"\fBdinky OR pinky\fR"相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnot\fR 或 \fB!\fR\fR
+.ad
+.sp .6
+.RS 4n
+对下列布尔值执行逻辑 \fBNOT\fR 运算。在 \fBAND\fR 或 OR 之前计算此运算符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslp\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为 \fBSLP\fR 包，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsctp\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为 \fBSCTP\fR 包，则为 True。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBospf\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果包为 \fBOSPF\fR 包，则为 True。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fBsnoop\fR 命令
+.sp
+.LP
+捕获所有包，并在接收这些包时显示它们：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用主机 \fBfunky\fR 作为源或目标来捕获包，并在接收这些包时显示它们：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop funky\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+捕获 \fBfunky\fR 和 \fBpinky\fR 之间的包，并将其保存到文件。然后，使用相对于捕获的第一个包的时间（以秒为单位）检查包：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -o cap funky pinky\fR
+example# \fBsnoop -i cap -t r | more\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要查看其他捕获文件中的选定包：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts -p 99,108\fR
+ 99   0.0027   boutique -> sunroof     NFS C GETATTR FH=8E6
+100   0.0046   sunroof -> boutique     NFS R GETATTR OK
+101   0.0080   boutique -> sunroof NFS C RENAME FH=8E6C MTra00192 to .nfs08
+102   0.0102   marmot -> viper        NFS C LOOKUP FH=561E screen.r.13.i386
+103   0.0072   viper -> marmot       NFS R LOOKUP No such file or directory
+104   0.0085   bugbomb -> sunroof    RLOGIN C PORT=1023 h
+105   0.0005   kandinsky -> sparky    RSTAT C Get Statistics
+106   0.0004   beeblebrox -> sunroof  NFS C GETATTR FH=0307
+107   0.0021   sparky -> kandinsky    RSTAT R
+108   0.0073   office -> jeremiah      NFS C READ FH=2584 at 40960 for 8192
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要更详细地查看包 101：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts -v -p101\fR
+ETHER:  ----- Ether Header -----
+ETHER:
+ETHER:  Packet 101 arrived at 16:09:53.59
+ETHER:  Packet size = 210 bytes
+ETHER:  Destination = 8:0:20:1:3d:94, Sun
+ETHER:  Source      = 8:0:69:1:5f:e,  Silicon Graphics
+ETHER:  Ethertype = 0800 (IP)
+ETHER:
+IP:   ----- IP Header -----
+IP:
+IP:   Version = 4, header length = 20 bytes
+IP:   Type of service = 00
+IP:         ..0. .... = routine
+IP:         ...0 .... = normal delay
+IP:         .... 0... = normal throughput
+IP:         .... .0.. = normal reliability
+IP:   Total length = 196 bytes
+IP:   Identification 19846
+IP:   Flags = 0X
+IP:   .0.. .... = may fragment
+IP:   ..0. .... = more fragments
+IP:   Fragment offset = 0 bytes
+IP:   Time to live = 255 seconds/hops
+IP:   Protocol = 17 (UDP)
+IP:   Header checksum = 18DC
+IP:   Source address = 172.16.40.222, boutique
+IP:   Destination address = 172.16.40.200, sunroof
+IP:
+UDP:  ----- UDP Header -----
+UDP:
+UDP:  Source port = 1023
+UDP:  Destination port = 2049 (Sun RPC)
+UDP:  Length = 176
+UDP:  Checksum = 0
+UDP:
+RPC:  ----- SUN RPC Header -----
+RPC:
+RPC:  Transaction id = 665905
+RPC:  Type = 0 (Call)
+RPC:  RPC version = 2
+RPC:  Program = 100003 (NFS), version = 2, procedure = 1
+RPC:  Credentials: Flavor = 1 (Unix), len = 32 bytes
+RPC:     Time = 06-Mar-90 07:26:58
+RPC:     Hostname = boutique
+RPC:     Uid = 0, Gid = 1
+RPC:     Groups = 1
+RPC:  Verifier   : Flavor = 0 (None), len = 0 bytes
+RPC:
+NFS:  ----- SUN NFS -----
+NFS:
+NFS:  Proc = 11 (Rename)
+NFS:  File handle = 000016430000000100080000305A1C47
+NFS:                597A0000000800002046314AFC450000
+NFS:  File name = MTra00192
+NFS:  File handle = 000016430000000100080000305A1C47
+NFS:                597A0000000800002046314AFC450000
+NFS:  File name = .nfs08
+NFS:  
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要仅查看 \fBsunroof\fR 和 \fBboutique\fR 之间的 \fBNFS\fR 包：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts rpc nfs and sunroof and boutique\fR
+1   0.0000   boutique -> sunroof    NFS C GETATTR FH=8E6C
+2   0.0046    sunroof -> boutique   NFS R GETATTR OK  
+3   0.0080   boutique -> sunroof   NFS C RENAME FH=8E6C MTra00192 to .nfs08
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要将这些包保存到新捕获文件：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -i pkts -o pkts.nfs rpc nfs sunroof boutique\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+要查看封装的包，包中将存在一个封装指示器：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop ip-in-ip\fR
+sunroof -> boutique ICMP Echo request    (1 encap)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果在封装包中使用 -V：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop -V ip-in-ip\fR
+sunroof -> boutique  ETHER Type=0800 (IP), size = 118 bytes
+sunroof -> boutique  IP D=172.16.40.222 S=172.16.40.200 LEN=104, ID=27497
+sunroof -> boutique  IP  D=10.1.1.2 S=10.1.1.1 LEN=84, ID=27497
+sunroof -> boutique  ICMP Echo request
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR设置更有效的过滤器
+.sp
+.LP
+要设置更有效的过滤器，应在表达式末尾使用下列过滤器，以便可以在内核中设置表达式的第一个部分：\fBgreater\fR、\fBless\fR、\fBport\fR、\fBrpc\fR、\fBnofrag\fR 和 \fBrelop\fR。使用无法在内核中设置的这些基元时，如果存在 \fBOR\fR，则很难拆分过滤。而应改用括号以便强制应执行 \fBOR\fR 运算的基元。
+
+.sp
+.LP
+要在 \fBport\fR 80 上封装 \fBfunky\fR 和 \fBpinky\fR 之间的 \fBtcp\fR 或 \fBudp\fR 类型的包：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop funky and pinky and port 80 and tcp or udp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+由于内核过滤器无法处理基元 \fBport\fR，并且表达式中还存在 \fBOR\fR，一种更有效的过滤方法是将 \fBOR\fR 移至表达式末尾，并使用括号在 \fBtcp\fR 和 \fBudp\fR 之间强制 \fBOR\fR：
+
+.sp
+.in +2
+.nf
+example# \fBsnoop funky and pinky and (tcp or udp) and port 80\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+出现错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/audio\fR\fR
+.ad
+.RS 17n
+.rt  
+指向系统的主要音频设备的符号链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/null\fR\fR
+.ad
+.RS 17n
+.rt  
+空文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts\fR\fR
+.ad
+.RS 17n
+.rt  
+主机名数据库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/rpc\fR\fR
+.ad
+.RS 17n
+.rt  
+RPC 程序编号数据库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/services\fR\fR
+.ad
+.RS 17n
+.rt  
+Internet 服务和别名。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性service/network/network-clients
+_
+接口稳定性 Obsolete（已过时） 
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdladm\fR(1M)、\fBipadm\fR(1M)、\fBnetstat\fR(1M)、\fBhosts\fR(4)、\fBrpc\fR(4)、\fBservices\fR(4)、\fBattributes\fR(5)、\fBaudio\fR(7I)、\fBipnet\fR(7D)、\fBbufmod\fR(7M)、\fBdlpi\fR(7P)、\fBpfmod\fR(7M)
+.sp
+.LP
+Callaghan, B. 和 Gilligan, R. 合著的《\fIRFC 1761, Snoop Version 2 Packet Capture File Format\fR》。Network Working Group 出版。1995 年 2 月。
+.SH 警告
+.sp
+.LP
+实时包解释的处理开销要高得多。因此，包删除计数可能较高。为了进行更可靠的捕获，请使用 \fB-o\fR 选项将原始包输出到文件，并脱机分析这些包。
+.sp
+.LP
+未经过滤的包捕获会对主机施加大量处理负载，特别是当实时解释捕获的包时。如果使用详细选项，此处理负载将进一步增加。由于大量使用 \fBsnoop\fR 会拒绝其他进程的计算资源，因此不应在生产服务器上使用它。仅限在专用计算机上大量使用 \fBsnoop\fR。
+.sp
+.LP
+\fBsnoop\fR 不会重装 \fBIP\fR 分段。解释较高级别的协议将在第一个 \fBIP\fR 分段末尾暂停。
+.sp
+.LP
+使用 \fBsnoop\fR 的负面影响是可能会生成额外的包。例如，它可以使用网络名称服务 (NIS) 将 \fBIP\fR 地址转换为主机名以便显示。通过捕获到文件以便在以后显示，可以延迟地址-名称映射，直到完成捕获会话后为止。捕获到挂载了 NFS 的文件中还会生成额外的包。
+.sp
+.LP
+将 \fBsnaplen\fR（\fB-s\fR 选项）设置为较小值会删除解释较高级别的协议所需的头信息。确切截止值取决于使用的网络和协议。对于在 10 Mb/s 以太网上使用 \fBUDP\fR 的 \fBNFS\fR 版本 2 通信，请不要将 \fBsnaplen\fR 设置为小于 150 字节的值。对于在 100 Mb/s 以太网上使用 \fBTCP\fR 的 \fBNFS\fR 版本 3 通信，\fBsnaplen\fR 应为 250 字节或更大值。
+.sp
+.LP
+\fBsnoop\fR 需要来自 \fBRPC\fR 请求的信息，以便完全解释 \fBRPC\fR 回复。如果捕获文件或包范围中的 \fBRPC\fR 回复前面没有请求，则仅显示 \fBRPC\fR 回复头。

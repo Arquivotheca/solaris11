@@ -1,0 +1,262 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH pkcs11_softtoken 5 "2011 年 7 月 12 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+pkcs11_softtoken \- 软件 RSA PKCS#11 的软令牌
+.SH 用法概要
+.LP
+.nf
+/usr/lib/security/pkcs11_softtoken.so
+/usr/lib/security/64/pkcs11_softtoken.so
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpkcs11_softtoken.so\fR 对象在软件中实现 RSA Security Inc. PKCS#11 加密令牌接口 (Cryptographic Token Interface, Cryptoki) v2.20 规范。令牌对象的持久性存储由此 PKCS#11 实现提供。 
+.sp
+.LP
+应用程序开发者应链接到 \fBlibpkcs11.so\fR 而不是直接链接到 \fBpkcs11_softtoken.so\fR。请参见 \fBlibpkcs11\fR(3LIB)。
+.sp
+.LP
+将实现以下加密算法：DES、3DES、AES、Blowfish、RC4、MD5、SHA1、SHA256、SHA384、SHA512、RSA、DSA、DH 和 ECC。
+.sp
+.LP
+除以下函数之外，列在 \fBlibpkcs11\fR(3LIB) 中的所有标准 PKCS#11 函数都将实现：
+.sp
+.in +2
+.nf
+C_GetObjectSize
+C_InitPIN
+C_InitToken
+C_WaitForSlotEvent
+.fi
+.in -2
+
+.sp
+.LP
+对这些函数的调用将返回 \fBCKR_FUNCTION_NOT_SUPPORTED\fR。
+.sp
+.LP
+支持以下 RSA PKCS#11 v2.20 机制：
+.sp
+.in +2
+.nf
+CKM_RSA_PKCS_KEY_PAIR_GEN
+CKM_RSA_PKCS
+CKM_RSA_X_509
+
+CKM_DSA_KEY_PAIR_GEN
+CKM_DSA
+CKM_DSA_SHA1
+
+CKM_DH_PKCS_KEY_PAIR_GEN
+CKM_DH_PKCS_DERIVE
+
+CKM_EC_KEY_PAIR_GEN
+CKM_ECDSA
+CKM_ECDSA_SHA1
+CKM_ECDH1_DERIVE
+
+CKM_DES_KEY_GEN
+CKM_DES_ECB
+CKM_DES_CBC
+CKM_DES_CBC_PAD
+
+CKM_DES3_KEY_GEN
+CKM_DES3_ECB
+CKM_DES3_CBC
+CKM_DES3_CBC_PAD
+
+CKM_AES_KEY_GEN
+CKM_AES_ECB
+CKM_AES_CBC
+CKM_AES_CBC_PAD
+CKM_AES_CTR
+
+CKM_BLOWFISH_KEY_GEN
+CKM_BLOWFISH_CBC
+
+CKM_RC4_KEY_GEN
+CKM_RC4
+
+CKM_MD5_RSA_PKCS
+CKM_SHA1_RSA_PKCS
+CKM_SHA256_RSA_PKCS
+CKM_SHA384_RSA_PKCS
+CKM_SHA512_RSA_PKCS
+
+CKM_MD5
+CKM_SHA_1
+CKM_SHA256
+CKM_SHA384
+CKM_SHA512
+
+CKM_MD5_HMAC
+CKM_MD5_HMAC_GENERAL
+CKM_SHA_1_HMAC
+CKM_SHA_1_HMAC_GENERAL
+CKM_SHA256_HMAC
+CKM_SHA256_HMAC_GENERAL
+CKM_SHA384_HMAC
+CKM_SHA384_HMAC_GENERAL
+
+CKM_MD5_KEY_DERIVATION
+CKM_SHA1_KEY_DERIVATION
+CKM_SHA256_KEY_DERIVATION
+CKM_SHA384_KEY_DERIVATION
+CKM_SHA512_KEY_DERIVATION
+
+CKM_SSL3_PRE_MASTER_KEY_GEN 
+CKM_SSL3_MASTER_KEY_DERIVE
+CKM_SSL3_KEY_AND_MAC_DERIVE
+CKM_SSL3_MASTER_KEY_DERIVE_DH
+CKM_TLS_PRE_MASTER_KEY_GEN 
+CKM_TLS_MASTER_KEY_DERIVE 
+CKM_TLS_KEY_AND_MAC_DERIVE 
+CKM_TLS_MASTER_KEY_DERIVE_DH
+.fi
+.in -2
+
+.sp
+.LP
+以下每种类型的密钥对象都具有令牌特定的某些属性，缺省情况下，这些属性将因创建对象、生成密钥/密钥对以及派生密钥而设置为 true。
+.sp
+.ne 2
+.mk
+.na
+\fB公钥对象\fR
+.ad
+.RS 16n
+.rt  
+\fBCKA_ENCRYPT\fR、\fBCKA_VERIFY\fR、\fBCKA_VERIFY_RECOVER\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB私钥对象\fR
+.ad
+.RS 16n
+.rt  
+\fBCKA_DECRYPT\fR、\fBCKA_SIGN\fR、\fBCKA_SIGN_RECOVER\fR、\fBCKA_EXTRACTABLE\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB密钥对象\fR
+.ad
+.RS 16n
+.rt  
+\fBCKA_ENCRYPT\fR、\fBCKA_DECRYPT\fR、\fBCKA_SIGN\fR、\fBCKA_VERIFY\fR、\fBCKA_EXTRACTABLE\fR
+.RE
+
+.sp
+.LP
+支持以下证书对象：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCKC_X_509\fR\fR
+.ad
+.RS 23n
+.rt  
+对于 \fBCKC_X_509\fR 证书对象，支持以下属性：\fBCKA_SUBJECT\fR、\fBCKA_VALUE\fR、\fBCKA_LABEL\fR、\fBCKA_ID\fR、\fBCKA_ISSUER\fR、\fBCKA_SERIAL_NUMBER\fR 和 \fBCKA_CERTIFICATE_TYPE\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCKC_X_509_ATTR_CERT\fR\fR
+.ad
+.RS 23n
+.rt  
+对于 \fBCKC_X_509_ATTR_CERT\fR 证书对象，支持以下属性：\fBCKA_OWNER\fR、\fBCKA_VALUE、CKA_LABEL\fR、\fBCKA_SERIAL_NUMBER\fR、\fBCKA_AC_ISSUER\fR、\fBCKA_ATTR_TYPES\fR 和 \fBCKA_CERTIFICATE_TYPE\fR。
+.RE
+
+.sp
+.LP
+在 \fBC_FindObjectsInit\fR 中执行匹配模板的对象搜索操作。匹配的对象将进行缓存以供后续 \fBC_FindObjects\fR 操作使用。
+.sp
+.LP
+\fBpkcs11_softtoken.so\fR 对象提供了一个基于文件系统的持久性令牌对象存储，用来存储令牌对象。该令牌对象存储的缺省位置是 \fBgetpwuid_r()\fR 所返回的用户起始目录。用户可以使用 \fB${SOFTTOKEN_DIR} \fR 环境变量覆盖该缺省位置。
+.sp
+.LP
+如果令牌对象存储从未经过初始化，\fBC_Login()\fR 函数可能会返回 \fBCKR_OK\fR，但用户无法创建、生成、派生或查找任何专用令牌对象并会收到 \fBCKR_PIN_EXPIRED\fR。
+.sp
+.LP
+用户必须使用 \fBpktool\fR(1) \fBsetpin\fR 命令（其缺省口令短语 "changeme" 是旧口令短语）更改对象存储的口令短语。在初始化新创建的令牌对象存储并为其设置口令短语时，需要执行此操作。
+.sp
+.LP
+在使用 \fBpktool setpin\fR 命令所设置的新口令短语登录到对象存储后，用户即可在此新创建的对象存储中创建和存储专用令牌对象。在 \fBsetpin\fR 初始化令牌对象存储之前，允许使用 \fBC_Login()\fR 函数，但用户创建、生成、派生或查找任何专用令牌对象的所有尝试都会失败并会显示 \fBCKR_PIN_EXPIRED\fR 错误。
+.sp
+.LP
+为 \fBC_Login()\fR 和 \fBC_SetPIN()\fR 函数提供的 PIN 可以是长度介于 1 到 256 之间且不带嵌入空字符的任何字符串。
+.sp
+.LP
+令牌对象存储的缺省位置位于 \fBgerpwuid_r()\fR 所返回的用户起始目录中。它后跟 \fB/.sunw/pkcs11_softtoken/\fR，缺省位置为 \fB~/.sunw/pkcs11_softtoken()\fR。 
+.sp
+.LP
+用户可以使用 \fB${SOFTTOKEN_DIR} \fR 环境变量覆盖该缺省位置。备用令牌对象存储的位置是 \fB${SOFTTOKEN_DIR}/pkcs11_softtoken/\fR。
+.SH 返回值
+.sp
+.LP
+每个已实现函数的返回值都在 RSA PKCS#11 v2.20 规范中定义和列出。请参见 http://www.rsasecurity.com
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\fIuser_home_directory\fR/.sunw/pkcs11_softtoken \fR\fR
+.ad
+.sp .6
+.RS 4n
+用户的缺省令牌对象存储
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB${SOFTTOKEN_DIR}/pkcs11_softtoken\fR\fR
+.ad
+.sp .6
+.RS 4n
+备用令牌对象存储
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+接口稳定性Committed（已确定）
+_
+MT 级别T{
+MT-Safe with exceptions（多线程安全，但存在异常）。请参见 RSA PKCS#11 v2.20 的第 6.6.2 节。
+T}
+_
+标准PKCS#11 v2.20
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpktool\fR(1)、\fBcryptoadm\fR(1M)、\fBlibpkcs11\fR(3LIB)、\fBattributes\fR(5)、\fBpkcs11_kernel\fR(5)
+.sp
+.LP
+RSA PKCS#11 v2.20 http://www.rsasecurity.com 

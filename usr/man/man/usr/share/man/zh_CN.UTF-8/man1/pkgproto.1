@@ -1,0 +1,169 @@
+'\" te
+.\"  版权所有 1989 AT&T 版权所有 (c) 2007，Oracle 和/或其附属公司。保留所有权利。
+.TH pkgproto 1 "2007 年 10 月 30 日" "SunOS 5.11" "用户命令"
+.SH 名称
+pkgproto \- 生成原型文件条目，以用作 pkgmk 命令的输入
+.SH 用法概要
+.LP
+.nf
+\fBpkgproto\fR [\fB-i\fR] [\fB-c\fR \fIclass\fR] [\fIpath1\fR]
+.fi
+
+.LP
+.nf
+\fBpkgproto\fR [\fB-i\fR] [\fB-c\fR \fIclass\fR] [\fIpath1=path2\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpkgproto\fR 扫描指定的路径并生成 \fBprototype\fR(4) 文件条目（可用作 \fBpkgmk\fR(1) 命令的输入）。
+.sp
+.LP
+如果未在命令行中指定路径，则会采用标准输入作为路径列表。如果命令行中列出的路径名是目录，则会对目录的内容进行搜索。不过，如果是从 \fBstdin\fR 读取输入，则不会搜索指定为路径名的目录。
+.sp
+.LP
+\fBpkgproto\fR 之类的软件包命令能够识别 \fBlargefile\fR(5)。它们处理大于 2 GB 的文件的方法与处理较小文件的方法相同。在当前的执行中，\fBpkgadd\fR(1M)、\fBpkgtrans\fR(1) 和其他软件包命令可以处理最大 4 GB 的数据流。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 12n
+.rt  
+忽略符号链接并将路径记录为 \fBftype\fR=\fBf\fR（文件）而不是与之相对的 \fBftype\fR=\fBs\fR（符号链接）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIclass\fR\fR
+.ad
+.RS 12n
+.rt  
+将所有路径的类映射到 \fIclass\fR。
+.RE
+
+.SH 操作数
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpath1\fR\fR
+.ad
+.RS 9n
+.rt  
+对象所在的路径名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpath2\fR\fR
+.ad
+.RS 9n
+.rt  
+输出中应取代 \fIpath1\fR 的路径名。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR基本用法
+.sp
+.LP
+以下示例显示了 \fBpkgproto\fR 的常见用法和所产生的输出的部分列表。
+
+.sp
+.in +2
+.nf
+\fBexample%\fR \fBpkgproto\fR /bin=bin /usr/bin=usrbin /etc=etc
+f none bin/sed=/bin/sed 0775 bin bin
+f none bin/sh=/bin/sh 0755 bin daemon
+f none bin/sort=/bin/sort 0755 bin bin
+f none usrbin/sdb=/usr/bin/sdb 0775 bin bin
+f none usrbin/shl=/usr/bin/shl 4755 bin bin
+d none etc/master.d 0755 root daemon
+f none etc/master.d/kernel=/etc/master.d/kernel 0644 root daemon
+f none etc/rc=/etc/rc 0744 root daemon 
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR在管道中使用 \fBpkgproto\fR
+.sp
+.LP
+以下命令显示了接受 \fBfind\fR 命令的输出的 \fBpkgproto\fR。
+
+.sp
+.in +2
+.nf
+\fBexample% find /\fR \fB-type\fR d \fB-print\fR | pkgproto
+d none / 755 root root
+d none /bin 755 bin bin
+d none /usr 755 root root
+d none /usr/bin 775 bin bin
+d none /etc 755 root root
+d none /tmp 777 root root
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBpkgmk\fR(1)、\fBpkgparam\fR(1)、\fBpkgtrans\fR(1)、\fBpkgadd\fR(1M)、\fBprototype\fR(4)、\fBattributes\fR(5)、\fBlargefile\fR(5)
+.sp
+.LP
+\fI《Application Packaging Developer\&'s Guide》\fR
+.SH 附注
+.sp
+.LP
+缺省情况下，\fBpkgproto\fR 为所遇到的任何符号链接创建符号链接条目 (\fBftype\fR=\fBs\fR)。当使用 \fB-i\fR 选项时，\fBpkgproto\fR 为符号链接创建文件条目 (\fBftype\fR=\fB f\fR)。必须对 \fBprototype\fR(4) 文件进行编辑以分配 \fBv\fR（可变）、\fBe\fR（可编辑）或 \fBx\fR（专用目录）等文件类型。\fBpkgproto\fR 检测链接的文件。如果多个文件链接在一起，则遇到的第一个路径将被视为链接的源。
+.sp
+.LP
+缺省情况下，\fBpkgproto\fR 将原型条目输出到标准输出中。不过，应将输出保存在文件中（方便起见，命名为 \fBPrototype\fR 或 \fBprototype\fR），以用作\fBpkgmk\fR(1) 命令的输入。

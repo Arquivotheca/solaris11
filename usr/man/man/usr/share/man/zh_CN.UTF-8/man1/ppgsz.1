@@ -1,0 +1,236 @@
+'\" te
+.\" 版权所有 (c) 2003，Oracle 和/或其附属公司。保留所有权利。
+.TH ppgsz 1 "2003 年 1 月 23 日" "SunOS 5.11" "用户命令"
+.SH 名称
+ppgsz \- 为栈、堆和/或其他匿名段设置首选页面大小
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/ppgsz\fR [\fB-F\fR] \fB-o\fR \fIoption\fR[,\fIoption\fR] \fIcmd\fR | \fB-p\fR \fIpid\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBppgsz\fR 实用程序为目标进程（即启动的 \fIcmd\fR 或 pid 列表中的进程）的栈、堆和/或其他匿名段设置首选页面大小。\fBppgsz\fR 在更改页面大小时会停止目标进程。请参见 \fBmemcntl\fR(2)。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 22n
+.rt  
+强制。为目标进程设置首选页面大小选项（即使目标进程被其他进程所控制）。使用 \fB-F\fR 标志时应谨慎。请参见 \fBproc\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoption\fR[,\fIoption\fR]\fR
+.ad
+.RS 22n
+.rt  
+这些\fI选项\fR如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheap\fR=\fIsize\fR\fR
+.ad
+.RS 14n
+.rt  
+此选项用于为目标进程的堆指定首选页面大小。\fB堆\fR被定义为 bss（未初始化的数据）及紧随其后的 brk 区域（请参见 \fBbrk\fR(2)）。首选堆页面大小是为现有堆以及将来分配的任何其他堆内存设置的。请参见"注释"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstack\fR=\fIsize\fR\fR
+.ad
+.RS 14n
+.rt  
+此选项用于为目标进程的栈指定首选页面大小。首选栈页面大小是为现有栈以及栈扩展时新分配的栈部分配置的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanon\fR=\fIsize\fR\fR
+.ad
+.RS 14n
+.rt  
+此选项用于为目标进程的所有现有 \fBMAP_PRIVATE\fR 匿名段（而不是\fB堆\fR和\fB栈\fR）指定首选页面大小，这些匿名段足够大，至少能够容纳一个指定大小的对齐页面。对于足够大的段，首选页面大小是从段中的第一个大小对齐的地址开始设置的。\fBanon\fR 首选页面大小不应用于将来创建的 \fBMAP_PRIVATE\fR 匿名段。请参见 \fBmmap\fR(2) 中的 \fBMAP_ANON\fR。
+.sp
+匿名内存指的是与没有与某个文件系统中的文件直接关联的 \fBMAP_PRIVATE\fR 页面。\fBppgsz\fR 命令使用 \fBmemcntl\fR(2) 为匿名段设置首选页面大小。请参见 \fBmemcntl\fR(2) 中的 \fBMC_HAT_ADVISE\fR。
+.RE
+
+必须至少指定以上选项之一。
+.sp
+\fIsize\fR 必须是受支持的页面大小（请参见 \fBpagesize\fR(1)）或 \fB0\fR，在后一种情况下，将由系统来选择合适的页面大小。请参见 \fBmemcntl\fR(2)。
+.sp
+\fIsize\fR 的缺省单位为字节，可指定为八进制 (\fB0\fR)、十进制或十六进制 (\fB0x\fR) 格式的。可以使用 \fBK\fR、\fBM\fR、\fBG\fR 或 \fBT\fR 对数字值加以限定，以分别指定千字节、兆字节、千兆字节或兆兆字节。\fB4194304\fR、\fB0x400000\fR、\fB4096K\fR、\fB0x1000K\fR 和 \fB4M\fR 这几种不同的方式指定的都是 4 兆字节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.RS 22n
+.rt  
+为跟在 \fB-p\fR 选项后的进程 ID (\fIpid\fR) 列表中的目标进程设置首选页面大小选项。pid 列表还可以包含 \fB/proc\fR 目录中的名称。只允许进程所有者或超级用户设置页面大小。
+.sp
+如果未指定 \fB-p\fR，将会解释 \fIcmd\fR。\fBppgsz\fR 将启动 \fIcmd\fR，并将页面大小选项应用于新进程。
+.sp
+堆和栈首选页面大小是继承的。在 \fBppgsz\fR 完成后，从已启动的进程或 pid 列表中的目标进程创建的子进程（请参见 \fBfork\fR(2)）将继承首选堆和栈页面大小。在执行 \fBexec\fR(2) 时，所有段的首选页面大小都将重置为缺省系统页面大小（请参见 \fBgetpagesize\fR(3C)）。已启动的进程或目标进程的子进程不会继承其他所有匿名段的首选页面大小。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR设置首选堆和栈页面大小
+.sp
+.LP
+下面的示例针对所有以 \fBora\fR 开头的归 \fBora\fR 所有的进程运行命令将首选堆页面大小设置为 \fB4M\fR，将首选栈页面大小设置为 \fB512K\fR：
+
+.sp
+.in +2
+.nf
+example% \fBppgsz -o heap=4M,stack=512K -p `pgrep -u ora '^ora'`\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR设置首选匿名页面大小
+.sp
+.LP
+下面的示例针对进程 ID \fB953\fR 将现有合格匿名段的首选页面大小设置为 \fB512k\fR：
+
+.sp
+.in +2
+.nf
+example% \fBppgsz -o anon=512k -p 953\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+如果指定并成功调用了 \fIcmd\fR（请参见 \fBexec\fR(2)），则 \fBppgsz\fR 的退出状态将是 \fIcmd\fR 的退出状态。否则，\fBppgsz\fR 将以下列值之一退出：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 7n
+.rt  
+成功为 pid 列表中的进程设置了首选页面大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB125\fR\fR
+.ad
+.RS 7n
+.rt  
+\fBppgsz\fR 中出现错误。错误包括：参数无效、指定的页面大小无效，以及无法为 pid 列表中的一个或多个进程或 \fIcmd\fR 设置首选页面大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB126\fR\fR
+.ad
+.RS 7n
+.rt  
+找到了 \fIcmd\fR，但无法调用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB127\fR\fR
+.ad
+.RS 7n
+.rt  
+找不到 \fIcmd\fR。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR \fR
+.ad
+.RS 29n
+.rt  
+进程文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ld/map.bssalign\fR \fR
+.ad
+.RS 29n
+.rt  
+用于对齐 bss 的模板链接编辑器 \fBmapfile\fR（请参见"注意"部分）。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/extended-system-utilities
+SUNWesxu（64 位）
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBld\fR(1)、\fBmpss.so.1\fR(1)、\fBpagesize\fR(1)、\fBpgrep\fR(1)、\fBpmap\fR(1)、\fBproc\fR(1)、\fBbrk\fR(2)、\fBexec\fR(2)、\fBfork\fR(2)、\fBmemcntl\fR(2)、\fBmmap\fR(2)、\fBsbrk\fR(2)、\fBgetpagesize\fR(3C)、\fBproc\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR
+.SH 附注
+.sp
+.LP
+由于资源限制，首选页面大小的设置不一定可以保证目标进程将获得首选页面大小。可以使用 \fBpmap\fR(1) 查看目标进程的堆和栈页面的\fB实际\fR大小（请参见 \fBpmap\fR \fB-s\fR 选项）。
+.sp
+.LP
+在是大页面大小的倍数的地址上，需要映射大页面。因为堆通常不是以大页面对齐的，堆的起始部分（位于第一个以大页面对齐的地址下）是以系统内存页面大小映射的。请参见 \fBgetpagesize\fR(3C)。
+.sp
+.LP
+要提供将以大页面大小映射的堆，可使用包含 \fBbss\fR 段声明指令的链接编辑器 (\fBld\fR(1)) \fB映射文件\fR来构建一个应用程序。有关此指令以及 \fB/usr/lib/ld/map.bssalign\fR 中提供的\fB映射文件\fR模板的更多详细信息，请参阅\fI《Linker and Libraries Guide》\fR中的"映射文件选项"部分。用户需要注意的是，对齐规范可能是特定于计算机的，在不同的硬件平台上可能会失去其作用。在将来的发行版中，可能会开发出用于请求最佳基础页面大小的更灵活方式。
+.sp
+.LP
+还可以使用 \fBmpss.so.1\fR(1)（一个可预装入的共享对象）来设置首选栈和/或堆页面大小。

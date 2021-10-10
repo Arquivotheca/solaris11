@@ -1,0 +1,927 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH ikecert 1M "2009 年 6 月 10 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ikecert \- マシンのファイルシステム上の公開鍵証明書データベースを操作する
+.SH 形式
+.LP
+.nf
+\fBikecert\fR certlocal 
+     [\fB-a\fR | \fB-e\fR | \fB-h\fR | \fB-k\fR | \fB-l\fR | \fB-r\fR | \fB-U\fR | \fB-C\fR | \fB-L\fR] 
+     [[\fB-p\fR] \fB-T\fR \fIPKCS#11 token identifier\fR] 
+     [\fIoption_specific_arguments\fR]...
+.fi
+
+.LP
+.nf
+\fBikecert\fR certdb [\fB-a\fR | \fB-e\fR | \fB-h\fR | \fB-l\fR | \fB-r\fR | \fB-U\fR | \fB-C\fR | \fB-L\fR] 
+     [[\fB-p\fR] \fB-T\fR \fIPKCS#11 token identifier\fR] 
+     [\fIoption_specific_arguments\fR]...
+.fi
+
+.LP
+.nf
+\fBikecert\fR certrldb [\fB-a\fR | \fB-e\fR | \fB-h\fR | \fB-l\fR | \fB-r\fR] 
+     [\fIoption_specific_arguments\fR]...
+.fi
+
+.LP
+.nf
+\fBikecert\fR tokens
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBikecert\fR コマンドは、マシンのファイルシステム上の公開鍵証明書データベースを操作します。後述の「ファイル」の項を参照してください。
+.sp
+.LP
+\fBikecert\fR には、3 つの主要なリポジトリにそれぞれ対応する 3 つのサブコマンドと、使用可能なハードウェアトークンを一覧表示するサブコマンドがあります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcertlocal\fR は秘密鍵リポジトリを処理します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcertdb\fR は公開鍵リポジトリを処理します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcertrldb\fR は証明書失効リスト (\fBCRL\fR) リポジトリを処理します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBtokens\fR は、特定の PKCS#11 ライブラリの使用可能な PKCS#11 トークンを表示します。
+.RE
+.sp
+.LP
+サポートされている PKCS#11 ライブラリとハードウェアは、Sun 暗号化アクセラレータ 4000 だけです。
+.SH オプション
+.sp
+.LP
+\fBtokens\fR 以外のサブコマンドにはオプションを 1 つ指定する必要があり、そのあとにオプション固有の引数をいくつか指定する場合もあります。
+.sp
+.LP
+\fBtokens\fR サブコマンドは、\fB/etc/inet/ike/config\fR に指定されている PKCS#11 ライブラリの使用可能なトークンをすべて一覧表示します。
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、インターネット鍵交換 (\fBIKE\fR) のローカル \fBID\fR データベースに秘密鍵がインストール (追加) されます。鍵データは標準入力から読み込まれ、その形式は Solaris 専用形式または暗号化されていない PKCS#8 DER 形式です。鍵の形式は自動的に検出されます。PKCS#8 鍵ファイルは PEM 形式です。パスワードで保護された暗号化された形式のファイルは認識されませんが、OpenSSL で入手可能なツールを使用すると適切に変換できます。
+.sp
+このオプションを PKCS#11 ハードウェアオブジェクトで使用するには、対応する公開証明書が \fBIKE\fR データベースにすでに存在している必要があります。公開証明書と秘密鍵の両方をインポートする場合は、\fBcertdb\fR サブコマンドを使用して公開部分を最初にインポートする必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertdb\fR サブコマンドにこのオプションを指定すると、証明書が標準入力から読み込まれて \fBIKE\fR 証明書データベースに追加されます。\fBPEM Base64\fR または \fB ASN.1 BER\fR でエンコードされた \fBX.509\fR 証明書でなければなりません。証明書には、そのアイデンティティーの名前が採用されます。
+.sp
+このオプションでは、次のどちらかの方法で PKCS#11 ハードウェアキーストアに証明書をインポートできます。1 つは、一致する公開鍵オブジェクトと既存の秘密鍵オブジェクトの両方を \fBcertlocal\fR \fB-kc\fR オプションで作成する方法、もう 1 つは、PKCS#11 トークンを \fB-T\fR オプションで明示的に指定する方法です。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertrldb\fR サブコマンドにこのオプションを指定すると、\fBIKE\fR データベースに \fBCRL\fR がインストール (追加) されます。\fBCRL\fR は標準入力から読み込まれます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR [\fB-f\fR pkcs8] \fIslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、\fBIKE\fR ローカル \fBID\fR データベースから秘密鍵が抽出されます。鍵データは標準出力に書き込まれます。slot は、どの秘密鍵を抽出するかを指定します。秘密鍵はバイナリ BER 形式のみで抽出されます。
+.sp
+\fBこのオプションは特に慎重に使用してください。\fR後述の「セキュリティー」の節を参照してください。
+.sp
+このオプションは PKCS#11 ハードウェアオブジェクトでは機能しません。
+.sp
+「\fB-f\fR \fBpkcs8\fR」と組み合せて使用すると、暗号化されていない PKCS#8 形式で秘密鍵が抽出されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR [\fB-f\fR \fIoutput-format\fR] \fBcertspec\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertdb\fR サブコマンドにこのオプションを指定すると、certspec に一致する証明書が IKE 証明書データベースから抽出され、標準出力に書き込まれます。\fIoutput-format\fR オプションはエンコード形式を指定します。指定できるオプションは \fBPEM\fR と \fBBER\fR です。最初に一致したアイデンティティーが抽出されます。デフォルトの出力形式は \fBPEM\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertrldb\fR サブコマンドにこのオプションを指定すると、IKE データベースから \fBCRL\fR が抽出されます。鍵データは標準出力に書き込まれます。\fBcertspec\fR は、どの CRL を抽出するかを指定します。データベース内で最初に一致したものが抽出されます。\fBcertspec\fR パターンの詳細については、後述の「注意事項」を参照してください。\fB\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-kc\fR \fB-m\fR \fIkeysize\fR \fB-t\fR \fIkeytype\fR \fB-D\fR \fIdname\fR \fB-A\fR \fIaltname\fR[ ... ]\fR
+.ad
+.br
+.na
+\fB[\fB-S\fR \fI validity start_time\fR][\fB-F\fR \fIvalidity end_time\fR]\fR
+.ad
+.br
+.na
+\fB[\fB-T\fR \fIPKCS#11 token identifier\fR]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、IKE 公開鍵/秘密鍵のペアが生成され、ローカル ID データベースに追加されます。証明書要求も生成され、標準出力に書き込まれます。上記のオプションの詳細は、\fIdname\fR 引数については「」を参照し、このコマンドの \fIaltname\fR 引数については「代替名」を参照してください。
+.sp
+\fB-T\fR を指定すると、ハードウェアトークンで鍵のペアが生成されます。
+.sp
+\fB-T\fR と同時に \fB-p\fR を指定すると、PKCS#11 トークン PIN が平文でディスク上に保存され、ルート保護されたファイルアクセス権が設定されます。指定しない場合は、\fBin.iked\fR(1M) の実行開始後に \fBikeadm\fR(1M) でトークンのロックを解除する必要があります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ks\fR \fB-m\fR \fIkeysize\fR \fB-t\fR \fIkeytype\fR \fB-D\fR \fIdname\fR \fB-A\fR \fIaltname\fR[ ... ]\fR
+.ad
+.br
+.na
+\fB[\fB-S\fR \fI validity start_time\fR][\fB-F\fR \fIvalidity end_time\fR]\fR
+.ad
+.br
+.na
+\fB[\fB-f\fR \fIoutput-format\fR][[\fB-p\fR] \fB-T\fR \fIPKCS#11 token identifier\fR]\fR
+.ad
+.br
+.na
+\fB\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、公開鍵/秘密鍵のペアが生成され、ローカル ID データベースに追加されます。自己署名付き証明書も生成され、証明書データベースにインストールされます。このコマンドの \fIdname\fR 引数と \fIaltname\fR 引数の詳細については、後述の「注意事項」を参照してください。\fB\fR
+.sp
+\fB-T\fR を指定すると、ハードウェアトークンで鍵のペアが生成され、自己署名付き証明書もハードウェアに保存されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fB-v\fR] [\fIslot\fR]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、ローカル ID データベース内の秘密鍵が一覧表示されます。\fB-v\fR オプションを指定すると、出力が詳細モードに切り替わり、証明書全体が出力されます。
+.sp
+\fB\fR\fB-v\fR\fB オプションは特に慎重に使用してください。\fR後述の「セキュリティー」の節を参照してください。\fB-v\fR オプションは PKCS#11 ハードウェアオブジェクトでは機能しません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fB-v\fR] [certspec]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertdb\fR サブコマンドにこのオプションを指定すると、IKE 証明書データベース内の証明書が一覧表示されます。certspec を指定した場合は、そのパターンに一致するものだけが表示されます。このリストには、証明書のアイデンティティー文字列が表示され、鍵データベースに存在する場合は秘密鍵も表示されます。\fB-v\fR を指定すると、出力が詳細モードに切り替わり、証明書全体が出力されます。
+.sp
+一致する証明書がハードウェアトークン上にある場合は、トークン ID も表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertrldb\fR サブコマンドにこのオプションを指定すると、IKE データベース内の CRL と、データベース内にあり発行者名に一致する証明書が一覧表示されます。\fBcertspec\fR を使用すると、特定の CRL を表示するように指定できます。\fB-v\fR オプションを指定すると、出力が詳細モードに切り替わり、証明書全体が出力されます。\fBcertspec\fR パターンの詳細については、後述の「注意事項」を参照してください。\fB\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、指定したスロットのローカル ID が削除されます。対応する公開鍵が存在する場合は削除されません。このスロットが「壊れている」とみなされる場合やほかの理由で認識されない場合にも、同じく削除されます。
+.sp
+これを PKCS#11 ハードウェアオブジェクトに対して呼び出すと、PKCS#11 公開鍵オブジェクトと秘密鍵オブジェクトも削除されます。公開鍵オブジェクトが \fBcertdb\fR \fB-r\fR ですでに削除されていても問題ありません。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR certspec\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+IKE 証明書データベースから証明書を削除します。指定した証明書パターンに一致する証明書が削除されます。これらの証明書に対応する秘密鍵が \fBcertlocal\fR データベースに存在する場合、それらは削除されません。最初に一致したアイデンティティーが削除されます。
+.sp
+パターンでスロットを指定すると、そのスロットが「壊れている」とみなされる場合やほかの理由で認識されない場合にも、同じく削除されます。
+.sp
+これを PKCS#11 ハードウェアオブジェクトに対して呼び出すと、証明書と PKCS#11 公開鍵オブジェクトも削除されます。公開鍵オブジェクトが \fBcertlocal\fR \fB-r\fR ですでに削除されていても問題ありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertrldb\fR サブコマンドにこのオプションを指定すると、指定した \fBcertspec\fR を持つ CRL が削除されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR slot\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcertlocal\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドに \fB-T\fR フラグとともにこのオプションを指定すると、PKCS#11 秘密鍵オブジェクトが IKE データベースからリンク解除されます。ハードウェアキーストアへのアクセスや、トークン上の秘密鍵オブジェクトの検証または削除が試みられることはありません。単にオブジェクトと IKE データベースの関連付けが解除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcertdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertdb\fR サブコマンドに \fB-T\fR フラグとともにこのオプションを指定すると、PKCS#11 証明書オブジェクトが IKE データベースからリンク解除されます。ハードウェアキーストアへのアクセスや、トークン上の証明書オブジェクトや公開鍵オブジェクトの検証または削除が試みられることはありません。単にオブジェクトと IKE データベースの関連付けが解除されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR certspec\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、秘密鍵、それに対応する証明書、および公開鍵が、ディスク上のキーストアから PKCS#11 トークンで指定されたハードウェアキーストアにコピーされます。このサブコマンドでは、一部が失敗しても、これらの各コンポーネントの作成が試みられます。いずれの場合も、ディスク上の元の秘密鍵および公開証明書はそのまま残るため、これらは個別に削除する必要があります。FIPS-140 準拠のデバイスなど、一部のハードウェアキーストアでは、この方法による秘密鍵オブジェクトの移行がサポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertdb\fR サブコマンドにこのオプションを指定すると、指定した \fBcertspec\fR に一致する証明書、およびそれに対応する公開鍵が、ディスク上のキーストアから PKCS#11 トークンで指定されたハードウェアキーストアにコピーされます。元の公開証明書はそのまま残るため、必要な場合は個別に削除する必要があります。
+.sp
+\fB-p\fR を指定すると、PKCS#11 トークン PIN が平文でディスク上に保存され、ルート保護されたファイルアクセス権が設定されます。指定しない場合は、\fBin.iked\fR(1M) の実行開始後に \fBikeadm\fR(1M) でトークンのロックを解除する必要があります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR pattern\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertlocal\fR サブコマンドにこのオプションを指定すると、トークン上に存在している秘密鍵オブジェクトが \fBIKE\fR データベースにリンクされます。オブジェクト自体はトークン上に残ります。このオプションは、オブジェクトが元から Solaris の \fBIKE\fR ユーティリティーでトークン上に作成されたかのように、オブジェクトの存在を \fBIKE\fR インフラストラクチャーに認識させるだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+\fBcertdb\fR サブコマンドにこのオプションを指定すると、トークン上に存在している証明書オブジェクトが \fBIKE\fR データベースにリンクされます。オブジェクト自体はトークン上に残ります。このオプションは、オブジェクトが元から Solaris の \fBIKE\fR ユーティリティーでトークン上に作成されたかのように、オブジェクトの存在を \fBIKE\fR インフラストラクチャーに認識させるだけです。
+.sp
+\fB-p\fR を指定すると、PKCS#11 トークン PIN が平文でディスク上に保存され、ルート保護されたファイルアクセス権が設定されます。省略した場合は、\fBin.iked\fR(1M) の実行開始後に \fBikeadm\fR(1M) でトークンのロックを解除する必要があります。
+.RE
+
+.RE
+
+.SH パラメータ
+.sp
+.LP
+サポートされているパラメータは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBcertspec\fR
+.ad
+.sp .6
+.RS 4n
+証明書仕様のパターンマッチングを指定します。\fBcertspec\fR には、被認証者名、発行者名、および被認証者代替名を指定できます。
+.sp
+これらを使用すると、指定の \fBcertspec\fR 値に一致し、ほかの \fBcertspec\fR 値には一致しない証明書を指定できます。証明書に存在しないと想定する \fBcertspec\fR 値を表すには、タグの前に \fB!\fR を付加します。
+.sp
+有効な \fBcertspec\fR は次のとおりです。
+.sp
+.in +2
+.nf
+<Subject Names>
+SUBJECT=<Subject Names>
+ISSUER=<Issuer Names>
+SLOT=<Slot Number in the certificate database>
+
+Example:"ISSUER=C=US, O=SUN" IP=1.2.3.4 !DNS=example.com
+Example:"C=US,   O=CALIFORNIA" IP=5.4.2.1 DNS=example.com 
+.fi
+.in -2
+.sp
+
+代替名の有効な引数は次のとおりです。
+.sp
+.in +2
+.nf
+IP=<IPv4 address>
+DNS=<Domain Name Server address>
+EMAIL=<email (RFC 822) address>
+URI=<Uniform Resource Indicator value>
+DN=<LDAP Directory Name value>
+RID=<Registered Identifier value>
+.fi
+.in -2
+.sp
+
+キーワードタグなしで、有効なスロット番号を指定できます。代替名はキーワードタグを使用して発行することもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の被認証者代替名。\fB-A\fR オプションに続く引数は、\fItag\fR=\fIvalue\fR という形式で指定するようにしてください。有効なタグは、\fBIP\fR、\fBDNS\fR、\fBEMAIL\fR、\fB URI\fR、\fBDN\fR、および \fBRID\fR です (下記の例を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の被認証者の \fBX.509\fR 識別名。一般的な形式は次のとおりです。\fBC\fR=country (国)、\fBO\fR=organization (組織)、\fBOU\fR=organizational unit (組織単位)、\fBCN\fR=common name (共通名)。有効なタグは、\fBC\fR、\fB O\fR、\fBOU\fR、および \fBCN\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+エンコード出力形式。\fBpem\fR (\fBPEM Base64\fR) または \fBber\fR (\fBASN.1 BER\fR) です。\fB-f\fR を指定しない場合、 \fBpem\fR とみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIvalidity end_time\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の有効期間の終了時刻。\fB-F\fR フラグを指定しない場合、 有効期間の終了時刻は有効期間の開始時刻から 4 年として計算されます。有効期間の日付と時刻の構文については、「注意事項」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+鍵のサイズ。有効な値は、\fB512\fR、\fB1024\fR、\fB2048\fR、\fB3072\fR、または \fB4096\fR です。Solaris 暗号化フレームワークでサポートされている鍵サイズを調べるには、次のコマンドを使用します。
+.sp
+.in +2
+.nf
+% \fBcryptoadm list -vm\fR
+.fi
+.in -2
+.sp
+
+このコマンドで表示されるメカニズムについては、\fBpkcs11_softtoken\fR(5) を参照してください。ハードウェアアクセラレーションを備えたシステムの場合、ハードウェアでサポートされているメカニズムがプロバイダごとに個別のセクションに表示されます。メカニズムは次のいずれかにできます。
+.sp
+.in +2
+.nf
+CKM_RSA_PKCS_KEY_PAIR_GEN
+CKM_DSA_KEY_PAIR_GEN
+CKM_DH_PKCS_KEY_PAIR_GEN
+.fi
+.in -2
+.sp
+
+.LP
+注 - 
+.sp
+.RS 2
+すべてのハードウェアですべての鍵サイズがサポートされているわけではありません。たとえば、Sun 暗号化アクセラレータ 4000 のキーストアでは (後述の \fB-T\fR オプションを使用した場合)、RSA には最大 2048 ビット、DSA には最大 1024 ビットの鍵だけがサポートされています。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIvalidity start_time\fR\fR
+.ad
+.sp .6
+.RS 4n
+証明書の有効期間の開始時刻。\fB-S\fR フラグを指定しない場合、 有効期間の開始時刻として現在の日付と時刻が使用されます。有効期間の日付と時刻の構文については、後述の「注意事項」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+鍵のタイプ。有効な値は、\fBrsa-sha1\fR、\fBrsa-md5\fR、\fBdsa-sha1\fR のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェアキーストアの PKCS#11 トークン識別子。これは、PKCS#11 標準に準拠したハードウェアデバイスインスタンスを指定します。\fB/etc/inet/ike/config\fR に PKCS#11 ライブラリが指定されている必要があります。(\fBike.config\fR(4) を参照。)
+.sp
+トークン識別子は、スペースで詰められた 32 文字の文字列です。指定したトークンの長さが 32 文字未満の場合は、自動的にスペースで詰められます。
+.sp
+システムに複数の PKCS#11 ライブラリが存在する場合、\fB/etc/inet/ike/config\fR には一度に 1 つのライブラリしか指定できないことに留意してください。1 つの PKCS#11 ライブラリインスタンスに複数のトークン (それぞれが別個のキーストアを持つ) が存在することもあります。
+.RE
+
+.SH セキュリティ
+.sp
+.LP
+このコマンドは、公開鍵と秘密鍵のペアから秘密鍵をファイルに保存できます。秘密鍵が外部にさらされると、悪意のある者が何らかの方法でこの鍵を入手した場合、危殆化につながる可能性があります。
+.sp
+.LP
+PKCS#11 ハードウェアオブジェクトの機能は、ディスク上の秘密鍵の短所に一部対処できます。IKE はシステムサービスなので、ブート時のユーザーの介入は望ましくありません。ただし、トークンの PIN は必要です。したがって、PKCS#11 トークンの PIN は、ディスク上の暗号化鍵が通常置かれる場所に保存されます。このような設計上の決定は妥当と考えられます。なぜなら、ハードウェアキーストアでは、鍵の「所有」はまだ不可能で、ホストが危殆化した場合に鍵の「使用」だけが問題になるからです。\fB\fR\fB\fRPIN を越えると、\fBikecert\fR のセキュリティーは PKCS#11 実装のセキュリティーまで下がります。PKCS#11 の実装も詳細に検討されるべきです。
+.sp
+.LP
+詳細については、Bruce Schneier 著『\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR』の Matt Blaze による後書きを参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fR自己署名証明書の生成
+.sp
+.LP
+次に、自己署名付き証明書の例を示します。
+
+.sp
+.in +2
+.nf
+example# \fBikecert certlocal -ks -m 512 -t rsa-md5 -D "C=US, O=SUN" -A\fR
+IP=1.2.3.4
+Generating, please wait...
+Certificate generated.
+Certificate added to database.
+-----BEGIN X509 CERTIFICATE-----
+MIIBRDCB76ADAgECAgEBMA0GCSqGSIb3DQEBBAUAMBsxCzAJBgNVBAYTAlVTMQww
+CgYDVQQKEwNTVU4wHhcNMDEwMzE0MDEzMDM1WhcNMDUwMzE0MDEzMDM1WjAbMQsw
+CQYDVQQGEwJVUzEMMAoGA1UEChMDU1VOMFowDQYJKoZIhvcNAQEBBQADSQAwRgJB
+APDhqpKgjgRoRUr6twTMTtSuNsReEnFoReVer!ztpXpQK6ybYlRH18JIqU/uCV/r
+26R/cVXTy5qc5NbMwA40KzcCASOjIDAeMAsGA1UdDwQEAwIFoDAPBgNVHREECDAG
+hwQBAgMEMA0GCSqGSIb3DQEBBAUAA0EApTRD23KzN95GMvPD71hwwClukslKLVg8
+f1xm9ZsHLPJLRxHFwsqqjAad4j4wwwriiUmGAHLTGB0lJMl8xsgxag==
+-----END X509 CERTIFICATE-----
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRCA 要求の生成
+.sp
+.LP
+\fBCA\fR 要求の生成は自己署名付き証明書の生成と同じに見えます。これら 2 つの相違点は、オプション \fB-s\fR の代わりに \fB-c\fR を使用し、証明書データが \fBCA\fR 要求であるということだけです。
+
+.sp
+.in +2
+.nf
+example# \fBikecert certlocal -kc -m 512 -t rsa-md5 \e
+   -D "C=US, O=SUN" -A IP=1.2.3.4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRハードウェアキーストアを使用した CA 要求
+.sp
+.LP
+次の例は、\fB-T\fR オプションでトークンを指定する方法を示しています。
+
+.sp
+.in +2
+.nf
+example# \fB# ikecert certlocal -kc -m 1024 -t rsa-md5 -T vca0-keystore \e
+  -D "C=US, O=SUN" -A IP=1.2.3.4\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0 以外\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生しました。対応するエラーメッセージが標準エラーに書き込まれます。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/secret/ike.privatekeys/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+秘密鍵。秘密鍵に対応する同じファイル名の公開鍵証明書が \fB/etc/inet/ike/publickeys/\fR に存在する必要があります。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/ike/publickeys/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+公開鍵証明書。名前については、対応する秘密鍵の名前との関連だけが重要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/ike/crls/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+公開鍵証明書失効リスト。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/ike/config\fR\fR
+.ad
+.sp .6
+.RS 4n
+PKCS#11 ライブラリのパス名を調べるために参照されます。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBikeadm\fR(1M), \fBin.iked\fR(1M), \fBgetdate\fR(3C), \fBike.config\fR(4), \fBattributes\fR(5), \fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+Schneier, Bruce 著『\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR』、第 2 版、John Wiley & Sons 発行、New York, NY、1996.
+.sp
+.LP
+『PKCS#11 v2.11: \fICryptographic Token Interface Standards\fR』、RSA Labs 発行、2001 年 11 月
+.SH 注意事項
+.sp
+.LP
+次に、\fB-F\fR または \fB-S\fR フラグを使用する場合の有効期間の日付と時刻の構文について説明します。
+.sp
+.LP
+相対日付の場合、構文は次のとおりです。
+.sp
+.in +2
+.nf
+{+,-}[Ns][Nm][Nh][Nd][Nw][NM][Ny]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+各表記の意味は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBN\fR
+.ad
+.sp .6
+.RS 4n
+整数を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBs\fR
+.ad
+.sp .6
+.RS 4n
+秒を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBm\fR
+.ad
+.sp .6
+.RS 4n
+分を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBh\fR
+.ad
+.sp .6
+.RS 4n
+時間を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBd\fR
+.ad
+.sp .6
+.RS 4n
+日を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBw\fR
+.ad
+.sp .6
+.RS 4n
+週を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM\fR
+.ad
+.sp .6
+.RS 4n
+月を表します
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBy\fR
+.ad
+.sp .6
+.RS 4n
+年を表します
+.RE
+
+.sp
+.LP
+これらのパラメータは任意の順序で指定できます。たとえば、「+3d12h」は今から 3.5 日後、「-3y2M」は 3 年 2 か月前です。
+.sp
+.LP
+固定値を持つパラメータはすべて、秒数の絶対値で足し合わせることができます。月と年は、秒数が可変なので、カレンダを使用して計算されます。月と年は、長さが固定ではないため、1 年または 1 か月を足すことは、次の年または次の月の同じ日を表すものとして定義されます。たとえば、今日が 2005 年 1 月 26 日で、今日から 3 年 1 か月後に証明書が失効する場合、失効日 (有効期間の終了時刻) は 2008 年 2 月 26 日になります。オーバーフローは適切に処理されます。たとえば、2 月には 28 日しかないため、2005 年 1 月 31 日から 1 か月後は 2005 年 3 月 3 日です。
+.sp
+.LP
+絶対日付の場合は、ファイル \fB/etc/datemsk\fR に含まれている日付形式の構文を使用できます (詳細は、\fBgetdate\fR(3C) を参照)。日付文字列の前に「+」または「-」が付加されている場合は、現在の時刻からの相対時刻とみなされます。それ以外の場合は、絶対日付とみなされます。有効期間の終了日時が有効期間の開始日時より大きいことを確認する妥当性検査も行われます。たとえば、次のコマンドを実行すると、1 日と 2 時間前を開始日時、2007 年 1 月 22 日のローカル時間 12:00:00 を終了日時として証明書が作成されます。
+.sp
+.in +2
+.nf
+# ikecert certlocal -ks -t rsa-sha1 -m 1024 \e
+    -D "CN=mycert, O=Sun, C=US" \e 
+    -S -1d2h -F "01/22/2007 12:00:00"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBin.iked\fR(1M) は大域ゾーンと排他的 IP ゾーンでのみ実行可能なので、このコマンドは共有 IP ゾーンでは役立ちません。

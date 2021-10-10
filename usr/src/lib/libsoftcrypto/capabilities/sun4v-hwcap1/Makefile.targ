@@ -1,0 +1,78 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+include		../../Makefile.targ
+
+pics/aes_impl.o: $(AES_DIR)/aes_impl.c
+		$(COMPILE.c) $(AES_FLAGS) -o $@ $(AES_DIR)/aes_impl.c
+		$(POST_PROCESS_O)
+
+pics/yf_aes.o: $(AES_DIR)/sun4v/yf_aes.s
+		$(COMPILE.s) -o $@ $(AES_DIR)/sun4v/yf_aes.s
+		$(POST_PROCESS_O)
+
+pics/gcm_sparc.o: $(MODES_DIR)/sun4v/gcm_sparc.s
+		$(COMPILE.s) $(MODES_FLAGS) -o $@ $(MODES_DIR)/sun4v/gcm_sparc.s
+		$(POST_PROCESS_O)
+
+pics/aes_sun4v_modes.o: $(AES_DIR)/sun4v/aes_sun4v_modes.c
+		$(COMPILE.c) $(AES_FLAGS) -o $@ \
+		$(AES_DIR)/sun4v/aes_sun4v_modes.c
+		$(POST_PROCESS_O)
+
+pics/yf_des.o: $(DES_DIR)/sun4v/yf_des.s
+		$(COMPILE.s) -o $@ $(DES_DIR)/sun4v/yf_des.s
+		$(POST_PROCESS_O)
+
+pics/des_sun4v_modes.o: $(DES_DIR)/sun4v/des_sun4v_modes.c
+		$(COMPILE.c) $(DES_FLAGS) -o $@ \
+		$(DES_DIR)/sun4v/des_sun4v_modes.c
+		$(POST_PROCESS_O)
+
+pics/montmul_vt.o: $(BIGNUM_DIR)/sun4v/montmul_vt.c
+		$(COMPILE.c) $(BIGNUM_FLAGS) -o $@ \
+		$(BIGNUM_DIR)/sun4v/montmul_vt.c
+		$(POST_PROCESS_O)
+
+pics/mpmul_vt.o: $(BIGNUM_DIR)/sun4v/mpmul_vt.c
+		$(COMPILE.c) $(BIGNUM_FLAGS) -o $@ \
+		$(BIGNUM_DIR)/sun4v/mpmul_vt.c
+		$(POST_PROCESS_O)
+
+pics/montmul_vt_asm.o: $(BIGNUM_DIR)/sun4v/montmul_vt_asm.s montmul_offsets.h
+		$(COMPILE.s) -o $@ $(BIGNUM_DIR)/sun4v/montmul_vt_asm.s
+		$(POST_PROCESS_O)
+
+pics/mpmul_vt_asm.o:    $(SRC)/common/bignum/sun4v/mpmul_vt_asm.s \
+		$(SRC)/common/bignum/sun4v/mpmul_tables.h\
+		montmul_offsets.h
+		$(COMPILE.s) -o pics/mpmul_vt_asm.o \
+		$(BIGNUM_DIR)/sun4v/mpmul_vt_asm.s
+
+montmul_offsets.h: $(BIGNUM_DIR)/sun4v/generate_montmul_offsets.c \
+		$(BIGNUM_DIR)/sun4v/montmul_vt.h
+		$(LINK.c) -o generate_montmul_offsets \
+		$(BIGNUM_DIR)/sun4v/generate_montmul_offsets.c
+		./generate_montmul_offsets

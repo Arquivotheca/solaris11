@@ -1,0 +1,887 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH itadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+itadm \- 管理 iSCSI 目标
+.SH 用法概要
+.LP
+.nf
+\fBitadm\fR create-target [\fB-a\fR,\fB--auth-method\fR radius | chap | none | default]
+     [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] [\fB-n\fR,\fB--node-name\fR \fItarget_node_name\fR]
+     [\fB-l\fR,\fB--alias\fR \fIalias\fR] [\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR]]
+.fi
+
+.LP
+.nf
+\fBitadm\fR modify-target [\fB-a\fR,\fB--auth-method\fR radius | chap | none | default]
+     [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] [\fB-n\fR,\fB--node-name\fR \fInew_target_node_name\fR]
+     [\fB-l\fR,\fB--alias\fR \fIalias\fR] [\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR]] \fItarget_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR delete-target [\fB-f\fR,\fB--force\fR] \fItarget_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-target [\fB-v\fR,\fB--verbose\fR] [\fItarget_node_name\fR]
+.fi
+
+.LP
+.nf
+\fBitadm\fR create-tpg \fItpg_name\fR \fIIP-address\fR[:\fIport\fR] [\fIIP-address\fR[:\fIport\fR]]...
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-tpg [\fB-v\fR,\fB--verbose\fR] [\fItpg_name\fR]
+.fi
+
+.LP
+.nf
+\fBitadm\fR delete-tpg  [\fB-f\fR,\fB--force\fR] \fItpg_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR create-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR modify-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-initiator [\fB-v\fR,\fB--verbose\fR] \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR delete-initiator \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR modify-defaults [\fB-a\fR,\fB--auth-method\fR radius | chap | none]
+     [\fB-r\fR,\fB--radius-server\fR \fIIP-address\fR[:\fIport\fR]] [\fB-d\fR,\fB--radius-secret\fR]
+     [\fB-D\fR,\fB--radius-secret-file\fR \fIpath\fR][\fB-i\fR,\fB--isns\fR enable | disable]
+     [\fB-I\fR,\fB--isns-server\fR \fIIP-address\fR[:\fIport\fR][,\fIIP-address\fR[:\fIport\fR]]]
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-defaults
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBitadm\fR 命令用于管理 \fBstmfadm\fR(1M) 和 \fBlibstmf\fR(3LIB) 中介绍的 SCSI 目标模式框架中的 Internet SCSI (iSCSI) 目标节点。这允许 iSCSI 启动器使用 iSCSI 协议访问 STMF 逻辑单元。除了 iSCSI 目标节点外，\fBitadm\fR 还管理其他两类托管对象：iSCSI 目标门户组与 iSCSI 启动器节点上下文。
+.sp
+.LP
+\fBitadm\fR 是作为一组子命令以及用于各个子命令的选项和操作数实现的。下文中的相应部分分别描述了这些子命令。除了其子命令，\fBitadm\fR 还有一个帮助命令，用以显示该实用程序的用法信息。该帮助命令是使用 \fB-?\fR 选项调用的。
+.SS "iSCSI 目标门户组"
+.sp
+.LP
+iSCSI 目标网络门户是指可由启动器节点用来连接到 iSCSI 目标的 IP 地址和 TCP 端口。这些门户的集合称为目标门户组 (Target Portal Group, TPG)。您可以使用 TPG 来限制对 iSCSI 目标的访问。可以使用 \fBitadm modify\fR \fB- t\fR 命令将特定 iSCSI 目标绑定到 TPG。将在属于 TPG 的每个 IP 地址上创建一个 iSCSI 侦听器，它侦听与 iSCSI 目标的连接。
+.sp
+.LP
+TPG 是由在创建 TPG 时提供的唯一名称所标识的。在创建 TPG 时会自动生成一个范围介于 2-65535 的数字"目标门户组标记"。"目标门户组标记 1"是为没有在目标上设置显式"目标门户组"时使用的"缺省"目标门户组保留的。缺省 TPG 的门户与来自端口 3260 上所有网络接口的请求相匹配。
+.SS "iSCSI 启动器节点上下文"
+.sp
+.LP
+某些操作，例如通过质询握手身份验证协议 (Challenge Handshake Authentication Protocol, CHAP) 进行的验证，需要与远程 iSCSI 启动器节点关联的参数。这些参数与 iSCSI 启动器节点上下文关联。iSCSI 启动器节点上下文由其启动器节点名称标识，该名称的格式为 IQN 或 EUI 格式（请参见 RFC 3720）。例如：
+.sp
+.in +2
+.nf
+iqn.1986-03.com.sun:01:e00000000000.47d55444
+eui.02004567A425678D
+.fi
+.in -2
+.sp
+
+.SS "指定 IP 地址"
+.sp
+.LP
+许多 \fBitadm\fR 子命令要求您指定一个或多个具有可选端口号的 IP 地址。对于 IPv4，请使用标准的点分十进制记法。对于 IPv6，请用方括号将地址括起来。以下是示例指定方法。
+.sp
+.in +2
+.nf
+\fBIPv4\fR:  10.2.4.1
+       10.2.4.1:3260
+\fBIPv6\fR:  [1080:0:0:0:8:800:200C:417A]
+       [1080:0:0:0:8:800:200C:417A]:3260
+.fi
+.in -2
+.sp
+
+.SH 子命令
+.sp
+.LP
+下面是 \fBitadm\fR 子命令及其选项。
+.SS "\fBitadm create-target\fR"
+.sp
+.in +2
+.nf
+itadm create-target [-a,--auth-method radius | chap | none | default]
+     [-s,--chap-secret]
+     [-S,--chap-secret-file \fIpath\fR] [-u,--chap-user \fIchap-user-name\fR]
+     [-n,--node-name \fItarget_node_name\fR] [-l,--alias \fIalias\fR]
+     [-t,--tpg \fItpg-name\fR[,\fItpg-name\fR,...]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+使用指定选项创建 iSCSI 目标。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR,\fB--auth-method\fR \fBradius | chap | none | default\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用于目标的验证方式。有效值是 \fBradius\fR、\fBchap\fR 和 \fBnone\fR。\fBchap\fR 表示必须使用质询握手身份验证协议 (Challenge Handshake Authentication Protocol, CHAP) 对连接到此目标的启动器进行验证。\fBradius\fR 表示还应当使用 CHAP 对启动器进行验证，但应当从中央 RADIUS 服务器获取所需的验证参数（请参见 \fBradius-server\fR 和 \fBradius-secret\fR 选项）。\fBnone\fR 表示不需要对与目标的连接进行验证。\fBdefault\fR 表示目标将使用此属性的全局设置。（请参见 \fBmodify-defaults\fR 子命令）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR,\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+交互 CHAP 验证期间要发送的 CHAP 密钥。此属性没有缺省值。最大长度为 255 个字符；最小必需长度为 12 个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+如 \fB-s\fR 选项中所述，包含 CHAP 密钥的临时文件的路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+为目标指定在交互 CHAP 验证中使用的 CHAP 用户名。此值只允许用于目标，不能全局设置，并且只会在启动器节点被配置为使用交互 CHAP 验证时使用。如果没有指定值，则将目标节点名称用作用户名。请参见 \fBiscsiadm\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR,\fB--node-name\fR \fItarget_node_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+iSCSI 目标节点由其目标节点名称标识，该名称的格式为 IQN 或 EUI 格式（请参见 RFC 3720）。此选项用于创建该名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR,\fB--alias\fR \fIalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+与目标节点关联的替代标识符。此标识符不需要是唯一的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR,...]\fR
+.ad
+.sp .6
+.RS 4n
+一个目标门户组 (Target Portal Group, TPG) 列表（用以指定启动器可以用来访问特定目标的 TGP）或者关键字 \fBdefault\fR。如果指定了 \fBdefault\fR，目标将使用缺省门户 \fBINADDR_ANY:3260\fR。
+.RE
+
+.SS "\fBitadm modify-target\fR"
+.sp
+.in +2
+.nf
+itadm modify-target [\fB-a\fR,\fB--auth-method\fR radius | chap | none | default]
+     [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] [\fB-n\fR,\fB--node-name\fR \fInew_tgt_node_name\fR]
+     [\fB-l\fR,\fB--alias\fR \fIalias\fR] [\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR]] \fItarget_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+根据指定的选项修改 iSCSI 目标。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR,\fB--auth-method\fR \fBradius | chap | none | default\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR,\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。要删除显式设置的 CHAP 用户名，请使用 \fB-u\fR \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR,\fB--node-name\fR \fItarget_node_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+重命名目标。另请参见上文中的 \fBcreate-target\fR 子命令部分中对 \fB-n\fR 的说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR,\fB--alias\fR \fIalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。要删除显式设置的别名，请使用 \fB-l\fR \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR,...]\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.SS "\fBitadm list-target\fR"
+.sp
+.in +2
+.nf
+itadm list-target [\fB-v\fR,\fB--verbose\fR] [\fItarget_node_name\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+列出所配置的目标的相关信息。如果指定了 \fItarget_node_name\fR，则只会列出关于该目标的信息。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR,\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。
+.RE
+
+.SS "\fBitadm delete-target\fR"
+.sp
+.in +2
+.nf
+itadm delete-target [\fB-f\fR,\fB--force\fR] \fItarget_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+删除由 \fItarget_node_name\fR 指定的目标。目标必须处于 \fBoffline\fR（脱机）状态才能删除。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR,\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果目标仍然保持联机状态，此选项将尝试在删除目标前使其脱机。
+.RE
+
+.SS "\fBitadm create-tpg\fR"
+.sp
+.in +2
+.nf
+itadm create-tpg \fItpg_name\fR \fIIP-address\fR[:\fIport\fR]...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+创建由指定的门户组成的 iSCSI 目标门户组，并为其分配标识符 \fItpg_name\fR。每个门户都是一个 IP 地址与端口对。IPv4 门户是以点分地址表示法指定的，例如 \fB172.31.255.255\fR。IPv6 门户地址必须用方括号括起来。
+.sp
+.LP
+此子命令没有选项。
+.SS "\fBitadm list-tpg\fR"
+.sp
+.in +2
+.nf
+itadm list-tpg [\fB-v\fR,\fB--verbose\fR] [\fItpg_name\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+列出所配置的目标门户组的相关信息。如果指定了 \fItpg_name\fR，则只会列出与 \fItpg_name\fR 关联的目标门户组的相关信息。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR,\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。
+.RE
+
+.SS "\fBitadm delete-tpg\fR"
+.sp
+.in +2
+.nf
+itadm delete-tpg  [\fB-f\fR,\fB--force\fR] \fItpg_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+删除与 \fItpg_name\fR 关联的目标门户组。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR,\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 TPG 与任何目标关联，则除非指定了此选项，否则删除的请求将被拒绝。
+.RE
+
+.SS "\fBitadm create-initiator\fR"
+.sp
+.in +2
+.nf
+itadm create-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+配置与名为 \fIinitiator_node_name\fR 的远程启动器关联的参数。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR,\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+为启动器指定用于 CHAP 验证的 CHAP 用户名。如果没有指定值，则将启动器节点名称用作用户名。
+.RE
+
+.SS "\fBitadm modify-initiator\fR"
+.sp
+.in +2
+.nf
+itadm modify-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+修改与名为 \fIinitiator_node_name\fR 的远程启动器关联的参数。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR,\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+如上文中的 \fBcreate-target\fR 子命令部分所述。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+为启动器指定用于 CHAP 验证的 CHAP 用户名。如果没有指定值，则将启动器节点名称用作用户名。
+.RE
+
+.SS "\fBitadm delete-initiator\fR"
+.sp
+.in +2
+.nf
+itadm delete-initiator \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+删除与名为 \fIinitiator_node_name\fR 的远程启动器关联的参数。此子命令没有选项。
+.SS "\fBitadm list-initiator\fR"
+.sp
+.in +2
+.nf
+\fBitadm\fR list-initiator [\fB-v\fR,\fB--verbose\fR] \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+列出与名为 \fIinitiator_node_name\fR 的启动器关联的参数。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR,\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+详细模式。
+.RE
+
+.SS "\fBitadm modify-defaults\fR"
+.sp
+.in +2
+.nf
+itadm modify-defaults [\fB-a\fR,\fB--auth-method\fR radius | chap | none]
+     [\fB-r\fR,\fB--radius-server\fR \fIIP-address\fR[:\fIport\fR]] [\fB-d\fR,\fB--radius-secret\fR]
+     [\fB-D\fR,\fB--radius-secret-file\fR \fIpath\fR][\fB-i\fR,\fB--isns\fR enable | disable]
+     [\fB-I\fR,\fB--isns-server\fR \fIIP-address\fR[:\fIport\fR][,\fIIP-address\fR[:\fIport\fR]]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+修改缺省参数。选项如下所述。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR,\fB--auth-method\fR \fBradius | chap | none\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用于所有目标的缺省验证方式。有效值是 \fBradius\fR、\fBchap\fR 和 \fBnone\fR。\fBchap\fR 表示必须使用质询握手身份验证协议 (Challenge Handshake Authentication Protocol, CHAP) 对连接到此目标的启动器进行验证。\fBradius\fR 表示还应当使用 CHAP 对启动器进行验证，但应当从中央 RADIUS 服务器获取所需的验证参数。（请参见 \fB--radius-server\fR 和 \fB--radius-secret\fR 选项）。\fBnone\fR 表示不需要对与目标的连接进行验证。各个目标都可使用 \fBcreate-target\fR 和 \fBmodify-target\fR 子命令的 \fB-a\fR 选项覆盖此全局设置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR,\fB--radius-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于集中 CHAP 验证的 RADIUS 共享密钥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR,\fB--radius-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+如 \fB-d\fR 选项中所述，包含 CHAP 密钥的临时文件的路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR,\fB--sns\fR \fBenable | disable\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定是否向所定义的 iSCSI 名称服务 (iSCSI Name Service, iSNS) 服务器集注册目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR,\fB--isns-server\fR \fIIP-address\fR[:\fIport\fR][,\fIIP-address\fR[:\fIport\fR],...]\fR
+.ad
+.sp .6
+.RS 4n
+定义当设置了与相应目标关联的 \fBisns\fR 选项时，要向其注册 iSCSI 目标节点的 iSNS 服务器的列表。最多可以指定八个 iSNS 服务器。要删除所有 iSNS 服务器，请使用 \fB-I\fR \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR,\fB--radius-server\fR \fIIP-address\fR[:\fIport\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定用于集中 CHAP 验证的 RADIUS 服务器的 IP 地址。
+.RE
+
+.SS "\fBitadm list-defaults\fR"
+.sp
+.in +2
+.nf
+itadm list-defaults
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+列出关于缺省属性的信息。此子命令没有选项。
+.SH 示例
+.LP
+\fB示例 1 \fR创建目标
+.sp
+.LP
+以下命令用于创建目标。
+
+.sp
+.in +2
+.nf
+# \fBitadm create-target\fR
+Target iqn.1986-03.com.sun:02:72e1b181-7bce-c0e6-851e-ec0d8cf14b7a
+successfully created
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用特定名称创建目标
+.sp
+.LP
+以下命令用于使用特定 IQN 创建目标。
+
+.sp
+.in +2
+.nf
+# \fBitadm create-target -n eui.20387ab8943ef7548\fR
+or:
+# \fBitadm create-target \e
+-n iqn.1986-03.com.sun:02:a9a366f8-cc2b-f291-840948c7f29e\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR更改名称
+.sp
+.LP
+以下命令用于更改现有目标的 IQN。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-target -n eui.20387ab8943ef7548 \e
+iqn.1986-03.com.sun:02:a9a366f8-909b-cc2b-f291-840948c7f29e\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR设置 CHAP 验证
+.sp
+.LP
+以下命令用于使用缺省 CHAP 用户名为目标设置 CHAP 验证。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-initiator -s iqn.1986-03.com.sun:01:e00000000000.47d55444\fR
+\fBEnter CHAP secret:\fR *********
+\fBRe-enter secret:\fR *********
+
+# \fBitadm modify-target -a chap eui.20387ab8943ef7548\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR创建目标门户组
+.sp
+.LP
+以下命令用于创建两个目标门户组 \fBA\fR 和 \fBB\fR，并且为 TPG 2 中的地址使用端口 8000。
+
+.sp
+.in +2
+.nf
+# \fBitadm create-tpg A 192.168.0.1 192.168.0.2\fR
+# \fBitadm create-tpg B 192.168.0.2:8000 192.168.0.2:8000\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR将目标配置为使用 TPG
+.sp
+.LP
+以下命令用于将目标配置为使用 TPG A 和 B。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-target -t A,B eui.20387ab8943ef7548\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR为特定目标设置 RADIUS 验证
+.sp
+.LP
+以下命令用于为特定目标设置 RADIUS 验证。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-defaults -r 192.168.10.1 -d\fR
+\fBEnter RADIUS secret:\fR *********
+\fBRe-enter secret:\fR *********
+
+# \fBitadm modify-target -a radius eui.20387ab8943ef7548\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR为所有目标设置 RADIUS 验证
+.sp
+.LP
+以下命令用于为所有目标设置 RADIUS 验证。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-defaults -d -r 192.168.10.1 -a radius\fR
+\fBEnter RADIUS secret:\fR *********
+\fBRe-enter secret:\fR *********
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+上面的命令假定所有目标都是使用 \fB-a\fR \fBdefault\fR 创建的。
+
+.LP
+\fB示例 9 \fR列出缺省属性
+.sp
+.LP
+以下命令用于列出缺省属性。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-defaults\fR
+iSCSI Target Default Properties:
+
+alias:          \fInone\fR
+auth:           \fInone\fR
+radiusserver:   \fInone\fR
+radiussecret:   unset
+isns:           disabled
+isnsserver:     2.3.4.5,4.5.6.7
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR列出目标
+.sp
+.LP
+以下命令用于列出目标。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-target\fR
+TARGET NAME                                           STATE    SESSIONS
+iqn.1986-03.com.sun:02:72e1b181-7bce-c0e6-851e-ec0d8cf14b7a  online   0
+iqn.1986-03.com.sun:02:2cb0c526-c05a-e279-e396-a367006f4227  online   0
+iqn.1986-03.com.sun:02:d14125bb-1c9d-c28d-97b0-f89259b642f3  online   0
+iqn.1986-03.com.sun:02:03ff9fc5-794a-e9b4-a081-bb82917c292a  online   0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR列出目标（详细）
+.sp
+.LP
+以下命令用于使用详细选项列出目标。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-target -v\fR
+TARGET NAME                                           STATE    SESSIONS
+iqn.1986-03.com.sun:02:d23e68d8-2d79-c988-98e7-a6361689d33c  online   0
+       alias:                  -
+       auth:                   none (defaults)
+       targetchapuser:         -
+       targetchapsecret:       unset
+       tpg-tags:               default
+iqn.1986-03.com.sun:02:94ec46d4-c8e1-6993-ef03-ffc1dcd66606  online   1
+       alias:                  -
+       auth:                   chap
+       targetchapuser:         -
+       targetchapsecret:       unset
+       tpg-tags:               nge1_ipv4 = 3
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR列出特定目标
+.sp
+.LP
+以下命令用于使用详细选项列出目标。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-target -v \e
+iqn.1986-03.com.sun:02:2cb0c526-c05a-e279-e396-a367006f4227\fR
+TARGET NAME                                           STATE    SESSIONS
+iqn.1986-03.com.sun:02:2cb0c526-c05a-e279-e396-a367006f4227  online   1
+        alias:                  -
+        auth:                   chap
+        targetchapuser:         -
+        targetchapsecret:       unset
+        tpg-tags:               nge1_ipv4 = 3
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/storage/iscsi/iscsi-target
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBiscsiadm\fR(1M)、\fBstmfadm\fR(1M)、\fBlibstmf\fR(3LIB)、\fBattributes\fR(5)

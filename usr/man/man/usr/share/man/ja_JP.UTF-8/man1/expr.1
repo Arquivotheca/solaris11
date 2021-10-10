@@ -1,0 +1,403 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH expr 1 "2010 年 7 月 20 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+expr \- 引数を式として評価する
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/expr\fR \fIargument\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/expr\fR \fIargument\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/xpg6/bin/expr\fR \fIargument\fR...
+.fi
+
+.SH 機能説明
+.SS "/usr/bin/expr, /usr/xpg4/bin/expr"
+.sp
+.LP
+\fBexpr\fR ユーティリティは式を評価して、その結果を標準出力に書き出します。文字 \fB0\fR はゼロ値として書き込まれ、何もない場合は NULL 文字列として書き込まれます。
+.SS "/usr/xpg6/bin/expr"
+.sp
+.LP
+\fBexpr\fR ユーティリティは式を評価して、その結果とその後に NEWLINE を標準出力に書き出します。\fBexpr\fR 処理からの結果がない場合、NEWLINE が標準出力に書き込まれます。
+.SH オペランド
+.sp
+.LP
+\fIargument\fR オペランドは式として評価されます。式の項は空白文字で区切る必要があります。シェルに対する特殊文字は、エスケープする必要があります (\fBsh\fR(1) 参照)。空白文字またはその他の特殊文字を含む文字列は、引用符で囲む必要があります。式の長さは \fBLINE_MAX\fR (2048 文字) に制限されます。
+.sp
+.LP
+演算子とキーワードを以下に示します。優先度の低いものから順に並べてあり、等しい優先度の演算子は、\fB{\|}\fR 記号内にグループ分けされています。演算子はすべてその左に関わります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr\fR \fB\e|\fR \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 番目の \fIexpr\fR が \fINULL\fR または \fB0\fR のどちらでもない場合、1 番目の \fIexpr\fR の評価を返します。それ以外の場合、2 番目の expr が \fINULL\fR でなければ、2 番目の \fBexpr\fR の評価を返します。そうでなければ、0 を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr\fR \fB\e&\fR \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIexpr\fR が両方とも \fINULL\fR または \fB0\fR 以外の場合、最初の \fIexpr\fR を返します。それ以外の場合は、\fB0\fR を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr\fR{ \fB=\fR, \fB\e>\fR, \fB\e>=\fR, \fB\e<\fR, \fB\e<=\fR, \fB!=\fR} \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+両引数とも整数の場合、整数比較の結果を返します。それ以外の場合、ロケール固有の連立シーケンスを使用して、文字列比較の結果を返します。各比較の結果は、指定された関係が \fBTRUE\fR の場合は \fB1\fR、\fBFALSE\fR の場合は \fB0\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr \fR{ \fB+\fR, \fB\(mi \fR} \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数値引数の加減。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr \fR{ \fB\e*\fR, \fB/\fR, \fB%\fR} \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数値引数の乗除または剰余。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpr\fR \fB:\fR \fIexpr\fR\fR
+.ad
+.sp .6
+.RS 4n
+マッチング演算子 \fB:\fR (コロン) は、最初の引数と 2 番目の引数を比較します。2 番目の引数は国際化された基本正規表現である必要があります。ただし、すべてのパターンが文字列の最初にアンカーされるという点を除きます。つまり、文字列の最初の文字から始まるシーケンスだけが正規表現と一致することができます。\fBregex\fR(5) および「注意事項」を参照してください。通常、\fB/usr/bin/expr\fR のマッチング演算子は一致したバイト数を返し、\fB/usr/xpg4/bin/expr\fR のマッチング演算子は一致した文字数を返します (失敗時は \fB0\fR)。2 番目の引数に少なくとも 1 つの、基本正規表現のサブエクスプレッション [\e(...\e)] が含まれる場合、マッチング演算子は \e1 に対応する文字列を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinteger\fR \fR
+.ad
+.sp .6
+.RS 4n
+数字だけからなる引数。先頭に負記号を付けることもできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstring\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fIinteger\fR 引数、または演算子符号の 1 つとして識別することができない文字列の引数です。
+.RE
+
+.sp
+.LP
+\fBindex、length、match、および substr\fR の 4 つの演算子の優先度はすべて同じです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBindex\fR \fIstring character-list\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIcharacter-list\fR のバイトが \fIstring\fR のバイトと一致する、\fIstring\fR の最初のバイトを報告します (1 からカウントします)。\fIcharacter-list\fR のバイトが string のバイトと一致しない場合は、\fB0\fR が返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlength\fR \fIstring\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIstring\fR の長さ (バイト数) を返します。終端 NULL 文字はそのカウントには含まれません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmatch\fR \fIstring regular-expression\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBexpr : expr\fR マッチング演算子と同義です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubstr\fR \fIstring integer-1 integer-2\fR\fR
+.ad
+.sp .6
+.RS 4n
+位置 \fIinteger-1\fR から始まる、長さが \fIinteger-2\fR バイトのバイトシーケンスを string から抽出します (1 からカウントします)。\fIinteger-1\fR が string のバイト数よりも大きい値である場合、\fBexpr\fR は NULL 文字列を返します。string にあるバイト数よりも多く抽出しようとした場合、\fBexpr\fR は string から残りのすべてのバイトを返します。\fIinteger-1\fR または \fIinteger-2\fR のどちらかが負の値である場合、結果は不確定です。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR整数をシェル変数に追加する
+.sp
+.LP
+シェル変数 \fBa\fR に 1 を追加します。
+
+.sp
+.in +2
+.nf
+example$ \fBa=`expr\| $a\| +\| 1`\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRパス名の要素を返す
+.sp
+.LP
+以下は \fBbasename\fR(1) をエミュレートする例です。basename1 は、\fB$a\fR というパス名の最後の要素を返します。\fB$a\fR が \fB/usr/abc/file\fR か、ただの \fBfile\fR のいずれかと等価の場合に、この例は、\fBfile\fR を返します。(引数としての単独の \fB/\fR に注意してください。 \fBexpr\fR は / を除数演算子とみなします。後述の「注意事項」を参照.)
+
+.sp
+.in +2
+.nf
+example$ \fBexpr $a : '.*/\e(.*\e)' \e| $a\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR// 文字を使用して式を単純にする
+.sp
+.LP
+例 2. を改善したものです。\fB//\fR 文字を追加してあるので、除算演算子についてのあいまいさはなくなり、式全体が単純になっています。
+
+.sp
+.in +2
+.nf
+example$ \fBexpr //$a : '.*/\e(.*\e)'\fR
+.fi
+.in -2
+.sp
+
+.SS "/usr/bin/expr"
+.LP
+\fB例 4 \fR変数にバイト数を返す
+.sp
+.in +2
+.nf
+example$ \fBexpr "$VAR" : '.*'\fR
+.fi
+.in -2
+.sp
+
+.SS "/usr/xpg4/bin/expr"
+.LP
+\fB例 5 \fR変数に文字数を返す
+.sp
+.in +2
+.nf
+example$ \fBexpr "$VAR" : '.*'\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBexpr\fR の実行に影響を与える次の環境変数 の詳細については、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+式を評価した結果として、\fBexpr\fR は次の終了値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 6n
+.rt  
+式が \fINULL\fR でも \fB0\fR でもない場合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR \fR
+.ad
+.RS 6n
+.rt  
+式が \fINULL\fR または \fB0\fR である場合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR \fR
+.ad
+.RS 6n
+.rt  
+不正な式の場合。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>2\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSIT{
+有効。「\fB注意事項\fR」を参照してください。
+T}
+_
+インタフェースの安定性下記を参照。
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.sp
+.LP
+\fBmatch、substr、length、\fRおよび \fBindex\fR 演算子は「不確実」です。ほかはすべて「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBbasename\fR(1), \fBed\fR(1), \fBsh\fR(1), \fBIntro\fR(3), \fBattributes\fR(5), \fBenviron\fR(5), \fBregex\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsyntax error\fR\fR
+.ad
+.RS 24n
+.rt  
+演算子とオペランドのエラー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnon-numeric argument\fR\fR
+.ad
+.RS 24n
+.rt  
+数値ではない文字列に対して演算を行う
+.RE
+
+.SH 注意事項
+.sp
+.LP
+次の 3 つの演算子は CSI に対応していません。これらは、\fB/usr/xpg4/bin/expr\fR および \fB/usr/xpg6/bin/expr\fR で使用することもできません。
+.sp
+.in +2
+.nf
+\fIindex string character-list\fR
+
+\fIlength string\fR
+
+\fIsubstr string integer-1 integer-2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+シェルによる引数の処理後、\fBexpr\fR は、値による場合を除き、演算子とオペランドの違いを区別できなくなります。\fB$a\fR が \fB=\fR の場合、
+.sp
+.in +2
+.nf
+example$ \fBexpr $a = '='\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+というコマンドは、次のコマンドと等価になります。
+.sp
+.in +2
+.nf
+example$ \fBexpr = = =\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、引数が \fBexpr\fR に渡される (さらに、すべて引数が \fB=\fR 演算子と見なされる) ためです。次のコマンドは正しく動作します。
+.sp
+.in +2
+.nf
+example$ \fBexpr X$a = X=\fR
+.fi
+.in -2
+.sp
+
+.SS "正規表現"
+.sp
+.LP
+旧バージョンのあるバージョンとは違って、\fBexpr\fR はシステムに提供されたすべてのロケールに対して、国際化された基本正規表現を使用します。国際化された正規表現に関しては \fBregex\fR(5) のマニュアルページを参照してください。

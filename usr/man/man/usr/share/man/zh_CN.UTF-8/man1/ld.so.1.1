@@ -1,0 +1,635 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH ld.so.1 1 "2011 年 5 月 9 日" "SunOS 5.11" "用户命令"
+.SH 名称
+ld.so.1 \- 动态对象的运行时链接程序
+.SH 用法概要
+.LP
+.nf
+\fB/lib/ld.so.1\fR 
+.fi
+
+.LP
+.nf
+\fB/lib/ld.so.1\fR [\fB-e\fR \fIenvar\fR] \fIdynamic-object\fR [\fIobject args\fR]...
+.fi
+
+.SH 描述
+.sp
+.LP
+动态应用程序包含一个或多个动态对象。动态应用程序通常是指动态可执行文件，以及一个或多个共享对象相关项。在动态应用程序的初始化和执行过程中，将调用\fB解释器\fR。该解释器可将应用程序与其共享对象相关项绑定在一起。在 Solaris 中，该解释器也称为运行时链接程序。
+.sp
+.LP
+在动态可执行文件的链接编辑期间，将创建一个特殊的 \fB\&.interp\fR 部分，以及一个关联的程序头。此节包含用于指定程序的解释程序的路径名。将 \fB-I\fR 选项用于链接编辑器 \fBld\fR(1) 来构造可执行文件时，可指定解释器路径名。由链接编辑器提供的缺省名称是运行时链接程序的名称 \fBld.so.1 \fR。
+.sp
+.LP
+在动态可执行文件的执行过程中，内核将映射文件和所需解释器的定位。请参见 \fBexec\fR(2) 和 \fBmmapobj\fR(2)。内核将映射到该解释器中并将控制权传输给该解释器。将向解释器传递足够的信息，使之能够继续绑定，然后执行应用程序。
+.sp
+.LP
+除了初始化应用程序，运行时链接程序还可以向应用程序提供相关服务以扩展其地址空间。此外，还可以映射其他共享对象并绑定到共享对象中的符号。
+.sp
+.LP
+运行时链接程序可执行以下功能：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+处理配置文件（如果存在）。 配置文件可用来更改缺省搜索路径、提供目录高速缓存，以及提供备选对象相关项。请参见 \fBcrle\fR(1)。缺省情况下，对于 32 位对象，将使用配置文件 \fB/var/ld/ld.config\fR。对于 64 位对象，将使用缺省配置文件 \fB/var/ld/64/ld.config\fR。备选配置文件可通过 \fBLD_CONFIG\fR 环境变量指定。此外，还可以使用 \fBld\fR(1)的 \fB-c\fR 选项在动态可执行文件内对备选配置文件进行编码。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+运行时链接程序可以分析应用程序的动态信息部分 \fB\&.dynamic\fR，从而确定哪些共享对象相关项是必需的。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+然后，运行时链接程序会定位并映射到这些相关项中，并接着分析每个相关项的动态信息部分，以便确定是否需要任何其他相关项。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+装入所有共享对象相关项以后，运行时链接程序将执行任何必要的重定位操作。这些重定位操作可以绑定共享对象，为进程执行做准备。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将调用共享对象相关项以及（可能）动态可执行文件提供的初始化函数。这些函数的调用顺序与相关项的拓扑排序顺序相反。如果存在循环相关项，将使用排序顺序调用初始化函数并删除循环。\fBldd\fR(1) 可用于显示共享对象相关项的初始化顺序。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+控制权将传递给应用程序。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+在应用程序执行期间，可调用运行时链接程序来执行任何延迟的函数绑定操作。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果从进程中删除任何共享对象，将调用结束化函数。缺省情况下，这些函数的调用顺序与相关项的拓扑排序顺序相同。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+应用程序还可以使用 \fBdlopen\fR(3C) 来调用运行时链接程序的服务以获取其他共享对象。可以使用 \fBdlsym\fR(3C) 绑定到这些对象提供的符号。
+.RE
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR中提供了此前每一个主题的更多详细信息。
+.sp
+.LP
+运行时链接程序使用规定的搜索路径定位对象的动态相关项。缺省搜索路径为对象中记录的 runpath，后跟一系列缺省值。32 位对象的缺省搜索路径为 \fB/lib\fR，后跟 \fB/usr/lib\fR。64 位对象的缺省搜索路径为 \fB/lib/64\fR，后跟 \fB/usr/lib/64\fR。这些缺省部分可以使用通过 \fBcrle\fR(1) 创建的配置文件进行修改。将 \fB-R\fR 选项用于 \fBld\fR(1) 以构造动态对象时，将指定 runpath。可以使用环境变量 \fBLD_LIBRARY_PATH\fR 来表示将先于缺省目录进行搜索的目录。
+.SS "命令行使用"
+.sp
+.LP
+通常情况下，运行时链接程序是通过执行动态可执行文件间接调用的，动态可执行文件将运行时链接程序声明为它的解释器。此外，也可通过命令行直接执行运行时链接程序。该机制最常用来尝试运行时链接程序的新的实现。命令行上提供的参数包含适用于运行时链接程序的选项。这些选项后跟要执行的动态对象的名称，以及该对象所需的任何选项。事实上，运行时链接程序将替换动态对象所指定的任何解释器。
+.sp
+.LP
+支持以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIenvar\fR\fR
+.ad
+.RS 12n
+.rt  
+指定特定于运行时链接程序的环境变量。请参见\fB环境变量\fR。使用该选项设置的变量将优先于任何环境变量或具有相同名称的配置文件变量。可指定变量 \fBLD_NOENVIRON\fR 来指示在 \fB-e\fR 选项处理后不应处理任何环境变量。
+.RE
+
+.SH 环境变量
+.sp
+.LP
+每个环境变量均可使用 \fB_32\fR 或 \fB_64\fR 后缀进行指定。这样，环境变量将分别特定于 32 位或 64 位进程。该环境变量将覆盖任何可能有效的环境变量的无后缀版本。如果环境变量指定时没有提供值且其具有 \fB_32\fR 或 \fB_64\fR 后缀，则事实上会取消任何关联的通用环境变量设置。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_AUDIT\fR、\fBLD_AUDIT_32\fR 和 \fBLD_AUDIT_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+运行时链接程序装入的对象的冒号分隔列表。装入每个对象时，将检查对象的\fI链接审计\fR接口例程。将按照\fI《Linker and Libraries Guide》\fR中所述的\fI链接审计\fR接口中指定的那样调用存在的例程。另请参见 \fBld\fR(1) 的 \fB-p\fR 和 \fB-P\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_BIND_LAZY\fR、\fBLD_BIND_LAZY_32\fR 和 \fBLD_BIND_LAZY_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以将环境变量 \fBLD_BIND_LAZY\fR 设置为任意非空值，从而强制实施运行时链接程序执行延迟绑定的缺省模式。此设置使运行时链接程序对所有已装入进程的对象都只执行\fB延迟\fR引用重定位。各对象可以请求在装入对象时执行\fB延迟\fR引用重定位。请参见 \fBld\fR(1) 的 \fB-z\fR \fBnow\fR 选项，以及模式为 \fBRTLD_NOW\fR 的 \fBdlopen\fR(3C)。\fBLD_BIND_LAZY\fR 有效时，将抑制用于执行\fB延迟\fR引用重定位的此类请求。
+.sp
+如果同时指定 \fBLD_BIND_LAZY\fR 和 \fBLD_BIND_NOW\fR，则 \fBLD_BIND_NOW\fR 优先。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_BIND_NOW\fR、\fBLD_BIND_NOW_32\fR 和 \fBLD_BIND_NOW_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+可以将环境变量 \fBLD_BIND_NOW\fR 设置为任意非空值，从而覆盖运行时链接程序执行延迟绑定的缺省模式。此设置使运行时链接程序对所有已装入进程的非延迟对象执行\fB立即\fR引用和\fB延迟\fR引用重定位。各对象可以请求在装入对象时执行非延迟的\fB延迟\fR引用重定位。请参见 \fBld\fR(1) 的 \fB-z\fR \fBnow\fR 选项，以及模式为 \fBRTLD_NOW\fR 的 \fBdlopen\fR(3C)。延迟的相关项不受 \fBLD_BIND_NOW\fR 或 \fBRTLD_NOW\fR 的影响。请参见 \fBld\fR(1) 的 \fB-z\fR \fBdeferred\fR 选项。
+.sp
+如果同时指定 \fBLD_BIND_NOW\fR 和 \fBLD_BIND_LAZY\fR，则 \fBLD_BIND_NOW\fR 优先。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_CAP_FILES\fR、\fBLD_CAP_FILES_32\fR 和 \fBLD_CAP_FILES_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+应针对任何备选功能进行验证的文件的逗号分隔列表。请参见 \fBLD_PLATCAP\fR、\fBLD_MACHCAP\fR、\fBLD_HWCAP\fR 和 \fBLD_SFCAP\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_CONFIG\fR、\fBLD_CONFIG_32\fR 和 \fBLD_CONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供备选配置文件。配置文件可用来更改缺省搜索路径、提供目录高速缓存，以及提供备用对象相关项。请参见 \fBcrle\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_DEBUG\fR、\fBLD_DEBUG_32\fR 和 \fBLD_DEBUG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供以逗号或冒号分隔的标记列表，使运行时链接程序将调试信息输出到标准错误中。特殊标记 \fBhelp\fR 指示可用标记的完整列表。还可提供环境变量 \fBLD_DEBUG_OUTPUT\fR 来指定接收调试信息的文件。文件名的后缀为生成调试信息的应用程序的进程 \fBID\fR。请参见 \fBlari\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_DEMANGLE\fR、\fBLD_DEMANGLE_32\fR 和 \fBLD_DEMANGLE_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+在诊断消息中使用的任何符号名称都将按 \fBELF\fR 文件中定义的那样进行显示。将 \fBLD_DEMANGLE\fR 设置为任意非空值时，运行时链接程序将尝试解码（取消重整）任何 C++ 符号名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_FLAGS\fR、\fBLD_FLAGS_32\fR 和 \fBLD_FLAGS_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供环境变量信息的备选提供方式。任何 \fBLD_\fR\fIXXX\fR 环境变量均可指定为 \fIxxx\fR 标记。可提供多个标记，以逗号分隔。请参见"示例"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_HWCAP\fR、\fBLD_HWCAP_32\fR 和 \fBLD_HWCAP_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识替代硬件功能值。
+.sp
+.in +2
+.nf
+LD_HWCAP=[+-]{\fItoken\fR | \fInumber\fR},....
+.fi
+.in -2
+.sp
+
+通过"+"前缀可以将后面的功能添加到备选功能中。通过"-"前缀可以将后面的功能从备选功能中删除。缺少"+-"时，后面的功能将替换备选功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_LIBRARY_PATH\fR、\fBLD_LIBRARY_PATH_32\fR 和 \fBLD_LIBRARY_PATH_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBLD_LIBRARY_PATH\fR 环境变量在设置的情况下将用于增强搜索路径，运行时链接程序使用该路径查找动态相关项。\fBLD_LIBRARY_PATH\fR 指定将先于缺省目录进行搜索的目录的冒号分隔列表。还请注意，\fBLD_LIBRARY_PATH\fR 为 \fBld\fR(1) 添加了其他语义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_LOADFLTR\fR、\fBLD_LOADFLTR_32\fR 和 \fBLD_LOADFLTR_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+过滤器是共享对象的一种形式。过滤器允许在运行时选择备选共享对象，提供在过滤器内定义的任何符号的实现。请参见 \fBld\fR(1) 的 \fB-f\fR 和 \fB-F\fR 选项。缺省情况下，备选共享对象的处理将推迟到对过滤器进行符号解析的时候。将 \fBLD_LOADFLTR\fR 设置为任意非空值时，装入任何过滤器后会立即对其进行处理。另请参见 \fBld\fR(1) 的 \fB-z\fR \fBloadfltr\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_MACHCAP\fR、\fBLD_MACHCAP_32\fR 和 \fBLD_MACHCAP_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识备选计算机硬件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOAUDIT\fR、\fBLD_NOAUDIT_32\fR 和 \fBLD_NOAUDIT_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+本地审计库可在应用程序和共享对象内进行定义。请参见 \fBld\fR(1) 的 \fB-p\fR 和 \fB-P\fR 选项。将 \fBLD_NOAUDIT\fR 设置为任意非空值时，运行时链接程序将忽略任何本地审计库。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOAUXFLTR\fR、\fBLD_NOAUXFLTR_32\fR 和 \fBLD_NOAUXFLTR_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+辅助过滤器是共享对象的一种形式。辅助过滤器允许在运行时选择备选共享对象，提供在过滤器内定义的任何符号的实现。请参见 \fBld\fR(1) 的 \fB-f\fR 选项。将 \fBLD_NOAUXFLTR\fR 设置为任意非空值时，运行时链接程序将禁用该备选共享对象查找。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOCONFIG\fR、\fBLD_NOCONFIG_32\fR 和 \fBLD_NOCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省情况下，运行时链接程序将尝试打开并处理一个配置文件。将 \fBLD_NOCONFIG\fR 设置为任意非空值时，运行时链接程序将禁用该配置文件处理。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NODIRCONFIG\fR、\fBLD_NODIRCONFIG_32\fR 和 \fBLD_NODIRCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供 \fBLD_NOCONFIG\fR 的子集，从而将忽略配置文件中提供的任何目录高速缓存信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NODIRECT\fR、\fBLD_NODIRECT_32\fR 和 \fBLD_NODIRECT_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+直接绑定信息可指导运行时链接程序直接搜索关联对象中的符号。请参见 \fBld\fR(1) 的 \fB-B\fR \fBdirect\fR 选项。在没有直接绑定的情况下，由运行时链接程序执行的符号搜索将遵循缺省模式。将 \fBLD_NODIRECT\fR 设置为任意非空值时，运行时链接程序将忽略任何直接绑定信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOENVCONFIG\fR、\fBLD_NOENVCONFIG_32\fR 和 \fBLD_NOENVCONFIG_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供 \fBLD_NOCONFIG\fR 的子集，从而将忽略配置文件中提供的任何环境变量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOLAZYLOAD\fR、\fBLD_NOLAZYLOAD_32\fR 和 \fBLD_NOLAZYLOAD_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+加标签进行延迟装入的相关项不会装入到内存中，直到对该相关项进行了显式引用。请参见 \fBld\fR(1) 的 \fB-z\fR \fBlazyload\fR 选项。将 \fBLD_NOLAZYLOAD\fR 设置为任意非空值时，运行时链接程序将忽略相关项延迟装入标签并立即装入相关项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOOBJALTER\fR、\fBLD_NOOBJALTER_32\fR 和 \fBLD_NOOBJALTER_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供 \fBLD_NOCONFIG\fR 的子集，从而将忽略配置文件中提供的任何备选对象相关项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_NOVERSION\fR、\fBLD_NOVERSION_32\fR 和 \fBLD_NOVERSION_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省情况下，运行时链接程序将验证主要可执行文件及其所有相关项的版本相关项。将 \fBLD_NOVERSION\fR 设置为任意非空值时，运行时链接程序将禁用该版本检查。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_ORIGIN\fR、\fBLD_ORIGIN_32\fR 和 \fBLD_ORIGIN_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+将环境变量 \fBLD_ORIGIN\fR 设置为任意非空值可触发 \fB$ORIGIN\fR 的即时处理。在 Solaris 9 之前，对于先调用 \fBchdir\fR(2)，然后定位使用 \fB$ORIGIN\fR 字符串标记的相关项的应用程序，该选项非常有用。现在，运行时链接程序会在缺省情况下建立当前工作目录，因此使该选项变为冗余。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_PLATCAP\fR、\fBLD_PLATCAP_32\fR 和 \fBLD_PLATCAP_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识备选平台名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_PRELOAD\fR、\fBLD_PRELOAD_32\fR 和 \fBLD_PRELOAD_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供由空格分隔的共享对象列表。这些对象将装入在正在执行的程序之后，但在该程序引用的任何其他共享对象之前。预装入对象提供的符号定义可以插入程序引用的共享对象所进行的引用。预装入对象提供的符号定义不会插入程序所提供的符号定义。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_PROFILE\fR、\fBLD_PROFILE_32\fR 和 \fBLD_PROFILE_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义运行时链接程序将要分析的共享对象。启用分析时，将创建并映射分析缓冲区文件。缓冲区文件的名称为要进行分析的共享对象的名称，带有 \fB\&.profile\fR 扩展名。缺省情况下，该缓冲区置于 \fB/var/tmp\fR 下。还可提供环境变量 \fBLD_PROFILE_OUTPUT\fR 来指示可在其中放置分析缓冲区的备选目录。
+.sp
+分析缓冲区包含 \fBprofil\fR(2) 和调用计数信息。该信息类似于由那些通过 \fBcc\fR 的 \fB-xpg\fR 选项链接的程序所生成的 \fIgmon.out\fR 信息。使用命名的共享对象并在设置该环境变量时运行的任何应用程序都会在分析缓冲区中累积数据。另请参见"备注"。可以使用 \fBgprof\fR(1) 检查分析缓冲区信息。
+.sp
+\fBLD_PROFILE\fR 分析技术是编译系统提供的其他技术的一种替代技术。进行分析的共享对象不必采用任何方式进行检测，而 \fBLD_PROFILE\fR 不应与已分析检测的应用程序结合使用。有关共享对象分析的更多信息，请参见\fI《Linker and Libraries Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_SFCAP\fR、\fBLD_SFCAP_32\fR 和 \fBLD_SFCAP_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识替代软件功能值。
+.sp
+.in +2
+.nf
+LD_SFCAP=[+-]{\fItoken\fR | \fInumber\fR},....
+.fi
+.in -2
+.sp
+
+通过"+"前缀可以将后面的功能添加到备选功能中。通过"-"前缀可以将后面的功能从备选功能中删除。缺少"+-"时，后面的功能将替换备选功能。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLD_SIGNAL\fR、\fBLD_SIGNAL_32\fR 和 \fBLD_SIGNAL_64\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供运行时链接程序在出现严重运行时错误的情况下用来中止进程的\fB数字\fR信号编号。请参见 \fBthr_kill\fR(3C)。缺省情况下，将使用 \fBSIGKILL\fR。例如，如果备选信号编号为 \fB6\fR (\fBSIGABRT\fR)，即可利用该编号创建核心转储文件来协助调试。另请参见针对 \fBdlinfo\fR(3C) 的 \fBRTLD_DI_SETSIGNAL\fR 请求。
+.RE
+
+.sp
+.LP
+请注意，以 "\fBLD_\fR" 字符开头的环境变量名是为未来可能推出的针对 \fBld\fR(1) 和 \fBld.so.1 \fR 的增强功能而保留的。
+.SH 安全
+.sp
+.LP
+安全进程在评估其相关项及 runpaths 时会应用某些限制，以免出现恶意相关项替换或符号插入的情况。
+.sp
+.LP
+如果 \fBissetugid\fR(2) 系统调用对某进程返回 true，则运行时链接程序将该进程归类为安全进程。
+.sp
+.LP
+对于 32 位对象，对运行时链接程序已知的缺省可信目录为 \fB/lib/secure\fR 和 \fB/usr/lib/secure\fR。对于 64 位对象，缺省可信目录为 \fB/lib/secure/64\fR 和 \fB/usr/lib/secure/64\fR。实用程序 \fBcrle\fR(1) 可用于指定适用于安全应用程序的其他可信目录。使用此技术的管理员应确保已对目标目录进行了适当的保护，以防受到恶意入侵。
+.sp
+.LP
+如果安全进程的 \fBLD_LIBRARY_PATH\fR 系列环境变量有效，则仅使用该变量所指定的\fB可信\fR目录来扩充运行时链接程序的搜索规则。
+.sp
+.LP
+在安全进程中，将使用由应用程序或其任意相关项提供的 runpath 组件，前提是该组件使用全路径名，即路径名以 "\fB/\fR" 开头。
+.sp
+.LP
+在安全进程中，仅当 \fB$ORIGIN\fR 字符串扩展扩展到某个\fB可信\fR目录时才允许该字符串的扩展。不过，如果 \fB$ORIGIN\fR 扩展与某个已提供相关项的目录相匹配，则该目录为隐式安全目录。该目录可用于提供其他相关项。
+.sp
+.LP
+在安全进程中，将忽略 \fBLD_CONFIG\fR，但是，会使用安全应用程序中记录的配置文件。请参见 \fBld\fR(1) 的 \fB-c\fR 选项。记录的配置文件必须使用全路径名，即路径名必须以"\fB/\fR"开头。使用 \fB$ORIGIN\fR 字符串的已记录配置文件只能位于已知的可信目录下。如果开发者在安全应用程序内记录配置文件，应确保配置文件目录受到适当的保护，以免遭恶意入侵。缺少记录的配置文件时，安全进程将使用缺省配置文件（如果存在）。参见 \fBcrle\fR(1)。
+.sp
+.LP
+在安全进程中，将忽略 \fBLD_SIGNAL\fR。
+.sp
+.LP
+可以使用 \fBLD_PRELOAD\fR 或 \fBLD_AUDIT\fR 环境变量来与安全进程一起装入其他对象。必须将这些对象指定为\fB全\fR路径名或\fB简单\fR文件名。全路径名仅限于已知的\fB可信\fR目录。不含 "\fB/\fR" 的简单文件名在定位时将遵循前述搜索路径限制。简单文件名只能解析到已知的\fB可信\fR目录。
+.sp
+.LP
+在安全进程中，使用前述路径名限制处理包含简单文件名的任何相关项。以全路径名或相对路径名形式表示的相关项将按"原样"使用。因此，安全进程的开发者应确保对以全路径名或相对路径名相关项形式引用的目标目录进行适当的保护，以免遭恶意入侵。
+.sp
+.LP
+创建安全进程时，\fB不\fR应使用相对路径名来表示相关项或构建 \fBdlopen\fR(3C) 路径名。此限制应适用于应用程序及\fB所有\fR相关项。
+.SH 示例
+.LP
+\fB示例 1 \fR使用 LD_FLAGS 对环境变量信息进行分组
+.sp
+.LP
+对 \fBLD_FLAGS\fR 的下述用法相当于为 32 位应用程序设置单个环境变量 \fBLD_BIND_NOW\fR 和 \fBLD_LIBRARY_PATH\fR：
+
+.sp
+.in +2
+.nf
+example% \fBLD_FLAGS_32=bind_now,library_path=/lib/one:/lib/two\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+对 \fBLD_FLAGS\fR 的下述用法相当于为 64 位应用程序设置单个环境变量 \fBLD_LIBRARY_PATH\fR 和 \fBLD_PRELOAD\fR：
+
+.sp
+.in +2
+.nf
+example% \fBLD_FLAGS_64=library_path=/lib/one/64,preload=foo.so\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/ld.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省运行时链接程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/libc.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+可实现 \fBSVID ABI\fR 兼容性的备选解释器。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/0@0.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+一种兼容性库，支持空字符指针。请参见"注释"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/secure\fR 和 \fB/usr/lib/secure\fR\fR
+.ad
+.sp .6
+.RS 4n
+安全应用程序的 \fBLD_PRELOAD\fR 位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/secure/64\fR 和 \fB/usr/lib/secure/64\fR\fR
+.ad
+.sp .6
+.RS 4n
+安全的 64 位应用程序的 \fBLD_PRELOAD\fR 位置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/lib/64/ld.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 位应用程序的缺省运行时链接程序。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/64/0@0.so.1\fR\fR
+.ad
+.sp .6
+.RS 4n
+一种 64 位的兼容性库，支持空字符指针。请参见"注释"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/ld/ld.config\fR\fR
+.ad
+.sp .6
+.RS 4n
+32 位应用程序的缺省配置文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/ld/64/ld.config\fR\fR
+.ad
+.sp .6
+.RS 4n
+64 位应用程序的缺省配置文件。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/linker
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcrle\fR(1)、\fBgprof\fR(1)、\fBlari\fR(1)、\fBld\fR(1)、\fBldd\fR(1)、\fBexec\fR(2)、\fBissetugid\fR(2)、\fBmmapobj\fR(2)、\fBprofil\fR(2)、\fBdladdr\fR(3C)、\fBdlclose\fR(3C)、\fBdldump\fR(3C)、\fBdlerror\fR(3C)、\fBdlinfo\fR(3C)、\fBdlopen\fR(3C)、\fBdlsym\fR(3C)、\fBthr_kill\fR(3C)、\fBproc\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+\fI《Linker and Libraries Guide》\fR
+.SH 附注
+.sp
+.LP
+将 \fBLD_PROFILE\fR 与其他进程监视技术结合使用时应慎重，如使用 \fBproc\fR(4) 的用户。多进程监视技术可能会导致死锁条件，从而使分析缓冲区处于锁定状态。锁定的缓冲区将阻止任何尝试记录分析信息的进程。为了降低这种可能性，运行时链接程序的配置文件实现会确定在启动时进程是否受到监视。如果是，将在无提示情况下禁用进程的分析。不过，此机制无法捕捉在进程执行过程中附加到该进程的监视进程。
+.sp
+.LP
+用户兼容性库 \fB/usr/lib/0@0.so.1\fR 提供了一种机制，可以在位置 0 建立值 \fB0\fR。存在一些应用程序，其错误地假定空字符指针应视为与指向空字符串的指针相同。访问空字符指针时，这些应用程序中会出现段违规。如果在运行时使用 \fBLD_PRELOAD\fR 将该库添加到此类应用程序，该库将提供一个与该错误行为对应的环境。然而，用户兼容性库既不是用来允许生成此类应用程序，也不是用来支持此特定编程实践。
+.sp
+.LP
+在很多情况下，\fB/usr/lib/0@0.so.1\fR 的存在并没有危险，并可将其预装入不需要它的程序中，但也有例外。诸如 \fBJVM\fR（Java Virtual Machine，Java 虚拟机）之类的某些应用程序要求从空指针访问生成段违规。诸如 \fBJVM\fR 之类的应用程序不应预装入 \fB/usr/lib/0@0.so\fR。

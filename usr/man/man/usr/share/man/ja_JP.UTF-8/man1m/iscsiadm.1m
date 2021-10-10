@@ -1,0 +1,1356 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH iscsiadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+iscsiadm \- iSCSI イニシエータの管理の有効化
+.SH 形式
+.LP
+.nf
+\fBiscsiadm\fR \fIsubcommand\fR \fIdirect-object\fR [\fIoptions\fR] [\fIoperand\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBiscsiadm\fR コマンドは、ホスト上で iSCSI (インターネット SCSI) イニシエータを管理できるようにします。\fBiscsiadm\fR は、独自のオプションを備えた一連のサブコマンドとして実装されています。これらのオプションについては、各サブコマンドのセクションで説明します。特定のサブコマンドに関連付けられていないオプションは、「オプション」で説明されています。
+.sp
+.LP
+\fBiscsiadm\fR は、次のサービスがオンラインの場合にのみ動作します。
+.sp
+.in +2
+.nf
+svc:/network/iscsi/initiator:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBiscsiadm\fR コマンドは次のサブコマンドをサポートしています。各サブコマンドについては、以降のサブセクションで詳細に説明します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR\fR
+.ad
+.RS 10n
+.rt  
+オブジェクトに要素を追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.RS 10n
+.rt  
+オブジェクトの要素を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodify\fR\fR
+.ad
+.RS 10n
+.rt  
+オブジェクトの属性を変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR\fR
+.ad
+.RS 10n
+.rt  
+オブジェクトから要素を削除します。
+.RE
+
+.sp
+.LP
+\fBiscsiadm\fR サブコマンドは、直接オブジェクト (\fIdirect-object\fR) に対して動作します。これらについては、各サブコマンドのセクションで説明します。
+.sp
+.LP
+\fBiscsiadm\fR コマンドでは、iSCSI ターゲットの発見のために iSNS (Internet Storage Name Service) がサポートされています。このコマンドではまた、認証のために CHAP (Challenge Handshake Authentication Protocol) がサポートされています。
+.SS "\fBadd\fR サブコマンド"
+.sp
+.LP
+\fBadd\fR サブコマンドの構文は次のとおりです。
+.sp
+.in +2
+.nf
+# iscsiadm add \fIdirect_object\fR [\fIoperands\fR...] 
+.fi
+.in -2
+
+.sp
+.LP
+\fBadd\fR サブコマンドは、次の直接オブジェクトを追加します。\fI\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery-address\fR \fIdiscovery-address\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+発見アドレスのリストにターゲットを追加します。発見アドレス (下に示す構文で指定される) は、SendTargets 発見セッションで使用される IP \fIaddress\fR:\fIport\fR の組み合わせです。この発見アプローチを使用すると、ターゲットデバイスはターゲットアドレスと、そのデバイスによって公開された各ターゲットのターゲット名をイニシエータに通知できます。ターゲットへの接続は、SendTargets 発見方式がホスト上で有効になっていないかぎり試行されません。この方式は \fBmodify\fR サブコマンドで有効にします。
+.sp
+\fIdiscovery-address\fR パラメータの形式は次のとおりです。
+.sp
+.in +2
+.nf
+<\fIIP address\fR>[:\fIport\fR]
+.fi
+.in -2
+
+\fIport\fR が指定されていない場合は、3260 のデフォルト値が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisns-server\fR \fIisns-server\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+iSNS サーバーアドレスのリストに iSNS サーバーを追加します。iSNS サーバーアドレス (下に示す構文で指定される) は、iSNS 発見セッションで使用される IP アドレスとポートの組み合わせです。iSNS 発見を使用すると、iSNS サーバーはイニシエータにポータルに関する情報や、そのイニシエータと同じ発見ドメインに属する各ターゲットの名前を提供できます。iSNS サーバーへの接続は、iSNS 発見方式がホスト上で有効になっていないかぎり、試行されません。この方式は、後述の \fBmodify\fR サブコマンドで有効にします。
+.sp
+\fIisns-server\fR パラメータの形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fIIP_address\fR[:\fIport\fR]
+.fi
+.in -2
+
+ポートが指定されていない場合は、3205 のデフォルト値が使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatic-config\fR \fIstatic_target\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+静的に設定されたターゲットのリストにターゲットを追加します。ターゲットへの接続は、静的な設定による発見方式が有効になっていないかぎり試行されません。
+.sp
+\fIstatic_target\fR パラメータの形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fI<target-name>\fR,\fI<target address>\fR[:\fIport-number\fR][,\fItpgt\fR]
+.fi
+.in -2
+
+\fI<target-name>\fR には最大 223 文字を指定できます。
+.RE
+
+.SS "\fBlist\fR サブコマンド"
+.sp
+.LP
+\fBlist\fR サブコマンドの構文は次のとおりです。
+.sp
+.in +2
+.nf
+# iscsiadm list \fIdirect-object\fR [\fIoptions\fR]
+.fi
+.in -2
+
+.sp
+.LP
+\fBlist\fR サブコマンドは、次の直接オブジェクトのデータを表示します。\fI\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery\fR\fR
+.ad
+.sp .6
+.RS 4n
+発見方式と、それらの現在の有効化状態 (有効または無効) を一覧表示します。発見方式には次のものがあります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+iSNS (Internet Storage Name Service)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+静的
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+SendTargets
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitiator-node\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホスト上のイニシエータノードに関する情報を一覧表示します。iSCSI イニシエータノードは論理 HBA を表し、iSCSI ターゲットのための論理的なホスト接続ポイントです。応答に一覧表示されるパラメータ値は、このイニシエータのデフォルトのパラメータ設定です。イニシエータに接続されている各ターゲットには、イニシエータノード上のパラメータ値とは異なるパラメータ値を設定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatic-config\fR [\fIstatic_target\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたターゲットのターゲット名とアドレスを一覧表示します。静的なターゲットが指定されていない場合は、静的に検出されたすべてのターゲットが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget\fR [\fB-S\fR] [\fB-v\fR] [\fItarget\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットの現在のパラメータ、接続状態、およびそのターゲットの発見に使用された方式を一覧表示します。指定されたターゲットに関する情報を報告します。ターゲットが指定されていない場合は、検出されたか、または \fBmodify target\fR サブコマンドによって変更されたパラメータを持っていたすべてのターゲットが報告されます。
+.sp
+指定されたターゲットに対して \fB-S\fR オプションとともに使用された場合は、次の情報が返されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ターゲット名
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+論理ユニット番号
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ベンダー ID
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+製品 ID
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+OS デバイス名 (たとえば、\fB/dev/rdsk/c0t2d0s0\fR)
+.RE
+\fB-v\fR オプションを指定すると、現在のログインパラメータ、詳細な接続情報、そのターゲットの発見に使用された発見方式などの、さらに詳細な情報が返されます。
+.sp
+発見方式のパラメータとして \fBNA\fR が返された場合は、そのターゲットが \fBiscsiadm modify target-param\fR コマンドを使用して作成され、検出されたオブジェクトとしては存在していないことを示します。このようなターゲットを削除するには、\fBiscsiadm remove target-param\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget-param\fR [\fB-v\fR] \fItarget\fR [...]\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットのデフォルトパラメータおよびユーザー定義パラメータを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery-address\fR [\fB-v\fR] [\fIdiscovery-address\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+\fBiscsiadm add discovery-address\fR サブコマンドを使用して追加された \fBdiscovery-address\fR オブジェクトを一覧表示します。
+.sp
+\fB-v\fR オプションとともに使用された場合は、指定された \fIdiscovery-address\fR にあるすべての既知のターゲットを一覧表示します。\fB-v\fR オプションを指定すると、1 つ以上のターゲット名が、0 個以上のターゲットアドレス、および関連付けられたターゲットポータルグループタグ (TPGT) (該当する場合) とともに返されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisns-server\fR [\fB-v\fR] [\fIisns-server\fR[, ...]]\fR
+.ad
+.sp .6
+.RS 4n
+\fBiscsiadm\fR \fBadd\fR \fBisns-server\fR サブコマンドを使用して追加された \fBisns-server\fR オブジェクトを一覧表示します。
+.sp
+\fB-v\fR オプションとともに使用された場合は、指定された \fBisns-server\fR アドレスにあるすべての既知のターゲットを一覧表示します。 \fB-v\fR オプションを指定すると、1 つ以上のターゲット名が、0 個以上のターゲットアドレス、および関連付けられたターゲットポータルグループタグ (該当する場合) とともに返されます。
+.RE
+
+.SS "\fBmodify\fR サブコマンド"
+.sp
+.LP
+\fBmodify\fR サブコマンドの構文は次のとおりです。
+.sp
+.in +2
+.nf
+# iscsiadm modify \fIdirect_object\fR [\fIoptions\fR] 
+.fi
+.in -2
+
+.sp
+.LP
+\fBmodify\fR サブコマンドは、次の直接オブジェクトをサポートしています。\fI\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery\fR [\fIoptions\fR]\fR
+.ad
+.sp .6
+.RS 4n
+発見方式を有効にすると、その方式を使用した発見が開始されます。現在有効になっている発見方式を無効にしても、その方式によってすでに検出されたターゲットへの接続には影響を与えません。
+.sp
+\fBmodify discovery\fR のオプションは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR, \fB-iSNS\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+iSNS 発見を有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR, \fB-\fR\fB-static\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+静的な発見を有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR, \fB-\fR\fB-sendtargets\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+SendTargets 発見を有効または無効にします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitiator-node\fR [\fIoptions\fR]\fR
+.ad
+.sp .6
+.RS 4n
+イニシエータのプロパティーを変更します。ターゲットが現在接続されている場合、この操作は成功します。ただし、変更された一連のパラメータは、既存の接続セッションが存在しなくなって新しい接続が確立されるまで、そのターゲットに対して有効になりません。オプション \fB-C\fR と \fB-\fR\fB-CHAP-secret\fR を指定した場合は、プロンプトで CHAP シークレットを入力する必要があります。
+.sp
+Solaris I/O マルチパス機能 (以前は Sun StorEdge Traffic Manager [STMS] または MPxIO と呼ばれていた) が無効になっている場合の iSCSI ブートでは、次の initiator-node オプションだけを変更できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-r\fR, \fB--radius-server\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-R\fR, \fB--radius-access\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-P\fR, \fB--radius-shared-secret\fR
+.RE
+Solaris I/O マルチパス機能が有効になっている場合の iSCSI ブートでは、次の initiator-node オプションだけを変更できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-h\fR, \fB--headerdigest\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-d\fR, \fB--datadigest\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-c\fR, \fB--configured-sessions\fR
+.RE
+\fBmodify initiator-node\fR のオプションは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR, \fB-\fR\fB-node-alias\fR \fI<initiator node alias>\fR\fR
+.ad
+.sp .6
+.RS 4n
+イニシエータノードの別名を変更します。最大長は 223 文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR, \fB-\fR\fB-authentication\fR \fBchap\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+認証モードを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR, \fB-\fR\fB-CHAP-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+CHAP シークレットの値を設定します。デフォルト値はありません。最大長は 16 文字、最低限必要な長さは 12 文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB--configured-sessions\fR \fI<num_sessions>\fR | \fI<IP address>\fR[,\fI<IP address>\fR\&...]\fR
+.ad
+.sp .6
+.RS 4n
+各 iSCSI ターゲットに対して作成される設定済みの iSCSI セッションの数を設定します。この機能は、\fBscsi_vhci\fR(7D) で説明されている Solaris I/O マルチパス機能と組み合わせて使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB--datadigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+SCSI データ転送をチェックするために CRC32 を有効にするかどうかを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR, \fB-\fR\fB-CHAP-name\fR \fICHAP name\fR\fR
+.ad
+.sp .6
+.RS 4n
+CHAP ユーザー名を指定します。このオプションを使用しない場合は、初期化時に CHAP 名がイニシエータノード名に設定されます。認証方式が CHAP に設定されている場合 (上の \fB-a\fR/\fB-\fR\fB-authentication\fR オプションを参照)、CHAP ユーザー名は \fBiscsiadm list initiator-node\fR コマンドで表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB--headerdigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+SCSI パケットヘッダーをチェックするために CRC32 を有効にするかどうかを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR, \fB--max-connections\fR \fInumber_connections\fR\fR
+.ad
+.sp .6
+.RS 4n
+iSCSI セッションの最大接続数を変更します。デフォルト値は \fB1\fR です。各セッションの最大接続数は \fB65535\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR, \fB-\fR\fB-node-name\fR \fI<initiator node name>\fR\fR
+.ad
+.sp .6
+.RS 4n
+イニシエータノード名を変更します。最大長は 223 文字です。
+.LP
+注 - 
+.sp
+.RS 2
+Solaris のインストール中に、イニシエータノード名はグローバルに一意な値に設定されます。この値を変更すると、iSCSI ネットワーク内の操作に悪影響を与えることがあります。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR, \fB--radius-shared-secret\fR (exclusive)\fR
+.ad
+.sp .6
+.RS 4n
+RADIUS 共有シークレットを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR, \fB--radius-access\fR \fBenable\fR | \fBdisable\fR\fR
+.ad
+.sp .6
+.RS 4n
+RADIUS サーバーを使用するかどうかを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR, \fB--radius-server\fR \fI<IP address>\fR[:\fI<port>\fR]\fR
+.ad
+.sp .6
+.RS 4n
+使用する RADIUS サーバーの IP アドレスとポートを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR, \fB-\fR\fB-tunable-param\fR <<\fItunable-prop\fR>=<\fIvalue\fR>, ...>\fR
+.ad
+.sp .6
+.RS 4n
+イニシエータノードが接続されているすべてのターゲットに対して 1 つ以上の調整可能なパラメータを指定します。
+.LP
+注 - 
+.sp
+.RS 2
+これらの値は、iSCSI ネットワーク内におけるこのパラメータの影響についての実際的な知識を備えた管理者だけが変更するようにしてください。
+.RE
+サポートされている tunable-prop オプションは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv-login-rsp-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+セッションログインの応答時間
+.sp
+\fBrecv-login-rsp-timeout\fR オプションは、iSCSI イニシエータが iSCSI ターゲットからの iSCSI セッションログイン要求の応答を待つ時間を指定します。有効な値は 0 ～ 60*60 であり、デフォルト値は 60 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconn-login-max\fR\fR
+.ad
+.sp .6
+.RS 4n
+接続再試行の最大時間
+.sp
+\fBconn-login-max\fR オプションを指定すると、指定された時間ウィンドウ中に入出力タイムアウトまたは接続の失敗が発生した場合に、iSCSI イニシエータはターゲットへの接続を再確立できます。有効な値は 0 ～ 60*60 であり、デフォルト値は 180 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolling-login-delay\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログイン再試行の時間間隔
+.sp
+\fBpolling-login-delay\fR オプションは、入出力タイムアウトまたは接続の失敗が発生した場合の iSCSI イニシエータからターゲットへの各ログイン再試行の時間間隔を指定します。有効な値は 0 ～ 60*60 であり、デフォルト値は 60 秒です。
+.RE
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget-param\fR [\fIoptions\fR] \fItarget\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットのパラメータを変更します。ターゲットが現在接続されている場合、この変更操作は成功します。ただし、変更された設定が有効になるまでに数秒かかることがあります。これらの設定が有効なことを確認するには、\fBiscsiadm list target\fR \fB-v\fR を使用します。指定されたターゲットがどの発見方式にも関連付けられていない場合は、指定されたパラメータを使用してターゲットオブジェクトが作成されます。このコマンドを使用してターゲットのパラメータを変更したあと、新しいパラメータは、そのターゲット上で \fBiscsiadm remove target-param\fR コマンドで変更または削除されるまで持続します。オプション \fB-C\fR と \fB-\fR\fB-CHAP-secret\fR を指定した場合は、プロンプトで CHAP シークレットを入力する必要があります。
+.sp
+\fBmodify target-param\fR のオプションは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-B\fR, \fB-\fR\fB-bi-directional-authentication enable | disable\fR\fR
+.ad
+.sp .6
+.RS 4n
+双方向オプションを設定します。\fBenable\fR に設定されている場合、イニシエータは、指定されたターゲットに対して双方向認証を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR, \fB-\fR\fB-CHAP-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットの CHAP シークレットの値を設定します。デフォルト値はありません。指定できる最大長は 16 文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR, \fB-\fR\fB-configured-sessions\fR \fI<num_sessions>\fR | \fI<IP address>\fR[,\fI<IP address>\fR\&...]\fR
+.ad
+.sp .6
+.RS 4n
+各 iSCSI ターゲットに対して作成される設定済みの iSCSI セッションの数を設定します。この機能は、\fBscsi_vhci\fR(7D) で説明されている Solaris I/O マルチパス機能と組み合わせて使用してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR, \fB-\fR\fB-datadigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+データのために CRC32 を有効または無効のどちらにするかを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR, \fB-\fR\fB-CHAP-name\fR \fICHAP name\fR\fR
+.ad
+.sp .6
+.RS 4n
+CHAP ユーザー名を設定します。このオプションを使用しない場合は、初期化時に CHAP 名がターゲット名に設定されます。認証方式が CHAP に設定されている場合 (上の \fBinitiator-node\fR 直接オブジェクトの下にある \fB-a\fR/\fB-\fR\fB-authentication\fR オプションを参照)、CHAP ユーザー名は \fBiscsiadm list initiator-node\fR コマンドで表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR, \fB-\fR\fB-headerdigest\fR \fBnone\fR | \fBCRC32\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘッダーのために CRC32 を有効または無効のどちらにするかを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB-\fR\fB-login-param\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上のログインパラメータ設定を指定します。
+.LP
+注 - 
+.sp
+.RS 2
+これらの値は、iSCSI ネットワーク内におけるこのパラメータの影響についての実際的な知識を備えた管理者だけが変更するようにしてください。
+.RE
+ログインパラメータは、iSCSI 標準 RFC 3720 から派生しています。 有効な値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdataseqinorder\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR または \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaulttime2retain\fR\fR
+.ad
+.RS 22n
+.rt  
+0-3600
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefaulttime2wait\fR\fR
+.ad
+.RS 22n
+.rt  
+0-3600
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfirstburstlength\fR\fR
+.ad
+.RS 22n
+.rt  
+512 から 2^24-1
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimmediatedata\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR または \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitialr2t\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR または \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxburstlength\fR\fR
+.ad
+.RS 22n
+.rt  
+512 から 2^24-1
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdatapduinorder\fR\fR
+.ad
+.RS 22n
+.rt  
+\fByes\fR または \fBno\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxoutstandingr2t\fR\fR
+.ad
+.RS 22n
+.rt  
+1 から 65535
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaxrecvdataseglen\fR\fR
+.ad
+.RS 22n
+.rt  
+512 から 2^24-1
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR, \fB-\fR\fB-tunable-param\fR <<\fItunable-prop\fR>=<\fIvalue\fR>, ...>\fR
+.ad
+.sp .6
+.RS 4n
+イニシエータノードが接続されているすべてのターゲットに対して 1 つ以上の調整可能なパラメータを指定します。
+.LP
+注 - 
+.sp
+.RS 2
+調整可能な値は、iSCSI ネットワーク内におけるこのパラメータの影響についての実際的な知識を備えた管理者だけが変更するようにしてください。
+.RE
+サポートされている \fItunable-prop\fR オプションは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv-login-rsp-timeout\fR\fR
+.ad
+.sp .6
+.RS 4n
+セッションログインの応答時間
+.sp
+\fBrecv-login-rsp-timeout\fR オプションは、iSCSI イニシエータが iSCSI ターゲットからの iSCSI セッションログイン要求の応答を待つ時間を指定します。有効な値は 0 ～ 60*60 であり、デフォルト値は 60 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconn-login-max\fR\fR
+.ad
+.sp .6
+.RS 4n
+接続再試行の最大時間
+.sp
+\fBconn-login-max\fR オプションを指定すると、指定された時間ウィンドウ中に入出力タイムアウトまたは接続の失敗が発生した場合に、iSCSI イニシエータはターゲットへの接続を再確立できます。有効な値は 0 ～ 60*60 であり、デフォルト値は 180 秒です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpolling-login-delay\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログイン再試行の時間間隔
+.sp
+\fBpolling-login-delay\fR オプションは、入出力タイムアウトまたは接続の失敗が発生した場合の iSCSI イニシエータからターゲットへの各ログイン再試行の時間間隔を指定します。有効な値は 0 ～ 60*60 であり、デフォルト値は 60 秒です。
+.RE
+
+.RE
+
+.RE
+
+.SS "\fBremove\fR サブコマンド"
+.sp
+.LP
+\fBremove\fR サブコマンドの構文は次のとおりです。
+.sp
+.in +2
+.nf
+# iscsiadm remove \fIdirect_object\fR 
+.fi
+.in -2
+
+.sp
+.LP
+\fBremove\fR サブコマンドは、次の直接オブジェクトをサポートしています。\fI\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdiscovery-address\fR \fIdiscovery-address\fR, ...\fR
+.ad
+.sp .6
+.RS 4n
+発見アドレスのリストからターゲットデバイスを削除します。発見アドレス (下に示す構文で指定される) は、SendTargets 発見セッションで使用される IP アドレスとポートの組み合わせです。この発見アプローチを使用すると、ターゲットデバイスはターゲットアドレスと、そのデバイスによって公開された各ターゲットのターゲット名をイニシエータに通知できます。発見アドレスによって公開されたいずれかのターゲットが現在マウントされているか、またはそのデバイス上にアクティブな I/O が存在する場合は、「論理ユニット使用中」のエラーが返され、操作は失敗します。 関連付けられたデバイスが使用されていない場合、それらのデバイスは削除されます。
+.sp
+\fIdiscovery-address\fR は、次の形式である必要があります。
+.sp
+.in +2
+.nf
+\fI<IP address>\fR[:\fI<port>\fR]
+.fi
+.in -2
+
+この直接オブジェクトに関連付けられたオプションはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisns-server\fR \fIisns-server\fR, ...\fR
+.ad
+.sp .6
+.RS 4n
+iSNS サーバーアドレスのリストから iSNS サーバーを削除します。iSNS サーバーアドレス (下に示す構文で指定される) は、iSNS 発見セッションで使用される IP アドレスとポートの組み合わせです。iSNS 発見を使用すると、iSNS サーバーはイニシエータにポータルに関する情報や、そのイニシエータと同じ発見ドメインに属する各ターゲットの名前を提供できます。iSNS によって検出されたいずれかのターゲットが現在マウントされているか、またはそのデバイス上にアクティブな I/O が存在する場合は、「論理ユニット使用中」のエラーが返され、操作は失敗します。関連付けられたデバイスが使用されていない場合、それらのデバイスは削除されます。
+.sp
+\fIisns-server\fR は、次の形式である必要があります。
+.sp
+.in +2
+.nf
+\fIIP_address\fR[:\fIport\fR]
+.fi
+.in -2
+
+この直接オブジェクトに関連付けられたオプションはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatic-config\fR \fIstatic_target\fR, ...\fR
+.ad
+.sp .6
+.RS 4n
+静的に検出されたターゲットのリストからターゲットを削除します。削除されるターゲットが現在マウントされているか、またはそのデバイス上にアクティブな I/O が存在する場合は、「論理ユニット使用中」のエラーが返され、操作は失敗します。デバイスが使用されていない場合、そのデバイスは削除されます。
+.sp
+\fIstatic_target\fR は、次の形式である必要があります。
+.sp
+.in +2
+.nf
+\fI<target-name>\fR,\fI<target-address>\fR[:\fIport-number\fR][,\fItpgt\fR]
+.fi
+.in -2
+
+この直接オブジェクトに関連付けられたオプションはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtarget-param\fR \fItarget-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fItarget-name\fR で指定されたターゲットを削除します。ターゲット名の形式は次のとおりです。
+.sp
+.in +2
+.nf
+\fI<target-name>\fR
+.fi
+.in -2
+
+この直接オブジェクトに関連付けられたオプションはありません。Solaris I/O マルチパス機能 (以前は Sun StorEdge Traffic Manager [STMS] または MPxIO と呼ばれていた) が有効になっている場合の iSCSI ブートでは、ターゲットを削除することはできません。
+.RE
+
+.SS "ディスカバリ方式の正しい使用"
+.sp
+.LP
+単一のターゲットを、静的な発見方式と動的な発見方式の両方で検出されるようには構成しないでください。発見方式を重複して使用すると、iSCSI ターゲットデバイスとの通信時にパフォーマンスが低下する恐れがあります。
+.SH オプション
+.sp
+.LP
+以下の汎用オプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR, \fB-\fR\fB-version\fR\fR
+.ad
+.RS 17n
+.rt  
+バージョン情報を表示します。以降の引数の解釈を停止します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR, \fB-\fR\fB-help\fR\fR
+.ad
+.RS 17n
+.rt  
+ヘルプ情報を表示します。引数のない \fBiscsiadm\fR コマンドのあと、サブコマンドのあと、またはサブコマンドと直接オブジェクトの組み合わせのあとに使用できます。入力に適したヘルプ情報が表示されます。たとえば、次の行を入力したとします。
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node --help\fR
+.fi
+.in -2
+.sp
+
+\&...\fBiscsiadm\fR によって、そのサブコマンドと直接オブジェクトの組み合わせに使用可能なオプションが表示されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR発見アドレスの追加
+.sp
+.LP
+次のコマンドは、\fBadd\fR サブコマンドを使用して発見アドレスを追加します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm add discovery-address 10.0.0.1:3260 10.0.0.2:3260\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR静的なターゲットの追加
+.sp
+.LP
+次のコマンドは、\fBadd\fR サブコマンドを使用して静的なターゲットを追加します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm add static-config \e
+iqn.1999-08.com.array:sn.01234567,10.0.0.1:3260\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR現在の発見設定の一覧表示
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドを使用して現在の発見設定を一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list discovery\fR
+        Discovery:
+                Static: enabled
+                Send Targets: disabled
+                iSNS: enabled
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR詳細な発見出力の取得
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドで \fB-v\fR オプションを使用して (使用した例と、使用しない例が 1 つずつ)、詳細な出力を取得します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list discovery-address\fR
+        Discovery Address: 10.0.0.1:3260
+        Discovery Address: 10.0.0.2:3260
+
+# \fBiscsiadm list discovery-address -v 10.0.0.1:3260\fR
+        Discovery Address: 10.0.0.1:3260
+                Target name: eui.210000203787d1f7
+                        Target address:    10.0.0.1:3260
+                Target name: eui.210000203787a693
+                        Target address:    10.0.0.1:3260
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRイニシエータに関する情報の表示
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドを使用してイニシエータに関する情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list initiator-node\fR
+Initiator node name: iqn.1986-03.com.company.central.interopv20-1
+Initiator node alias: interopv20-1
+        Login Parameters (Default/Configured):
+                Header Digest: NONE/NONE
+                Data Digest: NONE/NONE
+        Authentication Type: CHAP
+                CHAP Name: iqn.1986-03.com.company.central.interopv20-1
+        RADIUS Server: NONE
+        RADIUS access: disabled
+        Tunable Parameters (Default/Configured):
+                Session Login Response Time: 60/-
+                Maximum Connection Retry Time: 180/-
+                Login Retry Time Interval: 60/-
+        Configured Sessions: 1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR静的な設定情報の表示
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドを使用して静的な設定に関する情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list static-config\fR
+        Static target: eui.210000203787a693,10.0.0.1:3260
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR ターゲットの情報の表示
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドをさまざまなオプションとともに使用してターゲットに関する情報を表示する方法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list target\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        TPGT: 12288
+        ISID: 4000002a0000
+        Connections: 1# \fBiscsiadm list target -v iqn.2004-05.com.abcStorage:Tgt-1\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        TPGT: 12288
+        ISID: 4000002a0000
+        Connections: 1
+                CID: 0
+                  IP address (Local): 10.4.52.158:32803
+                  IP address (Peer): 10.4.49.70:3260
+                  Discovery Method: SendTargets
+                  Login Parameters (Negotiated):
+                        Data Sequence In Order: yes
+                        Data PDU In Order: yes
+                        Default Time To Retain: 20
+                        Default Time To Wait: 2
+                        Error Recovery Level: 0
+                        First Burst Length: 65536
+                        Immediate Data: yes
+                        Initial Ready To Transfer (R2T): yes
+                        Max Burst Length: 262144
+                        Max Outstanding R2T: 1
+                        Max Receive Data Segment Length: 65536
+                        Max Connections: 1
+                        Header Digest: NONE
+                        Data Digest: NONE
+# \fBiscsiadm list target -S iqn.2004-05.com.abcStorage:Tgt-1\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        TPGT: 12288
+        ISID: 4000002a0000
+        Connections: 1
+        LUN: 6
+             Vendor:  ABCStorage
+             Product: iSCSI Target
+             OS Device Name: /dev/rdsk/c3t1d0s2
+        LUN: 5
+             Vendor:  ABCStorage
+             Product: iSCSI Target
+             OS Device Name: /dev/rdsk/c3t0d0s2
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRターゲットのパラメータ情報の表示
+.sp
+.LP
+次のコマンドは、\fBlist\fR サブコマンドを使用して、特定のターゲットに関するターゲット情報を表示します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm list target-param -v iqn.2004-05.com.abcStorage:Tgt-1\fR
+Target: iqn.2004-05.com.abcStorage:Tgt-1
+        Alias: -
+        Bi-directional Authentication: disabled
+        Authentication Type: NONE
+        Login Parameters (Default/Configured):
+                Data Sequence In Order: yes/-
+                Data PDU In Order: yes/-
+                Default Time To Retain: 20/-
+                Default Time To Wait: 2/-
+                Error Recovery Level: 0/-
+                First Burst Length: 65536/-
+                Immediate Data: yes/-
+                Initial Ready To Transfer (R2T): yes/-
+                Max Burst Length: 262144/-
+                Max Outstanding R2T: 1/-
+                Max Receive Data Segment Length: 65536/-
+                Max Connections: 1/-
+                Header Digest: NONE/-
+                Data Digest: NONE/-
+        Tunable Parameters (Default/Configured):
+                Session Login Response Time: 60/-
+                Maximum Connection Retry Time: 180/-
+                Login Retry Time Interval: 60/-
+        Configured Sessions: 1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR静的な発見方式の有効化
+.sp
+.LP
+次のコマンドは、\fBmodify\fR サブコマンドを使用して静的な発見方式を有効にします。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify discovery --static enable\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fRRADIUS サーバーの IP アドレスの設定
+.sp
+.LP
+次のコマンドは、\fBmodify\fR サブコマンドを使用して、CHAP 認証に使用される RADIUS サーバーの IP アドレスを設定します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator --radius-server 10.0.0.1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRイニシエータのノード名の設定
+.sp
+.LP
+次のコマンドは、\fBmodify\fR サブコマンドを使用してイニシエータノードのノード名を設定します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node -N iqn.2004-10.com.SUN.host-1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fRイニシエータノードの最大接続数の設定
+.sp
+.LP
+次のコマンドは、\fBmodify\fR サブコマンドを使用してイニシエータノードの最大接続数を設定します。これにより、1 つのセッションに複数の接続が存在できるようになります。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node -m 3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 13 \fRターゲットのパラメータの変更
+.sp
+.LP
+次のコマンドは、\fBmodify\fR サブコマンドを使用して、指定されたターゲットのターゲットパラメータの最大接続数を変更します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify target-param -m 3 eui.210000203787a693\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 14 \fR発見アドレスの削除
+.sp
+.LP
+次のコマンドは、\fBremove\fR サブコマンドを使用して発見アドレスを削除します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm remove discovery-address 10.0.0.1:3260\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 15 \fRターゲットのパラメータの削除
+.sp
+.LP
+次のコマンドは、\fBremove\fR サブコマンドを使用して一連のターゲットパラメータを削除します。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm remove target-param eui.210000203787a693\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 16 \fR最大接続数の変更
+.sp
+.LP
+次のコマンドは、イニシエータのプロパティーで各セッションの最大接続数を変更します。変更された値は、すべてのセッションで、すべてのターゲットに使用されます。
+
+.sp
+.in +2
+.nf
+# \fBiscsiadm modify initiator-node --max-connections 4\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/storage/iscsi/iscsi-initiator
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBattributes\fR(5), \fBiscsi\fR(7D), \fBscsi_vhci\fR(7D)
+.sp
+.LP
+\fI『System Administration Guide: Devices and File Systems』\fR

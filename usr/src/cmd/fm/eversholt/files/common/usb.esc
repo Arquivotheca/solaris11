@@ -1,0 +1,514 @@
+/*
+ * CDDL HEADER START
+ *
+ * The contents of this file are subject to the terms of the
+ * Common Development and Distribution License (the "License").
+ * You may not use this file except in compliance with the License.
+ *
+ * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ * or http://www.opensolaris.org/os/licensing.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ *
+ * When distributing Covered Code, include this CDDL HEADER in each
+ * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ * If applicable, add the following below this CDDL HEADER, with the
+ * fields enclosed by brackets "[]" replaced with your own identifying
+ * information: Portions Copyright [yyyy] [name of copyright owner]
+ *
+ * CDDL HEADER END
+ */
+/*
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ */
+
+#pragma dictionary "USB"
+
+#include <fm/topo_hc.h>
+
+/*
+ * SERD parameters.
+ *
+ * Generally, USB client drivers have the ability to recover from non-fatal
+ * errors. We will be more conservative about nonfatal internal errors
+ * reported by the driver.
+ */
+#define NONFATAL_COUNT 10
+#define NONFATAL_TIME 2h
+
+#define DEFECT_COUNT 100
+#define DEFECT_TIME 2h
+
+
+#define	USBDEV	usbdev
+#define	USBIF	usbif
+#define USBHUB	usbhub
+#define USBBUS	usb-bus
+
+engine serd.io.usb.dev@USBDEV,
+	N=NONFATAL_COUNT, T=NONFATAL_TIME;
+engine serd.io.usb.ifc@USBIF,
+	N=NONFATAL_COUNT, T=NONFATAL_TIME;
+engine serd.io.usb.hub@USBHUB,
+	N=NONFATAL_COUNT, T=NONFATAL_TIME;
+engine serd.io.usb.bus@USBBUS,
+	N=NONFATAL_COUNT, T=NONFATAL_TIME;
+
+
+engine serd.io.usb.defect@USBDEV,
+	N=DEFECT_COUNT, T=DEFECT_TIME;
+engine serd.io.usb.ifdefect@USBIF,
+	N=DEFECT_COUNT, T=DEFECT_TIME;
+engine serd.io.usb.hubdefect@USBHUB,
+	N=DEFECT_COUNT, T=DEFECT_TIME;
+engine serd.io.usb.busdefect@USBBUS,
+	N=DEFECT_COUNT, T=DEFECT_TIME;
+
+/* Define defects  engine 
+ * Defect may generate frequently  by driver, but may not do significant
+ * impact to the usb bus or client device.  The threshhold set loose.
+ */
+
+event defect.io.usb.driver@USBDEV,engine=serd.io.usb.defect@USBDEV;
+event defect.io.usb.driver@USBIF,engine=serd.io.usb.ifdefect@USBIF;
+event defect.io.usb.driver@USBHUB,engine=serd.io.usb.hubdefect@USBHUB;
+event defect.io.usb.driver@USBBUS,engine=serd.io.usb.busdefect@USBBUS;
+
+/* define faults */
+
+/*
+ * Hardware fault within the device or its interface
+ * Driver can't recover.
+ */
+event fault.io.usb.device@USBDEV;
+event fault.io.usb.device@USBIF;
+event fault.io.usb.device@USBHUB;
+
+/*
+ * Hub port over current
+ * Device connecting to the port can't function.
+ */
+event fault.io.usb.poc@USBHUB;
+
+/* port status error */
+event fault.io.usb.pse@USBHUB;
+
+/* packet timeout */
+event fault.io.usb.pto@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.pto@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.pto@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* data packet mismatch */
+event fault.io.usb.dpm@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.dpm@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.dpm@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* endpoint stall */ 
+event fault.io.usb.eps@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.eps@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.eps@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* device not respond to host tokens */
+event fault.io.usb.dnr@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.dnr@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.dnr@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* packet ID check error or unexpected packet ID */
+event fault.io.usb.pide@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.pide@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.pide@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* data babble, endpoint returns more data than required -- data overrun */
+event fault.io.usb.dor@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.dor@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.dor@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* data babble, endpoint returns less data than required -- data underrun */
+event fault.io.usb.dur@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.dur@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.dur@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* buffer overrun */
+event fault.io.usb.bor@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.bor@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.bor@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* buffer underrun */
+event fault.io.usb.bur@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.bur@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.bur@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* TD not processed by HC */
+event fault.io.usb.not_acc@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.not_acc@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.not_acc@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+
+/* system out of memory */
+event fault.io.usb.som@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.som@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.som@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+event fault.io.usb.som@USBBUS, engine=serd.io.usb.bus@USBBUS, retire=0;
+
+/* command not supported */
+event fault.io.usb.cns@USBIF, engine=serd.io.usb.ifc@USBIF, retire=0;
+event fault.io.usb.cns@USBDEV, engine=serd.io.usb.dev@USBDEV, retire=0;
+event fault.io.usb.cns@USBHUB, engine=serd.io.usb.hub@USBHUB, retire=0;
+event fault.io.usb.cns@USBBUS, engine=serd.io.usb.bus@USBBUS, retire=0;
+
+
+
+/*
+ * define ereports
+ * Most of the ereports can be reported through an interface
+ * or at the overall device level.
+ */
+event ereport.io.device.inval_state@USBDEV, discard_if_config_unknown=1;
+event ereport.io.device.inval_state@USBIF, discard_if_config_unknown=1;
+event ereport.io.device.inval_state@USBHUB, discard_if_config_unknown=1;
+
+/* connect fail, port power overcurrent */
+event ereport.io.usb.con_fail_poc@USBHUB, discard_if_config_unknown=1;
+
+/* connect fail, port status error other than overcurrent */
+event ereport.io.usb.con_fail_pse@USBHUB, discard_if_config_unknown=1;
+
+/* request timeout */
+event ereport.io.usb.req_to@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.req_to@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.req_to@USBHUB, discard_if_config_unknown=1;
+
+/* data toggle error */
+event ereport.io.usb.dte@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.dte@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.dte@USBHUB, discard_if_config_unknown=1;
+
+/* endpoint stall error */
+event ereport.io.usb.epse@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.epse@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.epse@USBHUB, discard_if_config_unknown=1;
+
+/* device not responding */
+event ereport.io.usb.dnr@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.dnr@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.dnr@USBHUB, discard_if_config_unknown=1;
+
+/* packet ID error */
+event ereport.io.usb.pide@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.pide@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.pide@USBHUB, discard_if_config_unknown=1;
+
+/* data error underrun */
+event ereport.io.usb.due@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.due@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.due@USBHUB, discard_if_config_unknown=1;
+
+/* data error overrun */
+event ereport.io.usb.doe@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.doe@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.doe@USBHUB, discard_if_config_unknown=1;
+
+/* buffer overrun error */
+event ereport.io.usb.boe@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.boe@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.boe@USBHUB, discard_if_config_unknown=1;
+
+/* buffer underrun error */
+event ereport.io.usb.bue@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.bue@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.bue@USBHUB, discard_if_config_unknown=1;
+
+/* unspecified error */
+event ereport.io.usb.use@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.use@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.use@USBHUB, discard_if_config_unknown=1;
+
+/* not accessed error */
+event ereport.io.usb.nae@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.nae@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.nae@USBHUB, discard_if_config_unknown=1;
+
+/* no resource error */
+event ereport.io.usb.nre@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.nre@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.nre@USBHUB, discard_if_config_unknown=1;
+event ereport.io.usb.nre@USBBUS, discard_if_config_unknown=1;
+
+/* not supported error */
+event ereport.io.usb.nse@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.nse@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.nse@USBHUB, discard_if_config_unknown=1;
+event ereport.io.usb.nse@USBBUS, discard_if_config_unknown=1;
+
+/* 
+ * pipe error, including pipe reset,
+ * pipe close, pipe flush, pipe stop
+ * polling
+ */
+event ereport.io.usb.pe@USBDEV, discard_if_config_unknown=1;
+event ereport.io.usb.pe@USBIF, discard_if_config_unknown=1;
+event ereport.io.usb.pe@USBHUB, discard_if_config_unknown=1;
+event ereport.io.usb.pe@USBBUS, discard_if_config_unknown=1;
+
+
+/*
+ * Propagations
+ * - Hub faults propagation
+ * - Device level propagation
+ * - Interface level propagation
+ * - Defect propagation
+ */
+prop fault.io.usb.poc@USBHUB -> ereport.io.usb.con_fail_poc@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+prop fault.io.usb.pse@USBHUB -> ereport.io.usb.con_fail_pse@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.pto@USBDEV -> ereport.io.usb.req_to@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.pto@USBIF-> ereport.io.usb.req_to@USBIF;
+prop fault.io.usb.pto@USBHUB -> ereport.io.usb.req_to@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.dpm@USBDEV -> ereport.io.usb.dte@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.dpm@USBIF-> ereport.io.usb.dte@USBIF;
+prop fault.io.usb.dpm@USBHUB -> ereport.io.usb.dte@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.eps@USBDEV -> ereport.io.usb.epse@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.eps@USBIF -> ereport.io.usb.epse@USBIF;
+prop fault.io.usb.eps@USBHUB -> ereport.io.usb.epse@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.dnr@USBDEV -> ereport.io.usb.dnr@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.dnr@USBIF -> ereport.io.usb.dnr@USBIF;
+prop fault.io.usb.dnr@USBHUB -> ereport.io.usb.dnr@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.pide@USBDEV -> ereport.io.usb.pide@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.pide@USBIF -> ereport.io.usb.pide@USBIF;
+prop fault.io.usb.pide@USBHUB -> ereport.io.usb.pide@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.dor@USBDEV -> ereport.io.usb.doe@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.dor@USBIF -> ereport.io.usb.doe@USBIF;
+prop fault.io.usb.dor@USBHUB -> ereport.io.usb.doe@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.dur@USBDEV -> ereport.io.usb.due@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.dur@USBIF -> ereport.io.usb.due@USBIF;
+prop fault.io.usb.dur@USBHUB -> ereport.io.usb.due@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.bor@USBDEV -> ereport.io.usb.boe@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.bor@USBIF -> ereport.io.usb.boe@USBIF;
+prop fault.io.usb.bor@USBHUB -> ereport.io.usb.boe@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.bur@USBDEV -> ereport.io.usb.bue@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.bur@USBIF -> ereport.io.usb.bue@USBIF;
+prop fault.io.usb.bur@USBHUB -> ereport.io.usb.bue@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.not_acc@USBDEV -> ereport.io.usb.nae@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.not_acc@USBIF -> ereport.io.usb.nae@USBIF;
+prop fault.io.usb.not_acc@USBHUB -> ereport.io.usb.nae@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+
+prop fault.io.usb.som@USBDEV -> ereport.io.usb.nre@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.som@USBIF -> ereport.io.usb.nre@USBIF;
+prop fault.io.usb.som@USBHUB -> ereport.io.usb.nre@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+prop fault.io.usb.som@USBBUS -> ereport.io.usb.nre@USBBUS{
+	setpayloadprop("vendor-id", confprop(USBBUS, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBBUS, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBBUS, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBBUS, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBBUS, "serial-number")) };
+
+prop fault.io.usb.cns@USBDEV -> ereport.io.usb.nse@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.cns@USBIF -> ereport.io.usb.nse@USBIF;
+prop fault.io.usb.cns@USBHUB -> ereport.io.usb.nse@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+prop fault.io.usb.cns@USBBUS -> ereport.io.usb.nse@USBBUS{
+	setpayloadprop("vendor-id", confprop(USBBUS, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBBUS, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBBUS, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBBUS, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBBUS, "serial-number")) };
+
+
+
+/* 
+ * Driver defects propagations.
+ * Two groups of error propagate to defect: Invalid error and Pipe
+ * error.Invalid error include invalid request, invalid permission,
+ * and invalid args. Pipe error include pipe reset, pipe close, pipe
+ * flush, pipe stop polling. Either ereport propagate to defect event. 
+ */
+
+prop defect.io.usb.driver@USBDEV(0)-> ereport.io.usb.use@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) },
+					ereport.io.usb.pe@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+
+prop defect.io.usb.driver@USBIF(0)-> ereport.io.usb.use@USBIF,
+					ereport.io.usb.pe@USBIF;
+prop defect.io.usb.driver@USBHUB(0)-> ereport.io.usb.use@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) },
+					ereport.io.usb.pe@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };
+prop defect.io.usb.driver@USBBUS -> ereport.io.usb.pe@USBBUS{
+	setpayloadprop("vendor-id", confprop(USBBUS, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBBUS, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBBUS, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBBUS, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBBUS, "serial-number")) };
+
+
+
+
+
+
+prop fault.io.usb.device@USBDEV-> ereport.io.device.inval_state@USBDEV{
+	setpayloadprop("vendor-id", confprop(USBDEV, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBDEV, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBDEV, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBDEV, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBDEV, "serial-number")) };
+prop fault.io.usb.device@USBIF-> ereport.io.device.inval_state@USBIF;
+prop fault.io.usb.device@USBHUB-> ereport.io.device.inval_state@USBHUB{
+	setpayloadprop("vendor-id", confprop(USBHUB, "vendor-id")) &&
+	setpayloadprop("product-id", confprop(USBHUB, "product-id")) &&
+	setpayloadprop("vendor-name", confprop(USBHUB, "vendor-name")) &&
+	setpayloadprop("product-name", confprop(USBHUB, "product-name")) &&
+	setpayloadprop("serial-number", confprop(USBHUB, "serial-number")) };

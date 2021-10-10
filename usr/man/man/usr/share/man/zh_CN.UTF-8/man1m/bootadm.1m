@@ -1,0 +1,341 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH bootadm 1M "2011 年 3 月 31 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+bootadm \- 管理启用了 GRUB 的操作系统的可引导性
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR update-archive [\fB-vn\fR] [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR list-archive [\fB-vn\fR] [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+.fi
+
+.LP
+.nf
+ x86 only
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR set-menu [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]] \fIkey\fR=\fIvalue\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/bootadm\fR list-menu [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBbootadm\fR 命令用于管理引导归档文件以及 x86 引导环境中的 GRUB (GRand Unified Bootloader) 菜单。\fBupdate-archive\fR 选项提供了一种用于用户更新引导归档文件的方法，作为恢复过程的一种预防措施或一部分。\fBset-menu\fR 子命令可用于切换 GRUB 菜单中的 \fBauto-boot\fR 超时以及缺省的引导项。
+.sp
+.LP
+\fBlist-menu\fR 子命令显示 GRUB 菜单的位置以及当前 GRUB 菜单项。通常，GRUB 菜单在 ZFS 的位置为 \fB/rpool/boot/grub/menu.lst\fR。安装方法不同，活动的 GRUB 菜单的位置可能也不同。可以使用 \fBlist-menu\fR 子命令定位活动的 GRUB 菜单。例如，如果系统是使用 Live Upgrade 进行安装的，GRUB 菜单可能没有在当前的引导环境中。有关 \fBlist-menu\fR 选项的典型输出，请参见"示例"部分。
+.sp
+.LP
+请注意，基于 OpenBoot PROM (OBP) 的计算机（如 SPARC 系统），不使用 GRUB，也不存在可由 \fBbootadm\fR 管理的引导菜单。
+.sp
+.LP
+\fBbootadm\fR 命令动态确定要管理的映像支持的选项。这样，平台上调用的 \fBbootadm\fR 命令可用于管理其他平台类型的无盘客户机。
+.SH 子命令
+.sp
+.LP
+\fBbootadm\fR 命令包含以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBupdate-archive\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据需要更新当前引导归档文件。适用于 SPARC 和 x86 平台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-archive\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出引导归档文件中包含的文件以及目录。适用于 SPARC 和 x86 平台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-menu\fR\fR
+.ad
+.sp .6
+.RS 4n
+维护 GRUB 菜单。当前 GRUB 菜单为 \fBboot/grub/menu.lst\fR（相对于根）。该位置随时可能变动，因此，不要依赖该位置。仅适用于 x86 平台。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist-menu\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出活动 GRUB 菜单的位置，以及当前的 GRUB 菜单项。包括自动引导超时、缺省的菜单项数量以及每个菜单项的标题。仅适用于 x86 平台。
+.RE
+
+.SH 选项
+.sp
+.LP
+\fBbootadm\fR 命令包含以下选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBupdate-archive\fR 操作中，过时的文件显示在标准错误中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fBupdate-archive\fR 操作中，只检查归档文件内容但不更新归档文件内容。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIplatform\fR\fR
+.ad
+.sp .6
+.RS 4n
+该客户机的平台或计算机硬件类型。该平台类型只能与 \fB-R\fR 一起指定，并且通常只用于管理与服务器不属于同一平台类型的无盘客户机。平台必须为 \fBi86pc\fR、\fBsun4u\fR 或 \fBsun4v\fR 之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIaltroot\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作适用于一个备用的根路径。
+.LP
+注 - 
+.sp
+.RS 2
+不得使用 \fB-R\fR 选项引用任何非全局区域的根文件系统。否则，可能会损坏全局区域的文件系统，危及全局区域的安全性，或者损坏非全局区域的文件系统。请参见 \fBzones\fR(5)。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIkey\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+可能的值为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault=\fR\fIentrynum\fR\fR
+.ad
+.sp .6
+.RS 4n
+GRUB 菜单中的菜单项编号（例如，0、1 或 2），用于指定当计时器超时时要引导的操作系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout=\fR\fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+由缺省的菜单项编号指定的操作系统进行引导之前等待的时间（以秒为单位）。如果值为 -1，表明禁用自动引导。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR更新当前的引导归档文件
+.sp
+.LP
+以下命令更新当前的引导归档文件：
+
+.sp
+.in +2
+.nf
+# bootadm update-archive
+.fi
+.in -2
+
+.LP
+\fB示例 2 \fR更新备用根中的引导归档文件
+.sp
+.LP
+以下命令更新备用根下的引导归档文件：
+
+.sp
+.in +2
+.nf
+# bootadm update-archive -R /a
+.fi
+.in -2
+
+.LP
+\fB示例 3 \fR列出安装的操作系统实例
+.sp
+.LP
+以下命令列出 GRUB 菜单中的安装的操作系统实例：
+
+.sp
+.in +2
+.nf
+# bootadm list-menu
+
+default=0
+timeout=10
+(0) Solaris10
+(1) Solaris10 Failsafe
+(2) Linux
+.fi
+.in -2
+
+.LP
+\fB示例 4 \fR切换缺省的引导项
+.sp
+.LP
+以下命令指向上一示例中显示的菜单。用户选择 Linux（菜单项 2）。
+
+.sp
+.in +2
+.nf
+# bootadm set-menu default=2
+.fi
+.in -2
+
+.LP
+\fB示例 5 \fR列出 GRUB 菜单项以及 GRUB 菜单的位置
+.sp
+.LP
+以下命令列出 GRUB 菜单项以及 GRUB 菜单的位置：
+
+.sp
+.in +2
+.nf
+# bootadm list-menu
+The location for the active GRUB menu is: /stubboot/boot/grub/menu.lst
+default 0
+timeout 10
+0 Solaris10
+1 Solaris10 failsafe
+2 Linux
+.fi
+.in -2
+
+.LP
+\fB示例 6 \fR显示 GRUB 菜单的位置
+.sp
+.LP
+以下命令显示 GRUB 菜单的位置：
+
+.sp
+.in +2
+.nf
+# bootadm list-menu
+The location for the active GRUB menu is: /dev/dsk/c0t1d0s0 (not mounted)
+The filesystem type of the menu device is <ufs>
+default 2
+timeout 10
+0 c0t1d0s3
+1 c0t1d0s3 failsafe
+2 Solaris10
+3 Solaris10 failsafe
+.fi
+.in -2
+
+.sp
+.LP
+在该示例中，活动的 GRUB 菜单位于\fB未\fR挂载的设备上。要访问 GRUB 菜单，请挂载该设备并在 \fB\fI<mountpoint>\fR/boot/grub/menu.lst\fR 中访问 GRUB 菜单。
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+命令执行成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+命令因运行出错而退出。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBboot\fR(1M)、\fBinstallgrub\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+登录以下网址查阅 GRUB 主页：
+.sp
+.in +2
+.nf
+http://www.gnu.org/
+.fi
+.in -2
+

@@ -1,0 +1,1360 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH pktool 1 "2011 年 6 月 9 日" "SunOS 5.11" "用户命令"
+.SH 名称
+pktool \- 管理证书和密钥
+.SH 用法概要
+.LP
+.nf
+\fBpktool\fR [\fB-f\fR \fIoption_file\fR] [\fB-i\fR] \fIsubcommand\fR \fIsubcommand_options\fR ...
+.fi
+
+.SH 描述
+.sp
+.LP
+使用 \fBpktool\fR 命令，用户可以管理多个密钥库中的证书和密钥，包括 PKCS#11 令牌（即，加密框架）、Netscape 安全服务 (Netscape Security Services, NSS) 令牌以及 OpenSSL 的基于标准文件的密钥库。
+.sp
+.LP
+\fBpktool\fR 还支持列出、删除和导入证书撤销列表 (Certificate Revocation List, CRL)。\fBpktool\fR 不支持创建 CRL、签署 CRL 或导出 CRL。对 PKCS#11 密钥库的 CRL 支持是基于文件的。
+.SH 选项
+.sp
+.LP
+支持以下命令选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIoption_file\fR\fR
+.ad
+.RS 18n
+.rt  
+允许用户在文件中设置选项，而不是在命令行上输入选项。 
+.sp
+提供此选项是为了方便用户，因为使用 \fBpktool\fR 时可能需要在命令行上指定大量子命令及相关选项。
+.sp
+\fIoption_file\fR 的格式是每行一个选项或值对。 
+.sp
+下面是 \fIoption_file\fR 的一个示例：
+.sp
+.in +2
+.nf
+list
+keystore=nss
+dir=/export/foo
+objtype=key
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 18n
+.rt  
+允许用户以交互方式为 \fBgencert\fR 和 \fBgencsr\fR 子命令指定 \fBsubject-DN\fR。指定 \fB-i\fR 后，系统将提示用户输入一些数据以组成 \fBsubject-DN\fR。
+.sp
+使用 \fB-i\fR 选项的示例如下所示： 
+.sp
+.in +2
+.nf
+Country Name (2 letter code) [US]:US
+State or Province Name (full name) [Some-State]:CA
+Locality Name (eg, city) []:Menlo Park
+Organization Name (eg, company):Sun Microsystems Inc.
+Organizational Unit Name (eg, section):OPG
+Common Name (eg, YOUR name):John Smith
+ Email Address []: john.smith@sun.com
+.fi
+.in -2
+.sp
+
+最后得到的 \fBsubject-DN\fR 为：
+.sp
+.in +2
+.nf
+"C=US, ST=CA, L=Menlo Park, O=Sun Microsystems Inc.,\e
+   OU=OPG, emailAddress=john.smith@sun.com, \e
+   CN=John Smith"
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH 子命令
+.sp
+.LP
+支持以下子命令： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdelete\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+pktool delete [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [objtype=private|public|both]
+              [label=\fIobject-label\fR]
+
+pktool delete keystore=pkcs11
+              objtype=cert[:public | private | both]]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [label=\fIcert-label\fR]
+              [serial=\fIhex-serial-number\fR]
+              [issuer=\fIissuer-DN\fR]
+              [subject=\fIsubject-DN\fR]
+
+pktool delete keystore=nss
+              objtype=cert
+              [subject=\fIsubject-DN\fR]
+              [issuer=\fIissuer-DN\fR]
+              [serial=\fIhex-serial-number\fR]
+              [nickname=\fIcert-nickname\fR]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool delete keystore=nss
+              objtype=crl
+              [nickname=\fIcert-nickname\fR]
+              [subject=\fIsubject-DN\fR]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool delete keystore=pkcs11
+              objtype=key[:public | private | both]]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [label=\fIkey-label\fR]
+
+pktool delete keystore=pkcs11
+              objtype=crl
+              infile=\fIinput-fn\fR
+
+
+pktool delete keystore=file
+              objtype=cert
+              [infile=\fIinput-fn\fR]
+              [dir=\fIdirectory-path\fR]
+              [serial=\fIhex-serial-number\fR]
+              [issuer=\fIissuer-DN\fR]
+              [subject=\fIsubject-DN\fR]
+
+pktool delete keystore=file
+              objtype=key
+              [infile=\fIinput-fn\fR]
+              [dir=\fIdirectory-path\fR]
+
+pktool delete keystore=file
+              objtype=crl
+              infile=\fIinput-fn\fR
+              
+.fi
+.in -2
+.sp
+
+删除证书、密钥或证书撤销列表 (certificate revocation list, CRL)。 
+.sp
+要从 PKCS#11 令牌中删除专用证书或私钥，系统将提示用户输入正确的个人识别号 (Personal Identification Number, PIN) 来向 PKCS#11 表明身份。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdownload\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdownload\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+ pktool download url=\fIurl_str\fR 
+                 [objtype=crl|cert]
+                 [http_proxy=\fIproxy_str\fR]
+                 [outfile=\fIoutput-fn\fR]
+                 [dir=\fIdirectory-path\fR]
+.fi
+.in -2
+.sp
+
+从指定的 URL 位置下载 CRL 文件或证书文件。在成功下载文件后，将检查下载的 CRL 或证书文件的有效性。如果 CRL 或证书已过期，\fBdownload\fR 将发出警告。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBexport\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+pktool export [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              outfile=\fIoutput-fn\fR
+
+pktool export keystore=pkcs11
+              outfile=\fIoutput-fn\fR
+              [objtype=cert|key]
+              [label=\fIlabel\fR]
+              [subject=\fIsubject-DN\fR]
+              [issuer=\fIissuer-DN\fR]
+              [serial=\fIhex-serial-number\fR]
+              [outformat=pem|der|pkcs12|raw]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+
+pktool export keystore=nss
+              outfile=\fIoutput-fn\fR
+              [subject=\fIsubject-DN\fR]
+              [issuer=\fIissuer-DN\fR]
+              [serial=\fIhex-serial-number\fR]
+              [nickname=\fIcert-nickname\fR]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [outformat=pem|der|pkcs12]
+
+pktool export keystore=file
+              certfile=\fIcert-input-fn\fR
+              keyfile=\fIkey-input-fn\fR
+              outfile=\fIoutput-pkcs12-fn\fR
+.fi
+.in -2
+.sp
+
+将 PKCS#11 令牌的内容、NSS 令牌中的证书的内容或基于文件的密钥库的内容保存到指定文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgencert\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencert\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool gencert [-i] keystore=nss
+              label=\fIcert-nickname\fR
+              subject=\fIsubject-DN\fR
+              serial=\fIhex_serial_number\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [keytype=rsa | ec [curve=ECC Curve Name] \
+                 [hash= md5 | sha1 | sha256 | sha384 | sha512]
+              [keytype=dsa [hash=sha1 ]
+              [keylen=\fIkey-size\fR]
+              [trust=\fItrust-value\fR]
+              [eku=[critical:]\fIEKU_name,...\fR]
+                 [listcurves ]
+                 [lifetime=number-hour|number-day|number-year]
+
+pktool gencert [-i] [ keystore=pkcs11]
+              label=\fIkey/cert-label\fR
+              subject=\fIsubject-DN\fR
+              serial=\fIhex_serial_number\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [ keytype=rsa | ec [curve=ECC Curve Name] \
+                  [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [ keytype=dsa [hash=sha1 | sha256 ]]
+              [keylen=\fIkey-size\fR]
+              [eku=[critical:]\fIEKU_name,...\fR]
+              [listcurves]
+              [lifetime=number-hour|number-day|number-year]
+
+pktool gencert [-i] keystore=file
+              outcert=\fIcert-fn\fR
+              outkey=\fIkey-fn\fR
+              subject=\fIsubject-DN\fR
+              serial=\fIhex_serial_number\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [format=der|pem]
+              [ keytype=rsa [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [ keytype=dsa [hash=sha1 | sha256 ]]
+              [keylen=\fIkey-size\fR]
+              [eku=[critical:]\fIEKU_name,...\fR]
+                [lifetime=number-hour|number-day|number-year]
+.fi
+.in -2
+.sp
+
+生成一个自签名证书并将该证书及相关私钥安装到指定的密钥库。 
+.sp
+对于基于令牌的密钥库，\fBgencert\fR 会提示用户输入 PIN。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgencsr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgencsr\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool gencsr [-i] keystore=nss
+              nickname=\fIkey-nickname\fR
+              outcsr=\fIcsr-fn\fR
+              subject=\fIsubject-DN\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [keytype=rsa | ec [curve=ECC Curve Name] \
+                 [hash= md5 | sha1 | sha256 | sha384 | sha512]
+              [keytype=dsa [hash=sha1 ]
+              [keylen=\fIkey-size\fR]
+              [format=pem|der]
+              [eku=[critical:]\fIEKU_name,...\fR]
+              [listcurves]
+
+pktool gencsr [-i] keystore=pkcs11
+              label=\fIkey-label\fR
+              outcsr=\fIcsr-fn\fR
+              subject=\fIsubject-DN\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage\fR,\fIusage\fR...]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+               [ keytype=rsa | ec [curve=ECC Curve Name] \
+                    [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [keylen=\fIkey-size\fR]
+              [format=pem|der]
+              [eku=[critical:]\fIEKU_name,...\fR]
+              [listcurves]
+
+pktool gencsr [-i] keystore=file
+              outcsr=\fIcsr-fn\fR
+              outkey=\fIkey-fn\fR
+              subject=\fIsubject-DN\fR
+              [altname=[critical:]\fIsubjectAltName\fR]
+              [keyusage=[critical:]\fIusage,usage...\fR]
+              [dir=\fIdirectory-path\fR]
+              [ keytype=rsa [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+              [ keytype=dsa [hash=sha1 | sha256 ]]
+              [keylen=\fIkey-size\fR]
+              [format=pem|der]
+              [eku=[critical:]\fIEKU_name,...\fR]
+.fi
+.in -2
+.sp
+
+创建 PKCS#10 证书签名请求 (certificate signing request, CSR) 文件。可以将该 CSR 发送给颁证机构 (Certifying Authority, CA) 进行签名。对于基于令牌的密钥库，\fBgencsr\fR 子命令会提示用户输入 PIN。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgenkey\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgenkey\fR 子命令的格式如下所示：
+.sp
+\fB\fR
+.sp
+.in +2
+.nf
+pktool genkey [keystore=pkcs11]
+              label=\fIkey-label\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [keylen=\fIkey-size\fR (for aes, arcfour, or \e
+                  generic keytypes only)]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [sensitive=y|n]
+              [extractable=y|n]
+              [print=y|n]
+
+pktool genkey keystore=nss
+              label=\fIkey-label\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [keylen=\fIkey-size\fR (for aes, arcfour, or \e
+                  generic keytypes only)]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool genkey keystore=file
+              outkey=\fIkey-fn\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [keylen=\fIkey-size\fR (for aes, arcfour, \e
+                   or generic keytypes only)]
+              [print=y|n]
+.fi
+.in -2
+.sp
+
+在指定密钥库中生成对称密钥。对于基于令牌的密钥库，\fBgenkey\fR 子命令会提示用户输入 PIN。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgenkeypair\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgenkeypair\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool genkeypair keystore=nss
+                  label=\fIkey-nickname\fR
+                  [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+                  [dir=\fIdirectory-path\fR]
+                  [prefix=\fIDBprefix\fR]
+                  [keytype=rsa|dsa|ec [curve=ECC Curve Name]]
+                  [keylen=\fIkey-size\fR]
+                  [listcurves]
+
+pktool genkeypair [keystore=pkcs11]
+                  label=\fIkey-label\fR
+                  [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+                  [keytype=rsa|dsa|ec [curve=ECC Curve Name]]
+                  [keylen=\fIkey-size\fR]
+                  [listcurves]
+
+pktool genkeypair keystore=\fIfile\fR
+                  outkey=\fIkey_filenam\fRe
+                  [format=der|pem]
+                  [keytype=rsa|dsa]
+                  [keylen=key-size]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBimport\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+pktool import [token=\fItoken\fR>[:\fImanuf\fR>[:\fIserial\fR>]]]
+              infile=\fIinput-fn\fR
+
+pktool import [keystore=pkcs11]
+              infile=\fIinput-fn\fR
+              label=\fIobject-label\fR
+              [keytype=aes|arcfour|des|3des|generic]
+              [sensitive=y|n]
+              [extractable=y|n]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [objtype=cert|key]
+
+pktool import keystore=pkcs11
+              objtype=\fIcrl\fR
+              infile=\fIinput-fn\fR
+              outcrl=\fIoutput-crl-fn\fR
+              outformat=pem|der
+
+pktool import keystore=nss
+              objtype=\fIcert\fR
+              infile=\fIinput-fn\fR
+              label=\fIcert-label\fR
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+              [trust=\fItrust-value\fR]
+
+pktool import keystore=nss
+              objtype=crl
+              infile=\fIinput-fn\fR
+              [verifycrl=y|n]
+              [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+              [dir=\fIdirectory-path\fR]
+              [prefix=\fIDBprefix\fR]
+
+pktool import keystore=file
+              infile=\fIinput-fn\fR
+              outkey=\fIoutput-key-fn\fR
+              outcert=\fIoutput-key-fn\fR
+              [outformat=pem|der]
+
+pktool import keystore=file
+              objtype=crl
+              infile=\fIinput-fn\fR
+              outcrl=\fIoutput-crl-fn\fR
+              outformat=pem|der
+.fi
+.in -2
+.sp
+
+将证书、密钥或 CRL 从指定输入文件装入指定密钥库。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinittoken\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBinittoken\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool inittoken [ slotid=slot number ]
+                 [ currlabel=token[:manuf[:serial]]]
+                 [ newlabel=new token label ]
+.fi
+.in -2
+.sp
+
+该命令使用 \fBC_InitToken API\fR 初始化 PKCS#11 令牌。定位令牌的首选方法是指定其缺省标签。还可以通过使用 \fBnewlabel\fR 参数向令牌分配新标签。如果没有提供 \fBnewlabel\fR，则不会修改令牌标签。系统将提示用户输入安全员 (security officer, SO) PIN，然后此命令才能继续执行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBlist\fR 子命令的格式如下：
+.sp
+.in +2
+.nf
+pktool list [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [objtype=private|public|both]
+            [label=\fIlabel\fR]
+
+pktool list [keystore=pkcs11]
+            [objtype=cert[:public | private | both]]
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [label=\fIcert-label\fR]
+            [serial=\fIhex-serial-number\fR]
+            [issuer=\fIissuer-DN\fR]
+            [subject=\fIsubject-DN\fR]
+
+pktool list [keystore=pkcs11]
+            objtype=key[:public | private | both]]
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [label=\fIkey-label\fR]
+
+pktool list keystore=pkcs11
+            objtype=crl
+            infile=\fIinput-fn\fR
+            
+pktool list keystore=nss
+            objtype=cert
+            [subject=\fIsubject-DN\fR]
+            [issuer=\fIissuer-DN\fR]
+            [serial=\fIhex-serial-number\fR]
+            [nickname=\fIcert-nickname\fR]
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [dir=\fIdirectory-path\fR]
+            [prefix=\fIDBprefix\fR]
+
+pktool list keystore=nss
+            objtype=key
+            [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+            [dir=\fIdirectory-path\fR]
+            [prefix=\fIDBprefix\fR]
+            
+pktool list keystore=file
+            objtype=cert
+            [infile=\fIinput-fn\fR]
+            [dir=\fIdirectory-path\fR]
+            [serial=\fIhex-serial-number\fR]
+            [issuer=\fIissuer-DN\fR]
+            [subject=\fIsubject-DN\fR]
+
+pktool list keystore=file
+            objtype=\fIkey\fR
+            [infile=\fIinput-fn\fR]
+            [dir=\fIdirectory-path\fR]
+.fi
+.in -2
+.sp
+
+列出证书、密钥或证书撤销列表 (certificate revocation list, CRL)。在显示 PKCS#11 令牌中的专用证书或私钥时，系统将提示用户输入正确的 PIN 以便向 PKCS#11 令牌表明身份。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetpin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsetpin\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool setpin keystore=nss
+       [token=\fItoken\fR]
+       [dir=\fIdirectory-path\fR]
+       [prefix=\fIDBprefix\fR]
+
+pktool setpin [ keystore=pkcs11]
+       [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+       [usertype=user | so]
+.fi
+.in -2
+.sp
+
+更改用于向 PKCS#11 或 NSS 令牌表明用户身份的口令短语。口令短语可以是长度为 1 到 256 之间且不含空值的字符串。
+.sp
+\fBsetpin\fR 提示用户输入旧口令短语（如果有）。如果旧口令短语匹配，\fBpktool\fR 将提示用户输入新口令短语两次。如果两次输入的新口令短语匹配，它将成为该令牌的当前口令短语。 
+.sp
+对于 Sun Software PKCS#11 softtoken 密钥库（缺省），用户在使用 \fBsetpin\fR 命令来更改对象存储的口令短语时，必须使用缺省口令短语 \fBchangeme\fR 作为旧口令短语。在初始化新创建的令牌对象存储并为其设置口令短语时，需要执行此操作。
+.sp
+如果为基于 PKCS#11 的令牌指定了 \fBusertype=so\fR 选项，则会更改与普通用户 PIN 相对的安全员 (Security Officer, SO) 用户 PIN。缺省情况下，\fBusertype\fR 假定为 \fBuser\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsigncsr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsigncsr\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+signcsr keystore=pkcs11
+        signkey=\fIlabel\fR (label of key to use for signing)
+        csr=\fICSR_filename\fR
+        serial=\fIserial_number_hex_string_for_final_certificate\fR
+        outcert=\fIfilename_for_final_certificate\fR
+        issuer=\fIissuer-DN\fR
+        [store=y|n] (store the new cert in NSS DB, default=n)
+        [outlabel=\fIcertificate label\fR]
+        [format=pem|der] (certificate output format)
+        [subject=\fIsubject-DN\fR] (override the CSR subject name)
+        [altname=\fIsubjectAltName\fR] (add subjectAltName )
+        [keyusage=[critical:]\fIusage,...\fR] (add key usage bits)
+        [eku=[critical:]\fIEKU_Name,...\fR] (add Extended Key Usage )
+        [lifetime=\fInumber-hour\fR|\fInumber-day\fR|\fInumber-year\fR]
+        [token=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]]
+signcsr keystore=\fIfile\fR
+        signkey=\fIfilename\fR
+        csr=\fICSR_filename\fR
+        serial=\fIserial_number_hex_string_for_final_certificate\fR
+        outcert=\fIfilename_for_final_certificate\fR
+        issuer=\fIissuer-DN\fR
+        [format=pem|der] (certificate output format)
+        [subject=\fIsubject-DN\fR] (override the CSR subject name)
+        [altname=\fIsubjectAltName\fR] (add a subjectAltName)
+        [keyusage=[critical:]\fIusage,...\fR] (add key usage bits)
+        [lifetime=\fInumber-hour\fR|\fInumber-day\fR|\fInumber-year\fR]
+        [eku=[critical:]\fIEKU_ Name,...\fR] (add Extended Key Usage)
+signcsr keystore=nss
+        signkey=\fIlabel\fR (label of key to use for signing)
+        csr=\fICSR_filename\fR
+        serial=\fIserial_number_hex_string_for_final_certificate\fR
+        outcert=\fIfilename_for_final_certificate\fR
+        issuer=\fIissuer-DN\fR
+        [store=y|n] (store the new cert in NSS DB, default=n)
+        [outlabel=\fIcertificate label\fR]
+        [format=pem|der] (certificate output format)
+        [subject=\fIsubject-DN\fR] (override the CSR subject name)
+        [altname=\fIsubjectAltName\fR] (add a subjectAltName)
+        [keyusage=[critical:]\fIusage,...\fR] (add key usage bits)
+        [eku=[critical:]\fIEKU_Name,...\fR] (add Extended Key Usage)
+        [lifetime=\fInumber-hour\fR|\fInumber-day\fR|\fInumber-year\fR]
+        [token=token[\fI:manuf\fR[:\fIserial\fR]]]
+        [dir=\fIdirectory-path\fR]
+        [prefix=\fIDBprefix\fR]
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtokens\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtokens\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool tokens
+.fi
+.in -2
+.sp
+
+tokens 子命令列出所有可见的 PKCS#11 令牌。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-?\fR 子命令的格式如下所示：
+.sp
+.in +2
+.nf
+pktool -?
+pktool --help
+.fi
+.in -2
+.sp
+
+\fB-?\fR 选项显示用法和帮助信息。\fB--help\fR 是 \fB-?\fR 的同义词。
+.RE
+
+.SH 用法
+.sp
+.LP
+\fBpktool\fR 的子命令支持以下选项： 
+.sp
+.ne 2
+.mk
+.na
+\fBaltname=[critical:]\fIsubjectAltName\fR\fR
+.ad
+.sp .6
+.RS 4n
+证书的主体替代名称。-A 选项后的参数的格式应该是 tag=value。有效的标记为 IP、DNS、EMAIL、URI、KRB、UPN 和 RID。如果 altname 字符串带有前缀 \fBcritical\fR，则 SubjectAltName 扩展被标记为 \fBcritical\fR。
+.sp
+示例 1：将 IP 地址添加到 \fIsubjectAltName\fR 扩展。\fBaltname="IP=1.2.3.4"\fR 示例 2：将电子邮件地址添加到 \fIsubjectAltName\fR 扩展，并将其标记为 critical。\fBaltname="critical:EMAIL=first.last@company.com" \fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcurrlabel=token label\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项仅供 \fBinittoken\fR 命令使用。这用于定位正在被初始化的缺省令牌。有关要使用的令牌名称的格式的详细信息，请参见 \fBtoken\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcurve=\fR\fIElliptic_Curve_Name\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项用于指定在生成 X.509 证书或证书签名请求时或生成椭圆曲线密钥对时要使用的椭圆曲线参数。 
+.sp
+支持以下已命名曲线：
+.sp
+.in +2
+.nf
+secp112r1, secp112r2, secp128r1, secp128r2, secp160k1
+secp160r1, secp160r2, secp192k1, secp192r1, secp224k1
+secp224r1, secp256k1, secp256r1, secp384r1, secp521r1
+sect113r1, sect113r2, sect131r1, sect131r2, sect163k1
+sect163r1, sect163r2, sect193r1, sect193r2, sect233k1
+sect233r1, sect239k1, sect283k1, sect283r1, sect409k1
+sect409r1, sect571k1, sect571r1, c2pnb163v1, c2pnb163v2
+c2pnb163v3, c2pnb176v1, c2tnb191v1, c2tnb191v2, c2tnb191v3
+c2pnb208w1, c2tnb239v1, c2tnb239v2, c2tnb239v3, c2pnb272w1
+c2pnb304w1, c2tnb359v1, c2pnb368w1, c2tnb431r1, prime192v2
+prime192v3
+.fi
+.in -2
+.sp
+
+通过将 \fBlistcurves\fR 选项与 \fBgencert\fR、\fBgencsr\fR 或 \fBgenkeypair\fR 子命令一起使用，还可以查看已命名曲线的列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdir=\fR\fIdirectory_path\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定存储所请求的对象的 NSS 数据库目录或 OpenSSL 密钥库目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeku\fR=[critical:]\fIEKU_Name\fR,[critical:]\fIEKU_Name, ...\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定要添加到证书或证书请求的扩展密钥用法 X.509v3 扩展值。 
+.sp
+将 \fIEKU_Name\fR 指定为以下任一值：\fBserverAuth\fR、\fBclientAuth\fR、\fBcodeSigning\fR、\fBemailProtection\fR、\fBipsecEndSystem\fR、\fBipsecTunnel\fR、\fBipsecUser\fR、\fB timeStamping\fR、\fBOCSPSigning\fR、\fBKPClientAuth\fR、\fBKPKdc\fR 或 \fBscLogon\fR。
+.sp
+举例如下： 
+.sp
+.in +2
+.nf
+eku=KPClientAuth,clientAuth
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextractable=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 PKCS#11 令牌中的结果对称密钥是否为可提取的。有效值是 \fBy\fR 和 \fBn\fR。缺省值是 \fBy\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBformat=pem | der | pkcs12\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBgencert\fR 子命令，此选项仅适用于基于文件的密钥库，如 OpenSSL。它用于指定要创建的密钥或证书文件的输出格式。有效格式是 \fBpem\fR 或 \fBder\fR。缺省格式为 \fBpem\fR。
+.sp
+对于 \fBgencsr\fR 子命令，此选项指定 CSR 文件的输出编码格式。有效格式是 \fBpem\fR 或 \fBder\fR。缺省格式为 \fBpem\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhash=md5 | sha1 | sha256 | sha384 | sha512\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBgencert\fR 和 \fBgencsr\fR 子命令，此选项允许调用者指定用于生成 X.509 证书签名的散列算法。使用 NSS 或 PKCS#11 密钥库创建基于 EC 或 RSA 的证书时可以使用此选项。使用基于 OpenSSL 文件的密钥库时，椭圆曲线支持不可用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinfile=\fR\fIinput-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+当 objtype=cert 且 keystore=file 时，为 \fBlist\fR 和 \fBdelete\fR 子命令指定证书文件名称。对于 \fBimport\fR 子命令，此选项指定要导入的文件名。当 \fBobjtype=crl\fR 时，为 \fBlist\fR、\fBdelete\fR 和 \fBimport\fR 子命令指定输入 CRL 文件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBissuer=\fR\fIissuer-DN\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定证书的颁发者。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeylen=\fR\fIkey-size\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要生成的私钥或对称密钥的大小（位数）。
+.sp
+对于 \fBgencert\fR 和 \fBgencsr\fR 子命令，缺省密钥长度是 1024 位。
+.sp
+对于 \fBgenkey\fR 子命令，使用 AES 算法生成的对称密钥的最小位数和最大位数分别是 \fB128\fR 和 \fB256\fR。使用 ARCFOUR 算法时，最小位数和最大位数分别是 \fB8\fR 和 \fB2048\fR。普通密钥的最小位数是 \fB8\fR 位，最大位数任意。AES、ARCFOUR 或普通密钥的缺省密钥长度是 128。对于 DES 密钥或 3DES 密钥，密钥长度是固定的；如果指定了此选项，将忽略此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkeystore=\fBnss | pkcs11 | file\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定基础密钥库的类型：NSS 令牌、PKCS#11 令牌或基于文件的插件。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeytype=rsa | dsa | ec | aes | arcfour | des | 3des | generic\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要生成的私钥或对称密钥的类型。
+.sp
+对于 \fBgencert\fR 和 \fBgencsr\fR 子命令，有效私钥类型是 \fBrsa\fR、\fBec\fR 或 \fBdsa\fR。缺省密钥类型是 \fBrsa\fR。
+.sp
+对于 \fBgenkey\fR 子命令，有效的对称密钥类型是 \fBaes\fR、\fBarcfour\fR、\fBdes\fR、\fB3des\fR 或 \fBgeneric\fR。缺省密钥类型是 \fBaes\fR。 
+.sp
+.in +2
+.nf
+ keyusage=[critical:]usage,usage,usage,...
+.fi
+.in -2
+.sp
+
+.sp
+.in +2
+.nf
+Key Usage strings:
+* digitalSignature
+* nonRepudiation
+* keyEncipherment
+* dataEncipherment
+* keyAgreement
+* keyCertSign
+* cRLSign
+* encipherOnly
+* decipherOnly
+.fi
+.in -2
+.sp
+
+示例 1：设置 KeyUsage，以便 cert（或 csr） 可以用于对非证书或 CRL (digitalSignature) 数据进行签名和验证，还可以用于对非加密密钥 (dataEncipherment) 数据进行加密和解密。keyusage=digitalSignature,dataEncipherment
+.sp
+示例 2：与上面的示例 1 相同，但设置了 critical 位。keyusage=critical:digitalSignature,dataEncipherment
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlabel=\fIkey-label\fR | \fIcert-label\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBgencert\fR 子命令，此选项指定 PKCS#11 令牌中的私钥和自签名证书的标签。
+.sp
+对于 \fBgencsr\fR 子命令，此选项指定 PKCS#11 令牌中的私钥的标签。
+.sp
+对于 \fBlist\fR 子命令，此选项指定 PKCS#11 令牌中的 X.509 证书的标签（\fBobjtype=key\fR 时）或私钥的标签（\fBobjtype=cert\fR 时）以进一步限制列表。
+.sp
+对于 \fBdelete\fR 子命令，此选项指定 X.509 证书的标签（\fBobjtype=key\fR 时）或私钥的标签（\fBobjtype=cert\fR 时）以从 PKCS#11 令牌中删除指定对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlistcurves\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项用于显示受支持的椭圆曲线名称的列表。仅 \fBgencert\fR、\fBgencsr\fR 或 \fBgenkeypair\fR 子命令可以使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlifetime=\fInumber\fR-hour|\fInumber\fR-day|\fInumber\fR-year\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定证书的有效期。可以通过 \fInumber\fR\fB-hour\fR、\fInumber\fR\fI-day\fR 或 \fInumber\fR\fB-year\fR 指定证书使用期限。只能指定一种格式。缺省值是 \fB1-year\fR。此选项的示例如下：\fBlifetime=1-hour、lifetime=2-day、lifetime=3-year\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnewlabel=token label\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项仅供 \fBinittoken\fR 命令使用。这用于更改分配给正在被初始化的令牌的标签。有关要使用的令牌名称的格式的详细信息，请参见 \fBtoken\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnickname=\fR\fIcert-nickname\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBgencert\fR 子命令，此选项是必需的，用以为 NSS 密钥库指定证书的昵称。
+.sp
+对于 \fBlist\fR 子命令，此选项指定 NSS 令牌中的证书的昵称以显示其内容。对于 \fBdelete\fR 子命令，要从 NSS 令牌中删除 CRL，可使用此选项指定颁发者的证书的昵称。对于 \fBdelete\fR 子命令，要从 NSS 令牌中删除证书，可使用此选项来指定证书的昵称。对于 \fBimport\fR 子命令，要将指定的输入文件导入 NSS 令牌，可使用此选项来指定结果证书的昵称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobjtype=cert | key | crl\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定对象类：\fBcert\fR、\fBkey\fR 或 \fBcrl\fR。对于 \fBdownload\fR 子命令，如果未指定此选项，则缺省类是 \fBcrl\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobjtype=public | private | both\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定对象的类型：专用对象、公用对象或两者。当指定了 \fBobjtype=key\fR 时，此选项仅适用于针对 PKCS#11 令牌的 \fBlist\fR 和 \fBdelete\fR 子命令。缺省值是 \fBpublic\fR。
+.sp
+对于 \fBlist\fR 子命令，可以将 label 选项与此选项组合使用以进一步限制密钥列表。对于 \fBdelete\fR 子命令，可使用此选项将要删除的密钥缩小到仅公钥或仅私钥。此外，还可以省略 label 选项以指示删除所有公钥、所有私钥或所有这两种类型的密钥。可供 \fBobjtype\fR 参数选用的 \fBpublic\fR、\fBprivate\fR 和 \fBboth\fR 仅适用于 PKCS#11 密钥库，保留它们是为了保持与 \fBpktool\fR 命令的早期版本的兼容性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutcert=\fR\fIcert-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要写入到的输出证书文件名。对于基于文件的插件（如 OpenSSL），此选项是必需的。此选项必须与 \fBoutkey=\fR\fIkey-fn\fR 选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutcrl=\fIoutput-crl-fn\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要写入到的输出 CRL 文件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutcsr=\fR\fIcsr-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要写入到的输出 CSR 文件名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutfile=\fR\fIoutput-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBexport\fR 子命令，此选项指定要创建的输出文件名。对于 \fBimport\fR 子命令，此选项指定证书或 CRL 的输出文件名。此选项仅适用于基于文件的插件，如 OpenSSL。对于 \fBdownload\fR 子命令，如果未指定此选项，则下载的文件名是 URL 字符串的根基名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutformat=pem | der | pkcs12\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于 \fBimport\fR 子命令，此选项指定从指定的 PKCS#12 文件提取到基于文件的插件中的证书或密钥的输出格式。有效值是 \fBpem\fR 或 \fBder\fR。缺省值是 \fBpem\fR。将 CRL 导入基于 CRL 文件的密钥库时，此选项指定 CRL 的输出格式。有效值是 \fBpem\fR 或 \fBder\fR。缺省值是 \fBder\fR。对于 \fBexport\fR 子命令，此选项指定要创建的指定输出文件的格式。支持的格式为 \fBpem\fR、\fBder\fR 或 \fBpkcs12\fR。缺省值是 \fBpkcs12\fR。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutkey=\fR\fIkey-fn\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要写入到的输出私钥文件名。只有使用 \fBfiles\fR 密钥库时需要此选项。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprefix=\fR\fIDBprefix\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 NSS 数据库前缀。此选项仅适用于 NSS 令牌。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprint=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+此选项用于 \fBgenkey\fR 子命令中，且适用于 PKCS11 密钥库和基于文件的密钥库。如果 \fBprint=y\fR，\fBgenkey\fR 子命令将在十六进制的单个行中输出生成的密钥的密钥值。缺省值是 \fBn\fR。对于 PKCS11 密钥库，如果创建对称密钥时使用了 \fBsensitive=y\fR 或 \fBextractable=n\fR 设置，则不会显示密钥值，即使 \fBprint\fR 选项设置为 \fBy\fR 也是如此。仍然会创建密钥，但发出如下警告：\fBcannot reveal the key value\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsensitive=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 PKCS#11 令牌中的结果对称密钥是否为敏感的。有效值是 \fBy\fR 和 \fBn\fR。缺省值为 \fBn\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBserial=\fR\fIhex-serial-number\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定证书的唯一序列号。序列号必须指定为十六进制值。示例：\fB0x0102030405060708090a0b0c0d0e0f\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubject=\fR\fIsubject-DN\fR\fR
+.ad
+.sp .6
+.RS 4n
+为证书或证书请求指定具体的证书所有者。\fBsubject=\fR 设置示例如下： 
+.sp
+.in +2
+.nf
+subject=O=Sun Microsystems Inc., \e 
+OU=Solaris Security Technologies Group, \e
+L=Ashburn, ST=VA, C=US, CN=John Smith
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken=\fItoken\fR[:\fImanuf\fR[:\fIserial\fR]]\fR\fR
+.ad
+.sp .6
+.RS 4n
+当令牌标签包含结尾空格时，为方便起见，此选项不要求用户键入这些空格。 
+.sp
+冒号分隔的令牌标识字符串 \fB\fItoken\fR:\fImanuf\fR:\fIserial\fR\fR。如果任何部分中有 \fB:\fR 文本字符，则需要使用反斜杠 (\fB\e\fR) 进行转义。如果没有发现 \fB:\fR，则整个字符串（最多 32 个字符）将用作令牌标签。如果只发现一个 \fB:\fR，则字符串将用作令牌标签和生产商。当指定了 \fBkeystore=nss\fR 时，如果未指定此选项，则缺省值为 NSS 内部令牌。当指定了 \fBkeystore=pkcs11\fR 时，如果未指定此选项，则缺省值为 \fBpkcs11_softtoken\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrust=\fItrust\fR-\fIvalue\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定证书信任属性。此选项仅适用于 NSS 证书，将应用标准的 NSS 语法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusertype=user | so\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定为其执行 \fBsetpin\fR 命令的用户的类型。缺省情况下，是为标准用户执行，但可以指定 \fBso\fR 来为令牌安全员设置 PIN。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBurl=\fR\fIurl_string\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用来下载 CRL 或证书文件的 URL。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverifycrl=y | n\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 CRL 导入 NSS 密钥库时，此选项指定是否执行 CRL 验证。有效值是 \fBy\fR 和 \fBn\fR。缺省值为 \fBn\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhttp_proxy=\fR\fIproxy_str\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定代理服务器主机名和端口号。格式可以是 \fIhttp\fR\fB://\fIhostname\fR[:\fIport\fR]\fR 或 \fIhostname\fR\fB[:\fIport\fR]\fR。如果没有指定此选项，则 \fBdownload\fR 子命令将检查 \fBhttp_proxy\fR 环境变量。命令行选项的优先级高于环境变量。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR生成自签名证书
+.sp
+.LP
+以下示例将创建证书并将其存储在命令中指示的密钥库中：
+
+.sp
+.in +2
+.nf
+ $ pktool gencert keystore=nss nickname=WebServerCert \e
+       subject="O=Sun Microsystems Inc., OU=Solaris Security Technologies Group, \e
+       L=Ashburn, ST=VA, C=US, CN=John Smith" dir=/etc/certs \e
+       keytype=rsa keylen=2048 hash=sha512
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR生成证书签名请求
+.sp
+.LP
+以下示例将创建 CSR 并将其存储在命令中指示的密钥库中：
+
+.sp
+.in +2
+.nf
+ $ pktool gencsr keystore=nss subject="O=Sun Microsystems Inc., \e
+       OU=Solaris Security Technologies Group, L=Ashburn, ST=VA, C=US, \e
+       CN=John Smith" keytype=rsa keylen=2048 hash=sha256 outcsr=csr.dat
+ 
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR导入证书
+.sp
+.LP
+以下示例将一个证书对象从指定输入文件导入到命令中指示的密钥库中：
+
+.sp
+.in +2
+.nf
+ $ pktool import keystore=nss objtype=cert infile=mycert.pem \e
+       nickname=mycert
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBattributes\fR(5)、\fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+RSA PKCS#11 v2.11 http://www.rsasecurity.com
+.sp
+.LP
+RSA PKCS#12 v1.0 http://www.rsasecurity.com
+.sp
+.LP
+SECG 建议的椭圆曲线域参数 http://www.secg.org

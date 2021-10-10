@@ -1,0 +1,280 @@
+'\" te
+.\" Copyright (c) 1989, 2011, Oracle and/or its affiliates.保留所有权利。
+.\" 版权所有 1989 AT&T
+.TH fuser 1M "2010 年 8 月 27 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+fuser \- 识别文件和设备的用户
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/fuser\fR [\fB-c\fR | \fB-d\fR | \fB-f\fR] [\fB-nu\fR] [\fB-k\fR | \fB-s\fR \fIsig\fR] \fIfiles\fR 
+     [ [\fB-\fR] [\fB-c\fR | \fB-d\fR | \fB-f\fR] [\fB-nu\fR] [\fB-k\fR | \fB-s\fR \fIsig\fR] \fIfiles\fR] ...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBfuser\fR 实用程序显示正在使用指定为参数的 \fIfiles\fR 的进程的进程 \fBID\fR。
+.sp
+.LP
+每个进程 \fBID\fR 后面跟有一个字母代码。字母代码的解释如下所述。如果进程将文件用作
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正在使用该文件作为其当前目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正在使用由 \fBmmap\fR(2) 映射的文件。有关详细信息，请参见 \fBmmap\fR(2)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBn\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正持有针对该文件的非阻塞强制性锁定。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正在将该文件作为打开的文件使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBr\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正在将该文件用作其根目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正在将该文件用作其文本文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBy\fR\fR
+.ad
+.RS 5n
+.rt  
+表示此进程正在将该文件用作其控制终端。
+.RE
+
+.sp
+.LP
+对于具有已挂载文件系统的块特殊设备，将列出使用该设备上的任何文件的所有进程。对于所有类型的文件（文本文件、可执行文件、目录、设备，等等），只会报告使用该文件的进程。
+.sp
+.LP
+对于所有类型的设备，\fBfuser\fR 还会显示打开设备的任何已知内核使用者。内核使用者显示为下列格式之一：
+.sp
+.in +2
+.nf
+[\fImodule_name\fR]
+[\fImodule_name\fR,dev_path=\fIpath\fR]
+[\fImodule_name\fR,dev=(\fImajor\fR,\fIminor\fR)]
+[\fImodule_name\fR,dev=(\fImajor\fR,\fIminor\fR),dev_path=\fIpath\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果指定了多组文件，可能需要为其他每个文件组重新指定选项。单个短划线可取消当前施行的选项。
+.sp
+.LP
+各个进程 ID 输出到标准输出中的单个行上，并以空格分隔。所有其他输出（包括单个终止换行符）均被写入到标准错误。
+.sp
+.LP
+任何用户都可以运行 fuser，但只有超级用户可以终止其他用户的进程。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 10n
+.rt  
+报告用作文件系统的挂载点的文件，以及该已挂载文件系统内的所有文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.RS 10n
+.rt  
+报告与指定的次要节点绑定到同一设备节点的所有次要节点的设备使用信息。此选项不报告已挂载文件系统内的文件的文件使用情况。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 10n
+.rt  
+为指定的文件输出报告，而不是已为挂载文件系统内的文件输出报告。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR\fR
+.ad
+.RS 10n
+.rt  
+向每个进程发送 \fBSIGKILL\fR 信号。因为此选项要针对每个进程生成终止信号，因此终止消息可能不会立即显示（请参见 \fBkill\fR(2)）。不会向内核文件使用者发送信号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 10n
+.rt  
+只列出具有针对文件的非阻塞强制性锁定的进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsig\fR\fR
+.ad
+.RS 10n
+.rt  
+向每个进程发送信号。\fIsig\fR 选项参数指定在 \fB<signal.h>\fR 标头中定义的符号名称之一，或者指定一个十进制整数信号编号。如果 \fIsig\fR 是一个符号名称，识别它时将不区分大小写，且没有 \fBSIG\fR 前缀。\fB-k\fR 选项等效于 \fB-s\fR \fBKILL\fR 或 \fB-s\fR \fB9\fR。不会向内核文件使用者发送信号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.RS 10n
+.rt  
+在进程 \fBID\fR 后面的圆括号中显示用户登录名。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR报告挂载点和文件
+.sp
+.LP
+以下示例将报告已挂载文件系统内的挂载点和文件。
+
+.sp
+.in +2
+.nf
+example% \fBfuser -c /export/foo\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR在报告挂载点和文件时对输出进行限制
+.sp
+.LP
+以下示例将报告已挂载文件系统内的挂载点和文件，但将输出限制为持有非阻塞强制性锁定的那些进程。
+
+.sp
+.in +2
+.nf
+example% \fBfuser -cn /export/foo\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR向持有非阻塞强制性锁定的进程发送 SIGTERM
+.sp
+.LP
+以下命令向持有针对文件 \fB/export/foo/my_file\fR 的非阻塞强制性锁定的所有进程发送 \fBSIGTERM\fR。
+
+.sp
+.in +2
+.nf
+example% \fBfuser -fn -s term /export/foo/my_file\fR
+.fi
+.in -2
+.sp
+
+.SH 环境变量
+.sp
+.LP
+有关影响 \fBfuser\fR 执行的环境变量 \fBLANG\fR、\fBLC_ALL\fR \fBLC_CTYPE\fR、\fBLC_MESSAGES\fR 和 \fBNLSPATH\fR 的描述，请参见 \fBenviron\fR(5)。
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+_
+标准请参见 \fBstandards\fR(5)。
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBps\fR(1)、\fBmount\fR(1M)、\fBkill\fR(2)、\fBmmap\fR(2)、\fBsignal\fR(3C)、\fBattributes\fR(5)、\fBenviron\fR(5)、\fBstandards\fR(5)
+.SH 附注
+.sp
+.LP
+因为 \fBfuser\fR 使用系统映像的快照，所以它可能会漏掉在 \fBfuser\fR 运行期间开始使用某个文件的进程。另外，被报告为正在使用某个文件的进程在 \fBfuser\fR 运行期间可能已停止使用该文件。考虑到这些因素，不鼓励使用 \fB-k\fR 选项。

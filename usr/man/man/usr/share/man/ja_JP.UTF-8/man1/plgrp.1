@@ -1,0 +1,392 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH plgrp 1 "2011 年 6 月 10 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+plgrp \- スレッドのホーム lgroup と lgroup アフィニティーの監視と変更
+.SH 形式
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-h\fR] \fIpid\fR | \fIcore\fR [/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-i\fR \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-a\fR \fIlgroup_list\fR \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I\fR \fBdefault\fR | \fBnone\fR |\fBfuture\fR] 
+     -H \fIlgroup_list\fR \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I\fR \fBdefault\fR | \fBnone\fR |\fBfuture\fR] -H \fIlgroup_list\fR \fB-e\fR \fIcommand\fR [\fIarguments\fR]
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I default\fR | \fBnone\fR | \fBfuture\fR] 
+     \fB-A\fR \fIlgroup_list\fR\fB/none\fR | \fBweak\fR | \fBstrong\fR [,...] \fIpid\fR[/\fIlwps\fR] ...
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] [\fB-I\fR \fBdefault\fR | \fBnone\fR | \fBfuture\fR] 
+     \fB-A\fR \fIlgroup_list\fR/none | \fBweak\fR |\fBstrong\fR [,...] \fB-e\fR \fIcommand\fR [\fIarguments\fR]
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-I\fR \fBdefault\fR | \fBnone\fR | \fBfuture\fR \fIpid\fR[/\fIlwps\fR]
+.fi
+
+.LP
+.nf
+\fBplgrp\fR [\fB-F\fR] \fB-I default\fR | \fBnone\fR | \fBfuture\fR \fB-e\fR \fIcommand\fR [\fIarguments\fR] ...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBplgrp\fR は、1 つ以上のプロセス、スレッド、または LWP のホーム \fBlgroup\fR と \fBlgroup\fR アフィニティーを表示および設定します。 
+.sp
+.LP
+\fBlgroup\fR は、一連の CPU およびメモリーに類似するハードウェアデバイスを表します。これらの間には少し距離 (遅延) がある場合があります。システムの各 \fBlgroup\fR は、一意の \fBlgroup\fR ID によって識別されます。\fBlgroup\fR は、もっとも近いリソースを見つけやすくするために階層にまとめられます。\fBlgroups\fR と \fBlgroup\fR 階層の詳細については、\fBlgrpinfo\fR(1) を参照してください。
+.sp
+.LP
+デフォルトでは、各スレッドには、作成時にホーム \fBlgroup\fR が割り当てられます。CPU リソースまたはメモリーリソースをスレッドに割り当てる必要がある場合、システムは、スレッドのホームにもっとも近い位置にある使用可能なリソースを探すために、スレッドのホーム \fBlgroup\fR から順番に \fBlgroup\fR 階層を検索します。
+.sp
+.LP
+通常、スレッドのホーム \fBlgroup\fR は、スレッドがもっともアフィニティーを持つ lgroup です。\fB\fR初期状態では、システムは各スレッドのホーム \fBlgroup\fR を選択しますが、その \fBlgroup\fR に対するスレッドのアフィニティーは \fBnone\fR に設定されたままにします。スレッドがホームではないプロセッサセットに、より強い \fBlgroup\fR のアフィニティーを設定した場合、スレッドが CPU に関連付けられていないかぎり、スレッドのホームはその \fBlgroup\fR に変更されます。ホーム \fBlgroup\fR のアフィニティー (もしあれば) が削除された (\fBnone\fR に設定) 場合、スレッドのホームは、そのプロセッサセットで 2 番目に高いアフィニティーを持つ \fBlgroup\fR に変更できます。 
+.sp
+.LP
+\fBlgroup\fR アフィニティーの各種レベルとそのセマンティクスの詳細については、\fBlgrp_affinity_set\fR(3LGRP) を参照してください。
+.SH 使用法
+.SS "\fBlgroup\fR の指定"
+.sp
+.LP
+\fIlgroup_list\fR は、次のものを 1 つ以上含むコンマで区切られたリストです。
+.sp
+.in +2
+.nf
+- \fIlgroup_ID\fR
+- Range of \fIlgroup_ID\fRs specified as
+ <start \fIlgroup_ID\fR>-<end \fIlgroup_ID\fR>
+- all
+- root
+- leaves
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBall\fR キーワードは、システム内のすべての \fBlgroup\fR ID を表します。\fBroot\fR キーワードは、ルート \fBlgroup\fR の ID を表します。\fBleaves\fR キーワードは、すべての \fBleaf\fR \fBlgroup\fR、つまり、子を持たない \fBlgroup\fR の ID を表します。
+.SS "プロセスとスレッドの指定"
+.sp
+.LP
+\fBplgrp\fR は、スペース文字で区切られた 1 つ以上のプロセスまたはスレッドを引数に取ります。プロセスとスレッドは、\fBproc\fR(1) ツールと同様の形式で指定できます。プロセス ID は、整数の \fIpid\fR または \fB/proc/\fR\fIpid\fR として指定できます。\fB/proc/\fR\fIpid\fR を使用する場合、プロセスを指定するためにシェル展開を使用できます。たとえば、システム内のすべてのプロセスを指定するには \fB/proc/*\fR を使用します。プロセス ID が単独で指定された場合、\fBplgrp\fR の引数としてプロセスのすべてのスレッドが含められます。
+.sp
+.LP
+スレッドは、\fIpid\fR\fB/\fR\fIlwpid\fR のようにプロセス ID とスレッド ID で明示的に指定できます。プロセスの複数のスレッドは、ハイフン (\fB-\fR) とコンマ (\fB,\fR) を使用すると、一度に選択できます。たとえば、\fIpid\fR\fB/1,2,7-9\fR は、プロセス ID が \fIpid\fR であるプロセスのスレッド 1、2、7、8、および 9 を指定しています。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIlgroup_list\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIlgroup_list\fR の指定されたプロセスまたはスレッドの \fBlgroup\fR のアフィニティーを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIlgroup_list\fR\fB/\fR\fInone\fR\fB|\fR\fIweak\fR\fB|\fR\fIstrong\fR\fB[,...]\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fIlgroup_list\fR の指定されたプロセスまたはスレッドのアフィニティーを設定します。 
+.sp
+\fIlgroup\fR\fB/\fR\fIアフィニティー\fRによる割り当ての、コンマで区切られたリストを指定すると、一度に複数のアフィニティーを設定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+別のプロセスが制御していても、ターゲットプロセスを捕捉して強制実行します。\fB-F\fR フラグを使用するときは注意してください。2 つの制御プロセスを 1 つの犠牲プロセスに課すと混乱することがあります。一次制御プロセス (通常はデバッガ) が犠牲プロセスを停止していて、この \fBproc\fR ツールの適用中に何も実行していない場合のみ、安全性が確保されます。詳細は、「警告」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいプロセスを作成し、そのプロセスに \fBplgrp\fR を適用し、指定されたコマンドと引数を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセスまたはスレッド、あるいはその両方のホーム \fBlgroup\fR を取得します。オプションが何も指定されていない場合は、これがデフォルトになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fIlgroup_list\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセスおよびスレッドのホーム \fBlgroup\fR を設定します。
+.sp
+これは、スレッドのホームを変更する対象の \fBlgroup\fR に、強力なアフィニティーを設定します。複数の \fBlgroup\fR が指定された場合、\fBplgrp\fR はラウンドロビン方式でスレッドのホームを \fBlgroup\fR に設定することを試みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセスまたはスレッドの \fBlgroup\fR のアフィニティーの継承を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fBdefault | none | future\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロセスまたはスレッドの \fBlgroup\fR のアフィニティーの継承を設定します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIlwps\fR\fR
+.ad
+.RS 8n
+.rt  
+スレッドを指定します。「\fB使用法\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.RS 8n
+.rt  
+プロセス ID を指定します。「\fB使用法\fR」を参照してください。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRシェルのホーム \fBlgroup\fR の取得
+.sp
+.LP
+次の例では、シェルのホーム \fBlgroup\fR を取得します。
+
+.sp
+.in +2
+.nf
+% plgrp $$
+PID/LWPID    HOME
+3401/1        1
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR複数のスレッドのホーム \fBlgroup\fR に対するルート \fBlgroup\fR の設定
+.sp
+.LP
+次の例では、複数のスレッドのホーム \fBlgroup\fR にルート \fBlgroup\fR を設定します。
+
+.sp
+.in +2
+.nf
+% plgrp -H root `pgrep firefox`
+     PID/LWPID    HOME
+     918/1        1 => 0
+     934/1        2 => 0
+     934/2        1 => 0
+     934/3        2 => 0
+     934/625      1 => 0
+     934/626      2 => 0
+     934/624      2 => 0
+     934/623      2 => 0
+     934/630      1 => 0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR複数スレッドのホーム \fBlgroup\fR としてルートの \fBlgroup\fR で \fBplgrp\fR を実行
+.sp
+.LP
+次の例では、複数スレッドのホーム \fBlgroup\fR としてルートで \fBfirefox\fR を実行します。
+
+.sp
+.in +2
+.nf
+% plgrp -H root -e /usr/bin/firefox
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR\fBlgroup 0-2\fR の 2 つのスレッドのアフィニティーの取得
+.sp
+.LP
+次の例では、\fBlgroup 1-2\fR の 2 つのスレッドのアフィニティーを取得します。
+
+.sp
+.in +2
+.nf
+% plgrp -a 0-2 101398/1 101337/1
+PID/LWPID    HOME  AFFINITY
+101398/1        1     0-2/none
+101337/1        1     0-2/none
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR\fBlgroup\fR のアフィニティーの設定
+.sp
+.LP
+次の例では、\fBlgroup\fR のアフィニティーを設定します。 
+
+.sp
+.in +2
+.nf
+% plgrp -A 0/weak,1/none,2/strong 101398
+PID/LWPID    HOME       AFFINITY
+101398/1        1 => 2     0,2/none => 2/strong,0/weak
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+構文エラー。変更は行われていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+致命的ではないエラーまたは中断。変更が行われた箇所がある可能性があります。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド構文と出力形式は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBlgrpinfo\fR(1), \fBmadv.so.1\fR(1), \fBpmadvise\fR(1), \fBpmap\fR(1), \fBproc\fR(1), \fBps\fR(1), \fBprstat\fR(1M), \fBlgrp_affinity_get\fR(3LGRP), \fBlgrp_affinity_set\fR(3LGRP), \fBlgrp_affinity_inherit_get\fR(3LGRP), \fBlgrp_affinity_inherit_set\fR(3LGRP), \fBlgrp_home\fR(3LGRP), \fBliblgrp\fR(3LIB), \fBproc\fR(4), \fBattributes\fR(5)
+.SH 警告
+.sp
+.LP
+\fBproc\fR(1) ツールと同様に、\fBplgrp\fR ユーティリティーは、任意のオプションを指定して呼び出した場合、ターゲットプロセスの検査中にターゲットプロセスを停止して結果を報告します。 
+.sp
+.LP
+状況によっては、プロセスのデッドロックが発生する可能性があります。停止中のプロセスは何も実行できません。本稼働環境で頻繁に使用されるプロセスを短時間でも停止すると、これらのプロセスが深刻なボトルネックになったりハングアップしたりして、ユーザーがプロセスを使用できなくなることがあります。このため、本稼働環境で UNIX プロセスを停止することは避けてください。\fBproc\fR(1) を参照してください。 
+.sp
+.LP
+このツールによって停止されたプロセスは、次のように識別できる場合があります。次のコマンドを発行して:
+.sp
+.in +2
+.nf
+/usr/bin/ps -eflL
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+出力の最初の列で \fBT\fR を探します。ただし、\fBsched\fR などの特定のプロセスは、ほとんどの場合デフォルトで \fBT\fR ステータスを表示する可能性があります。

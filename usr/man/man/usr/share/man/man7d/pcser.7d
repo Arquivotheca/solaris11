@@ -1,0 +1,197 @@
+'\" te
+.\"  Copyright (c) 2002 Microsystems, Inc.  All Rights Reserved.
+.TH pcser 7D "10 Sep 2002" "SunOS 5.11" "Devices"
+.SH NAME
+pcser \- PCMCIA serial card device driver
+.SH SYNOPSIS
+.LP
+.nf
+\fBserial@\fR\fI<socket>\fR\fB:pcser\fR
+.fi
+
+.LP
+.nf
+\fBserial@\fR\fI<socket>\fR\fB:pcser,cu\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpcser\fR \fBPCMCIA\fR serial card device driver supports asynchronous serial \fBI/O\fR access to any \fBPCMCIA\fR card that that complies with Revision 2.1 of the \fBPCMCIA\fR standard and which represents an 8250-type \fBUART\fR interface.
+.SH PRECONFIGURE
+.sp
+.LP
+If a PC card modem or serial device is recognized, the \fBpcser\fR device driver is automatically loaded, ports and IRQs allocated, and special files created (if they don't already exist).
+.SH CONFIGURATION
+.sp
+.LP
+Configuration steps include initial installation and configuration, identifying an unrecognized device and misidentifying a recognized device. 
+.SS "Initial Installation and Configuration"
+.RS +4
+.TP
+1.
+Install the Solaris software.
+.RE
+.RS +4
+.TP
+2.
+Boot the system.
+.RE
+.RS +4
+.TP
+3.
+Insert the modem or serial device.
+.RE
+.SS "Identifying an Unrecognized Device"
+.sp
+.LP
+If you insert a PC card modem or serial device and it is not recognized (that is, no special files are created under \fB/dev/cua\fR or \fB/dev/term\fR), use the \fBprtconf\fR command to find the problem:
+.RS +4
+.TP
+1.
+Become root.
+.RE
+.RS +4
+.TP
+2.
+Run the \fBprtconf -D\fR command to see if your modem or serial device is recognized. An unrecognized device will appear at the end of the \fBprtconf\fR output. For example:
+.sp
+.in +2
+.nf
+# prtconf -D
+\&.  .  .
+pcic, instance #0 (driver name: pcic)
+   .  .  .
+    pccard111.222 (driver not attached)
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+3.
+If your device is not recognized, use the \fBadd_drv\fR command to add the name of your device as another known alias for \fBpcser\fR devices. For example, type the following at the command line: 
+.sp
+.in +2
+.nf
+# add_drv -i'"pccard111.222"' pcser
+.fi
+.in -2
+
+.LP
+Note - 
+.sp
+.RS 2
+Include the double quotes in single quotes to keep the shell from stripping out the double quotes. Use the identification  string listed in the \fBprtconf\fR output. Use the entire string in the add_drv command. See \fBadd_drv\fR(1M).
+.RE
+.RE
+.SS "Misidentifying a Recognized Device"
+.RS +4
+.TP
+1.
+Run the \fBprtconf -D\fR command to see if your modem or serial device is erroneously recognized as a memory card. If the device is incorrectly recognized as a memory card, the output of the \fBprtconf\fR command could show:
+.sp
+.in +2
+.nf
+# prtconf -D
+.fi
+.in -2
+
+.sp
+.in +2
+.nf
+\&.  .  .
+pcic, instance #0 (driver name: pcic)
+   .  . . 
+    memory, instance #0 (driver name: pcmem)
+    pcram, instance #0 (driver name: pcram)
+.fi
+.in -2
+
+.RE
+.RS +4
+.TP
+2.
+Use the Configuration Assistant to identify the memory resource conflict, and add correct information for the device on the View/Edit Devices menu. Typically, the problem may be a resource conflict between device memory settings. A PC Card adapter chip that is not fully supported may also be the cause of the problem.
+.RE
+.RS +4
+.TP
+3.
+To work properly with the Solaris operating environment, all devices must be accounted for, even those the Solaris environment does not support. The Configuration Assistant software accounts for all devices in your system.
+.RE
+.SS "Additional Configuration"
+.sp
+.LP
+When adding a new serial port or modem to the system, you often need to edit configuration files so that applications can use the new communications port. For example, the \fB/etc/uucp/Devices\fR file needs to be updated to use UUCP. See \fIOverview of UUCP\fR in the \fISystem Administration Guide\fR. For PPP on the serial port, see \fBpppd\fR(1M) and \fISolaris PPP Overview\fR in the \fISystem Administration Guide\fR.
+.SS "Special Files"
+.sp
+.LP
+The serial devices in \fB/dev/term\fR and \fB/dev/cua\fR are named by socket number. A card inserted in socket 0 is \fBpc0\fR, and socket 1 is \fBpc1\fR. 
+.SS "Hot Plugging"
+.sp
+.LP
+If a PC Card modem or serial device is unplugged while in use, the device driver returns errors until the card is replaced in the socket.
+.sp
+.LP
+The device must be closed and reopened with the card reinserted before the device begins working again. The restart process depends on the application. For example, a \fBtip\fR session automatically exits when a card in use is unplugged. To restart the system, you must restart the \fBtip\fR session.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/pcser\fR\fR
+.ad
+.RS 21n
+.rt  
+\fBpcser\fR driver
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/term/pc\fIn\fR\fR\fR
+.ad
+.RS 21n
+.rt  
+dial-in devices
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/cua/pc\fIn\fR\fR\fR
+.ad
+.RS 21n
+.rt  
+dial-out devices where: \fIn\fR is the  \fBPCMCIA\fR physical socket number.
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBcu\fR(1C), \fBtip\fR(1), \fBuucp\fR(1C), \fBautopush\fR(1M), \fBports\fR(1M), \fBioctl\fR(2), \fBopen\fR(2), \fBpcmcia\fR(7D), \fBtermio\fR(7I), \fBldterm\fR(7M), \fBttcompat\fR(7M)
+.SH DIAGNOSTICS
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcser: socket\fR\fIn\fR \fBsoft silo overflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+The driver's character input ring buffer overflowed before it could be serviced.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpcser: socket\fR\fIn\fR \fBunable to get CIS information\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fBCIS\fR on the card has incorrect information or is in an incorrect format. This message usually indicates a non-compliant card.
+.RE
+

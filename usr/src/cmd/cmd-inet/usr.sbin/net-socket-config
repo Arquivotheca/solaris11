@@ -1,0 +1,78 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# This service configure sockets. Specifically, it established the mapping
+# between <family, type, protocol> and a socket module or TPI device. 
+#
+
+. /lib/svc/share/smf_include.sh
+
+#
+# In a non-global zone we need this service to be up, but all of the
+# work it tries to do is irrelevant (and will actually lead to the
+# service failing if we try to do it), so just bail out. In the global
+# zone we proceed.
+#
+smf_is_globalzone || exit $SMF_EXIT_OK
+
+reconfig=0
+ign_err=0
+
+is_reconfigure_boot && reconfig=1
+
+case "$1" in
+'start')
+	#
+	# On reconfigure boot there can be missing /dev entries that would
+	# cause soconfig(1M) to fail. We ignore errors in that case. This
+	# service will be refreshed by device/local after it runs devfsadm(1M).
+	#
+	[ $reconfig -eq 1 ] && ign_err=1
+	;;
+'refresh')
+	#
+	# New socket types are potentially being added. Those new sockets
+	# might use TPI, and we have to ensure that any /dev entries are
+	# present before we run soconfig(1M). If the service is being
+	# refreshed during reconfigure boot, then the refresh is being
+	# done by device/local, which has already run devfsadm(1M).
+	#
+	[ $reconfig -eq 0 ] && /usr/sbin/devfsadm -u
+	;;
+*)
+	echo "Usage: $0 { start | refresh }"
+	exit $SMF_EXIT_ERR_FATAL
+	;;
+esac
+
+/usr/sbin/soconfig -d /etc/sock2path.d
+if [ $? -ne 0 ]; then
+	if [ $ign_err -eq 0 ]; then
+		exit $SMF_EXIT_ERR_FATAL
+	else
+		echo "Errors ignored due to reconfiguration boot. " \
+			"Service will be refreshed."
+	fi
+fi
+
+exit $SMF_EXIT_OK

@@ -1,0 +1,242 @@
+'\" te
+.\" 版权所有 (c) 2006，2010，Oracle 和/或其附属公司。保留所有权利。
+.TH pkcs11_tpm 5 "2010 年 10 月 25 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+pkcs11_tpm \- 可信平台模块 (Trusted Platform Modules, TPM) 的 RSA PKCS#11 令牌
+.SH 用法概要
+.LP
+.nf
+/usr/lib/security/pkcs11_tpm.so
+.fi
+
+.LP
+.nf
+/usr/lib/security/64/pkcs11_tpm.so
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpkcs11_tpm.so\fR 对象使用可信计算组协议与 TPM 安全设备对话，从而实现 RSA Security Inc. PKCS#11 加密令牌接口 (Cryptographic Token Interface, Cryptoki) v2.20 规范。此提供器实现 PKCS#11 规范并在 \fBSUNWtss\fR 软件包中使用 TCG 软件栈 (TCG Software Stack, TSS) API。 
+.sp
+.LP
+应用程序开发者应链接到 \fBlibpkcs11.so.1\fR，而不是直接链接到 \fBpkcs11_tpm.so\fR。请参见 \fBlibpkcs11\fR(3LIB)。
+.sp
+.LP
+将实现以下加密算法：\fBRSA\fR、\fBSHA1\fR 和 \fBMD5\fR。
+.sp
+.LP
+将实现 \fBlibpkcs11\fR(3LIB) 中列出的所有标准 PKCS#11 函数，但以下函数除外：
+.sp
+.in +2
+.nf
+C_EncryptUpdate
+C_EncryptFinal
+C_DecryptUpdate
+C_DecryptFinal
+C_DigestEncryptUpdate
+C_DecryptDigestUpdate
+C_SignEncryptUpdate
+C_DecryptVerifyUpdate
+C_GetFunctionStatus
+C_CancelFunction
+C_WaitForSlotEvent
+C_GenerateKey
+C_DeriveKey
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+支持以下 RSA PKCS#11 v2.20 机制：
+.sp
+.in +2
+.nf
+CKM_RSA_PKCS_KEY_PAIR_GEN
+CKM_RSA_PKCS
+CKM_RSA_PKCS_OAEP
+CKM_RSA_X_509
+CKM_MD5_RSA_PKCS
+CKM_SHA1_RSA_PKCS
+CKM_SHA_1
+CKM_SHA_1_HMAC
+CKM_SHA_1_HMAC_GENERAL
+CKM_MD5
+CKM_MD5_HMAC
+CKM_MD5_HMAC_GENERAL
+.fi
+.in -2
+.sp
+
+.SS "基于每个用户的初始化"
+.sp
+.LP
+\fBpkcs11_tpm\fR 提供器只能用于安装有 TPM 设备和 \fBSUNWtss\fR 软件包的系统上。如果满足这些先决条件，用户可以使用\fBpktool\fR(1) 创建自己的专用令牌，这样他们能够使用 TPM 设备执行操作并通过 TPM 保护的密钥保护自己的专用数据。
+.sp
+.LP
+要准备并初始化用户的 TPM 令牌，必须执行以下步骤：
+.RS +4
+.TP
+1.
+初始化令牌。
+.RE
+.RS +4
+.TP
+2.
+设置 SO（security officer，安全官） PIN（Personal Identification Number，个人识别码）。
+.RE
+.RS +4
+.TP
+3.
+设置用户的唯一 PIN。
+.RE
+.sp
+.LP
+令牌初始化是使用 \fBpktool\fR(1) 命令（如下所示）执行的：
+.sp
+.in +2
+.nf
+$ \fBpktool inittoken currlabel=TPM newlabel=tpm/myname\fR
+.fi
+.in -2
+.sp
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+缺省情况下，未初始化的 TPM 按名称 \fBTPM\fR 识别。当用户初始化自己的专用令牌时，可以将其重命名为其他某一名称（例如，\fBtpm/joeuser\fR）或保留为 \fBTPM\fR（在这种情况下，将忽略 \fBnewlabel\fR 参数）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用户必须提供缺省的 SO PIN 才能初始化其令牌。缺省 SO PIN 为 \fB87654321\fR。在上述步骤 2 中更改该 PIN。
+.RE
+.sp
+.LP
+在初始化令牌之后，必须更改 SO 和用户 PIN 的缺省值。可再次使用 \fBpktool\fR(1) 更改这些 PIN 值。
+.sp
+.LP
+更改 SO PIN：
+.sp
+.in +2
+.nf
+$ \fBpktool setpin token=tpm/joeuser so\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBso\fR 选项指示此 "setpin" 操作将更改 SO PIN，因此 SO PIN 必须存在。随后，用户必须输入缺省的 SO PIN (\fB87654321\fR) 并输入（和确认）新的 PIN。
+.sp
+.LP
+在重置了 SO PIN 的缺省值后，还必须更改用户的唯一 PIN。
+.sp
+.LP
+更改用户的 PIN：
+.sp
+.in +2
+.nf
+$ \fBpktool setpin token=tmp/joeuser\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+非 SO 用户的缺省 PIN 是 \fB12345678\fR。用户必须输入缺省 PIN 并输入（和确认）新的唯一 PIN。
+.sp
+.LP
+为 \fBpktool\fR \fBsetpin\fR 操作提供的 PIN 或通过调用 \fBC_Login()\fR 和 \fBC_SetPIN()\fR 函数提供的 PIN 可以是长度介于 1 到 256 之间且不带嵌入空字符的任何字符串。
+.SS "访问令牌"
+.sp
+.LP
+在用户初始化令牌之后，即可开始通过 \fBpktool\fR(1) 或者通过编写 PKCS11 应用程序并使用前面创建的名称（在上例中为 \fBtpm/joeuser\fR）定位令牌来使用他们的令牌。
+.sp
+.LP
+示例：
+.sp
+.in +2
+.nf
+$ \fBpktool gencert token=tpm/joeuser -i\fR
+$ \fBpktool list token=tpm/joeuser\fR
+.fi
+.in -2
+.sp
+
+.SS "备注"
+.sp
+.LP
+\fBpkcs11_tpm.so\fR 在文件系统特定的令牌对象存储区域提供对象存储。专用对象由使用专用密钥的加密进行保护，只能通过将令牌的专用密钥装入 TPM 并完全在 TPM 中执行解密的方式进行解密。用户的专用密钥由 TPM 在用户设置其个人 PIN（参见上文）时生成。SO 和用户的密钥都存储在 TSS 持久性存储数据库中并由唯一的 UUID 值引用。所有用户令牌都有唯一的 SO 密钥和唯一的用户密钥，因此一个用户令牌的 PIN 无法解锁同一计算机上其他用户令牌的专用数据。
+.sp
+.LP
+每个 TPM 都是唯一的，在一个 TPM 上创建的令牌密钥不能用于其他 TPM。\fBpkcs11_tpm.so\fR 令牌数据完全由 TPM 所在的系统进行管理并且不能移到其他系统上。如果 TPM 重置且 SRK（Storage Root Key，存储库根密钥）发生更改，则以前为该 TPM 生成的所有密钥都将不再有效。
+.sp
+.LP
+\fBpkcs11_tpm.so\fR 将创建一个专用工作区来管理每个已创建令牌的管理文件。缺省情况下，此区域创建为 \fB/var/tpm/pkcs11/$USERNAME\fR。不过，用户可以覆盖此区域，方法是在初始化或使用令牌之前设置 \fBPKCS11_TPM_DIR\fR 环境变量。
+.SH 返回值
+.sp
+.LP
+每个已实现函数的返回值都在 RSA PKCS#11 v2.20 规范中定义和列出。请参见 \fBhttp://www.rsasecurity.com\fR。
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/tpm/pkcs11/USERNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+用户的缺省令牌对象存储。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB${PKCS11_TPM_DIR}\fR\fR
+.ad
+.sp .6
+.RS 4n
+备用令牌对象存储。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+接口稳定性Committed（已确定）
+_
+MT 级别T{
+MT-Safe with Exceptions（多线程安全，但存在异常）（参见下文）
+T}
+_
+标准 PKCS#11 v2.20
+.TE
+
+.sp
+.LP
+多线程安全属性的异常记录在 RSA PKCS#11 v2.20 的第 6.6.2 节中。
+.SH 另请参见
+.sp
+.LP
+\fBpktool\fR(1)、\fBcryptoadm\fR(1M)、\fBlibpkcs11\fR(3LIB)、\fBattributes\fR(5)
+.sp
+.LP
+TCG 软件栈 (TCG Software Stack, TSS) 规范 https://www.trustedcomputinggroup.org/specs/TSS（截至出版日期）
+.sp
+.LP
+RSA PKCS#11 v2.20, http://www.rsasecurity.com 

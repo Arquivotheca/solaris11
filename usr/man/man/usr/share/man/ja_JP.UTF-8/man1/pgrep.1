@@ -1,0 +1,413 @@
+'\" te
+.\"  Copyright (c) 2004, Sun Microsystems, Inc. All Rights Reserved
+.TH pgrep 1 "2004 年 5 月 6 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+pgrep, pkill \- 名前またはほかの属性によるプロセスの検出またはシグナル送信
+.SH 形式
+.LP
+.nf
+\fBpgrep\fR [\fB-flvx\fR] [\fB-n\fR | \fB-o\fR] [\fB-d\fR \fIdelim\fR] [\fB-P\fR \fIppidlist\fR] 
+     [\fB-g\fR \fIpgrplist\fR] [\fB-s\fR \fIsidlist\fR] [\fB-u\fR \fIeuidlist\fR] [\fB-U\fR \fIuidlist\fR] 
+     [\fB-G\fR \fIgidlist\fR] [\fB-J\fR \fIprojidlist\fR] [\fB-t\fR \fItermlist\fR] 
+     [\fB-T\fR \fItaskidlist\fR] [\fB-c\fR \fIctidlist\fR] [\fB-z\fR \fIzoneidlist\fR] 
+     [\fIpattern\fR]
+.fi
+
+.LP
+.nf
+\fBpkill\fR [\fB-\fIsignal\fR\fR] [\fB-fvx\fR] [\fB-n\fR | \fB-o\fR] [\fB-P\fR \fIppidlist\fR] 
+     [\fB-g\fR \fIpgrplist\fR] [\fB-s\fR \fIsidlist\fR] [\fB-u\fR \fIeuidlist\fR] [\fB-U\fR \fIuidlist\fR] 
+     [\fB-G\fR \fIgidlist\fR] [\fB-J\fR \fIprojidlist\fR] [\fB-t\fR \fItermlist\fR] 
+     [\fB-T\fR \fItaskidlist\fR] [\fB-c\fR \fIctidlist\fR] [\fB-z\fR \fIzoneidlist\fR] 
+     [\fIpattern\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpgrep\fR ユーティリティーは、システム上のアクティブなプロセスを調べて、コマンド行に指定した条件を満たす属性を持つプロセスのプロセス \fBID\fR を報告します。各プロセス \fBID\fR は 10 進数値として出力され、プロセス \fBID\fR は区切り文字 (デフォルトは復帰改行) で区切られます。コマンド行で属性オプションに値を指定するときは、複数の値をコンマで区切って指定できます。たとえば、次のように指定します。
+.sp
+.in +2
+.nf
+\fBpgrep -G other,daemon\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、実グループ \fBID\fR が \fBother\fR \fBまたは\fR \fBdaemon\fR であるプロセスを検出します。条件となるオプションを複数指定すると、\fBpgrep\fR は、条件オプションの論理\fB積\fRに一致する属性を持つプロセスを検出します。たとえば、次のように指定します。
+.sp
+.in +2
+.nf
+\fBpgrep -G other,daemon -U root,daemon\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、次の属性を持つプロセスを検出します。
+.br
+.in +2
+(実グループ \fBID\fR が \fBother\fR \fBまたは\fR \fBdaemon\fR であり) \fBかつ\fR 
+.in -2
+.br
+.in +2
+(実ユーザー \fBID\fR が \fBroot\fR \fBまたは\fR \fBdaemon\fR である) 
+.in -2
+.sp
+.LP
+\fBpkill\fR の機能は \fBpgrep\fR の機能と同等ですが、検出したプロセスのプロセス \fBID\fR を出力するのではなく、\fBkill\fR(1) と同様に、各プロセスにシグナルを送信します。シグナルの名前または番号は \fBpkill\fR への最初のコマンド行オプションとして指定できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIctidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定されたリスト内にプロセス契約 ID があるプロセスだけに一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdelim\fR\fR
+.ad
+.RS 17n
+.rt  
+一致したプロセス \fBID\fR 間に置かれる区切り文字を指定します。\fB-d\fR オプションを指定しない場合、デフォルトの区切り文字は復帰改行です。\fB-d\fR オプションは \fBpgrep\fR へのオプションとして指定した場合にのみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 17n
+.rt  
+正規表現 \fIpattern\fR の照合は、プロセスの引数を含む文字列全体 (\fB/proc/\fInnnnn\fR/psinfo\fR ファイルの \fBpr_psargs\fR フィールドから取得) に対して行われます。\fB-f\fR オプションを指定しないと、正規表現 pattern の照合は、実行可能ファイルの名前 (\fB/proc/\fInnnnn\fR/psinfo\fR ファイルの \fBpr_fname\fR フィールドから取得) に対してのみ行われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIpgrplist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリスト内にプロセスグループ \fBID\fR があるプロセスだけに一致します。リストにグループ 0 がある場合、これは \fBpgrep\fR または \fBpkill\fR プロセスのプロセスグループ \fBID\fR として解釈されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIgidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリスト内に実グループ \fBID\fR があるプロセスだけに一致します。各グループ \fBID\fR はグループ名または数値のグループ \fBID\fR のどちらでも指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-J\fR \fIprojidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリスト内にプロジェクト \fBID\fR があるプロセスだけに一致します。各プロジェクト \fBID\fR はプロジェクト名または数値のプロジェクト \fBID\fR のどちらでも指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 17n
+.rt  
+詳細出力形式。一致したプロセスの名前と\fBID\fR を出力します。\fB-f\fR オプションが指定されているかどうかによって (前述の説明を参照)、プロセス名は \fBpr_psargs\fR または \fBpr_fname\fR フィールドから取得されます。\fB-l\fR オプションは \fBpgrep\fR へのオプションとして指定した場合にのみ有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 17n
+.rt  
+指定した条件すべてを満たすプロセスの中で、最新の (最後に作成された) プロセスだけに一致します。このオプションは、\fB-o\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 17n
+.rt  
+指定した条件すべてを満たすプロセスの中で、もっとも古い (最初に作成された) プロセスだけに一致します。このオプションは、\fB-n\fR オプションと同時には使用できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIppidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリスト内に親プロセス \fBID\fR があるプロセスだけに一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリスト内にセッション \fBID\fR があるプロセスだけに一致します。リストのセッション \fBID\fR 0 がある場合、これは \fBpgrep\fR または \fBpkill\fR プロセスのセッション \fBID\fR として解釈されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItermlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリストの端末に関連するプロセスだけに一致します。各端末は、\fB/dev\fR 内にある端末へのパス名 (つまり、/dev/ 以降のパス名) として指定します。たとえば、\fBterm/a\fR や \fBpts/0\fR などです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItaskidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリストのタスク \fBID\fR があるプロセスだけに一致します。リストにタスク \fBID\fR 0 がある場合、これは \fBpgrep\fR または \fBpkill\fR プロセスのタスク \fBID\fR として解釈されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIeuidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリストの実効ユーザー \fBID\fR があるプロセスだけに一致します。各ユーザー \fBID\fR はログイン名または数値のユーザー \fBID\fR のどちらでも指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR \fIuidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定したリストの実ユーザー \fBID\fR があるプロセスだけに一致します。各ユーザー \fBID\fR はログイン名または数値のユーザー \fBID\fR のどちらでも指定できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 17n
+.rt  
+一致の意味を反転します。指定した条件を「満さない」すべてのプロセスに一致します。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.RS 17n
+.rt  
+指定した \fIpattern\fR に引数の文字列または実行可能ファイル名が完全に一致するプロセスだけに一致します。\fB\fR「完全に一致する」というのは、プロセス引数の文字列または実行可能ファイルの名前のすべての文字が pattern に一致することを意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzoneidlist\fR\fR
+.ad
+.RS 17n
+.rt  
+指定されたリスト内にゾーン \fBID\fR があるプロセスだけに一致します。各ゾーン \fBID\fR は、ゾーン名または数値のゾーン \fBID\fR のどちらでも指定できます。このオプションは、グローバルゾーンで実行する場合にのみ便利です。\fBpkill\fR ユーティリティーを使用して、ほかのゾーン内のプロセスにシグナルを送信する場合、送信元のプロセスは \fB{PRIV_PROC_ZONE}\fR 特権を表明しておく必要があります (\fBprivileges\fR(5) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fIsignal\fR\fR
+.ad
+.RS 17n
+.rt  
+一致した各プロセスに送信するシグナルを指定します。シグナルを指定しないと、デフォルトで \fBSIGTERM\fR が送信されます。\fIsignal\fR は \fBsignal.h\fR(3HEAD) で定義されているシンボル名 (ただし \fBSIG\fR 接頭辞は付けない) または対応するシグナル番号 (10 進数) のどちらでも指定できます\fB-\fR\fIsignal\fR オプションは \fBpkill\fR への最初のオプションとして指定した場合にのみ有効です。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpattern\fR\fR
+.ad
+.RS 11n
+.rt  
+実行可能ファイルの名前またはプロセス引数の文字列全体と照合させる拡張正規表現 (\fBERE\fR) パターンを指定します。\fBERE\fR 構文の詳細は、\fBregex\fR(5) を参照してください。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRプロセス ID を取得する
+.sp
+.LP
+\fBsendmail\fR のプロセス \fBID\fR を取得します。 
+
+.sp
+.in +2
+.nf
+example% \fBpgrep -x -u root sendmail\fR
+283
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRプロセスを強制終了する
+.sp
+.LP
+最後に作成された \fBxterm\fR を強制終了します。 
+
+.sp
+.in +2
+.nf
+example% \fBpkill -n xterm\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+1 つまたは複数のプロセスが一致しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+どのプロセスも一致しなかった。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+無効なコマンド行オプションが指定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+致命的なエラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/\fInnnnn\fR/psinfo\fR\fR
+.ad
+.RS 22n
+.rt  
+プロセス情報ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBkill\fR(1), \fBproc\fR(1), \fBps\fR(1), \fBtruss\fR(1), \fBkill\fR(2), \fBsignal.h\fR(3HEAD), \fBproc\fR(4), \fBattributes\fR(5), \fBprivileges\fR(5), \fBregex\fR(5), \fBzones\fR(5)
+.SH 注意事項
+.sp
+.LP
+どちらのユーティリティーも \fB/proc/\fR\fInnnnn\fR\fB/psinfo\fR ファイルの \fBpr_fname\fR または \fBpr_psargs\fR フィールドに対して \fBERE\fR で \fIpattern\fR 引数を照合することができます。これらの文字列の長さ制限は \fB<sys/procfs.h>\fR に定義されています。現在の制限よりも長い文字列に一致する可能性があるパターンを使用すると、予期したプロセスと一致しないことがあります。
+.sp
+.LP
+\fIpattern\fR 引数に \fBERE\fR のメタキャラクタが含まれており、そのメタキャラクタがシェルのメタキャラクタでもある場合、そのメタキャラクタを適切なシェル引用符で囲む必要があります。
+.sp
+.LP
+終了したプロセスは、\fBpgrep\fR と \fBpkill\fR のいずれでも検出することはできません。
+.sp
+.LP
+現在の \fBpgrep\fR または \fBpkill\fR プロセスは、自身を照合候補とすることはありません。

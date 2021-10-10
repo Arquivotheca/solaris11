@@ -1,0 +1,321 @@
+'\" te
+.\" 版权所有 (c) 2010，Oracle 和/或其附属公司。保留所有权利。
+.TH latencytop 1M "2010 年 2 月 25 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+latencytop \- 报告系统和应用程序中与等待时间相关的统计信息
+.SH 用法概要
+.LP
+.nf
+\fBlatencytop\fR [\fB-t\fR \fIinterval\fR] [\fB-o\fR \fIlog_file\fR] [\fB-k\fR \fIlog_level\fR]
+     [\fB-f\fR [no]\fIfeature\fR,...] [\fB-l\fR \fIlog_interval\fR] [\fB-h\fR]
+     [ \fB-s\fR pid=\fIPID\fR | pgid=\fIPGID\fR ]
+.fi
+
+.SH 描述
+.sp
+.LP
+LatencyTOP 是一个监测工具，用于报告系统和应用程序中与等待时间相关的统计信息。此工具报告系统中以及系统上正在运行的应用程序中等待时间的发生位置和类型的相关统计信息。可以根据该统计信息来消除所查明的等待时间，从而提高应用程序和系统的性能吞吐量。
+.sp
+.LP
+此工具定期分析系统活动，并在输出窗口中显示数据。将跟踪两种类型的等待时间：进入休眠状态和从休眠状态唤醒的 LWP，以及调整顺序以获取同步对象的 LWP。此工具使用 Solaris DTrace 框架收集与系统和应用程序 LWP 的这两种非活动情况相对应的统计信息。
+.sp
+.LP
+输出窗口分成两部分。上部分显示系统范围的统计信息，而下部分显示有关各个进程的统计信息。用户可使用向左方向键和向右方向键在进程列表中导航，并选择感兴趣的列表。然后此工具会在窗口下部分中显示该选定进程的相关统计信息。如果按下 t 或 T 键，此工具将显示该选定进程的特定于 LWP 的视图。可使用 t 或 T 键在进程视图和线程视图之间进行切换。
+.sp
+.LP
+执行期间，用户可通过按下 r 或 R 键强制刷新分析结果。间隔时间将恢复为缺省值或指定值（如果使用 -t）。要退出应用程序，用户必须按下 q 或 Q 键。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR, \fB--feature\fR [no]\fIfeature1\fR,[no]\fIfeature2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+在 LatencyTOP 中启用/禁用功能。功能只能为下列项之一：
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBfilter\fR\fR
+.ad
+.sp .6
+.RS 4n
+过滤较长的中断等待时间，例如，休眠。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBsched\fR\fR
+.ad
+.sp .6
+.RS 4n
+监视 \fBsched\fR (PID=0)。缺省值为 "\fBoff\fR"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBsobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+监视同步对象。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB[\fBno\fR]\fBlow\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过抽样少量的等待时间来降低开销。启用此功能后，将统计评估少量的等待时间，从而降低 CPU 使用率。请将其用于繁重的工作负荷，如繁忙的 Web 服务器。缺省值为 "\fBoff\fR"。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示命令的用法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIlog_level\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定日志文件中的日志记录的级别。有效值包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBnone\fR（缺省值）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBunknown\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+\fBall\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fIlog_interval\fR]\fR
+.ad
+.sp .6
+.RS 4n
+每 \fIlog_interval\fR 秒向日志文件写入一次数据；\fIlog_interval\fR 必须大于 60。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIlog_file\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定输出将写入的日志文件。缺省日志文件为 \fB/var/log/latencytop.log\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR pid=\fIPID\fR | pgid=\fIPGID\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅跟踪指定的进程或指定的进程组，并仅显示与此进程或进程组相关的数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此工具从系统收集统计信息的时间间隔（以秒为单位）。可能值介于 1 和 60 之间；缺省值为 5 秒。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR运行此工具
+.sp
+.LP
+以下命令启动此工具，并且使用各个选项的缺省值。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR设置时间间隔
+.sp
+.LP
+以下命令将抽样时间间隔设置为两秒。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -t 2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR指定日志文件
+.sp
+.LP
+以下命令将日志文件设置为 \fB/tmp/latencytop.log\fR。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -o /tmp/latencytop.log\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR指定日志级别
+.sp
+.LP
+以下命令将日志级别设置为 \fBall\fR。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -l 2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR启用对等待时间的跟踪
+.sp
+.LP
+以下命令启用对同步对象导致的等待时间的跟踪。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -f sobj\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR显示进程组的数据
+.sp
+.LP
+以下命令显示属于进程组 630 的进程的跟踪日期。
+
+.sp
+.in +2
+.nf
+% \fBlatencytop -s pgid=630\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+体系结构x86、SPARC
+_
+可用性diagnostic/latencytop
+_
+接口稳定性Volatile（可变）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdtrace\fR(1M)、\fBkstat\fR(1M)、\fBattributes\fR(5)
+.SH 用法
+.sp
+.LP
+您必须具有 DTrace 特权才能运行 LatencyTOP。

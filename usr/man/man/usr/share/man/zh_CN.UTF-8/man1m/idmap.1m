@@ -1,0 +1,1224 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH idmap 1M "2010 年 9 月 2 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+idmap \- 配置和管理本机身份映射服务
+.SH 用法概要
+.LP
+.nf
+\fBidmap\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR \fB-f\fR \fIcommand-file\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR add [\fB-d\fR] \fIname1\fR \fIname2\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR dump [\fB-n\fR] [\fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBidmap\fR export [\fB-f\fR \fIfile\fR] \fIformat\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR flush [\fB-a\fR]
+.fi
+
+.LP
+.nf
+\fBidmap\fR get-namemap \fIname\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR help
+.fi
+
+.LP
+.nf
+\fBidmap\fR import [\fB-F\fR] [\fB-f\fR \fIfile\fR] \fIformat\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR list
+.fi
+
+.LP
+.nf
+\fBidmap\fR remove [\fB-t\fR|\fB-f\fR] \fIname\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR remove \fB-a\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR remove [\fB-d\fR] \fIname1\fR \fIname2\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR set-namemap [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR]
+     [\fB-j\fR \fIpasswdfile\fR] \fIname1\fR \fIname2\fR
+.fi
+
+.LP
+.nf
+\fBidmap\fR show [\fB-c\fR] [\fB-v\fR] [\fB-V\fR] \fIidentity\fR [\fItarget-type\fR]
+.fi
+
+.LP
+.nf
+\fBidmap\fR unset-namemap [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR]
+     [\fB-j\fR \fIpasswdfile\fR] \fIname\fR [\fItarget-type\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBidmap\fR 实用程序用于配置和管理本机身份映射服务。
+.sp
+.LP
+本机身份映射服务支持 Windows 安全标识符 (security identitier, SID) 与 POSIX 用户 ID 和组 ID（UID 和 GID）之间的以下映射类型：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB基于名称的映射。\fR管理员按名称映射 Windows 和 UNIX 的用户和组。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB临时 ID 映射。\fR为每个尚未按名称映射的 SID 动态分配 UID 或 GID。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB本地 SID 映射。\fR非临时 UID 或 GID 映射到按算法生成的本地 SID。
+.RE
+.sp
+.LP
+\fBidmap\fR 实用程序可以用于创建和管理基于名称的映射，以及监视生效的映射。
+.sp
+.LP
+如果调用 \fBidmap\fR 实用程序时不带子命令或选项，则会从标准输入读取子命令。标准输入是 TTY 时，\fBidmap\fR 命令会输出用法消息，然后退出。
+.SS "映射机制"
+.sp
+.LP
+\fBidmapd\fR(1M) 守护进程可将 Windows 用户和组 SID 映射到 UNIX UID 和 GID，如下所示：
+.RS +4
+.TP
+1.
+SID 按名称映射。
+.sp
+此映射使用系统管理员手动设置的基于名称的映射。
+.RE
+.RS +4
+.TP
+2.
+如果找不到基于名称的映射，SID 会映射到动态分配的临时 ID。
+.sp
+此分配使用 2^31 到 2^32 - 2 之间的下一个可用 UID 或 GID。
+.RE
+.sp
+.LP
+本地 SID 映射用于从 UNIX 到 Windows 的映射。
+.sp
+.LP
+为了防止别名问题，所有文件系统、归档和备份格式以及协议都必须存储 SID，或将 2^31 到 2^32 - 2 范围内的所有 UID 和 GID 映射到 \fBnobody\fR 用户和组。
+.sp
+.LP
+也可以创建对角映射。对角映射是指 Windows 组和 Solaris 用户之间以及 Solaris 组和 Windows 用户之间的映射。在 Windows 使用组身份作为文件所有者（或反之）的时候，需要这种映射。
+.SS "基于名称的映射"
+.sp
+.LP
+基于名称的映射可以在 Windows 用户和组与 UNIX 名称服务中的用户和组之间建立等效名称映射关系。这些映射在重新引导后依然存在。例如，以下命令将 Windows 用户映射到具有相同名称的 UNIX 用户：
+.sp
+.in +2
+.nf
+# \fBidmap add "winuser:*@mywindomain.com" "unixuser:*"\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果配置为使用目录服务，\fBidmapd\fR(1M) 将首先尝试使用存储在 Active Directory (AD) 和/或本机 LDAP 目录服务的用户或组对象中的映射信息。例如，可以对给定 Windows 用户或组的 AD 对象进行扩充，使之包括相应的 Solaris 用户或组名称或者数值型 ID。同样，也可以对给定 Solaris 用户或组的本机 LDAP 对象进行扩充，使之包括相应的 Windows 用户或组名称。
+.sp
+.LP
+通过设置 \fBidmap\fR 服务的相应服务管理工具 (service management facility, SMF) 属性，可以将 \fBidmapd\fR(1M) 配置为使用 AD 和/或本机 LDAP 目录型名称映射。请参见下面的"服务属性"部分了解更多详细信息。
+.sp
+.LP
+如果没有配置目录型名称映射或是配置了却找不到，则 \fBidmapd\fR(1M) 将处理本地存储的基于名称的映射规则。
+.sp
+.LP
+\fBidmap\fR 支持对 Windows 已知名称的映射。下面列出其中几个：
+.sp
+.in +2
+.nf
+Administrator
+Guest
+KRBTGT
+Domain Admins
+Domain Users
+Domain Guest
+Domain Computers
+Domain Controllers
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+添加 \fBidmap\fR 规则时，这些已知名称会扩展成规范格式。也就是说，将会添加缺省域名（对于非已知名称），或者添加适当的内置域名。此域名可以为空或 \fBBUILTIN\fR，也可以是本地主机名，具体取决于特定的已知名称。
+.sp
+.LP
+以下 \fBidmap\fR 命令序列说明了非已知名称 \fBfred\fR、已知名称 \fBadministrator\fR 和 \fBguest\fR 的处理方法。
+.sp
+.in +2
+.nf
+# \fBidmap add winname:fred unixuser:fredf\fR
+add     winname:fred    unixuser:fredf
+
+# \fBidmap add winname:administrator unixuser:root\fR
+add     winname:administrator   unixuser:root
+
+# \fBidmap add winname:guest unixuser:nobody\fR
+add     winname:guest   unixuser:nobody
+
+# \fBidmap add wingroup:administrators sysadmin\fR
+add     wingroup:administrators unixgroup:sysadmin
+
+# \fBidmap list\fR
+add     winname:Administrator@examplehost  unixuser:root
+add     winname:Guest@examplehost  unixuser:nobody
+add     wingroup:Administrators@BUILTIN unixgroup:sysadmin
+add     winname:fred@example.com       unixuser:fredf
+.fi
+.in -2
+.sp
+
+.SS "临时映射"
+.sp
+.LP
+\fBidmapd\fR 守护进程会尝试在守护进程重新启动后保留临时 ID 映射。但是如果无法保留 ID，守护进程会将之前映射的每个 SID 映射到新的临时 UID 或 GID 值。守护进程决不会重复使用临时 UID 或 GID。如果 \fBidmapd \fR 守护进程用光了临时 UID 和 GID，它会返回错误，同时为无法按名称映射的 SID 返回缺省 UID 或 GID。
+.sp
+.LP
+重新引导后不会保留动态 ID 映射。所以，重新引导系统后，任何动态映射到 UNIX UID 或 GID 的 SID 都很可能会映射到不同的 ID。
+.SS "本地 SID 映射"
+.sp
+.LP
+如果找不到基于名称的映射，非临时 UID 或 GID 将映射到按算法生成的本地 SID。映射生成方式如下：
+.sp
+.in +2
+.nf
+local SID for UID = \fI<machine SID>\fR - \fI<1000 + UID>\fR
+local SID for GID = \fI<machine SID>\fR - \fI<2^31 + GID>\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fI<machine SID>\fR 是由 \fBidmap\fR 服务为运行时所在的主机生成的唯一 SID。
+.SS "规则查找顺序"
+.sp
+.LP
+将 Windows 名称映射到 UNIX 名称时，按以下顺序查找基于名称的映射规则：
+.RS +4
+.TP
+1.
+\fIwindows-name\fR\fB@\fR\fIdomain\fR 到 \fB""\fR
+.RE
+.RS +4
+.TP
+2.
+\fIwindows-name\fR\fB@\fR\fIdomain\fR 到 \fIunix-name\fR
+.RE
+.RS +4
+.TP
+3.
+\fIwindows-name\fR\fB@*\fR 到 \fB""\fR
+.RE
+.RS +4
+.TP
+4.
+\fIwindows-name\fR\fB@*\fR 到 \fIunix-name\fR
+.RE
+.RS +4
+.TP
+5.
+\fB*@\fR\fIdomain\fR 到 \fB*\fR
+.RE
+.RS +4
+.TP
+6.
+\fB*@\fR\fIdomain\fR 到 \fB""\fR
+.RE
+.RS +4
+.TP
+7.
+\fB*@\fR\fIdomain\fR 到 \fIunix-name\fR
+.RE
+.RS +4
+.TP
+8.
+\fB*@*\fR 到 \fB*\fR
+.RE
+.RS +4
+.TP
+9.
+\fB*@*\fR 到 \fB""\fR
+.RE
+.RS +4
+.TP
+10.
+\fB*@*\fR 到 \fIunix-name\fR
+.RE
+.sp
+.LP
+将 UNIX 名称映射到 Windows 名称时，按以下顺序查找基于名称的映射规则：
+.RS +4
+.TP
+1.
+\fIunix-name\fR 到 \fB""\fR
+.RE
+.RS +4
+.TP
+2.
+\fIunix-name\fR 到 \fIwindows-name\fR\fB@\fR\fIdomain\fR
+.RE
+.RS +4
+.TP
+3.
+\fB*\fR 到 \fB*@\fR\fIdomain\fR
+.RE
+.RS +4
+.TP
+4.
+\fB*\fR 到 \fB""\fR
+.RE
+.RS +4
+.TP
+5.
+\fB*\fR 到 \fIwindows-name\fR\fB@\fR\fIdomain\fR
+.RE
+.SS "服务属性"
+.sp
+.LP
+服务属性决定 \fBidmapd\fR(1M) 守护进程的行为。这些属性存储在属性组 \fBconfig\fR 下的 SMF 系统信息库中（请参见 \fBsmf\fR(5)）。您可以使用 \fBsvccfg\fR(1M) 访问和修改它们，但这需要 \fBsolaris.smf.value.idmap\fR 授权。\fBidmap\fR 服务的服务属性如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/ad_unixuser_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定包含 UNIX 用户名的 AD 属性名。无缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/ad_unixgroup_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定包含 UNIX 组名称的 AD 属性名。无缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/nldap_winname_attr\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定包含 Windows 用户/组名称的本机 LDAP 属性名。无缺省值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/directory_based_mapping\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制对使用存储在目录服务中的数据进行身份映射的支持。
+.sp
+\fBnone\fR 禁用基于目录的映射。
+.sp
+\fBname\fR 允许使用上述属性进行基于名称的映射。
+.sp
+\fBidmu\fR 启用使用 Microsoft Identity Management for UNIX (IDMU) 的映射。此 Windows 组件允许管理员为每个 Windows 用户指定一个 UNIX 用户 ID，以便将 Windows 身份映射到相应的 UNIX 身份。仅使用包含 Solaris 系统的域中的 IDMU 数据。
+.RE
+
+.sp
+.LP
+更改服务属性不会影响正在运行的 \fBidmap\fR 服务。更改在服务刷新（使用 \fBsvcadm\fR(1M)）后才会生效。
+.SH 操作数
+.sp
+.LP
+\fBidmap\fR 命令使用以下操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fI格式化\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用户名称映射在 \fBexport\fR 和 \fBimport\fR 子命令中的描述格式。支持 Netapp \fBusermap.cfg\fR 和 Samba \fBsmbusers\fR 外部格式。这些外部格式\fB仅\fR适用于用户而非组。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBusermap.cfg\fR 规则-映射格式如下：
+.sp
+.in +2
+.nf
+\fIwindows-username\fR [\fIdirection\fR] \fIunix-username\fR
+.fi
+.in -2
+.sp
+
+\fIwindows-username\fR 是 Windows 用户名，格式为 \fIdomain\fR\e\fIusername\fR 或 \fIusername\fR\fB@\fR\fIdomain\fR。
+.sp
+\fIunix-username\fR 是 UNIX 用户名。
+.sp
+.LP
+\fIdirection\fR 为以下值之一：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB==\fR 表示这是一个双向映射（此为缺省值）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB=>\fR 或 \fB<=\fR 表示这是一个单向映射。
+.RE
+不支持 IP 限定符。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsmbusers\fR 规则-映射格式如下：
+.sp
+.in +2
+.nf
+\fIunixname\fR = \fIwinname1\fR \fIwinname2\fR ...
+.fi
+.in -2
+.sp
+
+如果 \fIwinname\fR 包括空格，则通过用双引号将值括起来对空格进行转义。例如，以下文件显示如何以 \fBidmap\fR 命令的有效格式指定空格：
+.sp
+.in +2
+.nf
+$ \fBcat myusermap\fR
+terry="Terry Maddox"
+pat="Pat Flynn"
+cal=cbrown
+.fi
+.in -2
+.sp
+
+映射作为从 Windows 名称到 UNIX 名称的单向映射导入。
+.sp
+格式依照 \fBsmb.conf\fR 手册页的"用户名映射"条目的说明，可以在 \fBsamba.org\fR Web 站点上找到这部分内容。支持在 \fIwindows-name\fR 中使用星号 (\fB*\fR)，但是不支持 \fB@group\fR 指令和映射链接。
+.sp
+缺省情况下，如果 \fBsmbusers\fR 文件中没有映射项，Samba 会将 \fIwindows-name\fR 映射到等效 \fIunix-name\fR（如果有）。如果要像 Samba 一样设置相同的映射，请使用以下 \fBidmap\fR 命令：
+.sp
+.in +2
+.nf
+idmap add -d "winuser:*@*" "unixuser:*"
+.fi
+.in -2
+.sp
+
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIidentity\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用户名、用户 ID、组名称或组 ID。\fIidentity\fR 以 \fItype\fR\fB:\fR\fIvalue\fR 格式指定。\fItype\fR 为以下值之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusid\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows 用户 SID（文本格式）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgsid\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows 组 SID（文本格式）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsid\fR\fR
+.ad
+.RS 13n
+.rt  
+既可以属于用户也可以属于组的 Windows 组 SID（文本格式）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid\fR\fR
+.ad
+.RS 13n
+.rt  
+数值型 POSIX UID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid\fR\fR
+.ad
+.RS 13n
+.rt  
+数值型 POSIX GID
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunixuser\fR\fR
+.ad
+.RS 13n
+.rt  
+UNIX 用户名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunixgroup\fR\fR
+.ad
+.RS 13n
+.rt  
+UNIX 组名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwinuser\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows 用户名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwingroup\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows 组名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwinname\fR\fR
+.ad
+.RS 13n
+.rt  
+Windows 用户名或组名称
+.RE
+
+\fIvalue\fR 是一个对应于指定 \fItype\fR 的数字或字符串。例如，\fBunixgroup:staff\fR 指定 UNIX 组名称 \fBstaff\fR。标识 \fBgid:10\fR 代表 GID 10，它与 UNIX 组 \fBstaff\fR 相对应。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定一个可以用于基于名称的映射规则的 UNIX 名称（\fBunixuser\fR、\fBunixgroup\fR）或 Windows 名称（\fBwinuser\fR、\fBwingroup\fR）。
+.sp
+.LP
+Windows 安全身份名称可以通过下列方式之一指定：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIdomain\fR\e\fIname\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIname\fR\fB@\fR\fIdomain\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIname\fR，使用缺省映射域
+.RE
+如果 \fIname\fR 是空字符串 (\fB""\fR)，则会禁止映射。请注意，\fB""\fR 名称不能用于阻止未映射 Windows 用户的登录。
+.sp
+如果 \fIname\fR 使用了通配符 (\fB*\fR)，它将匹配未被其他映射匹配的所有名称。同样，如果 \fIname\fR 是通配符 Windows 名称 (\fB*@*\fR)，它将匹配未被其他映射匹配的所有域中的所有名称。
+.sp
+如果 \fIname\fR 在映射规则两端都使用通配符，那么 Windows 和 Solaris 用户的名称是相同的。例如，如果规则是 \fB"*@domain" == "*"\fR，那么 \fBjp@domain\fR Windows 用户名与该规则匹配，并会映射到 \fBjp\fR Solaris 用户名。
+.sp
+如果类型可以从命令行上指定的其他参数或类型中推断，您也可以选择是否指定 \fIname\fR 的类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItarget-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+与 \fBshow\fR 和 \fBunset-namemap\fR 子命令结合使用。对于 \fBshow\fR，指定应该显示的映射类型。例如，如果 \fItarget-type\fR 是 \fBsid\fR，\fBidmap show\fR 会返回 SID，该 SID 映射到在命令行上指定的身份。对于 \fBunset-namemap\fR，确定由 \fIname\fR 操作数指定的对象中的属性。
+.RE
+
+.SH 选项
+.sp
+.LP
+\fBidmap\fR 命令支持一个选项和一组子命令。子命令也有选项。
+.SS "命令行选项"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIcommand-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 \fIcommand-file\fR 读取并执行 \fBidmap\fR 子命令。\fBidmap\fR \fB-f\fR \fB-\fR 命令从标准输入读取。此选项不能由任何子命令使用。
+.RE
+
+.SS "子命令"
+.sp
+.LP
+支持以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR [\fB-d\fR] \fIname1\fR \fIname2\fR\fR
+.ad
+.sp .6
+.RS 4n
+添加基于名称的映射规则。缺省情况下，名称映射是双向的。如果使用 \fB-d\fR 选项，会创建从 \fIname1\fR 到 \fIname2\fR 的单向映射。
+.sp
+\fIname1\fR 或 \fIname2\fR 的其中一个必须是 Windows 名称，而另外一个必须是 UNIX 名称。对于 Windows 名称，不能使用 \fBwinname\fR 身份类型，而是要从 \fBwinuser\fR 或 \fBwingroup \fR 类型中指定一个。有关 \fIname\fR 操作数的信息，请参见"操作数"部分。
+.sp
+请注意，相同的两个名称之间的两个方向相反的单向映射相当于一个双向映射。
+.sp
+该子命令需要 \fBsolaris.admin.idmap.rules\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdump\fR [\fB-n\fR] [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+转储自上次系统引导后缓存的所有映射。\fB-n\fR 选项也会显示名称。缺省情况下，只会显示 \fBsid\fR、\fBuid\fR 和 \fBgid\fR。\fB-v\fR 选项显示映射是如何生成的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR [\fB-f\fR \fIfile\fR] \fIformat\fR\fR
+.ad
+.sp .6
+.RS 4n
+将基于名称的映射规则以指定的 \fIformat\fR 导出至标准输出。\fB-f\fR \fIfile\fR 选项将规则写入指定的输出文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflush\fR [\fB-a\fR]\fR
+.ad
+.sp .6
+.RS 4n
+刷新身份映射高速缓存，以便将来的映射请求会完全按照当前的规则和目录信息进行处理。这是一个非中断操作。更改规则时会自动刷新高速缓存；该手动操作可用于强制使新更改的目录信息生效。
+.sp
+使用 \fB-a\fR 选项可将高速缓存清除干净。该操作可能会中断进行中的操作，因此应仅在静默系统上使用。可能需要使用 \fB-a\fR 选项来设置 "clean slate" 测试用例，虽然一般情况下并不需要。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget-namemap\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+从指定名称的 AD 或本机 LDAP 用户或组对象获取目录型名称映射信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示用法消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR [\fB-F\fR] [\fB-f\fR \fIfile\fR] \fIformat\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用指定的 \fIformat\fR 从标准输入导入基于名称的映射规则。\fB-f\fR \fIfile\fR 选项从指定文件读取规则。\fB-F\fR 选项在添加新规则前刷新现有的基于名称的映射规则。
+.sp
+不管使用的外部格式为何，导入的规则将使用前面"规则查找顺序"部分描述的语义和顺序进行处理。
+.sp
+该子命令需要 \fBsolaris.admin.idmap.rules\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出所有基于名称的映射规则。所有规则都以 \fBidmap add\fR 格式显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-t\fR|\fB-f\fR] \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除涉及指定名称的任何基于名称的映射规则。\fIname\fR 可以是 UNIX 或 Windows 用户名或组名称。
+.sp
+\fB-f\fR 选项删除使用 \fIname\fR 作为源的规则。\fB-t\fR 选项删除使用 \fIname\fR 作为目标的规则。这些选项是互斥的。
+.sp
+该子命令需要 \fBsolaris.admin.idmap.rules\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR \fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除所有基于名称的映射规则。
+.sp
+该子命令需要 \fBsolaris.admin.idmap.rules\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove\fR [\fB-d\fR] \fIname1\fR \fIname2\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除 \fIname1\fR 和 \fIname2\fR 之间基于名称的映射规则。如果指定 \fB-d\fR 选项，则会删除 \fIname1\fR 到 \fIname2\fR 的规则。
+.sp
+\fIname1\fR 或 \fIname2\fR 的其中一个必须是 Windows 名称，而另外一个必须是 UNIX 名称。
+.sp
+该子命令需要 \fBsolaris.admin.idmap.rules\fR 授权。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-namemap\fR [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR] [\fB-j\fR \fIpasswdfile\fR] \fIname1\fR \fIname2\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置 AD 或本机 LDAP 用户或组对象中的名称映射信息。\fIname1\fR 或 \fIname2\fR 的其中一个必须是 Windows 名称，而另外一个必须是 UNIX 名称。
+.sp
+如果 \fIname1\fR 是一个 Windows 名称，那么 UNIX 名称 \fIname2\fR 会添加到 \fIname1\fR 所代表的 AD 对象。同样，如果 \fIname1\fR 是一个 UNIX 名称，那么 Windows 名称 \fIname2\fR 会添加到 \fIname1\fR 所代表的本机 LDAP 项。
+.sp
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIauthenticationMethod\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定修改本机 LDAP 项时的验证方法。有关详细信息，请参见 \fBldapaddent\fR(1M)。缺省值是 \fBsasl/GSSAPI\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR \fIbindDN\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用标识名 \fIbindDN\fR 绑定到目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-j\fR \fIpasswdfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定一个文件，该文件包含对目录进行身份验证所需的口令。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow\fR [\fB-c\fR] [\fB-v\fR] [\fB-V\fR] \fIname\fR [\fItarget-type\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示类型为 \fItarget-type\fR 的身份，它是指定 \fIname\fR 映射的对象。如果省略可选的 \fItarget-type\fR，则会显示非对角映射。
+.sp
+缺省情况下，该子命令只显示已经建立的映射。\fB-c\fR 选项强制评估基于名称的映射配置或 ID 的动态分配。
+.sp
+\fB-v\fR 选项显示映射是如何生成的，以及映射是刚刚生成的还是从高速缓存获取的。\fB-V\fR 选项详细说明了要确定映射所需采取的具体步骤，包括被拒绝的临时步骤和方法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunset-namemap\fR [\fB-a\fR \fIauthenticationMethod\fR] [\fB-D\fR \fIbindDN\fR] [\fB-j\fR \fIpasswdfile\fR] \fIname\fR [\fItarget-type\fR] \fR
+.ad
+.sp .6
+.RS 4n
+从指定名称和可选目标类型代表的 AD 或本机 LDAP 用户或组对象中取消设置目录型名称映射信息。
+.sp
+请参见 \fBset-namemap\fR 子命令以了解各个选项。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR在基于名称的映射规则两端使用通配符
+.sp
+.LP
+如果有一项存在且没有其他映射，以下命令可将 \fBxyz.com\fR 域中的所有 Windows 用户名映射到具有相同名称的 UNIX 用户。如果匹配此类规则，但是 UNIX 用户名不存在，则会使用临时 ID 映射。
+
+.sp
+.in +2
+.nf
+# \fBidmap add "winuser:*@xyz.com" "unixuser:*"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR在基于名称的映射规则一端使用通配符
+.sp
+.LP
+以下命令将 \fBxyz.com\fR 域中的所有未映射 Windows 用户映射到 \fBguest\fR UNIX 用户。\fB-d\fR 选项指定一个从 \fB*@xyz.com\fR 用户到 \fBguest\fR 用户的单向映射。
+
+.sp
+.in +2
+.nf
+# \fBidmap add -d "winuser:*@xyz.com" unixuser:guest\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR添加双向的基于名称的映射规则
+.sp
+.LP
+以下命令将 Windows 用户 \fBfoobar@example.com\fR 映射到 UNIX 用户 \fBfoo\fR（反之亦可）：
+
+.sp
+.in +2
+.nf
+# \fBidmap add winuser:foobar@example.com unixuser:foo\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此命令显示如何删除由先前命令添加的映射：
+
+.sp
+.in +2
+.nf
+# \fBidmap remove winuser:foobar@example.com unixuser:foo\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR显示 UID 到 SID 的映射
+.RS +4
+.TP
+.ie t \(bu
+.el o
+以下命令显示指定 UID \fBuid:50000\fR 映射到的 SID：
+.sp
+.in +2
+.nf
+# \fBidmap show uid:50000 sid\fR
+uid:50000 -> usid:S-1-5-21-3223191800-2000
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+以下命令显示指定 Windows 用户名 \fBjoe@example.com\fR 映射到的 UNIX 用户名：
+.sp
+.in +2
+.nf
+# \fBidmap show joe@example.com unixuser\fR
+winuser:joe@example.com -> unixuser:joes
+.fi
+.in -2
+.sp
+
+.RE
+.LP
+\fB示例 5 \fR列出缓存的 SID 到 UID 的映射
+.sp
+.LP
+以下命令显示高速缓存中所有的 SID 到 UID 的映射：
+
+.sp
+.in +2
+.nf
+# \fBidmap dump | grep "uid:"\fR
+usid:S-1-5-21-3223191800-2000    ==     uid:50000
+usid:S-1-5-21-3223191800-2001    ==     uid:50001
+usid:S-1-5-21-3223191800-2006    ==     uid:50010
+usid:S-1-5-21-3223191900-3000    ==     uid:2147491840
+usid:S-1-5-21-3223191700-4000    =>     uid:60001
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR批处理 \fBidmap\fR 请求
+.sp
+.LP
+以下命令显示如何批处理 \fBidmap\fR 请求。此特定命令序列执行如下操作：
+
+.RS +4
+.TP
+.ie t \(bu
+.el o
+删除 \fBfoobar@example.com\fR 此前的所有规则。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将 Windows 用户 \fBfoobar@example.com\fR 映射到 UNIX 用户 \fBbar\fR，反之亦可。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将 Windows 组 \fBmembers\fR 映射到 UNIX 组 \fBstaff\fR，反之亦可。
+.RE
+.sp
+.in +2
+.nf
+# \fBidmap <<EOF\fR
+       \fBremove winuser:foobar@example.com\fR
+       \fBadd winuser:foobar@example.com unixuser:bar\fR
+       \fBadd wingroup:members unixgroup:staff\fR
+\fBEOF\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR列出基于名称的映射规则
+.sp
+.LP
+以下命令显示如何列出基于名称的映射规则：
+
+.sp
+.in +2
+.nf
+# \fBidmap list\fR
+add winuser:foobar@example.com unixuser:bar
+add wingroup:members unixgroup:staff
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR从 \fBusermap.cfg\fR 文件导入基于名称的映射规则
+.sp
+.LP
+\fBusermap.cfg\fR 文件可以用于配置基于名称的映射规则。以下 \fBusermap.cfg\fR 文件显示了从 Windows 用户 \fBfoo@example.com\fR 到 UNIX 用户 \fBfoo\fR，以及从 \fBfoobar@example.com \fR 到 UNIX 用户 \fBfoo\fR 的映射规则。
+
+.sp
+.in +2
+.nf
+# \fBcat usermap.cfg\fR
+foo@example.com == foo
+foobar@example.com => foo
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下 \fBidmap\fR 命令将 \fBusermap.cfg\fR 信息导入到 \fBidmapd\fR 数据库：
+
+.sp
+.in +2
+.nf
+# \fBcat usermap.cfg | idmap import usermap.cfg\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此命令与先前的命令功能相同：
+
+.sp
+.in +2
+.nf
+# \fBidmap import -f usermap.cfg usermap.cfg\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令相当于先前的 \fBidmap import\fR 命令：
+
+.sp
+.in +2
+.nf
+# \fBidmap <<EOF\fR
+       \fBadd winuser:foo@example.com unixuser:foo\fR
+       \fBadd -d winuser:foobar@example.com unixuser:foo\fR
+\fBEOF\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR结合使用基于名称的和临时的 ID 映射与身份功能映射及例外情况
+.sp
+.LP
+以下命令将 \fBexample.com\fR Windows 域中的所有用户映射到具有相同名称的 UNIX 用户帐户。命令还会指定以下 Windows 用户的映射：\fBjoe@example.com\fR、\fBjane.doe@example.com\fR 和 \fBadministrator@example.com \fR。所有域中的 \fBadministrator\fR 都映射到 \fBnobody\fR。没有对应 UNIX 帐户的 Windows 用户会动态映射到可用的临时 UID。
+
+.sp
+.in +2
+.nf
+# \fBidmap import usermap.cfg <<EOF\fR
+       \fBjoe@example.com == joes\fR
+       \fBjane.doe@example.com == janed\fR
+       \fBadministrator@* => nobody\fR
+       \fB*@example.com == *\fR
+       \fB*@example.com => nobody\fR
+\fBEOF\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR将目录型名称映射添加到 AD 用户对象
+.sp
+.LP
+以下命令可将 UNIX 名称添加到 \fBjoe@example.com\fR 的 AD 对象，从而将 Windows 用户 \fBjoe@example.com\fR 映射到 UNIX 用户 \fBjoe\fR。
+
+.sp
+.in +2
+.nf
+# \fBidmap set-namemap winuser:joe@example.com joes\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR将目录型名称映射添加到本机 LDAP 用户对象
+.sp
+.LP
+以下命令可将 Windows 名称添加到 \fBfoo\fR 的本机 LDAP 对象，从而将 UNIX 用户 \fBfoo\fR 映射到 Windows 用户 \fBfoobar@example.com\fR。
+
+.sp
+.in +2
+.nf
+# \fBidmap set-namemap unixuser:foo foobar@example.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR从 AD 用户对象中删除目录型名称映射
+.sp
+.LP
+以下命令从代表 \fBjoe@example.com\fR 的 AD 对象中删除 UNIX 用户名 \fBunixuser\fR。
+
+.sp
+.in +2
+.nf
+# \fBidmap unset-namemap winuser:joe@example.com unixuser\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。向标准错误写入一条诊断消息。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBidmapd\fR(1M)、\fBldapaddent\fR(1M)、\fBsvcadm\fR(1M)、\fBsvccfg\fR(1M)、\fBad\fR(5)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.SH 附注
+.sp
+.LP
+\fBidmapd\fR 服务由服务管理工具 \fBsmf\fR(5) 管理。\fBidmapd\fR 服务的服务标识符是 \fBsvc:/system/idmap\fR。
+.sp
+.LP
+使用 \fBsvcadm\fR 命令执行此服务的管理操作，如启用、禁用或重新启动服务。这些操作需要 \fBsolaris.smf.manage.idmap\fR 授权。使用 \fBsvcs\fR 命令查询服务状态。
+.sp
+.LP
+Windows 用户名不区分大小写，而 UNIX 用户名则区分大小写。\fBidmap\fR 名称-规则和 \fBidmap show\fR 命令行中显示的 Windows 名称的大小写是不相关的。
+.sp
+.LP
+由于在 UNIX 环境下的通常做法是使用全部小写的用户名，因此通配符名称-规则会按照如下方式将 Windows 名称映射到 UNIX 用户/组名称：首先，使用规范的 Windows 名称（即大小写情况与其在目录中的显示相同）作为 UNIX 用户名或组名称。如果没有这样的 UNIX 身份，则 Windows 名称转换为小写，这样就可以用作 UNIX 用户名或组名称。
+.sp
+.LP
+这样区分对待大小写的结果是，看起来相同的用户名可能不会被识别为相互匹配。您必须创建规则来处理这种只有大小写不同的字符串的配对情况。例如，要将 Windows 用户 \fBsam@example\fR 映射到 Solaris 用户 \fB Sam\fR，必须创建以下规则：
+.sp
+.in +2
+.nf
+# \fBidmap add "winuser:*@example" "unixuser:*"\fR
+# \fBidmap add winuser:sam@example unixuser:Sam\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关修改 Active Directory 模式的指导信息，请参考 Microsoft 文档《\fIStep-by-Step Guide to Using Active Directory Schema and Display Specifiers\fR》，该文档可以在 Microsoft \fBtechnet\fR Web 站点 \fBhttp://technet.microsoft.com/ \fR上找到。

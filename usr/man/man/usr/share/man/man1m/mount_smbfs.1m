@@ -1,0 +1,553 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright 1994-2008 The FreeBSD Project. All rights reserved.
+.\" Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.TH mount_smbfs 1M "23 Apr 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+mount_smbfs, umount_smbfs \- mount and unmount a shared resource from an SMB file server
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR]
+     [\fB-O\fR] \fIresource\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR]
+     [\fB-O\fR] \fImount-point\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR] 
+     [\fB-O\fR] \fIresource\fR \fImount-point\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/umount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] \fImount-point\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBmount\fR utility attaches a named resource, \fIresource\fR, to the file system hierarchy at the path name location, \fImount-point\fR, which must already exist.
+.sp
+.LP
+If \fImount-point\fR has any contents prior to the \fBmount\fR operation, those contents remain hidden until the resource is unmounted. An authorized user with the \fBSYS_MOUNT\fR privilege can perform a \fBmount\fR operation. Also, a user can perform SMBFS mount operations on a directory the user owns.
+.sp
+.LP
+If the resource is listed in the \fB/etc/vfstab\fR file, you can specify either \fIresource\fR or \fImount-point\fR as the \fBmount\fR command will consult the \fB/etc/vfstab\fR file for more information. If the \fB-F\fR option is omitted, \fBmount\fR takes the file system type from the entry in the \fB/etc/vfstab\fR file.
+.sp
+.LP
+If the resource is not listed in the \fB/etc/vfstab\fR file, the command line must specify both \fIresource\fR and \fImount-point\fR.
+.sp
+.LP
+The \fBumount\fR utility detaches a mounted file system from the file system hierarchy. An authorized user with the \fBSYS_MOUNT\fR privilege can perform a \fBumount\fR operation. Also, a user can perform SMBFS unmount operations on a directory the user owns.
+.sp
+.LP
+The \fBnetwork/smb/client\fR service must be enabled to successfully mount an SMB share. This service is enabled by default.
+.sp
+.LP
+To enable the service, enter the following \fBsvcadm\fR(1M) command:
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/smb/client\fR
+.fi
+.in -2
+.sp
+
+.SS "Operands"
+.sp
+.LP
+The \fBmount\fR command supports the following operands:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIresource\fR //\fIserver\fR/\fIshare\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.LP
+The name of the resource to be mounted. In addition to its name, you can specify the following information about the resource:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIserver\fR is the DNS or NetBIOS name of the remote computer.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIshare\fR is the resource name on the remote server.
+.RE
+You can also specify the user account. See the "Options" section.
+.sp
+The \fBmount\fR command can read a password from standard input for the user account. If the password is not provided, \fBmount\fR first attempts to use the password stored by the \fBsmbadm add-key\fR command (if any). If that password fails to authenticate, the \fBmount_smbfs\fR command prompts you for a password if standard input is a TTY.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImount-point\fR\fR
+.ad
+.sp .6
+.RS 4n
+The path to the location where the file system is to be mounted or unmounted. The \fBmount\fR command maintains a table of mounted file systems in the \fB/etc/mnttab\fR file. See the \fBmnttab\fR(4) man page.
+.RE
+
+.SH OPTIONS
+.sp
+.LP
+See the \fBmount\fR(1M) man page for the list of supported \fIgeneric-options\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR or\fR
+.ad
+.br
+.na
+\fB\fB-o\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the file system-specific properties. You can specify more than one name-value pair as a list of comma-separated pairs. No spaces are permitted in the list. The properties are as follows:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacdirmax\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hold cached attributes for no more than \fIn\fR seconds after directory update. The default value is \fB60\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacdirmin\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hold cached attributes for at least \fIn\fR seconds after directory update. The default value is \fB30\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacregmax\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hold cached attributes for no more than \fIn\fR seconds after file modification. The default value is \fB60\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacregmin\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hold cached attributes for at least \fIn\fR seconds after file modification. The default value is \fB3\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactimeo\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+Set minimum and maximum times for regular files and directories to \fIn\fR seconds. See "File Attributes," below, for a description of the effect of setting this option to \fB0\fR.
+.RE
+
+See "Specifying Values for Attribute Cache Duration Options," below, for a description of how \fBacdirmax\fR, \fBacdirmin\fR, \fBacregmax\fR, \fBacregmin\fR, and \fBactimeo\fR are parsed on a \fBmount\fR command line.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdirperms=\fR\fIoctaltriplet\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the permissions to be assigned to directories. The value must be specified as an octal triplet, such as \fB755\fR. The default value for the directory mode is taken from the \fBfileperms\fR setting, with execute permission added where \fBfileperms\fR has read permission.
+.sp
+Note that these permissions have no relation to the rights granted by the SMB server.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdomain\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the name of the workgroup or the Windows domain in which the user name is defined. If the domain name is not specified, the default system's SMB domain is used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfileperms=\fR\fIoctaltriplet\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the permissions to be assigned to files. The value must be specified as an octal triplet, such as \fB644\fR. The default value is \fB700\fR.
+.sp
+Note that these permissions have no relation to the rights granted by the SMB server.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid=\fR\fIgroupid\fR\fR
+.ad
+.sp .6
+.RS 4n
+Assigns the specified group ID to files. The default value is the group ID of the directory where the volume is mounted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBintr\fR|\fBnointr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enable (or disable) cancellation of \fBsmbfs\fR(7FS) I/O operations when the user interrupts the calling thread (for example, by hitting Ctrl-C while an operation is underway). The default is \fBintr\fR (interruption enabled), so cancellation is normally allowed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoac\fR\fR
+.ad
+.sp .6
+.RS 4n
+Suppress attribute caching. Local \fBstat\fR(2) calls always request attributes from the SMB server.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+Suppresses the prompting for a password when mounting a share. This property enables you to permit anonymous access to a share. Anonymous access does not require a password.
+.sp
+The \fBmount\fR operation fails if a password is required, the \fBnoprompt\fR property is set, and no password is stored by the \fBsmbadm add-key\fR command.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBretry_count=\fR\fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the number of SMBFS retries to attempt before the connection is marked as broken. By default, 4 attempts are made.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout=\fR\fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the SMB request timeout. By default, the timeout is 15 seconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid=\fR\fIuserid\fR\fR
+.ad
+.sp .6
+.RS 4n
+Assigns the specified user ID files. The default value is the owner ID of the directory where the volume is mounted.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIuser\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specifies the remote user name. If user is  omitted, the logged-in user ID is used.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxattr\fR|\fBnoxattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enable (or disable) Solaris Extended Attributes in this mount point. This option defaults to \fBxattr\fR (enabled Extended Attributes), but note: if the SMB server does not support SMB "named streams", \fBsmbfs\fR(7FS) forces this option to \fBnoxattr\fR. When a mount has the \fBnoxattr\fR option, attempts to use Solaris Extended attributes fail with EINVAL.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.sp .6
+.RS 4n
+Overlays mount. Allow the file system to be mounted over an existing mount point, making the underlying file system inaccessible. If a mount is attempted on a pre-existing mount point without setting this flag, the mount fails, producing the error "device busy."
+.RE
+
+.SH FILE ATTRIBUTES
+.sp
+.LP
+To improve \fBsmbfs\fR performance, file attributes are cached. File modification times get updated whenever any local modifications occur. However, file access times can be temporarily out-of-date until the cache gets refreshed.
+.sp
+.LP
+The attribute cache retains file attributes on the client. Attributes for a file are assigned a time to be flushed. If the file is modified before the flush time, then the flush time is extended by the time since the last modification (under the assumption that files that changed recently are likely to change soon). There is a minimum and maximum flush time extension for regular files and for directories. Setting \fBactimeo=\fR\fIn\fR sets flush time to \fIn\fR seconds for both regular files and directories.
+.sp
+.LP
+Setting \fBactimeo=\fR\fIn\fR disables attribute caching on the client. This means that every reference to attributes is satisfied directly from the server. While this guarantees that the client always has the latest file attributes from the server, it has an adverse effect on performance through additional latency, network load, and server load.
+.sp
+.LP
+Setting the \fBnoac\fR option also disables attribute caching. When \fBsmbfs\fR is enhanced to support write caching, this option will have the further effect of disabling that write caching.
+.SH SPECIFYING VALUES FOR ATTRIBUTE CACHE DURATION OPTIONS
+.sp
+.LP
+The attribute cache duration options are \fBacdirmax\fR, \fBacdirmin\fR, \fBacregmax\fR, \fBacregmin\fR, and \fBactimeo\fR, as described under \fBOPTIONS\fR, above. A value specified for \fBactimeo\fR sets the values of all attribute cache duration options except for any of these options specified following \fBactimeo\fR on a \fBmount\fR command line. For example, consider the following command:
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o acdirmax=10,actimeo=1000 \e\fR
+     \fB//server/share  /mountpoint\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Because \fBactimeo\fR is the last duration option in the command line, its value (\fB1000\fR) becomes the setting for all of the duration options, including \fBacdirmax\fR. Now consider:
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o actimeo=1000,acdirmax=10 \e\fR
+     \fB//server/share  /mountpoint\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Because the \fBacdirmax\fR option follows \fBactimeo\fR on the command line, it is assigned the value specified (\fB10\fR). The remaining duration options are set to the value of \fBactimeo\fR (\fB1000\fR).
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRMounting an SMBFS Share
+.sp
+.LP
+The following example shows how to mount the \fB/tmp\fR share from the \fBnano\fR server in the \fBSALES\fR workgroup on the local \fB/mnt\fR mount point. You must supply the password for the \fBroot\fR user to successfully perform the mount operation.
+
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o user=root,domain=SALES //nano.sfbay/tmp /mnt\fR
+Password:
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRVerifying That an SMBFS File System Is Mounted
+.sp
+.LP
+The following example shows how to mount the \fB/tmp\fR share from the \fBnano\fR server on the local \fB/mnt\fR mount point. You must supply the password for the \fBroot\fR user to successfully perform the mount operation.
+
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o user=root //nano.sfbay/tmp /mnt\fR
+Password:
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+You can verify that the share is mounted in the following ways:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+View the file system entry in the \fB/etc/mnttab\fR file.
+.sp
+.in +2
+.nf
+# \fBgrep mnt /etc/mnttab\fR
+//nano.sfbay/tmp   /mnt    smbfs   dev=4900000     1177097833
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+View the output of the \fBmount\fR command.
+.sp
+.in +2
+.nf
+# \fBmount | grep mnt\fR
+mnt on //nano.sfbay/tmp read/write/setuid/devices/dev=4900000 on
+Tue Apr 20 13:37:13 2010
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+View the output of the \fBdf /mnt\fR command.
+.sp
+.in +2
+.nf
+# \fBdf /mnt\fR
+/mnt            (//nano.sfbay/tmp): 3635872 blocks     -1 files
+.fi
+.in -2
+.sp
+
+.RE
+.sp
+.LP
+Obtain information about the mounted share by viewing the output of the \fBdf -k /mnt\fR command.
+
+.sp
+.in +2
+.nf
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+//nano.sfbay/tmp
+                      1882384   64448 1817936     4%    /mnt
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRUnmounting an SMB Share
+.sp
+.LP
+This example assumes that an SMB share has been mounted on the \fB/mnt\fR mount point. The following command line unmounts the share from the mount point.
+
+.sp
+.in +2
+.nf
+# \fBumount /mnt\fR
+.fi
+.in -2
+.sp
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mnttab\fR\fR
+.ad
+.sp .6
+.RS 4n
+Table of mounted file systems.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/fstypes\fR\fR
+.ad
+.sp .6
+.RS 4n
+Default distributed file system type.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+Table of automatically mounted resources.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/smb/smbfspasswd\fR\fR
+.ad
+.sp .6
+.RS 4n
+Stores per-user settings for the Solaris SMB client.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See the \fBattributes\fR(5) man page for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/smb
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBmount\fR(1M), \fBmountall\fR(1M), \fBsmbadm\fR(1M), \fBsvcadm\fR(1M), \fBacl\fR(2), \fBfcntl\fR(2), \fBlink\fR(2), \fBmknod\fR(2), \fBmount\fR(2), \fBstat\fR(2), \fBsymlink\fR(2), \fBumount\fR(2), \fBmnttab\fR(4), \fBsmb\fR(4), \fBvfstab\fR(4), \fBattributes\fR(5), \fBpcfs\fR(7FS), \fBsmbfs\fR(7FS)
+.SH NOTES
+.sp
+.LP
+The Solaris SMB client always attempts to use \fBgethostbyname()\fR to resolve host names. If the host name cannot be resolved, the SMB client uses NetBIOS name resolution (NBNS). The Solaris SMB client permits the use of NBNS to enable Solaris SMB clients in Windows environments to work without additional configuration.
+.sp
+.LP
+If the directory on which a file system is to be mounted is a symbolic link, the file system is mounted on the directory to which the symbolic link refers, rather than being mounted on top of the symbolic link itself.

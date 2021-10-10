@@ -1,0 +1,813 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH beadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+beadm \- 管理 ZFS 引导环境
+.SH 用法概要
+.LP
+.nf
+\fBbeadm\fR \fBcreate\fR [\fB-a\fR] [\fB-d\fR \fIdescription\fR]
+     [\fB-e\fR \fInon-activeBeName\fR | \fIbeName\fR@\fIsnapshot\fR]
+     [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... [\fB-p\fR \fIzpool\fR] \fIbeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBcreate\fR \fIbeName\fR@\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBdestroy\fR [\fB-fF\fR] \fIbeName\fR | \fIbeName\fR@\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBlist\fR [\fB-a\fR | \fB-ds\fR] [\fB-H\fR] [\fIbeName\fR]
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBmount\fR \fIbeName\fR \fImountpoint\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBunmount\fR [\fB-f\fR] \fIbeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBrename\fR \fIbeName\fR \fInewBeName\fR
+.fi
+
+.LP
+.nf
+\fBbeadm\fR \fBactivate\fR \fIbeName\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBbeadm\fR 命令是管理 ZFS 引导环境 (Boot Environment, BE) 的用户接口。该实用程序由需要在一个系统中管理多个 Oracle Solaris 实例的系统管理员使用。
+.sp
+.LP
+使用 \fBbeadm\fR 可进行如下操作：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+基于活动引导环境创建新的引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+基于非活动引导环境创建新的引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+创建现有引导环境的快照。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+基于现有快照创建新的引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+创建新的引导环境并将其复制到另一个 zpool 中。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+激活现有的非活动引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+挂载引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+卸载引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+销毁引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+销毁引导环境的快照。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+重命名现有的非活动引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+显示有关快照和数据集的信息。
+.RE
+.SH 子命令
+.sp
+.LP
+\fBbeadm\fR 命令包含以下子命令和选项。下面的"示例"\fB\fR部分对其中的许多子命令和选项的用法进行了说明。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fI(no arguments)\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示命令用法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBcreate\fR [\fB-a\fR] [\fB-d\fR \fIdescription\fR] [\fB-e\fR \fInon-activeBeName\fR | \fIbeName\fR@\fIsnapshot\fR] [\fB-o\fR \fI property\fR=\fIvalue\fR] ... [\fB-p\fR \fIzpool\fR] \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建名为 \fIbeName\fR 的新引导环境。如果不提供 \fB-e\fR 选项，新引导环境将会创建为当前运行的引导环境的克隆。如果提供 \fB-d\fR 选项，相应描述还可作为 x86 系统的 GRUB 菜单或 SPARC 系统的引导菜单中的引导环境的标题。如果不提供 \fB-d\fR 选项，\fIbeName\fR 可以用作标题。嵌套引导环境不支持使用 \fB-p\fR 选项。此外，不可引导的嵌套引导环境及其快照不能与 \fB-e\fR 选项一起使用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建时激活新创建的引导环境。缺省设置为不激活新创建的引导环境。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建带有相关描述的新引导环境。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fInon-activeBeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+基于现有的非活动引导环境创建新引导环境。在嵌套引导环境中，只有可引导的引导环境可以与此选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+基于引导环境 \fIbeName\fR 的现有快照创建新引导环境。在嵌套引导环境中，只有可引导的引导环境快照可以与此选项一起使用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+为具有特定 ZFS 属性的新引导环境创建数据集。可以指定多个 \fB-o\fR 选项。有关 \fB-o\fR 选项的更多信息 ，请参见 \fBzfs\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIzpool\fR\fR
+.ad
+.sp .6
+.RS 4n
+在指定的 \fIzpool\fR 中创建新引导环境。如果不提供该选项，则缺省行为是在与原始引导环境相同的池中创建新引导环境。此选项在嵌套引导环境内不受支持。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBcreate\fR \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建现有引导环境 \fIbeName\fR 的快照。在嵌套引导环境内，只能为可引导的引导环境创建快照。在嵌套引导环境内，只能销毁可引导的引导环境，以及不可引导、但在重新引导时未标记为活动的引导环境。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBdestroy\fR [\fB-fF\fR] \fIbeName\fR | \fIbeName\fR@\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+销毁名为 \fIbeName\fR 的引导环境或销毁该引导环境下名为 \fIbeName\fR@\fIsnapshot\fR。如果销毁一个引导环境，该引导环境下的所有快照也均被销毁。使用该命令时需慎重。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果当前引导环境已挂载，强制卸载该引导环境。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制销毁引导环境，而不提示进行确认。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBlist\fR [\fB-a\fR | \fB-ds\fR] [\fB-H\fR] [\fIbeName\fR]\fR
+.ad
+.sp .6
+.RS 4n
+列出有关现有引导环境 \fIbeName\fR 的信息，或列出有关所有引导环境（如果不提供 \fIbeName\fR）的信息。\fBActive\fR（活动）字段指示引导环境当前是否为活动状态。\fBN\fR 表示引导环境当前为活动状态；\fBR\fR 表示重新引导时为活动状态；\fBNR\fR 表示引导环境在当前以及重新引导时均为活动状态。嵌套引导环境内的不可引导的引导环境由叹号 (\fB!\fR) 表示。
+.sp
+计算机可解析的输出中的每一行将引导环境名称作为第一个字段。\fBSpace\fR（空间）字段以字节显示。\fBCreated\fR（创建时间）字段以 UTC（国际协调时间）格式显示。如果不与其他选项一起使用，\fB-H\fR 选项在第二个字段中指定引导环境的 UUID（通用唯一标识符）。如果该引导环境不存在 UUID，该字段为空。请参见\fB\fR"示例"部分。在嵌套引导环境内，UUID 字段实际表示与嵌套引导环境相关联的父 ID。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出有关引导环境的所有可用信息。其中包括从属文件系统和快照。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出属于该引导环境的所有从属文件系统的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出有关引导环境的快照的信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+不列出标题信息。列表信息中的每个字段由分号分隔。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBmount\fR \fIbeName\fR \fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fImountpoint\fR 上挂载名为 \fIbeName\fR 的引导环境。\fImountpoint\fR 必须是已存在的空目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBunmount\fR [\fB-f\fR] \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载名为 \fIbeName\fR 的引导环境。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制卸载引导环境，即使引导环境当前处于忙碌状态也是如此。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBrename\fR \fIbeName\fR \fInewBeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+将名为 \fIbeName\fR 的引导环境重命名为 \fInewBeName\fR。在嵌套引导环境中，只能对可引导的引导环境进行重命名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbeadm\fR \fBactivate\fR \fIbeName\fR\fR
+.ad
+.sp .6
+.RS 4n
+在下一次重新引导时使 \fIbeName\fR 成为活动引导环境。在嵌套引导环境中，只能激活可引导的引导环境。
+.RE
+
+.SS "嵌套引导环境支持"
+.sp
+.LP
+\fBbeadm\fR 支持嵌套引导环境概念，具体而言，因为它与非全局区域的引导环境相关。目前，\fBbeadm\fR 只能从非全局区域内部管理嵌套引导环境。
+.sp
+.LP
+\fBbeadm\fR 函数在非全局区域内与从全局区域运行的情况大致相同，但有少数例外。第一，\fBbeadm\fR\fBcreate\fR 的 \fB-p\fR（备用池）选项在非全局区域内不受支持。第二，在确定任何给定嵌套引导环境（或引导环境快照）是可引导还是不可引导时存在一定的差别。如果嵌套引导环境与当前活动的全局区域引导环境相关联（即，与活动的全局区域引导环境的 UUID 共享同一父 ID），则它是可引导的。否则，它便是不可引导的，且在 \fBbeadm list\fR 的活动列中标记有 "\fB!\fR"。请注意，虽然非全局区域管理员可以通过 \fBbeadm activate\fR 将此类引导环境标记为活动，但是重新引导非全局区域并不会导致装入引导环境，因为该引导环境与非活动全局区域引导环境相关联。根据这些条件，\fBbeadm\fR 于是会限制对不可引导的引导环境执行某些操作：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不能销毁不可引导且在重新引导时标记为活动的嵌套引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不能激活不可引导的引导环境。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不能为不可引导的引导环境创建快照。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不能将不可引导的引导环境或引导环境快照与 \fBbeadm create\fR 的 \fB-e\fR 选项一起使用。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不能重命名不可引导的引导环境。
+.RE
+.SH 示例
+.LP
+\fB示例 1 \fR基于活动的引导环境创建新的引导环境
+.sp
+.LP
+以下命令通过克隆当前的引导环境来创建新的引导环境 \fBBE1\fR。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create BE1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR基于非活动的引导环境创建新的引导环境
+.sp
+.LP
+以下命令通过克隆现有的名为 \fBBE1\fR 的引导环境创建新的引导环境 \fBBE2\fR。
+
+.sp
+.in +2
+.nf
+# \fBbeadm beadm create -e BE1 BE2\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR创建现有的引导环境的快照
+.sp
+.LP
+以下命令为现有的名为 \fBBE1\fR 的引导环境创建名为 now 的快照。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create BE1@now\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR通过克隆快照创建新的引导环境
+.sp
+.LP
+以下命令通过克隆名为 \fBBE1\fR 的引导环境的现有快照创建名为 \fBBE3\fR 的新引导环境。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -e BE1@now BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR在指定的 zpool 中创建新的引导环境
+.sp
+.LP
+以下命令基于当前正在运行的引导环境创建名为 \fBBE4\fR 的新引导环境。该命令在名为 \fBrpool2\fR 的 zpool 中创建一个新的引导环境。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -p rpool2 BE4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR在指定的启用了压缩功能的 zpool 中创建新的引导环境
+.sp
+.LP
+以下命令基于当前正在运行的引导环境创建名为 \fBBE5\fR 的新引导环境。该命令在名为 \fBrpool2\fR 的 zpool 中创建新的引导环境以及启用了压缩功能的数据集。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -p rpool2 -o compression=on BE5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR创建新的引导环境并提供描述
+.sp
+.LP
+以下命令基于当前正在运行的引导环境创建名为 \fBBE6\fR 的新引导环境并提供描述。
+
+.sp
+.in +2
+.nf
+# \fBbeadm create -d "BE6 used as test environment" BE6\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR激活引导环境
+.sp
+.LP
+以下命令激活现有的名为 \fBBE3\fR 的非活动引导环境。
+
+.sp
+.in +2
+.nf
+# \fBbeadm activate BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR挂载引导环境
+.sp
+.LP
+以下命令将名为 \fBBE3\fR 的引导环境挂载到 \fB/mnt\fR。
+
+.sp
+.in +2
+.nf
+# \fBbeadm mount BE3 /mnt\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR卸载引导环境
+.sp
+.LP
+以下命令卸载名为 \fBBE3\fR 的引导环境。
+
+.sp
+.in +2
+.nf
+# \fBbeadm unmount BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR销毁引导环境
+.sp
+.LP
+以下命令销毁名为 \fBBE3\fR 的引导环境，而不提示进行确认。
+
+.sp
+.in +2
+.nf
+# \fBbeadm destroy -F BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR销毁快照
+.sp
+.LP
+以下命令销毁 \fBBE1\fR 引导环境的名为 \fBnow\fR 的快照。
+
+.sp
+.in +2
+.nf
+# \fBbeadm destroy BE1@now\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 13 \fR重命名引导环境
+.sp
+.LP
+以下命令将现有的名为 \fBBE1\fR 的非活动引导环境重命名为 \fBBE3\fR。
+
+.sp
+.in +2
+.nf
+# \fBbeadm rename BE1 BE3\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 14 \fR列出所有的引导环境
+.sp
+.LP
+以下命令列出所有的现有引导环境。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list\fR
+BE  Active Mountpoint Space  Policy Created
+--  ------ ---------- -----  ------ -------
+BE2 -      -          72.0K  static 2008-05-21 12:26
+BE3 -      -          332.0K static 2008-08-26 10:28
+BE4 -      -          15.78M static 2008-09-05 18:20
+BE5 NR     /          7.25G  static 2008-09-09 16:53
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 15 \fR列出所有的引导环境及其数据集和快照信息
+.sp
+.LP
+以下命令列出所有现有的引导环境及其所有数据集和快照信息。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -d -s\fR
+BE/Dataset/Snapshot     Active Mountpoint Space   Policy Created
+-------------------     ------ ---------- -----   ------ -------
+BE2
+   p/ROOT/BE2           -      -          36.0K   static 2008-05-21 12:26
+   p/ROOT/BE2/opt       -      -          18.0K   static 2008-05-21 16:26
+   p/ROOT/BE2/opt@now   -      -          0       static 2008-09-08 22:43
+   p/ROOT/BE2@now       -      -          0       static 2008-09-08 22:43
+BE3
+   p/ROOT/BE3           -      -          192.0K  static 2008-08-26 10:28
+   p/ROOT/BE3/opt       -      -          86.0K   static 2008-08-26 10:28
+   p/ROOT/BE3/opt/local -      -          36.0K   static 2008-08-28 10:58
+BE4
+   p/ROOT/BE4           -      -          15.78M  static 2008-09-05 18:20
+BE5
+   p/ROOT/BE5           NR     /          6.10G   static 2008-09-09 16:53
+   p/ROOT/BE5/opt       -      /opt       24.55M  static 2008-09-09 16:53
+   p/ROOT/BE5/opt@bar   -      -          18.38M  static 2008-09-10 00:59
+   p/ROOT/BE5/opt@foo   -      -          18.38M  static 2008-06-10 16:37
+   p/ROOT/BE5@bar       -      -          139.44M static 2008-09-10 00:59
+   p/ROOT/BE5@foo       -      -          912.85M static 2008-06-10 16:37
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 16 \fR列出一个引导环境的数据集和快照信息
+.sp
+.LP
+以下命令列出名为 \fBBE5\fR 的引导环境的所有数据集和快照信息。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -a BE5\fR
+BE/Dataset/Snapshot   Active Mountpoint Space   Policy Created
+-------------------   ------ ---------- -----   ------ -------
+BE5
+   p/ROOT/BE5         NR     /          6.10G   static 2008-09-09 16:53
+   p/ROOT/BE5/opt     -      /opt       24.55M  static 2008-09-09 16:53
+   p/ROOT/BE5/opt@bar -      -          18.38M  static 2008-09-10 00:59
+   p/ROOT/BE5/opt@foo -      -          18.38M  static 2008-06-10 16:37
+   p/ROOT/BE5@bar     -      -          139.44M static 2008-09-10 00:59
+   p/ROOT/BE5@foo     -      -          912.85M static 2008-06-10 16:37
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 17 \fR按计算机可解析的格式列出
+.sp
+.LP
+以下命令按照计算机可解析的格式列出所有引导环境的信息。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list -H\fR
+BE2;;;;55296;static;1211397974
+BE3;;;;339968;static;1219771706
+BE4;;;;16541696;static;1220664051
+BE5;215b8387-4968-627c-d2d0-f4a011414bab;NR;/;7786206208;static;1221004384
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 18 \fR显示不可引导的引导环境
+.sp
+.LP
+以下命令将列出所有引导环境。在非全局区域内运行时，它会显示可引导的和不可引导的引导环境。不可引导的引导环境在活动列中以叹号 (\fB!\fR) 指明。
+
+.sp
+.in +2
+.nf
+# \fBbeadm list\fR
+BE    Active Mountpoint Space   Policy Created
+--    ------ ---------- -----   ------ -------
+zbe-0 -      -          29.22M  static 2011-03-04 09:14
+zbe-1 NR     /          815.10M static 2011-03-04 09:28
+zbe-2 -      -          35.0K   static 2011-03-04 09:28
+zbe-3 -      -          35.0K   static 2011-03-04 09:28
+zbe-4 -      -          35.0K   static 2011-03-04 09:28
+zbe-5 !      -          35.0K   static 2011-03-04 11:47
+zbe-6 !      -          54.0K   static 2011-03-07 14:37
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.sp .6
+.RS 4n
+失败。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/log/beadm/\fIbeName\fR/create.log.\fIyyyymmdd_hhmmss\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于捕获 \fBbeadm create\fR 输出的日志。文件名中的时间部分解释如下。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIyyyymmdd_hhmmss\fR－例如，\fB20071130_140558\fR。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIyyyy\fR－年，\fB2007\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fImm\fR－月，\fB11\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIdd\fR－日，\fB30\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIhh\fR－时，\fB14\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fImm\fR－分，\fB05\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIss\fR－秒，\fB58\fR
+.RE
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/boot-environment-utilities
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBzfs\fR(1M)、\fBattributes\fR(5)

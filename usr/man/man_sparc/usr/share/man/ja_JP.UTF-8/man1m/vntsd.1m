@@ -1,0 +1,418 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.TH vntsd 1M "2009 年 3 月 31 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+vntsd \- 論理ドメイン用の仮想ネットワーク端末サーバーデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/ldoms/vntsd\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBvntsd\fR デーモンは、\fBtelnet\fR(1) を使用した論理ドメイン (LDoms) コンソールへの接続をサポートするサーバーです。\fBtelnet\fR セッションが開始すると、\fBvntsd\fR は、リモートで文字をエコーする要求と Go Ahead を抑制する要求を示す \fBtelnet\fR オプションを、クライアントに送信します。
+.sp
+.LP
+コンソールは、LDoms Manager によってグループにまとめられます。各コンソールグループには一意のグループ名と TCP ポート番号が割り当てられます。\fBvntsd\fR は、グループのポート番号を使用してそのグループ内のコンソールへのアクセスをエクスポートします。ユーザーは、コンソールまたはコンソールグループとの接続を確立するために、対応するグループのポート番号を使用して \fBtelnet\fR(1) セッションを開始します。そのグループ内のコンソールの数に応じて、\fBvntsd\fR は次の 2 つの処理のいずれかを行います。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+グループ内にコンソールが 1 つしか存在しない場合、\fBvntsd\fR はその LDoms コンソールにセッションを接続します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+グループ内にコンソールが複数存在する場合、\fBvntsd\fR は、接続したいコンソールを選択するようユーザーに促します。詳細は、後述の「複数コンソールオプション」を参照してください。
+.RE
+.sp
+.LP
+各コンソールについて、\fBvntsd\fR はコンソールに最初に接続したユーザーだけに書き込みアクセス権を付与します。その後にコンソールに接続したユーザーは、コンソールからの読み取りしか許可されず、書き込みアクセスについては待機状態となります。最初のユーザーの接続が切断されると、キュー内で待機している次のユーザーに書き込み特権が移されます。書き込み特権を持たないユーザーがコンソールへの書き込みを試みると、\fBvntsd\fR によって次のメッセージが表示されます。
+.sp
+.in +2
+.nf
+You do not have write access
+.fi
+.in -2
+
+.sp
+.LP
+書き込みアクセス権を持たないユーザーが書き込みアクセス権を強制的に取得するには、特殊コンソールコマンド \fB~w\fR を使用します。詳細は、後述の「特殊コンソールコマンド」を参照してください。
+.sp
+.LP
+\fBvntsd\fR の呼び出しは、スーパーユーザー特権を使用して行うか、Primary Administrator 役割のユーザーが行う必要があります。
+.SH オプション
+.sp
+.LP
+\fBvntsd\fR のオプションは、複数コンソールオプションとコンソールコマンドに分けられます。
+.SS "複数コンソールオプション"
+.sp
+.LP
+グループ内に LDoms コンソールが複数存在している場合、次に示すオプションがサポートされます。これらのオプションを使用するための構文は次のとおりです。
+.sp
+.in +2
+.nf
+\fI<hostname>\fR-vnts-\fI<group-name>\fR: \fI<option>\fR
+.fi
+.in -2
+
+.sp
+.LP
+例: 
+.sp
+.in +2
+.nf
+myhost-vnts-salesgroup: h
+.fi
+.in -2
+
+.sp
+.LP
+\fBh\fR オプションは、次に説明するようにヘルプを呼び出します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBh\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のヘルプテキストを表示します。
+.sp
+.in +2
+.nf
+h -- this help
+l -- list of consoles
+q -- quit
+c{id}, n{name} -- connect to console of domain {id} or domain name
+.fi
+.in -2
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+グループ内のすべてのコンソールを一覧表示します。例: 
+.sp
+.in +2
+.nf
+DOMAIN ID       DOMAIN NAME     DOMAIN STATE
+0               ldg1            online
+1               ldg2            connected
+\&...             ...             ...
+.fi
+.in -2
+
+2 つのドメイン状態とその意味を次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンソールに接続しているユーザーが一人もいません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+少なくとも一人のユーザーがすでにコンソールに接続しています。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBq\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBvntsd\fR への接続を切断します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBc\fI{id}\fR、n\fI{name}\fR\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたコンソールに接続します。接続時に次のメッセージが表示されます。
+.sp
+.in +2
+.nf
+Connecting to console \fI<domain-name>\fR in group \fI<group-name>\fR
+Press ~? for control options ....
+.fi
+.in -2
+
+.RE
+
+.SS "特殊コンソールコマンド"
+.sp
+.LP
+行の最初にあるチルド (\fB~\fR) はエスケープ信号で、\fBvntsd\fR に特殊コンソールコマンドを実行させます。連続するチルド (\fB~~\fR) を指定すると、チルドが出力されます。\fBvntsd\fR は、先頭のチルドとともに次の特殊コンソールコマンドを受け入れます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~.\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンソールまたはコンソールグループへの接続を切断します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~w\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンソールへの書き込みアクセスを強制的に行います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~p\fR\fR
+.ad
+.sp .6
+.RS 4n
+このコンソールへの接続を切断し、コンソールリスト内でこのコンソールの前にあるコンソールに接続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~n\fR\fR
+.ad
+.sp .6
+.RS 4n
+このコンソールへの接続を切断し、コンソールリスト内でこのコンソールの後にあるコンソールに接続します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~#\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブレークを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~^B\fR\fR
+.ad
+.sp .6
+.RS 4n
+代替ブレークを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB~?\fR\fR
+.ad
+.sp .6
+.RS 4n
+次のような \fBvntsd\fR のヘルプを表示します。
+.sp
+.in +2
+.nf
+~# - Send break
+~^B - Send alternate break
+~. - Exit from this console
+~w - Force write access
+~n - Console next
+~p - Console previous
+~? - Help
+.fi
+.in -2
+
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ldoms/vntsd\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBvntsd\fR のバイナリ実行可能ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ldoms/vntsd.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBvntsd\fR 用のサービス管理機能 (\fBsmf\fR(5)) マニフェストファイル。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/ldoms
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBtelnet\fR(1), \fBsvccfg\fR(1M), \fBusermod\fR(1M), \fBauth_attr\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBvntsd\fR はサービス管理機能 \fBsmf\fR(5) により次のサービス識別子の下で管理されます。
+.sp
+.in +2
+.nf
+svc:/ldoms/vntsd
+.fi
+.in -2
+
+.sp
+.LP
+\fBsvccfg\fR(1M) コマンドを使用して次のプロパティーを変更できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/vcc_device\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBvntsd\fR の接続先となる仮想コンソール端末集配信装置 (\fBvcc\fR) ドライバのインスタンスを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/listen_addr\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBvntsd\fR が待機する IP アドレスを、次の構文を使って設定します。
+.sp
+.in +2
+.nf
+vntsd/listen_addr:"\fIxxx.xxx.xxx.xxx\fR"
+.fi
+.in -2
+
+ここで、\fIxxx.xxx.xxx.xxx\fR は有効な IP アドレスです。このプロパティーのデフォルト値は、IP アドレス 127.0.0.1 上で待機します。この値を制御ドメインの IP アドレスに設定すると、ユーザーがネットワーク経由でゲストコンソールに接続できるようになります。
+.LP
+注 - 
+.sp
+.RS 2
+コンソールへのネットワークアクセスを有効にすると、セキュリティーの問題が発生します。任意のユーザーがコンソールに接続できます。このため、この機能はデフォルトで無効化されます。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/timeout_minutes\fR\fR
+.ad
+.sp .6
+.RS 4n
+タイムアウトを分単位で設定します。コンソールのアクティビティー (入力または出力) がまったく発生しないと、\fBvntsd\fR は \fBtelnet\fR 接続をタイムアウトします (閉じます)。デフォルト値は 0 で、この場合はタイムアウトが無効化されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvntsd/authorization\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクセス中の 1 つまたは複数のドメインコンソールに対してユーザーや役割の承認チェックを有効にします。このプロパティーのデフォルト値は \fBfalse\fR ですが、これは、下位互換性を維持するためです。承認チェックを有効にするには、\fBsvccfg\fR(1M) コマンドを使用してプロパティー値を \fBtrue\fR に設定します。このオプションが有効化されていると、\fBvntsd\fR は、\fBlocalhost\fR 上で接続を待機して受け入れます。このオプションが有効化された状態で \fBlisten_addr\fR プロパティーに代替 IP アドレスが指定されても、\fBvntsd\fR はその代替 IP アドレスを無視し、\fBlocalhost\fR 上で待機し続けます。ほかのホストから開始された接続も失敗します。すべてのコンソールまたはコンソールグループにアクセスする承認と、特定のコンソールまたはコンソールグループにアクセスする承認が使用できます。\fBvntsd\fR サービスを有効化すると、承認記述データベース \fBauth_attr\fR(4) に次の承認が追加されます。
+.sp
+.in +2
+.nf
+solaris.vntsd.consoles:::Access All LDoms Guest Consoles::
+.fi
+.in -2
+.sp
+
+コンソールグループの名前に基づく、きめ細かな承認を追加します。たとえば、承認対象となるコンソールグループの名前が \fBldg1\fR の場合、\fBauth_attr\fR(4) ファイルに次のエントリを追加します。
+.sp
+.in +2
+.nf
+solaris.vntsd.console-ldg1:::Access Specific LDoms Guest Console::
+.fi
+.in -2
+.sp
+
+ルートユーザーまたはルート役割にはデフォルトで、すべてのコンソールにアクセスする承認が割り当てられます。Primary Administrator (スーパーユーザー) は、\fBusermod\fR(1M) コマンドを使用すると 1 つまたは複数の必要な承認をほかのユーザーや役割に割り当てることができます。
+.sp
+次の例では、ユーザー \fBuser1\fR に、すべてのドメインコンソールにアクセスする承認を付与しています。
+.sp
+.in +2
+.nf
+# \fBusermod -A "solaris.vntsd.consoles" user1\fR
+.fi
+.in -2
+.sp
+
+次の例では、ユーザー \fBuser1\fR に、\fBldg1\fR という名前のコンソールグループにアクセスする承認を付与しています。
+.sp
+.in +2
+.nf
+# \fBusermod -A "solaris.vntsd.console-ldg1" user1\fR
+.fi
+.in -2
+.sp
+
+.RE
+

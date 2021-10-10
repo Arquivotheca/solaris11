@@ -1,0 +1,303 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved
+.TH poweradm 1M "20 Jun 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+poweradm \- manage power management properties
+.SH SYNOPSIS
+.LP
+.nf
+\fBpoweradm\fR [\fB-v\fR] get [\fB-a\fR all|smf|platform|current] \fIproperty\fR ...
+.fi
+
+.LP
+.nf
+\fBpoweradm\fR [\fB-v\fR] set \fIproperty\fR=\fIvalue\fR ...
+.fi
+
+.LP
+.nf
+\fBpoweradm\fR [\fB-v\fR] list
+.fi
+
+.LP
+.nf
+\fBpoweradm\fR \fB-?\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpoweradm\fR program is used to display and manage the Power Management settings within a Solaris instance.
+.sp
+.LP
+The Power Management properties and their values are stored in the service management facility (see \fBsmf\fR(5)).
+.sp
+.LP
+All users can run the \fBlist\fR and \fBget\fR forms given in the \fBSYNOPSIS\fR. These commands allow all users to view the current Power Management settings within a Solaris instance.
+.sp
+.LP
+Only users and roles that belong to the Maintenance and Repair RBAC profile can execute the \fBset\fR form of \fBpoweradm\fR given in the \fBSYNOPSIS\fR. See also the \fBNOTES\fR section below.
+.sp
+.LP
+\fBpoweradm\fR supports the following service property:
+.sp
+.in +2
+.nf
+administrative-authority
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The value for this property is specified as a string and can have the values:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsmf\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBplatform\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnone\fR
+.RE
+.sp
+.LP
+\&...with \fBplatform\fR as the default value. The significance of this property is the source of administrative control for power management within the Solaris kernel. That is, this property indicates the origin of \fBtime-to-full-capacity\fR and \fBtime-to-minimum-responsiveness\fR settings within the Solaris kernel. Only a Solaris user with appropriate privileges can set this property.
+.sp
+.LP
+When the \fBadministrative-authority\fR is set to \fBplatform\fR the values of \fBtime-to-full-capacity\fR and \fBtime-to-minimum-responsiveness\fR will be taken from the platform code. Setting these values in SMF using the \fBpoweradm\fR command will have no effect upon the values in the kernel, while \fBadministrative-authority\fR is set to \fBplatform\fR. Under this condition, the \fBpoweradm\fR command will indicate that the kernel is currently using the platform values. As these values are changed by the platform administrator, so they will be modified in kernel. Also, commands to enable or disable the power management within the Solaris kernel will come from the platform code. When the \fBadministrative-authority\fR is set to \fBsmf\fR, the values of \fBtime-to-full-capacity\fR and \fBtime-to-minimum-responsiveness\fR will be taken from SMF. As these values in SMF are changed by the Solaris administrator, so they will be applied to kernel. Setting these values in the platform will have no effect upon the values in the kernel while administrative-authority is set to \fBsmf\fR. Under this condition, he \fBpoweradm\fR command will indicate that the kernel is currently using the values from SMF. As these values are changed by the Solaris administrator, so they will be modified in kernel.
+.sp
+.LP
+When the \fBadministrative-authority\fR is set to \fBnone\fR, power management within the Solaris kernel will be turned off, although the power service will continue to run. Any power management instructions from the platform will be ignored, as will the settings in SMF. Only when \fBadministrative-authority\fR is set to one of the other values will power management within the Solaris kernel restart, using the settings from the specified source.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtime-to-full-capacity\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specified in microseconds.
+.sp
+This parameter constrains the dynamic capacity adjustment allowed while the system is in an active state.
+.sp
+This parameter defines the maximum time the system is allowed to reach (re-provision and make available) its full capacity, returning from any lower-capacity/less-responsive state, while it has been  using any or all of the PM features falling within this bound.
+.sp
+By default, this value is taken from the platform (for example, \fBi86pc\fR), because the default setting for \fBadministrative-authority\fR is set to \fBplatform\fR.
+.sp
+Alternatively, if \fBadministrative-authority\fR is set to \fBsmf\fR, this value is taken from the definition provided by the power service (that is, SMF). At install time this value is set to be \fBundefined\fR. If the Solaris administrator chooses to modify this property, a value appropriate to the needs of the workload or applications must be picked.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtime-to-minimum-responsiveness\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specified in milliseconds.
+.sp
+This parameter constrains the dynamic capacity adjustment allowed while the system is in an inactive state.
+.sp
+This parameter defines how long the system is allowed to return to its active state\(emthat is, to provide the minimum capacity required to meet the above time-to-full-capacity constraint.
+.sp
+Moderate values (seconds) allow hardware components or subsystems on the platform to be placed in slower-response inactive states; larger values still (for example, 30 seconds to minutes) allow for such as whole system suspension, using techniques such as suspend-to-RAM.
+.sp
+By default, this value is taken from the platform (for example, \fBi86pc\fR), because the default setting for \fBadministrative-authority\fR is set to \fBplatform\fR.
+.sp
+Alternatively, if \fBadministrative-authority\fR is set to \fBsmf\fR, this value is taken from the definition provided by the power service (that is, SMF). At install time this value is set to be \fBundefined\fR. If the Solaris administrator chooses to modify this property, a value appropriate to the needs of the workload or applications must be picked.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsuspend-enable\fR\fR
+.ad
+.sp .6
+.RS 4n
+By default, only a small number of machines are allowed to suspend. Setting this property to true will permit other machines to attempt to suspend. By default this property is set to \fBfalse\fR, unless a machine has S3 according the the ACPI kstat module and is on the white list. If these two conditions are met, the default is \fBtrue\fR. The value of \fBadministrative-authority\fR has no effect upon this property.
+.RE
+
+.SH OPTIONS
+.sp
+.LP
+The following options are supported.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-?\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display a synopsis of available subcommands and options.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Provide verbose output. Can be used with any of the subcommands listed below.
+.RE
+
+.SH SUB-COMMANDS
+.sp
+.LP
+The following subcommands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [\fB-a\fR \fBall\fR|\fBsmf\fR|\fBplatform\fR|\fBcurrent\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Retrieves the current value of the named property. The \fB-a\fR option can be used to indicate the origin of the value either: SMF (\fBsmf\fR), the platform (\fBplatform\fR), the current value used by the kernel (\fBcurrent\fR) or all of the preceeding (\fBall\fR). By default, if no origin is specified then \fBcurrent\fR is assumed.
+.sp
+The \fBadministrative-authority\fR and \fBsuspend-enable\fR properties do not have a platform value
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIproperty\fR=\fIvalue\fR...\fR
+.ad
+.sp .6
+.RS 4n
+Changes the named \fIproperty\fR to the given \fIvalue\fR. The properties \fBadministrative-authority\fR and \fBsuspend-enable\fR are automatically synchronized to the new value in the kernel. The properties \fBtime-to-full-capacity\fR and \fBtime-to-minimum-responsiveness\fR are synchronized to the kernel if and only if \fBadministrative-authority\fR is set to \fBsmf\fR. If the \fB-v\fR option is used and the kernel cannot be updated immediately because \fBadministrative-authority\fR is not set to \fBsmf\fR, a warning message will be issued.
+.sp
+Only users and roles that belong to the Maintenance and Repair RBAC profile can execute the \fBset\fR subcommand.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+Lists all the available Power Management properties values and indicate whether power management is active.
+.RE
+
+.SH EXIT STATUS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalid command line options were specified.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/kernel/power
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBsmf\fR(5), \fBsmf_security\fR(5)
+.SH NOTES
+.sp
+.LP
+The power service is managed by the service management facility, \fBsmf\fR(5), under the service identifier:
+.sp
+.in +2
+.nf
+svc:/system/power:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The properties that can be set by \fBpoweradm\fR are defined in that service as:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBactive_control\fR/\fBadministrative-authority\fR, which is described under \fBadministrative-authority\fR above
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBactive_config\fR/\fBtime-to-full-capacity\fR, which is described under \fBtime-to-full-capacity\fR above
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBactive_config\fR/\fBtime-to-minimum-responsiveness\fR, which is described under \fBtime-to-minimum-responsiveness\fR above
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsuspend\fR/\fBsuspend-enable\fR, which is described under \fBsuspend-enable\fR above
+.RE
+.sp
+.LP
+If the service is disabled, no power management settings will be uploaded to the kernel in the future. Existing settings will not be undone until the next reboot. Disabling all power management is best accomplished by setting \fBadministrative-authority\fR to \fBnone\fR.
+.sp
+.LP
+If \fBadministrative-authority\fR is set to the value \fBsmf\fR before both \fBtime-to-full-capacity\fR and \fBtime-to-minimum-responsiveness\fR have been set, the service will go into maintenance mode. In such a situation, set \fBadministrative-authority\fR to the value \fBnone\fR then set both \fBtime-to-full-capacity\fR and \fBtime-to-minimum-responsiveness\fR to the values you want, clear the service and then set administrative-authority to \fBsmf\fR.
+.sp
+.LP
+To set properties in the \fBactive_config\fR and \fBsuspend\fR property groups, the \fBsolaris.smf.value.power_config\fR authorization is required. To set properties in the \fBactive_control\fR property group requires the \fBsolaris.smf.value.power_control\fR authorization is required. Both of these authorizations are part of the Maintenance and Repair profile.

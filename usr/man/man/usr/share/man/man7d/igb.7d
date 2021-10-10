@@ -1,0 +1,195 @@
+'\" te
+.\" Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH igb 7D "28 Jul 2011" "SunOS 5.11" "Devices"
+.SH NAME
+igb \- Intel 1Gb PCI Express NIC Driver
+.SH SYNOPSIS
+.LP
+.nf
+\fB/dev/igb*\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBigb\fR Gigabit Ethernet driver is a multi-threaded, loadable, clonable, GLD-based STREAMS driver supporting the Data Link Provider Interface, \fBdlpi\fR(7P), on Intel 82575/82576 Gigabit Ethernet controllers.
+.sp
+.LP
+The \fBigb\fR driver functions include controller initialization, frame transmit and receive, promiscuous and multicast support, and error recovery and reporting.
+.sp
+.LP
+The \fBigb\fR driver and hardware support auto-negotiation, a protocol specified by the 1000 Base-T standard. Auto-negotiation allows each device to advertise its capabilities and discover those of its peer (link partner). The highest common denominator supported by both link partners is automatically selected, yielding the greatest available throughput, while requiring no manual configuration. The \fBigb\fR driver also allows you to configure the advertised capabilities to less than the maximum (where the full speed of the interface is not required), or to force a specific mode of operation, irrespective of the link partner's advertised capabilities.
+.sp
+.LP
+The \fBigb\fR driver also supports the SRIOV capability on Intel 82576 Gigabit Ethernet controller. In SRIOV enabled mode, it supports the Physical Function of the controller.
+.SH CONFIGURATION
+.sp
+.LP
+The \fBigb\fR driver is managed by the \fBdladm\fR(1M) command line utility, which allows VLANs to be defined on top of \fBigb\fR instances and for \fBigb\fR instances to be aggregated. See \fBdladm\fR(1M) for more details.
+.sp
+.LP
+By default, the \fBigb\fR driver performs auto-negotiation to select the link speed and mode. Link speed and mode can be any one of the following, as described in the \fIIEEE 803.2\fR standard: 
+.sp
+.LP
+1000 Mbps, full-duplex.
+.sp
+.LP
+100 Mbps, full-duplex.
+.sp
+.LP
+100 Mbps, half-duplex.
+.sp
+.LP
+10 Mbps, full-duplex.
+.sp
+.LP
+10 Mbps, half-duplex.
+.sp
+.LP
+The auto-negotiation protocol automatically selects speed (1000 Mbps, 100 Mbps, or 10 Mbps) and operation mode (full-duplex or half-duplex) as the highest common denominator supported by both link partners.
+.sp
+.LP
+Alternatively, you can set the capabilities advertised by the \fBigb\fR device using \fBndd\fR(1M). The driver supports a number of parameters whose names begin with \fIadv_\fR (see below). Each of these parameters contains a boolean value that determines if the device advertises that mode of operation. For example, the \fIadv_1000fdx_cap\fR parameter indicates if 1000M full duplex is advertised to link partner. The \fIadv_autoneg\fR cap parameter controls whether auto-negotiation is performed. If \fIadv_autoneg_cap\fR is set to 0, the driver forces the mode of operation selected by the first non-zero parameter in priority order as shown below:
+.sp
+.in +2
+.nf
+                        (highest priority/greatest throughput)
+        en_1000fdx_cap        1000Mbps full duplex
+        en_100fdx_cap          100Mpbs full duplex
+        en_100hdx_cap          100Mbps half duplex
+        en_10fdx_cap           10Mpbs full duplex
+        en_10hdx_cap           10Mpbs half duplex
+                                (lowest priority/least throughput)
+.fi
+.in -2
+
+.sp
+.LP
+All capabilities default to enabled. Changing any capability parameter causes the link to go down while the link partners renegotiate the link speed/duplex using the newly changed capabilities.
+.sp
+.LP
+In SRIOV mode, the following device specific parameters are exported by the igb driver to supprot SR-IOV feature.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-config-vfs\fR\fR
+.ad
+.RS 18n
+.rt  
+This is a read-only parameter describing the maximum number of VFs that can be configured. A value of \fB7\fR is exported to override the information that is found in PCI \fBconfig\fR space of the \fB82576\fR device. This difference is due to the fact that \fBigb\fR driver utilizes hardware resources to provide a functional PF device along with VFs. This parameter enables external management software to limit the number of configured VFs to be \fB7\fR or less.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-vlans\fR\fR
+.ad
+.RS 18n
+.rt  
+This is a read-only parameter describing the maximum number of VLAN filters supported for PF and VFs. As the \fB82576\fR supports 32 VLAN filters for PF and VFs all together, a value of \fB32\fR is exported. This parameter allows external management software entities to limit the number of VLAN filters configured to be with the supported limit.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax-vf-mtu\fR\fR
+.ad
+.RS 18n
+.rt  
+This is a read-only parameter describing the maximum MTU allowed for a VF. A value of \fB9216\fR is exported to indicate the \fB82576\fR VF hardware limit. This parameter allows external management software to limit the maximum VF MTU setting to be within the described limit.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpvid-exclusive\fR\fR
+.ad
+.RS 18n
+.rt  
+This is a read-only parameter describing the hardware attribute that vlan IDs and port vlan ID are mutual exclusive on a 82576 device. Users cannot set vlan IDs successfully  when port vlan ID has been set. Vice versa, users cannot set port vlan ID successfully when vlan IDs have been set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunicast-slots\fR\fR
+.ad
+.RS 18n
+.rt  
+This is a tunable parameter that allows the reservation of unicast \fBmac-address\fR slots to a PF or a VF. A total of \fB24\fR unicast \fBmac-address\fR slots are present in a 82576 device instance, out which one \fBmac-address\fR slot for the PF and each VFs is always reserved. The rest of the unicast \fBmac-address\fR slots can be reserved for the PF or VFs through this parameter. If not, the rest unicast \fBmac-address\fR slots are shared and allocated on first come first serve basis.
+.RE
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/igb*\fR\fR
+.ad
+.RS 27n
+.rt  
+Special character device
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/igb\fR\fR
+.ad
+.RS 27n
+.rt  
+32-bit device driver (x86)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/igb\fR\fR
+.ad
+.RS 27n
+.rt  
+64-bit device driver (x86)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/igb\fR\fR
+.ad
+.RS 27n
+.rt  
+64-bit device driver (SPARC)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/igb.conf\fR\fR
+.ad
+.RS 27n
+.rt  
+Configuration file
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBndd\fR(1M), \fBnetstat\fR(1M), \fBdriver.conf\fR(4), \fBattributes\fR(5), \fBdlpi\fR(7P), \fBigbvf\fR(7D), \fBstreamio\fR(7I)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR
+.sp
+.LP
+\fINetwork Interfaces Programmer's Guide\fR

@@ -1,0 +1,202 @@
+'\" te
+.\" Portions Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.\" Copyright (c) 2002-2006 Szabolcs Szakacsits
+.\" Copyright (c) 2002-2005 Anton Altaparmakov
+.\" Copyright (c) 2002-2003 Richard Russon
+.\" Copyright (c) 2007 Yura Pakhuchiy
+.\" This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program (in the main directory of the Linux-NTFS distribution in the file COPYING); if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfsresize 1M "2009 年 5 月 21 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ntfsresize \- データ損失を伴わない NTFS ファイルシステムのサイズ変更
+.SH 形式
+.LP
+.nf
+\fBntfsresize\fR  [\fIoptions\fR] \fB--info\fR \fIdevice\fR
+.fi
+
+.LP
+.nf
+\fBntfsresize\fR  [\fIoptions\fR] [\fB--size\fR \fIsize\fR[k|M|G]] \fIdevice\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBntfsresize\fR プログラムは、Windows XP、Windows Server 2003、Windows 2000、Windows NT4、および Longhorn NTFS ファイルシステムのサイズを安全に、データを損失することなく変更します。32 ビットおよび 64 ビットの Windows「オペレーティングシステム」で使用されるすべての NTFS バージョンがサポートされます。\fBntfsresize\fR は、データの整合性を危険にさらすことなく、必要に応じてあらゆるデータを再配置できるので、サイズ変更の前にデフラグを行う必要はありません。
+.sp
+.LP
+マウントされていないデバイス (通常はディスクパーティション) に配置された NTFS ファイルシステムの縮小または拡大に、\fBntfsresize\fR を使用できます。新しいファイルシステムは、指定したサイズになります。サイズパラメータには、オプションの修飾子 \fBk\fR、\fBM\fR、\fBG\fR (それぞれ K バイト、M バイト、G バイトを示す) のいずれかを指定できます。\fBntfsresize\fR は、\fBk=10\fR^3、\fBM=10\fR^6、および \fBG=10\fR^9 をサポートすることによって、SI、ATA、IEEE の各標準とディスク製造元に準拠します。
+.sp
+.LP
+\fB---info\fR と \fB---size\fR の両方のオプションを指定しない場合、NTFS ファイルシステムは、基礎となるデバイスのサイズに拡大されます。
+.sp
+.LP
+パーティション上のファイルシステムのサイズを変更するには、ディスク上のパーティションテーブルを編集して、ファイルシステムとパーティションの両方のサイズを変更する必要があります。ほかのコマンド行ファイルシステムサイズ変更ツールと同様に、\fBntfsresize\fR は、パーティションのサイズを操作しません。これを行うには、\fBfdisk\fR(1M) などのディスクパーティション分割ツールを使用する必要があります。または、\fBntfsresize\fR を内部で使用する、その他多数のユーザーフレンドリなパーティション分割ツールを使用することもできます。このようなパーティション分割ツールとしては、たとえば Mandriva の DiskDrake、QTParted、SUSE/Novell の YaST Partitioner、IBM の EVMS、GParted、Debian/Ubuntu の Partman があります。
+.sp
+.LP
+パーティション分割ツールを使用する前に、データとパーティションテーブルのバックアップを作成してください。NTFS ファイルシステムの場合、バックアップの手段として、\fBntfsclone\fR(1M) を使用できます。
+.sp
+.LP
+NTFS パーティションを縮小するには、最初に \fBntfsresize\fR を使用してファイルシステムのサイズを縮小します。次に、\fBfdisk\fR(1M) などのユーティリティーを使用して、パーティションを削除してからより小さなサイズで再作成することによって、パーティションのサイズを縮小します。パーティションのサイズを NTFS の新しいサイズよりも小さくしないでください。小さくすると、そのパーティションから起動できなくなります。間違ってパーティションのサイズを小さくしすぎた場合は、新しいサイズに変更した NTFS ファイルシステムと同じ大きさになるように、パーティションを再作成する必要があります。
+.sp
+.LP
+NTFS ファイルシステムを拡大するには、最初に、基礎となるパーティションのサイズを拡大する必要があります。\fBfdisk\fR(1M) を使用すると、パーティションを削除して、より大きなサイズで再作成できます。新しいサイズに変更したパーティションが、ほかのどのパーティションとも重なっていないことを確認してください。続いて \fBntfsresize\fR を使用してファイルシステムを拡大します。
+.sp
+.LP
+パーティションを再作成するときには、必ず、元のパーティションで使用されたものと同じ開始セクターとパーティションタイプを使用してください。それ以外の場合は、ファイルシステムにアクセスできなくなります。デフォルトのシリンダ単位から信頼できるセクター単位に切り換えるには、\fBfdisk u\fR コマンドを使用します。また、古いパーティションで起動可能フラグが設定されていた場合は、必ず、再作成したパーティションでもこのフラグを設定してください。それ以外の場合、新しいパーティションから起動できなくなる可能性があります。
+.SH 拡張機能説明
+.sp
+.LP
+\fBntfsresize\fR の使用には、非常にまれにしか見られない制限がわずかにあります。このような制限は、たとえば、不明な不良セクターを含むディスクにファイルシステムが格納された場合に生じます。最初の \fBMFT\fR エクステントの再配置と、\fB$MFTMirr\fR エクステントの中央へのサイズ変更はサポートされていません。これらの場合は検出され、サイズ変更は安全なサイズに制限されるか、もっとも近い安全なサイズが表示されます。
+.sp
+.LP
+サイズ変更が完了すると、\fBntfsresize\fR は NTFS 整合性検査のスケジュールを設定します。Windows では、この検査は \fBchkdsk\fR によって実行されます。その後、最初に Windows にリブートしたときに、\fBchkdsk\fR が青色のバックグラウンドで実行されます。これは正常な状態です。整合性検査のすぐあとに、Windows により強制的にリブートされる場合があります。ハードウェア構成に応じて、Windows でシステム設定の変更に関する警告が表示され、リブートが推奨または要求されます。メッセージを承認し、もう一度リブートします。
+.SH オプション
+.sp
+.LP
+サポートされているオプションを次に示します。ほとんどのオプションには、単一文字と完全名の両方の形式があります。引数を取らない単一文字オプションは複数を組み合わせることができます。たとえば、\fB-fv\fR は \fB-f\fR \fB-v\fR と同等です。完全名のオプションは、その名前の一意の接頭辞に短縮できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR、\fB--bad-sectors\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトでは、不良セクターを検出すると、\fBntfsresize\fR は終了します。このオプションを使用すると、不良セクターがあってもユーティリティーを続行できます。
+.sp
+このオプションを使用する前に、\fB--rescue\fR オプションを指定した \fBntfsclone\fR(1M) を使用してバックアップを作成したあと、Windows のコマンド行から \fBchkdsk /f /r volume\fR: (volume はボリューム) を実行することをお勧めします。ディスク保証が有効と表示された場合、欠陥があるので交換してください。不良セクターエラーを修復できるソフトウェアは存在しません。これらの欠陥を回避することが、最善の方法です。
+.sp
+ディスクに不良セクターがない場合、このオプションは効果がありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsresize\fR は常に、実際の (\fB--no-action\fR を使用しない) サイズ変更操作の前に、整合性検査の対象としてファイルシステムにマークを付け、安全性を高めるためそのままにします。したがって、\fBntfsresize\fR によって NTFS ファイルシステムにマークが付けられた場合は、このオプションを使用しても安全です。サイズ変更の各手順間で Windows を起動せずに複数回サイズを変更する場合は、このオプションを使用する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR、\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用法の情報を表示して終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB--info\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムを縮小する必要があるときに使用します。\fBntfsresize\fR が、縮小対象のファイルシステムでサポートされる最小サイズを決定します。ほとんどの場合、最小サイズは、ファイルシステムですでに使用されている容量になります。\fBntfsresize\fR は、このオプションで返されるサイズ未満にファイルシステムを縮小しません。複数の要因により、この理論的なサイズまで縮小できない場合もあります。データの整合性が危険にさらされることはありませんが、それでも、実際のサイズ変更の前に \fB--no-action\fR オプションを使用してテスト実行を行うことを強くお勧めします。
+.sp
+テストによると、最小サイズはおおよそで、ファイルシステムで使用されている容量に 20 - 200M バイトを加えたサイズになります。Windows では、安全に起動するために、さらに 50 - 100M バイトが必要になる可能性があります。
+.sp
+このオプションを使用しても、ファイルシステムに変更はありません。パーティションは読み取り専用で開かれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR、\fB--no-action\fR\fR
+.ad
+.sp .6
+.RS 4n
+サイズ変更操作を行う前にテストを実行する場合に、このオプションを使用します。ボリュームは読み取り専用で開かれます。\fBntfsresize\fR は、ファイルシステムのサイズを変更した場合にどのような影響があるかを表示します。テスト実行に成功した場合にのみ、実際のサイズ変更を続行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR、\fB--no-progress-bar\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsresize\fR の操作中に進捗状況を表示しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--size\fR \fIsize\fR[k|M|G]]\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムのサイズを \fIsize\fR バイトに変更します。新しいファイルシステムは、指定したサイズになります。サイズパラメータには、オプションの修飾子 \fBk\fR、\fBM\fR、\fBG\fR (それぞれ K バイト、M バイト、G バイトを示す) のいずれかを指定できます。\fBntfsresize\fR は、\fBk=10\fR^3、\fBM=10\fR^6、および \fBG=10\fR^9 をサポートすることによって、SI、ATA、IEEE の各標準とディスク製造元に準拠します。実際のサイズ変更を実行する前に、最初に、このオプションとともに \fB--no-action\fR オプションを付けて、\fBntfsresize\fR を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR、\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+多量の出力を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR、\fB--version\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBntfsresize\fR のバージョン番号を表示します。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+成功した場合は 0 を、失敗した場合は 0 以外を表示します。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/ntfsprogs
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBfdisk\fR(1M), \fBntfsclone\fR(1M), \fBparted\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 注意事項
+.sp
+.LP
+Linux Version 2.6 では、\fBparted\fR(1M) で操作されたパーティションで \fBntfsresize\fR を使用すると、パーティションテーブルが破壊され、その結果、Windows システムが起動不能になりました。これは、NTFS ファイルシステムに整合性がある場合でも起きていました。この問題は NTFS とは無関係であり、したがって \fBntfsresize\fR に関係したものではありません。さらに、\fBntfsresize\fR は決してパーティションテーブルを操作しません。直前に説明した条件では、BIOS でディスクアクセスモードを \fBLBA\fR に変更すれば、起動機能を回復できます。\fB\fRこの条件に関する詳細は、\fBhttp://mlf.linux.rulez.org/mlf/ezaz/ntfsresize.html\fR の \fBntfsresize\fR の FAQ を参照してください。
+.SH 著者
+.sp
+.LP
+\fBntfsresize\fR は、Anton Altaparmakov と Richard Russon の協力の下、Szabolcs Szakacsits が作成しました。

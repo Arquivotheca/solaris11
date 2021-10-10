@@ -1,0 +1,229 @@
+'\" te
+.\" Copyright (c) 2010, Sun Microsystems All Rights Reserved
+.TH nge 7D "10 Mar 2010" " SunOS 5.11" "Devices"
+.SH NAME
+nge \- Gigabit Ethernet driver for Nvidia Gigabit family of network  interface controllers
+.SH SYNOPSIS
+.LP
+.nf
+/dev/nge
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnge\fR Gigabit Ethernet driver is a  multi-threaded,  loadable,  clonable,  GLD v3-based  STREAMS  driver supporting the Data Link Provider Interface \fBdlpi\fR(7P), on Nvidia ck8-04/mcp55/mcp51 Gigabit Ethernet controllers. The controller is a Mac chipset that works with PHY functions and provides three-speed (copper) Ethernet operation on the RJ-45 connectors.
+.sp
+.LP
+The \fBnge\fR driver functions include controller initialization, frame transmit and receive, promiscuous and multicast support, and error recovery and reporting.
+.sp
+.LP
+The \fBnge\fR driver and hardware support auto-negotiation, a protocol specified by the 1000 Base-T standard. Auto-negotiation allows each device to advertise its capabilities and discover those of its peer (link partner). The highest common denominator supported by both link partners is automatically selected, yielding the greatest available throughput while requiring no manual configuration. The \fBnge\fR driver also allows you to configure the advertised capabilities to less than the maximum (where the full speed of the interface is not required), or to force a specific mode of operation, irrespective of the link partner's advertised capabilities.
+.SH APPLICATION PROGRAMMING INTERFACE
+.sp
+.LP
+The cloning,  character-special device \fB/dev/nge\fR is used to access all \fBnge\fR devices.
+.sp
+.LP
+The \fBnge\fR driver is dependent on \fB/kernel/misc/mac\fR, a loadable kernel module that provides the DLPI and STREAMS functionality required of a LAN driver. See \fBgld\fR(7D) for more details on supported primitives.
+.sp
+.LP
+You must send an explicit DL_ATTACH_REQ message to associate the opened stream with a particular device (PPA). The PPA ID is interpreted as an unsigned integer data type and indicates the corresponding device instance (unit) number. The driver returns an error (DL_ERROR_ACK) if the PPA field value does not correspond to a valid device instance number for the system. The device is initialized on first attach and de-initialized (stopped) at last detach.
+.sp
+.LP
+The values returned by the driver in the DL_INFO_ACK primitive in response to the DL_INFO_REQ are as follows:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum SDU (with jumbo frame) is 9000. (ETHERMTU - defined in <\fBsys/ethernet\fR>.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum SDU is \fB68\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDSLAP\fR address length is \fB8\fR bytes.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMAC\fR type is \fBDL_ETHER.\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSAP\fR length value is  -2 meaning the physical address component is followed immediately by a 2-byte sap component within the DLSAP address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Broadcast address value is Ethernet/IEEE  broadcast address (FF:FF:FF:FF:FF:FF).
+.RE
+.sp
+.LP
+Once in the DL_ATTACHED state, you must send a DL_BIND_REQ to associate a particular Service Access Point (SAP) with the stream.
+.SH CONFIGURATION
+.sp
+.LP
+By default, the \fBnge\fR driver performs auto-negotiation to select the link speed and mode. Link speed and mode can be any one of the following, (as described in the \fIIEEE803.2\fR standard):
+.sp
+.LP
+1000 Mbps, full-duplex.
+.sp
+.LP
+1000 Mbps, half-duplex.
+.sp
+.LP
+100 Mbps, full-duplex.
+.sp
+.LP
+100 Mbps, half-duplex.
+.sp
+.LP
+10 Mbps, full-duplex.
+.sp
+.LP
+10 Mbps, half-duplex.
+.sp
+.LP
+The auto-negotiation protocol automatically selects speed (1000 Mbps, 100 Mbps, or 10 Mbps) and operation mode (full-duplex or half-duplex) as the highest common denominator supported by both link partners. Because the \fBnge\fR device supports all modes, the effect is to select the highest throughput mode supported by the other device.
+.sp
+.LP
+Alternatively, you can set the  capabilities advertised by the \fBnge\fR device using \fBdladm\fR(1M). The driver supports a number of parameters whose names begin with enable (see below). Each of these parameters contains a boolean value that determines whether the device advertises that mode of operation. If \fIen_autoneg_cap\fR is set to 0, the driver forces the mode of operation selected by the first non-zero parameter in priority order as  listed below:
+.sp
+.in +2
+.nf
+(highest priority/greatest throughput)
+          en_1000fdx_cap         1000Mbps full duplex
+          en_1000hdx_cap         1000Mpbs half duplex
+          en_100fdx_cap          100Mpbs full duplex
+          en_100hdx_cap          100Mpbs half duplex
+          en_10fdx_cap           10Mpbs full duplex
+          en_10hdx_cap           10Mpbs half duplex
+                                (lowest priority/least throughput)
+.fi
+.in -2
+
+.sp
+.LP
+For example, to prevent the device 'nge2' from advertising gigabit capabilities, enter (as super-user):
+.sp
+.in +2
+.nf
+# dladm set-linkprop -p en_1000fdx_cap=0 nge2
+.fi
+.in -2
+
+.sp
+.LP
+All capabilities default to enabled. Note that changing any capability parameter causes the link to go down while the link partners renegotiate the link  speed/duplex using the newly changed capabilities.
+.sp
+.LP
+You can obtain the current parameters settings using  dladm show-linkprop. In addition, the driver exports the current state, speed, duplex setting and working mode of the link via kstat parameters (which are read only and can not be changed). For example, to check link state of device \fBnge0\fR:
+.sp
+.in +2
+.nf
+# dladm show-linkprop -p state nge1
+       LINK         PROPERTY        VALUE      DEFAULT     POSSIBLE
+       nge1         state           up         up          up,down 
+       # dladm show-linkprop -p speed nge0
+       LINK         PROPERTY        VALUE      DEFAULT     POSSIBLE
+       nge1         speed           100          --        10,100,1000 
+       # dladm show-linkprop -p duplex nge1
+       LINK         PROPERTY        VALUE      DEFAULT     POSSIBLE
+       nge1         duplex          full       full        half,full 
+       # dladm show-linkprop -p flowctrl nge1
+       LINK         PROPERTY        VALUE      DEFAULT     POSSIBLE
+       nge1         flowctrl        no         bi          no,tx,rx,bi
+.fi
+.in -2
+
+.sp
+.LP
+The output above indicates that the link is up and running at 100Mbps full-duplex with its rx/tx direction pause capability. In addition, the driver exports its working mode by \fIloop_mode\fR. If it is set to 0, the loopback mode is disabled.
+.sp
+.LP
+Only MCP55/CK804 chipsets accept the Maximum MTU upper to 9000 bytes. Use default_mtu to set in \fB/kernel/drv/nge.conf file\fR, then reboot to make it available. The default MTU value is 1500. For MCP55/CK804 chipsets, \fBnge\fR provides one option of minimal memory usage. Use \fBminimal-memory-usage = 1\fR in the \fB/kernel/drv/nge.conf\fR file, then reboot to make it available. With this option, the \fBnge\fR driver can reduce memory usage by two thirds. Note that setting \fBminimal-memory-usage = 1\fR does not take effect if MTU is increased above the default value. To avoid problems, do not set the \fBminimal-memory-usage\fR and \fBdefault_mtu\fR options together in the \fBnge.conf\fR file.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/nge\fR\fR
+.ad
+.RS 25n
+.rt  
+\fBnge\fR special character device.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/nge\fR\fR
+.ad
+.RS 25n
+.rt  
+32-bit ELF Kernel module (x86).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/nge\fR\fR
+.ad
+.RS 25n
+.rt  
+64-bit ELF Kernel module (x86).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/nge.conf\fR\fR
+.ad
+.RS 25n
+.rt  
+Driver configuration file.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) lw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+Architecturex86
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBndd\fR(1M), \fBattributes\fR(5), \fBgld\fR(7D), \fBstreamio\fR(7I), \fBdlpi\fR(7P)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR
+.sp
+.LP
+\fINetwork Interfaces Programmer's Guide\fR

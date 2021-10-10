@@ -1,0 +1,2162 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1983 Regents of the University of California. All rights reserved.The Berkeley software License Agreement specifies the terms and conditions for redistribution.
+.TH ifconfig 1M "2011 年 2 月 10 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ifconfig \- ネットワークインタフェースのパラメータの構成
+.SH 形式
+.LP
+.nf
+\fBifconfig\fR \fIinterface\fR [\fIaddress_family\fR] [\fIaddress\fR [\fI/prefix_length\fR] 
+ [\fIdest_address\fR]] [\fBaddif\fR \fIaddress\fR [\fI/prefix_length\fR]]
+ [\fBremoveif\fR \fIaddress\fR [\fI/prefix_length\fR]] [\fBarp\fR | \fB-arp\fR]
+ [\fBauth_algs\fR \fIauthentication algorithm\fR] [\fBencr_algs\fR \fIencryption algorithm\fR]
+ [\fBencr_auth_algs\fR \fIauthentication algorithm\fR] [\fBauto-revarp\fR]
+ [\fBbroadcast\fR \fIaddress\fR] [\fBdeprecated\fR | \fB-deprecated\fR]
+ [\fBpreferred\fR | \fB-preferred\fR] [\fBdestination\fR \fIdest_address\fR]
+ [ether [\fIaddress\fR]] [\fBfailover\fR | \fB-failover\fR] [\fBgroup\fR
+ [\fIname\fR | ""\fB\fR]] [\fBindex\fR \fIif_index\fR] [ipmp] [\fBmetric\fR \fIn\fR] [modlist]
+ [modinsert \fImod_name@pos\fR] [modremove \fImod_name@pos\fR]
+ [\fBmtu\fR \fIn\fR] [\fBnetmask\fR \fImask\fR] [\fBplumb\fR] [\fBunplumb\fR] [\fBprivate\fR
+ | \fB-private\fR] [\fBnud\fR | \fB-nud\fR] [\fBset\fR [\fIaddress\fR] [\fI/netmask\fR]]
+ [\fBstandby\fR | \fB-standby\fR] [\fBsubnet\fR \fIsubnet_address\fR] [\fBtdst\fR 
+ \fItunnel_dest_address\fR] [\fBtoken\fR \fIaddress\fR/\fIprefix_length\fR]
+ [\fBtsrc\fR \fItunnel_src_address\fR] [\fBtrailers\fR | \fB-trailers\fR]
+ [\fBup\fR] [\fBdown\fR] [\fBusesrc\fR [\fIname\fR | none]] [\fBxmit\fR | \fB-xmit\fR]
+ [\fBencaplimit\fR \fIn\fR | \fB-encaplimit\fR] [\fBthoplimit\fR \fIn\fR] [\fBrouter\fR
+ | \fB-router\fR] [zone \fIzonename\fR | \fB-zone\fR | \fB-all-zones\fR]
+.fi
+
+.LP
+.nf
+\fBifconfig\fR [\fIaddress_family\fR] \fIinterface\fR {\fBauto-dhcp\fR | \fBdhcp\fR} [\fBprimary\fR]
+ [\fBwait\fR \fIseconds\fR] \fBdrop\fR | \fBextend\fR | \fBinform\fR | \fBping\fR
+ | \fBrelease\fR | \fBstart\fR | \fBstatus\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+コマンド \fBifconfig\fR は、ネットワークインタフェースにアドレスを割り当てたり、ネットワークインタフェースのパラメータを構成したりするために使用されます。\fBifconfig\fR コマンドで構成されたネットワークインタフェースは、リブート後は無効になります。ネットワークインタフェースの永続的な構成を行うには、\fBipadm\fR(1M) コマンドを使用する必要があります。オプションが 1 つも指定されなかった場合、\fBifconfig\fR は、ネットワークインタフェースの現在の構成を表示します。アドレスファミリが指定された場合、\fBifconfig\fR は、そのアドレスファミリに固有の詳細のみを報告します。ネットワークインタフェースの構成を変更できるのは、特権ユーザーだけです。中括弧 (\fB{\|}\fR) で囲まれたオプションは、そのうちのどれか 1 つのオプションを指定することを示します。
+.SS "DHCP 構成"
+.sp
+.LP
+\fBauto-dhcp\fR または \fBdhcp\fR 引数を使用する \fBifconfig\fR の形式は、インタフェースの動的ホスト構成プロトコル (「\fBDHCP\fR」) 構成を制御するために使用されます。このモードでは、\fBDHCP\fR クライアントデーモンである \fBdhcpagent\fR(1M) の動作を制御する目的で、\fBifconfig\fR が使用されます。あるインタフェースがいったん \fBstart\fR オペランド経由で \fBDHCP\fR の制御下に置かれたら、通常の操作では、そのインタフェースのアドレスや特性を \fBifconfig\fR を使って変更するべきではありません。\fBDHCP\fR 配下の特定のインタフェースのアドレスが変更されると、\fBdhcpagent\fR はそのインタフェースを制御対象外にします。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaddif\fR \fIaddress\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された物理インタフェース上に、次の未使用の論理インタフェースを作成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBall-zones\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースをシステム上のすべての共有 IP ゾーンで使用できるようにします。データを提供する対象のゾーンは、\fBtnzonecfg\fR データベースを使用して決定されます。このオプションを使用できるのは、システムが Solaris Trusted Extensions で構成されている場合だけです。
+.sp
+\fBtnzonecfg\fR データベースについては、『\fISolaris Trusted Extensions リファレンスマニュアル\fR』に含まれている \fBtnzonecfg(4)\fR のマニュアルページを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanycast\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBANYCAST\fR フラグを設定して、論理インタフェースをエニーキャストアドレスとしてマークします。エニーキャストの詳細については、下記の「インタフェースフラグ」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-anycast\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBANYCAST\fR フラグをクリアして、論理インタフェースを非エニーキャストアドレスとしてマークします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBarp\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットワークレベルのアドレスとリンクレベルのアドレスとの間のマッピングを行う際に、アドレス解決プロトコル (「\fBARP\fR」) の使用を有効にします (デフォルト)。これは現時点では、IPv4 アドレスと MAC アドレス間のマッピング用として実装されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-arp\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理インタフェースでの \fBARP\fR の使用を無効にします。IPMP IP インタフェースでは ARP を無効にできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauth_algs\fR \fIauthentication algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のトンネルに対し、指定された認証アルゴリズムを使って IPsec \fBAH\fR を有効にします。このアルゴリズムは、数字、アルゴリズム名のどちらで指定してもかまいません。どのアルゴリズムでもかまわないことを示す \fIany\fR も使用できます。すべての IPsec トンネルプロパティーは、同一コマンド行に指定する必要があります。トンネルのセキュリティーを無効にするには、\fBauth_alg\fR に \fBnone\fR を指定します。
+.sp
+トンネルのセキュリティープロパティーを設定する際、現在では \fBipsecconf\fR(1M) を使用する方が適切です。\fBipsecconf\fR を使用してトンネルのセキュリティープロパティーが設定されている場合、このキーワードはトンネルに影響を与えません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauto-dhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースのアドレスを、DHCP を使って自動的に取得します。このオプションには、\fBdhcp\fR という名前の、完全に等価な別名があります。 
+.sp
+IPv6 の場合、指定するインタフェースは、リンクローカルアドレスが設定されている 0 番目の論理インタフェース (物理インタフェース名) でなければなりません。
+.sp
+.ne 2
+.mk
+.na
+\fBprimary\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースを \fBprimary\fR として定義します。このインタフェースは、クライアント全体の構成データを配信するための優先インタフェースとして定義されます。主インタフェースになれるインタフェースは、一度に 1 つだけです。その後、別のインタフェースが主インタフェースとして選択された場合、以前の主インタフェースはそれに置き換えられます。クライアントワークステーションのブート完了後に特定のインタフェースを主インタフェースとして指定することは、あまり意味がありません。これは、多くのアプリケーションはすでにブートされており、以前の主インタフェースから読み取ったデータに基づいて構成されているからです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBwait \fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBifconfig\fR コマンドは、操作が完了するか、指定された時間が経過するまで待機します。実際の待機時間はどちらか早いほうになります。待機時間が指定されず、かつ操作がすぐに完了できない性質のものであった場合、\fBifconfig\fR は 30 秒間、要求された処理が完了するのを待ちます。シンボリック値 \fBforever\fR も、リテラルな意味で使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdrop\fR
+.ad
+.sp .6
+.RS 4n
+DHCP サーバーには通知せずに、指定されたインタフェースを \fBDHCP\fR の制御対象外にします。また、あとで使用できるように現在のリースを記録します。さらに IPv4 の場合は、IP アドレスをゼロに設定します。IPv6 の場合は、\fBdhcpagent\fR によって plumb されたすべての論理インタフェースを unplumb します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBextend\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの IP アドレスのリースを延長しようとします。これは必須ではありません。リースが期限切れになる前に、エージェントによって自動的にリースが延長されるからです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinform\fR
+.ad
+.sp .6
+.RS 4n
+\fBDHCP\fR からネットワーク構成パラメータを取得します。その際、\fBIP\fR アドレスのリースは取得しません。これは、\fBDHCP\fR 以外のメカニズムを使って \fBIP\fR アドレスを取得する場合に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBping\fR
+.ad
+.sp .6
+.RS 4n
+指定されたインタフェースが \fBDHCP\fR の制御下にあるかどうか、つまり、そのインタフェースが \fBDHCP\fR エージェントによって管理されており、かつ正しく動作しているかをチェックします。終了ステータス \fB0\fR は、成功したことを意味します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBrelease\fR
+.ad
+.sp .6
+.RS 4n
+サーバーに通知してインタフェースの IP アドレスを解放し、現在のリースを破棄します。IPv4 の場合は、IP アドレスをゼロに設定します。IPv6 の場合は、\fBdhcpagent\fR によって plumb されたすべての論理インタフェースを unplumb します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstart\fR
+.ad
+.sp .6
+.RS 4n
+インタフェース上で \fBDHCP\fR を開始します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBstatus\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの \fBDHCP\fR 構成ステータスを表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauto-revarp\fR\fR
+.ad
+.sp .6
+.RS 4n
+逆アドレス解決プロトコル (「RARP」) を使ってこのインタフェースのアドレスを自動的に取得します。IPoIB (IP over InfiniBand) など、RARP をサポートしていないインタフェースおよび IPv6 インタフェースでは、この処理は失敗します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbroadcast\fR \fIaddress\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 専用。ネットワークへのブロードキャストを示すために使用するアドレスを指定します。デフォルトのブロードキャストアドレスは、ホスト部分がすべて \fB1\fR であるようなアドレスです。ブロードキャストの値として「\fB+\fR」(プラス記号) を指定した場合、ブロードキャストアドレスは、(新しくなった可能性のある) アドレスとネットマスクに適したデフォルトにリセットされます。\fBifconfig\fR の引数は左から右に解釈されます。したがって、
+.sp
+.in +2
+.nf
+example% ifconfig -a netmask + broadcast +
+.fi
+.in -2
+.sp
+
+および
+.sp
+.in +2
+.nf
+example% ifconfig -a broadcast + netmask +
+.fi
+.in -2
+.sp
+
+では、インタフェースのブロードキャストアドレスに異なる値が割り当てられる可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeprecated\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースを非推奨としてマークします。非推奨のインタフェースに関連付けられたアドレスが送信パケットの発信元アドレスとして使用されるのは、そのインタフェース上で利用可能なアドレスがほかに存在しない場合と、アプリケーションがそのアドレスに明示的にバインドした場合だけです。ステータス表示では、\fBDEPRECATED\fR がフラグの一部として表示されます。\fBifconfig\fR でサポートされるフラグについては、 を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-deprecated\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースを「非推奨でない」としてマークします。そのようなインタフェースに関連付けられたアドレスは、送信パケットの発信元アドレスとして使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpreferred\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースを優先としてマークします。このオプションは IPv6 アドレスでのみ有効です。優先論理インタフェースに割り当てられたアドレスは、システム上で構成されたほかのどのアドレスよりも、発信元アドレスとして優先されます。ただし、そのアドレスが着信先アドレスから見て不適切なスコープを持つ場合はその限りではありません。優先アドレスは、それらがどの物理インタフェースに割り当てられているかにかかわらず、常に発信元アドレスとして使用されます。たとえば、ループバックインタフェース上で優先発信元アドレスを構成し、そのアドレスの到達可能性を、経路指定プロトコルを使って通知できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-preferred\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースを非優先としてマークします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdestination\fR \fIdest_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+ポイントツーポイントインタフェースの着信先アドレスを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+このオプションは、オプション \fBauto-dhcp\fR の別名です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースを「down」としてマークします。(つまり、\fBIFF_UP\fR ビットをオフにします)。特定の論理インタフェースが「down」としてマークされると、システムは、そのインタフェースに割り当てられたアドレスを送信パケットの発信元アドレスとして使用しようとしなくなるほか、そのアドレス宛の受信パケットをこのホスト宛のものとして認識しなくなります。さらに、ある物理インタフェース上のすべての論理インタフェースが「down」になった場合、その物理インタフェースそのものが無効になります。
+.sp
+特定の論理インタフェースが停止すると、\fBroute\fR(1M) コマンドの \fB-ifp\fR オプションまたは \fBroute\fR(7P) ソケットの \fBRTA_IFP\fR を使ってそのインタフェースを出力として指定した経路がすべて、転送テーブルから削除されます。\fBRTF_STATIC\fR とマークされた経路はインタフェース復旧時にテーブルに戻されますが、\fBRTF_STATIC\fR とマークされていない経路は単に削除されます。
+.sp
+特定のゲートウェイアドレスに到達するために使用可能な論理インタフェースのすべてが停止した場合 (直前の段落で説明したインタフェースオプションなしで指定された場合)、その影響を受けるゲートウェイ経路は、\fBRTF_BLACKHOLE\fR フラグが設定されている場合と同様に処理されます。一致するすべてのパケットは、そのゲートウェイに到達できずに破棄されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencaplimit\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースのトンネルカプセル化制限を n に設定します。このオプションは、IPv6 内 IPv4 トンネルと IPv6 内 IPv6 トンネルにしか適用されず、単にベースとなる IPv6 トンネルリンクの \fBencaplimit\fR リンクプロパティーを変更するだけです (\fBdladm\fR(1M) を参照)。トンネルカプセル化制限は、特定のパケットが任意のトンネルを出る前にさらにいくつのトンネルに入れるか (つまりトンネルのネストレベル) を制御します。
+.sp
+このオプションは廃止され、\fBdladm\fR(1M) の \fBencaplimit\fR リンクプロパティーで置き換えられました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-encaplimit\fR\fR
+.ad
+.sp .6
+.RS 4n
+トンネルカプセル化制限の生成を無効にします。このオプションを使用できるのは、IPv6 内 IPv4 トンネルと IPv6 内 IPv6 トンネルに対してのみです。これは単に、ベースとなる IPv6 トンネルリンクの \fBencaplimit\fR リンクプロパティーを 0 に設定するだけです (\fBdladm\fR(1M) \fBencaplimit\fR を参照)。
+.sp
+このオプションは廃止され、\fBdladm\fR(1M) の \fBencaplimit\fR リンクプロパティーで置き換えられました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencr_auth_algs\fR \fIauthentication algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のトンネルに対し、指定された認証アルゴリズムを使って IPsec \fBESP\fR を有効にします。これは、数字、アルゴリズム名のどちらで指定してもかまいません。どのアルゴリズムでもかまわないことを示す \fBany\fR や \fBnone\fR も使用できます。\fBESP\fR 暗号化アルゴリズムは指定されたがその認証アルゴリズムが指定されなかった場合、\fBESP\fR 認証アルゴリズムのデフォルト値は \fBany\fR になります。
+.sp
+トンネルのセキュリティープロパティーを設定する際、現在では \fBipsecconf\fR(1M) を使用する方が適切です。\fBipsecconf\fR を使用してトンネルのセキュリティープロパティーが設定されている場合、このキーワードはトンネルに影響を与えません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencr_algs\fR \fIencryption algorithm\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のトンネルに対し、指定された暗号化アルゴリズムを使って IPsec \fBESP\fR を有効にします。これは、数字、アルゴリズム名のどちらで指定してもかまいません。すべての IPsec トンネルプロパティーは同一コマンド行に指定する必要があるので、注意してください。トンネルセキュリティーを無効にするには、\fBencr_alg\fR の値として \fBnone\fR を指定します。\fBESP\fR 認証アルゴリズムは指定されたがその暗号化アルゴリズムが指定されなかった場合、\fBESP\fR 暗号化アルゴリズムのデフォルト値は \fBnull\fR になります。
+.sp
+トンネルのセキュリティープロパティーを設定する際、現在では \fBipsecconf\fR(1M) を使用する方が適切です。\fBipsecconf\fR を使用してトンネルのセキュリティープロパティーが設定されている場合、このキーワードはトンネルに影響を与えません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBether\fR [ \fIaddress\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+アドレスが指定されなかった場合、ユーザーがルートであるか、あるいは対象データリンクをオープンできるだけの十分な特権を備えていれば、現在の Ethernet アドレス情報を表示します。
+.sp
+それ以外の場合、ユーザーがルートであるか十分な特権を備えていれば、インタフェースの Ethernet アドレスを \fIaddress\fR に設定します。このアドレスは Ethernet アドレスであり、\fIx:x:x:x:x:x\fR として表現されます。ここで、\fIx\fR は 0 から FF までの 16 進数です。同様に、IPoIB (IP over InfiniBand) インタフェースの場合、このアドレスは、\fB0\fR から \fBFF\fR までの 16 進数がコロンで区切られた 20 バイトの文字列になります。
+.sp
+Ethernet インタフェースカードの中には、固有のアドレスを持つものもあります (すべてではない)。固有のアドレスを持たないカードを使用する場合には、IEEE 802.3 仕様の 3.2.3(4) セクションを参照し、ローカル管理アドレス空間の定義を確認してください。IPMP グローバル内の IP インタフェースは必ず、一意のハードウェアアドレスを持つ必要があります。\fBin.mpathd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-failover\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースに \fBNOFAILOVER\fR を設定します。これにより、\fBin.mpathd\fR が関連する物理 IP インタフェースに対してプローブベースの障害検出を実行する際に、関連するアドレスが使用可能となります。副作用として、\fBDEPRECATED\fR も論理インタフェースに設定されます。IPMP IP インタフェースでは、この操作を行うことはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailover\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースの \fBNOFAILOVER\fR をクリアします。これはデフォルトです。これらの論理インタフェースは、開始時に移行される可能性があります (「IP マルチパスグループ」を参照)。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR [ \fIname\fR |\fB""\fR]\fR
+.ad
+.sp .6
+.RS 4n
+これを物理インタフェースに適用した場合、そのインタフェースが指定されたグループ内に配置されます。そのグループが存在しない場合は、1 つ以上の IPMP IP インタフェース (IPv4 用、IPv6 用、またはその両方) とともに作成されます。\fBNOFAILOVER\fR とマークされていない \fBUP\fR アドレスはすべて、IPMP IP インタフェースに移行される可能性があります (「IP マルチパスグループ」を参照)。\fB\fRグループ名として \fB""\fR を指定すると、物理 IP インタフェースがグループから削除されます。
+.sp
+これを物理 IPMP IP インタフェースに適用した場合、IPMP グループの名前が変更されて新しい名前になります。その名前がすでに存在しているか、名前として \fB""\fR が指定された場合は、処理が失敗します。IPMP グループの名前を変更することはお勧めできません。代わりに、\fBipmp\fR サブコマンドを使用して IPMP IP インタフェースを作成する際に意味のある名前を指定するべきです。システムでは、この名前が IPMP グループ名としても使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBindex\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースのインタフェースインデックスを変更します。\fIn\fR の値は、ほかのインタフェースで使用されていないインタフェースインデックス (\fIif_index\fR) でなければなりません。\fIif_index\fR は 0 でない正数であり、システム上のネットワークインタフェースを一意に識別します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmp\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前の IPMP IP インタフェースを作成します。インタフェースの作成は、IPv4 用と IPv6 用とで別々に行う必要があります。コマンドが IPv4、IPv6 のどちらに適用されるかは、\fIaddress_family\fR パラメータによって決まります (指定されていない場合は IPv4 に適用される)。IPMP IP インタフェースには必ず \fBIPMP\fR フラグが設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmetric\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの経路指定メトリックを \fIn\fR に設定します。値が指定されなかった場合のデフォルトは、\fB0\fR になります。経路指定メトリックは、経路指定プロトコルによって使用されます。メトリックが高いほど、その経路は好まれません。メトリックは、着信先となるネットワークまたはホストへの加算ホップとしてカウントされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodinsert\fR \fImod_name@pos\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fImod_name\fR という名前のモジュールを、デバイスのストリーム内の位置 \fIpos\fR に挿入します。この位置は、ストリームの先頭からの相対位置です。位置 \fB0\fR は、ストリームの先頭のすぐ下を意味します。
+.sp
+\fBmodlist\fR オプションの例に基づいて次のコマンドを使用すると、\fBipqos\fR という名前のモジュールが、\fBip\fR モジュールの下、firewall モジュールの上に挿入されます。
+.sp
+.in +2
+.nf
+example% ifconfig eri0 modinsert ipqos@2
+.fi
+.in -2
+.sp
+
+このあと、デバイスのストリーム内のすべてのモジュールを一覧表示した結果を、次に示します。
+.sp
+.in +2
+.nf
+example% ifconfig eri0 modlist
+0 arp
+1 ip
+2 ipqos
+3 firewall 
+4 eri
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスのストリーム内のすべてのモジュールを一覧表示します。
+.sp
+次の例では、デバイスのストリーム内のすべてのモジュールを一覧表示しています。
+.sp
+.in +2
+.nf
+example% ifconfig eri0 modlist
+0 arp
+1 ip
+2 firewall
+4 eri
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmodremove\fR \fImod_name@pos\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fImod_name\fR という名前のモジュールを、デバイスのストリーム内の位置 \fIpos\fR から削除します。この位置は、ストリームの先頭からの相対位置です。
+.sp
+\fBmodinsert\fR オプションの例に基づいて次のコマンドを使用すると、\fBipqos\fR モジュール挿入後のストリームから firewall モジュールが削除されます。
+.sp
+.in +2
+.nf
+example% ifconfig eri0 modremove firewall@3
+.fi
+.in -2
+.sp
+
+このあと、デバイスのストリーム内のすべてのモジュールを一覧表示した結果を、次に示します。
+.sp
+.in +2
+.nf
+example% ifconfig eri0 modlist
+0 arp
+1 ip
+2 ipqos
+3 eri
+.fi
+.in -2
+.sp
+
+\fBip\fR や \fBtun\fR などのコア IP スタックモジュールは削除できません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの最大転送単位を \fIn\fR に設定します。多くのネットワークタイプでは、\fBmtu\fR には上限があります。たとえば、Ethernet の場合は \fB1500\fR です。このオプションを使用すると、対象のインタフェース上に \fBFIXEDMTU\fR フラグが設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetmask\fR \fImask\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 専用。ネットワークをサブネットワークに分割する際にアドレスの何ビットを確保するかを指定します。マスクにはローカルアドレスのネットワーク部とサブネット部が含まれます。これは、アドレスのホストフィールドから取得されます。マスクでは、32 ビットアドレス内でネットワーク部とサブネット部用として使用するべきビット位置に 1 が、ホスト部に対するビット位置に 0 が、それぞれ含まれています。マスクには少なくとも標準ネットワーク部を含めてください。また、サブネットフィールドはネットワーク部に隣接するようにしてください。マスクの指定方法には次の 4 つがあります。 
+.RS +4
+.TP
+1.
+0x で始まる単一の 16 進数の使用
+.RE
+.RS +4
+.TP
+2.
+ドット表記アドレスの使用
+.RE
+.RS +4
+.TP
+3.
+「\fB+\fR」(プラス記号) アドレスの使用
+.RE
+.RS +4
+.TP
+4.
+ネットワークデータベース \fBnetworks\fR(4) 内に収められた擬似ホスト名/擬似ネットワーク名の使用
+.RE
+ネットマスク値として「\fB+\fR」(プラス記号) が指定された場合、\fBnetmasks\fR(4) データベース内でマスクの検索が行われます。この検索では、データベース内で一致する最長のネットマスクを見つけるために、インタフェースの IPv4 アドレスをキーとして検索を開始し、アドレスのより多くの下位ビットを順次マスキングしていきます。この反復的な検索手法により、1 つのネットワーク番号内でさまざまな長さのサブネットマスクが使用されている場合に \fBnetmasks\fR(4) データベースをネットマスク指定用として使用できることが保証されます。
+.sp
+擬似ホスト名/擬似ネットワーク名がネットマスク値として指定された場合、\fBhosts\fR または \fBnetworks\fR データベース内でネットマスクデータが検索されます。まず、\fBgethostbyname\fR(3NSL)を使って名前の検索が行われます。名前がそこに見つからなかった場合には、\fBgetnetbyname\fR(3SOCKET) で名前の検索が行われます。これらのインタフェースは通常、実際の値を取得するのにどのデータストア (複数可) を使用するべきかを、\fBnsswitch.conf\fR(4) を使って判定します。
+.sp
+\fBinet\fR と \fBinet6\fR のどちらでも、\fImask\fR が表現しているのと同じ情報を、\fIaddress\fR パラメータに付随する \fIprefix_length\fR として指定することができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnud\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のポイントツーポイント物理インタフェース上で近傍不到達検出メカニズムを有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-nud\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のポイントツーポイント物理インタフェース上で近傍不到達検出メカニズムを無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBplumb\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理 IP インタフェースの場合、その物理インタフェース名に関連付けられたデータリンクを開き、IP がデータリンクを使用するために必要な plumb の設定を行います。このコマンドを論理インタフェース名とともに使用した場合、その名前を持つ論理インタフェースが既存の物理 IP インタフェース上に作成されます。
+.sp
+インタフェースは、\fIaddress_family\fR パラメータに従って IPv4 用および IPv6 用 (指定されていない場合は IPv4 用) に個別に plumb する必要があります。plumb がまだ完了していないインタフェースは、\fBifconfig\fR \fB-a\fR で表示されません。
+.sp
+IPMP IP インタフェースは特定のデータリンクに関連付けられないため、代わりに \fBipmp\fR サブコマンドで作成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivate\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された論理インタフェースは通知するべきでないことを、\fBin.routed\fR 経路指定デーモンに伝えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-private\fR\fR
+.ad
+.sp .6
+.RS 4n
+通知されないインタフェースを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremoveif\fR \fIaddress\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された物理インタフェース上の論理インタフェースのうち、指定された \fIaddress\fR に一致するものを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouter\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェース上の IP 転送を有効にします。有効にした場合、そのインタフェースは \fBROUTER\fR としてマークされ、そのインタフェースへの、およびそのインタフェースからの、IP パケットの転送が行えるようになります。IPMP グループ内のいずれかの IP インタフェースで \fBROUTER\fR を有効にすると、その IPMP グループ内のすべての IP インタフェースでそれが有効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-router\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェース上の IP 転送を無効にします。そのインタフェースへの、およびそのインタフェースからの、IP パケットの転送は行われません。IPMP グループ内のいずれかの IP インタフェースで \fBROUTER\fR を無効にすると、その IPMP グループ内のすべての IP インタフェースでそれが無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定の論理インタフェースの \fIaddress\fR または \fIprefix_length\fR、あるいはその両方を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstandby\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理 IP インタフェースを \fBSTANDBY\fR インタフェースとしてマークします。IPMP グループの一部となっているインタフェースを \fBSTANDBY\fR とマークした場合、IPMP グループ内の別のインタフェースが使用不可能にならないかぎり、そのインタフェースがデータトラフィックに使用されることはありません。正常に機能している \fBSTANDBY \fR インタフェースがデータトラフィックに使用されていない場合、そのインタフェースはさらに \fBINACTIVE\fR とマークされます。IPMP IP インタフェースでは、この操作を行うことはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-standby\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースの \fBSTANDBY\fR をクリアします。これはデフォルトです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースのサブネット \fIaddress\fR を設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtdst\fR \fItunnel_dest_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+トンネルの着信先アドレスを設定します。このアドレスをトンネルの \fBdest_address\fR と同じ値にするべきではありません。そのようなトンネル経由でシステムを離れるパケットは存在しないからです。
+.sp
+このオプションは廃止され、\fBdladm\fR(1M) の \fBcreate-iptun\fR および \fBmodify-iptun\fR サブコマンドで置き換えられました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBthoplimit\fR \fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+トンネルインタフェースのホップ制限を設定します。IPv4 内 IPv6 および IPv4 内 IPv4 トンネルの場合、このホップ制限値は IPv4 ヘッダー内の \fBTTL\fR として使用されます。IPv6 内 IPv6 および IPv6 内 IPv4 トンネルの場合、このホップ制限値は IPv6 ヘッダー内のホップ制限として使用されます。このオプションは単に、ベースとなる IP トンネルリンクの \fBhoplimit\fR リンクプロパティーを変更します (\fBdladm\fR(1M) を参照)。
+.sp
+このオプションは廃止され、\fBdladm\fR(1M) の \fBencaplimit\fR リンクプロパティーで置き換えられました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoken\fR \fIaddress\fR/\fIprefix_length\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレス自動構成で使用される、インタフェースの IPv6 トークンを設定します。
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 inet6 token ::1/64\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtrailers\fR\fR
+.ad
+.sp .6
+.RS 4n
+このフラグは以前、一部のリンクレベルで IPv4 パケットの非標準カプセル化を引き起こしていました。このリリースに付属するドライバは、このフラグを使用しません。これは互換性のために提供されていますが、無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-trailers\fR\fR
+.ad
+.sp .6
+.RS 4n
+「trailer」リンクレベルカプセル化の使用を無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtsrc\fR \fItunnel_src_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+トンネルの発信元アドレスを設定します。これは、外側のカプセル化している \fBIP\fR ヘッダーの発信元アドレスです。これは、\fBifconfig\fR ですでに構成済みの別のインタフェースのアドレスである必要があります。
+.sp
+このオプションは廃止され、\fBdladm\fR(1M) の \fBcreate-iptun\fR および \fBmodify-iptun\fR サブコマンドで置き換えられました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunplumb\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理インタフェースまたは IPMP インタフェースの場合、関連する論理 IP インタフェースをすべて削除し、IP がそのインタフェースを使用するために必要な plumb をすべて破棄します。IPMP IP インタフェースの場合、グループが空でなければこのコマンドは失敗します。論理インタフェースの場合、その論理インタフェースが削除されます。
+.sp
+インタフェースは、\fIaddress_family\fR パラメータに従って IPv4 用および IPv6 用 (未指定の場合は IPv4 用) に個別に unplumb する必要があります。処理が成功すると、そのインタフェース名が \fBifconfig\fR \fB-a\fR の出力に表示されなくなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBup\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースを \fBUP\fR としてマークします。その結果、IP モジュールは、関連するアドレス宛てのパケットを受け入れ (そのアドレスがゼロでないかぎり)、さらに関連するすべてのマルチキャストおよびブロードキャスト IP アドレス宛てのパケットも受け入れます。同様に、IP モジュールは、関連するアドレスを送信元アドレスに持つパケットを送信できるようにします。論理インタフェースが少なくとも 1 つ \fBUP\fR 状態になっていないと、関連する物理インタフェースでパケットの送受信を行うことができません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusesrc\fR [ \fIname\fR | \fBnone\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+特定の物理インタフェースを発信元アドレス選択用として指定します。キーワード \fBnone\fR を使用した場合、それまでの選択がすべてクリアされます。
+.sp
+アプリケーションが \fBbind\fR(3SOCKET) を使って 0 以外の発信元アドレスを選択しなかった場合、送信インタフェースとアドレス選択規則 (\fBipaddrsel\fR(1M) を参照) に基づいて、システムが適切な発信元アドレスを選択します。
+.sp
+\fBusesrc\fR が指定され、そこで指定されたインタフェースが転送テーブル内で出力用として選択されていた場合、システムは発信元アドレスの選択時に、まず、その指定された物理インタフェースとそれに関連付けられた論理インタフェースを調べます。転送テーブル内に使用可能なアドレスが 1 つも見つからなかった場合には、通常の選択規則が適用されます。たとえば、次のように入力したとします。
+.sp
+.in +2
+.nf
+# \fBifconfig eri0 usesrc vni0\fR
+.fi
+.in -2
+.sp
+
+\&...ここで、\fBvni0\fR にアドレス 10.0.0.1 が割り当てられているとすると、システムは、\fBeri0\fR 経由で送信されるローカル接続からのすべてのパケットに対し、10.0.0.1 を発信元アドレスとして優先的に使用します。その他の例については、「使用例」セクションを参照してください。\fB\fR
+.sp
+どのような物理インタフェースでも (ループバックでさえも) 指定できますが、仮想 IP インタフェース (\fBvni\fR(7D) を参照) を指定することもできます。仮想 IP インタフェースは、どの物理ハードウェアにも関連付けられていないため、ハードウェア障害の影響を一切受けません。1 つの仮想インタフェース上にホストされた発信元アドレスを、任意の数の物理インタフェースで使用するよう指定できます。これにより、経路指定に基づくマルチパス化の構成が単純化されます。物理インタフェースの 1 つで障害が発生した場合、正常に機能している残りの物理インタフェースのいずれかを介して通信が継続されます。このシナリオは、仮想インタフェース上にホストされたアドレスの到達可能性が、経路指定プロトコルを使用するなど、何らかの方法を使って通知されていることを前提にしています。
+.sp
+\fBifconfig\fR の \fBpreferred\fR オプションは、すべてのインタフェースに適用されるため、\fBusesrc\fR オプションよりも粗粒度であると言えます。それは、\fBusesrc\fR や \fBsetsrc\fR (route サブコマンド) によって、その順番で上書きされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxmit\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定の論理インタフェースのパケット送信機能を有効にします。これは、論理インタフェースが「up」状態にある場合のデフォルト動作です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-xmit\fR\fR
+.ad
+.sp .6
+.RS 4n
+特定のインタフェース上でパケット送信を無効にします。そのインタフェースは、パケットの受信は引き続き行います。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzone\fR \fIzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースをゾーン \fIzonename\fR 内に配置します。指定されたゾーンは、カーネル内でアクティブになっており、準備完了か実行中の状態になっていなければいけません。ゾーンが停止またはリブートすると、インタフェースは unplumb されます。ゾーンは共有 IP ゾーンとして構成されている必要があります。排他的 IP ゾーンにネットワークインタフェース名を割り当てるには、\fBzonecfg\fR(1M) を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-zone\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP インタフェースを大域ゾーン内に配置します。これはデフォルトです。
+.RE
+
+.SH オペランド
+.sp
+.LP
+ここでは、\fIinterface \fRオペランドとそれに影響を与えるアドレスパラメータについて説明します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+文字列。次のいずれかの形式になります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIname physical-unit\fR。例: \fBeri0\fR、\fBce1\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIname physical-unit\fR\fB:\fR\fIlogical-unit\fR。例: \fBeri0:1\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+暗黙的な IP トンネルリンクの場合は、\fBip.tun\fR\fIN\fR、\fBip6.tun\fR\fIN\fR、または \fBip6to4.tun\fR\fIN\fR
+.RE
+ダッシュ (-) で始まるインタフェース名は、インタフェース群を表すオプションがいくつか組み合わさったものとして解釈されます。そのような場合、\fB-a\fR は必ずオプションに含まれている必要がありますが、それ以外の次の追加オプションは、どれでも任意の順序で追加できます。これらのインタフェース名のいずれかが指定された場合、それ以降のコマンドは、条件に一致するすべてのインタフェースに対して適用されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたアドレスファミリのすべてのインタフェースに対して、コマンドを適用します。コマンド行からも \fB/etc/default/inet_type\fR 経由でもアドレスファミリが指定されなかった場合、すべてのアドレスファミリが選択されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム内のすべての「down」インタフェースに対して、コマンドを適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBDHCP \fR (動的ホスト構成プロトコル) の制御下にないすべてのインタフェースに対して、コマンドを適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム内のすべての「up」インタフェースに対して、コマンドを適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-Z\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのゾーン内のすべてのインタフェースに対して、コマンドを適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-4\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての IPv4 インタフェースに対して、コマンドを適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-6\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての IPv6 インタフェースに対して、コマンドを適用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress_family\fR\fR
+.ad
+.sp .6
+.RS 4n
+アドレスファミリを指定するには、\fIaddress_family\fR パラメータを使用します。\fBifconfig\fR コマンドが現時点でサポートしているファミリは、\fBinet\fR と \fBinet6\fR です。アドレスファミリが指定されなかった場合のデフォルトは、\fBinet\fR です。
+.sp
+\fBifconfig\fR は、インタフェースの情報を表示する際に、\fB/etc/default/inet_type\fR ファイル内の \fBDEFAULT_IP\fR 設定に従います。\fBDEFAULT_IP\fR が \fBIP_VERSION4\fR に設定されていた場合、\fBifconfig\fR は、IPv6 インタフェースに関する情報を省略します。ただし、ユーザーがアドレスファミリ (\fBinet\fR、\fBinet6\fR のいずれか) を \fBifconfig\fR コマンド行で明示的に指定した場合、そのコマンド行のほうが \fBDEFAULT_IP\fR 設定よりも優先されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddress\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 ファミリ (\fBinet\fR) の場合、\fIaddress\fR は、ホスト名データベース (\fBhosts\fR(4) を参照) 内またはネットワーク情報サービス (NIS) のマップ \fBhosts\fR 内に存在しているホスト名、インターネット標準の「ドット表記」で表現された IPv4 アドレス、のいずれかになります。 
+.sp
+IPv6 ファミリ (\fBinet6\fR) の場合、\fIaddress\fR は、ホスト名データベース (\fBhosts\fR(4) を参照) 内またはネットワーク情報サービス (\fBNIS\fR) のマップ \fBipnode\fR 内に存在するホスト名、インターネット標準のコロン区切り 16 進形式で表現された IPv6 アドレス、のいずれかになります。後者は\fIx:x:x:x:x:x:x:x\fR として表現されます。ここで、\fIx\fR は \fB0\fR から \fBFFFF\fR までの 16 進数です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprefix_length\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPv4 ファミリと IPv6 ファミリ (\fBinet\fR と \fBinet6\fR) の場合、\fIprefix_length\fR は、0 からアドレス内のビット数までの数値です。アドレス内のビット数は、\fBinet\fR の場合は 32、\fBinet6\fR の場合は 128 です。\fIprefix_length\fR は、ネットマスク内の先頭のセットビットの数を表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdest_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddress\fR パラメータのほかに \fIdest_address\fR パラメータが指定された場合、そのアドレスは、ポイントツーポイントリンクの他端に位置する対応するインタフェースのアドレスを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItunnel_dest_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+構成中のトンネル以外の特定のインタフェースから到達可能、または到達可能と予想されるアドレス。これによって、トンネルパケットの送信先をトンネルに指示します。このアドレスは、構成中のインタフェース着信先アドレスと同じであってはいけません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItunnel_src_address\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBifconfig\fR を使って「up」として構成された構成済みインタフェースに割り当てられるアドレス。
+.RE
+
+.SH インタフェースフラグ
+.sp
+.LP
+\fBifconfig\fR コマンドがサポートするインタフェースフラグは、次のとおりです。この文脈では、「アドレス」という用語は \fBeri0:0\fR などの論理インタフェースを表します。一方、「インタフェース」は \fBeri0\fR などの物理インタフェースを表します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDRCONF\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスは、ステートレス \fBaddrconf\fR からのものです。ステートレスメカニズムを使えば、ホストは、ルーターが通知する情報とローカルで利用可能な情報とを組み合わせて固有のアドレスを生成できます。ルーターは、そのリンクに関連付けられたサブネットを識別するプレフィックスを通知します。一方、ホストは、サブネット内のインタフェースを一意に識別する「インタフェース識別子」を生成します。ルーターからの情報が存在しない場合、ホストはリンクローカルアドレスを生成できます。このフラグは IPv6 に固有です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBANYCAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBanycast\fR アドレスを示します。\fBanycast\fR アドレスは、あるタイプのサービスを提供する特定のシステムグループの最近傍メンバーを識別します。\fBanycast\fR アドレスは、特定のシステムグループに割り当てられます。パケットは、\fBanycast\fR アドレスで識別される最近傍グループメンバーに配信されます。グループのすべてのメンバーに配信されるのではありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBROADCAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+この \fBbroadcast\fR アドレスは有効です。このフラグと \fBPOINTTOPOINT\fR は互いに排他です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCoS\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースは、何らかの形式の CoS (Class of Service) マーキングをサポートしています。一例として、\fBVLAN\fR インタフェース上でサポートされる 802.1D ユーザー優先順位マーキングなどが挙げられます。IPMP IP インタフェースの場合、これが設定されるのは、グループ内のすべてのインタフェースで CoS が設定されている場合だけです。
+.sp
+このフラグは、VLAN リンク経由、および \fBdladm\fR(1M) \fBtagmode\fR リンクプロパティーが \fBnormal\fR に設定された Ethernet リンク経由のインタフェース上でのみ設定されることに注意してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEPRECATED\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスは非推奨です。このアドレスが送信パケットの発信元アドレスとして使用されるのは、このインタフェース上で利用可能なアドレスがほかに存在しない場合と、アプリケーションがこのアドレスに明示的にバインドされている場合だけです。IPv6 の非推奨アドレスは、IPv6 での再採番を行うための標準メカニズムの一部であり、最終的には使用中でないときに削除されます。IPv4 と IPv6 のどちらの場合も、すべての \fBNOFAILOVER\fR アドレスにも \fBDEPRECATED\fR が設定されます。ただし、この仕様は将来のリリースで変更される可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDHCPRUNNING\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースのアドレスは \fBdhcpagent\fR(1M) によって管理されます。IPv6 でそのアドレスがゼロ番目の論理インタフェースにも設定されるのは、そのインタフェースで DHCPv6 が開始された場合です。\fBin.ndpd\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUPLICATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェースに構成されている IP アドレスが重複アドレスなので、このインタフェースは無効にされています。ネットワーク上のほかのノードがこのアドレスを使用しています。これが DHCP によって構成されたアドレスまたは一時アドレスの場合は、可能であれば別のアドレスが自動的に選択されます。それ以外の場合、システムはこのアドレスの回復を定期的に試み、ネットワーク上の衝突が解消されるとインタフェースは回復します。アドレスやネットマスクを変更したり、論理インタフェースを「\fBup\fR」に設定すると、重複検出が再度開始されます。インタフェースを「\fBdown\fR」に設定すると、回復処理は終了し、\fBDUPLICATE\fR フラグは削除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFAILED\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBin.mpathd\fR デーモンは、このインタフェースで障害が発生したものと判定しました。\fBFAILED\fR インタフェースは、IP データトラフィックの送受信には使用されません。これが IPMP グループの物理 IP インタフェースに設定されている場合、IP データトラフィックは、その IPMP グループで使用可能なほかの IP インタフェースを介して引き続き送受信されます。これが IPMP IP インタフェースに設定されている場合は、グループ全体が障害状態であり、そのグループのどのインタフェースでもデータトラフィックを送受信できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFIXEDMTU\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-mtu\fR オプションで MTU が設定されました。このフラグは読み取り専用です。このフラグが設定されたインタフェースは固定の MTU 値を持ちますが、その値は、ドライバがリンク MTU 変更を IP に通知する際に発生する可能性のある動的 MTU 変更の影響を受けません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBINACTIVE\fR\fR
+.ad
+.sp .6
+.RS 4n
+物理インタフェースは正常に機能していますが、管理ポリシーに従ってデータトラフィックの送受信には使用されていません。このフラグは、最初 \fBstandby\fR サブコマンドによって設定され、その後 \fBin.mpathd\fR によって管理されます。またこのフラグは、\fBFAILBACK=no\fR モードが有効化された (\fBin.mpathd\fR(1M) を参照) 場合に、修復された IP インタフェースがまだ使用されていないことを示すためにも設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIPMP\fR\fR
+.ad
+.sp .6
+.RS 4n
+これが IPMP IP インタフェースであることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLOOPBACK\fR\fR
+.ad
+.sp .6
+.RS 4n
+これがループバックインタフェースであることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMULTI_BCAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースではブロードキャストアドレスがマルチキャスト用として使用されることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMULTICAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースはマルチキャストをサポートします。\fBIP\fR は、ハードウェアブロードキャストをサポートするインタフェース、つまりポイントツーポイントリンクインタフェースは、マルチキャストをサポートするものと仮定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNOARP\fR\fR
+.ad
+.sp .6
+.RS 4n
+ブロードキャストアドレスを持たないデバイスのすべてのインタフェースに対応した、このインタフェース用のアドレス解決プロトコル (\fBARP\fR) が存在しません。このフラグは IPv4 に固有です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNOFAILOVER\fR\fR
+.ad
+.sp .6
+.RS 4n
+この論理インタフェースに関連付けられたアドレスは、関連する物理 IP インタフェースのプローブベース障害検出を行う際に \fBin.mpathd\fR から使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNOLOCAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースはアドレスを持ちません。持つのはオンリンクサブネットだけです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNONUD\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースでは、\fBNUD\fR が無効になっています。各ノードは \fBNUD\fR (近傍不到達検出) を使って、自身が能動的にパケットを送信する近傍ノードの到達状態を追跡し、到達不可能な近傍ノードが検出された際に回復処理を実行します。このフラグは IPv6 に固有です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNORTEXCH\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースは経路指定情報を交換しません。RIP-2 の場合、経路指定パケットがこのインタフェース経由で送信されることはありません。さらに、このインタフェースを経由したと思われるメッセージには、応答が返されません。このインタフェースのサブネットまたはアドレスが、ほかのインタフェース経由でのほかのルーター宛の通知に含められることはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNOXMIT\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスがパケットを送信しないことを示します。また、RIP-2 はこのアドレスを通知しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFFLINE\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースはオフライン状態なので、IP データトラフィックを送受信できません。これは、IPMP グループ内の IP インタフェースにしか設定されません。\fBif_mpadm\fR(1M) および \fBcfgadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOINTOPOINT\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスがポイントツーポイントリンクであることを示します。このフラグと \fBBROADCAST\fR は互いに排他です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPREFERRED\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスは優先 IPv6 発信元アドレスです。このアドレスは、すべての IPv6 着信先との IPv6 通信の発信元アドレスとして使用されます。ただし、システム上の別のアドレスがより適切なスコープを持つ場合は除外します。\fBDEPRECATED\fR フラグは \fBPREFERRED\fR フラグよりも優先されます。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIVATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアドレスが通知されないことを示します。RIP-2 の場合、このインタフェースは通知を送信する際に使用されます。ただし、サブネットやこのアドレスが、ほかのルーター宛の通知に含められることはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROMISC\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースがプロミスキュアスモードになっていることを示す、読み取り専用のフラグ。プロミスキュアスモードのインタフェースに関連付けられたアドレスでは必ず、\fBPROMISC\fR フラグが表示されます (\fBifconfig\fR \fB-a\fR への応答時など)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBROUTER\fR\fR
+.ad
+.sp .6
+.RS 4n
+このインタフェースへの、およびこのインタフェースからの、IP パケットの転送を行えることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRUNNING\fR\fR
+.ad
+.sp .6
+.RS 4n
+インタフェースが必要とするリソースが確保されていることを示します。一部のインタフェースでは、これは、リンクが稼働していることも示します。IPMP IP インタフェースの場合、グループ内の 1 つの IP インタフェースがアクティブになっているかぎり、\fBRUNNING\fR が設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTANDBY\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP グループ内の別のインタフェースが使用不可能にならないかぎり、この物理インタフェースがデータトラフィックに使用されないことを示します。\fBINACTIVE\fR および \fBFAILED\fR フラグは、インタフェースがアクティブに使用されているかどうかを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTEMPORARY\fR\fR
+.ad
+.sp .6
+.RS 4n
+これがRFC 3041 に規定された一時 IPv6 アドレスであることを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUNNUMBERED\fR\fR
+.ad
+.sp .6
+.RS 4n
+このフラグが設定されるのは、このリンクのローカル IP アドレスが、システム内のほかのリンクのローカルアドレスに一致した場合です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUP\fR\fR
+.ad
+.sp .6
+.RS 4n
+論理インタフェース (と関連する物理インタフェース) が動作していることを示します。IP モジュールは、\fBUP\fR アドレス宛てのパケットを受け入れ (そのアドレスがゼロでないかぎり)、さらに関連するすべてのマルチキャストおよびブロードキャスト IP アドレス宛てのパケットも受け入れます。同様に、IP モジュールは、\fBUP\fR アドレスを送信元アドレスに持つパケットを送信できるようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVIRTUAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+この物理インタフェースには基本となるハードウェアがないことを示します。仮想インタフェースを通してパケットの送信や受信を行うことはできません。このようなインタフェースは、複数のインタフェース上で使用できるローカルアドレスを構成する場合に役立ちます。(\fBusesrc\fR オプションも参照してください。)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBL3PROTECT\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdladm\fR(1M) の \fBallowed-ips\fR リンクプロパティーを使用して、物理インタフェース上でレイヤー 3 保護が適用されたことを示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROBER\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP グループ内のベースとなる \fBFAILED\fR インタフェースの修復が完了したかどうかを判定するための検査を行なっていることを示します。\fBPROBER\fR フラグとそのセマンティクスは、Solaris IPMP 実装の中身に依存するため、変更される可能性があります。
+.RE
+
+.SH 論理インタフェース
+.sp
+.LP
+Solaris の \fBTCP/IP\fR では、1 つの物理ネットワークインタフェースに複数の論理インタフェースを関連付けることができます。これにより、ネットワークインタフェースを 1 つしか持たないようなマシンにも、複数の \fBIP\fR アドレスを割り当てることが可能になります。物理ネットワークインタフェースが \fIdriver-name physical-unit-number\fR という形式の名前を持つのに対し、論理インタフェースは \fIdriver-name physical-unit-number\fR\fB:\fR\fIlogical-unit-number\fR という形式の名前を持ちます。特定の物理インタフェースを構成してシステムに組み込むには、\fBplumb\fR コマンドを使用します。例: 
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 plumb\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+物理インタフェースの「plumb」が完了すると、その物理インタフェースに関連付けられた論理インタフェースを構成できるようになります。それには、\fB-plumb\fR または \fB-addif\fR オプションを指定して再度 \fBifconfig\fR コマンドを実行します。 
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0:1 plumb\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、物理インタフェース \fBeri0\fR に関連付けられた特定の論理インタフェースを割り当てます。次のコマンドを見てください。 
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 addif 192.168.200.1/24 up\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、\fBeri0\fR 物理インタフェース上で利用可能な次の論理ユニット番号を割り当てるとともに、\fIaddress\fR と \fIprefix_length\fR も割り当てます。
+.sp
+.LP
+論理インタフェースは、関連付けられた物理インタフェースとは異なるパラメータ (\fIaddress\fR、\fIprefix_length\fR など) を使って構成することができます。また、同じ物理インタフェースに関連付けられた複数の論理インタフェースにそれぞれ異なるパラメータを与えることもできます。各論理インタフェースは、既存の「up」状態の物理インタフェースに関連付ける必要があります。したがって、たとえば、論理インタフェース \fBeri0:1\fR を構成できるのは、物理インタフェース \fBeri0\fR を plumb し終わったあとです。
+.sp
+.LP
+論理インタフェースを削除するには、\fBunplumb\fR または \fBremoveif\fR オプションを使用します。たとえば、次のように指定します。 
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0:1 down unplumb\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、論理インタフェース \fBeri0:1\fR を削除します。
+.SH IP マルチパスグループ
+.sp
+.LP
+同じリンクレイヤーブロードキャストドメインを共有する物理インタフェースは、\fBgroup\fR サブコマンドを使用して単一の IP マルチパス (IPMP) グループ内に集める\fB必要\fRがあります。各 IPMP グループには IPMP IP インタフェースが関連付けられます。このインタフェースは、\fBipmp\fR サブコマンドを使用して明示的に作成する (推奨される方法) ことも、\fBifconfig\fR で IP インタフェースを新しい IPMP グループ内に配置することによって暗黙的に作成することもできます。暗黙的に作成される IPMP インタフェースには \fBipmp\fR\fIN\fR という名前が付けられます。ここで \fIN\fR は、既存の IP インタフェース名や IPMP グループ名と競合しない最小の整数です。
+.sp
+.LP
+各 IPMP IP インタフェースの作成時には対応する IPMP グループ名が使用されますが、このグループ名は、\fBgroup\fR サブコマンドを使用すると変更できます。各 IPMP IP インタフェースは、高可用性の一連の IP アドレスをホストします。それらのアドレスは、グループ内の少なくとも 1 つのインタフェースがアクティブであるかぎり、到達可能な状態に保たれます。なお、この場合の「アクティブ」は、少なくとも 1 つの \fBUP\fR アドレスが存在し、かつ \fBINACTIVE\fR、\fBFAILED\fR、および \fBOFFLINE\fR がクリアされた状態として定義されます。IPMP IP インタフェース上でホストされる IP アドレスは、静的に構成することも、\fBdhcp\fR サブコマンドを使用して DHCP 経由で構成することもできます。
+.sp
+.LP
+同じ IPMP グループに割り当てられたインタフェースはすべて同等とみなされ、\fBin.mpathd\fR によって障害発生の有無が監視されます。グループ内にアクティブなインタフェースが残っている場合、IP インタフェースの障害 (と後続のすべての修復) が、ソケットベースのアプリケーションに対して透過的に処理されます。さらに、IPMP は動的再構成フレームワーク (\fBcfgadm\fR(1M)を参照) と統合されています。このフレームワークを使用すると、ソケットベースのアプリケーションに対して透過的な方法で、ネットワークアダプタを交換することができます。
+.sp
+.LP
+IP モジュールは自動的に、IPMP グループ内のすべてのアクティブインタフェースにすべてのアウトバウンドトラフィックを負荷分散します。同様に、IPMP IP インタフェースでホストされているすべての \fBUP\fR アドレスが複数のアクティブインタフェースに分散され、インバウンド負荷分散が促進されます。\fBipmpstat\fR(1M) ユーティリティーを使用すると、IP データアドレスと IP インタフェースの現在のバインドなど、IPMP サブシステムのさまざまな側面を監視することができます。
+.sp
+.LP
+あるインタフェースが IPMP グループ内に配置されると、次の場合を除き、\fBUP\fR 状態の論理インタフェースがすべて、そのグループで使用できるように IPMP IP インタフェースに「移行」されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+論理インタフェースが \fBNOFAILOVER\fR とマークされている。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+論理インタフェースが IPv6 リンクローカルアドレスをホストしている。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+論理インタフェースが IPv4 0.0.0.0 アドレスをホストしている。
+.RE
+.sp
+.LP
+同様に、インタフェースがいったんグループ内に配置されると、ある論理インタフェースが、\fBUP\fR 状態でかつ上記のいずれかの条件によって除外されないように変更された場合、その論理インタフェースも関連する IPMP IP インタフェースに移行されます。アドレスを提供した物理インタフェースがグループから削除された場合でも、その論理インタフェースの移行が元に戻されることはありません。
+.sp
+.LP
+IPMP グループ内に配置する各インタフェースは、\fBin.mpathd\fR がプローブベースの障害検出で使用する「テスト」アドレスで構成することもできます。\fBin.mpathd\fR(1M) を参照してください。これらのアドレスは、\fBUP\fR とマークされる前に (\fB-failover\fR サブコマンドを使用して) \fBNOFAILOVER\fR とマークされる必要があります。テストアドレスは、\fBdhcp\fR サブコマンドを使用して DHCP 経由で取得することもできます。
+.sp
+.LP
+IPMP のより詳しい背景情報については、\fI『System Administration Guide: Network Interfaces and Network Virtualization』\fR の IPMP に関する章を参照してください。
+.SH IPV6 インタフェースの構成
+.sp
+.LP
+\fBifconfig\fR による IPv6 物理インタフェースの plumb と「up」構成が完了すると、そのインタフェースには、IPv6 リンクローカルアドレスが自動的に割り当てられます。このアドレスの最後の 64 ビットは、そのインタフェースの \fBMAC\fR アドレスから 計算されます。
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 inet6 plumb up\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例は、リンクローカルアドレスのプレフィックスが \fBfe80::/10\fR であることを示しています。
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 inet6\fR
+ce0: flags=2000841<UP,RUNNING,MULTICAST,IPv6>
+           mtu 1500 index 2 \ 
+        inet6 fe80::a00:20ff:fe8e:f3ad/10
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+リンクローカルアドレスは、ローカルサブネット上での通信にのみ使用され、ほかのサブネットからは見えません。
+.sp
+.LP
+プレフィックスを通知しているリンク上に通知 IPv6 ルーターが存在する場合、新しく plumb された IPv6 インタフェースは、1 つ以上の論理インタフェースをそのプレフィックス通知に基づいて自動構成します。たとえば、プレフィックス通知が \fB2001:0db8:3c4d:0:55::/64\fR であった場合、自動構成されたインタフェースは次のようになります。
+.sp
+.in +2
+.nf
+eri0:2: flags=2080841<UP,RUNNING,MULTICAST,ADDRCONF,IPv6>
+          mtu 1500 index 2
+        inet6 2001:0db8:3c4d:55:a00:20ff:fe8e:f3ad/64
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+プレフィックス通知がリンク上に存在しない場合でも、グローバルアドレスを手動で割り当てることができます。例: 
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 inet6 addif \e
+2001:0db8:3c4d:55:a00:20ff:fe8e:f3ad/64 up\fR
+.fi
+.in -2
+.sp
+
+.SS "IP 上の IP トンネルインタフェースの構成"
+.sp
+.LP
+IP トンネルは、概念的に 2 つの部分で構成されます。1 つは、2 つ以上の IP ノード間の仮想リンク、もう 1 つはこのリンク上の IP インタフェースです。このインタフェースを使用すると、基礎となるリンクによってカプセル化された IP パケットをシステムで送受信できます。
+.sp
+.LP
+トンネルリンクの構成には \fBdladm\fR(1M) コマンドを使用し、それらのトンネルリンク上での IP インタフェースの構成には \fBifconfig\fR を使用します。IPv4 上の IPv4 トンネルを作成するには、IPv4 トンネルリンク上で IPv4 インタフェースを plumb します。IPv4 上の IPv6 トンネルを作成するには、IPv6 トンネルリンク上で IPv4 インタフェースを plumb します。
+.sp
+.LP
+IP トンネルリンク上で IPv6 インタフェースを plumb すると、その IPv6 アドレスが自動的に設定されます。IPv4 および IPv6 トンネルでは、\fBfe80::\fR\fIinterface-id\fR という形式の送信元および送信先リンクローカルアドレスが構成されます。IPv4 トンネルの場合、\fIinterface-id\fR は IPv4 トンネルの送信元または送信先アドレスになります。IPv6 の場合、\fIinterface-id\fR は、IPv6 トンネルの送信元または送信先アドレスの下位 64 ビットになります。たとえば、10.1.2.3 と 10.4.5.6 との間の IPv4 トンネルの場合、IPv6 インタフェースの IPv6 リンクローカルの送信元アドレスと送信先アドレスは、\fBfe80::a01:203\fR と \fBfe80::a04:506\fR になります。\fB2000::1234:abcd\fR と \fB3000::5678:abcd\fR との間の IPv6 トンネルの場合、インタフェースの IPv6 リンクローカルの送信元アドレスと送信先アドレスは、\fBfe80::1234:abcd\fR と \fBfe80::5678:abcd\fR になります。これらのデフォルトのリンクローカルアドレスを上書きするには、ほかのポイントツーポイントインタフェースと場合と同じく、アドレスを明示的に指定します。
+.sp
+.LP
+6to4 トンネルの場合、\fB2002:\fItsrc\fR::1/16\fR という形式の 6to4 グローバルアドレスが構成されます。\fItsrc\fR の部分はトンネルの送信元 IPv4 アドレスです。6to4 インタフェースの接頭辞長は自動的に 16 に設定されますが、これは、すべての 6to4 パケット (送信先が \fB2002::/16\fR の範囲のもの) が 6to4 トンネルインタフェースに転送されるからです。たとえば、トンネル送信元が 75.1.2.3 の 6to4 リンクでは、IPv6 インタフェースのアドレスは \fB2002:4b01:203::1/16\fR になります。
+.sp
+.LP
+追加の IPv6 アドレスを追加するには、\fBaddif\fR オプションを使用するか、追加の論理インタフェースを plumb します。
+.sp
+.LP
+下位互換性を保つため、特殊な名前を使用してトンネル IP インタフェースを plumb すると、\fBdladm create-iptun\fR を呼び出さなくても、トンネルリンクが暗黙的に作成されます。それらのトンネル名を次に示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip.tun\fR\fIN\fR\fR
+.ad
+.RS 15n
+.rt  
+IPv4 トンネル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip6.tun\fR\fIN\fR\fR
+.ad
+.RS 15n
+.rt  
+IPv6 トンネル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip.6to4tun\fR\fIN\fR\fR
+.ad
+.RS 15n
+.rt  
+6to4 トンネル
+.RE
+
+.sp
+.LP
+これらのトンネルは「暗黙的なトンネル」であり、\fBdladm show-iptun\fR 出力では \fBi\fR フラグで示されます。これらの特殊 IP インタフェースの plumb 先となるトンネルリンクは自動的に作成され、最後の参照が解放された (つまり最後の IP インタフェースが unplumb された) 時点で自動的に削除されます。
+.sp
+.LP
+\fBifconfig\fR の \fBtsrc\fR、\fBtdst\fR、\fBencaplim\fR、および \fBhoplimit\fR オプションは廃止済みであり、下位互換性を保つためだけに維持されています。これらは、\fBdladm\fR(1M) の対応するオプションと同等です。
+.SS "トンネルのセキュリティー設定の表示"
+.sp
+.LP
+IP トンネルインタフェースの \fBifconfig\fR 出力には、ベースとなる IP トンネルリンクで IPsec ポリシーが構成されているかどうかが表示されます。たとえば、IPsec ポリシーが存在する場合には、次のような形式の行が表示されます。
+.sp
+.in +2
+.nf
+tunnel security settings  -->  use 'ipsecconf -ln -i ip.tun1'
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBifconfig\fR または \fBipsecconf\fR(1M) を使用してセキュリティーポリシーの設定を行なっていない場合、トンネルのセキュリティー設定は表示されません。
+.SH 使用例
+.LP
+\fB例 1 \fR\fBifconfig\fR コマンドの使用
+.sp
+.LP
+ワークステーションが Ethernet に接続されていない場合、そのネットワークインタフェース (たとえば \fBeri0\fR など) を次のようにして「down」としてマークしてください。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 down\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRアドレス指定情報の出力
+.sp
+.LP
+各インタフェースのアドレス指定情報を出力するには、次のコマンドを使用します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig -a\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRブロードキャストアドレスのリセット
+.sp
+.LP
+ネットマスクが正しく設定された状態で、各インタフェースのブロードキャストアドレスをリセットするには、次のコマンドを使用します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig -a broadcast +\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fREthernet アドレスの変更
+.sp
+.LP
+インタフェース \fBce0\fR の Ethernet アドレスを変更するには、次のコマンドを使用します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig ce0 ether aa:1:2:3:4:5\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRIP 内 IP トンネルの構成
+.sp
+.LP
+IP 内 IP トンネルを構成するには、まず、次のように IP トンネルリンクを作成します (\fBtunsrc\fR と \fBtundst\fR は、\fB/etc/hosts\fR 内に対応する IPv4 エントリを持つホスト名)。
+
+.sp
+.in +2
+.nf
+example% \fBdladm create-iptun -T ipv4 -s tunsrc -d tundst tun0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+続いて次のように、送信元および送信先アドレスを指定してポイントツーポイントインタフェースを plumb します (\fBmysrc\fR と \fBthedst\fR は、\fB/etc/hosts\fR 内に対応する IPv4 エントリを持つホスト名)。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig tun0 plumb mysrc thedst up\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+トンネルのセキュリティープロパティーを設定するには、前述の \fBipsecconf\fR(1M) を使用します。
+
+.sp
+.LP
+IPv6 トンネルを構成するには、\fBcreate-iptun\fR でトンネルタイプ \fBipv6\fR を使用します。どちらかのタイプのトンネル上で、IPv6 インタフェースを plumb することもできます。
+
+.LP
+\fB例 6 \fR6to4 トンネルの構成
+.sp
+.LP
+6to4 トンネルを構成するには、まず、次のように 6to4 トンネルリンクを作成します (\fBmyv4addr\fR は、\fB/etc/hosts\fR 内に対応する IPv4 エントリを持つホスト名)。
+
+.sp
+.in +2
+.nf
+example% \fBdladm create-iptun -T 6to4 -s myv4addr my6to4tun0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+続いて、次のように、このリンク上で IPv6 インタフェースを plumb します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig my6to4tun0 inet6 plumb up\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このインタフェースの IPv6 アドレスは、前述したように自動的に設定されます。
+
+.LP
+\fB例 7 \fRインタフェース上の IP 転送の構成
+.sp
+.LP
+単一インタフェース上の IP 転送を有効にするには、次のコマンドを使用します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 router\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+単一インタフェース上の IP 転送を無効にするには、次のコマンドを使用します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig eri0 -router\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fR仮想インタフェースを使用した発信元アドレス選択の構成
+.sp
+.LP
+次のコマンドは発信元アドレス選択を構成することで、発信元アドレスが関連付けられずにローカルで生成されて \fBqfe2\fR から出力されるすべてのパケットに対し、\fBvni0\fR 上にホストされた発信元アドレスが優先的に使用されるようにします。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig qfe2 usesrc vni0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBqfe2\fR および \fBvni0\fR インタフェースに対する \fBifconfig\fR \fB-a\fR の出力は、次のようになります。
+
+.sp
+.in +2
+.nf
+qfe2: flags=1100843<UP,BROADCAST,RUNNING,MULTICAST,ROUTER,IPv4> mtu
+  1500 index 4
+  usesrc vni0
+  inet 1.2.3.4 netmask ffffff00 broadcast 1.2.3.255
+  ether 0:3:ba:17:4b:e1
+vni0: flags=20011100c1<UP,RUNNING,NOARP,NOXMIT,ROUTER,IPv4,VIRTUAL>
+  mtu 0 index 5
+  srcof qfe2
+  inet 3.4.5.6 netmask ffffffff
+.fi
+.in -2
+
+.sp
+.LP
+前述の \fBifconfig\fR 出力に含まれる \fBusesrc\fR と \fBsrcof\fR キーワードに注目してください。これらのキーワードは、物理インタフェース単位のパラメータであるにもかかわらず、物理インタフェースの論理インスタンス上にも現れます。構成元のインタフェースに対する \fBifconfig\fR には、\fBsrcof\fR キーワードは現れません。この情報は、\fBusesrc\fR が設定された一連のインタフェースから自動的に決定されます。
+
+.sp
+.LP
+\fBnone\fR キーワードを使用した次のコマンドは、前述の \fBifconfig\fR \fBusesrc\fR コマンドによる効果を取り消します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig qfe2 usesrc none\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドの実行後、\fBifconfig\fR \fB-a\fR の出力は次のようになります。
+
+.sp
+.in +2
+.nf
+qfe2: flags=1100843<UP,BROADCAST,RUNNING,MULTICAST,ROUTER,IPv4> mtu
+  1500 index 4
+  inet 1.2.3.4 netmask ffffff00 broadcast 1.2.3.255
+  ether 0:3:ba:17:4b:e1
+vni0: flags=20011100c1<UP,RUNNING,NOARP,NOXMIT,ROUTER,IPv4,VIRTUAL>
+  mtu 0 index 5
+  inet 3.4.5.6 netmask ffffffff
+.fi
+.in -2
+
+.sp
+.LP
+前述の出力には \fBusesrc\fR と \fBsrcof\fR キーワードは含まれていません。
+
+.LP
+\fB例 9 \fRIPv6 アドレスの発信元アドレス選択の構成
+.sp
+.LP
+次のコマンドは、\fBvni0\fR 上にホストされた発信元アドレスを選択することで、IPv6 アドレスの発信元アドレス選択を構成します。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig qfe1 inet6 usesrc vni0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドの実行後、\fBifconfig\fR \fB-a\fR の出力は次のようになります。
+
+.sp
+.in +2
+.nf
+qfe1: flags=2000841<UP,RUNNING,MULTICAST,IPv6> mtu 1500 index 3
+  usesrc vni0
+  inet6 fe80::203:baff:fe17:4be0/10
+  ether 0:3:ba:17:4b:e0
+vni0: flags=2002210041<UP,RUNNING,NOXMIT,NONUD,IPv6,VIRTUAL> mtu 0
+  index 5
+  srcof qfe1
+  inet6 fe80::203:baff:fe17:4444/128
+vni0:1: flags=2002210040<RUNNING,NOXMIT,NONUD,IPv6,VIRTUAL> mtu 0
+  index 5
+  srcof qfe1
+  inet6 fec0::203:baff:fe17:4444/128
+vni0:2: flags=2002210040<RUNNING,NOXMIT,NONUD,IPv6,VIRTUAL> mtu 0
+  index 5
+  srcof qfe1
+  inet6 2000::203:baff:fe17:4444/128
+.fi
+.in -2
+
+.sp
+.LP
+\fBqfe1\fR から出力されるパケットの着信先のスコープに応じて、適切なスコープを持つ発信元アドレスが \fBvni0\fR とその別名から選択されます。
+
+.LP
+\fB例 10 \fR共有 IP ゾーンでの発信元アドレス選択の使用
+.sp
+.LP
+次の例は、Solaris の \fBzones\fR(5) 機能における \fBusesrc\fR 機能の使用方法を示したものです。大域ゾーン内で次の各コマンドを呼び出したとします。
+
+.sp
+.in +2
+.nf
+example% \fBifconfig hme0 usesrc vni0\fR
+example% \fBifconfig eri0 usesrc vni0\fR
+example% i\fBfconfig qfe0 usesrc vni0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述のコマンドの実行後、その仮想インタフェースに対する \fBifconfig\fR \fB-a\fR の出力は次のようになります。
+
+.sp
+.in +2
+.nf
+vni0: flags=20011100c1<UP,RUNNING,NOARP,NOXMIT,ROUTER,IPv4,VIRTUAL>
+   mtu 0 index 23
+   srcof hme0 eri0 qfe0
+   inet 10.0.0.1 netmask ffffffff
+vni0:1:
+   flags=20011100c1<UP,RUNNING,NOARP,NOXMIT,ROUTER,IPv4,VIRTUAL> mtu 0
+   index 23
+   zone test1
+   srcof hme0 eri0 qfe0
+   inet 10.0.0.2 netmask ffffffff
+vni0:2:
+   flags=20011100c1<UP,RUNNING,NOARP,NOXMIT,ROUTER,IPv4,VIRTUAL> mtu 0
+   index 23
+   zone test2
+   srcof hme0 eri0 qfe0
+   inet 10.0.0.3 netmask ffffffff
+vni0:3:
+   flags=20011100c1<UP,RUNNING,NOARP,NOXMIT,ROUTER,IPv4,VIRTUAL> mtu 0
+   index 23
+   zone test3
+   srcof hme0 eri0 qfe0
+   inet 10.0.0.4 netmask ffffffff
+.fi
+.in -2
+
+.sp
+.LP
+仮想インタフェースの別名が、ゾーン (\fBtest1\fR、\fBtest2\fR、および \fBtest3\fR) ごとに 1 つずつ存在しています。同じゾーン内の仮想インタフェース別名に含まれる発信元アドレスが選択されます。これらの仮想インタフェース別名は、次のように \fBzonecfg\fR(1M) を使って作成されたものです。
+
+.sp
+.in +2
+.nf
+example% \fBzonecfg -z test1\fR
+zonecfg:test1> \fBadd net\fR
+zonecfg:test1:net> \fBset physical=vni0\fR
+zonecfg:test1:net> \fBset address=10.0.0.2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBtest2\fR ゾーンと \fBtest3\fR ゾーンのインタフェースとアドレスも同じ方法で作成されます。
+
+.LP
+\fB例 11 \fRDHCPv6 を無効にする
+.sp
+.LP
+次の例は、すべてのインタフェースで DHCPv6 の自動使用を無効にし、\fBhme0\fR というインタフェースの DHCPv6 をただちに停止する方法を示したものです。DHCPv6 の自動構成メカニズムの詳細については、\fBin.ndpd\fR(1M) および \fBndpd.conf\fR(4) を参照してください。
+
+.sp
+.in +2
+.nf
+example% \fBecho ifdefault StatefulAddrConf false >> /etc/inet/ndpd.conf\fR
+example% \fBpkill -HUP -x in.ndpd\fR
+example% \fBifconfig hme0 dhcp release\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/netmasks\fR\fR
+.ad
+.sp .6
+.RS 4n
+ネットマスクのデータ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/inet_type\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのインターネットプロトコルタイプ。 
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.73i) |cw(2.77i) 
+lw(2.73i) |lw(2.77i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+T{
+コマンド行オプションに対するインタフェースの安定性
+T}確実
+_
+T{
+コマンド出力に対するインタフェースの安定性
+T}不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdhcpinfo\fR(1), \fBcfgadm\fR(1M), \fBdhcpagent\fR(1M), \fBdladm\fR(1M), \fBif_mpadm\fR(1M), \fBin.mpathd\fR(1M), \fBin.ndpd\fR(1M), \fBin.routed\fR(1M), \fBipadm\fR(1M), \fBipmpstat\fR(1M), \fBipsecconf\fR(1M), \fBndd\fR(1M), \fBnetstat\fR(1M), \fBzoneadm\fR(1M), \fBzonecfg\fR(1M), \fBethers\fR(3SOCKET), \fBgethostbyname\fR(3NSL), \fBgetnetbyname\fR(3SOCKET), \fBhosts\fR(4), \fBinet_type\fR(4), \fBndpd.conf\fR(4), \fBnetmasks\fR(4), \fBnetworks\fR(4), \fBnsswitch.conf\fR(4), \fBattributes\fR(5), \fBprivileges\fR(5), \fBzones\fR(5), \fBarp\fR(7P), \fBipsecah\fR(7P), \fBipsecesp\fR(7P)
+.sp
+.LP
+\fI『System Administration Guide: IP Services 』\fR
+.SH 診断
+.sp
+.LP
+\fBifconfig\fR は、次のことを示すメッセージを送信します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+指定されたインタフェースが存在しないかどうか
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+要求されたアドレスが未知かどうか
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+非特権ユーザーが特定のインタフェースの構成を変更しようとしているかどうか
+.RE
+.SH 注意事項
+.sp
+.LP
+ホスト名を選択する際に、\fBbroadcast\fR、\fBdown\fR、\fBprivate\fR、\fBtrailers\fR、\fBup\fR やその他のオプションの名前を選択しないでください。これらの名前のいずれかをホスト名として選択した場合、診断が非常に難しい特異な問題が発生する可能性があります。

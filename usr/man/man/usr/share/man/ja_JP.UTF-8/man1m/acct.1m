@@ -1,0 +1,197 @@
+'\" te
+.\" Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH acct 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+acct, acctdisk, acctdusg, accton, acctwtmp, closewtmp, utmp2wtmp \- アカウンティングおよびいろいろなアカウントコマンドの概要
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/acct/acctdisk\fR 
+.fi
+
+.LP
+.nf
+\fB/usr/lib/acct/acctdusg\fR [\fB-u\fR \fIfilename\fR] [\fB-p\fR \fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/lib/acct/accton\fR [\fIfilename\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/lib/acct/acctwtmp\fR \fIreason\fR \fIfilename\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/acct/closewtmp\fR 
+.fi
+
+.LP
+.nf
+\fB/usr/lib/acct/utmp2wtmp\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+アカウンティングソフトウェアは、アカウンティングシステムを構築するためのツール群です (C 言語のプログラムおよびシェルプロシージャから構成される)。\fBacctsh\fR(1M) では、C 言語のプログラムのいちばん上に組むシェルプロシージャー群を説明します。
+.sp
+.LP
+接続時間のアカウンティングは記録を \fB/var/adm/wtmpx\fR (\fButmpx\fR(4) を参照) に書き込むプログラム群により管理されます。\fBacctcon\fR(1M) では、このファイルをセッションおよび課金記録に変換するプログラムを説明します。また、\fBacctmerg\fR( 1M) では、この課金記録について集約します。
+.sp
+.LP
+プロセスアカウンティングは、システムカーネルによって行われます。プロセスを終了すると、1 つのプロセスにつき 1 つのレコードが、あるファイル (通常は、\fB/var/adm/pacct\fR) に書き込まれます。\fBacctprc\fR(1M) では、課金のためにこのデータを集約します。コマンドの使用状況を集約するには、\fBacctcms\fR(1M) を使用します。\fBacctcom\fR(1) を用いて、現在のプロセスデータを調査することができます。
+.sp
+.LP
+\fBacctmerg\fR (\fBacct.h\fR(3HEAD) の \fBtacct\fR フォーマットを参照) を使うと、プロセスのアカウンティングレコードおよび接続時間のアカウンティングレコード (あるいは \fBacct.h\fR(3HEAD) で説明する \fBtacct\fR フォーマットのアカウンティングレコードのいずれか) をアカウンティングレコードの合計にマージしたり、集約したりすることができます。どのアカウンティングレコードにも、あるいはすべてのアカウンティングレコードにでも \fBprtacct\fR (\fBacctsh\fR(1M) を参照) をフォーマットに使用します。
+.sp
+.LP
+\fBacctdisk\fR は、ユーザー \fBID\fR、ログイン名およびディスクブロック数がある行を読み取り、ほかのアカウンティングレコードとマージすることができるアカウンティングレコードの合計に、それらの情報を変換します。入力ファイルが壊れているか、または正しくフォーマットされていない場合は、\fBacctdisk\fR はエラーを返します。
+.sp
+.LP
+\fBacctdusg\fR は、その標準入力を (通常は、\fBfind\fR \fB/\fR \fB-\fR\fBprint\fR から) 読み取り、ログインによるディスクのリソース消費 (間接ブロックを含む) を計算します。
+.sp
+.LP
+\fBaccton\fR では、引数がない場合、プロセスアカウンティングをオフにします。\fIfilename\fR を指定する場合は、そのファイルは、カーネルがプロセスのアカウンティングレコード (\fBacct\fR(2) および \fBacct.h\fR(3HEAD) を参照) を追加するための、既存のファイル名である必要があります。
+.sp
+.LP
+\fBacctwtmp\fR は、\fButmpx\fR(4) のレコードを \fIfilename\fR へ書き込みます。レコードには、現在の時間および \fIreason\fR を説明する文字列が入っています。\fBACCOUNTING\fR のレコードの型が割り当てられます (\fButmpx\fR(4) を参照)。\fIreason\fR には、11 文字以下の文字列、数、\fB$\fR、またはスペースを指定してください。たとえば、以下は、リブートのプロシージャおよびシャットダウンのプロシージャでの使用例です。 
+.sp
+.in +2
+.nf
+acctwtmp "acctg on" /var/adm/wtmpx
+acctwtmp "acctg off" /var/adm/wtmpx
+.fi
+.in -2
+
+.sp
+.LP
+現在ログオンしている各ユーザーについて、\fBclosewtmp\fR は、偽の \fBDEAD_PROCESS\fR レコードを \fB/var/adm/wtmpx\fR ファイルに入れます。\fBrunacct\fR (\fBrunacct\fR(1M) を参照) がこの偽の \fBDEAD_PROCESS\fR を使用することにより、接続アカウンティングプロシージャーは \fBrunacct\fR を起動する前にログオンしたユーザーが使用した時間を追跡することができます。
+.sp
+.LP
+現在ログオンしている各ユーザーについて、\fBrunacct\fR は \fButmp2wtmp\fR を使用して、\fBrunacct\fR が作成したファイル \fB/var/adm/wtmpx\fR にエントリを作成します。この \fB/var/adm/wtmpx\fR のエントリを見れば、引き続いて起こる \fBrunacct\fR の呼び出しで、現在ログインしているユーザーの接続時間がわかります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIfilename\fR\fR
+.ad
+.RS 15n
+.rt  
+だれにも課金されないファイル名から成るレコードを、\fIfilename\fR に入れます (ディスクの課金を拒否しようとしたユーザーを見つけるための潜在的な情報源となる)。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIfilename\fR\fR
+.ad
+.RS 15n
+.rt  
+\fIp\fR は、パスワードファイル filename を指定します。パスワードファイルが \fB/etc/passwd\fR である場合は、このオプションは不要です。
+.RE
+
+.SH 環境
+.sp
+.LP
+\fBLC_*\fR 変数 (\fBLC_TYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBLC_COLLATE\fR、\fBLC_NUMERIC\fR、\fBLC_MONETARY\fR) (\fBenviron\fR(5) 参照) のいずれも環境に設定されていなければ、それぞれ対応するロケールのカテゴリにおける \fBacct\fR の動作は、環境変数 \fBLANG\fR によって決定されます。もし、\fBLC_ALL\fR が設定されていれば、その内容が \fBLANG\fR 変数やその他の \fBLC_*\fR 変数より優先されます。前述の変数が環境にまったく設定されていなければ、C ロケール (米国スタイル) が \fBacct\fR の動作を決定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBacct\fR の文字の処理方法を決定します。\fBLC_CTYPE\fR に有効な値が設定されていると、\fBacct\fR は、そのロケールにあった文字を含むテキストやファイル名を表示および処理できます。\fBacct\fR は拡張 UNIX コード (EUC) も表示および処理できます。この場合、文字は 1 バイト幅、2 バイト幅、3 バイト幅のいずれも使用できます。また、\fBacct\fR は 1、 2、またはそれ以上のカラム幅の EUC 文字も処理することができます。C ロケールにおいては、ISO 8859-1 の文字だけが有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_TIME\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBacct\fR の日付および時間のフォーマットの処理方法を決定します。C ロケールにおいては、日付および時間の処理方法は米国ルールに従います。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 18n
+.rt  
+ログイン名からユーザー \fBID\fR への変換に用いる
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/acct\fR\fR
+.ad
+.RS 18n
+.rt  
+本マニュアルの 1M 章に含まれるアカウンティングコマンドが置かれる
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/pacct\fR\fR
+.ad
+.RS 18n
+.rt  
+現在のプロセスアカウンティングファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/wtmpx\fR\fR
+.ad
+.RS 18n
+.rt  
+ユーザーアクセスまたは管理情報の履歴
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/accounting/legacy-accounting
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBacctcom\fR(1), \fBacctcms\fR(1M), \fBacctcon\fR(1M), \fBacctmerg\fR(1M), \fBacctprc\fR( 1M), \fBacctsh\fR(1M), \fBfwtmp\fR(1M), \fBrunacct\fR(1M), \fBacct\fR(2), \fBacct.h\fR(3HEAD), \fBpasswd\fR(4), \fButmpx\fR(4), \fBattributes\fR(5), \fBenviron\fR(5)
+.sp
+.LP
+\fI\fR

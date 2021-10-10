@@ -1,0 +1,601 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved
+.TH pgstat 1M "17 Aug 2010" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+pgstat \- report utilization statistics for Processor Groups
+.SH SYNOPSIS
+.LP
+.nf
+\fBpgstat\fR [\fB-A\fR] [\fB-C\fR] [\fB-p\fR] [\fB-s\fR \fIkey\fR | \fB-S\fR \fIkey\fR] [\fB-t\fR \fInumber\fR] [\fB-T\fR u | d] [\fB-v\fR]
+[\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fB-P\fR \fIpg\fR ...] [\fB-c\fR \fIprocessor_id\fR... ]
+[\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.LP
+.nf
+\fBpgstat\fR \fB-h\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpgstat\fR displays utilization statistics about Processor Groups (PGs). A PG is a set of CPUs that are grouped together by a common characteristic.
+.sp
+.LP
+PGs are used by the operating system to represent CPUs that share performance relevant hardware, such as  execution pipelines, caches, and so forth. These PGs are organized into a hierarchy that models the processor topology of the machine. In this hierarchy, each CPU (strand) has a leaf PG that represents the CPUs that share the most hardware with it. Each successive ancestor of the leaf PG shares progressively less hardware with the CPU until the root PG is reached. The root PG contains all of the CPUs in the system and represents the group of CPUs sharing the least hardware with each other. (See "Examples" below for an example of PG hierarchy).
+.sp
+.LP
+If a machine does not have any performance-relevant hardware sharing relationships, then \fBpgstat\fR displays only a root PG that contains all of the CPUs in the system.
+.sp
+.LP
+By default, \fBpgstat\fR does the following:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Measures the hardware and software utilization of all PGs in the PG hierarchy over a one second interval.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Displays the utilization of the PGs in depth first order using indentation to help show how the PGs relate to each other.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Displays the ID, sharing relationship, hardware load, software load, and online CPUs for each PG at the end of each interval.
+.RE
+.sp
+.LP
+The interval and count can be given as arguments to specify the number of seconds in the sampling interval and number of times to measure and display the utilization for the specified PGs.
+.sp
+.LP
+You can specify options to further tailor the output, organize the output a certain way, and specify PGs of interest (see "Options" below for details).
+.sp
+.LP
+A hyphen ("\fB-\fR") is displayed when the utilization for a given PG is not supported and a question mark (\fB?\fR) is displayed when the  utilization is not available. On systems where the CPU hardware performance counters are needed to measure the hardware utilization, the hardware utilization might be unavailable because the counters are being used by a \fBcpc\fR(3CPC) consumer such as \fBcpustat\fR(1M), \fBcputrack\fR(1), \fBdtrace\fR(1M), or another application that uses \fBlibcpc\fR(3LIB).
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display summary of utilization data when \fBpgstat\fR is run over multiple intervals.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIprocessor_id\fR...\fR
+.ad
+.sp .6
+.RS 4n
+Display utilization about PGs that contain the specified CPUs. The CPUs can be specified as a comma separated list of CPU IDs. A hyphen ("-") can be used to specify contiguous ranges of CPU IDs (for example, \fB0-3\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display utilization of each CPU in each PG.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display short help message and exit with exit status 0.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display the physical relationship that corresponds to a PG. If a PG has the same CPUs as the whole system, a processor core, or a chip, \fBsystem\fR, \fBcore\fR, or \fBchip\fR, as appropriate, is displayed after the sharing relationship of the PG in square brackets ("\fB[]\fR").
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIpg\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+Display utilization for specified PGs. Multiple PGs can be specified as a comma-separated list of PG IDs. A hyphen ("-") can be used to specify a contiguous range of PG IDs (for example, \fB0-3\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIstring1\fR,\fIstring2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+Display utilization only for PGs with a sharing relationship name that matches any of the specified strings. The string can be a whole relationship name or a portion of one or more relationship names. The string matching is case-insensitive.
+.sp
+Multiple \fB-r\fR options can be entered, which results in matching all PGs with a relationship name that matches any of the specified strings.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIstring1\fR,\fIstring2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+Display information only about PGs with a sharing relationship name \fBother\fR than the one(s) specified.
+.sp
+String matching is the same as described above for the \fB-r\fR option. Multiple \fB-R\fR options can be entered.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIkey\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort output lines by the specified key in descending order. The specified key can be one of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpg\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by PG ID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhwload\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by hardware utilization.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBswload\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by software utilization.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by user time.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsys\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by system time.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidle\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by idle time.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdepth\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by descending PG tree from root to leaves, depth-first (default).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbreadth\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort by descending PG tree from root to leaves, breadth-first.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIkey\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sort output lines by the specified key in ascending order. Possible key values are the same as for the \fB-s\fR option.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+Show the top number of PGs for the specified integer number.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBu\fR | \fBd\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display timestamp for each sampling interval in Unix time (see \fBtime\fR(2)) or the standard date format used by \fBdate\fR(1).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display extra information about each PG including hardware utilization and capacity and software user, system, and idle times.
+.RE
+
+.SH OUTPUT HEADINGS
+.sp
+.LP
+pgstat displays the column headings, which are listed below, along with the meanings of those headings.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPG\fR\fR
+.ad
+.sp .6
+.RS 4n
+Processor Group ID.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRELATIONSHIP\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sharing relationship for PG.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHW\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hardware load in percent (calculated as \fBUTIL\fR/\fBCAP\fR for interval).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUTIL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Hardware utilization of PG's shared hardware component over the interval. This can be a large number, so \fBK\fR, \fBM\fR, \fBB\fR, and \fBT\fR are used for denoting thousand, million, billion, and trillion, respectively.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+Approximate maximum possible utilization for PG's shared hardware component over the interval.  This can be a large number, so \fBK\fR, \fBM\fR, \fBB\fR, and \fBT\fR are used for denoting thousand, million, billion, and trillion, respectively.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSW\fR\fR
+.ad
+.sp .6
+.RS 4n
+Software load in percent (calculated as (\fBUSR\fR + \fBSYS\fR) / (\fBUSR\fR + \fBSYS\fR + \fBIDLE\fR))
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUSR\fR\fR
+.ad
+.sp .6
+.RS 4n
+Percentage of time that software threads ran in user mode on CPUs in PG during interval.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Percentage of time that software threads ran in system mode on CPUs in PG during interval.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Percentage of time that no software threads ran on CPUs in PG during interval.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCPUS\fR\fR
+.ad
+.sp .6
+.RS 4n
+CPU IDs for CPUs in PG.
+.RE
+
+.SH EXAMPLES
+.sp
+.LP
+In the following examples, the system contains one UltraSPARC T1 processor chip with 8 cores and 32 strands.
+.LP
+\fBExample 1 \fRDisplaying Utilization for Specified Period
+.sp
+.LP
+The following command displays utilization for all PGs over the last two seconds.
+
+.sp
+.in +2
+.nf
+$ \fBpgstat 1 2\fR
+PG  RELATIONSHIP            HW    SW  CPUS
+ 0  System                   -  0.4%  0-31
+ 3   Data_Pipe_to_memory     -  0.4%  0-31
+ 2    Floating_Point_Unit   0%  0.4%  0-31
+ 1     Integer_Pipeline     0%    0%  0-3
+ 4     Integer_Pipeline     0%    0%  4-7
+ 5     Integer_Pipeline     0%    0%  8-11
+ 6     Integer_Pipeline     0%  0.2%  12-15
+ 7     Integer_Pipeline     0%    0%  16-19
+ 8     Integer_Pipeline   2.8%  2.7%  20-23
+ 9     Integer_Pipeline   0.1%  0.2%  24-27
+10     Integer_Pipeline     0%    0%  28-31
+PG  RELATIONSHIP            HW    SW  CPUS
+ 0  System                   -  0.4%  0-31
+ 3   Data_Pipe_to_memory     -  0.4%  0-31
+ 2    Floating_Point_Unit   0%  0.4%  0-31
+ 1     Integer_Pipeline     0%  0.2%  0-3
+ 4     Integer_Pipeline     0%    0%  4-7
+ 5     Integer_Pipeline     0%    0%  8-11
+ 6     Integer_Pipeline     0%    0%  12-15
+ 7     Integer_Pipeline     0%    0%  16-19
+ 8     Integer_Pipeline   3.1%  2.5%  20-23
+ 9     Integer_Pipeline     0%    0%  24-27
+10     Integer_Pipeline     0%  0.2%  28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDisplaying Information about Integer Pipeline
+.sp
+.LP
+The following command displays detailed information about the two most utilized integer pipelines over the last two seconds.
+
+.sp
+.in +2
+.nf
+$ \fBpgstat -v -t 2 -r 'Integer_Pipeline' 1 2\fR
+PG  RELATIONSHIP         HW UTIL  CAP     SW    USR    SYS   IDLE CPUS
+ 1  Integer_Pipeline   0.2% 2.2M 1.4B   0.2%   0.0%   0.2%  99.8% 0-3
+ 4  Integer_Pipeline  13.1% 181M 1.4B  14.9%   0.0%  14.9%  85.1% 4-7
+PG  RELATIONSHIP         HW UTIL  CAP     SW    USR    SYS   IDLE CPUS
+ 1  Integer_Pipeline   0.2% 1.9M 1.2B   0.2%   0.0%   0.2%  99.8% 0-3
+ 4  Integer_Pipeline  13.1% 163M 1.2B  14.9%   0.0%  14.9%  85.1% 4-7
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRDisplaying Core Utilization over Specified Period
+.sp
+.LP
+The following command displays information about core utilization over the last two minutes.
+
+.sp
+.in +2
+.nf
+$ \fBpgstat -A 60 2\fR
+PG  RELATIONSHIP              HW      SW  CPUS
+ 0  System                     -   56.9%  0-31
+ 3   Data_Pipe_to_memory       -   56.9%  0-31
+ 2    Floating_Point_Unit   0.0%   56.9%  0-31
+ 1     Integer_Pipeline    36.7%   58.7%  0-3
+ 4     Integer_Pipeline    41.9%   58.3%  4-7
+ 5     Integer_Pipeline    31.0%   58.0%  8-11
+ 6     Integer_Pipeline    30.7%   57.9%  12-15
+ 7     Integer_Pipeline    30.1%   55.8%  16-19
+ 8     Integer_Pipeline    40.2%   54.8%  20-23
+ 9     Integer_Pipeline    35.0%   56.0%  24-27
+10     Integer_Pipeline    40.3%   55.8%  28-31
+PG  RELATIONSHIP              HW      SW  CPUS
+ 0  System                     -   10.7%  0-31
+ 3   Data_Pipe_to_memory       -   10.7%  0-31
+ 2    Floating_Point_Unit   0.0%   10.7%  0-31
+ 1     Integer_Pipeline     9.0%   10.7%  0-3
+ 4     Integer_Pipeline     9.6%   10.8%  4-7
+ 5     Integer_Pipeline     8.6%    9.9%  8-11
+ 6     Integer_Pipeline    10.5%   11.9%  12-15
+ 7     Integer_Pipeline     9.1%   10.4%  16-19
+ 8     Integer_Pipeline     9.6%   10.9%  20-23
+ 9     Integer_Pipeline     8.9%   10.0%  24-27
+10     Integer_Pipeline     9.5%   10.7%  28-31
+
+       SUMMARY: UTILIZATION OVER 120 SECONDS
+
+                             ------HARDWARE------ ------SOFTWARE------
+PG  RELATIONSHIP             MIN    AVG    MAX    MIN    AVG    MAX CPUS
+ 0  System                     -      -      -  10.7%  10.7%  56.9% 0-31
+ 3   Data_Pipe_to_memory       -      -      -  10.7%  10.7%  56.9% 0-31
+ 2    Floating_Point_Unit   0.0%   0.0%   0.0%  10.7%  10.7%  56.9% 0-31
+ 1     Integer_Pipeline     9.0%   8.5%  36.7%  10.7%  10.7%  58.7% 0-3
+ 4     Integer_Pipeline     9.6%   9.1%  41.9%  10.8%  10.8%  58.3% 4-7
+ 5     Integer_Pipeline     8.6%   8.1%  31.0%   9.9%   9.9%  58.0% 8-11
+ 6     Integer_Pipeline    10.5%  10.0%  30.7%  11.9%  11.9%  57.9% 12-15
+ 7     Integer_Pipeline     9.1%   8.6%  30.1%  10.4%  10.4%  55.8% 16-19
+ 8     Integer_Pipeline     9.6%   9.1%  40.2%  10.9%  10.9%  54.8% 20-23
+ 9     Integer_Pipeline     8.9%   8.4%  35.0%  10.0%  10.0%  56.0% 24-27
+10     Integer_Pipeline     9.5%   8.9%  40.3%  10.7%  10.7%  55.8% 28-31
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unable to get PG information from the system.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specified interval, count, or all CPUs, PGs, and sharing relationships invalid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalid syntax.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityUncommitted
+.TE
+
+.sp
+.LP
+The command line options and output are Uncommitted.
+.SH SEE ALSO
+.sp
+.LP
+\fBcputrack\fR(1), \fBcpustat\fR(1M), \fBdtrace\fR(1M), \fBpginfo\fR(1M), \fBcpc\fR(3CPC), \fBlibcpc\fR(3LIB), \fBattributes\fR(5)

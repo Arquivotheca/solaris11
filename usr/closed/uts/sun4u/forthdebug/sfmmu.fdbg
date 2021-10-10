@@ -1,0 +1,510 @@
+\
+\ CDDL HEADER START
+\
+\ The contents of this file are subject to the terms of the
+\ Common Development and Distribution License (the "License").
+\ You may not use this file except in compliance with the License.
+\
+\ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+\ or http://www.opensolaris.org/os/licensing.
+\ See the License for the specific language governing permissions
+\ and limitations under the License.
+\
+\ When distributing Covered Code, include this CDDL HEADER in each
+\ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+\ If applicable, add the following below this CDDL HEADER, with the
+\ fields enclosed by brackets "[]" replaced with your own identifying
+\ information: Portions Copyright [yyyy] [name of copyright owner]
+\
+\ CDDL HEADER END
+\
+
+\
+\ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.  
+\
+
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/user.h>
+#include <sys/cred.h>
+#include <sys/proc.h>
+#include <sys/cpuvar.h>
+#include <sys/thread.h>
+#include <sys/sysinfo.h>
+#include <sys/vfs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/disp.h>
+#include <sys/var.h>
+#include <sys/ts.h>
+#include <sys/kstat.h>
+#include <vm/hat_sfmmu.h>
+#include <sys/ivintr.h>
+#include <sys/intr.h>
+#include <sys/machcpuvar.h>
+#include <vm/anon.h>
+#include <vm/as.h>
+#include <vm/hat.h>
+#include <vm/page.h>
+#include <vm/pvn.h>
+#include <vm/seg.h>
+#include <vm/seg_dev.h>
+#include <vm/seg_enum.h>
+#include <vm/seg_kp.h>
+#include <vm/seg_map.h>
+#include <vm/seg_vn.h>
+#include <sys/mutex_impl.h>
+#include <sys/rwlock_impl.h>
+#include <sys/callo.h>
+#include <sys/ddi_impldefs.h>
+#include <sys/kmem_impl.h>
+#include <sys/siginfo.h>
+#include <sys/memlist.h>
+#include <sys/modctl.h>
+#include <sys/kobj.h>
+#include <sys/privregs.h>
+#include <sys/machpcb.h>
+#include <sys/traptrace.h>
+
+
+
+tte
+	v	x
+	sz	x
+	nfo	x
+	ie	x
+	hmenum	x
+	pahi	x
+	palo	x
+	suspend	x
+	ref	x
+	wr_perm	x
+	no_sync	x
+	exec_perm x
+	l	x
+	cp	x
+	cv	x
+	e	x
+	p	x
+	w	x
+	g	x
+
+tsb_info
+	tsb_va		x
+	tsb_pa		x
+	tsb_next	x
+	tsb_szc		d
+	tsb_flags	x
+	tsb_ttesz_mask	x
+	tsb_tte		.tte
+	tsb_sfmmu	x
+	tsb_cache	x
+
+hat.h_un
+	sfmmu_iblkp	x
+
+sfmmu_ctx
+	gnum		x
+	cnum		x
+
+hat
+	sfmmu_cpusran	x
+	sfmmu_as	x
+	sfmmu_ttecnt	.d
+	sfmmu_ismttecnt	.d
+	h_un		.hat.h_un
+	sfmmu_free	x
+	sfmmu_ismhat	x
+	sfmmu_rmstat	x
+	sfmmu_clrstart	x
+	sfmmu_clrbin	x
+	sfmmu_cext	x
+	sfmmu_flags	x
+	sfmmu_tsb	.tsb_info
+	sfmmu_ismblkpa	x
+	sfmmu_tsb_cv	x
+	sfmmu_pgsz	.x
+	sfmmu_ctx_lock	x
+	sfmmu_ctxs	.sfmmu_ctx
+
+hmehash_bucket
+	hmehash_mutex	.mutex
+	hmeh_nextpa	x
+	hmeblkp		x
+
+hmeblk_tag
+	htag_tag	x
+
+hme_blk.hblk_misc
+
+
+hme_blk.hblk_un
+
+hme_blk
+	hblk_nextpa	x
+	hblk_tag	.hmeblk_tag
+	hblk_next	x
+	hblk_shadow	x
+	hblk_span	d
+	hblk_misc	.hme_blk.hblk_misc
+	hblk_un		.hme_blk.hblk_un
+
+sf_hment.sf_hment_un
+	page		x
+
+sf_hment
+	sf_hment_un	.sf_hment.sf_hment_un
+	hme_next	x
+	hme_prev	x
+	hme_tte		.tte
+
+sfmmu_global_stat
+	sf_tsb_exceptions	d
+	sf_tsb_raise_exception	d
+	sf_pagefaults		d
+	sf_uhash_searches	d
+	sf_uhash_links		d
+	sf_khash_searches	d
+	sf_khash_links		d
+	sf_swapout		d
+	sf_tsb_alloc		d
+	sf_tsb_allocfail	d
+	sf_tsb_sectsb_create	d
+	sf_scd_1sttsb_alloc	d
+	sf_scd_2ndtsb_alloc	d
+	sf_scd_1sttsb_allocfail	d
+	sf_scd_2ndtsb_allocfail	d
+	sf_tteload8k		d
+	sf_tteload64k		d
+	sf_tteload512k		d
+	sf_tteload4m		d
+	sf_tsb_load8k		d
+	sf_tsb_load4m		d
+	sf_hblk_hit		d
+	sf_hblk8_ncreate	d
+	sf_hblk8_nalloc		d
+	sf_hblk1_ncreate	d
+	sf_hblk1_nalloc		d
+	sf_hblk_slab_cnt	d
+	sf_hblk_reserve_cnt	d
+	sf_hblk_recurse_cnt	d
+	sf_hblk_reserve_hit	d
+	sf_get_free_success	d
+	sf_get_free_throttle	d
+	sf_get_free_fail	d
+	sf_put_free_success	d
+	sf_put_free_fail	d
+	sf_pgcolor_conflict	d
+	sf_uncache_conflict	d
+	sf_unload_conflict	d
+	sf_ism_uncache		d
+	sf_ism_recache		d
+	sf_recache		d
+	sf_steal_count		d
+	sf_pagesync		d
+	sf_pagesync_invalid	d
+	sf_kernel_xcalls	d
+	sf_user_xcalls		d
+	sf_tsb_grow		d
+	sf_tsb_shrink		d
+	sf_tsb_resize_failures	d
+	sf_tsb_reloc		d
+	sf_user_vtop		d
+	sf_ctx_inv		d
+	sf_tlb_reprog_pgsz	d
+	sf_region_remap_demap	d
+	sf_create_scd		d
+	sf_join_scd		d
+	sf_leave_scd		d
+	sf_destroy_scd		d
+
+sfmmu_tsbsize_stat
+	sf_tsbsz_8k		d
+	sf_tsbsz_16k		d
+	sf_tsbsz_32k		d
+	sf_tsbsz_64k		d
+	sf_tsbsz_128k		d
+	sf_tsbsz_256k		d
+	sf_tsbsz_512k		d
+	sf_tsbsz_1m		d
+	sf_tsbsz_2m		d
+	sf_tsbsz_4m		d
+
+_mseg_un
+	kpm_lpgs		x
+
+memseg
+	pages			x
+	epages			x
+	pages_base		x
+	pages_end		x
+	next			x
+	kpm_pbase		x
+	kpm_nkpmpgs		x
+	mseg_un			._mseg_un
+	msegflags		x
+
+tsbmiss
+
+ism_blk
+
+ism_map
+
+ism_ment
+
+forth_start
+
+( given a pfn will return the page structure )
+: pfn>page ( pfn -- page )
+   [ also page-words ]
+   [ also memseg-words ]
+   symbol memsegs p@                   ( n memseg )
+   begin  ?dup  while                  ( n memseg )
+      2dup                             ( n memseg n memseg )
+      dup pages_base swap pages_end    ( n memseg n base end )
+      within  if                       ( n memseg )
+         2dup pages_base -             ( n memseg noff )
+         ['] .page sizeof * swap       ( n poff memseg )
+         pages +  		       ( n page )
+	 nip exit		       ( page )
+      then                             ( n memseg )
+      next                             ( n memseg' )
+   repeat                              ( n )
+   drop 0 			       ( 0 )
+   [ previous ]
+   [ previous ]
+;
+
+( given a pfn will display page struct )
+: .page-n ( n -- )
+   dup pfn>page ?dup			( n page )
+   if
+      dup ." page " .x cr		( n page )
+      .page				( n )
+      drop
+   else
+      . ." not found "			( )
+   then
+;
+
+: .memseg-list ( -- )
+   [ also memseg-words ]
+   symbol memsegs p@        ( memseg )
+   begin  ?dup  while       ( memseg )
+      dup .memseg cr next   ( memseg' )
+   repeat
+   [ previous ]
+;
+
+: .memlist-list ( memlist -- )
+   [ also memlist-words ]
+   begin  ?dup  while           ( memlist )
+      dup .memlist cr ml_next   ( memlist' )
+   repeat                       ( )
+   [ previous ]
+;
+
+: .hmeb-shift ( sfmmu addr shift -- )
+   >> over xor swap                 ( hash sfmmu )
+   symbol ksfmmup p@ <>  if               ( hash )
+      symbol uhmehash_num l@ and    ( bucket )
+      ['] .hmehash_bucket sizeof *  ( index )
+      symbol uhme_hash p@ +         ( hmeb )
+   else                             ( hash )
+      symbol khmehash_num l@ and    ( bucket )
+      ['] .hmehash_bucket sizeof *  ( index )
+      symbol khme_hash p@ +         ( hmeb )
+   then                             ( hmeb )
+   ." hmeb " dup .x cr              ( hmeb )
+   .hmehash_bucket                  ( )
+;
+
+: .hmeb-8k ( sfmmup addr -- ) d# 16 .hmeb-shift ;
+
+alias .hmeb-64k .hmeb-8k
+
+: .hmeb-512k ( sfmmup addr -- ) d# 19 .hmeb-shift ;
+
+: .hmeb-4m ( sfmmup addr -- ) d# 22 .hmeb-shift ;
+
+: .hmeblk-list ( hmeblk -- )
+   [ also hme_blk-words ]
+   begin  ?dup  while             ( hmeblk )
+      dup .hme_blk cr hblk_next   ( hmeblk' )
+   repeat                         ( )
+   [ previous ]
+;
+
+: .pmap-list ( sfhme -- )
+   [ also sf_hment-words ]
+   begin  ?dup  while            ( sfhme )
+      dup .sf_hment cr hme_next  ( sfhme' )
+   repeat                        ( )
+   [ previous ]
+;
+
+: clr_mmustats ( -- )
+	[ also sfmmu_global_stat-words ]
+	[ also tsbmiss-words ]
+	symbol sfmmu_global_stat 
+	dup 0 to sf_tsb_exceptions
+	dup 0 to sf_tsb_raise_exception
+	dup 0 to sf_pagefaults
+	dup 0 to sf_uhash_searches
+	dup 0 to sf_uhash_links
+	dup 0 to sf_khash_searches
+	dup 0 to sf_khash_links
+	dup 0 to sf_swapout
+	dup 0 to sf_tsb_alloc
+	dup 0 to sf_tsb_allocfail
+	dup 0 to sf_tsb_sectsb_create
+	dup 0 to sf_scd_1sttsb_alloc
+	dup 0 to sf_scd_2ndtsb_alloc
+	dup 0 to sf_scd_1sttsb_allocfail
+	dup 0 to sf_scd_2ndtsb_allocfail
+	dup 0 to sf_tteload8k
+	dup 0 to sf_tteload64k
+	dup 0 to sf_tteload512k
+	dup 0 to sf_tteload4m
+	dup 0 to sf_tsb_load8k
+	dup 0 to sf_tsb_load4m
+	dup 0 to sf_hblk_hit
+	dup 0 to sf_hblk8_ncreate
+	dup 0 to sf_hblk8_nalloc
+	dup 0 to sf_hblk1_ncreate
+	dup 0 to sf_hblk1_nalloc
+	dup 0 to sf_hblk_slab_cnt
+	dup 0 to sf_hblk_reserve_cnt
+	dup 0 to sf_hblk_recurse_cnt
+	dup 0 to sf_hblk_reserve_hit
+	dup 0 to sf_get_free_success
+	dup 0 to sf_get_free_throttle
+	dup 0 to sf_get_free_fail
+	dup 0 to sf_put_free_success
+	dup 0 to sf_put_free_fail
+	dup 0 to sf_pgcolor_conflict
+	dup 0 to sf_uncache_conflict
+	dup 0 to sf_unload_conflict
+	dup 0 to sf_ism_uncache
+	dup 0 to sf_ism_recache
+	dup 0 to sf_recache
+	dup 0 to sf_steal_count
+	dup 0 to sf_pagesync
+	dup 0 to sf_pagesync_invalid
+	dup 0 to sf_kernel_xcalls
+	dup 0 to sf_user_xcalls
+	dup 0 to sf_tsb_grow
+	dup 0 to sf_tsb_shrink
+	dup 0 to sf_tsb_resize_failures
+	dup 0 to sf_tsb_reloc
+	dup 0 to sf_user_vtop
+	dup 0 to sf_ctx_inv
+	dup 0 to sf_tlb_reprog_pgsz
+	dup 0 to sf_region_remap_demap
+	dup 0 to sf_create_scd
+	dup 0 to sf_join_scd
+	dup 0 to sf_leave_scd
+	dup 0 to sf_destroy_scd
+	symbol tsbmiss_area
+	20 1 do
+		dup 0 to utsb_misses
+		dup 0 to ktsb_misses
+		dup 0 to uprot_traps
+		dup 0 to kprot_traps
+		['] .tsbmiss sizeof +
+	loop
+	[ previous ]
+	[ previous ]
+;
+
+0 value itlbmis_total
+0 value dtlbmis_total
+0 value utsbmis_total
+0 value ktsbmis_total
+0 value kprot_total
+0 value uprot_total
+0 value thisarea
+1 value hatstatcpu
+
+: prt_mmustats ( -- )
+	[ also sfmmu_global_stat-words ]
+	[ also tsbmiss-words ]
+	symbol sfmmu_global_stat .sfmmu_global_stat 
+	0 to itlbmis_total
+	0 to dtlbmis_total
+	0 to utsbmis_total
+	0 to ktsbmis_total
+	0 to uprot_total
+	0 to kprot_total
+	1 to hatstatcpu
+	symbol tsbmiss_area to thisarea
+	20 1 do i
+		symbol cpu_ready_set l@ hatstatcpu and
+		0 <> if 
+			thisarea utsb_misses thisarea uprot_traps - utsbmis_total + to utsbmis_total
+			thisarea ktsb_misses thisarea kprot_traps - ktsbmis_total + to ktsbmis_total
+			thisarea uprot_traps uprot_total + to uprot_total
+			thisarea kprot_traps kprot_total + to kprot_total
+		then
+		thisarea
+		['] .tsbmiss sizeof + to thisarea
+		hatstatcpu 1 lshift to hatstatcpu
+	loop
+	." inst tlb misses = " itlbmis_total .d cr
+	." data tlb misses = " dtlbmis_total .d cr
+	." u tsb misses = " utsbmis_total .d cr
+	." k tsb misses = " ktsbmis_total .d cr
+	." u prot misses = " uprot_total .d cr
+	." k prot misses = " kprot_total .d cr
+	[ previous ]
+	[ previous ]
+;
+
+\
+\ Utilities
+\
+
+: sctx@
+        MMU_SCONTEXT ASI_MMU_CTX spacex@
+;
+: pctx@
+        MMU_PCONTEXT ASI_MMU_CTX spacex@
+;
+ 
+: umap? ( uvaddr -- )
+        sctx@ unix-tte if               \ false | tte-data true
+          tte> drop             \ pa
+          ." pa = " . cr
+        else
+          ." no translation" cr
+        then
+;
+
+( given a page struct will display a list of hatid/va mappings )
+( Typical usage:  pfn pfn>page .page-mappings )
+: .page-mappings ( page -- )
+   [ also page-words ]
+   [ also hme_blk-words ]
+   [ also hat-words ]
+   [ also sf_hment-words ]
+   [ also tte-words ]
+
+   ?dup 0= if exit then				( page )
+   p_mapping					( sf_hment )
+   begin  ?dup  while
+      dup hme_tte hmenum			( sf_hment ttenum )
+      over sfmmu_hmetohblk call nip		( sf_hment ttenum hblk )
+      hblk_tag dup 8 + x@ swap			( sf_hment ttenum hatid tagp )
+      x@ h# 1fff invert and			( sf_hment ttenum hatid va )
+      rot 2000 * +				( sf_hment hatid va )
+      ." VA: " .x ."  HATID: " .x cr		( sf_hment )
+      hme_next					( 'sf_hment )
+   repeat
+
+   [ previous ]
+   [ previous ]
+   [ previous ]
+   [ previous ]
+   [ previous ]
+;
+forth_end

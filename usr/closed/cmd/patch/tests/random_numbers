@@ -1,0 +1,41 @@
+#!/bin/sh
+nawk '
+function random(b, n) {
+	return int(n * rand()) + b
+}
+
+BEGIN {
+	srand()
+	count = ARGV[1]
+	base = ARGV[2]
+	max = ARGV[3]
+	per_line = 72 / (length(max) + 2)
+	for(i=1; i<=count; i++) {
+		used[i] = 0
+	}
+	new_line = 0
+	output = 0;
+	
+	while(count) {
+		x = random(base, max)
+		if(used[x] == 0) {
+			count--
+			used[x] = 1
+			if(new_line == 0) {
+				printf("%" length(max) "d", x)
+				new_line=1
+			} else {
+				printf(" %" length(max) "d", x)
+			}
+			output++
+			if((output % per_line) == 0) {
+				output = 0;
+				new_line=0
+				printf("\n")
+			} else if((output % 5) == 0) {
+				printf(" ")
+			}
+		}
+	}
+}
+' $*

@@ -1,0 +1,1065 @@
+'\" te
+.\" Copyright 1989 AT&T 
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH passwd 1 "2011 年 6 月 14 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+passwd \- ログインパスワードおよびパスワード属性の変更
+.SH 形式
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR files | \fB-r\fR ldap | \fB-r\fR nis] [\fIname\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR files] [\fB-egh\fR] [\fIname\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR files] \fB-s\fR [\fB-a\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR files] \fB-s\fR [\fIname\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR files] [\fB-d\fR | \fB-l\fR | \fB-u\fR | \fB-N\fR] [\fB-f\fR] [\fB-n\fR \fImin\fR] 
+     [\fB-w\fR \fIwarn\fR] [\fB-x\fR \fImax\fR] \fIname\fR
+.fi
+
+.LP
+.nf
+\fBpasswd\fR \fB-r\fR ldap [\fB-egh\fR] [\fIname\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR ldap ] \fB-s\fR [\fB-a\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR [\fB-r\fR ldap ] \fB-s\fR [\fIname\fR]
+.fi
+
+.LP
+.nf
+\fBpasswd\fR \fB-r\fR ldap [\fB-d | -l | -u | -N\fR] [\fB-f\fR] [\fB-n\fR \fImin\fR] 
+     [\fB-w\fR \fIwarn\fR] [\fB-x\fR \fImax\fR] \fIname\fR
+.fi
+
+.LP
+.nf
+\fBpasswd\fR \fB-r\fR nis [\fB-egh\fR] [\fIname\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpasswd\fR コマンドは、パスワードを変更したり、あるいはユーザーのログイン \fIname\fR に関連するパスワードの属性を表示したりします。さらに、承認されたユーザーは \fBpasswd\fR を使用して、すべてのログイン \fIname\fR に関連するパスワードおよび属性を登録もしくは変更できます。
+.sp
+.LP
+パスワードを変更する場合、\fBpasswd\fR は、古いパスワードがあれば、それを入力するよう要求します。次に、新しいパスワードを 2 回入力するように要求します。古いパスワードを入力すると、\fBpasswd\fR は、そのパスワードが十分に時間経過しているかをチェックします。時間経過が不十分である場合、\fBpasswd\fR は終了します。詳細は、\fBpwconv\fR(1M) および \fBshadow\fR(4) を参照してください。\fB\fR
+.sp
+.LP
+\fBpwconv\fR コマンドは、\fB/etc/passwd\fR の情報をもとに \fB/etc/shadow\fR を作成し、更新します。\fBpwconv\fR は、\fB/etc/passwd\fR のパスワードフィールドで「\fBx\fR」という特殊な値を探します。この「\fBx\fR」という値は、ユーザー用のパスワードがすでに \fB/etc/shadow\fR にあり、修正するべきではないということを表します。
+.sp
+.LP
+時間経過が十分である場合、新しいパスワードの構造が要求に合うかどうかチェックが行われます。新しいパスワードを 2 回入力した時点で、2 つの新しいパスワードが比較されます。2 つのパスワードが同じでない場合は、新しいパスワードに対して、最大 2 回までプロンプトが繰り返されます。
+.sp
+.LP
+パスワードは、次の要求に合うように作らなければなりません。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各パスワードは、\fBPASSLENGTH\fR 文字以上でなければなりません。\fBPASSLENGTH\fR は、\fB/etc/default/passwd\fR に定義され、\fB6\fR に設定されています。\fBPASSLENGTH\fR を 8 文字より多く設定するには、8 文字より多くの文字をサポートするアルゴリズムを \fBpolicy.conf\fR(4) に構成する必要があります。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各パスワードは、\fB/etc/default/passwd\fR に指定されている複雑さの制約を満たす必要があります。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+各パスワードは、\fB/etc/default/passwd\fR に指定されている構成済み辞書のメンバーと同じであってはいけません。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+パスワード履歴チェックをサポートしているネームサービス用のアカウントで旧パスワード履歴が定義されている場合、新しいパスワードは、旧パスワード履歴に含まれるものであってはいけません。
+.RE
+.sp
+.LP
+前述の条件がすべて満たされた場合、デフォルトでは \fBpasswd\fR コマンドは \fB/etc/nsswitch.conf\fR を参照してパスワード更新を実行すべきレポジトリ (記録場所) を決めます。具体的には \fBpasswd\fR と \fBpasswd_compat\fR の両エントリを検索します。これらのエントリに対応したリソースつまりレポジトリが更新されます。ただし、サポートされるパスワード更新設定は、次の場合に制限されます。いずれの形式にも合っていない場合はシステムにログインできません。使用可能なパスワード更新定義形式は次のとおりです。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: files\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: files ldap\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: files nis\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: compat\fR (==> files nis)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpasswd: compat\fR (==> files ldap)
+.sp
+\fBpasswd_compat: ldap\fR
+.RE
+.sp
+.LP
+\fBad\fR キーワードを上記のリストの \fBpasswd\fR 構成のいずれかに追加できます。ただし、Active Directory (AD) ユーザーのパスワードを変更するときは、\fBpasswd\fR コマンドを使用できません。パスワードの更新操作中に \fBad\fR キーワードが \fBpasswd\fR エントリで見つかった場合は、無視されます。AD ユーザーのパスワードを更新するには、\fBkpasswd\fR(1) コマンドを使用します。
+.sp
+.LP
+パスワードテーブルを所有するネットワーク管理者は、パスワードのどの属性をも変更できます。また、LDAP シャドー情報を更新するために構成された管理者も、任意のパスワード属性を変更できます。\fBldapclient\fR(1M) を参照してください。
+.sp
+.LP
+ユーザーのパスワードが、ローカル \fBfiles\fR エントリ内のほかに、いずれかのネームサービス内に格納されている場合、\fBpasswd\fR コマンドはその両方を更新します。ネームサービス内のパスワードとローカル files エントリ内のパスワードは異なっている可能性があります。特定のパスワードリポジトリを変更するには、\fBpasswd\fR \fB-r\fR を使用してください。 
+.sp
+.LP
+\fBpasswd\fR は、承認されたユーザーに古いパスワードを入力するよう要求しません。
+.sp
+.LP
+LDAP が有効になっている場合、ネイティブ LDAP クライアントシステム上の承認されたユーザーは、古い LDAP パスワードを要求されずにパスワードを変更できます。
+.sp
+.LP
+デフォルトでは、ほかのユーザーのパスワードを変更することを承認されているユーザーでも、構成済みパスワードポリシーに従う必要があります。\fBpam_authtok_check\fR(5) を参照してください。
+.sp
+.LP
+通常、引数なしで入力された \fBpasswd\fR は現在のユーザーのパスワードを変更します。ユーザーがログインしたあとに、役割または別のユーザーになるために \fBsu\fR(1M) を呼び出した場合、\fBpasswd\fR は、役割または新しいユーザーのパスワードではなく、元のユーザーのパスワードを変更します。
+.sp
+.LP
+\fB-s\fR 引数は、承認されたユーザーに制限されます。
+.sp
+.LP
+表示の書式は、次のようになります。
+.sp
+.in +2
+.nf
+\fIname status mm/dd/yy min max warn\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+パスワードの有効期限の情報が存在しない場合は、次のようになります。
+.sp
+.in +2
+.nf
+\fIname status\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+各情報の意味は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのログイン \fBID\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR のパスワードステータス。 
+.sp
+\fIstatus\fR フィールドは次の値をとることができます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLK\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアカウントがロックされていることを表します。\fB\fR「セキュリティー」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNL\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアカウントではログインできないことを表します。\fB\fR「セキュリティー」を参照してください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNP\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードがないため、非認証でアクセス可能であることを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードがあることを表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUN\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードフィールドのデータが不明です。認識可能なハッシュパスワードや上記のエントリのどちらでもありません。有効なパスワードハッシュについては、\fBcrypt\fR(3C) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUP\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアカウントはまだ管理者によって有効化されていないため、使用できません。「セキュリティー」を参照してください。\fB\fR
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImm/dd/yy\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR のパスワードが最近変更された日付(すべてのパスワードの日付は、グリニッジ標準時(ユニバーサル時間) を使用して決定されます。したがって、時差があるところでは最大 1 日ずれることがあるので注意してください) 。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR に対するパスワード変更に最低限必要な日数。\fBMINWEEKS\fR は \fB/etc/default/passwd\fR にあり、\fBNULL\fR に設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImax\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードが \fIname\fR に対して有効である最大日数。\fBMAXWEEKS\fR は \fB/etc/default/passwd\fR にあり、\fBNULL\fR に設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIwarn\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードの有効期限切れが近いことを示す警告を \fIname\fR が受ける日を、\fImax\fR に相対的な日数で表します。
+.RE
+
+.SS "セキュリティー"
+.sp
+.LP
+パスワードを変更するとき、\fBpasswd\fR は \fBpam\fR(3PAM) を使用します。PAM を呼び出すとき、passwd は \fBpasswd\fR というサービス名を使用し、パスワードを変更するための認証とパスワードとして \fBauth\fR というサービスモジュールタイプを使用します。
+.sp
+.LP
+アカウントのロック (\fB-l\fR オプション) を使用すると、パスワードに基づくログインの使用と遅延実行 (\fBat\fR(1)、\fBbatch\fR(1)、\fBcron\fR(1M) など) を禁止します。\fB-N\fR オプションを使用すると、パスワードに基づくログインを禁止しますが、遅延実行は許可します。 
+.sp
+.LP
+ロックされてパスワードがないアカウントやログインできないアカウントでは、ステータスをアクティブなパスワードに直接変更できません。\fI\fR \fB\fR\fI\fR\fB-d\fR を参照してください。ロックされる前にパスワードを持っていた、ロックされたアカウントでパスワードを変更すると、アカウントをロック解除せずにパスワードが変更されます。アカウントのロック解除については、\fB-u\fR を参照してください。承認された管理者は、アカウントにパスワードを付与することによって、有効化されていない状態でアカウントを有効化できます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべてのエントリのパスワードの属性を表示します。\fB-s\fR オプションとともにのみ使用し、\fIname\fR を指定してはいけません。\fBfiles\fR および \fBldap\fR リポジトリの場合、承認されたユーザーに制限されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログインシェルを変更します。通常のユーザーは自分のシェル情報を変更でき、承認されたユーザーはすべてのユーザーの情報を変更できます。シェルの選択は、\fBgetusershell\fR(3C) によって制限されています。ユーザーが現在 \fBgetusershell\fR によって許可されていないシェルを保持している場合、承認されたユーザーはシェルを変更できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgecos\fR (finger) 情報を変更します。通常のユーザーは自分の \fBgecos\fR 情報を変更でき、承認されたユーザーはすべてのユーザーの情報を変更できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホームディレクトリを変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+処理の対象とするレポジトリ (記録場所) を指定します。サポートされているリポジトリは、\fBfiles\fR、\fBldap\fR、または \fBnis\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR が示すログイン名用のパスワード属性を表示します。\fBfile\fR および \fBldap\fR リポジトリの場合、これは承認されたユーザーに対してのみ機能します。また \fBnis\fR の場合には、パスワードの有効期限を設定する (エージング) 機能がサポートされていないので、この指定はどのユーザーも使用できません。
+.sp
+このオプションの出力 (このオプションのみ) は、「確実」で構文解析可能です。形式は \fIusername\fR のあとにスペースが続き、そのあとに次のコードのいずれかが続きます。 
+.sp
+これを解析するコードが不明なコードに対して柔軟性を持つように、今後新しいコードが追加される可能性があります。既存のすべてのコードの長さは 2 文字ですが、コードが常にこの長さであるとは限りません。 
+.sp
+現在のステータスコードは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLK\fR\fR
+.ad
+.sp .6
+.RS 4n
+UNIX 認証でアカウントがロックされています。\fBpasswd -l\fR が実行されたか、認証に \fBRETRIES\fR 回失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNL\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアカウントではログインできないことを表します。\fB\fR\fBpasswd -N\fR が実行されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNP\fR\fR
+.ad
+.sp .6
+.RS 4n
+アカウントはパスワードを持っていません。\fBpasswd -d\fR が実行されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+アカウントは有効なパスワードを持っている可能性が高いです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUN\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードフィールドのデータが不明です。認識可能なハッシュパスワードや上記のエントリのどちらでもありません。有効なパスワードハッシュについては、\fBcrypt\fR(3C) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUP\fR\fR
+.ad
+.sp .6
+.RS 4n
+このアカウントはまだ管理者によって有効化されていないため、使用できません。「セキュリティー」を参照してください。\fB\fR
+.RE
+
+.RE
+
+.SS "承認されたユーザーのオプション"
+.sp
+.LP
+既存のアカウントをロックおよびロック解除できるように、管理者に User Security プロファイルを付与する必要があります。このプロファイルには、新しく作成されたアカウントを有効化する機能、パスワードの有効期限オプションを設定する機能、およびパスワード属性を表示する機能も用意されています。次のリストには、さまざまな操作を実行するために必要な承認を示します。
+.sp
+.LP
+承認されたユーザーのみが、次のオプションを使用できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR に対するパスワードを削除します。ログイン \fIname\fR に対するパスワードを入力するように要求することはありません。この指定は、\fBfiles\fR および \fBldap\fR リポジトリにのみ適用できます。
+.sp
+\fBlogin\fR(1) オプション \fBPASSREQ=YES\fR が構成されている場合、アカウントにはログインできません。\fBPASSREQ=YES\fR はデフォルト設定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR のパスワードの期限を切ることによって、次のログインセッションで パスワードを強制的にユーザーに変更させます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.sp .6
+.RS 4n
+すでにロックされているか、ログインできないアカウントである場合を除いて、\fIname\fR に対するアカウントをロックします。\fB\fRアカウントのロックを解除する方法については、\fB-d\fR オプション、または \fB-u\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR に対するパスワードエントリを、ログインで使用できないが、アカウントをロックしない値にします。この値を削除したり、ログインできるようにパスワードを設定したりする方法については、\fB-d\fR オプションを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fImin\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR の最小のフィールドを設定します。\fImin\fR フィールドには、\fIname\fR に対するパスワードを変更するために最低限必要な日数が設定されます。\fImin\fR が \fImax\fR より大きい場合は、ユーザーはパスワードを変更できません。このオプションは、必ず \fB-x\fR オプションとともに使用してください。ただし、\fImax\fR が \fB-1\fR に設定されている場合は例外です (最低経過日数を設定する機能がオフ)。この場合は、\fImin\fR を設定する必要はありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+エントリ \fIname\fR に対してロックされたパスワードをロック解除します。ロックされたパスワードを削除したり、ログインできるようにパスワードを設定したりする方法については、\fB-d\fR オプションを参照してください。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIwarn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR の警告フィールドを設定します。\fIwarn\fR フィールドには、パスワードの有効期限が切れる何日前に、期限切れが近いことを示す警告をユーザーが受けるか、その日数が設定されます。このオプションは、パスワードの有効期限が切れている場合は無効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fImax\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIname\fR の最大のフィールドを設定します。\fImax\fR フィールドには、パスワードが \fIname\fR に対して有効である最大の日数が設定されます。\fImax\fR が \fB-1\fR に設定された場合は、\fIname\fR の有効期限を設定する機能はただちにオフになります。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのログイン名
+.RE
+
+.SH 環境
+.sp
+.LP
+\fBLC_*\fR 変数 (\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBLC_COLLATE\fR、\fBLC_NUMERIC\fR、および \fBLC_MONETARY\fR) (\fBenviron\fR(5) を参照) のいずれも環境に設定されていなければ、それぞれ対応するロケールのカテゴリにおける \fBpasswd\fR の動作は、環境変数 \fBLANG\fR によって決定されます。もし、\fBLC_ALL\fR が設定されていれば、その内容が \fBLANG\fR 変数やその他の \fBLC_*\fR 変数より優先されます。前述の変数が環境にまったく設定されていなければ、\fBC\fR ロケール (米国スタイル) が \fBpasswd\fR の動作を決定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBpasswd\fR の文字の処理方法を決定します。\fBLC_CTYPE\fR に有効な値が設定されていると、\fBpasswd\fR は、そのロケールにあった文字を含むテキストやファイル名を表示および処理できます。\fBpasswd\fR は拡張 UNIX コード (\fBEUC\fR) も表示および処理できます。この場合、文字は 1 バイト幅、2 バイト幅、3 バイト幅のいずれも使用できます。また、\fBpasswd\fR は 1、2、またはそれ以上のカラム幅の \fBEUC\fR 文字も処理することができます。\fBC\fR ロケール においては、ISO 8859-1の文字だけが有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.sp .6
+.RS 4n
+診断メッセージや情報メッセージの表示方法を決定します。また、メッセージの言語とスタイル、肯定・否定の応答形式も決定します。\fBC\fR ロケールでは、メッセージはプログラム自身が使用しているデフォルトの形 (通常、米語) で表示されます。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+\fBpasswd\fR は、処理終了時に次のいずれかの値を返します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+アクセス権が与えられていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+オプションの組み合わせが無効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+予想できない失敗。パスワードファイルは変更されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+予想できない失敗。パスワードファイルがありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB5\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードファイルは使用中です。あとで行なってください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+オプションに対する引数が無効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB7\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効期限のオプションが無効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB8\fR\fR
+.ad
+.sp .6
+.RS 4n
+メモリーがありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB9\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムエラー。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB10\fR\fR
+.ad
+.sp .6
+.RS 4n
+アカウントが期限切れです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB11\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワード情報は変更されませんでした。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/passwd\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルト値は \fB/etc/default/passwd\fR 中の次のフラグで設定することができます。例:   \fBMAXWEEKS=26\fR
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDICTIONDBDIR\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成された辞書データベースが格納されるディレクトリ。デフォルトは \fB/var/passwd\fR。 
+.sp
+\fBDICTIONLIST\fR と \fBDICTIONDBDIR\fR のどちらも指定しない場合、辞書チェックは実行されません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDICTIONLIST\fR\fR
+.ad
+.sp .6
+.RS 4n
+コンマ区切りの辞書ファイルのリスト。たとえば、\fBDICTIONLIST=\fR\fIfile1\fR\fI、file2\fR, \fIfile3\fR。\fB\fR各辞書ファイルは複数行から構成され、各行は単語と NEWLINE 文字から構成されます (\fB/usr/share/lib/dict/words\fR と同様)。完全パス名を指定する必要があります。これらのファイルの単語は 1 つのデータベースにマージされ、パスワードが辞書の単語に基づいているかどうかを判断します。 
+.sp
+\fBDICTIONLIST\fR と \fBDICTIONDBDIR\fR のどちらも指定しない場合、辞書チェックは実行されません。
+.sp
+辞書データベースを事前構築するには、\fBmkpwdict\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHISTORY\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーごとに保存しておく旧パスワード履歴の最大数。\fBHISTORY\fR 値をゼロ (\fB0\fR) に設定するか、HISTORY フラグを削除した場合、任意のユーザーが次回パスワードを変更するときに、すべてのユーザーの旧パスワード履歴が破棄されます。デフォルトでは、\fBHISTORY\fR フラグを定義しません。最大値は \fB26\fR です。現在のところ、この機能は \fBfiles\fR ネームサービス (ローカルの \fBpasswd\fR(4) または \fBshadow\fR(4)) で定義されたユーザーアカウントにのみ実施されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAXREPEATS\fR\fR
+.ad
+.sp .6
+.RS 4n
+同じ文字を続けることができる最大数を定義します。\fBMAXREPEATS\fR を設定しないか、ゼロ (\fB0\fR) に設定した場合、デフォルトでは、このチェックは実行されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAXWEEKS\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードが有効な最大期間
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINALPHA\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに必要な英字の最小数。\fBMINALPHA\fR を設定しない場合、デフォルトは \fB2\fR です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINDIFF\fR\fR
+.ad
+.sp .6
+.RS 4n
+古いパスワードと新しいパスワードで異なる必要がある文字の最小数。\fBMINDIFF\fR を設定しない場合、デフォルトは \fB3\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINDIGIT\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに必要な数字の最小数。\fBMINDIGIT\fR を設定しないか、ゼロ (\fB0\fR) に設定した場合、デフォルトでは、このチェックは実行されません。\fBMINNONALPHA\fR を指定した場合、\fBMINDIGIT\fR は指定できません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINLOWER\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに必要な英小文字の最小数。MINLOWER を設定しないか、ゼロ (0) に設定した場合、デフォルトでは、このチェックは実行されません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINNONALPHA\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに必要な英字以外の文字 (数字または特殊文字) の最小数。\fBMINNONALPHA\fR を設定しない場合、デフォルトは \fB1\fR です。\fBMINDIGIT\fR または \fBMINSPECIAL\fR を指定した場合、\fBMINNONALPHA\fR は指定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINWEEKS\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワード変更に最低限必要な期間
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINSPECIAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに必要な特殊文字 (英字と数字以外の文字) の最小数。\fBMINSPECIAL\fR を設定しないか、ゼロ (\fB0\fR) に指定した場合、デフォルトでは、このチェックは実行されません。\fBMINNONALPHA\fR を指定した場合、\fBMINSPECIAL\fR は指定できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMINUPPER\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに必要な英大文字の最小数。\fBMINUPPER\fR を設定しないか、ゼロ (\fB0\fR) に設定した場合、デフォルトでは、このチェックは実行されません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAMECHECK\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログイン名のチェックを有効または無効にします。デフォルトでは、ログイン名チェックは実行されます。NAMECHECK を \fBno\fR (大文字小文字の区別なし) に設定した場合、このチェックは実行されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPASSLENGTH\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードに最低限必要な文字数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBWARNWEEKS\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードの有効期間が切れる前の警告期間
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBWHITESPACE\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワード内でスペース文字を許可するかどうかを指定します。指定できる値は、\fBYES\fR と \fBNO\fR です。\fBWHITESPACE\fR が設定されていないか、または \fBYES\fR に設定されている場合、スペース文字は許可されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/oshadow\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBpasswd\fR および \fBpwconv\fR が実際のシャドウファイルを更新するときに使用する一時ファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.sp .6
+.RS 4n
+パスワードファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/shadow\fR\fR
+.ad
+.sp .6
+.RS 4n
+シャドウパスワードファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/shells\fR\fR
+.ad
+.sp .6
+.RS 4n
+シェルデータベース。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+人間が読める形式の出力は「不確実」です。オプションは「確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBat\fR(1), \fBbatch\fR(1), \fBfinger\fR(1), \fBkpasswd\fR(1), \fBlogin\fR(1), \fBcron\fR(1M), \fBdomainname\fR(1M), \fBeeprom\fR(1M), \fBid\fR(1M), \fBldapclient\fR(1M), \fBmkpwdict\fR(1M), \fBpwconv\fR(1M), \fBsu\fR(1M), \fBuseradd\fR(1M), \fBuserdel\fR(1M), \fBusermod\fR(1M), \fBcrypt\fR(3C), \fBgetpwnam\fR(3C), \fBgetspnam\fR(3C), \fBgetusershell\fR(3C), \fBpam\fR(3PAM), \fBloginlog\fR(4), \fBnsswitch.conf\fR(4), \fBpam.conf\fR(4), \fBpasswd\fR(4), \fBpolicy.conf\fR(4), \fBshadow\fR(4), \fBshells\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBpam_authtok_check\fR(5), \fBpam_authtok_get\fR(5), \fBpam_authtok_store\fR(5), \fBpam_dhkeys\fR(5), \fBpam_ldap\fR(5), \fBpam_unix_account\fR(5), \fBpam_unix_auth\fR(5), \fBpam_unix_session\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBypasswd\fR コマンドは、\fBpasswd\fR コマンドのラッパーです。\fBypasswd\fR の使用は推奨されていません。\fBpasswd\fR \fB-r\fR \fIrepository_name\fR を使用することをお勧めします。
+.sp
+.LP
+\fBfiles\fR および \fBldap\fR リポジトリ内のパスワードを変更すると、失敗したログインのカウントがクリアされます。
+.sp
+.LP
+パスワードを変更すると、非アクティブ期間の長さのために無効になったアカウントが再度有効になります。
+.sp
+.LP
+入力端末処理は、キーシーケンスの一部を解釈し、その部分の情報を \fBpasswd\fR コマンドに渡さない可能性があります。
+.sp
+.LP
+パスワードを持っていないアカウント (ステータスコード \fBNP\fR) は、ログインできない可能性があります。\fBlogin\fR(1) \fBPASSREQ\fR オプションを参照してください。
+.sp
+.LP
+さまざまなオプションを実行するために必要な承認:
+.sp
+.in +2
+.nf
+-d     delete password               solaris.passwd.assign
+-N     set nologin                   solaris.passwd.assign
+       change any passwd             solaris.passwd.assign
+
+-l     lock account                  solaris.account.setpolicy
+-u     unlock account                solaris.account.setpolicy
+-n     set min field for name        solaris.account.setpolicy
+-w     set warn field for name       solaris.account.setpolicy
+-x     set max field for name        solaris.account.setpolicy
+-f     forces password expiration    solaris.account.setpolicy
+-s     display password attributes   solaris.account.setpolicy  
+-a     display password attributes   solaris.account.setpolicy  
+       for all entries
+
+-e     change login shell            solaris.user.manage
+-g     change gecos information      solaris.user.manage
+-h     change home directory         solaris.user.manage
+       set a newly created account's 
+         passwd for the first time   solaris.account.activate   
+.fi
+.in -2
+.sp
+

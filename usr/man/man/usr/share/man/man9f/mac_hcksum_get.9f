@@ -1,0 +1,213 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH mac_hcksum_get 9F "26 Jul 2010" "SunOS 5.11" "Kernel Functions for Drivers"
+.SH NAME
+mac_hcksum_get, mac_hcksum_set \- hardware checksumming offload routines
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mac_provider.h>
+
+void mac_hcksum_get(mblk_t *\fImp\fR, uint32_t *\fIstart\fR, uint32_t *\fIstuff\fR,
+    uint32_t *\fIend\fR, uint32_t *\fIvalue\fR, uint32_t *\fIflags\fR);
+.fi
+
+.LP
+.nf
+void mac_hcksum_set(mblk_t *\fImp\fR, uint32_t \fIstart\fR, uint32_t \fIstuff\fR,
+    uint32_t \fIend\fR, uint32_t \fIvalue\fR, uint32_t *\fIflags\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fImp\fR\fR
+.ad
+.RS 9n
+.rt  
+pointer to a message block
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstart\fR\fR
+.ad
+.RS 9n
+.rt  
+offset, in bytes, from the start of the IP header to the start of the checksum span
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIend\fR\fR
+.ad
+.RS 9n
+.rt  
+offset, in bytes, from the start of the IP header to the end of the checksum span
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIstuff\fR\fR
+.ad
+.RS 9n
+.rt  
+offset, in bytes, from the start of the IP header to the checksum field in the protocol header
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvalue\fR\fR
+.ad
+.RS 9n
+.rt  
+hardware computed checksum value
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIflags\fR\fR
+.ad
+.RS 9n
+.rt  
+per-packet flags indicating the hardware checksumming to be performed on outbound packets, or the hardware checksumming performed on inbound packet
+.RE
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris architecture specific (Solaris DDI)
+.SH DESCRIPTION
+.sp
+.LP
+Hardware checksumming allows the checksum computation to be offloaded to the network device hardware for lower CPU utilization. Hardware checksumming capabilities are advertised from the driver's \fBmc_getcapab\fR(9E) entry point. The description of \fBmc_getcapab()\fR also includes more information about the expected behavior of drivers for full and partial checksumming offload.
+.sp
+.LP
+For received traffic, the hardware can enable hardware checksumming, and the network stack will know how to handle packets for which checksum computation or verification has been performed.  The \fBmac_hcksum_set()\fR function can be used by a device driver to associate information related to the hardware checksumming performed on the packet.
+.sp
+.LP
+The \fIflags\fR argument can be a combination of the following:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_FULLCKSUM\fR\fR
+.ad
+.RS 24n
+.rt  
+The full checksum was computed, and is passed through the \fIvalue\fR argument.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_FULLCKSUM_OK\fR\fR
+.ad
+.RS 24n
+.rt  
+The full checksum was verified in hardware and is correct.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_PARTIALCKSUM\fR\fR
+.ad
+.RS 24n
+.rt  
+Partial checksum computed and passed through the \fIvalue\fR argument. The \fIstart\fR and \fIend\fR arguments specify the checksum span.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_IPV4_HDRCKSUM_OK\fR\fR
+.ad
+.RS 24n
+.rt  
+IP header checksum was verified in hardware and is correct.
+.RE
+
+.sp
+.LP
+\fBHCK_PARTIALCKSUM\fR is mutually exclusive with the \fBHCK_FULLCKSUM\fR and \fBHCK_FULLCKSUM_OK\fR flags.
+.sp
+.LP
+For outbound packets, hardware checksumming capabilities are queried via the \fBmc_getcapab()\fR entry point. Hardware checksumming is enabled by the network stack based on the \fBMAC_CAPAB_HCKSUM\fR capability. A device driver that advertised support for this capability can subsequently receive outbound packets that may not have a fully computed checksum. It is the responsibility of the driver to invoke \fBmac_hcksum_get()\fR to retrieve the per-packet hardware checksumming metadata.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_FULLCKSUM\fR\fR
+.ad
+.RS 21n
+.rt  
+Compute full checksum for this packet.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_PARTIALCKSUM\fR\fR
+.ad
+.RS 21n
+.rt  
+Compute partial 1's complement checksum based on the \fIstart\fR, \fIstuff\fR, and offset.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHCK_IPV4_HDRCKSUM\fR\fR
+.ad
+.RS 21n
+.rt  
+Compute the IP header checksum.
+.RE
+
+.sp
+.LP
+\fBHCK_PARTIALCKSUM\fR is mutually exclusive with \fBHCK_FULLCKSUM\fR.
+.sp
+.LP
+The flags \fBHCK_FULLCKSUM\fR, \fBHCK_FULLCKSUM_OK\fR, and \fBHCK_PARTIALCKSUM\fR are used for both IPv4 and IPv6 packets. The driver advertises support for IPv4 and/or IPv6 full checksumming during capability negotiation. See \fBmc_getcapab\fR(9E).
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/header
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBmac\fR(9E)

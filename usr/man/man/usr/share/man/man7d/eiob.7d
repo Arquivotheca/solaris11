@@ -1,0 +1,199 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH eiob 7D "24 Aug 2010" "SunOS 5.11" "Devices"
+.SH NAME
+eiob, eibnx \- Ethernet over Infiniband drivers
+.SH SYNOPSIS
+.sp
+.LP
+\fB/dev/eoib*\fR
+.SH DESCRIPTION
+.sp
+.LP
+The Ethernet over Infiniband (\fBeoib\fR) driver is a multi-threaded, loadable, clonable, GLD-based STREAMS driver supporting the Data Link Provider Interface, \fBdlpi\fR(7P), over all IB ports on a system that are connected to a Sun Network QDR InfiniBand Gateway switch.  The driver uses the IBA Unreliable Datagram mode to provide initialization,  gateway handshake, heartbeat management, frame transmit and receive  functions, multicast support and statistics reporting.
+.sp
+.LP
+The \fBeoib\fR driver expects certain configuration of the IBA fabric  prior to operation (which also implies that the IB Subnet Manager must be active and managing the fabric). The gateway must be configured using the gateway manager with a Virtual IO Adapter (\fBvIOA\fR) for a  local IB port on the server where this driver runs.
+.sp
+.LP
+The Ethernet over Infiniband Nexus (eibnx) driver is loaded by  the IB framework during initialization. This nexus driver is responsible for discovering the gateways that are accessible on the HCA IB  ports on the host. For each gateway that the nexus driver discovers, it invokes an instance of \fBeoib\fR to bind to that gateway.
+.SS "Application Programming Interface"
+.sp
+.LP
+The cloning, character-special device \fB/dev/eoib\fR is used to access all \fBeoib\fR devices installed within the system.
+.sp
+.LP
+The \fBeoib\fR driver is managed by the \fBdladm\fR(1M) command line utility,  which allows VLANs to be defined on top of \fBeoib\fR instances. The driver currently does not allow for \fBeoib\fR instances to be aggregated.
+.sp
+.LP
+The values returned by the driver in the \fBDL_INFO_ACK\fR primitive in response to the \fBDL_INFO_REQ\fR are as follows:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum \fBSDU\fR (default 1500). 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum \fBSDU\fR is 0. The driver pads to the mandatory 60-octet minimum packet size.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBdlsap\fR address length is \fB8\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+MAC type is \fBDL_ETHER\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The sap length value is \fB-2\fR, meaning the physical address component is followed immediately by a 2-byte sap component within the \fBDLSAP\fR address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The broadcast address value is Ethernet/IEEE broadcast address (\fBFF:FF:FF:FF:FF:FF\fR).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBDL_SET_PHYS_ADDR_REQ\fR is currently not supported
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Since the mac address is obtained only after a successful handshake with the gateway, the factory MAC address reported by the MAC layer always is zero.  MAC clients must use \fBDL_CURR_PHYS_ADDR\fR (and not \fBDL_FACT_PHYS_ADDR\fR) to obtain the source MAC being used by the \fBEoIB\fR driver instance.
+.RE
+.SS "Configuration"
+.sp
+.LP
+Currently, the virtual-wire speed and mode for an \fBeoib\fR instance are always reported as 10000 Mbps, full-duplex. There are no parameters for \fBeoib\fR that are configurable via a config file or dladm(1M). All supported public properties can be obtained using the \fBshow-linkprop\fR  subcommand of \fBdladm\fR(1M).
+.sp
+.LP
+While the parameters that are reported for \fBeoib\fR and the functionality  supported are similar to other ethernet drivers, there are a few key differences:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBvIOA\fR does not report any physical attributes of the ethernet interface on the gateway. That information is accessed using the gateway manager. As a result, none of the \fBETHER_STAT_*\fR statistics are reported.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The \fBvIOA\fR does not support passing LACP messages through to the ethernet port on the gateway because that port is shared by multiple \fBvIOAs\fR. As a result, the creation of \fBIEEE 802.3ad\fR link aggregation (LAG) over \fBvIOAs\fR is not supported. 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The maximum MTU associated with a vIOA is controlled by the gateway manager because the ethernet port is shared. As a result, the MTU is read-only. In addition, the maximum size is 4K bytes due to the maximum \fBIB MTU\fR, which is currently 4K bytes.
+.RE
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/eoib*\fR\fR
+.ad
+.RS 29n
+.rt  
+Character special device
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/eibnx.conf\fR\fR
+.ad
+.RS 29n
+.rt  
+Configuration file to start \fBeoib\fR nexus driver
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/eoib\fR\fR
+.ad
+.RS 29n
+.rt  
+64-bit SPARC \fBeoib\fR device driver
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/eibnx\fR\fR
+.ad
+.RS 29n
+.rt  
+64-bit SPARC \fBeoib\fR nexus module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/eoib\fR\fR
+.ad
+.RS 29n
+.rt  
+64-bit x86 \fBeoib\fR device driver
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/eibnx\fR\fR
+.ad
+.RS 29n
+.rt  
+64-bit x86 \fBeoib\fR nexus module
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/eoib\fR\fR
+.ad
+.RS 29n
+.rt  
+32-bit x86 \fBeoib\fR device driver
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/eibnx\fR\fR
+.ad
+.RS 29n
+.rt  
+32-bit x86 \fBeoib\fR nexus module
+.RE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBifconfig\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBdlpi\fR(7P), \fBgld\fR(7D), \fBib\fR(7D), \fBkstat\fR(7D), \fBstreamio\fR(7I)
+.SH NOTES
+.sp
+.LP
+The \fBEoIB\fR protocol allows for traffic to continue even when  the external port associated with a gateway (\fBeport\fR) is down.  However, the state of this gateway external port can be of use to administrators, so this is currently reported using a private property  called \fB_eib_eport_state\fR. This property is only available for diagnostics purposes and is subject to change or removal without notice.

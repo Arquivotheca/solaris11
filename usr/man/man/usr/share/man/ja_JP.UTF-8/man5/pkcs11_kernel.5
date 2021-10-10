@@ -1,0 +1,93 @@
+'\" te
+.\" Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH pkcs11_kernel 5 "2010 年 10 月 22 日" "SunOS 5.11" "標準、環境、マクロ"
+.SH 名前
+pkcs11_kernel \- カーネル暗号化フレームワークへの PKCS#11 インタフェース
+.SH 形式
+.LP
+.nf
+/usr/lib/security/pkcs11_kernel.so
+/usr/lib/security/64/pkcs11_kernel.so
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpkcs11_kernel.so\fR オブジェクトは、非公開インタフェースを使用してカーネル暗号化フレームワークと通信することで、RSA Security Inc. の PKCS#11 暗号化トークンインタフェース (Cryptoki) v2.20 仕様を実装します。
+.sp
+.LP
+一意のハードウェアプロバイダはそれぞれ 1 つの PKCS#11 スロットで表されます。カーネル暗号化フレームワークのハードウェアプロバイダを備えていないシステムでは、この PKCS#11 ライブラリにスロットは存在しません。
+.sp
+.LP
+このライブラリによって提供される PKCS#11 メカニズムは、使用可能なハードウェアプロバイダによって決まります。
+.sp
+.LP
+アプリケーション開発者は、\fBpkcs11_kernel.so\fR に直接リンクするのではなく、\fBlibpkcs11.so\fR にリンクするようにしてください。\fBlibpkcs11\fR(3LIB) を参照してください。
+.sp
+.LP
+\fBlibpkcs11\fR(3LIB) のリストに示されている標準の PKCS#11 関数は、次のものを除きすべて実装されています。
+.sp
+.in +2
+.nf
+C_DecryptDigestUpdate
+C_DecryptVerifyUpdate
+C_DigestEncryptUpdate
+C_GetOperationState
+C_InitToken
+C_InitPIN
+C_SetOperationState
+C_SignEncryptUpdate
+C_WaitForSlotEvent
+.fi
+.in -2
+
+.sp
+.LP
+これらの関数を呼び出すと、\fBCKR_FUNCTION_NOT_SUPPORTED\fR が返されます。
+.sp
+.LP
+バッファーは 2M バイトを超えることはできません。たとえば、\fBC_Encrypt()\fR は、平文用の 2M バイトのバッファーと暗号化テキスト用の 2M バイトのバッファーを使用すると呼び出すことができます。
+.sp
+.LP
+\fBC_FindObjects()\fR の呼び出しで取得できるオブジェクトハンドルの最大数は 512 です。
+.sp
+.LP
+暗号化処理に使用できるカーネルメモリーの最大量は、\fBproject.max-crypto-memory\fR リソース制御によって制限されます。カーネル内のバッファーおよびセッション関連の構造体の割り当ては、このリソース制御に対してチャージされます。
+.SH 戻り値
+.sp
+.LP
+実装されている各関数の戻り値は、RSA PKCS#11 v2.20 仕様で定義されています。http://www.rsasecurity.com を参照してください。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+インタフェースの安定性確実
+_
+MT レベルT{
+例外付きで MT-安全。RSA PKCS#11 v2.20 のセクション 6.6.2 を参照してください。
+T}
+_
+標準PKCS#11 v2.20
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcryptoadm\fR(1M), \fBrctladm\fR(1M), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5), \fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+RSA PKCS#11 v2.20 http://www.rsasecurity.com 
+.SH 注意事項
+.sp
+.LP
+アプリケーションが PKCS#11 スロットに対してセッションを開いていると、対応するハードウェアプロバイダのドライバは読み込み解除できなくなります。ハードウェアプロバイダのドライバを読み込み解除できるようにするには、そのプロバイダに対して PKCS#11 セッションを開いているアプリケーションを管理者が閉じる必要があります。

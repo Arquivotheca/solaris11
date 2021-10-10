@@ -1,0 +1,179 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH intrstat 1M "2011 年 8 月 16 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+intrstat \- 报告中断统计信息
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/intrstat\fR [\fB-c\fR \fIcpulist\fR | \fB-C\fR \fIprocessor_set_id\fR] [\fB-T\fR u | d ]
+     [\fB-x\fR \fIopt\fR[=\fIval\fR]] [\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBintrstat\fR 实用程序收集并显示运行时中断统计信息。输出是一个包含设备名称和 CPU ID 的表，该表的每一行表示一个设备，每一列表示一个 CPU。该表中每个单元格包含给定 CPU 上给定设备的原始中断数和该 CPU 上该设备的中断处理程序所花费的绝对时间的百分比。
+.sp
+.LP
+设备名称是以 \fB{\fR\fIname\fR}\fI#\fR\fB{\fR\fIinstance\fR\fB}\fR 形式给定的。该名称是标准化的驱动程序名称，通常对应于实施该驱动程序的模块名称。请参见 \fBddi_driver_name\fR(9F)。许多 Oracle 交付的驱动程序有自己的手册页。请参见 \fBIntro\fR(7)。
+.sp
+.LP
+如果标准输出是一个终端，该表将包含该终端宽度可以容纳的数据列。如果标准输出不是终端，该表最多可包含 4 个数据列。缺省情况下，会为所有 CPU 收集并显示数据。如果单个表容纳不下数据，则会在多个表中输出该数据。可以使用 \fB-c\fR 或 \fB-C\fR 选项指定要显示其数据的 CPU 集。
+.sp
+.LP
+缺省情况下，\fBintrstat\fR 会每秒显示一次数据并无限期运行。可以分别使用 interval 和 count 参数来控制这两个行为。请参见\fB\fR"操作数"部分。
+.sp
+.LP
+因为 \fBintrstat\fR 使用动态搜索，所以它只报告在该命令运行时发生中断的设备。不会显示在 \fBintrstat\fR 运行时处于静默状态的任何设备。
+.sp
+.LP
+\fBintrstat\fR 会在系统范围内导致少量的性能降低。因此，缺省情况下，只有超级用户可以运行 \fBintrstat\fR。《\fISolaris 动态跟踪指南\fR》中介绍了管理员如何授予其他用户特权以允许其运行 \fBintrstat\fR。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcpulist\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示由 \fIcpulist\fR 指定的 CPU 的数据。
+.sp
+\fIcpulist\fR 可以是单个处理器 ID（例如，\fB4\fR）、处理器 ID 范围（例如，\fB4-6\fR），或者以逗号分隔的处理器 ID 或处理器 ID 范围的列表（例如，\fB4,5,6\fR 或 \fB4,6-8\fR）。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR \fIprocessor_set_id\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示由 \fIprocessor_set_id\fR 指定的处理器集中的 CPU 的数据。 
+.sp
+\fBintrstat\fR 会修改其输出以始终反映指定的处理器集中的 CPU。如果向该集中添加了一个 CPU，\fBintrstat\fR 会修改其输出以包括该添加的 CPU。如果从该集中删除了一个 CPU，\fBintrstat\fR 会修改其输出以排除该删除的 CPU。最多可指定一个处理器集。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBu\fR | \fBd\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示时间戳。
+.sp
+指定 \fBu\fR 表示时间的内部表示形式的印刷表示形式。请参见 \fBtime\fR(2)。指定 \fBd\fR 表示标准日期格式。请参见 \fBdate\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIopt\fR[=\fIval\fR]\fR
+.ad
+.sp .6
+.RS 4n
+启用或修改 DTrace 运行时选项或 D 编译器选项。选项列表可在\fI《Solaris Dynamic Tracing Guide》\fR中找到。 布尔选项通过指定其名称启用。包含值的选项通过使用等号 (\fB=\fR) 分隔选项名称和值来设置。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcount\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示 \fBintrstat\fR 在退出之前显示其输出的次数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterval\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示两次显示 \fBintrstat\fR 输出的间隔秒数。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR在不指定选项的情况下使用 \fBintrstat\fR
+.sp
+.LP
+未指定选项时，\fBintrstat\fR 会显示一个包含陷阱类型和 CPU 的表。缺省终端宽度最多可以容纳 4 列。如果超过 4 个 CPU，则会显示多个表。 
+
+.sp
+.LP
+以下示例是在基于 Intel IA/32 的单处理器手提电脑上运行 \fBintrstat\fR 时的输出：
+
+.sp
+.in +2
+.nf
+example# intrstat
+               device |      cpu0 %tim
+     -----------------+---------------
+                ata#0 |       166  0.4
+                ata#1 |         0  0.0
+          audioi810#0 |         6  0.0
+              i8042#0 |       281  0.7
+               iprb#0 |         6  0.0
+               uhci#1 |         6  0.0
+               uhci#2 |         6  0.0
+
+               device |      cpu0 %tim
+     -----------------+---------------
+                ata#0 |       161  0.5
+                ata#1 |         0  0.0
+          audioi810#0 |         6  0.0
+              i8042#0 |       303  0.6
+               iprb#0 |         6  0.0
+               uhci#1 |         6  0.0
+               uhci#2 |         6  0.0
+     ...
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/dtrace
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令行语法为 Committed（已确定）。人类可阅读的输出为 Uncommitted（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBdtrace\fR(1M)、\fBtrapstat\fR(1M)、\fBattributes\fR(5)、\fBIntro\fR(7)、\fBddi_driver_name\fR(9F)
+.sp
+.LP
+《\fISolaris 动态跟踪指南\fR》

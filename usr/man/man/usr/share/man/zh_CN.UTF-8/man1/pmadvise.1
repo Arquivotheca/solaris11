@@ -1,0 +1,279 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH pmadvise 1 "2011 年 4 月 4 日" "SunOS 5.11" "用户命令"
+.SH 名称
+pmadvise \- 将关于内存的建议应用于某个进程
+.SH 用法概要
+.LP
+.nf
+\fBpmadvise\fR \fB-o\fR \fIoption\fR[,\fIoption\fR] [\fB-F\fR] [\fB-l\fR] [\fB-v\fR] \fIpid\fR...
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBpmadvise\fR 使用 \fBmadvise\fR(3C) 在指定的进程中应用有关如何使用内存的建议。 
+.sp
+.LP
+\fBpmadvise\fR 允许用户在一个特定时刻向一个子范围应用建议。\fBpmadvise\fR 与 \fBmadv.so.1\fR(1) 的区别在于，\fBmadv.so.1\fR(1) 在目标程序的整个执行过程中将建议应用于指定类型的所有段。
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 6n
+.rt  
+通过抓取目标进程来强制执行，即使另一进程已掌握了控制权。
+.sp
+您应当慎用 \fB-F\fR 选项。请参见 \fBproc\fR(1)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 6n
+.rt  
+显示未解析的动态链接程序映射名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.RS 6n
+.rt  
+以下面的格式指定要应用的建议：
+.sp
+.in +2
+.nf
+private=\fBadvice\fR
+shared=\fBadvice\fR
+heap=\fBadvice\fR
+stack=\fBadvice\fR
+\fBaddress\fR[:\fBlength\fR]=\fBadvice\fR
+.fi
+.in -2
+.sp
+
+其中，\fBadvice\fR 可以是下列值之一：
+.sp
+.in +2
+.nf
+normal
+random
+sequential
+willneed
+dontneed
+free
+access_lwp
+access_many
+access_many_pset
+access_default
+.fi
+.in -2
+.sp
+
+可以提供 \fBaddress\fR 和 \fBlength\fR 来指定应用建议的子范围。缺省情况下，\fBaddress\fR 应该为十六进制，并且 \fBlength\fR 应以字节计。
+.sp
+如果未指定 \fBlength\fR，且起始地址引用了某个段的开头，则会将建议应用于该段。\fBlength\fR 可使用 \fBK\fR、\fBM\fR、\fBG\fR、\fBT\fR、\fBP\fR 或 \fBE\fR 加以限定，以分别指定千字节、兆字节、千兆字节、兆兆字节或艾字节作为度量单位。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 6n
+.rt  
+显示详细输出。像 \fBpmap\fR(1) 一样显示输出，显示哪个建议应用于何处。当建议应用于某个指定区域（例如专用的、共享的，等等）时，要精确获取关于建议应用于何处的反馈时，这可能比较有用。
+.RE
+
+.sp
+.LP
+\fBpmadvise\fR 尝试处理所有合法选项。如果指定了非法的地址范围，则会输出一条错误消息，且跳过违规选项。当存在语法错误时，\fBpmadvise\fR 将不处理任何选项而退出，并且会输出用法消息。 
+.sp
+.LP
+如果在某个区域上给定了冲突的建议，则优先顺序是从针对性最强的建议到针对性最弱的（即最通用的）建议。换句话说，为特定地址范围指定的建议优先于为堆和栈指定的建议，其次，为堆和栈指定的建议优先于为专用和共享内存指定的建议。 
+.sp
+.LP
+此外，下列每个组中的建议与同一组中的其他建议是互斥的：
+.sp
+.in +2
+.nf
+MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL
+MADV_WILLNEED, MADV_DONTNEED, MADV_FREE
+MADV_ACCESS_DEFAULT, MADV_ACCESS_LWP, MADV_ACCESS_MANY
+.fi
+.in -2
+.sp
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.RS 7n
+.rt  
+进程 ID.
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR将建议应用于位于指定地址的段
+.sp
+.LP
+以下示例将建议应用于位于指定地址的段：
+
+.sp
+.in +2
+.nf
+% pmap $$
+100666: tcsh
+00010000     312K r-x--  /usr/bin/tcsh
+0006C000      48K rwx--  /usr/bin/tcsh
+00078000     536K rwx--    [ heap ]
+FF100000     856K r-x--  /lib/libc.so.1
+FF1E6000      32K rwx--  /lib/libc.so.1
+FF1EE000       8K rwx--  /lib/libc.so.1
+FF230000     168K r-x--  /lib/libcurses.so.1
+FF26A000      32K rwx--  /lib/libcurses.so.1
+FF272000       8K rwx--  /lib/libcurses.so.1
+FF280000     576K r-x--  /lib/libnsl.so.1
+FF310000      40K rwx--  /lib/libnsl.so.1
+FF31A000      24K rwx--  /lib/libnsl.so.1
+FF364000       8K rwxs-    [ anon ]
+FF370000      48K r-x--  /lib/libsocket.so.1
+FF38C000       8K rwx--  /lib/libsocket.so.1
+FF3B0000     176K r-x--  /lib/ld.so.1
+FF3EC000       8K rwx--  /lib/ld.so.1
+FF3EE000       8K rwx--  /lib/ld.so.1
+FFBE6000     104K rw---    [ stack ]
+%
+% pmadvise -o 78000=access_lwp $$
+
+%
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 \fB-v\fR 选项
+.sp
+.LP
+以下示例显示了来自 \fBpmadvise\fR 的详细输出：
+
+.sp
+.in +2
+.nf
+ 
+% pmadvise -o heap=access_lwp,stack=access_default -v $$
+1720:   -sh
+00010000      88K r-x--  /usr/sbin/sh
+00036000       8K rwx--  /usr/sbin/sh
+00038000      16K rwx--    [ heap ]           <= access_lwp
+FF250000      24K r-x--  /lib/libgen.so.1
+FF266000       8K rwx--  /lib/libgen.so.1
+FF272000       8K rwxs-    [ anon ]
+FF280000     840K r-x--  /lib/libc.so.1
+FF362000      32K rwx--  /lib/libc.so.1
+FF36A000      16K rwx--  /lib/libc.so.1
+FF390000      64K rwx--    [ anon ]
+FF3B0000     168K r-x--  /lib/ld.so.1
+FF3EA000       8K rwx--  /lib/ld.so.1
+FF3EC000       8K rwx--  /lib/ld.so.1
+FFBFE000       8K rw---    [ stack ]          <= access_default
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 13n
+.rt  
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB非零值\fR\fR
+.ad
+.RS 13n
+.rt  
+出现错误。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR\fR
+.ad
+.RS 19n
+.rt  
+进程文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/prob/lib/*\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBproc\fR 工具支持文件
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性请参见下文。
+.TE
+
+.sp
+.LP
+命令语法是 "Committed"（已确定）。输出格式是 "Uncommitted"（未确定）。
+.SH 另请参见
+.sp
+.LP
+\fBmadv.so.1\fR(1)、\fBpmap\fR(1)、\fBproc\fR(1)、\fBmadvise\fR(3C)、\fBattributes\fR(5)

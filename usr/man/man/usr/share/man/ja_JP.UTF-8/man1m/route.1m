@@ -1,0 +1,756 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH route 1M "2011 年 8 月 4 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+route \- ルーティングテーブルの手動操作
+.SH 形式
+.LP
+.nf
+\fBroute\fR [\fB-fnvq\fR] \fIsub-command\fR [ [\fImodifiers\fR] \fIargs\fR]
+.fi
+
+.LP
+.nf
+\fBroute\fR [\fB-fnvq\fR] [\fB-p\fR [\fB-R\fR \fIroot-dir\fR]] add | delete [\fImodifiers\fR] \fIdestination\fR \fIgateway\fR 
+     [\fIargs\fR]
+.fi
+
+.LP
+.nf
+\fBroute\fR [\fB-fnvq\fR] change | get [\fImodifiers\fR] \fIdestination\fR 
+     [\fIgateway\fR [\fIargs\fR]]
+.fi
+
+.LP
+.nf
+\fBroute\fR [\fB-fn\fR] monitor [\fImodifiers\fR]
+.fi
+
+.LP
+.nf
+\fBroute\fR [\fB-fnvq\fR] flush [\fImodifiers\fR]
+.fi
+
+.LP
+.nf
+\fBroute\fR \fB-p\fR [\fB-R\fR \fIroot-dir\fR] show
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBroute\fR は、ネットワークルーティングテーブルを手動で操作するためのユーティリティーです。これらのテーブルは通常、\fBin.routed\fR(1M) や \fBin.ripngd\fR(1M) などのシステムルーティングデーモンによって保守されます。
+.sp
+.LP
+\fBroute\fR でサポートされる一般的なオプションの数は限られていますが、強力なコマンド言語がサポートされます。ユーザーは、\fBroute \fR(7P) で説明されているプログラム的なインタフェースによって実現できる任意の要求を指定できます。
+.sp
+.LP
+\fBroute\fR では、ルーティングソケットと、新しいメッセージタイプ \fBRTM_ADD\fR、\fBRTM_DELETE\fR、\fBRTM_GET\fR、および \fBRTM_CHANGE\fR を使用します。ルーティングテーブルを変更できるのはスーパーユーザーのみですが、\fBRTM_GET\fR 操作は非特権ユーザーにも許可されます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 15n
+.rt  
+すべてのゲートウェイエントリのルーティングテーブルをフラッシュします。\fB-f\fR オプションを任意の \fBroute\fR サブコマンドと組み合わせて使用した場合、\fBroute\fR は、それらのサブコマンドを実行する前にゲートウェイをフラッシュします。フラッシュするテーブルは、\fB-f\fR オプションの直後に \fBinet\fR または \fBinet6\fR 修飾子を置くことによって指定します。指定されていない場合は、デフォルトで IPv4 (\fBinet\fR) 経路がフラッシュされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 15n
+.rt  
+アクションの報告時に、ホスト名やネットワーク名をシンボルで出力できないようにします。このオプションは、ネームサーバーが使用できない場合に有効です。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.RS 15n
+.rt  
+ネットワークルーティングテーブルへの変更が、システムの再起動後も永続するようにします。この操作は最初、ネットワークルーティングテーブルに適用され、成功すると、次にシステムの起動時に使用される保存された経路のリストに適用されます。 操作が成功したかどうかの判定では、すでに存在する経路を追加したり、ルーティングテーブルにない経路を削除したりしたときの失敗は無視されます。起動時に経路が追加される時点ではネットワークベースの名前解決サービスを使用できないため、永続的な経路にホスト名またはネットワーク名を使用する場合は特別な注意が必要です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR\fR
+.ad
+.RS 15n
+.rt  
+すべての出力を抑制します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot-dir\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBroute\fR が変更を適用する代替ルートディレクトリを指定します。このオプションは、\fB-p\fR オプションと組み合わせて使用されないかぎり無視されます。\fB-R\fR が指定されている場合、経路の変更は、起動時に使用される保存された経路のリストにのみ適用され、ネットワークルーティングテーブルには適用されません。\fB\fRさらに、\fB-ifp\fR で使用されるネットワークインタフェースの存在などの、特定のチェックもスキップされます。このオプションは、変更されるシステムのルートディレクトリが \fB/\fR 以外の場所にある JumpStart スクリプト内から使用する場合に便利です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 15n
+.rt  
+詳細情報を冗長モードで出力します。
+.RE
+
+.SS "サブコマンド"
+.sp
+.LP
+サポートされているサブコマンドは次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR\fR
+.ad
+.RS 11n
+.rt  
+経路を追加します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchange\fR\fR
+.ad
+.RS 11n
+.rt  
+経路の各側面 (ゲートウェイなど) を変更します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR\fR
+.ad
+.RS 11n
+.rt  
+特定の経路を削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflush\fR\fR
+.ad
+.RS 11n
+.rt  
+ルーティングテーブルからすべてのゲートウェイエントリを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR\fR
+.ad
+.RS 11n
+.rt  
+宛先の経路を検索および表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmonitor\fR\fR
+.ad
+.RS 11n
+.rt  
+ルーティング情報ベースへの任意の変更、ルーティング検索の失敗、またはネットワークパーティション分割と考えられるものを継続的に報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow\fR\fR
+.ad
+.RS 11n
+.rt  
+システムの起動時に適用される経路のリストを表示します。\fB-p\fR オプションとの組み合わせでのみ使用できます。
+.RE
+
+.sp
+.LP
+\fBadd\fR および \fBdelete\fR サブコマンドの構文は次のとおりです。
+.sp
+.in +2
+.nf
+route [ -fnvq ] cmd \fIdestination\fR \fIgateway\fR [metric/netmask]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、\fIcmd\fR は \fBadd\fR または \fBdelete\fR、\fIdestination\fR は宛先のホストまたはネットワーク、\fIgateway\fR はパケットが経路指定されるときに使用される次のホップの中継点です。「オペランド」で説明する修飾子は、コマンド行の任意の位置に指定できます。\fB\fR 
+.sp
+.LP
+\fBget\fR および \fBchange\fR サブコマンドの構文は次のとおりです。 
+.sp
+.in +2
+.nf
+route [ -fnvq ] \fIcmd\fR \fIdestination\fR [\fIgateway\fR [metric/netmask]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、\fIcmd\fR は \fBget\fR または \fBchange\fR、\fIdestination\fR は宛先のホストまたはネットワーク、\fIgateway\fR はパケットが経路指定されるときに使用される次のホップの中継点です。「オペランド」で説明する修飾子は、コマンド行の任意の位置に指定できます。\fB\fR 
+.sp
+.LP
+\fBmonitor\fR サブコマンドの構文は次のとおりです。
+.sp
+.in +2
+.nf
+route monitor [ -inet | -inet6 ]
+.fi
+.in -2
+.sp
+
+.SH オペランド
+.sp
+.LP
+\fBroute\fR は、これらのサブコマンドを、ゲートウェイを経由した宛先までの経路上で実行します。
+.SS "宛先とゲートウェイ"
+.sp
+.LP
+デフォルトでは、宛先とゲートウェイアドレスは IPv4 アドレスとして解釈されます。すべてのシンボル名が最初、\fBgetipnodebyname\fR(3SOCKET) を使用してホスト名として試行されます。AF_INET の場合にこの検索が失敗すると、\fBgetnetbyname\fR(3SOCKET) は、この名前をネットワークの名前として解釈します。 
+.sp
+.LP
+コマンド行のアドレスの前にオプションの修飾子を指定すると、\fBroute\fR サブコマンドでのアドレスの解釈方法が変更されます。
+.sp
+.LP
+次の修飾子がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-inet\fR\fR
+.ad
+.RS 10n
+.rt  
+アドレスが強制的に IPv4 アドレスとして、つまり、\fBAF_INET\fR アドレスファミリの下で解釈されるようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-inet6\fR\fR
+.ad
+.RS 10n
+.rt  
+アドレスが強制的に IPv6 アドレスとして、つまり、\fBAF_INET6\fR アドレスファミリの下で解釈されるようにします。
+.RE
+
+.sp
+.LP
+IPv4 アドレスの場合は、宛先として指定されたインターネットアドレスを解釈することによって、特定のホストへの経路がネットワークへの経路とデフォルトで区別されます。宛先に \fB0\fR のローカルアドレス部分 (つまり、ネットマスクによってカバーされていない部分) が含まれている場合や、宛先がネットワークのシンボル名として解決された場合は、ネットワークへの経路であると見なされます。それ以外の場合は、ホストへの経路であると見なされます。\fB\fR
+.sp
+.LP
+次のいずれかの修飾子を使用して、この選択を強制的に行うことができます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-host\fR\fR
+.ad
+.RS 9n
+.rt  
+宛先が強制的にホストとして解釈されるようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-net\fR\fR
+.ad
+.RS 9n
+.rt  
+宛先が強制的にネットワークとして解釈されるようにします。
+.RE
+
+.sp
+.LP
+例: 
+.sp
+
+.sp
+.TS
+tab();
+cw(2.75i) cw(2.75i) 
+lw(2.75i) lw(2.75i) 
+.
+宛先同等の宛先
+_
+\fB128.32\fR\fB-host\fR \fB128.0.0.32\fR
+\fB128.32.130\fR\fB-host\fR \fB128.32.0.130\fR
+\fB-net\fR \fB128.32\fR\fB128.32.0.0\fR
+\fB-net\fR \fB128.32.130\fR\fB\fR\fB128.32.130.0\fR
+.TE
+
+.sp
+.LP
+2 つの修飾子によって、アドレスとキーワードの間の混乱 (たとえば、\fBhost\fR がホストのシンボル名として使用されている場合) が回避されます。\fIdestination\fR の前に \fB-dst\fR 修飾子を指定することによって、宛先を識別できます。\fB-gateway\fR 修飾子を使用してゲートウェイアドレスを識別できます。ゲートウェイとして機能する中間の IP ルーターを必要としないインタフェースを経由して宛先に直接到達可能な場合は、これを \fB-interface\fR または \fB-iface\fR 修飾子を使用して示すことができます。 
+.sp
+.LP
+次の例では、経路は外部のゲートウェイ (ルーター) ではなく、マシンのいずれかのインタフェースを指しています。このような経路上の宛先とマスクに一致する IP 宛先アドレスを含むパケットが、ゲートウェイアドレスによって識別されたインタフェースから送信されます。 ARP プロトコルを使用するインタフェースの場合は、このタイプの経路を使用して、一致するすべての宛先が物理リンクに対してローカルであることを指定します。つまり、このコマンドを使用してデフォルトの経路を追加することによって、設定されているインタフェースネットマスクには関係なく、すべてのアドレスに対して ARP を使用するようにホストを設定できます。例:  
+.sp
+.in +2
+.nf
+example# route add default \fIhostname\fR -interface
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ここで、ゲートウェイアドレス \fIhostname\fR は、一致するすべてのパケットの送信に使用されるネットワークインタフェースに関連付けられた名前または IP アドレスです。1 つのネットワークインタフェースを備えたホストでは、\fIhostname\fR は通常、\fBuname -n\fR コマンドによって返される \fInodename\fR と同じです。\fBuname\fR(1) を参照してください。
+.sp
+.LP
+古いシステムとの下位互換性のために、直接到達可能な経路は、ゲートウェイアドレスのあとに \fB0\fR を置くことによっても指定できます。
+.sp
+.in +2
+.nf
+example# route add default \fIhostname\fR 0 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この値は以前はルートメトリックでしたが、このメトリックは使用されなくなりました。この値が \fB0\fR として指定されている場合、宛先は直接到達可能です (\fB-\fR\fBinterface\fR の指定と同等)。 この値が 0 ではないが、サブネットマスクとして解釈できない場合は、ゲートウェイが使用されます (デフォルト)。 
+.sp
+.LP
+\fBAF_INET\fR アドレスファミリまたは IPv4 アドレスでは、個別のサブネットマスクを指定できます。これは、次のいずれかの方法で指定できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ゲートウェイアドレスのあとの IP アドレス。これは通常、シンボル形式ではなく、\fBinet_addr\fR(3SOCKET) の場合のような \fI10 進数のドット\fR表記法で指定されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fB-netmask\fR 修飾子のあとの IP アドレス。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+宛先アドレスに追加されたスラッシュ文字と 10 進数の長さ。
+.RE
+.sp
+.LP
+サブネットマスクが指定されていないとき、宛先のクラスフルネットワークがインタフェースのクラスフルネットワークと同じである場合、使用されるマスクはゲートウェイアドレスによって選択された出力インタフェースのサブネットマスクです。それ以外の場合は、宛先アドレスのクラスフルネットワークマスクが使用されます。 
+.sp
+.LP
+次の各例は、\fB255.255.255.224\fR のサブネットマスクを持つ宛先 \fB192.0.2.32\fR サブネットへの IPv4 経路を作成します。 
+.sp
+.in +2
+.nf
+example# route add 192.0.2.32/27 somegateway
+example# route add 192.0.2.32 -netmask 255.255.255.224 somegateway
+example# route add 192.0.2.32 somegateway 255.255.255.224
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+IPv6 の場合は、スラッシュ形式のみが使用できます。次の例は、\fB16\fR 個のビット 1 のあとに 112 個のビット 0 が続くネットマスクを持つ宛先 \fB33fe::\fR への IPv6 経路を作成します。
+.sp
+.in +2
+.nf
+example# route add -inet6 3ffe::/16 somegateway
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ゲートウェイによって出力インタフェースが一意に識別されない場合 (たとえば、複数のインタフェースが同じアドレスを持っている場合) は、\fB-ifp\fR \fIifname\fR 修飾子を使用してインタフェースを名前で指定することができます。たとえば、\fB\fR\fB-ifp\fR\fB lo0\fR は経路を \fBlo0\fR インタフェースに関連付けます。指定されたインタフェースが IPMP (IP マルチパス) グループの基本となるインタフェースの場合、経路を追加する要求は対応する IPMP IP インタフェースに自動的に変換され、基本となるインタフェースの経路を削除または変更する要求は失敗します。
+.sp
+.LP
+ルーティングテーブルに複数の同じ経路 (つまり同じ着信先とマスクの経路) が含まれている場合、IP はそれらの経路にトラフィックを分配することを試みます。分配では、個々の転送接続が同じ経路を使用して、たとえば TCP で見られるようなパケットの並び替えを防止します。分配のアルゴリズムの詳細はドキュメント化されておらず、随時変更される可能性があります。
+.SS "ルーティングフラグ"
+.sp
+.LP
+経路には、各経路に一致する宛先に送信するときのプロトコルの動作に影響を与えるフラグが関連付けられています。これらのフラグは、コマンド行で次の修飾子を指定することによって設定 (場合によっては、\fB~\fR で示すことによって消去) できます。 
+.sp
+
+.sp
+.TS
+tab();
+cw(1.32i) cw(1.24i) cw(2.94i) 
+lw(1.32i) lw(1.24i) lw(2.94i) 
+.
+修飾子フラグ機能説明
+_
+\fB-interface\fR\fB~RTF_GATEWAY\fR宛先は直接到達可能です。 
+\fB-iface\fR\fB~RTF_GATEWAY\fRT{
+インタフェース修飾子の別名です。
+T}
+\fB-static\fR\fBRTF_STATIC\fR手動で追加された経路です。
+\fB-nostatic\fR\fB~RTF_STATIC\fRT{
+経路がカーネルまたはルーティングデーモンによって追加されたように見せかけます。
+T}
+\fB-reject\fR\fBRTF_REJECT\fRT{
+一致した場合に、ICMP 到達不能を発行します。
+T}
+\fB-blackhole\fR\fBRTF_BLACKHOLE\fRT{
+パケットを暗黙的に破棄します。
+T}
+\fB-proto1\fR\fBRTF_PROTO1\fRT{
+プロトコル固有のルーティングフラグ #1 を設定します。
+T}
+\fB-proto2\fR\fBRTF_PROTO2\fRT{
+プロトコル固有のルーティングフラグ #2 を設定します。
+T}
+\fB-private\fR\fBRTF_PRIVATE\fRこの経路を通知しません。
+\fB-multirt\fR\fBRTF_MULTIRT\fRT{
+指定された冗長経路を作成します。
+T}
+\fB-setsrc\fR\fBRTF_SETSRC\fRT{
+デフォルトの発信元アドレスを割り当てます。
+T}
+\fB-indirect\fR\fBRTF_INDIRECT\fRT{
+ゲートウェイがオンリンクではない場所への経路の追加を許可します。
+T}
+.TE
+
+.sp
+.LP
+任意指定の \fB-indirect\fR 修飾子は、ゲートウェイに直接到達できない場所への経路の追加を許可します。間接的な経路がパケットの送信または転送に最適である場合、IP はそのゲートウェイを検索して、直接到達可能な経路を探します。\fB-indirect\fR 修飾子は、ゲートウェイに直接到達可能な場合でも使用できます。
+.sp
+.LP
+オプションの修飾子 \fB-rtt\fR、\fB-rttvar\fR、\fB-sendpipe\fR、\fB-recvpipe\fR、\fB-mtu\fR、\fB-hopcount\fR、\fB-expire\fR、および \fB-ssthresh\fR は、\fBTCP\fR などのトランスポートレベルのプロトコルによってルーティングエントリ内に保持される数量に初期値を提供します。これらの修飾子を個別にロックするには、ロックする各修飾子の前に \fB-lock\fR メタ修飾子を指定するか、またはあとに続くすべてのメトリックスを \fB-lockrest\fR メタ修飾子でロックすることを指定します。
+.sp
+.LP
+一部のトランスポートレイヤープロトコルは、これらのメトリックスの一部のみをサポートできます。次のオプションの修飾子がサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-expire\fR\fR
+.ad
+.RS 13n
+.rt  
+エントリの寿命。このオプションの修飾子は、現在サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-hopcount\fR\fR
+.ad
+.RS 13n
+.rt  
+最大ホップ数。このオプションの修飾子は、現在サポートされていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-mtu\fR\fR
+.ad
+.RS 13n
+.rt  
+最大 MTU (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-recvpipe\fR\fR
+.ad
+.RS 13n
+.rt  
+受信パイプのサイズ (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-rtt\fR\fR
+.ad
+.RS 13n
+.rt  
+往復時間 (マイクロ秒単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-rttvar\fR\fR
+.ad
+.RS 13n
+.rt  
+往復時間の分散 (マイクロ秒単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-sendpipe\fR\fR
+.ad
+.RS 13n
+.rt  
+送信パイプのサイズ (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ssthresh\fR\fR
+.ad
+.RS 13n
+.rt  
+送信パイプのサイズのしきい値 (バイト単位)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-secattr\fR\fR
+.ad
+.RS 13n
+.rt  
+経路のセキュリティー属性。この修飾子を使用できるのは、システムに Solaris Trusted Extensions 機能が設定されている場合だけです。
+.sp
+\fB-secattr\fR 修飾子の形式は次のとおりです。
+.sp
+.in +2
+.nf
+min_sl=\fIval\fR,max_sl=\fIval\fR,doi=\fIval\fR,cipso
+.fi
+.in -2
+
+または
+.sp
+.in +2
+.nf
+sl=VAL,doi=VAL,cipso
+.fi
+.in -2
+
+上の最初の形式では、\fBmin_sl\fR と \fBmax_sl\fR の \fIval\fR は、16 進数または文字列のどちらかの形式の機密ラベルです。\fBdoi\fR の \fIval\fR は、負でない整数です。経路は、\fBdoi\fR 値で定義されているものと同じ解釈のドメインを持ち、かつ \fBmin_sl\fR と \fBmax_sl\fR の値で定義されている認可範囲内にあるパケットに対してのみ適用されます。\fBcipso\fR キーワードは省略可能で、デフォルトで設定されます。有効な \fBmin_sl\fR、\fBmax_sl\fR、および \fBdoi\fR のキーワード/値のペアは必須です。\fIval\fR にスペースが含まれている場合は、二重引用符で保護されている必要があることに注意してください。
+.sp
+上の 2 番目の形式は、\fBmin_sl\fR と \fBmax_sl\fR に同じ \fBVAL\fR を使用して最初の形式を指定した場合と同等です。\fBget\fR コマンドでは 1 つの機密ラベルだけが使用されるため、2 番目の形式は \fBget\fR コマンドで使用してください。
+.RE
+
+.SS "互換性"
+.sp
+.LP
+修飾子 \fBhost\fR および \fBnet\fR は、\fB-\fR\fBhost\fR および \fB-net\fR\fB\fR と同等と見なされます。これらのいずれかの名前に一致する記号アドレスを指定するには、\fBdst\fR または \fBgateway\fR キーワードを使用して区別します。たとえば、\fB\fR\fB-dst\fR\fB host\fR と指定します。
+.sp
+.LP
+次の 2 つのフラグも、古いシステムとの互換性のために受け入れられますが、何も実行されません。 
+.sp
+
+.sp
+.TS
+tab();
+cw(2.84i) cw(2.66i) 
+lw(2.84i) lw(2.66i) 
+.
+修飾子フラグ
+_
+\fB-cloning\fRRTF_CLONING
+\fB-xresolve\fRRTF_XRESOLVE
+.TE
+
+.sp
+.LP
+\fB\fR\fB-ifa\fR\fB hostname\fR 修飾子も受け入れられますが、何も実行されません。
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/defaultrouter\fR\fR
+.ad
+.RS 22n
+.rt  
+デフォルト経路のリスト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/hosts\fR\fR
+.ad
+.RS 22n
+.rt  
+ホスト名とネットアドレスのリスト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/networks\fR\fR
+.ad
+.RS 22n
+.rt  
+ネットワークの名前とアドレスのリスト
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBuname\fR(1), \fBin.ripngd\fR(1M), \fBin.routed\fR(1M), \fBnetstat\fR(1M), \fB routed\fR(1M), \fBioctl\fR(2), \fBgetipnodebyname\fR(3SOCKET), \fBgetnetbyname\fR(3SOCKET), \fBinet_addr\fR(3SOCKET), \fBdefaultrouter\fR(4), \fBhosts\fR(4), \fBnetworks\fR(4), \fBattributes\fR(5), \fBARP\fR(7P), \fBip\fR(7P), \fBroute\fR(7P), \fBrouting\fR(7P)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd\fR [ \fBhost\fR\||\ \fBnetwork\|]\fR \fIdestination\fR:\fIgateway\fR \fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された経路がテーブルに追加されます。出力される値は、\fBioctl\fR(2) の呼び出しで指定されたルーティングテーブルエントリの情報です。使用されたゲートウェイアドレスがゲートウェイのプライマリアドレス (\fBgetipnodebyname\fR(3SOCKET) によって返される最初のアドレス) でなかった場合、ゲートウェイアドレスは数値とシンボルで出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete\fR [ \fBhost\fR\||\ \fBnetwork\fR\|] \fIdestination\fR:\fIgateway\fR \fIflags\fR\fR
+.ad
+.br
+.na
+\fB\fBchange\fR [ \fBhost\fR\||\ \fB network\fR\|] \fIdestination\fR:\fIgateway\fR \fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBadd\fR と同様ですが、エントリを削除または変更する場合に使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdestination\fR \fBdone\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-f\fR フラグが指定されているか、または \fBflush\fR サブコマンドが使用されている場合は、削除された各ルーティングテーブルエントリがこの形式のメッセージで示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNetwork is unreachable\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたゲートウェイが直接接続されたネットワーク上に存在しなかったため、経路を追加する試みが失敗しました。代わりに、次のホップのゲートウェイを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnot in table\fR\fR
+.ad
+.sp .6
+.RS 4n
+テーブルに存在しないエントリに対して \fBdelete\fR 操作が試行されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBentry exists\fR\fR
+.ad
+.sp .6
+.RS 4n
+カーネル内にすでに存在する経路に対して \fBadd\fR 操作が試行されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrouting table overflow\fR\fR
+.ad
+.sp .6
+.RS 4n
+操作が試行されましたが、システムは、新しいエントリを作成するためのメモリーを割り当てることができませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinsufficient privileges\fR\fR
+.ad
+.sp .6
+.RS 4n
+呼び出し側プロセスが適切な特権を持っていないため、経路を追加、削除、変更、またはフラッシュする試みが失敗しました。
+.RE
+
+.SH 注意事項
+.sp
+.LP
+宛先がローカルであることを (\fB-interface\fR 修飾子で) 指定する場合は、ルーターに \fBproxy ARP\fR が実装されていることを前提にしています。つまり、ルーターは、すべての到達可能な宛先への ARP クエリーに応答します。通常は、proxy ARP を使用するよりも、ルーター検索または RIP のどちらかを使用する方が信頼性と拡張性に優れています。RIP に関連する情報については、\fBin.routed\fR(1M) を参照してください。
+.sp
+.LP
+すべての宛先がローカルである経路とサブネットまたはネットワーク経路を組み合わせると、予期しない結果になることがあります。すべての宛先がローカルである経路に関連して行われる検索の順序は未定義であり、リリースによって変更されることがあります。

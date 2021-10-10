@@ -1,0 +1,258 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2000, Sun Microsystems, Inc. All Rights Reserved
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH write 1 "2000 年 11 月 3 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+write \- 他のユーザーへのメッセージの書き込み
+.SH 形式
+.LP
+.nf
+\fBwrite\fR \fIuser\fR [\fIterminal\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBwrite\fR ユーティリティは、ユーザーの標準入力から行を読み込み、 他のユーザーの端末へ書き出します。最初に呼び出されたときに、
+.sp
+.in +2
+.nf
+Message from \fIsender-login-id\fR (\fIsending-terminal\fR) [date]...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+というメッセージを \fIuser\fR で指定されたユーザーの端末へ書き出します。接続が正常に行われると、送り側ユーザーの端末にベルを 2 回送って、入力中の内容が宛先端末に送信されつつあることを示します。
+.sp
+.LP
+受け取り側は、返答を送りたい場合、最初のメッセージの受信時に
+.sp
+.in +2
+.nf
+write \fIsender-login-id\fR [\fIsending-terminal\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+と入力します。標準入力モードでは、\fBNL\fR、\fBEOF\fR、または \fBEOL\fR 特殊文字で区切られた 1 行分の入力データが累積されるたびに、その 1 行分が宛先ユーザーに送信されます。文字は次のように処理されます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+警告 (アラート) 文字を入力すると、警告文字が宛先に送られます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+行消去文字または文字消去文字を入力すると、\fBtermios\fR(3C) インタフェースの規定に従って、送り側の端末が影響を受けます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+割り込みまたは EOF 文字を入力すると、\fBwrite\fR は対応するメッセージ (C ロケールでは EOT\en) を宛先端末に送って処理を終了します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBLC_CTYPE\fR における \fBprint\fR または \fBspace\fR に属する文字を入力すると、それらの文字が宛先端末に送られます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBstty\fR \fBiexten\fR ローカルモードが有効な場合に限り、 特殊制御文字および複数バイト文字やシングルバイト文字は、 対応するワイド文字が印刷可能であれば、 印刷可能として処理されます。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+その他の印刷不可能な文字を入力した場合は、次に述べるような方法で宛先端末に送られます。制御文字は `\fB^\fR' 文字のあとに適切な \fBASCII\fR 文字が表示されます。最上位ビットに 1 がたっている文字は「メタ」表記法で表示されます。たとえば、`\fB\e003\fR\&' は `\fB^C\fR' と表示され、`\fB\e372\fR\&' は `\fBM-z\fR' と表示されます。
+.RE
+.sp
+.LP
+複数ログインしているユーザーへメッセージを送りたいときには、 接続する端末を指定するために \fIterminal\fR 引数を使用できます。それ以外の場合には、 \fB/usr/adm/utmpx\fR 中で見つかった、対象ユーザーの最初の出力可能な端末が宛先端末となります。 このとき、どの端末が選ばれたかを示すために以下の通知メッセージが 送り側の標準出力に書き込まれます。
+.sp
+.in +2
+.nf
+\fIuser\fR is logged on more than one place.
+You are connected to \fIterminal\fR.
+Other locations are:\fIterminal\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBwrite\fR メッセージの受け取り側になると、\fBmesg\fR ユーティリティを使って拒否したり承諾したりすることが可能となります。ただしユーザーがどのような特権を持っているかにより、 他のどのユーザーの端末にアクセスできるかが制限されます。つまり要求した動作を行う上で必要な特権を持っていないと、\fBwrite\fR ユーティリティの実行は成功しません。
+.sp
+.LP
+\fB!\fR 文字が行の先頭にあると、\fBwrite\fR は、シェルを呼び出して行の残りの部分をコマンドとして実行します。
+.sp
+.LP
+\fBwrite\fR は、ほかのユーザー端末への書き込み権を得るために、グループ \fBID\fR \fBtty\fR への \fBsetgid()\fR (\fBsetuid\fR(2) を参照) を実行します。
+.sp
+.LP
+\fBwrite\fR を使用するために次の手順をお薦めします。 ユーザーが相手のユーザーに最初の \fBwrite\fR を実行したら、メッセージを送り始める前に \fBwrite\fR を返してくるのを待ちます。相手がいつ返事をすればよいかがわかるように、それぞれのユーザーは終了を示すシグナル (\fB(o)\fR は \fIover (応答どうぞ)\fR を表す) を入れてメッセージを終了します。会話を終了するときは、シグナル \fB(oo)\fR (\fBover and out (通信終わり)\fR を表す) をお薦めします。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIuser\fR \fR
+.ad
+.RS 13n
+.rt  
+メッセージの送信先となる人のユーザー (ログイン) 名。指定形式は、 \fBwho\fR(1) ユーティリティが返す形式と同じでなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIterminal\fR \fR
+.ad
+.RS 13n
+.rt  
+端末の ID で、 \fBwho\fR ユーティリティが返す形式と同一形式。
+.RE
+
+.SH 環境
+.sp
+.LP
+\fBwrite\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+指定されたユーザーはログインしていなかった、または指定されたユーザーが書き込みを拒否しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/utmpx\fR\fR
+.ad
+.RS 18n
+.rt  
+\fBwrite\fR 用のユーザーおよびアカウント情報
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/bin/sh\fR\fR
+.ad
+.RS 18n
+.rt  
+Bourne シェルの実行可能ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBmail\fR(1), \fBmesg\fR(1), \fBpr\fR(1), \fBsh\fR(1), \fBtalk\fR(1), \fBwho\fR(1), \fBsetuid\fR(2), \fBtermios\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser is not logged on\fR \fR
+.ad
+.sp .6
+.RS 4n
+ユーザーが \fBwrite\fR を試みている相手はログインしていません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPermission denied\fR \fR
+.ad
+.sp .6
+.RS 4n
+ユーザーが \fBwrite\fR を試みている相手は、書き込みを \fBmesg\fR を使って拒否しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBWarning: cannot respond, set mesg \fR\fB-y\fR \fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの端末は \fBmesg\fR \fBn\fR に設定され、相手ユーザーが応答できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCan no longer write to user\fR \fR
+.ad
+.sp .6
+.RS 4n
+ユーザーが書き込みを始めた後で、相手ユーザーが、書き込みを拒否 (\fBmesg n\fR) しました。
+.RE
+

@@ -1,0 +1,84 @@
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.\"
+.\" 
+.\"
+.TH check_elfstub 1 "11 May 2010"
+.SH NAME
+.I check_elfstub
+\- validate stub ELF dynamic shared object
+.SH SYNOPSIS
+\fBcheck_elfstub stub-object real-object\fP
+.LP
+.SH DESCRIPTION
+.IX "OS-Net build tools" "check_elfstub" "" "\fBcheck_elfstub\fP"
+.LP
+.I check_elfstub
+compares the linking interface of a stub object to that of the real
+object. The term \fBlinking interface\fP refers to the attributes
+of a shared object that are of interest to the link-editor
+when the shared object is linked to another object. The stub
+and real objects need not be identical, and in fact
+can differ significantly. As long as both objects offer the
+same view to other code being linked to them, the link
+editor will produce the same output code, and the
+\fBlinking interface\fP is considered to be equivalent.
+
+.LP
+Stub objects are shared objects built without object code, using only
+mapfile(s). They offer the same linking interface as the real object.
+.I check_elfstub
+can be used to verify that the two objects are compatible.
+
+.SS Operation
+.I check_elfstub
+examines the dynamic section (.dynamic), dynamic symbol table (.dynsym), 
+and the associated symbol information section (.SUNW_syminfo) of the
+stub and real objects. Incompatible differences are reported in
+a three line format in which the first line describes the incompatibility,
+the second line shows the details of the stub object, and the final
+line shows the details of the real object. For example:
+.sp
+.in +2
+.nf
+check_elfstub: __assert: other flags differ
+    stub:    [1027]  0x00032fd8 0x00000014  FUNC GLOB  P   39 .text          
+    real:    [1030]  0x000553c8 0x00000070  FUNC GLOB  D   38 .text        
+check_elfstub: __assert: versions differ
+    stub:    [1027]  0x00032fd8 0x00000014  FUNC GLOB  P   39 .text          
+    real:    [1030]  0x000553c8 0x00000070  FUNC GLOB  D   38 .text        
+.fi
+.in -2
+.sp
+The object details are formatted in the style used by
+\fBelfdump(1)\fP. Note that the value and size also differ, but as
+the address and size of a function are not considered to be part
+of the linking interface, they are not reported.
+
+
+.LP
+.SH EXIT STATUS
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 6n
+.rt  
+The stub object and real object offer compatible linking interfaces
+.RE
+
+.ne 2
+.mk
+.na
+\fB\fB1\fR \fR
+.ad
+.RS 6n
+.rt  
+The stub and real libraries offer incompatible linking interfaces
+.RE
+.LP
+.SH SEE ALSO
+.B elfdump(1),
+.B ld(1).

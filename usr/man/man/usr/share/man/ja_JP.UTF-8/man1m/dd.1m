@@ -1,0 +1,512 @@
+'\" te
+.\" Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Copyright 1989 AT&T
+.\" Portions Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH dd 1M "1996 年 9 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+dd \- ファイルの変換とコピー
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/dd\fR [\fIoperand=value\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBdd\fR は、指定した入力ファイルに可能な変換を行なって、指定した出力へコピーします。デフォルトでは、標準入力および標準出力が使用されます。raw 入出力装置の特性を利用するために入出力のブロックサイズで指定することが可能です。サイズは、バイト単位で指定し、数字のあとに \fBk\fR、\fBb\fR、または \fBw\fR を付加することができ、それぞれ 1024、512、または 2 の倍数として指定します。また、数字を \fBx\fR で区切ることにより乗算を表すことができます。
+.sp
+.LP
+\fBdd\fR は、指定された入力ブロックサイズを用いて、入力データを 1 ブロックずつ読み込みます。\fBその後、実際に渡されたデータブロックを処理します。そのサイズは、指定されたブロックサイズより小さい場合があります。\fR\fBdd\fR は指定された変換処理をブロックに対して行い、結果のデータを、指定された出力ブロックサイズに従ってブロック単位で書き出します。
+.sp
+.LP
+\fBcbs\fR は、\fBascii\fR、\fBasciib\fR、\fBunblock\fR、\fBebcdic\fR、\fBebcdicb\fR、\fBibm\fR、\fBibmb\fR、または \fBblock\fR 変換が指定されている場合にかぎり使用されます。最初の 2 つの指定では、\fBcbs\fR 文字は変換バッファーにコピーされ、任意の指定文字のマッピングが行われます。また後続の空白文字は切り捨てられ、行を送信する前に復帰改行が追加されます。\fB\fR残りの 3 つの指定では、復帰改行までの文字が変換バッファーに読み込まれ、サイズ \fBcbs\fR の出力レコードを構成するために空白文字が追加されます。\fB\fR\fBASCII \fRファイルは復帰改行文字を含むものとします。\fB\fR\fBcbs\fR が指定されていないかまたは \fB0\fR であると、\fBascii\fR、\fBasciib\fR、\fBebcdic\fR、\fBebcdicb\fR、\fBibm\fR、\fBibmb\fR の各オプションは入力ファイルのブロック構造を変更せずに文字セットを変換します。\fBunblock\fR および \fBblock\fR の各オプションは単純なファイルコピーを行います。
+.sp
+.LP
+終了後に、\fBdd\fR は全体および部分的な入出力ブロック数を報告します。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBif=\fR\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+入力パス名。デフォルトは標準入力です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBof=\fR\fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+出力パス名。デフォルトは標準出力です。\fBseek=\fR\fBexpr\fR 変換が指定されていないとき、\fBconv=notrunc\fR も指定されていなければ、コピー処理の実行前に出力ファイルは切り捨てられます。\fBseek=\fR\fBexpr\fR が指定され、\fBconv=notrunc\fR が指定されていなければ、コピー処理の結果としては \fBdd\fR がシークする出力ファイル中のブロックは保持されますが、出力ファイルのその他の部分は保持されません。シークするサイズと入力ファイルのサイズの合計が出力ファイルの元のサイズより小さい場合、コピー処理により出力ファイルは小さくなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBibs=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+入力ブロックサイズを \fIn\fR バイトとします。デフォルト値は \fB512\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobs=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+出力ブロックサイズを \fIn\fR バイトとします。デフォルト値は \fB512\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbs=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+入力ブロックサイズと出力ブロックサイズをともに \fIn\fR バイトとします。この設定は \fBibs=\fR と \fBobs=\fR 設定よりも優先されます。\fBsync\fR、\fBnoerror\fR、\fBnotrunc\fR 以外の変換が 1 つも指定されない場合、各入力ブロックは複数の短いブロックを 1 つにまとめる処理は行われず、それぞれ単独のブロックとして出力側にコピーされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcbs=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBblock\fR と \fBunblock\fR 用の変換ブロックサイズを \fIn\fR バイトに指定します。デフォルト値は \fB0\fR です。\fBcbs=\fR を指定しないかまたは \fB0\fR を指定した場合、\fBblock\fR や \fBunblock\fR を使うと結果は不確定です。
+.sp
+このオプションは \fBASCII\fR または \fBEBCDIC\fR 変換を指定した場合にだけ有効です。\fBascii\fR と \fBasciib\fR オペランドを指定した場合、後続のスペース文字を消去する前に文字が \fBASCII\fR に変換されるという点を除き、入力処理は \fBunblock\fR オペランド指定時と同じです。\fB\fR\fBebcdic\fR、\fBebcdicb\fR、\fBibm\fR、または \fBibmb\fR オペランドを指定した場合、末尾にスペース文字を追加した後で文字が \fBEBCDIC\fR または \fBIBM EBCDIC\fRに変換されるという点を除き、入力処理は \fBblock\fR オペランド指定時と同じです。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfiles=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+終了する前に、\fIn\fR 個の入力ファイルをコピーして連結します (入力が磁気テープまたは同様な装置の場合だけ有効です)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBskip=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+コピーを開始する前に、指定された入力ブロックサイズを用いて \fIn\fR 個の入力ブロックを読み飛ばします。シーク可能なファイルに対しては、システムはそれらのブロックを読み込むか、あるいはシークを行います。シーク不可能なファイルに対しては、ブロックを読み込んで、そのデータを捨てます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBiseek=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+コピーを行う前に、入力ファイルの先頭から \fIn\fR 個のブロックをシークします (\fBskip\fR の動作が遅いディスクファイルに適しています)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoseek=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+コピーを行う前に、出力ファイルの先頭から \fIn\fR 個のブロックをシークします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBseek=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+コピーを行う前に、出力ファイルの先頭から \fIn\fR 個のブロックをスキップします (指定された出力ブロックサイズを使用)。シーク不可能なファイルに対しては、既存のブロックを読み込み、現在のファイルの終わり位置から指定されたオフセット位置までの間にスペースがあれば、そのスペースを NULL バイトで埋めます。シーク可能なファイルに対しては、指定されたオフセット位置までをシークするか、またはシーク不可能なファイルの場合と同様にブロックを読み込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcount=\fR\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIn\fR 個の入力ブロックだけをコピーします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconv=\fR\fIvalue\fR[\fB,\fR\fIvalue\fR.\|.\|.\|]\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上の \fIvalue\fR をコンマで区切って記述します。各 value は次のいずれかです。  
+.sp
+.ne 2
+.mk
+.na
+\fB\fBascii\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBEBCDIC\fR を \fBASCII\fR に変換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBasciib\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBBSD\fR 互換の文字変換を使用して、\fBEBCDIC\fR を \fBASCII\fR に変換します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBebcdic\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBASCII\fR を \fBEBCDIC\fR に変換します。復帰改行のない固定長の \fBASCII\fR レコードを変換する場合は、前もって \fBdd conv=unblock\fR でパイプラインを整えてください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBebcdicb\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBBSD\fR 互換の文字変換を使用して、\fBASCII\fR を \fBEBCDIC\fR に変換します。復帰改行のない固定長の \fBASCII\fR レコードを変換する場合は、前もって \fBdd conv=unblock\fR でパイプラインを整えてください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBibm\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBASCII\fR から \fBEBCDIC\fR への変換とわずかに異なるマップを使用します。復帰改行のない固定長の \fBASCII\fR レコードを変換する場合は、前もって \fBdd conv=unblock\fR でパイプラインを整えてください。\fB\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBibmb\fR\fR
+.ad
+.RS 11n
+.rt  
+\fBBSD\fR 互換の文字変換を使用して \fBASCII\fR から \fBEBCDIC\fR への変換とわずかに異なるマップを使用します。復帰改行のない固定長の \fBASCII\fR レコードを変換する場合は、前もって \fBdd conv=unblock\fR でパイプラインを整えてください。\fB\fR
+.RE
+
+\fBascii\fR (または \fBasciib\fR)、\fBebcdic\fR (または \fBebcdicb\fR)、\fBibm\fR (または \fBibmb\fR) のうち 2 つ以上を同時に指定することはできません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBblock\fR\fR
+.ad
+.RS 11n
+.rt  
+入力データを、入力ブロック境界に関係なく、復帰改行文字または \fBEOF\fR で終わる可変長レコードの集まりと見なします。\fB\fR各レコードは、変換ブロックサイズで指定した長さの固定長レコードに変換されます。入力行に復帰改行文字があれば削除されます。\fB\fR変換ブロックサイズより短い行に関しては、ブロックを埋めるためにスペース文字が付加されます。\fB\fR変換ブロックサイズより長い行に関しては、ブロックサイズを満たす最大長になるように文字が捨てられます。切り捨てられた行の総数が報告されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunblock\fR\fR
+.ad
+.RS 11n
+.rt  
+固定長のレコードを可変長に変換します。変換ブロックサイズと等しい長さ分のバイト (それより短いデータしか残っていなければそのすべて) を読み込み、後続のスペース文字を削除して、復帰改行文字を付加します。\fB\fR\fB\fR
+.RE
+
+\fBblock\fR と \fBunblock\fR を同時に指定することはできません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlcase\fR\fR
+.ad
+.RS 9n
+.rt  
+\fBLC_CTYPE\fR カテゴリ中のキーワードの \fBtolower\fR で指定された大文字を、対応する小文字にマップします。マッピングを指定されなかった文字は、この変換によって変更されることはありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBucase\fR\fR
+.ad
+.RS 9n
+.rt  
+\fBLC_CTYPE\fR カテゴリ中のキーワードの \fBtoupper\fR で指定された小文字を、対応する大文字にマップします。マッピングを指定されなかった文字は、この変換によって変更されることはありません。
+.RE
+
+\fBlcase\fR と \fBucase\fR を同時に指定することはできません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBswab\fR\fR
+.ad
+.RS 11n
+.rt  
+入力データを 2 バイトずつの対になっているものとし、各々の対についてバイトの値を交換します。入力レコードの長さが奇数バイトの場合には、最終バイトは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoerror\fR\fR
+.ad
+.RS 11n
+.rt  
+入力エラーが発生しても処理を停止しません。入力エラーが起こると、標準エラー出力に診断メッセージと、入力および出力ブロック数が出力されます。ブロック数の形式は、正常に終了したときに出力されるものと同じです。\fBsync\fR 変換が指定されたときは、入力データのうち得られなかったバイトは NULL バイトに置き換えられて通常どおりに処理されます。そうでない場合、入力ブロックは出力上には現れません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnotrunc\fR\fR
+.ad
+.RS 11n
+.rt  
+出力ファイルを切り捨てません。今回の \fBdd\fR 呼び出しで明示的に書き込まれなかったブロックも出力ファイル中に保持します。(前述の \fBof=\fR\fIfile\fR オペランドの説明を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsync\fR\fR
+.ad
+.RS 11n
+.rt  
+入力ブロックに NULL バイトを付加して、サイズが \fBibs=\fR で指定した値に等しくなるようにします。なお \fBblock\fR または \fBunblock\fR も指定されている場合には、NULL バイトの代わりにスペース文字を付加します。\fB\fR
+.RE
+
+.RE
+
+.sp
+.LP
+\fBconv=\fR 以外のオペランドが複数回指定されたときは、最後に記述された \fBoperand=\fR\fIvalue\fR が有効となります。
+.sp
+.LP
+\fBbs=\fR、\fBcbs=\fR、\fBibs=\fR、\fBobs=\fR に関しては、バイト単位でサイズを指定する式をアプリケーション側で提供しなければなりません。式 \fBexpr\fR は次のいずれかです。
+.RS +4
+.TP
+1.
+正の 10 進数。
+.RE
+.RS +4
+.TP
+2.
+正の 10 進数の後に 1024 倍を示す  \fBk\fR を付加したもの。
+.RE
+.RS +4
+.TP
+3.
+正の 10 進数の後に 512 倍を示す \fBb\fR を付加したもの。
+.RE
+.RS +4
+.TP
+4.
+2 つ以上の正の 10 進数 (\fBk\fR や \fBb\fR を付加してもしなくてもよい) を文字 \fBx\fR で区切ったもの。その 2 つの値を乗算した結果を表します。
+.RE
+.sp
+.LP
+オペランドはすべて、入力データを読み込む前に処理されます。
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBdd\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fRテープドライブ 0 から 1 へのコピー
+.sp
+.LP
+次のコマンドは、標準的なデバイス命名規約を用いて、テープドライブ \fB0\fR から \fB1\fR へコピーします。
+
+.sp
+.in +2
+.nf
+example% \fBdd if=/dev/rmt/0h  of=/dev/rmt/1h\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR標準入力の先頭の 10 バイトの削除
+.sp
+.LP
+次のコマンドは、標準入力の先頭の 10 バイトを削除します。
+
+.sp
+.in +2
+.nf
+example% \fBdd ibs=10  skip=1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRテープを ASCII ファイルに読み込む
+.sp
+.LP
+次のコマンドは、テープブロックごとに 10 個の 80 バイト \fBEBCDIC\fR カードイメージにブロック化した \fBEBCDIC\fR テープを \fBASCII\fR ファイル \fBx\|\fR に読み込みます。
+
+.sp
+.in +2
+.nf
+example% \fBdd if=/dev/tape of=x ibs=800 cbs=80 conv=ascii,lcase\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRテープの書き込みに conv=sync を使用
+.sp
+.LP
+次のコマンドは、テープに書き込む場合に \fBconv=sync\fR を使用する例です。
+
+.sp
+.in +2
+.nf
+example% \fBtar cvf - . | compress | dd obs=1024k of=/dev/rmt/0 conv=sync\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBdd\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+ファイルは正常にコピーされました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB>\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.LP
+\fBnoerror\fR 変換が指定されていないときに入力エラーが発生すると、部分的に生成された出力ブロックがあればそれを出力ファイルに書き出し、診断メッセージを出力し、コピー処理を中止します。その他のエラーを検出した場合には、診断メッセージを出力し、コピー処理を中止します。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcp\fR(1), \fBsed\fR(1), \fBtr\fR(1), \fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5), \fBstandards\fR(5)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBf+p records in(out)\fR\fR
+.ad
+.RS 23n
+.rt  
+読み取られた (書き込まれた) 完全 (f) および部分 (p) ブロック数
+.RE
+
+.SH 注意事項
+.sp
+.LP
+ブロックサイズが異なるファイルシステム間でファイルのコピーを行う場合には、\fBdd\fR を使用しないでください。
+.sp
+.LP
+ファイルをコピーするのにブロック型デバイスを使用すると、最終ブロックをブロック境界にあわせるために余分な NULL バイトがファイルに追加されます。
+.sp
+.LP
+\fBdd\fR が \fBibs=X\fR および \fBobs=Y\fR オペランドを用いてパイプから読み取ると、その出力は常にサイズ Y の固まりでブロック化されます。\fBbs=Z\fR が使用されると、出力ブロックはその時点でパイプから読み取ることができる大きさになります。
+.sp
+.LP
+\fBdd\fR を使用してテープデバイスにファイルをコピーする場合、ファイルのサイズはデバイスのセクタサイズ (たとえば 512K) の倍数でなければなりません。任意のサイズのファイルをテープデバイスにコピーする場合は、\fBtar\fR(1) または \fBcpio\fR(1) を使用してください。
+.sp
+.LP
+\fBSIGINT\fR が発生した場合、\fBdd\fR はステータス情報を標準エラー出力に書き出して処理を終了します。その他のシグナル発生時には、標準的な動作を行います。

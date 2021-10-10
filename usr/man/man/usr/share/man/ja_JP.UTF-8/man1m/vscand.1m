@@ -1,0 +1,100 @@
+'\" te
+.\" Copyright (c) 2007 Sun Microsystems, Inc. All Rights Reserved.
+.TH vscand 1M "2007 年 11 月 6 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+vscand \- vscan サービスデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/vscan/vscand\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBvscand\fR は、ファイルのオープン/クローズ処理時にファイルシステムからのウィルススキャン要求を処理するデーモンです。ファイルシステムによっては、そのファイルシステムの管理コマンド (\fBzfs\fR(1M) など) を使用してウィルススキャンの有効化や無効化をデータセット単位で行える場合があります。
+.sp
+.LP
+ファイル状態またはスキャンポリシー (\fBvscanadm\fR(1M) を参照) からファイルのスキャンが要求された場合、\fBvscand\fR は \fBICAP\fR (Internet Content Adaptation Protocol、\fBRFC\fR 3507) を使用して他社製の外部ウィルススキャナ (スキャンエンジン) と通信し、そのファイルをスキャンします。
+.sp
+.LP
+ファイルがスキャンエンジンに送られるのは、そのファイルが前回のスキャン後に変更された場合と、そのファイルがまだ最新のスキャンエンジン構成 (ウィルス定義) に基づいてスキャンされていない場合です。この情報の格納先として、ファイルの modified 属性と \fBscanstamp\fR 属性が使用されます。ファイルのスキャンが完了すると、modified 属性はクリアされ、\fBscanstamp\fR 属性は更新されます。
+.sp
+.LP
+ファイルにウィルスが含まれることが判明した場合、ウィルスの情報が \fBsyslogd\fR(1M) に記録され、監査レコードが書き込まれ、そのファイルは (quarantine 属性の設定によって) 隔離されます。ファイルが隔離されると、そのファイルの読み取り、実行、または名前変更の試みがファイルシステムによって拒否されます。\fBsyslogd\fR(1M) エントリと監査レコードには、感染したファイルの名前とそのファイル内で検出された違反の情報が記録されています。各違反は「ID - 脅威の説明」として指定されますが、この \fBID\fR と脅威の説明については、\fBICAP\fR \fBRFC\fR 3507 の拡張 X-Infection-Found-Header 内で定義されています。
+.sp
+.LP
+デフォルトでは、\fBvscand\fR はポート 1344 上でスキャンエンジンに接続します。ポートなどのサービス構成パラメータを構成するには、\fBvscanadm\fR(1M) を使用します。
+.sp
+.LP
+\fBvscan\fR サービスは、デフォルトでは無効になっていますが、\fBsvcadm\fR(1M) を使用すると有効化できます。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+デーモンが正常に起動されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0 以外\fR\fR
+.ad
+.RS 12n
+.rt  
+デーモンの起動に失敗しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/storage/virus-scan
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBps\fR(1), \fBsvcs\fR(1), \fBlogadm\fR(1M), \fBsvcadm\fR(1M), \fBsyslogd\fR(1M), \fBvscandadm\fR(1M), \fBzfs\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+ファイルへのアクセス時に、\fBNFSv3\fR のような、ファイルシステムのオープン/クローズ処理を呼び出さないプロトコルが使用された場合、そのファイルではウィルススキャンは起動されません。
+.sp
+.LP
+ファイルの内容は「平文」データとしてスキャンエンジンに転送されます。\fB\fR
+.sp
+.LP
+有効化、無効化、または再起動要求など、\fBvscan\fR サービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。\fBvscan\fR サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+\fBvscan\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。 
+.sp
+.in +2
+.nf
+svc:/system/filesystem/vscan
+.fi
+.in -2
+.sp
+

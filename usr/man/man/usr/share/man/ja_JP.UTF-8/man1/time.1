@@ -1,0 +1,230 @@
+'\" te
+.\"  Copyright (c) 1992, X/Open Company Limited All Rights Reserved Portions Copyright (c) 1995, Sun Microsystems, Inc. All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH time 1 "1995 年 2 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+time \- 単純コマンドの時間測定
+.SH 形式
+.LP
+.nf
+\fBtime\fR [\fB-p\fR] \fIutility\fR [\fIargument\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtime\fR ユーティリティーは \fIutility\fR オペランドで指定されたユーティリティーを \fIargument\fR とともに呼び出し、\fIutility\fR の時間統計情報をまとめて標準エラー出力に書き出します。この情報には以下のものが含まれます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIutility\fR を呼び出してからその実行が終了するまでの経過 (実) 時間
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザー \fBCPU\fR 時間。これは \fIutility\fR を実行したプロセスに対して \fBtimes\fR(2) 関数が返す \fItms_utime\fR と \fItms_cutime\fR の値の合計と同等の意味です。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+システム \fBCPU\fR 時間。これは \fIutility\fR を実行したプロセスに対して \fBtimes()\fR 関数が返す \fItms_stime\fR と \fItms_cstime\fR の値の合計と同等の意味です。
+.RE
+.sp
+.LP
+\fBtime\fR をパイプラインの一部として使用した場合、 それがパイプライン内のグループ分けコマンド中の 唯一のコマンドである場合を除き、 報告される時間情報の内容は不確定です。以下の例を見てください。左側のコマンドの結果は不確定ですが、 右側のコマンドは、上の例ではユーティリティ \fBa\fR について、下の例ではユーティリティ \fBc\fR について報告されます。
+.sp
+.in +2
+.nf
+time a | b | c		{ time a } | b | c
+a | b | time c		a | b | (time c)
+.fi
+.in -2
+
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.RS 7n
+.rt  
+時間情報を以下の形式で標準エラー出力に書き出します。
+.sp
+.in +2
+.nf
+real %f\enuser %f\ensys %f\en < \fIreal seconds\fR>, <\fIuser seconds\fR>,
+<\fIsystem seconds\fR>
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIutility\fR \fR
+.ad
+.RS 13n
+.rt  
+呼び出すユーティリティの名前
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIargument\fR \fR
+.ad
+.RS 13n
+.rt  
+\fIutility\fR を呼び出す際に引数として与えるべき文字列
+.RE
+
+.SH 使用法
+.sp
+.LP
+\fBtime\fR ユーティリティーは、エラーが発生すると終了ステータス \fB127\fR を返します。これによりアプリケーションは、「ユーティリティーが見つからなかった」エラーと「呼び出したユーティリティーがエラーで終了した」ステータスとを見分けることができます。\fB127\fR という値を選んだのは、通常この値はほかの意味で使われることがないためです。ほとんどのユーティリティーは、小さい値を使って「一般的なエラー状態」を表し、\fB128\fR より大きな値は、シグナル受信による終了の場合と区別が困難になりかねないためです。同じような観点から、ユーティリティは見つかったが実行できなかった、という場合に使う値として \fB126\fR が選ばれています。
+.SH 使用例
+.LP
+\fB例 1 \fRtime コマンドの使用
+.sp
+.LP
+\fBtime\fR は、パイプラインまたは一連のコマンドに対して使用すると 便利なことがよくあります。まずパイプラインやコマンド群を 1 つのファイルに入れ、それをユーティリティとして呼び出します。それにより \fBtime\fR をファイル中のすべてに適用させることができます。
+
+.sp
+.LP
+他の方法として、以下のような使い方でも \fBtime\fR を複雑なコマンドに適用できます。
+
+.sp
+.in +2
+.nf
+example% \fBtime sh -c 'complex-command-line'\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRC シェルに組み込まれている time の使用
+.sp
+.LP
+次の 2 つの例では、\fBcsh\fR に組み込まれている \fBtime\fR と \fB/usr/bin/time\fR との違いを示しています。現在使用中のシェルが \fBcsh\fR であるとします。
+
+.sp
+.in +2
+.nf
+example% \fBtime find / -name csh.1 -print
+/usr/share/man/man1/csh.1\fR
+95.0u 692.0s 1:17:52 16% 0+0k 0+0io 0pf+0w
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBtime\fR の出力形式に関する詳細は、\fBcsh\fR(1) を参照してください。
+
+.sp
+.in +2
+.nf
+example% \fB/usr/bin/time find / -name csh.1 -print
+/usr/share/man/man1/csh.1\fR
+real  1:23:31.5
+user     1:33.2
+sys     11:28.2
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBtime\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。 \fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_NUMERIC\fR、\fBNLSPATH\fR、および \fBPATH\fR。 
+.SH 終了ステータス
+.sp
+.LP
+\fIutility\fR で指定したユーティリティーが呼び出された場合、そのユーティリティーの終了ステータスが \fBtime\fR の終了ステータスとなります。\fI\fR呼び出されなかった場合には、 \fBtime\fR は以下のいずれかの値を返して終了します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1-125\fR\fR
+.ad
+.RS 9n
+.rt  
+\fBtime\fR ユーティリティの中でエラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB126\fR \fR
+.ad
+.RS 9n
+.rt  
+\fIutility\fR は見つかったが呼び出すことができなかった。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB127\fR \fR
+.ad
+.RS 9n
+.rt  
+\fIutility\fR は見つからなかった。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcsh\fR(1), \fBshell_builtins\fR(1), \fBtimex\fR(1), \fBtimes\fR(2), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+time コマンドをマルチプロセッサマシン上で実行した場合、出力された \fBuser\fR と \fBsys\fR の値の合計が \fBreal\fR 値を超える場合があります。これは、マルチプロセッサ・マシンでは、 処理を複数のプロセッサに分けて実行することが可能なためです。
+.sp
+.LP
+時間測定対象のコマンド処理中に割り込みが発生すると、 出力される時間の値に誤差が生じることがあります。
+.SH 使用上の留意点
+.sp
+.LP
+経過時間の精度は秒単位までですが、\fBCPU\fR 時間は 100 分の 1 秒まで計測されます。そのため \fBCPU\fR 時間の合計値は経過時間を最大 1 秒上回る可能性があります。

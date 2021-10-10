@@ -1,0 +1,392 @@
+'\" te
+.\" 版权所有 (c) 2009，2010，Oracle 和/或其附属公司。保留所有权利。
+.\" 版权所有 (C) 1999，2000，2007 Free Software Foundation, Inc.
+.\" 本程序是自由软件，您可以遵照自由软件基金会发布的 GNU 通用公共许可第 3 版或（根据您的选择）任何更高版本的条款重新发布和/或修改本程序。本程序本着为用户提供帮助的目的而发布，但不承担任何担保；即使是对适销性或特定用途适用性的暗示担保也不承担。有关详细信息，请参见 GNU 通用公共许可。您应当已经接收到本程序随附的一份 GNU 通用公共许可的副本。如果没有，请访问：http://www.gnu.org/copyleft/gpl.html
+.TH parted 1M "2010 年 11 月 29 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+parted \- 分区操作程序
+.SH 用法概要
+.LP
+.nf
+\fBparted\fR [\fIoptions\fR] [\fIdevice\fR [\fIcommand\fR [\fIoptions\fR...]...]]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBparted\fR 是对磁盘进行分区和调整分区大小的程序。通过它可以创建、销毁、移动和复制 \fBext2\fR、\fBlinux-swap\fR、\fBFAT\fR、\fBFAT32\fR 和 \fBreiserfs\fR 分区以及调整其大小。它可以创建和移动 Macintosh HFS 分区并调整其大小，还可以检测 \fBjfs\fR、\fBntfs\fR、\fBufs\fR 和 \fBxfs\fR 分区。它非常适用于为新操作系统创建空间、重新组织磁盘使用量以及将数据复制到新的硬盘。
+.sp
+.LP
+本手册页只是 \fBparted\fR 的简要说明。完整的 \fBparted\fR 文档以"GNU Info"格式随软件包一起提供。
+.sp
+.LP
+\fBparted\fR 通过一组顶级选项和一组子命令实现的，它们中的大多数都具有自己的选项和操作数。下面描述了这些子命令。\fBparted\fR 具有一个可选操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdevice\fR\fR
+.ad
+.RS 10n
+.rt  
+要使用的块设备。如果未指定，\fBparted\fR 将使用它找到的第一个块设备。
+.RE
+
+.sp
+.LP
+如果在不使用参数的情况下调用 \fBparted\fR，该程序会显示命令提示。
+.SH 选项
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIalignment-type\fR, \fB--align\fR \fIalignment-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+为新创建的分区设置对齐。有效的对齐类型包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用磁盘类型所允许的最小对齐。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcylinder\fR\fR
+.ad
+.sp .6
+.RS 4n
+将分区对齐到柱面。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBminimal\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用磁盘拓扑信息提供的最小对齐。该值和 \fIopt\fR 值将使用磁盘提供的布局信息，将逻辑分区表地址对齐到磁盘上的实际物理块。\fImin\fR 值是将分区正确对齐到物理块所需的最小对齐，这可避免性能降低。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoptimal\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用磁盘拓扑信息提供的最佳对齐。此值可在保证最佳性能的情况下对齐到物理块大小的倍数。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR，\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示帮助消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR，\fB--list\fR\fR
+.ad
+.sp .6
+.RS 4n
+列出所有块设备上的分区布局。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR，\fB--machine\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示计算机可解析的输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR，\fB--script\fR\fR
+.ad
+.sp .6
+.RS 4n
+从不提示用户介入。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR，\fB--version\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示版本号。
+.RE
+
+.SH 子命令
+.sp
+.LP
+如果在 \fBparted\fR 命令行中忽略某个子命令，该实用程序将给出一个命令提示符。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck\fR \fIpartition\fR\fR
+.ad
+.sp .6
+.RS 4n
+对 \fIpartition\fR 进行简单检查。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcp\fR [\fIsource-device\fR] \fIsource\fR \fIdest\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIsource-device\fR（如果未指定其他设备，则为当前设备）上的源分区的文件系统复制到当前设备上的 \fIdest\fR 分区。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR \fIcommand\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示一般帮助，或有关某个命令的帮助（如果指定命令）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmkfs\fR \fIpartition\fR \fIfs-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+在分区上创建文件系统 \fIfs-type\fR。\fIfs-type\fR 可以是 \fBfat16\fR、\fBfat32\fR、\fBext2\fR、\fBlinux-wap\fR 或 \fBreiserfs\fR 其中之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmklabel\fR \fIlabel-type\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个类型为 \fIlabel-type\fR 的新磁盘标签（分区表）。\fIlabel-type\fR 应该是 \fBbsd\fR、\fBdvh\fR、\fBgpt\fR、\fBloop\fR、\fBmac\fR、\fBmsdos\fR、\fB pc98\fR 或 \fBsun\fR 其中之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmkpart\fR \fIpart-type\fR [\fIfs-type\fR] \fIstart\fR \fIend\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个文件系统为 \fIfs-type\fR（如果指定）的 \fIpart-type\fR 分区，以 \fIstart\fR 开始，以 \fIend\fR 结束（缺省情况下，以兆字节为单位）。\fIfs-type\fR 可以是 \fBfat16\fR、\fBfat32\fR、\fBext2\fR、\fBHFS\fR、\fBlinux-swap\fR、\fBNTFS\fR、\fBreiserfs\fR 或 \fBufs\fR 其中之一。\fIpart-type\fR 应该是 \fBprimary\fR、\fBlogical\fR 或 \fBextended\fR 其中之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmkpartfs\fR \fIpart-type\fR \fIfs-type\fR \fIstart\fR \fIend\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个文件系统为 \fIfs-type\fR 的 \fIpart-type\fR 分区，以 \fIstart\fR 开始，以 \fIend\fR 结束（缺省情况下，以兆字节为单位）。
+.sp
+不建议使用此子命令。相反，应使用 \fBmkpart\fR 创建空分区，然后使用诸如 \fBmke2fs(8)\fR（Linux 的一部分）等外部工具创建文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmove\fR \fIpartition\fR \fIstart\fR \fIend\fR\fR
+.ad
+.sp .6
+.RS 4n
+移动分区，使其以 \fIstart\fR 开始，以 \fIend\fR 结束。请注意，\fBmove\fR 永远不会更改从设备号。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR \fIpartition\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+将分区名称设置为 \fIname\fR。此选项仅适用于 Mac、PC98 和 GPT 磁盘标签。如有必要，可将名称放在引号中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprint\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示分区表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 \fBparted\fR 退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrescue\fR \fIstart\fR \fIend\fR\fR
+.ad
+.sp .6
+.RS 4n
+挽救位于 \fIstart\fR 和 \fIend\fR 之间的丢失的分区。如果找到一个分区，\fBparted\fR 将询问是否要在分区表中为其创建一个条目。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBresize\fR \fIpartition\fR \fIstart\fR \fIend\fR\fR
+.ad
+.sp .6
+.RS 4n
+调整 \fIpartition\fR 上文件系统的大小，使其以 \fIstart\fR 开始，以 \fIend\fR 结束（缺省情况下，以兆字节为单位）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrm\fR \fIpartition\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除 \fIpartition\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect\fR \fIdevice\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择 \fIdevice\fR 作为要编辑的当前设备。\fIdevice\fR 通常应该是 Solaris 或 Linux 硬盘设备，但是如有必要，也可以是分区、软件 raid 设备或者 SVM 或 LVM 逻辑卷。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIpartition\fR \fIflag\fR \fIstate\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIpartition\fR 上的 \fIflag\fR 状态更改为 \fIstate\fR。支持的标志包括：\fBboot\fR、\fBroot\fR、\fBswap\fR、\fBhidden\fR、\fBraid\fR、\fBlvm\fR、\fBlba\fR 和 \fBpalo\fR。\fIstate\fR 应当是 \fBon\fR（开启）或 \fBoff\fR（关闭。）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunit\fR \fIunit\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIunit\fR 设置为显示位置和大小时使用的单位，以及在没有明确的单位后缀时，用于解释用户提供的位置和大小。\fIunit\fR 可以是 \fBs\fR（扇区）、\fBB\fR（字节）、\fBkB\fR、\fBMB\fR、\fBGB\fR、\fBTB\fR、\fB%\fR（设备大小的百分比）、\fBcyl\fR（柱面）、\fBchs\fR（柱面、磁头、扇区）或 \fBcompact\fR（对于输入为兆字节，对于输出为某种用户友好形式）其中之一。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBversion\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示版本信息和版权消息。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/storage/parted
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBfdisk\fR(1M)、\fBmkfs\fR(1M)、\fBattributes\fR(5)
+.sp
+.LP
+\fBinfo(1)\fR 格式的 GNU 分区软件手册对 \fBparted\fR 程序进行了详细说明。
+.SH 附注
+.sp
+.LP
+当前不能使用 \fBext3\fR 文件系统功能。要管理 \fBext3\fR 类型的文件系统，请使用诸如 \fBresize2fs(8)\fR 或 \fBmke2fs(8)\fR（两者均为 Linux 的一部分）等工具。请注意，一旦 \fBext3\fR 支持最终完成，当前支持的 \fBext2\fR 文件系统将过时。另请注意，\fBext3\fR 支持将包含有待定义的有限功能。请使用诸如 \fBresize2fs(8)\fR 和 \fBmke2fs(8)\fR 等工具管理这些类型的文件系统。
+.sp
+.LP
+要手动调整 \fBext3\fR 文件系统或分区的大小，请使用 \fBresize2fs(8)\fR、\fBfdisk(8)\fR 或类似工具。对于 LVM，需要使用 LVM 命令调整 LVM 元素的大小。
+.SH 作者
+.sp
+.LP
+此手册页是由 Timshel Knoll 针对 Debian GNU/Linux 系统编写的。这里针对 Solaris 操作系统进行了改编。

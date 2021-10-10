@@ -1,0 +1,630 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zfs_share 1M "23 Aug 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+zfs_share \- share and unshare a ZFS file system
+.SH SYNOPSIS
+.LP
+.nf
+zfs [-?]
+.fi
+
+.LP
+.nf
+\fBzfs help\fR \fIsubcommand\fR | help | \fIproperty property-name\fR | \fIpermission\fR
+.fi
+
+.LP
+.nf
+\fBzfs create\fR [-p] [-o sharenfs=on | sharesmb=on] [-o \fIproperty\fR ... \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+zfs set share=\fIname=sharename\fR,path=\fIpathname\fR,[desc=\fIdescription\fR],
+prot=smb | nfs[,\fIproperty=value\fR[,...]] \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBset\fR [\fB-r\fR] sharenfs=on | off \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBset\fR [\fB-r\fR] sharesmb=on | off \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+zfs set -c share=\fIname=sharename\fR \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR [\fB-r\fR] sharenfs \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBget\fR [\fB-r\fR] sharesmb \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBget\fR  [\fB-r\fR] \fBshare\fR \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBshare\fR \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunshare\fR \fB-a\fR \fIfilesystem\fR|\fImountpoint\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBzfs set share\fR command is used to create an NFS or SMB share within a \fBZFS\fR storage pool, as described in \fBzpool\fR(1M). Setting the \fBsharenfs\fR or the \fBsharesmb\fR property to on publishes a share. You can also publish and unpublish an NFS share of a ZFS dataset by using the \fBzfs share\fR and \fBzfs unshare\fR commands. 
+.SS "Native Share File System Properties"
+.sp
+.LP
+File system properties are divided into two types, native properties and user-defined (or "user") properties. Native properties either display information or control ZFS behavior. In addition, native properties are either editable or read-only.
+.sp
+.LP
+Properties are inherited from the parent unless overridden by the child. Some properties apply only to certain types of datasets (file systems, volumes, or snapshots).
+.sp
+.LP
+The following native properties can be used to change the behavior of a ZFS file system and are generally used when a file system is shared.
+.sp
+.LP
+The following native NFS and SMB properties can be used to change the behavior of a \fBZFS\fR share.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnbmand\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+Controls whether the file system should be mounted with \fBnbmand\fR (Non Blocking mandatory locks). This is used for \fBSMB\fR clients. Changes to this property only take effect when the file system is umounted and remounted. See \fBmount\fR(1M) for more information on \fBnbmand\fR mounts.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreadonly\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+Controls whether this dataset can be modified. The default value is \fBoff\fR.
+.sp
+This property can also be referred to by its shortened column name, \fBrdonly\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharenfs\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+Controls whether a ZFS dataset is published as an NFS share. You can also publish and unpublish an NFS share of a ZFS dataset by using the \fBzfs share\fR and \fBzfs unshare\fR commands. Both methods of publishing an NFS share require that the NFS share properties are already set. For information about setting NFS share properties, see the \fBzfs set share\fR command.
+.sp
+When the \fBsharenfs\fR property is changed, the file system share and any children inheriting the property are re-published with any new options that have been set with the \fBzfs set share\fR command only if the property was previously \fBoff\fR, or if the shares were published before the property was changed. If the new property value is \fBoff\fR, the file system shares are unpublished.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharesmb\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+Controls whether a ZFS dataset is published as an SMB share. You can also publish and unpublish an SMB share of a ZFS dataset by using the \fBzfs share\fR and \fBzfs unshare\fR commands. Both methods of publishing an SMB share require that the SMB share properties are also set. For information about setting SMB share properties, see the \fBzfs set share\fR command.
+.sp
+Because \fBSMB\fR shares requires a resource name, a unique resource name is constructed from the dataset name. The constructed name is a copy of the dataset name except that the characters in the dataset name that would be illegal in the resource name are replaced with underscore (\fB_\fR) characters. A pseudo property "name" is also supported that allows you to replace the data set name with a specified name. The specified name is then used to replace the prefix dataset in the case of inheritance. For example, if the dataset \fBdata/home/john\fR is set to \fBname=john\fR, then \fBdata/home/john\fR has a resource name of \fBjohn\fR. If \fBjohn\fR has a child dataset of \fBdata/home/john/backups\fR, it has a resource name of \fBjohn_backups\fR.
+.sp
+When SMB shares are created, the SMB share name appears as an entry in the \fB\&.zfs/shares\fR directory. You can use the \fBls\fR or \fBchmod\fR command to display the share-level ACLs on the entries in this directory.
+.sp
+When the \fBsharesmb\fR property is changed, the dataset share and any children inheriting the property are re-published with any new options that have been set with the \fBzfs set share\fR command if the property was previously set to \fBoff\fR, or if the shares were published before the property was changed. If the new property value is \fBoff\fR, the dataset shares are unpublished.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscan\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+Controls whether regular files should be scanned for viruses when a file is opened and closed. In addition to enabling this property, the virus scan service must also be enabled for virus scanning to occur. The default value is \fBoff\fR.
+.RE
+
+.sp
+.LP
+The following properties cannot be changed after the file system is created and, therefore, should be set when the file system is created. If the properties are not set with the \fBzfs create\fR or \fBzpool create\fR commands, these properties are inherited from the parent dataset. If the parent dataset lacks these properties due to having been created prior to these features being supported, the new file system will have the default values for these properties.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcasesensitivity\fR=\fBsensitive\fR | \fBinsensitive\fR | \fBmixed\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates whether the file name matching algorithm used by the file system should be case-sensitive, case-insensitive, or allow a combination of both styles of matching. The default value for the \fBcasesensitivity\fR property is \fBmixed\fR. Traditionally, UNIX and POSIX file systems have case-sensitive file names.
+.sp
+The \fBmixed\fR value for the \fBcasesensitivity\fR property indicates that the file system can support requests for both case-sensitive and case-insensitive matching behavior. Currently, case-insensitive matching behavior on a file system that supports mixed behavior is limited to the Solaris SMB server product. For more information about the \fBmixed\fR value behavior, see the \fISolaris ZFS Administration Guide\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnormalization\fR = \fBnone\fR | \fBformC\fR | \fBformD\fR | \fBformKC\fR | \fBformKD\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates whether the file system should perform a \fBunicode\fR normalization of file names whenever two file names are compared, and which normalization algorithm should be used. File names are always stored unmodified, names are normalized as part of any comparison process. If this property is set to a legal value other than \fBnone\fR, and the \fButf8only\fR property was left unspecified, the \fButf8only\fR property is automatically set to \fBon\fR. The default value of the \fBnormalization\fR property is \fBnone\fR. This property cannot be changed after the file system is created.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fButf8only\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+Indicates whether the file system should reject file names that include characters that are not present in the \fBUTF-8\fR character code set. If this property is explicitly set to \fBoff\fR, the normalization property must either not be explicitly set or be set to \fBnone\fR. The default value for the \fButf8only\fR property is \fBoff\fR. This property cannot be changed after the file system is created.
+.RE
+
+.SH SUBCOMMANDS
+.sp
+.LP
+All subcommands that modify state are logged persistently to the pool in their original form.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays a help message.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+Displays \fBzfs\fR command usage information. You can display help for a specific command, property, or delegated permission. If you display help for a specific command or property, the command syntax or property value is displayed. Using \fBzfs help\fR without any arguments displays a complete list of \fBzfs\fR commands.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-p\fR] [\fB-o\fR \fBsharenfs=on | sharesmb=on\fR \fB-o\fR\fIproperty\fR=\fIvalue\fR] ... \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+Creates a new \fBZFS\fR file system. The file system is automatically mounted according to the \fBmountpoint\fR property inherited from the parent.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+Sets the specified property as if the command \fBzfs set\fR \fIproperty\fR=\fIvalue\fR was invoked at the same time the dataset was created. Any editable \fBZFS\fR property can also be set at creation time. Multiple \fB-o\fR options can be specified. An error results if the same property is specified in multiple \fB-o\fR options.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs get [-r] share\fR [\fIfilesystem\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Displays all defined shares or the defined shares for a specified file system or descendent file systems.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set share\fR=\fIname\fR=\fIsharename\fR,\fBpath\fR=\fIpathname\fR,[\fBdesc\fR=\fIdescription\fR],\fBprot\fR=\fBsmb\fR | \fBnfs\fR[,\fIproperty\fR=\fIvalue\fR[,...]] \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+Defines an NFS or SMB file sharing properties for a ZFS dataset. After the NFS or SMB file-sharing properties are established, you can publish the NFS or SMB share of a ZFS file system by setting the \fBsharenfs\fR or \fBsharesmb\fR property to \fBon\fR.
+.sp
+The following share properties are required:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshare\fR=\fIname\fR=\fIsharename\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies an NFS or SMB share name. Maximum length of a share name is 80 characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpath\fR=\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies the physical path of the dataset to be shared or a subdirectory within the dataset to be shared.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprot\fR=\fBsmb\fR | \fBnfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies the NFS or SMB file sharing protocol.
+.RE
+
+The following share properties are optional:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdesc\fR=\fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+Identifies a text string that describes the share resource. Spaces or commas in the description must be enclosed in quotation marks (\fB"\fR \fB"\fR).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro\fR= | \fBrw\fR=\fR
+.ad
+.sp .6
+.RS 4n
+Identifies whether the share is available as read/write or read-only to all clients. You can also specify a colon-separated list that includes hostnames, IP addresses, or a netgroup.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBroot\fR=\fR
+.ad
+.sp .6
+.RS 4n
+Identifies a root user from a specified host or list of hosts that have root access. By default, no host has root access.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsec\fR=\fR
+.ad
+.sp .6
+.RS 4n
+Identifies an NFS server security mode, such as \fBsys\fR, \fBdh\fR, \fBkrb5\fR, and so on. For supported security mode information, see \fBnfssec\fR(5).
+.RE
+
+The following optional NFS properties must be specified after \fBprot=nfs\fR but before any \fBsec\fR properties:
+.sp
+.in +2
+.nf
+anon=TYPE_USER
+nosub=[true|false]
+nosuid=[true|false]
+aclok=[true|false]
+public=[true|false]
+index=filename
+log=TYPE_LOGTAG
+cksum=TYPE_STRINGSET
+.fi
+.in -2
+.sp
+
+The following optional SMB properties must be specified after \fBprot=smb\fR:
+.sp
+.in +2
+.nf
+ad-container=string
+abe=[true|false]
+csc=[disabled|manual|auto|vdo]
+catia=[true|false]
+guestok=[true|false]
+ro=access-list
+rw=access-list
+none=access-list
+.fi
+.in -2
+.sp
+
+See \fBshare_nfs\fR(1M) and \fBshare_smb(1M)\fR for a detailed description of NFS and SMB share properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set\fR [\fB-r\fR] \fIproperty\fR=\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+Sets the property to the given value for each dataset. Only some properties can be edited. See the "Properties" section for more information on what properties can be set and acceptable values. 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+Recursively apply the effective value of the setting throughout the subtree of child datasets. The effective value may be set or inherited, depending on the property.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBset\fR \fB-c\fR share=\fIname\fR=\fIsharename\fR \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+Removes a file system share. The \fB-c\fR option distinguishes this subcommand from the \fBzfs set share\fR command described above.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs share\fR \fB-a\fR | \fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+Publishes an NFS or SMB share of a ZFS dataset according to the share properties values and if \fBsharenfs\fR or \fBsharesmb\fR property set.
+.sp
+Sharing a dataset with the NFS or SMB protocol means that the dataset data is available over the network. ZFS datasets that have the \fBsharenfs\fR or \fBsharesmb\fR property set are automatically shared when a system is booted.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Shares all ZFS datasets according to their share property values and to the settings of the \fBsharenfs\fR and \fBsharesmb\fR properties.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+Shares the specified dataset according to the share property values and to the settings of the \fBsharenfs\fR and \fBsharesmb\fR properties.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unshare\fR \fB-a\fR | \fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unshares all ZFS datasets that have the \fBsharenfs\fR or \fBsharesmb\fR property set.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unshare all shared ZFS datasets. Invoked automatically as part of the boot process. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+Unshare the specified dataset. The command can also be given a path to a \fBZFS\fR dataset shared on the system.
+.RE
+
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCreating an NFS or SMB Share of a ZFS File System
+.sp
+.LP
+Creating an NFS or SMB share of a ZFS file system is a two-step process:
+
+.RS +4
+.TP
+1.
+Create the share by using the \fBzfs set share\fR command to identify the NFS or SMB share properties.
+.sp
+To create an NFS share:
+.sp
+.in +2
+.nf
+# \fBzfs create -o mountpoint=/data tank/data\fR
+# \fBzfs set share=name=data,path=/data,prot=nfs tank/data\fR
+.fi
+.in -2
+.sp
+
+To create an SMB share:
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=fs,path=/fs,prot=smb,ro=@10-132-60-234 \e\fR
+\fBtank/fs\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+Publish the share by setting the \fBsharenfs\fR or \fBsharesmb\fR property. Use commands such as:
+.sp
+.in +2
+.nf
+# \fBzfs set sharenfs=on tank/data\fR
+# \fBzfs set sharesmb=on tank/fs\fR
+.fi
+.in -2
+.sp
+
+.RE
+.LP
+\fBExample 2 \fRDisplaying NFS or SMB Share Information
+.sp
+.LP
+Display NFS or SMB share information:
+
+.sp
+.in +2
+.nf
+# \fBzfs get share\fR
+NAME                      PROPERTY  VALUE  SOURCE
+tank/data                 share     name=data,path=/data,prot=nfs  local
+tank/fs                   share     name=fs,path=/fs,prot=smb,ro... local
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRAdding or Changing Share Properties on a ZFS File System
+.sp
+.LP
+Change a share by adding a new option, such as read-only for \fBhostA\fR, as in the following:
+
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=data,prot=nfs,ro=hostA tank/data\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRRemoving a NFS or SMB Share of a ZFS File System
+.sp
+.LP
+Remove a share by using \fBzfs set\fR \fB-c\fR command:
+
+.sp
+.in +2
+.nf
+# \fBzfs set -c share=name=fs tank/fs\fR
+share 'fs' was removed.
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+Successful completion. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+Invalid command line options were specified.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/file-system/zfs
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBchmod\fR(1), \fBchown\fR(1), \fBpktool\fR(1), \fBssh\fR(1), \fBmount\fR(1M), \fBshadowd\fR(1M), \fBshare\fR(1M), \fBshare_nfs\fR(1M), \fBshare_smb\fR(1M), \fBunshare\fR(1M), \fBzfs\fR(1M), \fBzfs_allow\fR(1M), \fBzfs_encrypt\fR(1M), \fBzonecfg\fR(1M), \fBzpool\fR(1M), \fBchmod\fR(2), \fBchown\fR(2), \fBstat\fR(2), \fBwrite\fR(2), \fBfsync\fR(3C), \fBdfstab\fR(4), \fBvfstab\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+See the \fBgzip\fR(1) man page, which is not part of the SunOS man page collection.
+.sp
+.LP
+For information about using other \fBZFS\fR features, see the \fISolaris ZFS Administration Guide\fR.

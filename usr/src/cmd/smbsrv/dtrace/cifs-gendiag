@@ -1,0 +1,222 @@
+#!/usr/bin/bash
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+#======================================================================
+# CIFS Diagnostics Generator
+#
+# This script will gather some basic information which could be helpful
+# in diagnosing CIFS problems.
+#
+# Usage
+#
+# 	cifs-gendiag
+#
+# The following information is gathered by this script:
+#
+# 	o OS and hardware
+# 	o /etc/nsswitch.conf
+# 	o /etc/resolv.conf
+# 	o /etc/krb5/krb5.conf
+#	o network and routing information
+#	o list of zpools
+#	o list of zfs datasets
+#	o properties for all zpools and datasets
+#	o idmap properties, rules, cache
+#	o list of shares
+#	o ACL of CIFS shared directories
+#	o CIFS server configuration and status
+#	o pam_smb_passwd line in /etc/pam.conf (if exists)
+#	o list of usernames in /var/smb/smbpasswd (if any)
+#	o last 50 lines of /var/adm/messages
+#	o last 50 lines of smb/server SMF log
+#
+#======================================================================
+
+gendiag_version=2.01
+nsswitch_conf=/etc/nsswitch.conf
+resolv_conf=/etc/resolv.conf
+krb_conf=/etc/krb5/krb5.conf
+pam_conf=/etc/pam.conf
+smbpasswd=/var/smb/smbpasswd
+system_log=/var/adm/messages
+smbsvc=smb/server
+
+head1=0
+
+header1_echo()
+{
+	let "head1 += 1"
+	echo
+	echo "+=========================================="
+	echo "| $head1) $1"
+	echo "+=========================================="
+	head2=1
+}
+
+header2_echo()
+{
+	echo
+	echo "| $head1.$head2) $1"
+	echo "+------------------------------------------"
+	let "head2 += 1"
+}
+
+#
+# System
+#
+echo "Version $gendiag_version"
+date
+header1_echo "OS and Hardware"
+uname -a
+
+header1_echo "NS Switch ($nsswitch_conf)"
+cat $nsswitch_conf
+
+header1_echo "Resolver ($resolv_conf)"
+cat $resolv_conf
+
+header1_echo "Kerberos ($krb_conf)"
+cat $krb_conf
+
+header1_echo "Network and routing information"
+ifconfig -a
+echo
+netstat -rn
+
+#
+# ZFS
+#
+header1_echo "ZFS"
+
+header2_echo "List of zpools available"
+zpool list
+
+header2_echo "List of datasets available"
+zfs list
+
+header2_echo "Zpools properties"
+for zpl in `zpool list -H -o name`; do
+        zpool get all $zpl
+        echo "----------------------------------------------------"
+done
+echo
+
+header2_echo "Datasets properties"
+for zfs in `zfs list -H -o name`; do
+        zfs get all $zfs
+        echo "----------------------------------------------------"
+done
+
+#
+# idmap
+#
+header1_echo "idmap"
+
+header2_echo "Properties"
+svccfg -s idmap listprop
+
+header2_echo "name-based mapping rules"
+idmap list
+
+header2_echo "mappings cache"
+idmap dump
+echo "-----------------------"
+idmap dump -n
+
+#
+# Shares
+#
+header1_echo "Share Information"
+header2_echo "zfs get share command"
+zfs get share
+
+header2_echo "share command"
+# sharemgr show -vp
+share -A
+
+header2_echo "ACL of shared directories"
+# shrcnt=`sharemgr show -P smb | grep / | wc -l`
+# if [ $shrcnt != 0 ] ; then
+#	sharemgr show -P smb | grep / | xargs /usr/bin/ls -Vd
+# fi
+shrcnt=`share -F smb -A | grep / | wc -l`
+if [ $shrcnt != 0 ] ; then
+	share -F smb -A |
+	    while read line
+	    do
+		p1=${line#*	}
+		p2=${p1%	*}
+		/usr/bin/ls -Vd ${p2%	*}
+	    done
+fi
+
+#
+# CIFS Server
+#
+header1_echo "CIFS"
+
+header2_echo "Status"
+svcs -l $smbsvc
+echo
+modinfo | grep smbsrv
+echo
+svcs -xv $smbsvc
+
+header2_echo "Package Info"
+pkginfo | grep SUNWsmb
+
+header2_echo "Properties: sharectl"
+sharectl get smb
+header2_echo "Properties: smb"
+svccfg -s smb listprop
+header2_echo "Properties: smb/server"
+svccfg -s smb/server listprop
+header2_echo "Properties: smb/client"
+svccfg -s smb/client listprop
+echo
+
+# smbadm list
+smbadm show-domains
+echo
+
+header2_echo "SMB local groups"
+# smbadm show -mp
+smbadm show-groups -mp
+
+header2_echo "SMB PAM module"
+grep pam_smb_passwd $pam_conf
+echo
+
+header2_echo "SMB local password file"
+awk -F":" '{ print $1 }' $smbpasswd
+
+#
+# System log
+#
+header1_echo "System log (last 50 lines)"
+tail -50 $system_log
+
+header1_echo "smb/server SMF log (last 50 lines)"
+smf_log=`svcs -l smb/server | grep logfile | awk -F" " '{ print $2 }'`
+tail -50 $smf_log

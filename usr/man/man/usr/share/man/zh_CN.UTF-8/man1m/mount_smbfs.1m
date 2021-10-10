@@ -1,0 +1,553 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright 1994-2008 The FreeBSD Project. 保留所有权利。
+.\" 允许在满足以下条件的情况下以经修改或未经修改的源代码形式和二进制形式进行再分发和使用： 1. 源代码的再分发必须保留上述版权声明、此条件列表和以下免责声明。 2. 二进制形式的再分发，必须在随同提供的文档和/或其他材料中，复制上述的版权声明、这几条许可条件细目，和下面的免责声明。本软件由作者和提供者按"原样"提供，不提供任何明确或隐含的担保，包括但不限于对适销性和对特殊用途的适用性的隐含担保。在任何情况下，对于因使用此软件而以任何方式产生的任何直接、间接、偶发、特殊、惩罚性或后果性的损害（包括但不限于购买替代商品及服务、无法使用、数据丢失、盈利损失或业务中断），不管损害是如何发生的，基于何种责任推断，是否属于合同范畴、严格赔偿责任或民事侵权行为（包括疏忽和其他原因），作者或提供者均不承担任何责任，即使之前已被告知可能会发生此类损害。
+.TH mount_smbfs 1M "2011 年 4 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+mount_smbfs, umount_smbfs \- 在 SMB 文件服务器上挂载和取消挂载共享资源
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR]
+     [\fB-O\fR] \fIresource\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR]
+     [\fB-O\fR] \fImount-point\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/mount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] [\fB-o\fR \fIname\fR\fB=\fR\fIvalue\fR] 
+     [\fB-O\fR] \fIresource\fR \fImount-point\fR
+.fi
+
+.LP
+.nf
+\fB/usr/sbin/umount\fR [\fB-F smbfs\fR] [\fIgeneric-options\fR] \fImount-point\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBmount\fR 实用程序将一个指定资源 \fIresource\fR 关联到路径名称位置 \fImount-point\fR 处的文件系统结构，该位置必须已经存在。
+.sp
+.LP
+如果 \fImount-point\fR 在 \fBmount\fR 操作之前具有任何内容，这些内容将保持隐藏状态，直至取消资源的挂载。具有 \fBSYS_MOUNT\fR 特权的授权用户可执行 \fBmount\fR 操作。此外，用户可在自己拥有的目录上执行 SMBFS 挂载操作。
+.sp
+.LP
+如果资源列在 \fB/etc/vfstab\fR 文件中，则可以指定 \fIresource\fR 或 \fImount-point\fR，因为 \fBmount\fR 命令会向 \fB/etc/vfstab\fR 文件查询更多信息。如果省略 \fB-F\fR 选项，\fBmount\fR 会从 \fB/etc/vfstab\fR 文件所含的项中提取文件系统类型。
+.sp
+.LP
+如果资源没有列在 \fB/etc/vfstab\fR 文件中，命令行必须同时指定 \fIresource\fR 和 \fImount-point\fR。
+.sp
+.LP
+\fBumount\fR 实用程序会从文件系统结构中分离挂载的文件系统。具有 \fBSYS_MOUNT\fR 特权的授权用户可执行 \fBumount\fR 操作。此外，用户可在自己拥有的目录上执行 SMBFS 取消挂载操作。
+.sp
+.LP
+必须启用 \fBnetwork/smb/client\fR 服务才能成功挂载 SMB 共享。缺省情况下将启用该服务。
+.sp
+.LP
+要启用该服务，请输入以下 \fBsvcadm\fR(1M) 命令：
+.sp
+.in +2
+.nf
+# \fBsvcadm enable network/smb/client\fR
+.fi
+.in -2
+.sp
+
+.SS "操作数"
+.sp
+.LP
+\fBmount\fR 命令支持下列操作数：：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIresource\fR //\fIserver\fR/\fIshare\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.LP
+要挂载的资源的名称。除了其名称以外，还可以指定以下有关资源的信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIserver\fR 是远程计算机的 DNS 或 NetBIOS 名称。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIshare\fR 是远程服务器上的资源名称。
+.RE
+也可以指定用户帐户。请参见"选项"部分。
+.sp
+\fBmount\fR 命令可以从用户帐户的标准输入中读取口令。如果未提供口令，\fBmount\fR 将首先尝试使用 \fBsmbadm add-key\fR 命令存储的口令（如果有）。如果该口令无法通过身份验证，\fBmount_smbfs\fR 命令将提示您输入一个口令（如果标准输入是 TTY）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fImount-point\fR\fR
+.ad
+.sp .6
+.RS 4n
+要挂载或取消挂载的文件系统所在位置的路径。\fBmount\fR 命令在 \fB/etc/mnttab\fR 文件中维护一个已挂载文件系统的表。请参见 \fBmnttab\fR(4) 手册页。
+.RE
+
+.SH 选项
+.sp
+.LP
+有关支持的 \fIgeneric-options\fR 列表，请参见 \fBmount\fR(1M) 手册页。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIname\fR\fB=\fR\fIvalue 或\fR\fR
+.ad
+.br
+.na
+\fB\fB-o\fR \fIname\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置文件系统特定的属性。可以将多个"名称-值"对指定为逗号分隔的对列表。列表中不允许有空格。这些属性如下所示：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacdirmax\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+目录更新后保留高速缓存的属性不超过 \fIn\fR 秒。缺省值为 \fB60\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacdirmin\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+目录更新后将高速缓存的属性至少保留 \fIn\fR 秒。缺省值为 \fB30\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacregmax\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+文件修改后保留高速缓存的属性不超过 \fIn\fR 秒。缺省值为 \fB60\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBacregmin\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+文件修改后将高速缓存的属性至少保留 \fIn\fR 秒。缺省值为 \fB3\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactimeo\fR=\fIn\fR\fR
+.ad
+.sp .6
+.RS 4n
+将正规文件与目录的最小和最大时间设置为 \fIn\fR 秒。有关将此选项设置为 \fB0\fR 的效果的说明，请参见下文的"文件属性"部分。
+.RE
+
+有关在 \fBmount\fR 命令行上如何解析 \fBacdirmax\fR、\fBacdirmin\fR、\fBacregmax\fR、\fBacregmin\fR 和 \fBactimeo\fR 的说明，请参见下面的"指定属性高速缓存持续时间选项的值"。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdirperms=\fR\fIoctaltriplet\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要分配给目录的权限。必须将值指定为三个一组的八进制数，例如 \fB755\fR。目录模式的缺省值来自 \fBfileperms\fR 设置，并且添加了执行权限，其中 \fBfileperms\fR 具有读取权限。
+.sp
+请注意，这些权限与 SMB 服务器授予的权限无关。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdomain\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用户名定义所在的工作组或 Windows 域的名称。如果未指定域名，将使用缺省系统的 SMB 域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfileperms=\fR\fIoctaltriplet\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定要分配给文件的权限。必须将值指定为三个一组的八进制数，例如 \fB644\fR。缺省值为 \fB700\fR。
+.sp
+请注意，这些权限与 SMB 服务器授予的权限无关。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgid=\fR\fIgroupid\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定的组 ID 分配给文件。缺省值是在其中挂载了卷的目录的组 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBintr\fR|\fBnointr\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用或禁用以下行为：在用户中断调用线程时（例如，当操作正在执行时按 Ctrl-C）取消 \fBsmbfs\fR(7FS) I/O 操作。缺省值为 \fBintr\fR（启用中断），因此通常允许取消。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoac\fR\fR
+.ad
+.sp .6
+.RS 4n
+抑制属性高速缓存。本地 \fBstat\fR(2) 调用始终会从 SMB 服务器请求属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoprompt\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载共享时抑制口令提示。该属性可用于允许对共享进行匿名访问。匿名访问不需要口令。
+.sp
+如果需要口令，并且设置了 \fBnoprompt\fR 属性，同时未通过 \fBsmbadm add-key\fR 命令存储口令，\fBmount\fR 操作将失败。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBretry_count=\fR\fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定在将连接标记为中断之前 SMBFS 重新尝试的次数。缺省情况下将进行 4 次尝试。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtimeout=\fR\fIseconds\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定 SMB 请求超时值。缺省情况下，超时值为 15 秒。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuid=\fR\fIuserid\fR\fR
+.ad
+.sp .6
+.RS 4n
+分配指定的用户 ID 文件。缺省值是在其中挂载了卷的目录的所有者 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIuser\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定远程用户名。如果省略 user，则使用登录的用户 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxattr\fR|\fBnoxattr\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用（或禁用）此挂载点中的 Solaris 扩展属性。此选项缺省为 \fBxattr\fR（启用扩展属性），但请注意：如果 SMB 服务器不支持 SMB"命名流"，\fBsmbfs\fR(7FS) 会将此选项强制设置为 \fBnoxattr\fR。如果某个挂载设置了 \fBnoxattr\fR 选项，使用 Solaris 扩展属性的尝试将失败，并生成 EINVAL 错误。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.sp .6
+.RS 4n
+覆盖挂载。允许文件系统挂载到现有的挂载点之上，使得底层文件系统不可访问。如果在未设置此标志的情况下在之前已存在的挂载点上尝试挂载，挂载将失败，并生成"设备忙"错误。
+.RE
+
+.SH 文件属性
+.sp
+.LP
+为提高 \fBsmbfs\fR 的性能，文件属性会进行高速缓存。只要发生任何本地修改，都会更新文件修改时间。但是，文件访问时间在高速缓存刷新之前可能会暂时过期。
+.sp
+.LP
+属性高速缓存将文件属性保留在客户机上。系统会为文件的属性分配一个刷新时间。如果在刷新时间之前修改了文件，刷新时间会按照自上次修改以来的时间进行延长（假设最近更改的文件可能很快会发生更改）。正规文件和目录都有最小和最大刷新时间延长期。设置 \fBactimeo=\fR\fIn\fR 会将正规文件和目录的刷新时间设置为 \fIn\fR 秒。
+.sp
+.LP
+设置 \fBactimeo=\fR\fIn\fR 会禁用客户机上的属性高速缓存。这意味着对属性的每个引用将直接由服务器提供。虽然这可确保客户机始终可从服务器获得最新的文件属性，但额外的等待时间、网络负载和服务器负载会对性能产生不利影响。
+.sp
+.LP
+设置 \fBnoac\fR 选项也会禁用属性高速缓存。当增强了 \fBsmbfs\fR 以支持写高速缓存时，此选项会对禁用写高速缓存产生进一步影响。
+.SH 指定属性高速缓存持续时间选项的值
+.sp
+.LP
+属性高速缓存持续时间选项有 \fBacdirmax\fR、\fBacdirmin\fR、\fBacregmax\fR、\fBacregmin\fR 和 \fBactimeo\fR，如上面的\fB\fR"选项"部分所述。为 \fBactimeo\fR 指定的值会设置除了在 \fBmount\fR 命令行上 \fBactimeo\fR 之后指定的任何属性高速缓存持续时间选项以外的所有这些选项的值。例如，请考虑以下命令：
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o acdirmax=10,actimeo=1000 \e\fR
+     \fB//server/share  /mountpoint\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+因为 \fBactimeo\fR 是命令行中最后一个持续时间选项，所以它的值 (\fB1000\fR) 将成为所有持续时间选项的设置，包括 \fBacdirmax\fR。现在请考虑：
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o actimeo=1000,acdirmax=10 \e\fR
+     \fB//server/share  /mountpoint\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+因为 \fBacdirmax\fR 选项在命令行上位于 \fBactimeo\fR 之后，所以它被赋予指定值 (\fB10\fR)。其余的持续时间选项设置为 \fBactimeo\fR 的值 (\fB1000\fR)。
+.SH 示例
+.LP
+\fB示例 1 \fR挂载 SMBFS 共享
+.sp
+.LP
+以下示例显示如何从本地 \fB/mnt\fR 挂载点上 \fBSALES\fR 工作组中的 \fBnano\fR 服务器挂载 \fB/tmp\fR 共享。您必须提供 \fBroot\fR 用户的口令才能成功执行挂载操作。
+
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o user=root,domain=SALES //nano.sfbay/tmp /mnt\fR
+Password:
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR验证 SMBFS 文件系统已挂载
+.sp
+.LP
+以下示例显示如何从本地 \fB/mnt\fR 挂载点上的 \fBnano\fR 服务器挂载 \fB/tmp\fR 共享。您必须提供 \fBroot\fR 用户的口令才能成功执行挂载操作。
+
+.sp
+.in +2
+.nf
+# \fBmount -F smbfs -o user=root //nano.sfbay/tmp /mnt\fR
+Password:
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可通过下列方式验证共享是否已挂载：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+查看 \fB/etc/mnttab\fR 文件中的文件系统项。
+.sp
+.in +2
+.nf
+# \fBgrep mnt /etc/mnttab\fR
+//nano.sfbay/tmp   /mnt    smbfs   dev=4900000     1177097833
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+查看 \fBmount\fR 命令的输出。
+.sp
+.in +2
+.nf
+# \fBmount | grep mnt\fR
+mnt on //nano.sfbay/tmp read/write/setuid/devices/dev=4900000 on
+Tue Apr 20 13:37:13 2010
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+查看 \fBdf /mnt\fR 命令的输出。
+.sp
+.in +2
+.nf
+# \fBdf /mnt\fR
+/mnt            (//nano.sfbay/tmp): 3635872 blocks     -1 files
+.fi
+.in -2
+.sp
+
+.RE
+.sp
+.LP
+通过查看 \fBdf -k /mnt\fR 命令的输出获取有关已挂载共享的信息。
+
+.sp
+.in +2
+.nf
+# \fBdf -k /mnt\fR
+Filesystem            kbytes    used   avail capacity  Mounted on
+//nano.sfbay/tmp
+                      1882384   64448 1817936     4%    /mnt
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR取消挂载 SMB 共享
+.sp
+.LP
+此示例假设 SMB 共享已挂载到 \fB/mnt\fR 挂载点。以下命令行将从挂载点取消共享的挂载。
+
+.sp
+.in +2
+.nf
+# \fBumount /mnt\fR
+.fi
+.in -2
+.sp
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/mnttab\fR\fR
+.ad
+.sp .6
+.RS 4n
+其中列出了已挂载的文件系统的表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/fstypes\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省的分布式文件系统类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/vfstab\fR\fR
+.ad
+.sp .6
+.RS 4n
+自动挂载资源的表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/smb/smbfspasswd\fR\fR
+.ad
+.sp .6
+.RS 4n
+为 Solaris SMB 客户机存储每用户设置。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5) 手册页：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/ntfsprogs
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBmount\fR(1M)、\fBmountall\fR(1M)、\fBsmbadm\fR(1M)、\fBsvcadm\fR(1M)、\fBacl\fR(2)、\fBfcntl\fR(2)、\fBlink\fR(2)、\fBmknod\fR(2)、\fBmount\fR(2)、\fBstat\fR(2)、\fBsymlink\fR(2)、\fBumount\fR(2)、\fBmnttab\fR(4)、\fBsmb\fR(4)、\fBvfstab\fR(4)、\fBattributes\fR(5)、\fBpcfs\fR(7FS)、\fBsmbfs\fR(7FS)
+.SH 附注
+.sp
+.LP
+Solaris SMB 客户机会始终尝试使用 \fBgethostbyname()\fR 来解析主机名。如果不能解析主机名，SMB 客户机使用 NetBIOS 名称解析 (NetBIOS name resolution, NBNS)。Solaris SMB 客户机允许使用 NBNS，使 Windows 环境中的 Solaris SMB 客户机无需进行其他配置即可工作。
+.sp
+.LP
+如果要在其上挂载文件系统的目录是一个符号链接，文件系统将挂载到符号链接所指的目录，而不会挂载到符号链接本身。

@@ -1,0 +1,758 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH fmev_shdl_init 3FM "16 Aug 2011" "SunOS 5.11" "Fault Management Events Library Functions"
+.SH NAME
+fmev_shdl_init, fmev_shdl_fini, fmev_shdl_subscribe, fmev_shdl_unsubscribe, fmev_shdl_getauthority, fmev_errno, fmev_strerror, fmev_attr_list, fmev_class, fmev_timespec, fmev_time_sec, fmev_time_nsec, fmev_localtime, fmev_hold, fmev_hrtime, fmev_rele, fmev_dup, fmev_ev2shdl, fmev_shdl_alloc, fmev_shdl_zalloc, fmev_shdl_free, fmev_shdl_strdup, fmev_shdl_strfree, fmev_shdl_nvl2str, fmev_shdlctl_serialize, fmev_shdlctl_thrattr, fmev_shdlctl_sigmask, fmev_shdlctl_thrsetup, fmev_shdlctl_thrcreate \- subscription to fault management events from an external process
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR... ] \fIfile\fR... \(mi\fBL/usr/lib/fm\fR \(mi\fBlfmevent\fR \(mi\fBlnvpair\fR [ \fIlibrary\fR... ]
+#include <fm/libfmevent.h>
+#include <libnvpair.h>
+
+typedef enum fmev_err_t;
+extern fmev_err_t fmev_errno;
+const char *fmev_strerror(fmev_err_t \fIerr\fR);
+
+typedef struct fmev_shdl *fmev_shdl_t;
+
+typedef void fmev_cbfunc_t(fmev_t, const char *, nvlist_t *, void *);
+.fi
+
+.LP
+.nf
+fmev_shdl_t fmev_shdl_init(uint32_t \fIapi_version\fR, 
+     void *(*alloc)(size_t), void *(*zalloc)(size_t),
+     void (*free)(void *, size_t));
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdl_fini(fmev_shdl_t \fIhdl\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdl_subscribe(fmev_shdl_t \fIhdl\fR, const char *\fIclasspat\fR,
+     fmev_cbfunc_t \fIcallback\fR, void *\fIcookie\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdl_unsubscribe(fmev_shdl_t \fIhdl\fR,
+     const char *\fIclasspat\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdl_getauthority(fmev_shdl_t \fIhdl\fR, nvlist_t **\fIauthp\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdlctl_serialize(fmev_shdl_t \fIhdl\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdlctl_thrattr(fmev_shdl_t \fIhdl\fR, pthread_attr_t *\fIattr\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdlctl_sigmask(fmev_shdl_t \fIhdl\fR, sigset_t *\fIset\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdlctl_thrsetup(fmev_shdl_t \fIhdl\fR,
+     door_xcreate_thrsetup_func_t *\fIsetupfunc\fR, void *\fIcookie\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_shdlctl_thrcreate(fmev_shdl_t \fIhdl\fR,
+     door_xcreate_server_func_t *\fIcreatefunc\fR, void *\fIcookie\fR);
+.fi
+
+.LP
+.nf
+typedef struct fmev *fmev_t;
+.fi
+
+.LP
+.nf
+nvlist_t *fmev_attr_list(fmev_t \fIev\fR)
+.fi
+
+.LP
+.nf
+const char *fmev_class(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+fmev_err_t fmev_timespec(fmev_t \fIev\fR, struct timespec *\fIres\fR);
+.fi
+
+.LP
+.nf
+uint64_t fmev_time_sec(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+uint64_t fmev_time_nsec(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+struct tm *fmev_localtime(fmev_t \fIev\fR, struct tm *\fIres\fR);
+.fi
+
+.LP
+.nf
+hrtime_t fmev_hrtime(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+void fmev_hold(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+void fmev_rele(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+fmev_t fmev_dup(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+fmev_shdl_t fmev_ev2shdl(fmev_t \fIev\fR);
+.fi
+
+.LP
+.nf
+void *fmev_shdl_alloc(fmev_shdl_t \fIhdl\fR, size_t \fIsz\fR);
+.fi
+
+.LP
+.nf
+void *fmev_shdl_zalloc(fmev_shdl_t \fIhdl\fR, size_t \fIsz\fR);
+.fi
+
+.LP
+.nf
+void fmev_shdl_free(fmev_shdl_t \fIhdl\fR, void *\fIbuf\fR, size_t \fIsz\fR);
+.fi
+
+.LP
+.nf
+char *fmev_shdl_strdup(fmev_shdl_t \fIhdl\fR, char *\fIstr\fR);
+.fi
+
+.LP
+.nf
+void fmev_shdl_strfree(fmev_shdl_t \fIhdl\fR, char *\fIstr\fR);
+.fi
+
+.LP
+.nf
+char *fmev_shdl_nvl2str(fmev_shdl_t \fIhdl\fR, nvlist_t *\fIfmri\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The Solaris fault management daemon (fmd) is the central point in Solaris for fault management. It receives fault management protocol events from various sources and publishes additional protocol events such as to describe a diagnosis it has arrived at or a subsequent repair event. The event protocol is specified in the Sun Fault Management Event Protocol Specification. The interfaces described here allow an external process to subscribe to protocol events. See the Fault Management Daemon Programmer's Reference Guide for additional information on fmd.
+.sp
+.LP
+The fmd module API (not a Committed interface) allows plugin modules to load within the fmd process, subscribe to events of interest, and participate in various diagnosis and response activities. Of those modules, some are notification agents and will subscribe to events describing diagnoses and their subsequent lifecycle and render these to console/syslog (for the \fBsyslog-msgs\fR agent) and via SNMP trap and browsable MIB (for the \fBsnmp-trapgen\fR module and the corresponding dlmod for the SNMP daemon). It has not been possible to subscribe to protocol events outside of the context of an fmd plugin. The \fBlibfmevent\fR interface provides this external subscription mechanism. External subscribers may receive protocol events as fmd modules do, but they cannot participate in other aspects of the fmd module API such as diagnosis. External subscribers are therefore suitable as notification agents and for transporting fault management events.
+.SS "Fault Management Protocol Events"
+.sp
+.LP
+This protocol is defined in the Sun Fault Management Event Protocol Specification. Note that while the API described on this manual page are Committed, the protocol events themselves (in class names and all event payload) are not Committed along with this API. The protocol specification document describes the commitment level of individual event classes and their payload content. In broad terms, the list.* events are Committed in most of their content and semantics while events of other classes are generally Uncommitted with a few exceptions.
+.sp
+.LP
+All protocol events include an identifying class string, with the hierarchies defined in the protocol document and individual events registered in the Events Registry. The \fBlibfmevent\fR mechanism will permit subscription to events with Category 1 class of "list" and "swevent", that is, to classes matching patterns "list.*" and "swevent.*".
+.sp
+.LP
+All protocol events consist of a number of (name, datatype, value) tuples ("nvpairs"). Depending on the event class various nvpairs are required and have well-defined meanings. In Solaris fmd protocol events are represented as name-value lists using the \fBlibnvpair\fR(3LIB) interfaces.
+.SS "API Overview"
+.sp
+.LP
+The API is simple to use in the common case (see Examples), but provides substantial control to cater for more-complex scenarios.
+.sp
+.LP
+We obtain an opaque subscription handle using \fBfmev_shdl_init()\fR, quoting the ABI version and optionally nominating \fBalloc()\fR, \fBzalloc()\fR and \fBfree()\fR functions (the defaults use the \fBumem\fR family). More than one handle may be opened if desired. Each handle opened establishes a communication channel with fmd, the implementation of which is opaque to the \fBlibfmevent\fR mechanism.
+.sp
+.LP
+On a handle we may establish one or more subscriptions using \fBfmev_shdl_subscribe()\fR. Events of interest are specified using a simple wildcarded pattern which is matched against the event class of incoming events. For each match that is made a callback is performed to a function we associate with the subscription, passing a nominated cookie to that function. Subscriptions may be dropped using \fBfmev_shdl_unsubscribe()\fR quoting exactly the same class or class pattern as was used to establish the subscription.
+.sp
+.LP
+Each call to \fBfmev_shdl_subscribe()\fR creates a single thread dedicated to serving callback requests arising from this subscription.
+.sp
+.LP
+An event callback handler has as arguments an opaque event handle, the event class, the event nvlist, and the cookie it was registered with in \fBfmev_shdl_subscribe()\fR. The timestamp for when the event was generated (not when it was received) is available as a \fBstruct timespec\fR with \fBfmev_timespec()\fR, or more directly with \fBfmev_time_sec()\fR and \fBfmev_time_nsec()\fR; an event handle and \fBstruct tm\fR can also be passed to \fBfmev_localtime()\fR to fill the \fBstruct tm\fR. A high-resolution timestamp for an event may be retrieved using \fBfmev_hrtime()\fR; this value has the semantics described in \fBgethrtime\fR(3C).
+.sp
+.LP
+The event handle, class string pointer, and \fBnvlist_t\fR pointer passed as arguments to a callback are valid for the duration of the callback. If the application wants to continue to process the event beyond the duration of the callback then it can hold the event with \fBfmev_hold()\fR, and later release it with \fBfmev_rele()\fR. When the reference count drops to zero the event is freed.
+.SS "Error Handling"
+.sp
+.LP
+In \fB<libfmevent.h>\fR an enumeration \fBfmev_err_t\fR of error types is defined. To render an error message string from an \fBfmev_err_t\fR use \fBfmev_strerror()\fR. An \fBfmev_errno\fR is defined which returns the error number for the last failed \fBlibfmevent\fR API call made by the current thread. You may not assign to \fBfmev_errno\fR.
+.sp
+.LP
+If a function returns type \fBfmev_err_t\fR, then success is indicated by \fBFMEV_SUCCESS\fR (or \fBFMEV_OK\fR as an alias); on failure a \fBFMEVERR_\fR* value is returned (see \fB<fm/libfmevent.h>\fR).
+.sp
+.LP
+If a function returns a pointer type then failure is indicated by a \fINULL\fR return, and \fBfmev_errno\fR will record the error type.
+.SS "Subscription Handles"
+.sp
+.LP
+A subscription handle is required in order to establish and manage subscriptions. This handle represents the abstract communication mechanism between the application and the fault management daemon running in the current zone.
+.sp
+.LP
+A subscription handle is represented by the opaque \fBfmev_shdl_t\fR datatype. A handle is initialized with \fBfmev_shdl_init()\fR and quoted to subsequent API members.
+.sp
+.LP
+To simplify usage of the API, subscription attributes for all subscriptions established on a handle are a property of the handle itself ; they cannot be varied per-subscription. In such use cases multiple handles will need to be used.
+.SS "\fBlibfmevent\fR ABI version"
+.sp
+.LP
+The first argument to \fBfmev_shdl_init()\fR indicates the \fBlibfmevent\fR ABI version with which the handle is being opened. Specify either \fBLIBFMEVENT_VERSION_LATEST\fR to indicate the most recent version available at compile time or \fBLIBFMEVENT_VERSION_1\fR (_2, etc. as the interface evolves) for an explicit choice.
+.sp
+.LP
+Interfaces present in an earlier version of the interface will continue to be present with the same or compatible semantics in all subsequent versions. When additional interfaces and functionality are introduced the ABI version will be incremented. When an ABI version is chosen in \fBfmev_shdl_init()\fR, only interfaces introduced in or before that version will be available to the application via that handle. Attempts to use later API members will fail with \fBFMEVERR_VERSION_MISMATCH\fR.
+.sp
+.LP
+This manual page describes \fBLIBFMEVENT_VERSION_1\fR.
+.SS "Privileges"
+.sp
+.LP
+The \fBlibfmevent\fR API is not least-privilege aware; you need to have all privileges to call \fBfmev_shdl_init()\fR. Once a handle has been initialized with \fBfmev_shdl_init()\fR a process can drop privileges down to the basic set and continue to use \fBfmev_shdl_subscribe()\fR and other \fBlibfmevent\fR interfaces on that handle.
+.SS "Underlying Event Transport"
+.sp
+.LP
+The implementation of the event transport by which events are published from the fault manager and multiplexed out to \fBlibfmevent\fR consumers is strictly private. It is subject to change at any time, and you should not encode any dependency on the underlying mechanism into your application. Use only the API described on this manual page and in \fB<libfmevent.h>\fR.
+.sp
+.LP
+The underlying transport mechanism is guaranteed to have the property that a subscriber may attach to it even before the fault manager is running. If the fault manager starts first then any events published before the first consumer subscribes will wait in the transport until a consumer appears.
+.sp
+.LP
+The underlying transport will also have some maximum depth to the queue of events pending delivery. This may be hit if there are no consumers, or if consumers are not processing events quickly enough. In practice the rate of events is small. When this maximum depth is reached additional events will be dropped.
+.sp
+.LP
+The underlying transport has no concept of priority delivery; all events are treated equally.
+.SS "Subscription Handle Initialization"
+.sp
+.LP
+Obtain a new subscription handle with \fBfmev_shdl_init()\fR.  The first argument is the \fBlibfmevent\fR ABI version to be used (see above).  The remaining three arguments should be all \fINULL\fR to leave the library to use its default allocator functions (the \fBlibumem\fR family), or all non-\fINULL\fR to appoint wrappers to custom allocation functions if required.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_VERSION_MISMATCH\fR\fR
+.ad
+.sp .6
+.RS 4n
+The library does not support the version requested.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_ALLOC\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred in trying to allocate data structures.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.sp .6
+.RS 4n
+The \fBalloc()\fR, \fBzalloc()\fR, or \fBfree()\fR arguments must either be all \fINULL\fR or all non-\fINULL\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_NOPRIV\fR\fR
+.ad
+.sp .6
+.RS 4n
+Insufficient privilege to perform operation. In version 1 root privilege is required.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_INTERNAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+Internal library error.
+.RE
+
+.SS "Fault Manager Authority Information"
+.sp
+.LP
+Once a subscription handle has been initialized, authority information for the fault manager to which the client is connected may be retrieved with \fBfmev_shdl_getauthority()\fR. The caller is responsible for freeing the returned nvlist using \fBnvlist_free\fR(3NVPAIR).
+.SS "Subscription Handle Finalization"
+.sp
+.LP
+Close a subscription handle with \fBfmev_shdl_fini()\fR. This call must not be performed from within the context of an event callback handler, else it will fail with \fBFMEVERR_API\fR.
+.sp
+.LP
+The \fBfmev_shdl_fini()\fR call will remove all active subscriptions on the handle and free resources used in managing the handle.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.sp .6
+.RS 4n
+May not be called from event delivery context for a subscription on the same handle.
+.RE
+
+.SS "Subscribing To Events"
+.sp
+.LP
+To establish a new subscription on a handle, use \fBfmev_shdl_subscribe()\fR.  Besides the handle argument you provide the class or class pattern to subscribe to (the latter permitting simple wildcarding using '*'), a callback function pointer for a function to be called for all matching events, and a cookie to pass to that callback function.
+.sp
+.LP
+The class pattern must match events per the fault management protocol specification, such as "list.suspect" or "list.*".  Patterns that do not map onto existing events will not be rejected - they just won't result in any callbacks.
+.sp
+.LP
+A callback function has type \fBfmev_cbfunc_t\fR.  The first argument is an opaque event handle for use in event access functions described below.  The second argument is the event class string, and the third argument is the event nvlist; these could be retrieved using \fBfmev_class()\fR and \fBfmev_attr_list()\fR on the event handle, but they are supplied as arguments for convenience. The final argument is the cookie requested when the subscription was established in \fBfmev_shdl_subscribe()\fR.
+.sp
+.LP
+Each call to \fBfmev_shdl_subscribe()\fR opens a new door into the process that the kernel uses for event delivery.  Each subscription therefore uses one file descriptor in the process.
+.sp
+.LP
+See below for more detail on event callback context.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.sp .6
+.RS 4n
+Class pattern is \fINULL\fR or callback function is \fINULL\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_BADCLASS\fR\fR
+.ad
+.sp .6
+.RS 4n
+Class pattern is the empty string, or exceeds the maximum length of \fBFMEV_MAX_CLASS\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_ALLOC\fR\fR
+.ad
+.sp .6
+.RS 4n
+An attempt to \fBfmev_shdl_zalloc()\fR additional memory failed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_DUPLICATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+Duplicate subscription request. Only one subscription for a given class pattern may exist on a handle.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_MAX_SUBSCRIBERS\fR\fR
+.ad
+.sp .6
+.RS 4n
+A system-imposed limit on the maximum number of subscribers to the underlying transport mechanism has been reached.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_INTERNAL\fR\fR
+.ad
+.sp .6
+.RS 4n
+An unknown error occurred in trying to establish the subscription.
+.RE
+
+.SS "Unsubscribing"
+.sp
+.LP
+An unsubscribe request using \fBfmev_shdl_unsubscribe()\fR must exactly match a previous subscription request or it will fail with \fBFMEVERR_NOMATCH\fR.  The request stops further callbacks for this subscription, waits for any existing active callbacks to complete, and drops the subscription.
+.sp
+.LP
+Do not call \fBfmev_shdl_unsubscribe\fR from event callback context, else it will fail with \fBFMEVERR_API\fR.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.sp .6
+.RS 4n
+A \fINULL\fR pattern was specified, or the call was attempted from callback context.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_NOMATCH\fR\fR
+.ad
+.sp .6
+.RS 4n
+The pattern provided does not match any open subscription. The pattern must be an exact match.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_BADCLASS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The class pattern is the empty string or exceeds \fBFMEV_MAX_CLASS\fR.
+.RE
+
+.SS "Event Callback Context"
+.sp
+.LP
+Event callback context is defined as the duration of a callback event, from the moment we enter the registered callback function to the moment it returns. There are a few restrictions on actions that may be performed from callback context:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You can perform long-running actions, but this thread will not be available to service other event deliveries until you return.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You must not cause the current thread to exit.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You must not call either \fBfmev_shdl_unsubscribe()\fR or \fBfmev_shdl_fini()\fR for the subscription handle on which this callback has been made.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+You can invoke \fBfork()\fR, \fBpopen()\fR, etc.
+.RE
+.SS "Event Handles"
+.sp
+.LP
+A callback receives an \fBfmev_t\fR as a handle on the associated event. The callback may use the access functions described below to retrieve various event attributes.
+.sp
+.LP
+By default, an event handle \fBfmev_t\fR is valid for the duration of the callback context. You cannot access the event outside of callback context.
+.sp
+.LP
+If you need to continue to work with an event beyond the initial callback context in which it is received, you may place a "hold" on the event with \fBfmev_hold()\fR. When finished with the event, release it with \fBfmev_rele()\fR. These calls increment and decrement a reference count on the event; when it drops to zero the event is freed. On initial entry to a callback the reference count is 1, and this is always decremented when the callback returns.
+.sp
+.LP
+An alternative to \fBfmev_hold()\fR is \fBfmev_dup()\fR, which duplicates the event and returns a new event handle with a reference count of 1. When \fBfmev_rele()\fR is applied to the new handle and reduces the reference count to 0, the event is freed. The advantage of \fBfmev_dup()\fR is that it allocates new memory to hold the event rather than continuing to hold a buffer provided by the underlying delivery mechanism. If your operation is going to be long-running, you may want to use \fBfmev_dup()\fR to avoid starving the underlying mechanism of event buffers.
+.sp
+.LP
+Given an \fBfmev_t\fR, a callback function can use \fBfmev_ev2shdl()\fR to retrieve the subscription handle on which the subscription was made that resulted in this event delivery.
+.sp
+.LP
+The \fBfmev_hold()\fR and \fBfmev_rele()\fR functions always succeed.
+.sp
+.LP
+The \fBfmev_dup()\fR function may fail and return \fINULL\fR with \fBfmev_errno\fR of:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.RS 17n
+.rt  
+A \fINULL\fR event handle was passed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_ALLOC\fR\fR
+.ad
+.RS 17n
+.rt  
+The \fBfmev_shdl_alloc()\fR call failed.
+.RE
+
+.SS "Event Class"
+.sp
+.LP
+A delivery callback already receives the event class as an argument, so \fBfmev_class()\fR will only be of use outside of callback context (that is, for an event that was held or duped in callback context and is now being processed in an asynchronous handler). This is a convenience function that returns the same result as accessing the event attributes with \fBfmev_attr_list()\fR and using \fBnvlist_lookup_string\fR(3NVPAIR) to lookup a string member of name "class".
+.sp
+.LP
+The string returned by \fBfmev_class()\fR is valid for as long as the event handle itself.
+.sp
+.LP
+The \fBfmev_class()\fR function may fail and return \fINULL\fR with \fBfmev_errno\fR of:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.RS 27n
+.rt  
+A \fINULL\fR event handle was passed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_MALFORMED_EVENT\fR\fR
+.ad
+.RS 27n
+.rt  
+The event appears corrupted.
+.RE
+
+.SS "Event Attribute List"
+.sp
+.LP
+All events are defined as a series of (name, type) pairs. An instance of an event is therefore a series of tuples (name, type, value). Allowed types are defined in the protocol specification. In Solaris, and in \fBlibfmevent\fR, an event is represented as an \fBnvlist_t\fR using the \fBlibnvpair\fR(3LIB) library.
+.sp
+.LP
+The nvlist of event attributes can be accessed using \fBfmev_attr_list()\fR. The resulting \fBnvlist_t\fR pointer is valid for the same duration as the underlying event handle. Do not use \fBnvlist_free()\fR to free the nvlist. You may then lookup members, iterate over members, and so on using the \fBlibnvpair\fR interfaces.
+.sp
+.LP
+The \fBfmev_attr_list()\fR function may fail and return \fINULL\fR with \fBfmev_errno\fR of:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_API\fR\fR
+.ad
+.RS 27n
+.rt  
+A \fINULL\fR event handle was passed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_MALFORMED_EVENT\fR\fR
+.ad
+.RS 27n
+.rt  
+The event appears corrupted.
+.RE
+
+.SS "Event Timestamp"
+.sp
+.LP
+These functions refer to the time at which the event was originally produced, not the time at which it was forwarded to \fBlibfmevent\fR or delivered to the callback.
+.sp
+.LP
+Use \fBfmev_timespec()\fR to fill a \fBstruct timespec\fR with the event time in seconds since the Epoch (\fBtv_sec\fR, signed integer) and nanoseconds past that second (\fBtv_nsec\fR, a signed long). This call can fail and return \fBFMEVERR_OVERFLOW\fR if the seconds value will not fit in a signed 32-bit integer (as used in \fBstruct timespec\fR \fBtv_sec\fR).
+.sp
+.LP
+You can use \fBfmev_time_sec()\fR and \fBfmev_time_nsec()\fR to retrieve the same second and nanosecond values as \fBuint64_t\fR quantities.
+.sp
+.LP
+The \fBfmev_localtime\fR function takes an event handle and a \fBstruct tm\fR pointer and fills that structure according to the timestamp. The result is suitable for use with \fBstrftime\fR(3C). This call will return \fINULL\fR and \fBfmev_errno\fR of \fBFMEVERR_OVERFLOW\fR under the same conditions as above.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_OVERFLOW\fR\fR
+.ad
+.RS 20n
+.rt  
+The \fBfmev_timespec()\fR function cannot fit the seconds value into the signed long integer \fBtv_sec\fR member of a \fBstruct timespec\fR.
+.RE
+
+.SS "String Functions"
+.sp
+.LP
+A string can be duplicated using \fBfmev_shdl_strdup()\fR; this will allocate memory for the copy using the allocator nominated in \fBfmev_shdl_init()\fR. The caller is responsible for freeing the buffer using \fBfmev_shdl_strfree()\fR; the caller can modify the duplicated string but must not change the string length.
+.sp
+.LP
+An FMRI retrieved from a received event as an \fBnvlist_t\fR may be rendered as a string using \fBfmev_shdl_nvl2str()\fR. The nvlist must be a legal FMRI (recognized class, version and payload), or \fINULL\fR is returned with \fBfmev_errno()\fR of \fBFMEVERR_INVALIDARG\fR.  The formatted string is rendered into a buffer allocated using the memory allocation functions nominated in \fBfmev_shdl_init()\fR, and the caller is responsible for freeing that buffer using \fBfmev_shdl_strfree()\fR.
+.SS "Memory Allocation"
+.sp
+.LP
+The \fBfmev_shdl_alloc()\fR, \fBfmev_shdl_zalloc()\fR, and \fBfmev_shdl_free()\fR functions allocate and free memory using the choices made for the given handle when it was initialized, typically the \fBlibumem\fR(3LIB) family if all were specified \fINULL\fR.
+.SS "Subscription Handle Control"
+.sp
+.LP
+The \fBfmev_shdlctl_*()\fR interfaces offer control over various properties of the subscription handle, allowing fine-tuning for particular applications. In the common case the default handle properties will suffice.
+.sp
+.LP
+These properties apply to the handle and uniformly to all subscriptions made on that handle. The properties may only be changed when there are no subscriptions in place on the handle, otherwise \fBFMEVERR_BUSY\fR is returned.
+.sp
+.LP
+Event delivery is performed through invocations of a private door. A new door is opened for each \fBfmev_shdl_subscribe()\fR call. These invocations occur in the context of a single private thread associated with the door for a subscription. Many of the \fBfmev_shdlctl_*()\fR interfaces are concerned with controlling various aspects of this delivery thread.
+.sp
+.LP
+If you have applied \fBfmev_shdlctl_thrcreate()\fR, "custom thread creation semantics" apply on the handle; otherwise "default thread creation semantics" are in force. Some \fBfmev_shdlctl_*()\fR interfaces apply only to default thread creation semantics.
+.sp
+.LP
+The \fBfmev_shdlctl_serialize()\fR control requests that all deliveries on a handle, regardless of which subscription request they are for, be serialized - no concurrent deliveries on this handle. Without this control applied deliveries arising from each subscription established with \fBfmev_shdl_subscribe()\fR are individually single-threaded, but if multiple subscriptions have been established then deliveries arising from separate subscriptions may be concurrent. This control applies to both custom and default thread creation semantics.
+.sp
+.LP
+The \fBfmev_shdlctl_thrattr()\fR control applies only to default thread creation semantics. Threads that are created to service subscriptions will be created with \fBpthread_create\fR(3C) using the \fBpthread_attr_t\fR provided by this interface. The attribute structure is not copied and so must persist for as long as it is in force on the handle.
+.sp
+.LP
+The default thread attributes are also the minimum requirement: threads must be created \fBPTHREAD_CREATE_DETACHED\fR and \fBPTHREAD_SCOPE_SYSTEM\fR. A \fINULL\fR pointer for the \fBpthread_attr_t\fR will reinstate these default attributes.
+.sp
+.LP
+The \fBfmev_shdlctl_sigmask()\fR control applies only to default thread creation semantics. Threads that are created to service subscriptions will be created with the requested signal set masked - a \fBpthread_sigmask\fR(3C) request to \fBSIG_SETMASK\fR to this mask prior to \fBpthread_create()\fR.  The default is to mask all signals except \fBSIGABRT\fR.
+.sp
+.LP
+See \fBdoor_xcreate\fR(3C) for a detailed description of thread setup and creation functions for door server threads. 
+.sp
+.LP
+The \fBfmev_shdlctl_thrsetup()\fR function runs in the context of the newly-created thread before it binds to the door created to service the subscription. It is therefore a suitable place to perform any thread-specific operations the application may require. This control applies to both custom and default thread creation semantics.
+.sp
+.LP
+Using \fBfmev_shdlctl_thrcreate()\fR forfeits the default thread creation semantics described above. The function appointed is responsible for all of the tasks required of a \fBdoor_xcreate_server_func_t\fR in \fBdoor_xcreate()\fR.
+.sp
+.LP
+The \fBfmev_shdlctl_*()\fR functions may fail and return \fINULL\fR with \fBfmev_errno\fR of:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFMEVERR_BUSY\fR\fR
+.ad
+.RS 16n
+.rt  
+Subscriptions are in place on this handle.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRSubscription example
+.sp
+.LP
+The following example subscribes to \fBlist.suspect\fR events and prints out a simple message for each one that is received.  It foregoes most error checking for the sake of clarity.
+
+.sp
+.in +2
+.nf
+#include <fm/libfmevent.h>
+#include <libnvpair.h>
+
+/*
+ * Callback to receive list.suspect events
+ */
+void
+mycb(fmev_t ev, const char *class, nvlist_t *attr, void *cookie)
+{
+        struct tm tm;
+        char buf[64];
+        char *evcode;
+
+        if (strcmp(class, "list.suspect") != 0)
+                return; /* only happens if this code has a bug! */
+
+        (void) strftime(buf, sizeof (buf), NULL,
+            fmev_localtime(ev, &tm));
+
+        (void) nvlist_lookup_string(attr, "code", &evcode);
+
+        (void) fprintf(stderr, "Event class %s published at %s, "
+            "event code %s\n", class, buf, evcode);
+}
+
+int
+main(int argc, char *argv[])
+{
+        fmev_shdl_t hdl;
+        sigset_t set;
+
+        hdl = fmev_shdl_init(LIBFMEVENT_VERSION_LATEST,
+            NULL, NULL, NULL);
+
+        (void) fmev_shdl_subscribe(hdl, "list.suspect", mycb, NULL);
+
+        /* Wait here until signalled with SIGTERM to finish */
+        (void) sigemptyset(&set);
+        (void) sigaddset(&set, SIGTERM);
+        (void) sigwait(&set);
+
+        /* fmev_shdl_fini would do this for us if we skipped it */
+        (void) fmev_shdl_unsubscribe(hdl, "list.suspect");
+
+        (void) fmev_shdl_fini(hdl);
+
+        return (0);
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Architectureall
+_
+Interface StabilityCommitted
+_
+MT-LevelSafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdoor_xcreate\fR(3C), \fBgethrtime\fR(3C), \fBlibnvpair\fR(3LIB), \fBlibumem\fR(3LIB), \fBnvlist_lookup_string\fR(3NVPAIR), \fBpthread_create\fR(3C), \fBpthread_sigmask\fR(3C), \fBstrftime\fR(3C), \fBattributes\fR(5), \fBprivileges\fR(5)

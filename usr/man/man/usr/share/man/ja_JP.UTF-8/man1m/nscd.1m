@@ -1,0 +1,182 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH nscd 1M "2011 年 8 月 15 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+nscd \- ネームサービスキャッシュデーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/sbin/nscd\fR [\fB-f\fR \fIconfiguration-file\fR] [\fB-g\fR] [\fB-e\fR \fIcachename\fR, yes
+ | no] [\fB-i\fR \fIcachename\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBnscd\fR デーモンは、大半のネームサービス要求用のキャッシュを提供するプロセスです。\fBsvc:/system/name-service/cache\fR SMF サービスのサービスプロパティーは、キャッシュデーモンの動作を決定します。\fBnscd.conf\fR(4) を参照してください。
+.sp
+.LP
+\fBnscd\fR provides caching for the \fBpasswd\fR(4), \fBgroup\fR(4), \fBhosts\fR(4), \fBipnodes\fR(4), \fBexec_attr\fR(4), \fBprof_attr\fR(4), \fBuser_attr\fR(4), \fBethers\fR(4), \fBrpc\fR(4), \fBprotocols\fR(4), \fBnetworks\fR(4), \fBbootparams\fR(4), \fBauth_attr\fR(4), \fBservices\fR(4), \fBnetmasks\fR(4), \fBproject\fR(4) databases through standard \fBlibc\fR interfaces, such as \fBgethostbyname\fR(3NSL), \fBgetipnodebyname\fR(3SOCKET), \fBgethostbyaddr\fR(3NSL), and others. ただし、シャドウファイルはキャッシュされません。結果として、\fBgetspnam\fR(3C) の呼び出しはキャッシュされません。
+.sp
+.LP
+データの生存期間は、キャッシュによって異なります。デフォルトでは、ローカルデータベース (\fB/etc/hosts\fR、\fB/etc/passwd\fR など) を変更すると、次回の \fBnscd\fR の呼び出し時にキャッシュが無効になります。
+.sp
+.LP
+\fBsvc:/system/name-service/cache\fR がオプションで依存する任意のサービス (以下に一覧表示) を更新および再表示すると、\fBnscd\fR が再起動します。これにより、すべてのキャッシュが効率的にクリアされます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/dns/client\fR (\fBresolv.conf\fR(4) を参照)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/nis/client\fR (\fBypbind\fR(1M) および \fBypfiles\fR(4) を参照)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/network/ldap/client\fR (\fBldapclient\fR(1M) を参照)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBsvc:/system/name-service/switch\fR (\fBnsswitch.conf\fR(4) を参照)
+.RE
+.sp
+.LP
+\fBnscd.conf\fR(4) を参照してください。
+.sp
+.LP
+\fBnscd\fR は、独自の管理ツールとしても動作します。\fBnscd\fR のインスタンスが稼働している場合は、コマンドが稼働中のバージョンに透過的に渡されます。
+.sp
+.LP
+\fBnscd\fR は、ユーザーごとの検索が有効な状態 (\fBnscd.conf\fR(4) を参照) で稼働している場合に、要求を行うユーザーのために子プロセスを 1 つだけ生成します (ユーザーごとの \fBnscd \fR)。ユーザーごとの \fBnscd\fR は、ユーザーの資格情報を使って、ユーザーごとの検索スタイルに合わせて構成されたネームリポジトリへのユーザーごとの接続を開きます。検索は子プロセスで行われます。結果はプロセス内にキャッシュされ、同じユーザーだけが使用できます。キャッシュの管理方法は、メインの \fBnscd\fR デーモンが自身のキャッシュを管理する方法とまったく同じです。ユーザーからの以降の要求は、ユーザーごとの \fBnscd\fR が終了するまでは、その nscd により処理されます。ユーザーごとの \fB nscd\fR では、構成可能な非アクティブ生存期間 (TTL) の値が使用されるため、非アクティブ TTL を過ぎると終了します。
+.sp
+.LP
+メインの \fBnscd\fR で作成可能なユーザーごとの \fBnscd\fR の最大数を指定できます (\fBnscd.conf\fR(4) を参照)。作成数が最大数を超過すると、メインの \fBnscd\fR は、必要に応じ、LRU アルゴリズムを使ってあまりアクティブでない子 \fBnscd\fR を終了します。
+.sp
+.LP
+メインの \fBnscd\fR デーモンは、子 \fBnscd\fR をすべて作成、監視、および管理します。また、ユーザーごとの検索の初回受信時に、ユーザー自身の \fBnscd\fR を作成します。\fBnscd\fR デーモンの起動時にユーザーごとの検索が有効である場合、このデーモンは条件をすべて満たしていることを確認してから、ユーザーごとの \fBnscd\fR の作成を準備します。デーモンが停止すると、制御下にあるユーザーごとの \fBnscd\fR がすべて終了します。
+.sp
+.LP
+ユーザーごとの \fBnscd\fR は、メインの \fBnscd\fR と同じ構成を使用します。同じデフォルト構成ファイルか、\fB-f\fR コマンド行オプションで指定されたものを読み込んで使用します。構成がいったん読み込まれると、ユーザーごとの \fBnscd\fR は、構成が有効な限りそれを使用します。
+.SH オプション
+.sp
+.LP
+後述するオプションのいくつかでは、\fIcachename\fR の指定が必須です。\fIcachename\fR に指定可能な値には、\fBpasswd\fR、\fBgroup\fR、\fBhosts\fR、\fBipnodes\fR、\fBexec_attr\fR、\fB prof_attr\fR、\fBuser_attr\fR、\fBethers\fR、\fBrpc\fR、\fBprotocols\fR、\fBnetworks\fR、\fBbootparams\fR、\fBauth_attr\fR、\fBservices\fR、\fBnetmasks\fR、\fB printers\fR、\fBproject\fR があります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIconfiguration-file\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBnscd\fR は、指定されたファイルから構成データを読み取ります。このオプションは廃止されており、将来のリリースで削除される予定です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fR
+.ad
+.sp .6
+.RS 4n
+現在の構成および統計を標準出力に出力します。これは、root 以外のユーザーが実行可能な唯一のオプションです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIcachename\fR\fB, yes\fR|\fBno\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたキャッシュを有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIcachename\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたキャッシュを無効にします。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR\fBnscd\fR デーモンを停止して再起動します。
+.sp
+.in +2
+.nf
+example# \fBsvcadm disable system/name-service/cache\fR
+
+example# \fBsvcadm enable system/name-service/cache\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nscd.conf\fR\fR
+.ad
+.RS 18n
+.rt  
+廃止。以前はキャッシュデーモンの動作を決定していました。
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBypbind\fR(1M), \fBgetspnam\fR(3C), \fBgethostbyname\fR(3NSL), \fBgetipnodebyname\fR(3SOCKET), \fBauth_attr\fR(4), \fBbootparams\fR(4), \fBethers\fR(4), \fBexec_attr\fR(4), \fBgroup\fR(4), \fBhosts\fR(4), \fBnetmasks\fR(4), \fBnetworks\fR(4), \fBnscd.conf\fR(4), \fBnsswitch.conf\fR(4), \fBpasswd\fR(4), \fBprof_attr\fR(4), \fBproject\fR(4), \fBprotocols\fR(4), \fBresolv.conf\fR(4), \fBrpc\fR(4), \fBservices\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fBnscd\fR に \fB-g\fR オプションを指定した場合の出力は、変更される可能性があります。プログラミングインタフェースとして、これに依存しないようにしてください。
+.sp
+.LP
+\fBnscd\fR サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/system/name-service/cache
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+廃止されたサービス \fBsvc:/system/name-service-cache\fR は、下位互換性を確保するために、参照される可能性のあるスクリプトとともに保持されています。 唯一の目的は、サービス \fBsvc:/system/name-service/cache\fR への \fBoptional_all\fR 依存として機能することです。廃止されたサービスの名前は、将来のリリースで削除されます。

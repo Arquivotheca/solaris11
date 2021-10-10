@@ -1,0 +1,200 @@
+#
+# Warlock commands file for klmmod module.
+#
+# Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License, Version 1.0 only
+# (the "License").  You may not use this file except in compliance
+# with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#ident	"%Z%%M%	%I%	%E% SMI"
+
+#
+# Indirectly called functions.
+# Note: it is possible for these targets to change, and it may become
+#	necessary for more to be added.  Therefore these directives
+#	should be verified for correctness from time to time.
+#
+add clnt_ops::cl_call target \
+	xdr_mon \
+	xdr_nlm_cancargs \
+	xdr_nlm_lockargs \
+	xdr_nlm_notify \
+	xdr_nlm_res \
+	xdr_nlm_shareargs \
+	xdr_nlm_shareres \
+	xdr_nlm_testargs \
+	xdr_nlm_testres \
+	xdr_nlm_unlockargs \
+	xdr_nlm4_cancargs \
+	xdr_nlm4_lockargs \
+	xdr_nlm4_notify \
+	xdr_nlm4_res \
+	xdr_nlm4_shareargs \
+	xdr_nlm4_shareres \
+	xdr_nlm4_testargs \
+	xdr_nlm4_testres \
+	xdr_nlm4_unlockargs \
+	xdr_pmap \
+	xdr_sm_name \
+	xdr_sm_stat \
+	xdr_sm_stat_res
+
+add auth_ops::ah_destroy target kmem_free
+
+#
+# Hack.  VOP_FRLOCK() is always used to call ufs_frlock()
+#	in klmmod, but since we don't load it warlock
+#	would complain if we specified it as a target.
+#	ufs_frlock() only calls back to klmops, so to
+#	appease warlock here we simply say it only calls
+#	back to a stub.
+#
+#       XXX: The `ignore' command doesn't fix this because
+#	it doesn't work on function pointers (it may in
+#	the future).
+#
+#add vnodeops::vop_frlock target ufs_frlock
+add vnodeops::vop_frlock target klmmod_null
+
+#
+# Likewise, CLNT_DESTROY() may also call t_kclose() and
+#	freemsg(), but doesn't call back into klm{ops,mod}.
+#	We just supply klmmod_null() as a stub.
+#
+# add clnt_ops::cl_destroy target t_kclose freemsg kmem_free
+add clnt_ops::cl_destroy target klmmod_null
+
+#
+# Likewise, VOP_SHRLOCK() only calls back to klmops or to
+#	fs_shrlock().  We appease warlock with another stub.
+#
+#add vnodeops::vop_shrlock target lm_shrlock lm4_shrlock fs_shrlock
+add vnodeops::vop_shrlock target klmmod_null
+
+#
+# Call graph roots.
+# These are specified separately only for the purpose of
+# documentation.  warlock analyzes everything declared as a root
+# as such, in addition to analyzing it in any other valid context
+# (e.g., if it is called from another function in klmmod).
+#
+
+#
+# True call graph roots for klmmod.
+#
+root _init \
+	_fini \
+	_info \
+	lm_svc \
+	lm_xprtclose \
+	lm_shutdown \
+	nlm_dispatch_enter \
+	nlm_dispatch_exit \
+	lm_cprresume \
+	lm_cprsuspend
+
+#
+# Call graph roots which stem from registered kmem cache destructor
+# function calls.  If a function is both a destructor and can also be
+# called explicitly from klmops (e.g. lm_free_sysid_table()), it is
+# arbitrarily classified as a destructor on the premise that it is
+# likely to remain such (and therefore a root) forever.
+#
+root lm_free_sysid_table \
+	lm_flush_clients_mem \
+	lm_free_sleep \
+	lm_free_vnode
+
+#
+# Call graph roots which actually stem from klmops (but are
+# not roots in the true sense).  We declare these as roots
+# instead of ignoring them to give warlock the opportunity
+# to analyse their code paths.
+#
+# Note: need to be careful here to avoid cross-calls from
+#	klmops -> klmmod -> klmops -> ...
+#
+root lm_alock \
+	lm_alock4 \
+	lm_asynrpc \
+	lm_asynrply \
+	lm_crash \
+	lm_d_nsa \
+	lm_d_nsa4 \
+	lm_get_sleep \
+	lm_getconfig \
+	lm_getxprt \
+	lm_numcat \
+	lm_rel_sleep \
+	lm_relxprt \
+	lm_savexprt \
+	lm_set_oh \
+	lm_shr_sysid_has_locks \
+	lm_signal_granted \
+	lm_waitfor_granted \
+	xdr_status
+
+#
+# Ignored functions.
+#
+
+#
+# This is an ugly hack to avoid the complexity (as seen by warlock)
+# of lm_get_sysid(), until the function can be rewritten more simply.
+# See the warlock user's guide re data-dependent locking.
+#
+ignore lm_get_sysid
+
+#
+# These are fake call graph roots which assume that the caller
+# (klmops) holds a lock.  We ignore them rather than providing
+# a stub that enters and exits the lock (solely for warlock's benefit).
+#
+#ignore lm_add_block
+#ignore lm_cancel_granted_rxmit
+#ignore lm_dump_block
+#ignore lm_find_block
+#ignore lm_remove_block
+ignore klmmod_lock_held_roots
+
+#
+# This fake call graph root initializes a newly allocated data structure's
+# `next' field without holding the protecting mutex (lm_lck).  It's such a
+# simple function that ignoring it makes more sense than ASSERTing that it
+# always holds lm_lck, which it happens to now but may not always.
+#
+#ignore lm_init_block
+
+#
+# Ignored variables.  warlock complains if we use
+# DATA_READABLE_WITHOUT_LOCK() on some of these for which it would make
+# sense to do so, but we aren't sure why.
+#
+ignore lm_stat.servers		# no protection needed (statistic only)
+ignore lm_stat.start_time  # modified w/lm_lck only (should be DATA_READABLE...)
+ignore lm_stat.client_len	# modified w/lm_lck, read without it
+ignore :lm_get_me/found_ticlts	# no protection needed or wanted
+
+				# no protection needed (these have no locks)
+ignore __client::cl_auth \
+	__client::cl_nosignal \
+	_klwp::lwp_asleep \
+	_klwp::lwp_sysabort

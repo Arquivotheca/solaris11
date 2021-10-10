@@ -1,0 +1,3097 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates.保留所有权利。
+.TH ipadm 1M "2011 年 7 月 22 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ipadm \- 配置 Internet 协议网络接口和 TCP/IP 可调参数
+.SH 用法概要
+.LP
+.nf
+\fBipadm\fR create-ip [\fB-t\fR] \fIIP-interface\fR
+\fBipadm\fR delete-ip \fIIP-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-vni [\fB-t\fR] \fIVNI-interface\fR
+\fBipadm\fR delete-vni \fIVNI-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-ipmp [\fB-t\fR] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR
+\fBipadm\fR delete-ipmp [\fB-f\fR] \fIIPMP-interface\fR
+\fBipadm\fR add-ipmp [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...]
+     \fIIPMP-interface\fR
+\fBipadm\fR remove-ipmp [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...]
+     \fIIPMP-interface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR show-if [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIinterface\fR]
+\fBipadm\fR disable-if \fB-t\fR \fIinterface\fR
+\fBipadm\fR enable-if \fB-t\fR \fIinterface\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-ifprop [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR prop=\fIvalue\fR[,...] \fIinterface\fR
+\fBipadm\fR reset-ifprop [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR \fIprop\fR \fIinterface\fR
+\fBipadm\fR show-ifprop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...]
+     [\fB-m\fR \fIprotocol\fR] [\fIinterface\fR]
+.fi
+
+.LP
+.nf
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR static [\fB-d\fR]
+     \fB-a\fR {local|remote}=\fIaddr\fR[/\fIprefixlen\fR],... \fIaddrobj\fR
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR dhcp [\fB-w\fR \fIseconds\fR | forever]
+     [\fB-h\fR \fIhostname\fR] \fIaddrobj\fR
+\fBipadm\fR create-addr [\fB-t\fR] \fB-T\fR addrconf [\fB-i\fR {local|remote}=\fIinterface-id\fR]
+     [\fB-p\fR {stateful|stateless}={yes|no},..] \fIaddrobj\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR delete-addr [\fB-r\fR] \fIaddrobj\fR
+\fBipadm\fR show-addr [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-d\fR] [\fIaddrobj\fR | \fIinterface\fR/]
+\fBipadm\fR up-addr [\fB-t\fR] \fIaddrobj\fR
+\fBipadm\fR down-addr [\fB-t\fR] \fIaddrobj\fR
+\fBipadm\fR refresh-addr [\fB-i\fR] \fIaddrobj\fR
+\fBipadm\fR disable-addr \fB-t\fR \fIaddrobj\fR
+\fBipadm\fR enable-addr \fB-t\fR \fIaddrobj\fR
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-addrprop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR
+\fBipadm\fR reset-addrprop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR
+\fBipadm\fR show-addrprop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...]] [\fIaddrobj\fR]
+.fi
+
+.LP
+.nf
+\fBipadm\fR set-prop [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIprotocol\fR
+\fBipadm\fR reset-prop [\fB-t\fR] \fB-p\fR prop \fIprotocol\fR
+\fBipadm\fR show-prop [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...] \fIprotocol\fR | \fIprotocol\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBipadm\fR 命令提供了一组可用于执行下列操作的子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB管理接口：\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+创建和删除接口类为 \fBip\fR、\fBipmp\fR 和 \fBvni\fR 的接口
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+修改接口属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+显示接口配置
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB管理地址：\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+创建和删除地址
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+修改地址属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+显示地址配置
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB管理 TCP/IP 协议属性：\fR
+.ad
+.sp .6
+.RS 4n
+.RS +4
+.TP
+.ie t \(bu
+.el o
+修改 TCP/IP 属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+显示 TCP/IP 属性
+.RE
+.RE
+
+.sp
+.LP
+"子命令"部分后面的"操作数"部分中介绍了 \fBipadm\fR 子命令的各种操作数。
+.SS "需要的授权和特权"
+.sp
+.LP
+以下子命令需要 \fBsolaris.network.interface.config\fR 授权和 \fBPRIV_SYS_IP_CONFIG\fR 特权。
+.sp
+.in +2
+.nf
+create-ip          create-addr
+delete-ip          up-addr
+create-vni         down-addr
+delete-vni         refresh-addr
+create-ipmp        disable-addr
+delete-ipmp        enable-addr
+add-ipmp           set-addrprop
+remove-ipmp        reset-addrprop
+disable-if         set-prop
+enable-if          reset-prop
+set-ifprop
+reset-ifprop
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+除了上面指定的授权和特权以外，\fBipadm\fR 子命令 \fBcreate-ip\fR、\fBcreate-vni\fR、\fBcreate-ipmp\fR 和 \fBenable-if\fR 还需要 \fBPRIV_NET_RAWACCESS\fR 特权。
+.SH 子命令
+.sp
+.LP
+支持以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-ip\fR [\fB-t\fR] \fIIP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建处理 IPv4 和 IPv6 包的 IP 接口。IPv4 接口的地址将设置为 \fB0.0.0.0\fR，IPv6 接口的地址将设置为 \fB::\fR。缺省情况下，此子命令导致保存信息，因此，此接口将在下次重新引导时进行实例化。
+.sp
+在创建接口时针对 IPv4 和 IPv6 隐式启用接口。请参见下面的 \fBdisable-if\fR 和 \fBenable-if\fR 子命令，以便禁用或启用接口。
+.sp
+请注意，\fBlo0\fR 是称为回送接口的特殊接口。它是一个虚拟 IP 接口，并且不与任何物理硬件关联。它是在系统上创建的第一批 IP 接口之一，并且 IPv4 地址为 \fB127.0.0.1\fR，IPv6 地址为 \fB::/128\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此操作为临时操作，因此不能保存。此操作仅影响活动配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-ip\fR \fIIP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+从活动配置中删除 IP 接口。在此接口上配置的所有地址都将删除。并且，所有与此接口相关的持久性信息都将从持久性数据存储中删除，为此，不会在重新引导时实例化 \fIinterface\fR。要从活动配置禁用接口（而非删除此接口），请使用 \fBdisable-if\fR 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-vni\fR [\fB-t\fR] \fIVNI-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建处理 IPv4 和 IPv6 包的 VNI 接口。IPv4 接口的地址将设置为 \fB0.0.0.0\fR，IPv6 接口的地址将设置为 \fB::\fR。缺省情况下，此子命令导致保存信息，因此，此接口将在下次重新引导时进行实例化。
+.sp
+在创建接口时针对 IPv4 和 IPv6 隐式启用接口。请参见下面的 \fBdisable-if\fR 和 \fBenable-if\fR 子命令，以便禁用或启用接口。
+.sp
+请注意，\fBvni\fR 是一个虚拟接口，并且不与任何硬件关联，因此它是一个特殊接口。请参见 \fBvni\fR(7D)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此操作为临时操作，因此不能保存。此操作仅影响活动配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-vni\fR \fIVNI-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+从活动配置中删除 VNI 接口。在此接口上配置的所有地址都将删除。并且，所有与此 IP 接口相关的持久性信息都将从持久性数据存储中删除，为此，不会在重新引导时实例化接口。要从活动配置禁用此接口（而非删除此接口），请使用 \fBdisable-if\fR 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-ipmp\fR [\fB-t\fR] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建处理 IPv4 和 IPv6 包的 IPMP 接口。IPv4 接口的地址将设置为 \fB0.0.0.0\fR，IPv6 接口的地址将设置为 \fB::\fR。缺省情况下，此子命令导致保存信息，因此，此接口将在下次重新引导时进行实例化。
+.sp
+在创建接口时针对 IPv4 和 IPv6 隐式启用接口。请参见下面的 \fBdisable-if\fR 和 \fBenable-if\fR 子命令，以便禁用或启用 IPMP 接口。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此操作为临时操作，因此不能保存。此操作仅影响活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+以逗号分隔的、要作为底层接口添加到 IPMP 接口的接口列表。 指定接口必须存在于活动配置中才能成功添加到 IPMP 组，并且不能存在于任何其他 IPMP 组中。允许使用多个 \fB-i\fR 选项。如果已创建 IPMP 接口，但添加给定的底层接口失败，此命令将以部分成功的形式返回。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-ipmp\fR [\fB-f\fR] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+从活动配置中删除 IPMP 接口。在此接口上配置的所有地址都将删除。除非指定了 \fB-f\fR 选项，否则如果 IPMP 接口具有任何底层接口，此命令将失败。并且，所有与此 IPMP 接口相关的持久性信息都将从持久性数据存储中删除，为此，不会在重新引导时实例化接口。要从活动配置仅禁用此接口（而非删除此接口），请使用 \fBdisable-if\fR 子命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 IPMP 接口具有任何底层接口，指定此选项将首先从组中删除所有底层接口，然后再删除此 IPMP 接口。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd-ipmp\fR [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+向给定 IPMP 接口添加一个或多个底层 IP 接口。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此操作为临时操作，因此不能保存。此操作仅影响活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+以逗号分隔的、要作为底层接口添加到 IPMP 接口的接口列表。 指定接口必须存在于活动配置中才能成功添加到 IPMP 组，并且不能存在于任何其他 IPMP 组中。如果已至少添加一个接口，并且添加其余接口失败，此命令将以部分成功的形式返回。允许使用多个 \fB-i\fR 选项。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-ipmp\fR [\fB-t\fR] \fB-i\fR \fIinterface\fR,[...] [\fB-i\fR \fIinterface\fR,[...]...] \fIIPMP-interface\fR\fR
+.ad
+.sp .6
+.RS 4n
+从 IPMP 接口删除一个或多个底层 IP 接口。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB-\(emtemporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定此操作为临时操作，因此不能保存。此操作仅影响活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB-\(eminterface\fR \fIinterface\fR,[...]\fR
+.ad
+.sp .6
+.RS 4n
+要从 IPMP 接口中删除的底层接口的逗号分隔列表。指定接口必须已成为给定 IPMP 组的底层接口。允许使用多个 \fB-i\fR 选项。如果已至少删除一个接口，并且删除其余接口失败，此命令将以部分成功的形式返回。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-if\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIinterface\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示系统中配置的所有网络接口（包括仅位于持久性配置中的网络接口）或指定网络接口的网络接口配置信息。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。\fIfield\fR 名称必须是下面列出的某个字段，或者是特殊值 \fBall\fR 以便显示所有字段。对于每个网络接口，可显示下列字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+IP 接口的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCLASS\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示下列项之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip\fR\fR
+.ad
+.sp .6
+.RS 4n
+在底层数据链路上方检测到的接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBipmp\fR\fR
+.ad
+.sp .6
+.RS 4n
+在一个或多个底层 IP 接口上方创建的 IPMP 接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBloopback\fR\fR
+.ad
+.sp .6
+.RS 4n
+回送接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvni\fR\fR
+.ad
+.sp .6
+.RS 4n
+虚拟 IP 接口。请参见 \fBvni\fR(7D)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示显示的接口的下列项之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示已分配接口所需的资源。对于某些接口，此标志还指示链路已启动。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline（脱机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口处于脱机状态，因此不能发送或接收 IP 数据通信。请参见 \fBif_mpadm\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfailed（失败）\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示数据链路已关闭。如果接口包含在 IPMP 组中，则还可能表示此接口已失败（也即，设置了 IFF_FAILED）。失败的接口将不会用于发送或接收 IP 数据通信。如果对 IPMP 组中的某一物理 IP 接口设置了此标志，IP 数据通信将继续经由 IPMP 组中的其他可用物理 IP 接口传送。如果对 IPMP IP 接口设置了此标志，则整个组将失败，无法通过该组中的任何接口发送或接收数据通信。请参见 \fBin.mpathd\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown（关机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示已通过管理方式关闭接口，从而防止通过此接口发送或接收任何 IP 包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled（禁用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示已使用 \fBdisable-if\fR 子命令从活动配置中禁用接口。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBACTIVE\fR\fR
+.ad
+.sp .6
+.RS 4n
+此值为 \fByes\fR 或 \fBno\fR，具体取决于系统是否正在使用此 IP 接口传输 IP 数据通信。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于活动配置中的接口对象，此选项表示下列任何标志。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBb\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口支持广播
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBm\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口支持多播
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口是点对点链路
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBv\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口是虚拟接口（例如，\fBvni\fR(7D), loopback），也就是说，物理接口没有底层硬件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBs\fR\fR
+.ad
+.sp .6
+.RS 4n
+IPMP 接口以管理方式标记为备用。请参见 \fBin.mpathd\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBl\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口是 IPMP 接口的底层接口。请参见 \fBin.mpathd\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBi\fR\fR
+.ad
+.sp .6
+.RS 4n
+底层接口处于非活动状态。请参见 \fBin.mpathd\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBV\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口是 VRRP 接口
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.sp .6
+.RS 4n
+VRRP 接口处于接受模式 (~\fBIFF_NOACCEPT\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBZ\fR\fR
+.ad
+.sp .6
+.RS 4n
+已通过管理方式强制实施接口的 IP 地址的第 3 层保护。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口可处理 IPv4 包
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口可处理 IPv6 包
+.RE
+
+请注意，\fBb\fR 和 \fBp\fR 互斥。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定在重新引导时实例化或使用 \fBenable-if\fR 子命令重新启用接口对象时将应用的配置。此值可以为下列任何项或所有项：\fBs\fR、\fBl\fR、\fB4\fR 和 \fB6\fR（请参见上文）。缺省情况下，不会显示此字段，此字段仅在指定了 \fBall\fR 或 \fBpersistent\fR 以及 \fB-o\fR 时显示。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOVER\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建 IPMP 接口所基于的底层接口。此字段不适用于其他接口类。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。\fB-o\fR 选项需要与此选项一起使用。请参见下面的"可解析的输出格式"。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-if\fR \fB-t\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过从活动配置中删除指定 \fIinterface\fR 来禁用它。在此接口上配置的所有地址都将禁用。如果在一开始时就以持久方式创建了接口对象，持久性配置保持不变。要重新启用此接口，用户应使用 \fBenable-if\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定禁用是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-if\fR \fB-t\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过从持久性存储读取配置来启用给定接口。将应用所有持久性接口属性（如果有），并且将启用给定接口上的所有持久性地址（如果有）。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定启用是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-ifprop\fR [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR prop=\fIvalue\fR[,...] \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+将接口属性修改为用户指定的值。如果此属性采用多个值，则应使用逗号作为分隔符来指定这些值。一次只能指定一个属性。使用 \fBshow-ifprop\fR 子命令可以检索接口上支持的属性以及属性的可能值。一次只能修改一个属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定更改是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR、\fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+确定应对 IPv4 还是 IPv6 包应用属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop=\fIvalue\fR[,...]、\fB-prop\fR prop=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的属性。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-ifprop\fR [\fB-t\fR] \fB-m\fR \fIprotocol\fR \fB-p\fR \fIprop\fR \fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定接口的属性重置为其缺省值。如果未使用 \fB-t\fR，则将删除属性的所有保存的值。一次只能修改一个属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定重置是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR、\fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+确定重置的属性将影响 IPv4 还是 IPv6 包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR、\fB-prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的属性。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-ifprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...] [\fB-m\fR \fIprotocol\fR] [\fIinterface\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示创建的所有接口或指定接口的一个或多个属性的当前和持久性值。通过向 \fB-p\fR 选项提供以逗号分隔的属性名称，一次可以检索多个相关属性。如果未指定 \fB-p\fR 选项，则显示所有可用的接口属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。\fIfield\fR 名称必须是下面列出的某个字段，或者是特殊值 \fBall\fR 以便显示所有字段。对于每个接口，可显示下列字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIFNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+接口的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROTO\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性所属的协议的名称。当前支持的协议包括 IPv4 和 IPv6。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的读/写权限。显示的值将为 \fBr\fR（只读）、\fBw\fR（只写）或 \fBrw\fR（读写）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的当前值。对于已禁用的接口，由于未设置值，因此此选项显示为 \fB--\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的持久性值。持久性值是将在重新引导时重新应用的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的缺省值。如果属性没有缺省值，则显示 \fB--\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性可具有的值的逗号分隔列表。如果这些值在某个数字范围中，则可以显示简写形式 \fImin\fR - \fImax\fR。如果可能的值未知，则显示 \fB?\fR，或者如果可能的值无限制，则显示 \fB--\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR、\fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。\fB-o\fR 选项需要与此选项一起使用。请参见下面的"可解析的输出格式"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,...、\fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+要显示的属性的逗号分隔列表。请参见子命令说明后面的接口属性部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIprotocol\fR、\fB--module\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示与给定协议匹配的属性。有效值为 \fBipv4\fR 和 \fBipv6\fR。
+.RE
+
+有关接口属性的支持列表，请参见下面的"接口属性"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR static [\fB-d\fR] \fB-a\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],... \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fIaddrobj\fR 指定的接口上创建静态 IPv4 或 IPv6 地址。创建 \fIaddrobj\fR 时所在的接口必须已存在。创建的静态地址将通过 \fIaddrobj\fR 标识。
+.sp
+缺省情况下，配置的地址将标记为 \fBup\fR，因此可将其用作传出和传入包的源或目标。
+.sp
+所有地址对象均在创建时启用。有关如何禁用或启用地址对象的说明，请参见 \fBdisable-addr\fR 和 \fBenable-addr\fR 子命令。
+.sp
+不能在临时对象中执行持久性操作。也就是说，如果接口是临时创建的，用户不能以持久方式创建地址对象。
+.sp
+如果 \fIaddrobj\fR 名称中指定的接口为 IPMP 接口，则会在 IPMP 接口中创建一个静态数据地址。如果 \fIaddrobj\fR 名称中指定的接口为 IPMP 组的底层接口，则会在底层接口中创建一个静态测试地址。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定配置的地址是临时地址，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR、\fB--down\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应将配置的地址标记为 \fBdown\fR，也就是说，该地址将不会用作 IP 包的源或目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],...\fR
+.ad
+.br
+.na
+\fB\fB--address\fR {local | remote}=\fIaddr\fR[/\fIprefixlen\fR],...\fR
+.ad
+.sp .6
+.RS 4n
+\fIaddr\fR 表示与本地或远程端点对应的文本 IP 地址或主机名（适用于点对点接口）。
+.sp
+如果指定了主机名，则使用 \fB/etc/hosts\fR 中的条目以唯一方式获取其数值。如果此文件中未定义数字 IP 地址，则使用在 \fBnsswitch.conf\fR(4) 中为 \fBhosts\fR 或 \fBipnodes\fR 指定的解析器顺序以唯一方式获取此数值。如果给定主机名存在多个条目，则将生成错误。由于先创建 IP 地址，然后才会在引导进程中将命名服务联机，因此应将使用的所有主机名包含在 \fB/etc/hosts\fR 中，这一点非常重要。
+.sp
+如果未在命令行中明确指定 \fIprefixlen\fR，则按下面列出的顺序来执行搜索，以便获取地址的网络掩码：
+.RS +4
+.TP
+1.
+使用在 \fBnsswitch.conf\fR(4) 中为 \fBnetmasks\fR 指定的顺序
+.RE
+.RS +4
+.TP
+2.
+使用 RFC 791 中定义的类子网语义解释 IPv4 地址，使用 RFC 4291 中的定义解释 IPv6 地址。
+.RE
+对于点对点接口，除本地端点的地址以外，还必须指定远程端点的地址（例如，\fB-a\fR local=\fIladdr\fR,remote=\fIraddr\fR）。如果指定了远程端点的 \fIprefixlen\fR，则将返回错误。
+.sp
+请注意，如果接口仅需要本地地址，请使用 \fB-a\fR 选项按如下方法直接指定此地址：\fB-a\fR \fIaddr\fR[/\fIprefixlen\fR]。此地址将自动视为本地地址。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR dhcp [\fB-w\fR \fIseconds\fR | forever] \fB-h\fR \fIhostname\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fIaddrobj\fR 指定的接口上创建受 DHCP 控制的 IPv4 地址。创建的 IPv4 地址将通过 \fIaddrobj\fR 标识。如果 \fIaddrobj\fR 包含底层接口，此命令将创建一个测试地址；如果包含 IPMP 接口，则会创建一个数据地址。
+.sp
+所有地址对象均在创建时启用。有关如何禁用和启用地址对象的说明，请参见 \fBdisable-addr\fR 和 \fBenable-addr\fR 子命令。
+.sp
+不能在临时对象中执行持久性操作。也就是说，如果接口是临时创建的，用户不能以持久方式创建地址对象。
+.sp
+如果 \fIaddrobj\fR 名称中指定的接口为 IPMP 接口，则会在 IPMP 接口中创建通过 DHCP 获取的地址以作为数据地址。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhostname\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定客户机要让 DHCP 服务器将客户机的租用 IPv4 地址映射到的主机名。不保证 DHCP 服务器能够完成主机名请求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定配置的地址是临时地址，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR \fIseconds\fR | forever、\fB--wait\fR \fIseconds\fR | forever\fR
+.ad
+.sp .6
+.RS 4n
+指定等待操作完成的时间（以秒为单位）。如果未指定等待时间间隔，此操作无法立即完成，缺省情况下，\fBipadm\fR 将等待 120 秒钟以便完成请求的操作。请注意，缺省等待时间将在将来的发行版中发生更改。也可以使用具有明确含义的符号值 \fBforever\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate-addr\fR [\fB-t\fR] \fB-T\fR addrconf [\fB-i\fR {local | remote}=\fIinterface-id\fR] [\fB-p\fR {stateful | stateless}={yes | no},..] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fIaddrobj\fR 指定的接口上创建自动配置的 IPv6 地址。创建的 IPv6 地址将通过 \fIaddrobj\fR 标识。
+.sp
+系统使用缺省接口 ID（对于介质类型的以太网，接口 ID 即为此接口的 MAC 地址）生成自动配置的地址。使用 \fB-i\fR 选项可覆盖此行为。
+.sp
+缺省情况下：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IPv6 地址将根据路由器声明的前缀自动配置，如 RFC 4862 中所述，并且...
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+将使用 DHCPv6 服务器提供的 IPv6 地址在指定接口上自动配置 IPv6 地址，如 RFC 3315 中所述。（也就是说，\fB-p\fR \fBstateful=yes,stateless=yes\fR 为缺省选项。）
+.RE
+所有地址对象均在创建时启用。有关如何禁用和启用地址对象的说明，请参见 \fBdisable-addr\fR 和 \fBenable-addr\fR 子命令。
+.sp
+不能在临时对象中执行持久性操作。也就是说，如果接口是临时创建的，用户不能以持久方式创建地址对象。
+.sp
+如果 \fIaddrobj\fR 名称中指定的接口为 IPMP 接口，则会在 IPMP 接口上创建通过 IPv6 自动配置获取的地址以作为数据地址。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定配置的地址是临时地址，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR {local | remote}=\fIinterface-id\fR、\fB--interface-id\fR {local | remote}=\fIinterface-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用于生成自动配置的地址的接口 ID。
+.sp
+对于点对点接口，可指定远程端点的接口 ID（例如，\fB-i\fR \fBlocal=\fR\fIlid\fR,\fBremote=\fR\fIrid\fR）。
+.sp
+请注意，如果接口仅需要本地接口 ID，请使用 \fB-i\fR 选项按如下方式直接指定此 ID：\fB-i\fR \fIlid\fR。此接口 ID 将自动视为本地接口 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR {stateful | stateless}={yes | no},..\fR
+.ad
+.br
+.na
+\fB\fB--prop\fR {stateful | stateless}={yes | no},..\fR
+.ad
+.sp .6
+.RS 4n
+指定是否应启用自动配置的有状态和/或无状态方法。
+.sp
+如果指定 \fB-p\fR \fBstateful=no\fR，则不会执行基于 DHCPv6 指定的 IPv6 地址的有状态自动配置。
+.sp
+如果指定 \fB-p\fR \fBstateless=no\fR，则不会执行基于路由器声明的前缀的无状态自动配置。
+.sp
+如果指定 \fB-p\fR \fBstateful=no,stateless=no\fR，则不会执行两种自动配置方法。
+.sp
+通过 \fB-T\fR \fBaddrconf\fR 选项，将在缺省情况下使用 \fB-p\fR \fBstateful=yes,stateless=yes\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete-addr\fR [\fB-r\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+在 \fIaddrobj\fR 指定的接口中删除 \fIaddrobj\fR 标识的所有地址。此命令还会从持久性数据存储中删除这些地址；因此，这些地址不会在重新引导时实例化。
+.sp
+如果地址对象是受 DHCP 控制的地址，\fBdelete-addr\fR 将从系统中删除此地址，而不会通知 DHCP 服务器，并记录当前租用以备后用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR、\fB--release\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fIaddrobj\fR 是受 DHCP 控制的地址，此选项将导致通过通知服务器在接口上放弃受 DHCP 控制的 IP 地址，并放弃当前租用。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-addr\fR [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-d\fR] [\fIaddrobj\fR | \fIinterface\fR/]\fR
+.ad
+.sp .6
+.RS 4n
+显示给定 \fIaddrobj\fR 或指定接口上配置的所有地址对象（包括仅位于持久性配置中的地址对象）的地址信息。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。\fB-o\fR 选项需要与此选项一起使用。请参见下面的"可解析的输出格式"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。\fIfield\fR 名称必须是下面列出的某个字段，或者是特殊值 \fBall\fR 以便显示所有字段。对于每个接口，可显示下列字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDROBJ\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址对象的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址对象的类型。此类型将为下列值之一：\fBfrom-gz\fR、\fBstatic\fR、\fBdhcp\fR 或 \fBaddrconf\fR。\fBstatic\fR、\fBdhcp\fR 和 \fBaddrconf\fR 类型对应于 \fBcreate-addr\fR 的 \fB-T\fR 选项所指定的地址对象的类型。\fBfrom-gz\fR 类型将仅在非全局区域中显示，并且表示该地址是根据 \fBallowed-address\fR 属性配置的，此属性是从全局区域为非全局专用 IP 区域配置的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址对象的状态。此字段仅在指定了 \fBall\fR 和 \fB-o\fR 时显示。此字段表示下列值之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled（禁用）\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址不包含在活动配置中（请参见 \fBdisable-addr\fR 和 \fBdisable-if\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown（关机）\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址通过管理方式关闭（请参见 \fBdown-addr\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBduplicate（重复）\fR\fR
+.ad
+.sp .6
+.RS 4n
+重复地址检测 (duplicate address detection, DAD) 发现地址与其他系统的 IP 地址冲突，在解决冲突之前，无法使用此地址。系统将定期重新运行 DAD，确定是否已解决冲突。或者，也可以使用 \fBrefresh-addr\fR 立即重新运行 DAD。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinaccessible（无法访问）\fR\fR
+.ad
+.sp .6
+.RS 4n
+由于配置地址所在的 IP 接口已失败，因此无法使用此地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBok（正常）\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址已启用且正常运行。系统将接受发往此地址的 IP 包，并且将根据配置的 IP 源地址选择策略使用此地址发出 IP 包。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtentative（暂定）\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址当前正在进行重复地址检测（例如，作为 \fBup-addr\fR 或 \fBrefresh-addr\fR 的一部分）。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于活动配置中的地址对象，此选项表示下列任何标志。缺省情况下，不会显示此字段，此字段仅在指定了 \fBall\fR 或 \fBcurrent\fR 以及 \fB-o\fR 时显示。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBd\fR (deprecated)\fR
+.ad
+.sp .6
+.RS 4n
+除非接口上没有其他可用地址，或者应用程序已显式绑定到此地址，否则无法用作传出包的源地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR (private)\fR
+.ad
+.sp .6
+.RS 4n
+路由守护进程未声明的地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBt\fR (temporary)\fR
+.ad
+.sp .6
+.RS 4n
+在 RFC 3041 中定义的临时 IPv6 地址。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBU\fR (up)\fR
+.ad
+.sp .6
+.RS 4n
+标记地址，以便用作传出/传入包的源/目标。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBu\fR (unnumbered)\fR
+.ad
+.sp .6
+.RS 4n
+地址与系统中的某个其他链路的本地地址匹配。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定在重新引导时实例化或使用 \fBenable-addr\fR 子命令重新启用地址对象时将应用的配置。此值可以为下列任何项或所有项：\fBU\fR、\fBp\fR 和 \fBd\fR（请参见上文）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDR\fR\fR
+.ad
+.sp .6
+.RS 4n
+数字 IPv4 或 IPv6 地址。对于点对点接口，显示两个端点的地址 (\fIladdr\fR-->\fIraddr\fR)。对于类型为 \fBdhcp\fR 的地址对象，如果此地址对象的状态为 \fBdisabled\fR，或者如果此地址为 \fB0.0.0.0\fR（适用于 IPv4）或 \fB::\fR（适用于 IPv6），则会显示一个问号 (\fB?\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCID-TYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcpagent\fR(1M) 使用的客户机 ID 的类型（如果使用 DHCP 获取此地址）。对于 IPv4，此选项显示在构造 RFC 4361 客户机 ID 时使用的 DUID 的类型。此类型为 \fBDUID-LLT\fR、\fBDUID-EN\fR、\fBDUID-LL\fR、\fBother\fR 或 \fBdefault\fR 之一。缺省输出中不会显示此字段。通过使用 \fB-d\fR 或者使用 \fBcid-type\fR 或 \fBall\fR 以及 \fB-o\fR，可以显示此字段。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-LLT\fR\fR
+.ad
+.sp .6
+.RS 4n
+类型 1 RFC 3315 DUID 用于构造 \fBCID-VALUE\fR（例如，\fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR）。有关详细信息，请参见 RFC。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-EN\fR\fR
+.ad
+.sp .6
+.RS 4n
+类型 2 RFC 3315 DUID 用于构造 \fBCID-VALUE\fR（例如，\fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR）。有关详细信息，请参见 RFC。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDUID-LL\fR\fR
+.ad
+.sp .6
+.RS 4n
+类型 3 RFC 3315 DUID 用于构造 \fBCID-VALUE\fR（例如，\fB1,1,63463777,0a:0b:0c:0d:0e:0f\fR）。有关详细信息，请参见 RFC。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBother\fR\fR
+.ad
+.sp .6
+.RS 4n
+类型包含在 {0,4-65535} 中的 RFC 3315 DUID 用于派生客户机 ID（例如，\fB4,0x734633\fR），或者 \fBCID-VALUE\fR 是不符合 RFC 3315 的原始客户机 ID（例如，\fBSun\fR, \fB0xab3146\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefault\fR\fR
+.ad
+.sp .6
+.RS 4n
+表示 RFC 3315 DUID 未用于构造客户机 ID，而是根据 RFC 2132 使用接口的 MAC 地址派生客户机 ID。\fBCID-VALUE\fR 将包含后跟有 MAC 地址十六进制字符串的字符串 \fB0x01\fR。这仅适用于 IPv4。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCID-VALUE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdhcpagent\fR(1M) 使用的客户机 ID 的值（如果使用 DHCP 获取此地址）。使用的格式遵循文件 \fB/etc/default/dhcpagent\fR 中的配置参数 \fBCLIENT_ID\fR 的格式。请参见 \fBdhcpagent\fR(1M) 中 \fBCLIENT_ID\fR 的说明。如果 \fBCID-TYPE\fR 是缺省值，则 \fBCID-VALUE\fR 包含根据 RFC 2132 构造的旧 \fBCLIENT-ID\fR。缺省输出中不会显示此字段。通过使用 \fB-d\fR 或者使用 \fBcid-type\fR 或 all 以及 \fB-o\fR 选项，可以显示此字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBBEGIN\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于使用 DHCP 获取的地址而言，这是租用的开始时间（如果可用）。此时间按 \fBLC_TIME\fR 本地环境变量控制的格式显示。对于并非使用 DHCP 配置的地址或没有租用的 DHCP 地址，将显示 \fB--\fR（双连字符）。缺省输出中不会显示此字段。通过使用 \fB-d\fR 或者使用 \fBcid-type\fR 或 all 以及 \fB-o\fR 选项，可以显示此字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEXPIRE\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于使用 DHCP 获取的地址而言，这是租用过期的时间（如果可用）。此时间按 \fBLC_TIME\fR 本地环境变量控制的格式显示。对于并非使用 DHCP 配置的地址或没有租用的 DHCP 地址，将显示 \fB--\fR（双连字符）。缺省输出中不会显示此字段。通过使用 \fB-d\fR 或者使用 \fBcid-type\fR 或 all 以及 \fB-o\fR 选项，可以显示此字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRENEW\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于使用 DHCP 获取的地址而言，这是上次续订租用的时间。此时间按 \fBLC_TIME\fR 本地环境变量控制的格式显示。对于并非使用 DHCP 配置的地址或没有租用的 DHCP 地址，将显示 \fB--\fR（双连字符）。缺省输出中不会显示此字段。通过使用 \fB-d\fR 或者使用 \fBcid-type\fR 或 all 以及 \fB-o\fR 选项，可以显示此字段。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR、\fB--dhcp\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示使用 DHCP 获取的地址的 \fBdhcp\fR 状态字段。显示的字段包括 \fBADDROBJ\fR、\fBSTATE\fR、\fBADDR\fR、\fBCID-TYPE\fR、\fBCID-VALUE\fR、\fBBEGIN\fR、\fBEXPIRE\fR 和 \fBRENEW\fR。此选项仅显示便于阅读的输出，并且无法与 \fB-p\fR 配合使用。
+.RE
+
+.LP
+注 - 
+.sp
+.RS 2
+在某些情况下，地址对象的名称以下条 (\fB_\fR) 开头，如在 \fBe1000g1/_a\fR 或 \fBe1000g1/_b\fR 中。对于使用 \fBipadm\fR 编程库的应用程序，自动生成这些名称。您还将看到地址对象名称中含有问号 (\fB?\fR) 的地址。这表示这些地址是在 \fBipadm\fR 库外部创建的，因此 \fBipadm\fR 不知道这些地址。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdown-addr\fR [\fB-t\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过 \fIaddrobj\fR 标识的地址标记为已关闭，因此无法将其用作传出/传入包的源/目标。如果在调用 \fBdown-addr\fR 之前已将地址对象标记为关闭，此命令不起作用。如果地址对象的类型为 \fBaddrconf\fR，此命令将返回错误。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定配置的地址是临时地址，并且更改仅应用于活动配置。如果地址对象类型为 \fBdhcp\fR，此选项则是强制性的。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBup-addr\fR [\fB-t\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过 \fIaddrobj\fR 标识的地址标记为已启用，因此可以将其用作传出/传入包的源/目标。如果系统因地址对象是重复地址而将地址对象标记为已关闭，或者如果在调用 \fBup-addr\fR 之前将此地址标记为已启用，此命令不起作用。如果地址对象的类型为 \fBaddrconf\fR，此命令将返回错误。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定配置的地址是临时地址，并且更改仅应用于活动配置。如果地址对象类型为 \fBdhcp\fR，此选项则是强制性的。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefresh-addr\fR [\fB-i\fR] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果 \fIaddrobj\fR 的类型为 \fBstatic\fR，则会在地址对象标识的地址上重新启动 DAD（Duplicate Address Detection，重复地址检测）（如果需要）。
+.sp
+如果 \fIaddrobj\fR 的类型为 \fBdhcp\fR，DHCP 客户机守护进程将延长在此地址上获取的租用持续时间。
+.sp
+如果 \fIaddrobj\fR 的类型为 \fBaddrconf\fR，此命令将返回错误。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB--inform\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于指定 IP 地址，从 DHCP 获取网络配置参数，而不在其中获取租用。当通过 DHCP 以外的机制获取 IP 地址时，此选项非常有用。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-addr\fR \fB-t\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过从活动配置中删除地址来禁用它。如果在一开始时就以持久方式创建了地址对象，持久性配置保持不变。要重新启用此 \fIaddrobj\fR，用户应使用 \fBenable-addr\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定禁用是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-addr\fR \fB-t\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+通过从持久性存储读取配置来启用给定 \fIaddrobj\fR。所有持久性地址属性都适用于地址对象。此子命令要求存在启用地址对象所在的接口。如果活动配置中缺少此接口本身，且此接口位于持久性存储中，也就是说，如果禁用此接口，那么用户必须在调用 \fBenable-addr\fR 之前运行 \fBenable-if\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定启用是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-addrprop\fR [\fB-t\fR] \fB-p\fR prop=\fIvalue\fR[,...] \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+在指定 \fIaddrobj\fR 上设置属性的值。如果 \fIaddrobj\fR 映射到多个地址，属性更改将应用于 \fIaddrobj\fR 引用的所有地址。一次只能指定一个属性。使用 \fBshow-addrprop\fR 子命令可以检索 \fIaddrobj\fR 上支持的属性以及属性的可能值。如果 \fIaddrobj\fR 的类型为 \fBaddrconf\fR，此命令将返回错误。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定更改是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop=\fIvalue\fR[,...]、\fB--prop\fR prop=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的属性。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-addrprop\fR [\fB-t\fR] \fB-p\fR \fIprop\fR \fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+将给定地址属性重置为其缺省值。如果未使用 \fB-t\fR，则将删除属性的所有持久性值。一次只能修改一个属性。如果 \fIaddrobj\fR 的类型为 \fBaddrconf\fR，此命令将返回错误。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定重置是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR、\fB--prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+要重置的属性。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-addrprop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR,...] [\fIaddrobj\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示配置的所有地址对象或指定 \fIaddrobj\fR 的一个或多个属性的当前和持久性值。通过向 \fB-p\fR 选项提供以逗号分隔的属性名称，一次可以检索多个相关属性。如果未指定 \fB-p\fR 选项，则显示所有可用属性。如果 \fIaddrobj\fR 的类型为 \fBaddrconf\fR，此命令将返回错误。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。\fIfield\fR 名称必须是下面列出的某个字段，或者是特殊值 \fBall\fR 以便显示所有字段。对于每个 \fIaddrobj\fR，可显示下列字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADDROBJ\fR\fR
+.ad
+.sp .6
+.RS 4n
+地址对象的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的读/写权限。显示的值将为 \fBr\fR（只读）、\fBw\fR（只写）或 \fBrw\fR（读写）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的当前值。对于禁用的地址，由于未设置该值，因此该值显示为双连字符 (\fB--\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的持久性值。持久性值是将在重新引导时重新应用的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的缺省值。如果属性没有缺省值，则显示双连字符 (\fB--\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性可具有的值的逗号分隔列表。如果这些值在某个数字范围中，则可以显示简写形式 \fImin\fR - \fImax\fR。如果可能的值未知，则显示问号 (\fB?\fR)，或者如果可能的值无限制，则显示双连字符 (\fB--\fR)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR、\fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。\fB-o\fR 选项需要与此选项一起使用。请参见下面的"可解析的输出格式"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,...、\fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+要显示的属性的逗号分隔列表。请参见子命令说明后面的地址对象属性部分。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset-prop\fR [\fB-t\fR] \fB-p\fR prop[+ | -]=\fIvalue\fR[,...] \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+将协议属性的值修改为指定的 \fIvalue\fR。如果此属性采用多个值，则应使用逗号作为分隔符来指定这些值。一次只能指定一个属性。缺省情况下，此值为持久性值，并且将在重新引导时重新应用。使用 \fBshow-prop\fR 子命令可以检索协议上支持的属性以及属性的可能值。
+.sp
+支持下列协议：\fBip\fR、\fBipv4\fR、\fBipv6\fR、\fBicmp\fR、\fBtcp\fR、\fBudp\fR 和 \fBsctp\fR。
+.sp
+请注意，对于某些属性，可以全局设置属性值，也可以根据接口设置属性值。使用 \fBset-ifprop\fR 子命令可以设置基于接口的值。此种情况下，如果管理员选择自定义属性基于接口的值，以便与全局值区分开来，基于接口的值将覆盖此接口的全局设置。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定属性更改是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR prop[+|-]=\fIvalue\fR[,...]、\fB--prop\fR prop[+|-]=\fIvalue\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要设置为指定值的属性。此属性还提供下列"限定符"，以便执行添加、删除和赋值操作。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.sp .6
+.RS 4n
+向值的当前列表添加给定值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.sp .6
+.RS 4n
+从值的当前列表删除给定值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行新的赋值，并删除所有当前值。
+.RE
+
+有关如何使用限定符的详细信息，请参见\fB\fR"示例"部分。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset-prop\fR [\fB-t\fR] \fB-p\fR \fIprop\fR \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定协议的属性重置为此属性的缺省值。如果未使用 -t，则将删除属性的所有持久性值。一次只能修改一个属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--temporary\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定重置是临时操作，并且更改仅应用于活动配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR、\fB--prop\fR \fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+要重置的属性。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-prop\fR [[\fB-c\fR] \fB-o\fR \fIfield\fR[,...]] [\fB-p\fR \fIprop\fR[,...] \fIprotocol\fR | \fIprotocol\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示支持的所有协议或指定协议的一个或多个属性的当前和持久性值。通过向 \fB-p\fR 选项提供以逗号分隔的属性名称，一次可以检索多个相关属性。如果未指定 \fB-p\fR 选项，则显示所有可用属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+要显示的输出字段的列表，这些字段不区分大小写，并且由逗号分隔。\fIfield\fR 名称必须是下面列出的某个字段，或者是特殊值 \fBall\fR 以便显示所有字段。对于每个 \fIprotocol\fR，可显示下列字段：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROTO\fR\fR
+.ad
+.sp .6
+.RS 4n
+协议的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPROPERTY\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERM\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的读/写权限。显示的值将为 \fBr\fR（只读）、\fBw\fR（只写）或 \fBrw\fR（读写）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCURRENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的当前值。对于禁用的地址，由于未设置该值，因此该值显示为双连字符 (\fB--\fR)。如果值未知，则显示为一个问号 (\fB?\fR)。如果属性的当前值不在列出的 \fBPOSSIBLE\fR 值集中，则显示关键字 \fBcustom\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPERSISTENT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的持久性值。持久性值是将在重新引导时重新应用的值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDEFAULT\fR\fR
+.ad
+.sp .6
+.RS 4n
+属性的缺省值。如果属性没有缺省值，则显示双连字符 (\fB--\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPOSSIBLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+要与 \fBset-prop\fR 子命令配合使用的属性设置的值的逗号分隔列表。如果这些值在某个数字范围中，则可以显示简写形式 \fImin\fR - \fImax\fR。如果可能的值未知，则显示问号 (\fB?\fR)，或者如果可能的值无限制，则显示双连字符 (\fB--\fR)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR、\fB--parsable\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用稳定的可供计算机解析的格式显示。\fB-o\fR 选项需要与此选项一起使用。请参见下面的"可解析的输出格式"。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprop\fR,...、\fB--prop\fR=\fIprop\fR\fR
+.ad
+.sp .6
+.RS 4n
+要显示的属性的逗号分隔列表。请参见子命令说明后面的协议属性部分。
+.RE
+
+有关各个协议的属性的支持列表，请参见下面的"协议属性"。
+.RE
+
+.SS "可解析的输出格式"
+.sp
+.LP
+\fBipadm\fR "show" 子命令具有一个以计算机可解析的格式显示输出的 \fB-o\fR 选项。输出格式是一行或多行以冒号 (:) 分隔的字段。显示的字段特定于使用的子命令，并且在给定子命令的 \fB-o\fR 选项的条目下列出。输出仅包括通过 \fB-o\fR 选项请求的字段，这些字段按请求的顺序排列。请注意，显示给定子命令的所有字段的 \fB-o\fR \fBall\fR 选项不能与可解析的输出选项配合使用。
+.sp
+.LP
+当请求多个字段时，将在输出之前使用反斜杠 (\fB\\fR) 对任何文本冒号字符进行转义。类似地，也会对文本反斜杠字符进行转义 (\fB\\\fR)。通过使用带有环境变量（按 \fBIFS=:\fR 设置）的 shell \fBread\fR(1) 函数，可以解析此转义格式。请注意，当仅请求一个字段时，不会进行转义。
+.SS "协议属性"
+.sp
+.LP
+支持下列协议属性：
+.LP
+注 - 
+.sp
+.RS 2
+存在特定于协议的、以 "\fB_\fR"（下划线）开头的协议属性。这些属性可能会发生更改或者被删除，缺省情况下不显示在 \fBipadm show-prop\fR 输出中。有关详细信息，请参见《\fIOracle Solaris Tunable Parameters Reference Manual\fR》。
+.RE
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcong_default\fR (TCP, SCTP)\fR
+.ad
+.sp .6
+.RS 4n
+指定创建新的连接时由协议使用的缺省拥塞控制算法。在该连接的生命周期内，应用程序可以在以后选择不同的算法。只有已启用的算法才可以设置为缺省值（请参见 \fBcong_enabled\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcong_enabled\fR (TCP, SCTP)\fR
+.ad
+.sp .6
+.RS 4n
+该选项可以用于启用或禁用拥塞控制算法。缺省情况下，系统上安装的所有算法都处于启用状态。已禁用的算法不能设置为缺省值（请参见 \fBcong_default\fR）或由应用程序使用。
+.sp
+可以使用 \fBset-prop\fR 子命令和修饰符 \fB+\fR 与 \fB-\fR 来添加或删除算法。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBecn\fR (TCP)\fR
+.ad
+.sp .6
+.RS 4n
+显式拥塞控制（有关详细信息，请参见 RFC 3168）。可能的值与上面的值相同，即：\fBnever\fR、\fBpassive\fR 和 \fBactive\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBextra_priv_ports\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+此选项定义 1-1023 范围以外的其他特权端口。尝试绑定此处列出的端口的任何程序都必须作为根运行。这会防止普通用户在特定端口上启动服务器进程。
+.sp
+使用 \fBset-prop\fR 子命令以及 \fB+\fR、\fB-\fR 和 \fB=\fR 修饰符可以对这些端口进行添加、删除或赋值操作。有关用法，请参见下文的\fB\fR"示例"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforwarding\fR (IPv4)、\fBforwarding\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+启用/禁用全局 IPv4 或 IPv6 转发。配置的所有接口都将启动/停止转发包。各接口可使用 \fBset-ifprop\fR 覆盖全局选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhostmodel\fR (IPv4)、\fBhostmodel\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+控制多宿主系统中的 IP 包的发送/接收行为。\fBhostmodel\fR 的值可设置为与 RFC 1122 的等效终端系统模型定义对应的 \fBstrong\fR 或 \fBweak\fR。此外，还支持第三个值 \fBsrc-priority\fR。在 \fBsrc-priority\fR \fBhostmodel\fR 方案中，只要配置了包的目标 IP 地址并在某个主机接口上将其标记为 \fBUP\fR，则会在任何接口上接受此包。当传送包时，如果此包中的 IP 目标有多个路由，系统将首选这样的路由：包中的 IP 源地址在外发接口上配置。如果没有此类路由，系统将退而选择"最佳"路由，就像在弱 ES 情况下一样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmax_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.sp .6
+.RS 4n
+发送或接收套接字缓冲区的最大大小。该属性的当前值限制 \fBrecv_buf\fR 和 \fBsend_buf\fR 的最大值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecv_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.br
+.na
+\fB\fBsend_buf\fR (TCP, SCTP, UDP, ICMP)\fR
+.ad
+.sp .6
+.RS 4n
+修改指定协议的接收或发送缓冲区大小。这些属性的最大值均受 \fBmax_buf\fR 属性当前值的限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsack\fR (TCP)\fR
+.ad
+.sp .6
+.RS 4n
+通过选择性确认 (Selective acknowledgment, SACK)，接收者可以选择性地确认失序数据，选择性确认旨在提高通过有损链路传输数据的性能。有关 SACK 的信息，请参见 RFC 2018。可能的值及其含义：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnever\fR\fR
+.ad
+.sp .6
+.RS 4n
+从不接受 SACK 和外发 SACK 信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpassive\fR\fR
+.ad
+.sp .6
+.RS 4n
+将接受但不外发 SACK。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBactive\fR\fR
+.ad
+.sp .6
+.RS 4n
+将接受 SACK 并外发 SACK 信息。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmallest_anon_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.br
+.na
+\fB\fBlargest_anon_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+这些选项定义临时端口上的上限和下限。当建立传出网络连接时，将使用临时（表示短暂）端口。请注意，\fBsmallest_anon_port\fR 的当前值始终应当小于或等于 \fBlargest_anon_port\fR 的当前值。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsmallest_nonpriv_port\fR (TCP, SCTP, UDP)\fR
+.ad
+.sp .6
+.RS 4n
+此选项定义非特权端口的起点。非特权端口范围通常从 1024 开始。尝试绑定非特权端口的任何程序都不必作为根运行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBttl\fR (IPv4)、\fBhoplimit\fR (IPv6)\fR
+.ad
+.sp .6
+.RS 4n
+指定将为 IPv4 或 IPv6 头的 \fBttl/hoplimit\fR 字段设置的值。可用于防止系统到达其他系统中 \fIN\fR 跳以外的位置，其中 \fIN\fR 是指定的值。
+.RE
+
+.SS "接口属性"
+.sp
+.LP
+支持下列接口属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBarp\fR\fR
+.ad
+.sp .6
+.RS 4n
+在接口上启用/禁用对地址解析协议 (Address Resolution Protocol, ARP) 的使用。ARP 用于在网络级别地址和链路级别地址之间进行映射。当前已对 IPv4 地址与 MAC 地址之间的映射实现此选项。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexchange_routes\fR\fR
+.ad
+.sp .6
+.RS 4n
+在此接口上启用/禁用路由信息交换。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定采用此接口作为其底层接口的 IPMP 接口的组名称。如果此接口是 IPMP 类，此选项指定 IPMP 组的名称。此选项仅在 IPMP 接口上才是读写属性。对于其他接口类，此属性为只读。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforwarding\fR\fR
+.ad
+.sp .6
+.RS 4n
+在接口上启用/禁用 IP 转发。启用 IP 转发后，可将 IP 包转发到接口以及从此接口转发 IP 包。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmetric\fR\fR
+.ad
+.sp .6
+.RS 4n
+将接口的路由度量设置为 \fIn\fR；如果未指定值，则缺省为 \fB0\fR。路由度量由路由协议使用。较高的度量会降低相应路由的适用性。度量计为到目标网络或主机的额外跳数。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtu\fR\fR
+.ad
+.sp .6
+.RS 4n
+将接口的最大传输单元设置为 \fIn\fR。对于许多类型的网络，MTU 具有上限，例如，以太网的 MTU 上限为 1500。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnud\fR\fR
+.ad
+.sp .6
+.RS 4n
+在点对点物理接口上启用/禁用邻居不可达检测机制。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstandby\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定是否将此接口配置为 IPMP 组的备用接口。此属性不适用于 IPMP 接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusesrc\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用于选择源地址的物理或虚拟接口。如果使用关键字 \fBnone\fR，则将清除以前的所有选择。缺省值为 \fBnone\fR。
+.RE
+
+.SS "地址属性"
+.sp
+.LP
+支持下面列出的地址属性。请注意，不支持修改 \fBaddrconf\fR 地址对象的地址属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdeprecated\fR\fR
+.ad
+.sp .6
+.RS 4n
+此地址不应在新通信中继续用作源地址，但发往此地址的包仍会按预期方式处理。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBoff\fR。在类型为 \fBdhcp\fR 的地址对象上，不支持此属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprefixlen\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定地址的 IPv6 前缀或 IPv4 网络掩码所包含的地址的最左侧的连续位数。其余低阶位定义地址的主机部分。将 \fBprefixlen\fR 转换为地址的文本表现形式时，对于用于网络部分的位位置，此地址包含 1，对于主机部分，此地址包含 0。\fBprefixlen\fR 必须指定为一个十进制数字。在类型为 \fBdhcp\fR 的地址对象上，不支持此属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprivate\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定地址不应由 \fBin.routed\fR 路由守护进程声明。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreqhost\fR\fR
+.ad
+.sp .6
+.RS 4n
+客户机要让 DHCP 服务器将客户机的租用 IPv4 映射到的主机名。不保证能够完成主机名请求。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtransmit\fR\fR
+.ad
+.sp .6
+.RS 4n
+启用要使用地址对象引用的地址传输的包。当地址处于启用状态时，这是缺省行为。可能的值包括 \fBon\fR 或 \fBoff\fR。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzone\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定应在其中放置地址对象引用的所有地址的区域。命名区域在处于就绪或运行中状态的内核中必须处于活动状态。当区域停止或重新引导时，接口将被取消激活。必须将此区域配置为共享 IP 区域。\fBzonecfg\fR(1M) 用于向专用 IP 区域分配网络接口名称。要修改区域赋值使之在重新引导后保留，请使用 \fBzonecfg\fR(1M)。可能的值是在系统上配置的所有区域的列表。缺省值为 \fBglobal\fR。
+.RE
+
+.SH 操作数
+.sp
+.LP
+每个 \fBipadm\fR 子命令都在下列某个对象中运行：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIaddrobj\fR\fR
+.ad
+.sp .6
+.RS 4n
+在网络接口上配置的地址通过 \fIaddrobj\fR 标识。\fIaddrobj\fR 包括两个部分。第一个部分为配置地址所在的网络接口的名称。第二个部分是用户指定的字符串，此字符串可使用任何字母数字字符，其长度最多包含 32 个字符，并且必须以字母开头。\fIaddrobj\fR 的这两个部分使用斜杠 (\fB/\fR) 分隔。地址对象始终表示系统中的唯一地址集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIinterface\fR\fR
+.ad
+.sp .6
+.RS 4n
+配置网络地址所在的网络接口的名称。一般说来，此名称可使用任何字母数字字符、下划线 (\fB_\fR) 和句点 (\fB\&.\fR)，但必须以字母字符开头，并且以数字结尾。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+要配置其属性的 TCP/IP Internet 协议族的名称。支持下列协议：\fBip\fR、\fBipv4\fR、\fBipv6\fR、\fBicmp\fR、\fBtcp\fR、\fBsctp\fR 和 \fBudp\fR。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建 IPv4 静态地址
+.sp
+.LP
+下面的命令在接口 \fBbge1\fR（链路名称 \fBnet1\fR）上创建地址 10.2.3.4/24，并将此地址标记为 \fBup\fR 以便使用。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令在接口 \fBnet1\fR 上创建另一个地址 10.2.3.5/24，但将此地址标记为 \fBdown\fR，直到显式标记为 up 为止。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-addr -T static -d -a 10.2.3.5/24 net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，因为未使用本地地址且只有一个地址，所以假定 10.2.3.5/24 为本地地址。
+
+.sp
+.LP
+下面的命令将以前标记为 \fBdown\fR 的地址对象 \fBnet1/v4static2\fR 标记为 \fBup\fR。
+
+.sp
+.in +2
+.nf
+# \fBipadm up-addr net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+如果在地址对象上设置了 \fBDUPLICATE\fR 标志，\fBrefresh-addr\fR 将验证此地址是否仍在网络上重复。如果不重复，此地址将标记为 \fBup\fR。
+
+.sp
+.in +2
+.nf
+# \fBipadm refresh-addr net1/v4static2\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令列出已配置的地址。此命令显示地址 \fBnet1/v4static2\fR 不是重复地址。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-addr\fR
+ADDROBJ          TYPE    STATE      ADDR
+lo0/v4           static  ok         127.0.0.1/8
+lo0/v6           static  ok         ::/128
+net1/v4static1   static  ok         10.2.3.4/24
+net1/v4static2   static  ok         10.2.3.10/24
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR创建受 DHCPv4 控制的地址
+.sp
+.LP
+下面的命令在接口 \fBbge1\fR（链路名称 \fBnet1\fR）上获取 DHCPv4 地址。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T dhcp net1/dhaddr\fR
+# \fBipadm show-addr net1/dhaddr\fR
+ADDROBJ          TYPE    STATE      ADDR
+net1/dhaddr      dhcp    ok         10.8.48.173/25
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令延长 DHCPv4 地址对象 \fBnet1/dhaddr\fR 的租用持续时间。
+
+.sp
+.in +2
+.nf
+# \fBipadm refresh-addr net1/dhaddr\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR创建 IPv6 地址
+.sp
+.LP
+下面的命令序列使用具有缺省接口 ID 的 \fBin.ndpd\fR 在 \fBbge1\fR（链路名称 \fBnet1\fR）上自动配置 IPv6 地址。首先配置链路本地地址，然后 \fBin.ndpd\fR 添加无状态和有状态自动配置地址。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T addrconf net1/v6addr\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令创建一个 IPv6 静态地址。为了能够配置不是链路本地地址的 IPv6 地址，接口上应当已配置链路本地地址。这是通过使用 \fB-T\fR \fBaddrconf\fR 在上一步骤中实现的。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-addr -T static -a local=2ff0::f3ad/64 net1/v6static\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令更改 IPv6 地址的前缀长度。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-addrprop -p prefixlen=80 net1/v6static\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+通过列出地址，可以查看自动配置的所有地址以及更新后的前缀长度：
+
+.sp
+.in +2
+.nf
+# \fBipadm show-addr\fR
+ADDROBJ       TYPE     STATE     ADDR
+lo0/v4        static   ok        127.0.0.1/8
+lo0/v6        static   ok        ::/128
+net1/v6addr   addrconf ok        fe80::203:baff:fe94:2f01/10
+net1/v6addr   addrconf ok        2002:a08:39f0:1:203:baff:\e
+                                            fe94:2f00/64
+net1/v6addr   addrconf ok        2001:db8:1:2::402f/128
+net1/v6static static   ok        2ff0::f3ad/80
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR配置 IPv4 通道
+.sp
+.LP
+下面的第一个命令 (\fBipadm\fR) 创建通道源地址。然后，\fBdladm\fR 命令创建一个通道链路。最后的 \fBipadm\fR 命令在通道 IP 接口上配置 IPv4 和 IPv6 地址。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static\fR
+# \fBdladm create-iptun -T ipv4 -a local=10.2.3.4,remote=10.2.3.5 tun0\fR
+# \fBipadm create-ip tun0\fR 
+# \fBipadm create-addr -T static \e\fR
+       \fB-a local=173.129.134.1,remote=173.129.134.2 tun0/v4tunaddr\fR
+# \fBipadm create-addr -T static \e\fR
+       \fB-a local=2ff1::3344,remote=2ff1::3345 tun0/v6tunaddr\fR
+# \fBipadm show-addr\fR
+ADDROBJ        TYPE   STATE     ADDR
+lo0/v4         static ok        127.0.0.1/8
+lo0/v6         static ok        ::/128
+net1/v4static  static ok        10.2.3.4/24
+tun0/v4tunaddr static ok        173.129.134.1-->173.129.134.2
+tun0/v6tunaddr static ok        2ff1::3344-->2ff1::3345
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR查看所有接口
+.sp
+.LP
+下面的命令用于查看所有接口。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-if -o all\fR
+IFNAME  CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+lo0     loopback ok       yes    -m-v------46  --46       --
+net0    ip       ok       yes    bm--------46  --46       --
+e1000g0 ip       ok       yes    bm---l----46  -l46       --
+e1000g1 ip       ok       yes    bm---l----46  -l46       --
+ipmp0   ipmp     down     yes    bm--------46  --46       e1000g0 e1000g1
+tun0    ip       failed   no     -mp-------46  --46       --
+vni0    vni      disabled no     bm-v--------  --46       --
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR显示接口属性
+.sp
+.LP
+下面的命令显示指定接口的所有接口属性。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-ifprop net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   arp             ipv4  rw   on      --         on       on,off
+net0   forwarding      ipv4  rw   off     on         off      on,off
+net0   metric          ipv4  rw   2       2          0        --
+net0   mtu             ipv4  rw   1500    --         1500     68-1500
+net0   exchange_routes ipv4  rw   off     --         off      on,off
+net0   usesrc          ipv4  rw   none    --         none     --
+net0   forwarding      ipv6  rw   off     --         off      on,off
+net0   metric          ipv6  rw   2       2          0        --
+net0   mtu             ipv6  rw   1500    --         1500     1280-1500
+net0   nud             ipv6  rw   on      --         on       on,off
+net0   exchange_routes ipv6  rw   off     on         off      on,off
+net0   usesrc          ipv6  rw   none    --         none     --
+net0   group           ip    rw   grp0    --         --       --
+net0   standby         ip    r-   off     --         off      on,off
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR配置基于接口的属性
+.sp
+.LP
+下面的命令将接口 \fBnet0\fR 的 IPv4 MTU 设置为 \fB900\fR。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-ifprop -m ipv4 -p mtu=900 net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令将接口 \fBnet0\fR 的 IPv6 MTU 设置为 \fB1400\fR。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-ifprop -m ipv6 -p mtu 1400 net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+查看结果：
+
+.sp
+.in +2
+.nf
+# \fBipadm show-ifprop -p mtu net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   mtu             ipv4  rw   900     900        1500     68-1500
+net0   mtu             ipv6  rw   1400    1400       1500     1280-1500
+
+# \fBipadm show-ifprop -m ipv6 -p mtu net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   mtu             ipv6  rw   1400    1400       1500     1280-1500
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR显示支持的属性
+.sp
+.LP
+下面的命令显示在 TCP 上支持的属性。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-prop tcp\fR
+PROTO PROPERTY              PERM CURRENT PERSISTENT DEFAULT   POSSIBLE
+tcp   ecn                   rw   active  active     passive   never,passive,
+                                                                      active
+tcp   extra_priv_ports      rw   --      1,65535    2049,4045 1-65535
+tcp   largest_anon_port     rw   32768   32768      65535     1024-65535
+tcp   sack                  rw   active  --         active    never,passive,
+                                                                      active
+tcp   recv_buf              rw   29567   --         49152     2048-1073741824
+tcp   send_buf              rw   21354   --         49152     4096-1073741824
+tcp   max_buf               ro   65536   --         32768     4096-1073741824
+tcp   smallest_anon_port    rw   32768   --         32768     1024-65535
+tcp   smallest_nonpriv_port rw   1024    --         1024      1024-32768
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR配置全局 IPv4 转发
+.sp
+.LP
+下面的命令序列配置全局 IPv4 转发，并覆盖接口 \fBnet0\fR 的相应设置。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p forwarding=on ipv4\fR
+# \fBipadm set-ifprop -p forwarding=off -m ipv4 net0\fR
+# \fBipadm show-prop -p forwarding ipv4\fR
+PROTO PROPERTY              PERM CURRENT PERSISTENT DEFAULT POSSIBLE
+ipv4  forwarding            rw   on      on         off     on,off
+
+# \fBshow-ifprop -p forwarding -m ipv4 net0\fR
+IFNAME PROPERTY        PROTO PERM CURRENT PERSISTENT DEFAULT  POSSIBLE
+net0   forwarding      ipv4  rw   off     off        off      on,off
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR在 \fBset-prop\fR 子命令中使用限定符
+.sp
+.LP
+下面的命令序列使用加号和减号（\fB+\fR、\fB-\fR）限定符将 1047、1048 和 1049 添加为 TCP 的额外特权端口。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p extra_priv_ports=1047 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1048 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1049 tcp\fR
+# \fBipadm set-prop -p extra_priv_ports+=1050 tcp\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令删除作为额外特权端口的 1048。
+
+.sp
+.in +2
+.nf
+# \fBipadm set-prop -p extra_priv_ports-=1048\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令显示 TCP 的所有额外特权端口。
+
+.sp
+.in +2
+.nf
+# \fBipadm show-prop -p extra_priv_ports tcp\fR
+PROTO PROPERTY             PERM CURRENT    PERSISTENT  DEFAULT   POSSIBLE
+ipv4  extra_priv_ports     rw   1047,1049, 1047,1049,  2049,4045 1-65535
+                                1050       1050
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR启用和禁用对象
+.sp
+.LP
+下面的命令序列启用和禁用接口和地址对象，并显示这些操作的结果。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net1\fR
+# \fBipadm create-addr -T static -a local=10.2.3.4/24 net1/v4static\fR
+# \fBipadm set-addrprop -p private=yes net1/v4static\fR
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令禁用地址对象 \fBnet1/v4static\fR。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-addr -t net1/v4static\fR
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令禁用接口对象 \fBnet1\fR。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t net1\fR
+# \fBipadm show-if net1 -o all\fR
+IFNAME     CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+net1       ip       disabled no     bm----------  --46       --
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令从持久性配置启用接口对象。
+
+.sp
+.in +2
+.nf
+# \fBipadm enable-if -t net1\fR
+# \fBipadm show-if net1 -o all\fR
+IFNAME     CLASS    STATE    ACTIVE CURRENT       PERSISTENT OVER
+net1       ip       ok       yes    bm--------46  --46       --
+
+# \fBipadm show-addr net1/v4static\fR
+ADDROBJ        TYPE   STATE     ADDR
+net1/v4static  static ok        10.2.3.4/24
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+请注意，当启用接口对象时，还将启用在此接口上配置的所有地址对象。
+
+.sp
+.LP
+下面的命令在非全局专用 IP 区域中为 \fBnet0\fR 接口创建持久性配置，以便在下次重新引导时使用全局区域中通过 \fBallowed-address\fR 资源提供的地址集来配置 \fBnet0\fR 接口。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip net0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此外，还可以通过执行下面的命令，使用非全局专用 IP 区域中的可用 \fBallowed-address\fR 值集来配置 \fBnet0\fR 接口，而不必进行重新引导：
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t net0\fR
+# \fBipadm enable-if -t net0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR创建 IPMP 接口
+.sp
+.LP
+下面的命令序列创建一个 IPMP 接口，并向其添加底层接口。
+
+.sp
+.in +2
+.nf
+# \fBipadm create-ip e1000g0\fR
+# \fBipadm create-ip e1000g1\fR
+# \fBipadm create-ip e1000g2\fR
+# \fBipadm set-ifprop -p standby=on -m ip e1000g2\fR
+# \fBipadm create-ipmp testgroup0\fR
+# \fBipadm add-ipmp -i e1000g0 -i e1000g1 -i e1000g2 testgroup0\fR
+# \fBipadm create-addr -T static -a local=192.168.80.5/24 testgroup0/data1\fR
+# \fBipadm create-addr -T static -a local=192.168.80.6/24 testgroup0/data2\fR
+# \fBipadm show-if\fR
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+e1000g0    ip       ok       yes    --
+e1000g1    ip       ok       yes    --
+ipmp0      ipmp     ok       yes    e1000g0 e1000g1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令序列先禁用后启用 IPMP 接口。
+
+.sp
+.in +2
+.nf
+# \fBipadm disable-if -t testgroup0\fR
+\fBipadm show-if\fR
+IFNAME     CLASS    STATE    ACTIVE OVER
+lo0        loopback ok       yes    --
+net0       ip       ok       yes    --
+e1000g0    ip       disabled no     --
+e1000g1    ip       disabled no     --
+ipmp0      ipmp     disabled no     e1000g0 e1000g1
+# \fBipadm enable-if -t testgroup0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+下面的命令序列删除 IPMP 接口的底层接口，然后删除 IPMP 接口。
+
+.sp
+.in +2
+.nf
+\fBipadm remove-ipmp -i e1000g0 -i e1000g1 testgroup0\fR
+\fBipadm delete-ipmp testgroup0\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBread\fR(1)、\fBarp\fR(1M)、\fBcfgadm\fR(1M)、\fBdhcpagent\fR(1M)、\fBdladm\fR(1M)、\fBif_mpadm\fR(1M)、\fBifconfig\fR(1M)、\fBin.mpathd\fR(1M)、\fBin.ndpd\fR(1M)、\fBndd\fR(1M)、\fBzonecfg\fR(1M)、\fBnsswitch.conf\fR(4)、\fBattributes\fR(5)、\fBdhcp\fR(5)、\fBvni\fR(7D)
+.sp
+.LP
+\fI《Oracle Solaris Tunable Parameters Reference Manual》\fR
+.sp
+.LP
+由 Postel, J. 编著，RFC 791，《\fIInternet Protocol - DARPA Internet Program Protocol Specification\fR》，南加州大学信息科学研究所，1981 年 9 月。
+.sp
+.LP
+由 Hinden, R. 和 S. Deering 合著的《\fIIP Version 6 Addressing Architecture\fR》，RFC 4291，2006 年 2 月。
+.sp
+.LP
+由 Thomson, S.、Narten, T. 和 T. Jinmei 合著的《\fIIPv6 Stateless Address AutoConfiguration\fR》，RFC 4862，2007 年 9 月。
+.sp
+.LP
+由 Droms, R.、Bound, J.、Volz, B.、Lemon, T.、Perkins, C. 和 M. Carney 合著的《\fIDynamic Host Configuration Protocol for IPv6 (DHCPv6)\fR》，RFC 3315，2003 年 7 月。
+.sp
+.LP
+由 Narten, T.、Draves, R. 和 S. Krishnan 合著的《\fIPrivacy Extensions for Stateless Address AutoConfiguration in IPv6\fR》，RFC 4941，2007 年 9 月。
+.sp
+.LP
+由 S. Routhier, Ed. 编著的《\fIManagement Information Base for the Internet Protocol (IP)\fR》，RFC 4293，2006 年 4 月。
+.sp
+.LP
+由 Braden, R. 编著，RFC 1122，《\fIRequirements for Internet Hosts - Communication Layers\fR》，南加州大学信息科学研究所，1989 年 10 月。

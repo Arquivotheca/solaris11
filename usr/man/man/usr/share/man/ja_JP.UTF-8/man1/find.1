@@ -1,0 +1,981 @@
+'\" te
+.\" Copyright 1989 AT&T Copyright (c) 
+.\" Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Portions Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/. 
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH find 1 "2010 年 12 月 22 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+find \- ファイルの検索
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/find\fR [\fB-H\fR | \fB-L\fR] \fIpath\fR... \fIexpression\fR
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/find\fR [\fB-H\fR | \fB-L\fR] \fIpath\fR... \fIexpression\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBfind\fR ユーティリティーは、\fIpath\fR で指定した各パス名に含まれているディレクトリ階層を再帰的に下降し、次に示す一次子に書き込まれたブール型の式 \fIexpression\fR と一致するファイルを検索します。
+.sp
+.LP
+\fBfind\fR は、ファイル階層をどこまでも深く下降することができます。\fIpath\fR オペランドのアプリケーションによる指定値の長さが \fIPATH_MAX\fR を超えない限り、パスの長さが原因でエラーになることはありません。
+.sp
+.LP
+\fBfind\fR は、無限ループ、つまり、最後に検出されたファイルの祖先である、前にアクセスしたディレクトリに入る動作を検出します。 
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.RS 6n
+.rt  
+コマンド行でシンボリックリンクに遭遇した場合、シンボリックリンク自身ではなく、シンボリックリンクが参照するファイルのファイル情報とファイルタイプを評価します。参照先のファイルが存在しない場合、シンボリックリンク自身のファイル情報およびファイルタイプを評価します。コマンド行以外でシンボリックリンクに遭遇した場合、シンボリックリンク自身のファイル情報およびファイルタイプを評価します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.RS 6n
+.rt  
+シンボリックリンクに遭遇した場合、シンボリックリンク自身ではなく、シンボリックリンクが参照するファイルのファイル情報とファイルタイプを評価します。「\fB注意事項\fR」を参照してください。
+.RE
+
+.sp
+.LP
+\fB-H\fR と \fB-L\fR は相互排他的なオプションですが、これらを複数指定しても、エラーであるとは判断されません。最後に指定したオプションが cp の動作を決定します。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpath\fR\fR
+.ad
+.RS 14n
+.rt  
+ディレクトリ階層構造における、下降を開始する地点のパス名を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIexpression\fR\fR
+.ad
+.RS 14n
+.rt  
+第一引数は \fB\(mi\fR で始まるか、あるいは引数自身が \fB!\fR または \fB(\fR で、後続の引数は以下に説明する一次子と演算子で構成される式として解釈されます。\fI\fR以下の説明で、\fIn\fR が一次引数として使われている場合、n は 10 進整数とみなされます。この整数には、次に示すように先頭に正 (\fB+\fR) や負 (\fB\(mi\fR) の符号を付加することも可能です。
+.sp
+.ne 2
+.mk
+.na
+\fB+\fIn\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIn\fR より大きい
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIn\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIn\fR に等しい
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB-\fIn\fR\fR
+.ad
+.RS 6n
+.rt  
+\fIn\fR より小さい
+.RE
+
+.RE
+
+.SS "式"
+.sp
+.LP
+有効な式は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-acl\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルに拡張 ACL が定義されている場合、真になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-amin\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが最後にアクセスされたのは \fIn\fR 分前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-atime\fR\fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが \fIn\fR 日前にアクセスされている場合、真になります。\fIpath\fR に含まれているディレクトリのアクセス時間は、\fBfind\fR 自体によって変更されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-cmin\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルのステータスが最後に変更されたのは \fIn\fR 分前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-cpio\fR \fIdevice\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。\fIdevice\fR 上に、現在のファイルを \fBcpio\fR フォーマット (5120 バイトレコード) で書き込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ctime\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルのステータスが \fIn\fR 日前に変更されている場合、真になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-depth\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。ディレクトリ階層を下降して、あるディレクトリにあるすべてのエントリを、そのディレクトリ自体よりも先に検査します。これは、\fBfind\fR と \fBcpio\fR(1) を組み合わせて書き込み権のないディレクトリ内のファイルを転送したい場合に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-exec\fR \fIcommand\fR\fR
+.ad
+.RS 18n
+.rt  
+実行したコマンドが終了ステータスとして 0 の値を返す場合、真です。コマンドの終わりには、コマンドの終了を示すセミコロン (\fB;\fR) を付ける必要があります。コマンド引数 \fB{}\fR は、現在のパス名に置き換えられます。\fB-exec\fR の最後の引数が \fB{}\fR であり、セミコロン \fB;\fR ではなくプラス (\fB+\fR) を指定した場合、コマンドが複数回呼び出され、\fB{}\fR がパス名のグループに置き換えられます。コマンドの呼び出しで、終了ステータスとして 0 以外の値を返す場合、find は 0 以外の終了ステータスを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-follow\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真であり、\fIexpression\fR のどの位置に指定されていても常に評価されます。\fBfind\fR コマンドを \fB-H\fR オプションまたは \fB-L\fR オプションを指定して呼び出すときに、\fB-follow\fR を使用した場合、動作は不確定です。シンボリックリンクをたどり、アクセスしたディレクトリを記憶します。これは、無限ループを検出するためです。\fB\fR無限ループは、シンボリックリンクが親ディレクトリを指している場合などに発生します。この式を find -type \fBl\fR 式と組み合わせて使用しないようにしてください。「\fB注意事項\fR」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-fstype\fR \fItype\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが属するファイルシステムの形式が \fItype\fR の場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-group\fR \fIgname\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが \fIgname\fR というグループに属している場合、真です。\fIgname\fR が数値で、\fB/etc/group\fR ファイルや \fBNIS\fR テーブルに存在しない場合、この数値はグループ \fBID\fR と見なされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-iname\fR \fIpattern\fR\fR
+.ad
+.RS 18n
+.rt  
+\fB-name\fR と似ていますが、パターンと現在のファイル名のベース名との照合で、大文字と小文字は区別されません (「\fB使用例\fR」を参照)。\fB-name\fR オプションとは異なり、先頭のピリオドは特殊文字として扱われず、\fB/usr/bin/find\fR と \fB/usr/xpg4/bin/find\fR の両方で、ワイルドカードファイル名生成文字を、\fB\&.\fR で始まるファイル名と一致させることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-inum\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが \fIn\fR という i ノード番号を持つ場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-links\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルにリンクが \fIn\fR 個ある場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-local\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルシステムが \fB/etc/dfs/fstypes\fR で定義されたリモートファイルシステムでない場合に、真です。\fB/etc/dfs/fstypes\fR ファイルが存在しない場合、デフォルトのリモートファイルシステムとして \fBnfs\fR が使用されます。このオプションは、ローカルでないディレクトリの階層を下降して検索します。\fB-\fRディレクトリ階層を下降しないでローカルファイルを検索する例については、「\fB使用例\fR」の節を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ls\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。現在のパス名と、このパスの統計情報を出力します。統計情報には以下の項目が含まれています。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+i ノード番号
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+KB (1024 バイト) 単位のサイズ
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+保護モード
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ハードリンクの数
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザー
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+グループ
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+サイズ (単位はバイト)
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+変更時間。
+.RE
+ファイルが特殊ファイルの場合、サイズフィールドにはメジャーデバイス番号とマイナーデバイス番号が入ります。
+.sp
+ファイルがシンボリックリンクの場合、`\fB\(->\fR\&' の後に、リンクされたファイルのパス名が表示されます。書式は、\fBls\fR \fB-gilds\fR の書式と同じです (\fBls\fR(1B) 参照)。 
+.sp
+この書式は、\fBls\fR で設定されているのではなく、find 内部で設定されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-mmin\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルのデータが最後に変更されたのは \fIn\fR 分前です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-mount\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。検索の範囲を、指定されたディレクトリを持つファイルシステムに限定します。他のファイルシステムへのマウントポイントは表示しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-mtime\fR \fIn\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルのデータが \fIn\fR 日前に変更されている場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-name\fR \fIpattern\fR\fR
+.ad
+.RS 18n
+.rt  
+\fIpattern\fR が現在のファイル名のベース名に一致する場合は真。通常のシェルファイル名生成文字 (\fBsh\fR(1) 参照) を使用できます。pattern 内のエスケープ文字としては、バックスラッシュ (\fB\|\e\|\fR) を使用します。\fBfind\fR をシェルから起動する場合は、pattern をエスケープするか、pattern 全体を引用符で囲む必要があります。
+.sp
+\fB/usr/bin/find\fR では、ピリオド文字 (\fI\&.\fR) を \fBpattern\fR の先頭に明示的に指定しない場合、ピリオド文字 (\fI\&.\fR) で始まる現在のファイル名は \fBpattern\fR に一致しません。\fB/usr/xpg4/bin/find\fR では、この区別は行われません。つまり、ワイルドカードファイル名生成文字はピリオド文字 (\fB\&.\fR) で始まるファイル名に一致します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ncpio\fR \fIdevice\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。現在のファイルを \fIdevice\fR に \fBcpio\fR \fB-c\fR フォーマット (5120 バイトレコード) で書き込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-newer\fR \fIfile\fR\fR
+.ad
+.RS 18n
+.rt  
+現在のファイルが、\fIfile\fR 引数で示されているファイルの更新時刻以降に変更されている場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-nogroup\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが \fB/etc/group\fR ファイルに記載されているグループに属していないか、\fBNIS\fR テーブルに記載されていない場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-nouser\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが \fB/etc/passwd\fR ファイルに記載されているユーザーのものでないか、\fBNIS\fR テーブルに記載されていない場合、真です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ok\fR \fIcommand\fR\fR
+.ad
+.RS 18n
+.rt  
+生成されるコマンド行の先頭に疑問符が出力されること、および肯定的な応答の場合にのみ実行されることを除き、\fB-exec\fR と同様です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-perm\fR [\fB-\fR]\fImode\fR\fR
+.ad
+.RS 18n
+.rt  
+\fImode\fR 引数は、ファイルモードビットを表します。書式は、\fBchmod\fR(1) のシンボリックモードオペランド (\fIsymbolic_mode_list\fR) と同じです。すべてのファイルモードビットがオフになっているテンプレートを想定して、次の演算子記号 (\fIop\fR) があればそれを解釈します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.RS 8n
+.rt  
+テンプレート上で、モードビットをオンにする
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB\(mi\fR\fR
+.ad
+.RS 8n
+.rt  
+ビットをオフにする
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.RS 8n
+.rt  
+プロセスのファイルモード生成マスクの内容に関係なく、モードビットをオンにする
+.RE
+
+このうち \fB\(mi\fR 記号は、\fImode\fR 引数の最初の文字として記述することはできません。これは、ハイフンではじまるオプションとの混同を避けるためです。\fI\fR初期値としてすべてのモードビットがオフになっているので、最初の文字として \fB\(mi\fR を指定する必要のあるシンボリックモードはありません。
+.sp
+ハイフンが省略されると、一次子は、ファイルのアクセス権ビットの値が結果のテンプレートの値と等しければ、真と判定します。
+.sp
+\fImode\fR 引数がハイフンではじまる場合は、結果のテンプレートのビットがすべてファイルのアクセス権ビットで設定されていれば、真と判定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-perm\fR [\fB-\fR]\fIonum\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルのアクセス権フラグが \fIonum\fR に指定した 8 進数字に一致すれば、真になります(\fBchmod\fR(1) を参照)。\fIonum\fR の先頭がマイナス記号 (\fB\(mi\fR) の場合、ファイルのアクセス権フラグと 比較されるのは、\fIonum\fR 中で設定されているビットだけになります。比較の結果、一致すれば、真と判定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-print\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。現在のパス名を出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-print0\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。現在のパス名を出力します。その後には、\fB-print\fR で使用される NEWLINE 文字ではなく、NULL 文字が続きます。 
+.sp
+これにより、NEWLINE またはほかのタイプのスペースを含むファイル名を、\fBfind\fR の出力を処理するプログラムが正しく解釈できるようになります。このオプションは、\fBcpio\fR および \fBxargs\fR の \fB-0\fR オプションに相当します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-prune\fR\fR
+.ad
+.RS 18n
+.rt  
+常に真です。一致するディレクトリ構造内で、\fIpattern\fR より下位のディレクトリやファイルは検査しません (「使用例」を参照)。\fB-depth\fR が指定されている場合は、\fB-prune\fR の指定は無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-size\fR \fIn\fR[\fBc\fR]\fR
+.ad
+.RS 18n
+.rt  
+ファイルが \fIn\fR ブロック長 (1 ブロックは 512 バイト)である場合、真です。\fIn\fR の後に \fBc\fR を指定すると、サイズはバイト単位で示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-type\fR \fIc\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルの形式が \fIc\fR である場合、真です。ここで \fIc\fR は、\fBb\fR (ブロック型特殊ファイル)、\fBc\fR (文字型特殊ファイル)、\fBd\fR (ディレクトリ)、\fBD\fR (door)、\fBf\fR (プレーンファイル)、\fBl\fR (シンボリックリンク)、\fBp\fR(FIFO (名前付きパイプ))、\fBs\fR (ソケット) のいずれかです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-user\fR \fIuname\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルの所有者が \fIuname\fR に指定したユーザーである場合、真です。\fIuname\fR が数値で、\fB/etc/passwd\fR ファイルに記載されているログイン名でないか、\fBNIS\fR テーブルに記載されていない場合、この数値はユーザー \fBID\fR と見なされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-xdev\fR\fR
+.ad
+.RS 18n
+.rt  
+\fB-mount\fR 一次子と同じ。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-xattr\fR\fR
+.ad
+.RS 18n
+.rt  
+ファイルが拡張属性を持っている場合、真です。
+.RE
+
+.SS "複合式"
+.sp
+.LP
+一次子は、以下の演算子 (優先度の高い順) を使用して組み合わせることができます。
+.sp
+.ne 2
+.mk
+.na
+\fB1) \fB(\fR \fIexpression\fR \fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+括弧で囲まれた式が真である場合、真 (括弧は、シェルの特殊文字とみなされるため、エスケープする必要がある)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB2) \fB!\fR \fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+一次子の否定 (\fB!\fR は単項 \fInot\fR) 演算子
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB3) \fIexpression\fR \fB[\fR\fB-a\fR\fB]\fR \fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+一次子の連結 ( \fIand\fR 演算子は 2 つの一次子を並置することにより示される)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB4) \fIexpression\fR \fB\fR\fB-o\fR \fIexpression\fR\fR
+.ad
+.sp .6
+.RS 4n
+一次子の代替 (\fB-o\fR は \fIor\fR 演算子)
+.RE
+
+.sp
+.LP
+\fBfind\fR を \fBcpio\fR と組み合わせて使用する場合、\fBcpio\fR に \fB-L\fR オプションが指定されているときは、\fBfind\fR に \fB-L\fR オプションまたは \fB-follow\fR プリミティブを使用する必要があります。cpio に L オプションが指定されていない場合は、find に L オプションまたは follow プリミティブを使用してはいけません。そうしない場合、結果は不確定です。
+.sp
+.LP
+\fIexpression\fR を省略すると、式として \fB-print\fR が使用されます。expression を指定し、その式の中に \fB-exec\fR、\fB-ok\fR、\fB-ls\fR、\fB-print\fR のいずれも含まれていなければ、その式は次に示すものに置き換えられます。
+.sp
+.LP
+(指定された式) \fB-print\fR\fI\fR
+.sp
+.LP
+\fB-user\fR、\fB-group\fR、\fB-newer\fR の各一次子がそれぞれの引数を評価するのは 1 回だけです。\fB-exec\fR または \fB-ok\fR オプションで指定したコマンドを呼び出しても、同ファイル中の後続の一次子は影響を受けません。\fI\fR
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBfind\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fRディレクトリ階層を出力する
+.sp
+.LP
+次のコマンドは同等です。
+
+.sp
+.in +2
+.nf
+example% \fBfind .\fR
+example% \fBfind . -print\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+どちらも、現在のディレクトリ以下の階層構造をすべて出力します。
+
+.LP
+\fB例 2 \fRファイルを削除する
+.sp
+.LP
+次の例は、ホームディレクトリにある \fBa.out\fR または \fB*.o\fR という名前のファイルのうち、1 週間アクセスされなかったものをすべて削除します。
+
+.sp
+.in +2
+.nf
+example% \fBfind $HOME \e( -name a.out -o -name '*.o' \e) \e
+       -atime +7 -exec rm {} \e;\fR 
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRすべてのファイル名 (SCCS ディレクトリを除く) を出力する
+.sp
+.LP
+次の例は、現在のディレクトリとそれ以下のディレクトリ内にあるファイル名すべてを再帰的に出力します。ただし、\fBSCCS\fR ディレクトリはスキップします。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -name SCCS -prune -o -print\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRすべてのファイル名と SCCS ディレクトリを出力する
+.sp
+.LP
+次の例は、現在のディレクトリとそれ以下のディレクトリ内にあるファイル名すべてを再帰的に出力します。\fBSCCS\fR ディレクトリの内容は出力しませんが、\fBSCCS\fR ディレクトリ名は出力します。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -print -name SCCS -prune\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR新しいファイルを検査する
+.sp
+.LP
+次のコマンドは、\fB-nt\fR を指定した \fBtest\fR(1) と基本的に同等です。
+
+.sp
+.in +2
+.nf
+example$ \fBif [ -n "$(find
+file1 -prune -newer file2)" ]; then
+
+printf %s\e\en "file1 is newer than file2"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR24 時間モードを使用してファイルを選択する
+.sp
+.LP
+\fB-atime\fR、\fB-ctime\fR、\fB-mtime\fRで指定する \fIn\fR の最小単位は 24 時間です。たとえば、ある日の 23:59 にアクセスされたファイルがあり、その2 分後、つまり翌日の 00:01 に次のコマンドを実行したとします。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -atime -1 -print\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この場合、ファイルは選択の対象となります。日付は変わっていても 24 時間は経過していないためです。午前 0 時が間にはさまっていても、24 時間を単位とする計算には影響はありません。
+
+.LP
+\fB例 7 \fR指定したファイルアクセス権に一致したファイルを出力する
+.sp
+.LP
+次の例は、ユーザーによる読み取り・書き込み・実行、グループによる読み取り・実行、その他のユーザーによる読み取り・実行が許可されており、その他のアクセス権は許可されていないファイル名すべてを再帰的に出力します。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -perm u=rwx,g=rx,o=rx\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のように指定することもできます。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -perm a=rwx,g-w,o-w\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRその他のユーザーによる書き込みが許可されているファイルを出力する\fB\fR
+.sp
+.LP
+次の例は、その他のユーザーによる書き込みが 許可されているファイル名すべてを再帰的に出力します (読み取り、書き込みが許可されているかどうかは関係ありません)。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -perm -o+w\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fRローカルファイル (ローカルでないディレクトリ階層は下降しない) を出力する
+.sp
+.in +2
+.nf
+example% \fBfind . ! -local -prune -o -print\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fR拡張属性を持つ名前空間内のファイルを出力する
+.sp
+.in +2
+.nf
+example% \fBfind . -xattr\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fR大文字と小文字を区別せずにすべての PDF ファイル名を出力する
+.sp
+.LP
+次の例は、\fB\&.pdf \fR、\fB\&.PDF\fR、\fB\&.Pdf\fR などの拡張子を持つすべてのファイル名を検索します。
+
+.sp
+.in +2
+.nf
+example% \fBfind . -iname '*.pdf'\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBfind\fR の実行に影響を与える次の環境変数の詳細については、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPATH\fR\fR
+.ad
+.RS 8n
+.rt  
+一次子 \fB-exec\fR と \fB-ok\fR の \fIutility_name\fR の場所を判別します。
+.RE
+
+.sp
+.LP
+肯定応答は、ユーザーのロケールの \fBLC_MESSAGES\fR カテゴリの \fByesexpr\fR キーワードで定義されている拡張正規表現を使用して処理されます。\fBLC_COLLATE\fR カテゴリに指定されているロケールは、\fByesexpr\fR に定義されている式に使用される範囲、同等クラス、および複数文字照合要素の動作を定義します。\fBLC_CTYPE\fR に指定されているロケールは、テキストデータのバイト列を文字として解釈するロケールや、\fByesexpr\fR に定義されている式に使用される文字クラスの動作を定義します。\fBlocale\fR(5) を参照してください。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+オペランドで指定されたパスはすべて正常に検査されました。\fI\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/passwd\fR\fR
+.ad
+.RS 20n
+.rt  
+パスワードファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/group\fR\fR
+.ad
+.RS 20n
+.rt  
+グループファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/dfs/fstypes\fR\fR
+.ad
+.RS 20n
+.rt  
+分散ファイルシステムパッケージを登録したファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBchmod\fR(1), \fBcpio\fR(1), \fBsh\fR(1), \fBtest\fR(1), \fBls\fR(1B), \fBacl\fR(2), \fBstat\fR(2), \fBumask\fR(2), \fBattributes\fR(5), \fBenviron\fR(5), \fBfsattr\fR(5), \fBlargefile\fR(5), \fBlocale\fR(5), \fBstandards\fR(5)
+.SH 警告
+.sp
+.LP
+次のオプションは廃止済みで、将来のリリースではサポートされなくなります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-cpio\fR \fIdevice\fR\fR
+.ad
+.RS 17n
+.rt  
+常に真です。\fIdevice\fR 上に、現在のファイルを \fBcpio\fR フォーマット (5120 バイトレコード) で書き込みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ncpio\fR \fIdevice\fR\fR
+.ad
+.RS 17n
+.rt  
+常に真です。\fIdevice\fR 上に、現在のファイルを \fBcpio\fR \fB-c\fR フォーマット (5120 バイトレコード)で書き込みます。
+.RE
+
+.SH 注意事項
+.sp
+.LP
+\fBfind\fR を使用して、一定時間内に変更されたファイルを判別する場合は、\fB-print\fR 引数の前に \fB-mtime\fR 引数を指定します。\fB\fRそうしないと、すべてのファイル名が出力されます。\fB\fR
+.sp
+.LP
+Solaris のルートファイルシステム下にあるファイルは、実際には、\fBmntfs\fR や \fBnamefs\fR などの仮想ファイルシステムのマウントポイントである場合もあります。\fBufs\fR ファイルシステムと比較するときに、\fB-mount\fR または \fB-xdev\fR を \fBfind\fR 式に指定した場合、このようなファイルは選択されません。
+.sp
+.LP
+ほかのユーザーの管理下にあるファイルシステム階層を下降する場合に、\fB-L\fR または \fB-follow\fR オプションを使用することはお勧めしません。特に \fB-exec\fR を使用する場合は、シンボリックリンクによって、起動した階層から \fBfind\fR コマンドが抜け出す可能性があります。\fBfind\fR コマンドによって実行される型チェックと実行されるコマンドがファイル引数に対して操作する時間との間に固有の競合状態があるため、\fB-exec\fR コマンドが操作するファイルタイプを制限するのに \fB-type\fR を使用するのは十分ではありません。

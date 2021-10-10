@@ -1,0 +1,171 @@
+'\" te
+.\" Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH updatehome 1 "15 Oct 2010" "SunOS 5.11" "User Commands"
+.SH NAME
+updatehome \- update the home directory copy and link files for the current label
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/bin/updatehome\fR [\fB-cirs\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+\fBupdatehome\fR reads the user's minimum-label copy and link-control files (\fB\&.copy_files\fR and \fB\&.link_files\fR). These files contain a list of files to be copied and symbolically linked from the user's minimum-label home directory to the user's home directory at the current label.
+.sp
+.LP
+By  default, the minimum user label is specified in \fBlabel_encodings\fR(4), and can be explicitly specified in \fBuser_attr\fR(4). When created using \fBtxzonemgr\fR(1M), the public zone is assigned the default minimum label, and is configured as a multilevel NFS server. An authorized administrator in the public zone can use the \fBshare\fR(1M) command to export home directories, so that they can be mounted in read-only mode by higher-level zones. Additional zones created by means of \fBtxzonemgr\fR(1M) are configured with an \fBautomount\fR(1M) entry that mounts the public zone's home directories at \fB/zone/public/home\fR.
+.sp
+.LP
+If the user's minimum home directory has been shared in this fashion, a user can run the \fBupdatehome\fR command in higher-level zones, either manually or by executing it in a startup file. For example, the user probably wants a symbolic link to such files as \fB\&.profile\fR, \fB\&.login\fR, \fB\&.cshrc\fR, \fB\&.exrc\fR, \fB\&.mailrc\fR, and \fB~/bin\fR. The \fBupdatehome\fR command provides a convenient mechanism for accomplishing this symlink. The user can add files to those to be copied (\fB\&.copy_files\fR) and to those to be symbolically linked (\fB\&.link_files\fR).
+.SH OPTIONS
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+Replace existing home-directory copies at the current label. The default is to skip over existing copies.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+Ignore errors encountered. The default aborts on error.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+Replace existing home-directory copies or symbolic links at the current label. This option implies options \fB-c\fR and \fB-s\fR. The default is to skip over existing copies or symbolic links.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+Replace existing home-directory symbolic links at the current label. The default is to skip over existing symbolic links.
+.RE
+
+.SH EXIT STATUS
+.sp
+.LP
+Upon success, \fBupdatehome\fR returns \fB0\fR. Upon failure, \fBupdatehome\fR returns \fB1\fR and writes diagnostic messages to standard error.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRA Sample \fB\&.copy_files\fR File
+.sp
+.LP
+The files that are listed in \fB\&.copy_files\fR can be modified at every user's label.
+
+.sp
+.in +2
+.nf
+\&.cshrc 
+\&.mailrc 
+\&.mozilla/bookmarks.html
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRA Sample \fB\&.link_files\fR File
+.sp
+.LP
+The files that are listed in \fB\&.link_files\fR can be modified at the lowest label. The changes propagate to the other labels that are available to the user.
+
+.sp
+.in +2
+.nf
+~/bin
+\&.mozilla/preferences
+\&.xrc
+\&.rhosts
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRUpdating the Linked and Copied Files
+.sp
+.LP
+The \fB\&.copy_files\fR and \fB\&.link_files\fR were updated by the user at the minimum label. At a higher label, the user refreshes the copies and the links. No privileges are required to run the command.
+
+.sp
+.in +2
+.nf
+% \fBupdatehome -r\fR
+.fi
+.in -2
+.sp
+
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.copy_files\fR\fR
+.ad
+.RS 21n
+.rt  
+List of files to be copied
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.link_files\fR\fR
+.ad
+.RS 21n
+.rt  
+List of files to be symbolically linked
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/trusted
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBautomount\fR(1M), \fBshare\fR(1M), \fBtxzonemgr\fR(1M), \fBlabel_encodings\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fI\&.copy_files and .link_files Files\fR in \fIOracle Solaris Trusted Extensions Configuration and Administration\fR
+.SH NOTES
+.sp
+.LP
+The functionality described on this manual page is available only if the system is configured with Trusted Extensions.

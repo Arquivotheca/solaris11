@@ -1,0 +1,312 @@
+'\" te
+.\" Portions Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved
+.TH runat 1 "2001 年 6 月 22 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+runat \- 拡張属性名前空間でのコマンドの実行
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/runat\fR \fIfile\fR [\fIcommand\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBrunat\fR ユーティリティーは、ファイルの非表示の属性ディレクトリにあるシェルコマンドを実行するために使用します。実際にはこのユーティリティーは、file 引数に関連付けられている非表示の属性ディレクトリに現在の作業ディレクトリを変更し、指定されたコマンドを Bourne シェル (\fB/bin/sh\fR) で実行します。コマンド引数が指定されていない場合は、対話型シェルが起動されます。環境変数 $\fBSHELL\fR は、起動されるシェルを定義します。この変数が未定義の場合は、デフォルトのシェル \fB/bin/sh\fR が使用されます。
+.sp
+.LP
+file 引数には任意のファイルを指定できます。これには、拡張属性をサポートするディレクトリが含まれます。\fBrunat\fR コマンドを呼び出す前に、このファイルに属性を設定したり、何らかの方法で準備したりする必要はありません。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile\fR\fR
+.ad
+.RS 11n
+.rt  
+任意のファイル。これには、拡張属性をサポートするディレクトリが含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcommand\fR\fR
+.ad
+.RS 11n
+.rt  
+属性ディレクトリで実行するコマンド。
+.RE
+
+.SH エラー
+.sp
+.LP
+\fBrunat\fR が \fIfile\fR 引数にアクセスできない場合、または \fIfile\fR 引数が拡張属性をサポートしない場合は、ゼロ以外の終了ステータスが返されます。
+.SH 使用法
+.sp
+.LP
+拡張ファイル属性の詳細については、\fBfsattr\fR(5) を参照してください。
+.sp
+.LP
+\fBrunat\fR コマンドによって作成されたプロセスのコンテキストでは、ファイルの拡張属性を含む非表示のディレクトリが、現在の作業ディレクトリとして設定されます。このディレクトリの親 (「\fB\&..\fR」エントリ) は、コマンド行で指定されたファイルを常に指しています。そのため、これはディレクトリではない可能性があります。したがって、親エントリが正しい形式であることに依存する (つまり、ディレクトリを参照する) コマンド (\fBpwd\fR など) は失敗する可能性があります。
+.sp
+.LP
+\fIcommand\fR 引数が指定されていない場合、\fBrunat\fR は、指定されたファイルの非表示の属性ディレクトリを現在の作業ディレクトリに設定して、新しい対話型シェルを起動します。前述のようにディレクトリの親がディレクトリではない場合は、いくつかのシェル (\fBzsh\fR、\fBtcsh\fR など) が正常に動作しない場合があります。これらのシェルは、\fBrunat\fR とともに使用しないでください。
+.SH 使用例
+.LP
+\fB例 1 \fRrunat を使用したファイルの拡張属性の一覧表示
+.sp
+.in +2
+.nf
+example% \fBrunat file.1 ls -l\fR
+example% \fBrunat file.1 ls\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR拡張属性の作成
+.sp
+.in +2
+.nf
+example% \fBrunat file.2 cp /tmp/attrdata attr.1\fR
+example% \fBrunat file.2 cat /tmp/attrdata > attr.1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRあるファイルから別のファイルへの属性のコピー
+.sp
+.in +2
+.nf
+example% \fBrunat file.2 cat attr.1 | runat file.1 "cat > attr.1"\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRrunat を使用した対話型シェルの起動
+.sp
+.in +2
+.nf
+example% \fBrunat file.3 /bin/sh\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+これは、\fBfile.3\fR の属性ディレクトリで新しいシェルを起動します。このシェルは現在のディレクトリを判別できません。属性ディレクトリから出るには、起動されたシェルを終了するか、絶対パスを使用してディレクトリを変更します (\fBcd\fR)。
+
+.sp
+.LP
+属性の基本的な操作を行う際に推奨される方法は、次のとおりです。
+
+.sp
+.ne 2
+.mk
+.na
+\fBdisplay\fR
+.ad
+.RS 28n
+.rt  
+\fBrunat \fIfile\fR ls [\fIoptions\fR]\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBread\fR
+.ad
+.RS 28n
+.rt  
+\fBrunat \fIfile\fR cat \fIattribute\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB作成/変更\fR
+.ad
+.RS 28n
+.rt  
+\fBrunat \fIfile\fR cp \fIabsolute-file-path\fR \fIattribute\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdelete\fR
+.ad
+.RS 28n
+.rt  
+\fBrunat \fIfile\fR rm \fIattribute\fR\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBアクセス権の変更\fR
+.ad
+.RS 28n
+.rt  
+.sp
+.in +2
+.nf
+\fBrunat \fIfile\fR chmod \fImode attribute\fR
+runat \fIfile\fR chgrp \fIgroup attribute\fR
+runat \fIfile\fR chown \fIowner attribute\fR\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB対話型シェル\fR
+.ad
+.RS 28n
+.rt  
+.LP
+.nf
+\fBrunat \fIfile\fR /bin/sh\fR または $SHELL に /bin/sh を設定して、 \fBrunat \fIfile\fR\fR
+.fi
+
+.RE
+
+.sp
+.LP
+上記のリストには、\fBrunat\fR とともに動作することがわかっているコマンドが含まれています。その他の多くのコマンドが動作する可能性はありますが、このリスト以外のコマンドの動作は保証されていません。現在の作業ディレクトリを判別できることに依存するコマンドは、失敗する可能性があります。そのようなコマンドの例を次に示します。
+.LP
+\fB例 5 \fR属性ディレクトリでの man コマンドの使用
+.sp
+.in +2
+.nf
+example% \fBrunat file.1 man runat\fR
+>getcwd: Not a directory
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR属性ディレクトリでの tcsh シェルの起動
+.sp
+.in +2
+.nf
+example% \fBrunat file.3 /usr/bin/tcsh\fR
+tcsh: Not a directory
+tcsh: Trying to start from "/home/\fIuser\fR"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+ユーザーのホームディレクトリを現在の作業ディレクトリに設定して、新しい tcsh シェルが起動されました。
+
+.LP
+\fB例 7 \fR属性ディレクトリでの zsh シェルの起動
+.sp
+.in +2
+.nf
+example% \fBrunat file.3 /usr/bin/zsh\fR
+example%
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+コマンドは実行されたように見えますが、実際には \fBzsh\fR は現在の作業ディレクトリを「/」に変更しただけです。これは、\fB/bin/pwd\fR を使用して表示できます。
+
+.sp
+.in +2
+.nf
+example% \fB/bin/pwd\fR
+/
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR\fR
+.ad
+.RS 9n
+.rt  
+\fBrunat\fR によって呼び出されるコマンドシェルを指定します。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB125\fR \fR
+.ad
+.RS 8n
+.rt  
+\fIfile\fR 引数によって参照されるファイルの属性ディレクトリにアクセスできない。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB126\fR \fR
+.ad
+.RS 8n
+.rt  
+指定された \fIcommand\fR 引数の実行が失敗しました。
+.RE
+
+.sp
+.LP
+それ以外の場合は、指定されたコマンドを実行するために呼び出されたシェルの終了ステータスが返されます。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBopen\fR(2), \fBattributes\fR(5), \fBfsattr\fR(5)
+.SH 注意事項
+.sp
+.LP
+現在の作業ディレクトリを判別できない場合は、\fBrunat\fR でコマンドが失敗する原因を特定できないことがあります。発生したエラーは、区別するのが困難であり、さまざまな解釈ができます (\fBtcsh\fR と \fBzsh\fR の例を参照)。

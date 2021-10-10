@@ -1,0 +1,609 @@
+'\" te
+.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.TH vrrpadm 1M "14 Oct 2009" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+vrrpadm \- VRRP administration tool
+.SH SYNOPSIS
+.LP
+.nf
+\fBvrrpadm\fR \fBcreate-router\fR \fB-V\fR \fIvrid\fR \fB-l\fR \fIlink\fR \fB-A\fR \fIinet\fR | \fIinet6\fR
+        [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBdelete-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBdisable-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBenable-router\fR \fIrouter_name\fR
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBmodify-router\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR]
+        [\fB-o\fR \fIflags\fR] [\fIrouter_name\fR]
+.fi
+
+.LP
+.nf
+\fBvrrpadm\fR \fBshow-router\fR [\fB-P\fR | \fB-x\fR] [\fB-p\fR] [\fB-o\fR \fIfield\fR[,...]] [\fIrouter_name\fR]
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBvrrpadm\fR command is used to administer the VRRP (Virtual Router Redundancy Protocol) service in a system.
+.sp
+.LP
+VRRP specifies an election protocol that dynamically assigns responsibility for a virtual router to one of the VRRP routers within a LAN. At a given moment, only one VRRP router controls the IPv4 or IPv6 virtual address(es) associated with a virtual router (known as the \fBmaster\fR), and forwards packets sent to these IP addresses. The election process provides dynamic failover of the forwarding responsibility should the master become unavailable.
+.sp
+.LP
+Each \fBvrrpadm\fR subcommand operates on a VRRP router, which is identified by a name given by the administrator. VRRP routers with the same VRID and address family within a LAN comprise a virtual router, which protects a set of virtual IP addresses.
+.sp
+.LP
+A system can have multiple VRRP routers; each belongs to a different virtual router.
+.SH SUB-COMMANDS
+.sp
+.LP
+The following subcommands are supported. Note that all subcommands but \fBshow-router\fR require the \fBsolaris.network.vrrp\fR authorization. The \fBshow-router\fR subcommand does not require special authorizations.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm create-router\fR \fB-V\fR \fIvrid\fR \fB-l\fR \fIlink\fR \fB-A\fR \fIinet\fR | \fIinet6\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR] [\fB-o\fR \fIflags\fR] \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Create a VRRP router with a specified configuration.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIinet\fR | \fIinet6\fR, \fB--address_family\fR=\fIinet\fR | \fIinet6\fR\fR
+.ad
+.sp .6
+.RS 4n
+Address family. Either IPv4 or IPv6.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIadv_interval\fR, \fB--adv_interval\fR=\fIadv_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+The advertisement interval in milliseconds. Default is \fB1000\fR (one second). The valid interval range is 10-40950.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIlink\fR, \fB--link\fR=\fIlink\fR\fR
+.ad
+.sp .6
+.RS 4n
+The data link on which the VRRP router is configured. This determines the LAN this VRRP router is running in. The data-link can be a physical link, a VLAN, or an aggregation.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIflags\fR, \fB--flags\fR=\fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+The preempt and accept modes, delimited by a comma. Values can be:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpreempt\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBun_preempt\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBaccept\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBnoaccept\fR
+.RE
+By default both modes are set to true.
+.sp
+The \fBpreempt\fR mode controls whether an enabled higher priority backup router preempts a lower priority master router. If \fBpreempt\fR mode is true, then the preemption is allowed; otherwise, preemption is prohibited. Note that the \fBpreempt\fR mode must be true if the VRRP router is the owner of the virtual IP addresses.
+.sp
+The \fBaccept\fR mode controls the local packet acceptance of the virtual IP addresses. If \fBaccept\fR mode is true, the master must accept packets sent to the virtual IP addresses. If \fBaccept\fR mode is false, the master does not accept those packets, although it does respond to ARP requests or ND Solicitations and Advertisement for those non-accepted virtual IP addresses. It also must forward packets for the router specified in this subcommand. Note that \fBaccept\fR mode must be true if the VRRP router is the owner of the virtual IP addresses. An example of syntax for this option:
+.sp
+.in +2
+.nf
+-o preempt,no_accept
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpriority\fR, \fB--priority\fR=\fIpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+The priority of the specified VRRP router used in master selection. The higher the value, the greater the possibility the router is selected as the master.
+.sp
+The default value is 255, which indicates the specified VRRP router is the IP Address Owner and owns all the virtual IP addresses. An IP Address Owner will respond to the packets addressed to one of the virtual IP addresses for ICMP pings, TCP connections, and so forth.
+.sp
+The range 1-254 is available for VRRP routers backing up a virtual router. Master selection is weighted toward the VRRP router with the higher priority.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR \fIvrid\fR, \fB--VRID\fR=\fIvrid\fR\fR
+.ad
+.sp .6
+.RS 4n
+The virtual router identifier (VRID). Together with the address family, it identifies a virtual router within a LAN.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of a VRRP router. This name is used to identify a VRRP router in other \fBvrrpadm\fR subcommands.
+.sp
+The maximum length of a valid router name is 31 characters. Legal characters are alphanumeric (a-z, A-Z, 0-9) and the underscore ('_').
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBdelete-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Delete the VRRP router identified by \fIrouter_name\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBdisable-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Disable the virtual router identified by \fIrouter_name\fR. Once the router is disabled, it will stop participating in the master selection process in the virtual router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBenable-router\fR \fIrouter_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Re-enable the virtual router identified by \fIrouter_name\fR that was disabled. The router will resume participating in the master selection process in the virtual router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBmodify-router\fR [\fB-p\fR \fIpriority\fR] [\fB-i\fR \fIadv_interval\fR]         [\fB-o\fR \fIflags\fR] [\fIrouter_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Modify the configuration of the VRRP router identified by \fIrouter_name\fR.  Only the priority, the advertisement interval, the preempt mode, and the accept mode can be modified.
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpriority\fR, \fB--priority\fR=\fIpriority\fR\fR
+.ad
+.sp .6
+.RS 4n
+The new priority of this VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIadv_interval\fR, \fB--adv_interval\fR=\fIadv_interval\fR\fR
+.ad
+.sp .6
+.RS 4n
+The new advertisement interval.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIflags\fR, \fB--flags\fR=\fIflags\fR\fR
+.ad
+.sp .6
+.RS 4n
+The new preempt and accept modes. Either one or both can be specified. If both are specified, they are delimited by a comma. For example:
+.sp
+.in +2
+.nf
+-o preempt,no_accept
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvrrpadm\fR \fBshow-router\fR [\fB-P\fR | \fB-x\fR] [\fB-p\fR] [\fB-o\fR \fIfield\fR[,...]] [\fIrouter_name\fR]\fR
+.ad
+.sp .6
+.RS 4n
+Display the information for the VRRP router identified by \fIrouter_name\fR. If no \fIrouter_name\fR is specified, display information for all the VRRP routers on the system.
+.sp
+By default (with no options), the following fields are displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVRID\fR\fR
+.ad
+.sp .6
+.RS 4n
+The VRID of the VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLINK\fR\fR
+.ad
+.sp .6
+.RS 4n
+The data link on which the VRRP router is created.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBAF\fR\fR
+.ad
+.sp .6
+.RS 4n
+he address family of the VRRP router, either \fBIPv4\fR or \fBIPv6\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The priority of this VRRP router used in master selection.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBADV_INTV\fR\fR
+.ad
+.sp .6
+.RS 4n
+The advertisement interval, in milliseconds.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+The current state of the VRRP router, \fBINIT\fR (Initialize), \fBBACK\fR (Backup), or \fBMAST\fR (Master).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMODE\fR\fR
+.ad
+.sp .6
+.RS 4n
+A set of flags associated with the VRRP router. Possible values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBe\fR\fR
+.ad
+.RS 5n
+.rt  
+The router has been enabled.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBp\fR\fR
+.ad
+.RS 5n
+.rt  
+Preempt mode is true.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBa\fR\fR
+.ad
+.RS 5n
+.rt  
+Accept mode is true.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBo\fR\fR
+.ad
+.RS 5n
+.rt  
+Virtual address owner.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVNIC\fR\fR
+.ad
+.sp .6
+.RS 4n
+The VRRP VNIC created for this VRRP router.
+.sp
+Note that the name of the VNIC can change over time unless the router is enabled.
+.RE
+
+The \fBshow-router\fR subcommand has the following options:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR, \fB--extended\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display additional information of the given VRRP router:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRIMARY_IP\fR\fR
+.ad
+.sp .6
+.RS 4n
+The primary IP address selected by the VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBVIRTUAL_IPS\fR\fR
+.ad
+.sp .6
+.RS 4n
+The virtual IP addresses configured on the VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPRV_STAT\fR\fR
+.ad
+.sp .6
+.RS 4n
+The previous state of the VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTAT_LAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+Time since the last state transition.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR, \fB--peer\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display information for the backup VRRP router. This option is meaningful only when the VRRP router is in the backup state.
+.sp
+The following fields are displayed:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNAME\fR\fR
+.ad
+.sp .6
+.RS 4n
+The name of the VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPEER\fR\fR
+.ad
+.sp .6
+.RS 4n
+The primary IP address of the peer VRRP router.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_PRIO\fR\fR
+.ad
+.sp .6
+.RS 4n
+The priority of the peer VRRP router contained in the advertisement received from the peer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_INTV\fR\fR
+.ad
+.sp .6
+.RS 4n
+The advertisement interval (in milliseconds) contained in advertisements received from the peer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP_ADV_LAST\fR\fR
+.ad
+.sp .6
+.RS 4n
+Time since last received advertisement from the peer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMASTER_DOWN_INT\fR\fR
+.ad
+.sp .6
+.RS 4n
+Time interval (in milliseconds) after which to declare Master down.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR, \fB--parseable\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display the VRRP router information in the machine parseable format.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...], \fB--output\fR=\fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+A case-insensitive, comma-separated list of output fields to display. The field name must be one of the fields listed above, or the special value \fBall\fR to display all fields. By default (without \fB-o\fR), \fBvrrpadm show\fR displays all fields.
+.RE
+
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/network/routing/vrrp
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBvrrpd\fR(1M), \fBattributes\fR(5)

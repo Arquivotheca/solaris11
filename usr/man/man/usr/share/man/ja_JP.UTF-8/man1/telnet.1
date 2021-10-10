@@ -1,0 +1,1426 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (C) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1983, 1990, 1993 The Regents of the University of California. All rights reserved.
+.TH telnet 1 "2010 年 4 月 29 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+telnet \- TELNET プロトコルを使用した遠隔システムへのユーザーインタフェース
+.SH 形式
+.LP
+.nf
+\fBtelnet\fR [\fB-8EFKLacdfrx\fR] [\fB-X\fR \fIatype\fR] [\fB-e\fR \fIescape_char\fR] 
+     [\fB-k\fR \fIrealm\fR] [\fB-l\fR \fIuser\fR] [\fB-n\fR \fIfile\fR] 
+     [ [ [!] @hop1 [@hop2...] @] \fIhost\fR [\fIport\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtelnet\fR ユーティリティーは、\fBTELNET\fR プロトコルを使って他のホストと通信を行います。\fBtelnet\fR が引数なしで起動された場合、コマンドモードに入り、\fBtelnet>\fR プロンプトが表示されます。このモードでは、関連付けられたコマンドを受け入れて実行します。「\fB使用法\fR」を参照してください。telnet が引数を付けて起動された場合、それらの引数を使って \fBopen\fR コマンドが実行されます。
+.sp
+.LP
+たとえば、\fIhost\fR が \fI@hop1@hop2@host\fR と指定された場合、\fIhost\fR への接続はルーズソースルーティングを使って、ホスト \fIhop1\fR と \fIhop2\fR を経由して行われます。先頭に \fB!\fR が付いていると、ストリクトソースルーティングに従って接続が行われます。\fBtelnet\fR が IPv6 を使用する場合は、ルーズソースルーティングのみが可能で、\fB!\fR の指定は無視されることに注意してください。
+.sp
+.LP
+接続が開始されると、\fBtelnet\fR は入力モードに入ります。このモードでは、入力されたテキストが遠隔ホストに送信されます。入力モードは、遠隔システムでのサポート状況に応じて、「行モード」、「文字単位モード」、または「旧行単位モード」のいずれかになります。
+.sp
+.LP
+「行モード」では、文字処理が遠隔システムの制御下に置かれたローカルシステムで行われます。入力の編集や文字のエコーがオフに設定された場合、遠隔システムはその情報を中継します。遠隔システムは、そこで発生する特殊文字の変更も中継するので、その変更をローカルシステムに反映させることができます。
+.sp
+.LP
+「文字単位」モードでは、入力されたテキストの大部分は、ただちに遠隔ホストに送信され、処理されます。
+.sp
+.LP
+「旧行単位」モードでは、テキストはすべてローカルでエコーされ、(通常は) 完了した行だけが遠隔ホストに送信されます。「ローカルエコー文字」 (初期値は \fB^E\fR) は、ローカルエコーのオンとオフを切り替えるために使われます。(これは主にパスワードをエコーしないで入力する場合に使われます。)
+.sp
+.LP
+「行モード」オプションが有効になっている場合、または \fBlocalchars\fR トグルが \fBTRUE\fR (これは「旧行単位」モードではデフォルト) の場合、ユーザーの \fBquit\fR、\fBintr\fR、および \fBflush\fR 文字はローカルでトラップされ、リモート側には \fBTELNET\fR プロトコルシーケンスとして送信されます。「行モード」が一度でも有効になっていると、ユーザーの \fBsusp\fR と \fBeof\fR も \fBTELNET\fR プロトコルシーケンスとして送信されます。このとき、\fBquit\fR は \fBBREAK\fR ではなく、\fBTELNET ABORT\fR として送信されます。\fBtoggle\fR \fBautoflush\fR および \fBtoggle\fR \fBautosynch\fR オプションを指定すると、この処理によって、(遠隔ホストが \fBTELNET\fR シーケンスを確認するまで) 後続の端末への出力がフラッシュされたり、\fBquit\fR や \fBintr\fR の場合はそれまでの端末への入力がフラッシュされます。
+.sp
+.LP
+遠隔ホストとの接続中に、ユーザーは \fBtelnet\fR エスケープ文字 (初期値は \fB^]\fR) を入力することで、\fBtelnet\fR コマンドモードに入ることができます。コマンドモードでは、通常の端末編集規則が利用できます。\fBtelnet\fR コマンドプロンプトで  RETURN を押すと、コマンドモードが終了します。\fB\fR
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-8\fR\fR
+.ad
+.sp .6
+.RS 4n
+8 ビットデータパスを指定します。入力と出力の両方に対して、\fBTELNET BINARY\fR オプションを用いるようにネゴシエーションが試みられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+自動ログインを試みます。これにより、\fBENVIRON\fR オプションの \fBUSER\fR 変数によってユーザー名が送信されます (遠隔システムでサポートされている場合)。使用される名前は、現在のユーザー \fBID\fR と適合する場合は、\fBgetlogin\fR(3C) によって返される現在のユーザーの名前になります。それ以外の場合は、ユーザー \fBID\fR に関連付けられた名前になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの \fBtelnetrc\fR ファイルの読み取りを無効にします。(このリファレンスページの \fBtoggle\fR \fBskiprc\fR コマンドを参照してください。)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBdebug\fR トグルの初期値を \fBTRUE\fR に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIescape_char\fR\fR
+.ad
+.sp .6
+.RS 4n
+エスケープ文字の初期値を \fIescape_char\fR に設定します。\fIescape_char\fR は、\fB^\fR (Control キー) とそれに続く 1 文字から成る 2 文字のシーケンスにすることも可能です。2 番目の文字が \fB?\fR の場合、\fBDEL\fR 文字が選択されます。それ以外の場合、2 番目の文字は制御文字に変換され、エスケープ文字として使われます。\fIescape_char\fR が NULL 文字列 (つまり、\fB-e\fR \fB\&''\fR) として定義された場合、これは \fB-e\fR '\fB^@\fR' (Control-@) と同等です。エスケープ文字にできる文字がないことを指定するには、\fB-E\fR オプションを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-E\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべての文字が、エスケープ文字として認識されなくなります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+ローカルの資格情報のコピーを遠隔システムに転送します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+転送可能なローカルの資格情報のコピーを遠隔システムに転送します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIrealm\fR\fR
+.ad
+.sp .6
+.RS 4n
+Kerberos 認証を使用している場合、\fBkrb5.conf\fR(4) で定められた遠隔ホストのデフォルトのレルムではなく、\fIrealm\fR で指定された遠隔ホスト用のチケットを \fBtelnet\fR が取得するように要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+遠隔システムへの自動ログインを行わないことを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fIuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+遠隔システムが \fBENVIRON\fR オプションを解釈できる場合、遠隔システムへの接続時に、\fBENVIRON\fR オプションの \fBUSER\fR 変数の値として \fIuser\fR が遠隔システムに送信されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR\fR
+.ad
+.sp .6
+.RS 4n
+出力に対して 8 ビットデータパスを指定します。これにより、出力に対して \fBBINARY\fR オプションを用いるようにネゴシエーションが行われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fItracefile\fR\fR
+.ad
+.sp .6
+.RS 4n
+トレース情報を記録するために \fItracefile\fR を開きます。後述の \fBset\fR \fItracefile\fR コマンドを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBrlogin\fR に似たユーザーインタフェースを指定します。このモードでは、エスケープ文字はチルダ (\fB~\fR) 文字に設定されます。ただし、\fB-e\fR オプションで変更された場合を除きます。\fBrlogin\fR のエスケープ文字は、キャリッジリターンの直後に入力された場合にのみ認識されます。このモードでも、\fBtelnet\fR コマンドの前に \fBtelnet\fR のエスケープ文字 (通常は「\fB^]\fR」) を入力する必要があります。また、\fBrlogin\fR のエスケープ文字に続けて「\fB .\er\fR」を入力すると接続を閉じることができ、「\fB^Z\fR」を入力すると接続を中断できます (\fBrlogin\fR(1) と同様)。このオプションは不確実なインタフェースであり、将来変更されることがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+データストリームの暗号化を有効にします。このオプションが有効になっていると、認証のネゴシエーションが行えない場合または暗号化を有効にできない場合に \fBtelnet\fR はエラーを表示して終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-X\fR \fIatype\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIatype\fR タイプの認証を無効にします。
+.RE
+
+.SH 使用法
+.SS "telnet コマンド"
+.sp
+.LP
+この節では、\fBtelnet\fR で使用できるコマンドについて説明します。各コマンドは、そのコマンドであることを識別するのに十分なだけの文字数を入力すれば済みます。(これは、\fBmode\fR、\fBset\fR、\fBtoggle\fR、\fBunset\fR、\fBenviron\fR、および \fBdisplay\fR の各コマンドの引数についても同様です。)
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauth\fR \fIargument\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+\fBauth\fR コマンドは、\fBTELNET\fR \fBAUTHENTICATE\fR オプションを通じて送信される情報を操作します。\fBauth\fR コマンドの有効な引数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR \fItype\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたタイプの認証を無効にします。指定できるタイプの一覧を表示するには、\fBauth\fR \fBdisable ?\fR コマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR \fItype\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたタイプの認証を有効にします。指定できるタイプの一覧を表示するには、\fBauth\fR \fBenable ?\fR コマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+さまざまな認証タイプの現在のステータスを一覧表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBopen\fR [\fB\fR\fB-l\fR \fIuser\fR ] [ [!] @\fIhop1\fR [@\fIhop2\fR ...]@\fIhost\fR [ \fIport\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+指定されたホストに接続します。ポート番号を指定しない場合、\fBtelnet\fR はデフォルトポートの \fBTELNET\fR サーバーに接続を試みます。ホストの指定は、ホスト名 (\fBhosts\fR(4) を参照) でも、「ドット表記」で指定したインターネットアドレス (\fBinet\fR(7P) または \fBinet6\fR(7P) を参照) でも構いません。\fIhost\fR が \fI@hop1@hop2@host\fR と指定された場合、\fIhost\fR への接続はルーズソースルーティングを使って、ホスト \fIhop1\fR と \fIhop2\fR を経由して行われます。\fB@\fR は、指定するホスト間の区切り記号として必須です。IPv4 の使用時に先頭に \fB!\fR を付けると、ストリクトソースルーティングに従って接続が行われます。 
+.sp
+\fB-l\fR オプションは、\fBENVIRON\fR オプションの \fBUSER\fR 変数の値として \fIuser\fR を遠隔システムに送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclose\fR\fR
+.ad
+.sp .6
+.RS 4n
+開いている \fBTELNET\fR セッションがある場合は閉じます。\fBEOF\fR (コマンドモードで入力) も同様にセッションを閉じて終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencrypt\fR\fR
+.ad
+.sp .6
+.RS 4n
+encrypt コマンドは、\fBTELNET\fR \fBENCRYPT\fR オプションを通じて送信される情報を操作します。
+.sp
+encrypt コマンドの有効な引数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR \fItype\fR [\fBinput\fR|\fBoutput\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定された暗号化タイプを無効にします。input と output を省略した場合は、入力と出力の両方で無効になります。指定できるタイプの一覧を表示するには、\fBencrypt\fR \fBdisable ?\fR コマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR \fItype\fR [\fBinput\fR|\fBoutput\fR]\fR
+.ad
+.sp .6
+.RS 4n
+指定された暗号化タイプを有効にします。input と output を省略した場合は、入力と出力の両方で有効になります。指定できるタイプの一覧を表示するには、\fBencrypt\fR \fBenable ?\fR コマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinput\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは \fBencrypt\fR \fBstart input\fR コマンドと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-input\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは \fBencrypt\fR \fBstop input\fR コマンドと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutput\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは \fBencrypt\fR \fBstart output\fR コマンドと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-output\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは \fBencrypt\fR \fBstop output\fR コマンドと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR [\fBinput\fR|\fBoutput\fR]\fR
+.ad
+.sp .6
+.RS 4n
+暗号化の開始を試みます。input と output を省略した場合は、入力と出力の両方で有効になります。指定できるタイプの一覧を表示するには、\fBencrypt\fR \fBenable ?\fR コマンドを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の暗号化のステータスを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR [\fBinput\fR|\fBoutput\fR]\fR
+.ad
+.sp .6
+.RS 4n
+暗号化を停止します。input と output を省略した場合は、入力と出力の両方で暗号化が停止されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR \fItype\fR\fR
+.ad
+.sp .6
+.RS 4n
+あとの \fBencrypt\fR \fBstart\fR または \fBencrypt\fR \fBstop\fR コマンドで使用されるデフォルトの暗号化タイプを設定します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBclose\fR と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBz\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR を中断します。このコマンドは、ジョブ制御をサポートするシェル ( \fBsh\fR(1) など) をユーザーが使用している場合にのみ機能します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmode\fR \fItype\fR\fR
+.ad
+.sp .6
+.RS 4n
+要求されたモードに移行できるかどうかを遠隔ホストに問い合わせます。遠隔ホストがそのモードに移行できる場合は、要求されたモードに移行します。引数 \fItype\fR には次のいずれかを指定します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcharacter\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET LINEMODE\fR オプションを無効にします。リモート側が \fBLINEMODE\fR オプションを解釈できない場合は、「文字単位」モードに移行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBline\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET LINEMODE\fR オプションを有効にします。リモート側が \fBLINEMODE\fR オプションを解釈できない場合は、「旧行単位」モードへの移行を試みます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBisig\fR (\fB-isig\fR)\fR
+.ad
+.sp .6
+.RS 4n
+\fBLINEMODE\fR オプションの \fBTRAPSIG\fR モードを有効 (無効) にしようとします。このためには、\fBLINEMODE\fR オプションが有効になっている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBedit\fR (\fB-edit\fR)\fR
+.ad
+.sp .6
+.RS 4n
+\fBLINEMODE\fR オプションの \fBEDIT\fR モードを有効 (無効) にしようとします。このためには、\fBLINEMODE\fR オプションが有効になっている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsofttabs\fR (\fB-softtabs\fR)\fR
+.ad
+.sp .6
+.RS 4n
+\fBLINEMODE\fR オプションの \fBSOFT_TAB\fR モードを有効 (無効) にしようとします。このためには、\fBLINEMODE\fR オプションが有効になっている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlitecho\fR (\fB-litecho\fR)\fR
+.ad
+.sp .6
+.RS 4n
+\fBLINEMODE\fR オプションの \fBLIT_ECHO\fR モードを有効 (無効) にしようとします。このためには、\fBLINEMODE\fR オプションが有効になっている必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmode\fR コマンドのヘルプ情報を表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR の現在のステータスを表示します。これには、現在のモードだけでなく、接続されている相手側も含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisplay\fR\fR
+.ad
+.sp .6
+.RS 4n
+[\fIargument\fR\|.\|.\|.\|] \fBset\fR および \fBtoggle\fR 値のすべてまたは一部を表示します (\fBtoggle\fR \fIargument\fR.\|.\|. を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+[\fIcommand\fR] ヘルプを表示します。引数を付けない場合、\fBtelnet\fR はヘルプの要約を表示します。コマンドを指定した場合、\fBtelnet\fR はそのコマンドのヘルプ情報だけを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsend\fR \fIargument\fR\fB\|.\|.\|.\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つ以上の特殊文字シーケンスを遠隔ホストに送信します。指定できる引数は次のとおりです (一度に複数の引数を指定することもできます)。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBescape\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の \fBtelnet\fR エスケープ文字 (初期値は \fB^]\fR) を送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsynch\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET SYNCH\fR シーケンスを送信します。このシーケンスにより、遠隔システムでそれまでに打ち込まれた入力 (ただし、まだ読み取られていないもの) がすべて破棄されます。このシーケンスは、\fBTCP\fR 緊急データとして送信され、遠隔システムが 4.2 \fBBSD\fR システムの場合は機能しないことがあります。機能しない場合は、端末に小文字の「r」がエコーされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbrk\fR または \fBbreak\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET BRK\fR (Break) シーケンスを送信します。これは、遠隔システムにとって重要な意味を持つ場合があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBip\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET IP\fR (Interrupt Process) シーケンスを送信します。これにより、遠隔システムで現在実行されているプロセスが中止されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBabort\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET ABORT\fR (Abort Process) シーケンスを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBao\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET AO\fR (Abort Output) シーケンスを送信します。これにより、遠隔システムからユーザーの端末へのすべての出力がフラッシュされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBayt\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET AYT\fR (Are You There) シーケンスを送信します。遠隔システムは、このシーケンスに応答する場合も応答しない場合もあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBec\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET EC\fR (Erase Character) シーケンスを送信します。これにより、最後に入力された文字が消去されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBel\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET EL\fR (Erase Line) シーケンスを送信します。これにより、遠隔システムは現在入力中の行を消去します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeof\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET EOF\fR (End Of File) シーケンスを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeor\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET EOR\fR (End Of Record) シーケンスを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBga\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET GA\fR (Go Ahead) シーケンスを送信します。これは、おそらく遠隔システムにとって意味がありません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgetstatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+リモート側が \fBTELNET STATUS\fR コマンドをサポートしている場合、\fBgetstatus\fR はサブネゴシエーションを送信して、現在のオプションのステータスを送るようにサーバーに要求します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnop\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET NOP\fR (No Operation) シーケンスを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsusp\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET SUSP\fR (Suspend Process) シーケンスを送信します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdo\fR \fIoption\fR\fR
+.ad
+.br
+.na
+\fB\fBdont\fR \fIoption\fR\fR
+.ad
+.br
+.na
+\fB\fBwill\fR \fIoption\fR\fR
+.ad
+.br
+.na
+\fB\fBwont\fR \fIoption\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された \fBTELNET\fR プロトコルオプションのネゴシエーションを送信します。option には、プロトコルオプションのテキスト名を指定することも、オプションに対応する番号を指定することもできます。指定されたオプションのネゴシエーションが現在の状態で有効でない場合、このコマンドはそのまま無視されます。\fIoption\fR が \fBhelp\fR または \fB?\fR と指定された場合は、既知のオプション名の一覧が表示されます。このコマンドは主に、通常あまり見られないデバッグの状況で役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsend\fR コマンドのヘルプ情報を表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR \fIargument\fR [\fIvalue\fR]\fR
+.ad
+.br
+.na
+\fB\fBunset\fR \fIargument\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR 変数の 1 つを特定の値に設定します。特殊な値 \fBoff\fR は、変数に関連付けられている機能をオフにします。変数の値は、\fBdisplay\fR コマンドを使って調べることができます。\fIvalue\fR を省略した場合、値は真 (つまり「on」) と見なされます。\fBunset\fR 形式を使用した場合、値は偽 (つまり \fBoff\fR) と見なされます。指定できる変数は次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBecho\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは、「行単位」モードのとき、入力された文字を通常の処理としてローカルでエコーするか、入力された文字のエコーを抑制するか (パスワードが入力された場合など) を切り替える値です (初期値は \fB^E\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBescape\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは、遠隔システムに接続されているときに、\fBtelnet\fR コマンドモードに入るための \fBtelnet\fR エスケープ文字です (初期値は \fB^]\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinterrupt\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モード (\fBtoggle\fR、\fBlocalchars\fR を参照) にある場合に、\fBinterrupt\fR 文字が入力されると、\fBTELNET IP\fR シーケンス (\fBsend\fR、\fBip\fR を参照) が遠隔ホストに送信されます。interrupt 文字の初期値は、端末の \fBintr\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モードにある場合に、\fBquit\fR 文字が入力されると、\fBTELNET BRK\fR シーケンス (\fBsend\fR、\fBbrk\fR を参照) が遠隔ホストに送信されます。quit 文字の初期値は、端末の \fBquit\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBflushoutput\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モードにある場合に、\fBflushoutput\fR 文字が入力されると、\fBTELNET AO\fR シーケンス (\fBsend\fR、\fBao\fR を参照) が遠隔ホストに送信されます。flushoutput 文字の初期値は、端末の \fBflush\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBerase\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モードにあり、かつ\fI\fR「文字単位」モードで動作している場合に、\fBerase\fR 文字が入力されると、\fBTELNET EC\fR シーケンス (\fBsend\fR、\fBec\fR を参照) が遠隔システムに送信されます。\fBerase\fR 文字の初期値は、端末の \fBerase\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkill\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モードにあり、かつ\fI\fR「文字単位」モードで動作している場合に、\fBkill\fR 文字が入力されると、\fBTELNET EL\fR シーケンス (\fBsend\fR、\fBel\fR を参照) が遠隔システムに送信されます。\fBkill\fR 文字の初期値は、端末の \fBkill\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBeof\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が「行単位」モードで動作している場合に、\fBeof\fR 文字を行の先頭文字として入力すると、この文字が遠隔システムに送信されます。\fBeof\fR の初期値は、端末の \fBeof\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBayt\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モードにあるか、\fBLINEMODE\fR が有効になっている場合に、ステータス文字が入力されると、\fBTELNET AYT\fR (Are You There) シーケンスが遠隔ホストに送信されます。(前述の \fBsend\fR、\fBayt\fR を参照してください。)\fBayt\fR の初期値は、端末のステータス文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforw1\fR\fR
+.ad
+.br
+.na
+\fB\fBforw2\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBLINEMODE\fR で動作している場合に、\fBforw1\fR 文字または \fBforw2\fR 文字が入力されると、行の一部が遠隔システムに転送されます。転送文字の初期値は、端末の \fBeol\fR 文字と \fBeol2\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlnext\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBLINEMODE\fR または「旧行単位」モードで動作している場合、\fBlnext\fR 文字は端末の \fBlnext\fR 文字と見なされます。\fBlnext\fR 文字の初期値は、端末の \fBlnext\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreprint\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBLINEMODE\fR または「旧行単位」モードで動作している場合、\fBreprint\fR 文字は端末の \fBreprint\fR 文字と見なされます。\fBreprint\fR の初期値は、端末の \fBreprint\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrlogin\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは、\fBrlogin\fR のエスケープ文字です。これを設定すると、行頭でこの文字の直後に置かれている場合を除いて、\fBtelnet\fR の通常のエスケープ文字は無視されます。行頭で \fBrlogin\fR 文字のあとに「\fB\&.\fR」を続けると、接続が閉じられます。「\fB^Z\fR」を続けると、\fBrlogin\fR コマンドは \fBtelnet\fR コマンドを中断します。初期状態では、\fBrlogin\fR のエスケープ文字は無効になっています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstart\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET TOGGLE-FLOW-CONTROL\fR オプションが有効になっている場合、\fBstart\fR 文字は端末の \fBstart\fR 文字になります。\fBstart\fR 文字の初期値は、端末の \fBstart\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstop\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBTELNET TOGGLE-FLOW-CONTROL\fR オプションが有効になっている場合、\fBstop\fR 文字は端末の \fBstop\fR 文字になります。\fBstop\fR 文字の初期値は、端末の \fBstop\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsusp\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBlocalchars\fR モードにあるか、\fBLINEMODE\fR が有効になっている場合に、\fBsuspend\fR 文字が入力されると、\fBTELNET SUSP\fR シーケンス (前述の \fBsend\fR、\fBsusp\fR を参照) が遠隔ホストに送信されます。\fBsuspend\fR 文字の初期値は、端末の \fBsuspend\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtracefile\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは、\fBnetdata\fR または \fBdebug\fR オプションが \fBTRUE\fR の場合に出力が書き込まれるファイルです。\fBtracefile\fR が「\fB-\fR」に設定されている場合は、トレース情報が標準出力に書き込まれます (デフォルト)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBworderase\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR が \fBLINEMODE\fR または「旧行単位」モードで動作している場合、この文字は端末の \fBworderase\fR 文字と見なされます。\fBworderase\fR 文字の初期値は、端末の \fBworderase\fR 文字になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効な \fBset\fR および \fBunset\fR コマンドを表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBslc\fR \fIstate\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBslc\fR (Set Local Characters) コマンドは、\fBTELNET LINEMODE\fR オプションが有効な場合に、特殊文字の状態を設定または変更するために使われます。特殊文字とは、\fBTELNET\fR コマンドシーケンスにマップされる文字 (\fBip\fR や \fBquit\fR など) または行編集文字 (\fBerase\fR や \fBkill\fR など) のことです。デフォルトでは、ローカルの特殊文字はエクスポートされます。\fIstate\fR の有効な値は次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcheck\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の特殊文字の設定を検証します。リモート側に、現在の特殊文字の設定をすべて送信するように要求します。ローカル側との間に食い違いがある場合は、ローカル側の設定をリモート側の値に切り替えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR\fR
+.ad
+.sp .6
+.RS 4n
+特殊文字をローカル側のデフォルト文字に切り替えます。ローカル側のデフォルト文字とは、\fBtelnet\fR が起動したときのローカル端末の特殊文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBimport\fR\fR
+.ad
+.sp .6
+.RS 4n
+特殊文字をリモート側のデフォルト文字に切り替えます。リモート側のデフォルト文字とは、\fBTELNET\fR 接続が確立されたときの遠隔システムの特殊文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBslc\fR コマンドのヘルプ情報を表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoggle\fR \fIargument\fR...\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet\fR がイベントにどのように応答するかを制御する各種フラグを \fBTRUE\fR と \fBFALSE\fR の間で切り替えます。複数の引数を指定できます。これらのフラグの状態は、\fBdisplay\fR コマンドを使って調べることができます。有効な引数は次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBauthdebug\fR\fR
+.ad
+.RS 20n
+.rt  
+認証コードのデバッグ情報を有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautodecrypt\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBTELNET\fR \fBENCRYPT\fR オプションのネゴシエーションが行われるときに、デフォルトではデータストリームの実際の暗号化 (復号化) は自動的に開始されません。autoencrypt (autodecrypt) コマンドは、出力 (入力) ストリームの暗号化ができるだけ早く有効になるようにします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautologin\fR\fR
+.ad
+.RS 20n
+.rt  
+リモート側で \fBTELNET\fR \fBAUTHENTICATION\fR オプションがサポートされている場合、\fBtelnet\fR はそのオプションを使って自動認証を行おうとします。\fBAUTHENTICATION\fR オプションがサポートされていない場合は、\fBTELNET\fR \fBENVIRON\fR オプションを通じてユーザーのログイン名が渡されます。このコマンドは、\fBopen\fR コマンドで \fB-a\fR オプションを指定するのと同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautoflush\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBautoflush\fR と \fBlocalchars\fR がどちらも \fBTRUE\fR の場合に、\fBao\fR、\fBintr\fR、または \fBquit\fR 文字が認識され、\fBTELNET\fR シーケンスに変換されると (詳細は \fBset\fR を参照)、それらの \fBTELNET\fR シーケンスが処理されたことが (\fBTELNET\fR Timing Mark オプションを使って) 遠隔システムで確認されるまで、\fBtelnet\fR はユーザーの端末にデータを何も表示しません。端末ユーザーが「stty noflsh」を実行していない場合、このトグルの初期値は \fBTRUE\fR になります。それ以外の場合は、\fBFALSE\fR になります (\fBstty\fR(1) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBautosynch\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBautosynch\fR と \fBlocalchars\fR の両方が \fBTRUE\fR の場合に、\fBinterrupt\fR 文字または \fBquit\fR 文字が入力されると (\fBinterrupt\fR と \fBquit\fR については、\fBset\fR を参照)、結果として送信される \fBTELNET\fR シーケンスのあとに \fBTELNET SYNCH\fR シーケンスが続きます。この手順により、遠隔システムは、この両方の \fBTELNET\fR シーケンスが読み取られて処理が完了するまで、それまでに打ち込まれたすべての入力を破棄するはずです。\fI\fRこのトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbinary\fR\fR
+.ad
+.RS 20n
+.rt  
+入力と出力の両方に対して、\fBTELNET BINARY\fR オプションを有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinbinary\fR\fR
+.ad
+.RS 20n
+.rt  
+入力に対して、\fBTELNET BINARY\fR オプションを有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoutbinary\fR\fR
+.ad
+.RS 20n
+.rt  
+出力に対して、\fBTELNET BINARY\fR オプションを有効または無効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrlf\fR\fR
+.ad
+.RS 20n
+.rt  
+キャリッジリターンがどのように送信されるかを決めます。この値が \fBTRUE\fR の場合、キャリッジリターンは \fB<CR><LF>\fR として送信されます。この値が \fBFALSE\fR の場合、キャリッジリターンは \fB<CR><NUL>\fR として送信されます。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrmod\fR\fR
+.ad
+.RS 20n
+.rt  
+RETURN モードを切り替えます。このモードが有効の場合、遠隔ホストから受信したほとんどの RETURN 文字は RETURN LINEFEED にマップされます。このモードは、ユーザーの入力した文字には影響せず、遠隔ホストから受信した文字だけに影響します。このモードは、遠隔ホストがLINEFEED を送信せずに RETURN だけを送信する場合にのみ役立ちます。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdebug\fR\fR
+.ad
+.RS 20n
+.rt  
+ソケットレベルのデバッグを切り替えます (スーパーユーザーのみ利用可能)。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencdebug\fR\fR
+.ad
+.RS 20n
+.rt  
+暗号化コードのデバッグ情報を有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlocalchars\fR\fR
+.ad
+.RS 20n
+.rt  
+このトグルが \fBTRUE\fR の場合、\fBflush\fR、\fBinterrupt\fR、\fBquit\fR、\fBerase\fR、および \fBkill\fR 文字 (\fBset\fR を参照) はローカルで認識され、対応する \fBTELNET\fR 制御シーケンス (それぞれ \fBao\fR、\fBip\fR、\fBbrk\fR、\fBec\fR、および \fBel\fR。\fBsend\fR を参照) に変換されます。このトグルの初期値は、「行単位」モードでは \fBTRUE\fR、「文字単位」モードでは \fBFALSE\fR です。\fBLINEMODE\fR オプションが有効の場合、\fBlocalchars\fR の値は無視され、常に \fBTRUE\fR と見なされます。\fBLINEMODE\fR が一度でも有効になっていると、\fBquit\fR は \fBabort\fR として送信され、\fBeof\fR と \fBsuspend\fR は \fBeof\fR と \fBsusp\fR として送信されます (前述の \fBsend\fR を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnetdata\fR\fR
+.ad
+.RS 20n
+.rt  
+すべてのネットワークデータ (16 進形式) の表示を切り替えます。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoptions\fR\fR
+.ad
+.RS 20n
+.rt  
+一部の内部 \fBTELNET\fR プロトコル処理 (\fBtelnet\fR オプションに関係がある) の表示を切り替えます。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprettydump\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBnetdata\fR トグルが有効の場合に、\fBprettydump\fR を有効にすると、\fBnetdata\fR コマンドの出力がユーザーにとってより読みやすい形式になります。出力内のそれぞれの文字の間にスペースが挿入されます。\fBTELNET\fR エスケープシーケンスの先頭にアスタリスク (\fB*\fR) を付けて、それらを見つけやすくします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBskiprc\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBskiprc\fR トグルが \fBTRUE\fR の場合、\fBTELNET\fR は、接続が開かれるときに、ユーザーのホームディレクトリにある \fB\&.telnetrc\fR ファイルの読み取りをスキップします。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtermdata\fR\fR
+.ad
+.RS 20n
+.rt  
+すべての端末データ (16 進形式) の表示を切り替えます。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverbose_encrypt\fR\fR
+.ad
+.RS 20n
+.rt  
+\fBverbose_encrypt\fR フラグが \fBTRUE\fR の場合、\fBTELNET\fR は暗号化が有効または無効になるたびにメッセージを表示します。このトグルの初期値は \fBFALSE\fR です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.RS 20n
+.rt  
+有効な \fBtoggle\fR コマンドを表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenviron\fR \fIargument\|.\|.\|.\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBenviron\fR コマンドは、\fBTELNET ENVIRON\fR オプションを通じて送信される変数を操作するために使われます。変数の初期値のセットは、ユーザーの環境から取得されます。\fBDISPLAY\fR 変数と \fBPRINTER\fR 変数だけはデフォルトでエクスポートされます。\fBenviron\fR コマンドの有効な引数は次のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefine\fR \fIvariable value\fR\fR
+.ad
+.sp .6
+.RS 4n
+変数 \fIvariable\fR が値 \fIvalue\fR を持つように定義します。このコマンドで定義された変数はすべて自動的にエクスポートされます。\fIvalue\fR は単一引用符または二重引用符で囲んでも構わないため、タブやスペースを含めることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBundefine\fR \fIvariable\fR\fR
+.ad
+.sp .6
+.RS 4n
+変数 \fIvariable\fR を環境変数のリストから削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexport\fR \fIvariable\fR\fR
+.ad
+.sp .6
+.RS 4n
+変数 \fIvariable\fR がリモート側にエクスポートされるようにマークします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBunexport\fR \fIvariable\fR\fR
+.ad
+.sp .6
+.RS 4n
+変数 \fIvariable\fR が、リモート側から明示的に要求されないかぎり、リモート側にエクスポートされないようにマークします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在の環境変数のセットを一覧表示します。アスタリスク (\fB*\fR) でマークされた変数は自動的に送信されます。その他の変数は、明示的に要求された場合にのみ送信されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB?\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBenviron\fR コマンドのヘルプ情報を表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogout\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtelnet logout\fR オプションをリモート側に送信します。このコマンドは、\fBclose\fR コマンドに似ています。ただし、リモート側が \fBlogout\fR オプションをサポートしていない場合は何も行われません。リモート側が \fBlogout\fR オプションをサポートしている場合は、このコマンドにより、リモート側は \fBTELNET\fR 接続を閉じます。リモート側が、あとで再接続するためにユーザーのセッションを中断するという概念もサポートしている場合、\fBlogout\fR 引数は、ただちにセッションを終了するようにリモート側に指示します。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.telnetrc\fR\fR
+.ad
+.RS 19n
+.rt  
+\fBtelnet\fR セッションを開始する前に実行されるコマンドを記述するファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件network/telnet
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBrlogin\fR(1), \fBsh\fR(1), \fBstty\fR(1), \fBgetlogin\fR(3C), \fBhosts\fR(4), \fBkrb5.conf\fR(4), \fBnologin\fR(4), \fBtelnetrc\fR(4), \fBattributes\fR(5), \fBinet\fR(7P), \fBinet6\fR(7P)
+.SH 診断
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNO LOGINS: System going down in\fR \fIN\fR \fBminutes\fR\fR
+.ad
+.sp .6
+.RS 4n
+マシンがシャットダウンの処理中であり、ログインが無効になっています。
+.RE
+
+.SH 注意事項
+.sp
+.LP
+遠隔システムによっては、「行単位」モードのときに手動でエコーをオフにする必要があります。
+.sp
+.LP
+「旧行単位」モードまたは \fBLINEMODE\fR では、端末の \fBEOF\fR 文字は、それが行頭にある場合にのみ認識 (および遠隔システムに送信) されます。
+.sp
+.LP
+\fBtelnet\fR プロトコルは、セッションの保護にシングル DES だけを使用します。クライアントはシングル DES セッション鍵を使ってサービスチケットを要求します。KDC は、\fBtelnet\fR サービスを提供するホストサービスの主体がシングル DES をサポートしていることを認識している必要があり、実際にこれは、そのような主体がシングル DES 鍵を KDC データベース内に持っている必要があることを意味します。

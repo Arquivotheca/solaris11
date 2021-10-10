@@ -1,0 +1,292 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH su 1M "2011 年 4 月 26 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+su \- スーパーユーザーまたは別のユーザーに変更
+.SH 形式
+.LP
+.nf
+\fBsu\fR [\fB-\fR] [\fIusername\fR [arg...]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsu\fR コマンドを使用すると、ログオフをしないで別のユーザーまたは別の役割になることができます。デフォルトの \fIusername\fR は \fBroot\fR (スーパーユーザー) です。
+.sp
+.LP
+\fBsu\fR を使用するときは、適切なパスワードを入力する必要があります (ユーザーがすでに \fBroot\fR の場合は不要)。パスワードが正しければ、指定した \fIusername\fR 用に設定されている実ユーザー \fBID\fR、実効ユーザー \fBID\fR、グループ ID、補助グループリストを持つ新しいシェルプロセスが生成されます。\fB\fRまた、新しいシェルのプロジェクト ID は、指定されたユーザーのデフォルトのプロジェクト ID に設定されます。\fBgetdefaultproj \fR(3PROJECT) および \fB setproject\fR(3PROJECT) を参照してください。新しいシェルは、\fIusername\fR のパスワードファイルエントリ (\fBpasswd\fR( 4) を参照) のシェルフィールドで指定されたシェルです。シェルが指定されていないと、\fB/usr/bin/sh\fR (\fBsh\fR(1) を参照) になります。スーパーユーザー特権が必要な場合に、\fBexec\fR(2)によってスーパーユーザーのシェルを起動できないときは、代わりに \fB/sbin/sh\fR が使用されます。元のユーザー \fBID\fR の特権に戻る場合は、\fBEOF\fR 文字 (CTRL-D) を入力して新しいシェルを終了します。
+.sp
+.LP
+コマンド行に引数を指定すると、その引数が新しいシェルに渡されます。\fBsh\fR などのプログラムを実行している場合は、\fIarg\fR (引数) に \fB-c\fR \fIstring\fR と指定すると、シェルによって \fIstring\fR\fI\fR が実行されます。また、引数に \fB-r\fR を指定すると、ユーザーに制限付きのシェルが与えられ提供されます。
+.sp
+.LP
+ログイン環境を作成するために、コマンド「\fB"su -"\fR」は次の作業を実行します。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+すでに伝播されている環境変数に加えて、指定されたユーザーの環境から環境変数 \fBLC*\fR と \fBLANG\fR を伝播します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザーの環境から環境変数 \fBTZ\fR を伝播します。環境変数 \fBTZ\fR がユーザーの環境に存在しない場合、\fBsu\fR は、\fB/etc/default/login\fR にある \fBTIMEZONE\fR パラメータの \fBTZ\fR 値を使用します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMAIL\fR を \fB/var/mail/\fInew_user\fR\fR に設定します。
+.RE
+.sp
+.LP
+\fBsu\fR の最初の引数に - (ダッシュ) を指定すると、指定したユーザーとして実際にログインした場合と同じ環境が渡されます。そうしない場合、\fB$\fR\fBPATH\fR\fB 以外の環境が渡されます。\fR$PATH は \fB/etc/default/su\fR 中で \fBPATH\fR と \fBSU\fR\fBPATH\fR によって制御されます。
+.sp
+.LP
+\fBsu\fR を実行して別のユーザーになる操作は、すべてログファイル \fB/var/adm/sulog\fR に記録されます (\fBsulog\fR( 4) を参照)。
+.SH セキュリティ
+.sp
+.LP
+\fBsu\fR は、サービス名 \fBsu\fR で \fBpam\fR(3PAM) を使って、認証、アカウント管理、および資格の確立を行います。
+.SH 使用例
+.LP
+\fB例 1 \fR以前にエクスポートした環境を維持してユーザー \fBbin\fR になる
+.sp
+.LP
+以前にエクスポートした環境のままユーザー \fBbin\fR になるには、以下のコマンドを実行します。
+
+.sp
+.in +2
+.nf
+example% \fBsu bin\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRユーザー \fBbin\fR になり \fBbin\fR のログイン環境に変更する
+.sp
+.LP
+ユーザー \fBbin\fR になり、\fBbin\fR がログインした場合と同じ環境に切り替えるには、次のコマンドを実行します。
+
+.sp
+.in +2
+.nf
+example% \fBsu - bin\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRユーザー \fBbin\fR の環境とアクセス権でコマンドを実行する
+.sp
+.LP
+ユーザー \fBbin\fR の一時的な環境とアクセス権を使ってコマンド command を実行する場合は、次のように入力します。
+
+.sp
+.in +2
+.nf
+example% \fBsu - bin -c "\fIcommand args\fR"\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+セキュリティー上の理由から、接頭辞 \fBLD_\fR が付いている環境変数は削除されました。このため、以前にユーザー \fBbin\fR でエクスポートした接頭辞 \fBLD_\fR 付きの環境変数は、\fBsu bin\fR を実行しても使用できません。
+.sp
+.LP
+\fBLC_*\fR 変数 (\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBLC_TIME\fR、\fBLC_COLLATE\fR、\fBLC_NUMERIC\fR、および \fBLC_MONETARY\fR) (\fBenviron\fR(5) 参照) のいずれも環境に設定されていなければ、それぞれ対応するロケールのカテゴリにおける \fBsu\fR の動作は、環境変数 \fBLANG\fR によって決定されます。\fBLC_ALL\fR が設定されていれば、その内容が \fBLANG\fR 変数やその他の \fBLC_*\fR 変数より優先されます。上記の変数がどれも設定されていなければ、「C」ロケール (米国の形式) によって \fBsu\fR の動作が決定します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_CTYPE\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBsu\fR が文字を処理する方法を決定します。\fBLC_CTYPE\fR に有効な値が設定されていると、\fBsu\fR は、そのロケールにあった文字を含むテキストやファイル名を表示および処理できます。\fB\fRまた、拡張 UNIX コード (\fBEUC\fR) の表示または処理も可能です (\fB1\fR ～ \fB\fR\fB3\fR バイト幅の文字を使用)。また、\fBsu\fR は \fB1\fR、\fB2\fR、またはそれ以上のカラム幅の \fBEUC\fR 文字も処理することができます。「C」ロケール においては、ISO 8859-1 の文字だけが有効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_MESSAGES\fR\fR
+.ad
+.RS 15n
+.rt  
+診断メッセージや情報メッセージの表示方法を決定します。また、メッセージの言語とスタイル、肯定・否定の応答形式も決定します。「C」 ロケールでは、メッセージはプログラム自身が使用しているデフォルトの形 (通常、米語) で表示されます。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$\fR\fBHOME\fR\fB/.profile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBsh\fR および \fBksh\fR ユーザーのログインコマンド
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB /etc/passwd\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムのパスワードファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/profile\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム全体の \fBsh\fR と \fBksh\fR のログインコマンド
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/adm/sulog\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログファイル
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/su\fR\fR
+.ad
+.sp .6
+.RS 4n
+このファイル中に指定できるデフォルトパラメータは以下のとおりです。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSULOG\fR\fR
+.ad
+.RS 12n
+.rt  
+定義されている場合、別のユーザーになるための \fBsu\fR の試行はすべて、指定されたファイルに記録されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCONSOLE\fR \fR
+.ad
+.RS 12n
+.rt  
+定義されている場合、\fBroot\fR になるための \fBsu\fR の試行はすべて、コンソールに記録されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPATH\fR\fR
+.ad
+.RS 12n
+.rt  
+デフォルトパス(\fB/usr/bin:\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSU\fR\fBPATH\fR\fR
+.ad
+.RS 12n
+.rt  
+\fBroot\fR になるために \fBsu\fR を起動しているユーザーのデフォルトパス(\fB/usr/sbin:/usr/bin\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYSLOG\fR\fR
+.ad
+.RS 12n
+.rt  
+すべての \fBsu\fR 試行を記録するのに \fBsyslog\fR(3C) の \fBLOG_AUTH\fR を使うかどうかを指定します。\fBLOG_NOTICE\fR メッセージは root への \fBsu\fR に対して生成され、\fBLOG_INFO\fR メッセージはその他のユーザーへの \fBsu\fR に対して生成されます。\fBLOG_CRIT\fR メッセージは、\fBsu\fR に失敗した場合に生成されます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/default/login\fR\fR
+.ad
+.sp .6
+.RS 4n
+このファイル中に指定できるデフォルトパラメータは以下のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSLEEPTIME\fR \fR
+.ad
+.RS 14n
+.rt  
+存在する場合、ログイン失敗が画面に出力されて、別のログイン試行が許可されるまで待機する秒数を設定します。デフォルトは \fB4\fR 秒。最小は \fB0\fR 秒。最大は \fB5\fR 秒。
+.sp
+\fBsu\fR と \fBlogin\fR(1) は両方とも \fBSLEEPTIME\fR の値の影響を受けます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTIMEZONE\fR\fR
+.ad
+.RS 14n
+.rt  
+シェルの TZ 環境変数を設定します。
+.RE
+
+.RE
+
+.SH 属性
+.sp
+.LP
+次の属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fB csh\fR(1), \fBenv \fR(1), \fBksh\fR( 1), \fBlogin\fR(1), \fBroles \fR(1), \fBsh\fR( 1), \fBsyslogd\fR(1M), \fBexec \fR(2), \fBgetdefaultproj \fR(3PROJECT), \fB setproject\fR(3PROJECT), \fB pam\fR(3PAM), \fB pam_authenticate\fR(3PAM), \fB pam_acct_mgmt\fR(3PAM), \fB pam_setcred\fR(3PAM), \fB pam.conf\fR(4), \fB passwd\fR(4), \fB profile\fR(4), \fBsulog \fR(4), \fBsyslog\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5)

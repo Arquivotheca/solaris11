@@ -1,0 +1,365 @@
+'\" te
+.\" 版权所有 2008，Oracle 和/或其附属公司。保留所有权利 
+.TH encrypt 1 "2008 年 12 月 17 日" "SunOS 5.11" "用户命令"
+.SH 名称
+encrypt, decrypt \- 加密或解密文件
+.SH 用法概要
+.LP
+.nf
+\fB/usr/bin/encrypt\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/encrypt\fR \fB-a\fR \fIalgorithm\fR [\fB-v\fR] 
+     [\fB-k\fR \fIkey_file\fR | \fB-K\fR \fIkey_label\fR [\fB-T\fR \fItoken_spec\fR]]
+     [\fB-i\fR \fIinput_file\fR] [\fB-o\fR \fIoutput_file\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/decrypt\fR \fB-l\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/decrypt\fR \fB-a\fR \fIalgorithm\fR [\fB-v\fR] 
+     [\fB-k\fR \fIkey_file\fR | \fB-K\fR \fIkey_label\fR [\fB-T\fR \fItoken_spec\fR]]
+     [\fB-i\fR \fIinput_file\fR] [\fB-o\fR \fIoutput_file\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+此实用程序可使用指定算法加密或解密给定的文件或 stdin。如果未指定输出文件，将输出到标准输出。如果输入和输出是同一文件，加密后的输出将写入同一文件系统中的临时工作文件，然后可用于替换原始文件。
+.sp
+.LP
+在解密时，如果输入和输出是同一文件，则明文将替换密文文件。
+.sp
+.LP
+\fBencrypt\fR 的输出文件和 \fBdecrypt\fR 的输入文件包含以下信息：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+输出格式版本号，采用网络字节顺序的 4 个字节。当前版本是 1。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+密钥生成函数中使用的迭代，采用网络字节顺序的 4 个字节。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+IV（\fBivlen\fR 字节）[1]。iv 数据由等于一个块大小的随机字节数生成。 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+密钥生成中使用的 Salt 数据（16 字节）。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+密文数据。
+.RE
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIalgorithm\fR\fR
+.ad
+.RS 18n
+.rt  
+指定加密或解密过程中要使用的算法的名称。有关详细信息，请参见"用法"下的\fB算法\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinput_file\fR\fR
+.ad
+.RS 18n
+.rt  
+指定输入文件。如果未指定 \fIinput_file\fR，则缺省为 stdin。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIkey_file\fR\fR
+.ad
+.RS 18n
+.rt  
+指定包含用于加密算法的密钥值的文件。每种算法都具有特定的密钥材料要求，如 PKCS#11 规范中所述。如果未指定 \fB-k\fR，\fBencrypt\fR 会使用 \fBgetpassphrase\fR(3C) 提示您提供密钥材料。密钥文件的大小确定了密钥长度，从终端设置的口令短语始终用于为密钥长度可变的密码生成长度为 128 位的密钥。
+.sp
+有关生成密钥文件的信息，请参见 \fBpktool\fR(1) 中的 \fBgenkey\fR 子命令。此外，也可以使用 \fBdd\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIkey_label\fR\fR
+.ad
+.RS 18n
+.rt  
+指定 PKCS#11 令牌中的对称令牌密钥的标签。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR\fR
+.ad
+.RS 18n
+.rt  
+显示系统上可用的算法的列表。此列表可依加密框架的配置而变化。以位为单位显示密钥大小。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutput_file\fR\fR
+.ad
+.RS 18n
+.rt  
+指定输出文件。如果未指定 \fIoutput_file\fR，则缺省为 stdout。如果使用 stdout 而不重定向到文件，则终端窗口可能会因原始加密或解密数据中止终端仿真而挂起，与有时查看二进制文件所遇到的情况类似。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fItoken_spec\fR\fR
+.ad
+.RS 18n
+.rt  
+指定 PKCS#11 令牌，而不使用指定 \fB-K\fR 时的缺省软令牌对象存储。
+.sp
+\fItoken_spec\fR 的格式为：
+.sp
+.in +2
+.nf
+\fItoken_name\fR \fB[:\fR\fImanuf_id\fR \fB[:\fR\fIserial_no\fR\fB]]\fR
+.fi
+.in -2
+.sp
+
+当令牌标签包含结尾空格时，为方便起见，此选项不要求用户键入这些空格。 
+.sp
+使用冒号分隔令牌标识字符串。如果任一部分中包含冒号 (\fB:\fR) 文本字符，必须使用反斜杠 (\fB\e\fR) 对其进行转义。如果未找到冒号 (\fB:\fR)，则将整个字符串（最多 32 个字符）视为令牌标签。如果仅找到一个冒号 (\fB:\fR)，则该字符串是令牌标签和生产商。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 18n
+.rt  
+显示详细信息。请参见\fB详细模式\fR。
+.RE
+
+.SH 用法
+.SS "算法"
+.sp
+.LP
+在 \fB-l\fR 选项中显示支持的算法及其最小和最大密钥大小。这些算法由加密框架提供。所支持的每种算法都是 PKCS #11 机制的一个别名，对于特定的算法类型而言，PKCS #11 机制是最常用的也是限制最少的版本。例如，\fBdes\fR 是 \fBCKM_DES_CBC_PAD\fR 的别名，\fBarcfour\fR 是 \fBCKM_RC4\fR 的别名。不支持没有任何填充或 \fBECB\fR 的算法变体。
+.sp
+.LP
+这些别名与 \fB-a\fR 选项一起使用，并且区分大小写。
+.SS "口令短语"
+.sp
+.LP
+若在加密和解密任务期间未使用 \fB-k\fR 选项，则会提示用户提供口令短语。使用 PKCS #5 中指定的 PBKDF2 算法将该口令短语处理成更安全的密钥。
+.sp
+.LP
+当使用口令短语进行加密和解密时，会使用 http://www.rsasecurity.com \fBPKCS #5 v2.0\fR 中定义的 \fBPBKDF2\fR 算法将用户输入的口令短语转换成加密密钥。
+.SS "详细模式"
+.sp
+.LP
+如果向命令提供输入文件，则屏幕上会显示一个进度条。进度条会在每完成 25% 时使用一个管道符号 (\fB|\fR) 表示。如果输入来自标准输入，每读取 40KB 后都会显示一个句点 (\fB\&.\fR)。在两种输入方法都完成时，会显示 \fBDone\fR。 
+.SH 示例
+.LP
+\fB示例 1 \fR列出可用算法
+.sp
+.LP
+以下示例列出了可用的算法：
+
+.sp
+.in +2
+.nf
+example$ encrypt -l
+     Algorithm       Keysize:  Min   Max
+     -----------------------------------
+     aes                       128   128
+     arcfour                     8   128
+     des                        64    64
+     3des                      192   192
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 AES 加密
+.sp
+.LP
+以下示例使用 AES 加密并提示用户提供加密密钥：
+
+.sp
+.in +2
+.nf
+example$ encrypt -a aes -i myfile.txt -o secretstuff
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR对密钥文件使用 AES 加密
+.sp
+.LP
+以下示例在已创建密钥文件后使用 AES 加密： 
+
+.sp
+.in +2
+.nf
+example$ pktool genkey keystore=file keytype=aes keylen=128 \e
+            outkey=key
+example$ encrypt -a aes -k key -i myfile.txt -o secretstuff
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR使用输入管道提供加密的磁带备份
+.sp
+.LP
+以下示例使用输入管道提供加密的磁带备份：
+
+.sp
+.in +2
+.nf
+example$ ufsdump 0f - /var | encrypt -a arcfour \e
+     -k /etc/mykeys/backup.k | dd of=/dev/rmt/0
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR使用输入管道恢复磁带备份
+.sp
+.LP
+以下示例使用输入管道恢复磁带备份：
+
+.sp
+.in +2
+.nf
+example$ decrypt -a arcfour -k /etc/mykeys/backup.k \e
+     -i /dev/rmt/0 | ufsrestore xvf -
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR使用 3DES 算法加密输入文件
+.sp
+.LP
+以下示例使用存储在 \fBdes3key\fR 文件中的 192 位密钥加密 \fBinputfile\fR 文件：
+
+.sp
+.in +2
+.nf
+example$ encrypt -a 3des -k des3key -i inputfile -o outputfile
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR使用 DES 令牌密钥加密输入文件
+.sp
+.LP
+以下示例使用软令牌密钥库中的 DES 令牌密钥加密输入文件。可使用 \fBpktool\fR(1) 生成 DES 令牌密钥：
+
+.sp
+.in +2
+.nf
+example$ encrypt -a des -K mydeskey \e
+     -T "Sun Software PKCS#11 softtoken" -i inputfile \e
+     -o outputfile
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR\fR
+.ad
+.RS 6n
+.rt  
+出现错误。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdigest\fR(1)、\fBpktool\fR(1)、\fBmac\fR(1)、\fBdd\fR(1M)、\fBgetpassphrase\fR(3C)、\fBlibpkcs11\fR(3LIB)、\fBattributes\fR(5)、\fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+\fI《Oracle Solaris Administration: Security Services》\fR
+.sp
+.LP
+RSA PKCS#11 v2.11: http://www.rsasecurity.com
+.sp
+.LP
+RSA PKCS#5 v2.0: http://www.rsasecurity.com

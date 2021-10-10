@@ -1,0 +1,231 @@
+'\" te
+.\"  版权所有 (c) 1992-1996 Competitive Automation, Inc. 
+.\" 版权所有 (c) 2009，Oracle 和/或其附属公司。保留所有权利。
+.TH dhcpinfo 1 "2009 年 5 月 15 日" "SunOS 5.11" "用户命令"
+.SH 名称
+dhcpinfo \- 显示通过 DHCP 接收的参数的值
+.SH 用法概要
+.LP
+.nf
+\fBdhcpinfo\fR [\fB-c\fR] [\fB-i\fR \fIinterface\fR] [\fB-n\fR \fIlimit\fR] [\fB-v 4|6\fR] \fIcode\fR
+.fi
+
+.LP
+.nf
+\fBdhcpinfo\fR [\fB-c\fR] [\fB-i\fR \fIinterface\fR] [\fB-n\fR \fIlimit\fR] [\fB-v 4|6\fR] \fIidentifier\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBdhcpinfo\fR 实用程序可显示 \fBDHCP\fR 提供的命令行上所请求的参数的值。可通过 \fBDHCP\fR 规范中的数字代码或通过助记标识符（如 \fBdhcp_inittab\fR(4) 中所列）来标识参数。此命令旨在用于 \fBinit\fR(1M) 在系统引导时调用的 shell 脚本中的命令替换。它首先会在系统引导时或在事件脚本中联系 \fBDHCP\fR 客户机守护进程，如 \fBdhcpagent\fR(1M) 中所述。它首先会联系 DHCP 客户机守护进程 \fBdhcpagent\fR(1M)，以验证 \fBDHCP\fR 在请求的接口上是否已成功完成。如果 \fBDHCP\fR 在请求的接口上已成功完成，\fBdhcpinfo\fR 将检索所请求参数的值。对于由 \fBdhcpinfo\fR 回显的参数值，在未检查其退出状态的情况下不应直接使用。请参见 \fBexit\fR(1)。
+.sp
+.LP
+有关所有 \fBDHCP\fR 参数的助记标识符代码的列表，请参见 \fBdhcp_inittab\fR(4)。有关 DHCPv4 参数的更多详细信息，请参见"\fIRFC 2132，DHCP 选项和 BOOTP 供应商扩展\fR"，有关 DHCPv6 参数的更多详细信息，请参见"RFC 3315，适用于 IPv6 的动态主机配置协议 (Dynamic Host Configuration Protocol for IPv6, DHCPv6)"。
+.SS "输出格式"
+.sp
+.LP
+来自 \fBdhcpinfo\fR 的输出由一行或多行 \fBASCII\fR 文本组成；输出的格式取决于所请求的参数。给定参数的输出中每行返回的值数和总行数分别由参数的\fB粒度\fR值和\fB最大\fR值确定，如 \fBdhcp_inittab\fR(4) 所定义。
+.sp
+.LP
+每个值的格式由选项的数据类型确定，如 \fBdhcp_inittab\fR(4) 所确定的那样。下面列出了可能的数据类型及其格式： 
+.sp
+
+.sp
+.TS
+tab();
+cw(1.4i) cw(2.1i) cw(2i) 
+lw(1.4i) lw(2.1i) lw(2i) 
+.
+数据类型格式\fBdhcp_inittab\fR(4) 类型
+无符号数一个或多个十进制数字T{
+\fBUNUMBER8\fR, \fBUNUMBER16\fR, \fBUNUMBER32\fR, \fBUNUMBER64\fR
+T}
+带符号数T{
+（前面可能带有减号的）一个或多个十进制数字
+T}T{
+\fBSNUMBER8\fR, \fBSNUMBER16\fR, \fBSNUMBER32\fR, \fBSNUMBER64\fR
+T}
+\fBIP\fR 地址点分十进制表示法\fBIP\fR
+IPv6 地址以冒号分隔表示法\fBIPv6\fR
+八位字节T{
+字符串 \fB0x\fR 后跟一个两位数十六进制值
+T}\fBOCTET\fR
+字符串零个或多个 \fBASCII\fR 字符\fBASCII\fR
+DUIDDHCP 唯一标识符文本\fBDUID\fR
+域名T{
+以句点分隔的标准域名，RFC 1035 格式
+T}\fBDOMAIN\fR
+.TE
+
+.SH 选项
+.sp
+.LP
+支持下列选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 16n
+.rt  
+以规范格式显示输出。此格式与粒度为 \fB1\fR 的 \fBOCTET\fR 格式完全相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIinterface\fR\fR
+.ad
+.RS 16n
+.rt  
+指定从其检索 \fBDHCP\fR 参数值的接口。如果未指定此选项，则使用主接口。
+.sp
+如果尚未通过 \fBifconfig\fR(1M) 为系统或通过 \fB-i\fR 为此命令选择主接口，系统将自动选择一个接口作为当前命令调用的主接口。系统会选择其名称按词汇顺序排在首位且附带有 DHCP 参数的接口。此选择不会影响系统状态。使用 \fBifconfig\fR(1M) 设置主接口。 
+.sp
+\fBdhcpagent\fR(1M) \fBeventhook\fR 脚本中的建议做法是使用 \fB-i\fR 指定所需接口，而不是依赖于主接口选择。
+.sp
+对于 DHCPv6，所用的接口名称应该是物理接口的名称，而不是由 \fBdhcpagent\fR 创建的某个逻辑接口。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIlimit\fR\fR
+.ad
+.RS 16n
+.rt  
+将值列表的显示行数限制到 \fIlimit\fR 行。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fB4 | 6\fR\fR
+.ad
+.RS 16n
+.rt  
+指定要查询的 DHCP 版本。对 DHCPv4 使用 \fB-v4\fR，对 DHCPv6 使用 \fB-v6\fR。
+.RE
+
+.SH 操作数
+.sp
+.LP
+支持下列操作数：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcode\fR\fR
+.ad
+.RS 14n
+.rt  
+所请求 \fBDHCP\fR 参数的数字代码，如 \fBDHCP\fR 规范所定义。通过向 DHCPv4 的实际供应商代码添加 \fB256\fR，向 DHCPv6 的实际供应商代码添加 \fB65536\fR，指定供应商选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIidentifier\fR\fR
+.ad
+.RS 14n
+.rt  
+所请求 \fBDHCP\fR 参数的助记符号，如 \fBdhcp_inittab\fR(4) 中所列。
+.RE
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 5n
+.rt  
+操作成功。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.RS 5n
+.rt  
+操作失败。\fBDHCP\fR 客户机守护进程可能未在运行，接口可能配置失败，或者没有接收到满意的 \fBDHCP\fR 响应。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.RS 5n
+.rt  
+参数错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR\fR
+.ad
+.RS 5n
+.rt  
+操作超时。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB6\fR\fR
+.ad
+.RS 5n
+.rt  
+系统错误（永远不应发生）。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关下列属性的描述，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBdhcpagent\fR(1M)、\fBifconfig\fR(1M)、\fBinit\fR(1M)、\fBdhcp_inittab\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+Alexander, S. 和 R. Droms，"\fIRFC 2132，DHCP 选项和 BOOTP 供应商扩展\fR"，Silicon Graphics, Inc., Bucknell University，1997 年 3 月。
+.sp
+.LP
+Droms, R.，"\fIRFC 3315，适用于 IPv6 的动态主机配置协议 (Dynamic Host Configuration Protocol for IPv6, DHCPv6)\fR"，Cisco Systems，2003 年 7 月。 
+.sp
+.LP
+Mockapetris, P.V.，"\fIRFC 1035，域名－实现和规范\fR"，ISI，1987 年 11 月。

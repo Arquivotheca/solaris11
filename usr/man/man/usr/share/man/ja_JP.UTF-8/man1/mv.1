@@ -1,0 +1,232 @@
+'\" te
+.\" Copyright 1989 AT&T
+.\" Copyright (c) 1992, X/Open Company Limited All Rights Reserved
+.\" Portions Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/. 
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH mv 1 "2010 年 11 月 19 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+mv \- ファイルの移動
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/mv\fR [\fB-fi\fR] \fIsource\fR \fItarget_file\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/mv\fR [\fB-fi\fR] \fIsource\fR... \fI target_dir\fR
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/mv\fR [\fB-fi\fR] \fIsource\fR \fItarget_file\fR
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/mv\fR [\fB-fi\fR] \fIsource\fR... \fI target_dir\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+第 1 の形式の \fBmv\fR ユーティリティーは、\fIsource\fR オペランドが示すファイルを \fItarget_file\fR が示す宛先に移動します。\fIsource\fR と \fItarget_file\fR に同じ名前を指定することはできません。\fItarget_file\fR が存在しない場合、\fBmv\fR は \fItarget_file\fR という名前のファイルを作成します。\fItarget_file\fR が存在していれば、その内容は上書きされます。最終オペランドが既存のディレクトリを示していないとき、mv はこの第 1 形式であると見なします。
+.sp
+.LP
+第 2 の形式の \fBmv\fR は、 \fIsource\fR オペランドで指定された各ファイルを \fItarget_dir\fR オペランドが示す既存ディレクトリ中のファイルに移動します。各 \fIsource\fR 用の宛先パス名は、宛先ディレクトリ名のあとにスラッシュ (\fB/\fR) と \fIsource\fR の最終パス名部分を付加したものとなります。オペランドが既存のディレクトリを示しているとき、mv はこの第 2 形式であると見なします。
+.sp
+.LP
+\fBmv\fR は、\fItarget_file \fR のモードが書き込み禁止であると判断すると、モードを表示し (\fBchmod\fR(2) を参照)、応答を要求して、標準入力を 1 行読み取ります。応答が肯定である場合、使用可能ならば \fBmv\fR が実行されます。 それ以外の場合、このコマンドは終了します。\fItarget\fR が \fBACL\fR に関連付けられている場合、モードはアクセス権を完全には表示しません。\fIsource\fR の親ディレクトリが書き込み可能でスティッキ・ビットセットを持っている場合、次の条件のうち 1 つ以上が真である必要があります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザーはファイルを所有している必要がある
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザーはディレクトリを所有している必要がある
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ファイルはユーザーが書き込み可能である必要がある
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ユーザーは特権ユーザーである必要がある
+.RE
+.sp
+.LP
+\fIsource\fR がファイルで \fItarget_file\fR が複数のリンクを持っている別のファイルへのリンクで ある場合、ほかのリンクは残存し、\fItarget_file\fR は新しいファイルになります。
+.sp
+.LP
+\fIsource\fR と \fItarget_file\fR/\fItarget_dir\fR が異なるファイルシステム上にある場合、\fBmv\fR はソースファイルをコピーし、もとのファイルまたはディレクトリを削除します。ほかのファイルへのハードリンクはすべてなくなります。\fBmv\fR は、ソースファイルの特性 (ファイルの所有者 ID やグループ ID、アクセス権モード、修正時間やアクセス時間、および適用可能であれば \fBACL\fR と拡張属性) も対象ファイルに引き継ごうとします。シンボリックリンクに対しては、\fBmv\fR はリンク自体の所有者 ID やグループ ID だけを保存します。
+.sp
+.LP
+所有者 ID やグループ ID を保存できなかった場合、\fBmv\fR は対象ファイルの \fBS_ISUID\fR ビットと \fBS_ISGID\fR ビットをクリアします。これらのビットをクリアーできない場合、\fBmv\fR は標準エラー出力に診断メッセージを出力しますが、終了ステータスには影響を及ぼしません。ターゲットのファイルシステムが拡張属性をサポートしていない場合、\fBmv\fR は拡張属性を保持できません。\fB/usr/xpg4/bin/mv\fR が、ファイルの特性を引き継ごうとして失敗したその他すべてのエラーについて、標準エラー出力に診断メッセージを出力します。終了コードには影響しません。
+.sp
+.LP
+ソースファイルの特性を保存するには、ユーザーが適切なファイルのアクセス権を持っている必要があります。つまり、スーパーユーザーになるか、あるいは対象ファイルと同じ所有者 ID を持つことが必要です。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 6n
+.rt  
+\fBmv\fR は、既存の \fItarget\fR に書き込む場合でもプロンプトを出さずにファイルを移動します。標準入力が端末でない場合これがデフォルトになることに注意してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+\fBmv\fR は、移動により既存の target が上書きされる場合は、必ず、確認のプロンプトを出します。これは、入力が端末から送られているかどうかに関係なく実行されます。確認のプロンプトでエラーが発生した場合は、ユーザーによる否定応答と同等です。肯定を応答すれば、移動処理は続行されます。その他の応答では、\fBmv\fR は \fItarget\fR を上書きしません。
+.RE
+
+.SS "/usr/bin/mv"
+.sp
+.LP
+\fB-f\fR と \fB-i\fR のオプションを両方指定してもエラーとは見なされません。\fB-f\fR オプションは、\fB-i\fR オプションよりも優先されます。
+.SS "/usr/xpg4/bin/mv"
+.sp
+.LP
+\fB-f\fR と \fB-i\fR のオプションを両方指定してもエラーとは見なされません。最後に指定したオプションが \fBmv\fR の動作を決定します。
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsource\fR \fR
+.ad
+.RS 16n
+.rt  
+移動するファイルまたはディレクトリのパス名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItarget_file\fR \fR
+.ad
+.RS 16n
+.rt  
+移動するファイルまたはディレクトリの新たなパス名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItarget_dir\fR \fR
+.ad
+.RS 16n
+.rt  
+ファイルの移動先となる既存ディレクトリのパス名
+.RE
+
+.SH 使用法
+.sp
+.LP
+ファイルが 2G バイト (2^31 バイト) 以上ある場合の \fBmv\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 環境
+.sp
+.LP
+\fBmv\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、 \fBLC_ALL \fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.LP
+肯定応答は、ユーザーのロケールの \fBLC_MESSAGES\fR カテゴリの \fByesexpr\fR キーワードに定義されている拡張正規表現を使用して処理されます。\fBLC_COLLATE\fR カテゴリに指定されているロケールは、\fByesexpr\fR に定義されている式に使用される範囲、同等クラス、および複数文字照合要素の動作を定義します。\fBLC_CTYPE\fR に指定されているロケールは、テキストデータのバイト列を文字として解釈するロケールや、\fByesexpr\fR に定義されている式に使用される文字クラスの動作を定義します。\fBlocale\fR(5) を参照してください。
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+入力ファイルはすべて正常に移されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/mv"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性確実
+.TE
+
+.SS "/usr/xpg4/bin/mv"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+_
+CSI有効
+_
+インタフェースの安定性標準
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBcp\fR(1), \fBcpio\fR(1), \fBln\fR(1), \fBrm\fR(1), \fBsetfacl\fR(1), \fBchmod\fR(2), \fBattributes\fR(5), \fBenviron\fR(5), \fBfsattr\fR(5), \fBlargefile\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+\fB--\fR によって、ユーザーはコマンド行オプションの終端を明示的にマーク付けできるので、\fBmv\fR は \fB-\fR で始まるファイル名引数を認識できるようになります。BSD 移行のサポートとして、\fBmv\fR は \fB-\fR を \fB--\fR の同義語として受け入れます。この導入補助は、将来のリリースでは提供されない可能性があります。

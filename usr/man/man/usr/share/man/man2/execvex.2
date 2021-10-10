@@ -1,0 +1,146 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH execvex 2 "9 Nov 2010" "SunOS 5.11" "System Calls"
+.SH NAME
+execvex \- execute a file
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/execx.h>
+
+int execvex(uintptr_t \fIfile\fR, char *const \fIargv\fR[], char *const \fIenvp\fR[],
+    int \fIflags\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+All of the interfaces described in \fBexec()\fR are implemented using calls to the fundamental \fBexecvex()\fR system call described here. See \fBexec\fR(2) for details of process execution and return values from the system call.
+.sp
+.LP
+The interpretation of the file argument depends on the value of the \fIflags\fR argument.  The value of the \fIflags\fR argument must be an inclusive-OR of zero or more of these values:
+.br
+.in +2
+\fBEXEC_DESCRIPTOR\fR
+.in -2
+.br
+.in +2
+\fBEXEC_RETAINNAME\fR
+.in -2
+.br
+.in +2
+\fBEXEC_ARGVNAME\fR
+.in -2
+.sp
+.LP
+If \fBEXEC_DESCRIPTOR\fR is set in \fIflags\fR, the \fIfile\fR argument must be an open file descriptor for a regular file that is executable by the calling process.  The file may have been opened with any of these access modes (see \fBopen\fR(2)):
+.br
+.in +2
+\fBO_RDONLY\fR
+.in -2
+.br
+.in +2
+\fBO_WRONLY\fR
+.in -2
+.br
+.in +2
+\fBO_RDWR\fR
+.in -2
+.br
+.in +2
+\fBO_EXEC\fR
+.in -2
+.sp
+.LP
+If \fBEXEC_DESCRIPTOR\fR is not set in \fIflags\fR, the \fIfile\fR argument must be a pointer to a pathname for a file that is executable by the calling process.
+.sp
+.LP
+If \fBEXEC_RETAINNAME\fR is set in \fBflags\fR, the process's name, contained in the kernel user structure \fIu_comm\fR[] member, fetched in the /\fBproc\fR/\fIpid\fR/\fBpsinfo\fR \fIpr_fname\fR[] member, reported by \fBps\fR(1) and interrogated by \fBpgrep\fR(1), remains unchanged across the \fBexec()\fR of the new image.
+.sp
+.LP
+If \fBEXEC_DESCRIPTOR\fR or \fBEXEC_ARGVNAME\fR is set in \fIflags\fR and \fBEXEC_RETAINNAME\fR is not set, the process's name becomes the last component of the pathname-like \fIargv\fR[0] argument.
+.sp
+.LP
+If none of the \fBEXEC_DESCRIPTOR\fR, \fBEXEC_RETAINNAME\fR or \fBEXEC_ARGVNAME\fR flags are set in \fIflags\fR, the name of the process becomes the last component of the pathname passed in the \fIfile\fR argument.
+.sp
+.LP
+A call to \fBexecvex()\fR with no flags:
+.sp
+.in +2
+.nf
+execvex((uintptr_t)\fIpathname\fR, \fIargv\fR, \fIenvp\fR, 0);
+.fi
+.in -2
+
+.sp
+.LP
+is equivalent to a call to \fBexecve()\fR:
+.sp
+.in +2
+.nf
+execve(\fIpathname\fR, \fIargv\fR, \fIenvp\fR);
+.fi
+.in -2
+
+.sp
+.LP
+A call to \fBexecvex()\fR with only the \fBEXEC_DESCRIPTOR\fR flag:
+.sp
+.in +2
+.nf
+execvex(\fIfd\fR, \fIargv\fR, \fIenvp\fR, EXEC_DESCRIPTOR);
+.fi
+.in -2
+
+.sp
+.LP
+is equivalent to a call to \fBfexecve()\fR:
+.sp
+.in +2
+.nf
+fexecve(\fIfd\fR, \fIargv\fR, \fIenvp\fR);
+.fi
+.in -2
+
+.SH RETURN VALUES
+.sp
+.LP
+If the \fBexecvex()\fR function returns to the calling process image, an error has occurred; the return value is -1 and \fIerrno\fR is set to indicate the error.
+.SH ERRORS
+.sp
+.LP
+In addition to the failures described in \fBexec\fR(2), the \fBexecvex()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+The \fIflags\fR argument is invalid.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelAsync-Signal-Safe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBpgrep\fR(1), \fBps\fR(1), \fBexec\fR(2), \fBopen\fR(2), \fBproc\fR(4), \fBattributes\fR(5)

@@ -1,0 +1,887 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH itadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+itadm \- iSCSI ターゲットの管理
+.SH 形式
+.LP
+.nf
+\fBitadm\fR create-target [\fB-a\fR,\fB--auth-method\fR radius | chap | none | default]
+     [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] [\fB-n\fR,\fB--node-name\fR \fItarget_node_name\fR]
+     [\fB-l\fR,\fB--alias\fR \fIalias\fR] [\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR]]
+.fi
+
+.LP
+.nf
+\fBitadm\fR modify-target [\fB-a\fR,\fB--auth-method\fR radius | chap | none | default]
+     [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] [\fB-n\fR,\fB--node-name\fR \fInew_target_node_name\fR]
+     [\fB-l\fR,\fB--alias\fR \fIalias\fR] [\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR]] \fItarget_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR delete-target [\fB-f\fR,\fB--force\fR] \fItarget_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-target [\fB-v\fR,\fB--verbose\fR] [\fItarget_node_name\fR]
+.fi
+
+.LP
+.nf
+\fBitadm\fR create-tpg \fItpg_name\fR \fIIP-address\fR[:\fIport\fR] [\fIIP-address\fR[:\fIport\fR]]...
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-tpg [\fB-v\fR,\fB--verbose\fR] [\fItpg_name\fR]
+.fi
+
+.LP
+.nf
+\fBitadm\fR delete-tpg  [\fB-f\fR,\fB--force\fR] \fItpg_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR create-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR modify-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-initiator [\fB-v\fR,\fB--verbose\fR] \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR delete-initiator \fIinitiator_node_name\fR
+.fi
+
+.LP
+.nf
+\fBitadm\fR modify-defaults [\fB-a\fR,\fB--auth-method\fR radius | chap | none]
+     [\fB-r\fR,\fB--radius-server\fR \fIIP-address\fR[:\fIport\fR]] [\fB-d\fR,\fB--radius-secret\fR]
+     [\fB-D\fR,\fB--radius-secret-file\fR \fIpath\fR][\fB-i\fR,\fB--isns\fR enable | disable]
+     [\fB-I\fR,\fB--isns-server\fR \fIIP-address\fR[:\fIport\fR][,\fIIP-address\fR[:\fIport\fR]]]
+.fi
+
+.LP
+.nf
+\fBitadm\fR list-defaults
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBitadm\fR コマンドは、SCSI ターゲットモードフレームワーク (SCSI Target Mode Framework) 内部の iSCSI (Internet SCSI) ターゲットノードを管理します。詳細については、\fBstmfadm\fR(1M) および \fBlibstmf\fR(3LIB) を参照してください。 これにより、iSCSI イニシエータが iSCSI プロトコルを使用して STMF 論理ユニットにアクセスすることが可能になります。\fBitadm\fR は、iSCSI ターゲットノードのほかに、iSCSI ターゲットポータルグループおよび iSCSI イニシエータノードコンテキストという 2 つの管理対象オブジェクトクラスを管理します。
+.sp
+.LP
+\fBitadm\fR は、独自のオプションとオペランドを備えたサブコマンドのセットとして実装されています。これらのサブコマンドについては、以降の節でサブコマンドごとに説明します。\fBitadm\fR は、サブコマンドのほかに、ユーティリティーの使用方法を示すヘルプコマンドも備えています。ヘルプコマンドを呼び出すには、\fB-?\fR オプションを使用します。
+.SS "iSCSI ターゲットポータルグループ"
+.sp
+.LP
+iSCSI ターゲットネットワークポータルは、iSCSI ターゲットへの接続にイニシエータノードが使用可能な IP アドレスと TCP ポートです。これらのポータルの集まりをターゲットポータルグループ (TPG) と呼びます。TPG を使用すると、iSCSI ターゲットへのアクセスを制限できます。特定の iSCSI ターゲットを TPG にバインドするには、\fBitadm modify\fR \fB- t\fR コマンドを使用します。iSCSI リスナーは、TPG に属する各 IP アドレス上に作成され、iSCSI ターゲットへの接続を待機します。
+.sp
+.LP
+TPG は、TPG の作成時に指定された一意の名前で識別されます。TPG の作成時に 2 - 65535 の範囲の数値「ターゲットポータルグループタグ」が自動的に生成されます。ターゲットポータルグループタグ 1 は、「デフォルト」のターゲットポータルグループ用に予約されています。これは、ターゲットに明示的なターゲットポータルグループが設定されていない場合に使用されます。デフォルト TPG のポータルは、ポート 3260 上のすべてのネットワークインタフェースからの要求と一致します。
+.SS "iSCSI イニシエータノードコンテキスト"
+.sp
+.LP
+チャレンジハンドシェーク認証プロトコル (CHAP) による特定の操作 (認証など) には、リモート iSCSI イニシエータノードに関連付けられたパラメータが必要です。これらのパラメータは、iSCSI イニシエータノードコンテキストと関連付けられています。iSCSI イニシエータノードコンテキストは、IQN または EUI 形式で記述されたイニシエータノード名で識別されます (RFC 3720 を参照)。例: 
+.sp
+.in +2
+.nf
+iqn.1986-03.com.sun:01:e00000000000.47d55444
+eui.02004567A425678D
+.fi
+.in -2
+.sp
+
+.SS "IP アドレスの指定"
+.sp
+.LP
+多くの \fBitadm\fR サブコマンドでは、1 つ以上の IP アドレスを指定する必要があります。ポート番号の指定は任意です。IPv4 の場合は、標準のドット区切り 10 進数表記を使用します。IPv6 の場合は、アドレスを角括弧で囲みます。次に指定の例を示します。
+.sp
+.in +2
+.nf
+\fBIPv4\fR:  10.2.4.1
+       10.2.4.1:3260
+\fBIPv6\fR:  [1080:0:0:0:8:800:200C:417A]
+       [1080:0:0:0:8:800:200C:417A]:3260
+.fi
+.in -2
+.sp
+
+.SH サブコマンド
+.sp
+.LP
+次に、\fBitadm\fR のサブコマンドとそのオプションを示します。
+.SS "\fBitadm create-target\fR"
+.sp
+.in +2
+.nf
+itadm create-target [-a,--auth-method radius | chap | none | default]
+     [-s,--chap-secret]
+     [-S,--chap-secret-file \fIpath\fR] [-u,--chap-user \fIchap-user-name\fR]
+     [-n,--node-name \fItarget_node_name\fR] [-l,--alias \fIalias\fR]
+     [-t,--tpg \fItpg-name\fR[,\fItpg-name\fR,...]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+オプションを指定して iSCSI ターゲットを作成します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR、\fB--auth-method\fR \fBradius | chap | none | default\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットに使用する認証方法を指定します。有効な値は、\fBradius\fR、\fBchap\fR、および \fBnone\fR です。\fBchap\fR は、このターゲットに接続するイニシエータをチャレンジハンドシェーク認証プロトコル (CHAP) を使用して認証する必要があることを示します。\fBradius\fR は、イニシエータが CHAP によっても認証されるが、必須の認証パラメータは中央の RADIUS サーバーから取得されることを示します (\fBradius-server\fR および \fBradius-secret\fR オプションを参照)。\fB none\fR は、ターゲットへの接続に認証が不要であることを示します。\fBdefault\fR は、ターゲットがこのプロパティーのグローバル設定を使用することを示します(\fBmodify-defaults\fR サブコマンドを参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+相互 CHAP 認証時に送信する CHAP シークレット。このプロパティーにデフォルトはありません。最大長は 255 文字、最低限必要な長さは 12 文字です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR、\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-s\fR オプションで指定された CHAP シークレットを含む一時ファイルへのパス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR、\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+相互 CHAP 認証で使用するターゲットの CHAP ユーザー名を指定します。この値はターゲットのみに許可され、グローバルに設定することはできません。また、この値を使用できるのは、相互 CHAP 認証を使用するようにイニシエータノードが構成されている場合だけです。値が指定されていない場合、ターゲットのノード名がユーザー名として使用されます。\fBiscsiadm\fR(1M) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR、\fB--node-name\fR \fItarget_node_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+iSCSI ターゲットノードは、IQN または EUI 形式で記述されたターゲットノード名で識別されます (RFC 3720 を参照)。このオプションにより、その名前が設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR、\fB--alias\fR \fIalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットノードに関連付けられた代替識別子。この識別子は一意でなくてもかまいません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR,...]\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットポータルグループ (TPG) 識別子のリスト。このリストには、イニシエータから特定のターゲットへのアクセスに使用可能な TPG やキーワード \fBdefault\fR を指定します。\fBdefault\fR が指定された場合、ターゲットはデフォルトのポータル \fBINADDR_ANY:3260\fR を使用します。
+.RE
+
+.SS "\fBitadm modify-target\fR"
+.sp
+.in +2
+.nf
+itadm modify-target [\fB-a\fR,\fB--auth-method\fR radius | chap | none | default]
+     [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] [\fB-n\fR,\fB--node-name\fR \fInew_tgt_node_name\fR]
+     [\fB-l\fR,\fB--alias\fR \fIalias\fR] [\fB-t\fR,\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR]] \fItarget_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+指定されたオプションに従って iSCSI ターゲットを変更します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR、\fB--auth-method\fR \fBradius | chap | none | default\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR、\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR、\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。明示的に設定した CHAP ユーザー名を削除するには、\fB-u\fR \fBnone\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR、\fB--node-name\fR \fItarget_node_name\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットの名前を変更します。前述の \fBcreate-target\fR サブコマンドの \fB-n\fR の説明を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR、\fB--alias\fR \fIalias\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。明示的に設定した別名を削除するには、\fB-l\fR \fBnone\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR、\fB--tpg\fR \fItpg-name\fR[,\fItpg-name\fR,...]\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.SS "\fBitadm list-target\fR"
+.sp
+.in +2
+.nf
+itadm list-target [\fB-v\fR,\fB--verbose\fR] [\fItarget_node_name\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+構成済みのターゲットに関する情報を一覧表示します。\fItarget_node_name\fR が指定されている場合は、そのターゲットの情報のみを一覧表示します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR、\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モード。
+.RE
+
+.SS "\fBitadm delete-target\fR"
+.sp
+.in +2
+.nf
+itadm delete-target [\fB-f\fR,\fB--force\fR] \fItarget_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fItarget_node_name\fR で指定されたターゲットを削除します。ターゲットを削除するには、オフラインにする必要があります。\fB\fRオプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+ターゲットのオンライン状態が続く場合、このオプションはターゲットを削除する前にオフライン化を試みます。
+.RE
+
+.SS "\fBitadm create-tpg\fR"
+.sp
+.in +2
+.nf
+itadm create-tpg \fItpg_name\fR \fIIP-address\fR[:\fIport\fR]...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+指定されたポータルで構成される iSCSI ターゲットのポータルグループを作成して、それに識別子 \fItpg_name\fR を割り当てます。各ポータルは、IP アドレスとポートのペアです。IPv4 ポータルのアドレスは、ドット表記で指定します (例: \fB172.31.255.255\fR)。IPv6 ポータルアドレスは、角括弧で囲む必要があります。
+.sp
+.LP
+このサブコマンドにオプションはありません。
+.SS "\fBitadm list-tpg\fR"
+.sp
+.in +2
+.nf
+itadm list-tpg [\fB-v\fR,\fB--verbose\fR] [\fItpg_name\fR]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+構成済みのターゲットポータルグループに関する情報を一覧表示します。\fItpg_name\fR が指定されている場合、\fItpg_name\fR に関連付けられているターゲットポータルグループの情報だけを一覧表示します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR、\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モード。
+.RE
+
+.SS "\fBitadm delete-tpg\fR"
+.sp
+.in +2
+.nf
+itadm delete-tpg  [\fB-f\fR,\fB--force\fR] \fItpg_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fItpg_name\fR と関連付けられているターゲットポータルグループを削除します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+TPG がいずれかのターゲットと関連付けられている場合、このオプションが指定されていないかぎり、削除要求は拒否されます。
+.RE
+
+.SS "\fBitadm create-initiator\fR"
+.sp
+.in +2
+.nf
+itadm create-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIinitiator_node_name\fR という名前のリモートイニシエータと関連付けられているパラメータを構成します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR、\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR、\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+CHAP 認証で使用するイニシエータの CHAP ユーザー名を指定します。値が指定されていない場合、イニシエータのノード名がユーザー名として使用されます。
+.RE
+
+.SS "\fBitadm modify-initiator\fR"
+.sp
+.in +2
+.nf
+itadm modify-initiator [\fB-s\fR,\fB--chap-secret\fR] [\fB-S\fR,\fB--chap-secret-file\fR \fIpath\fR]
+     [\fB-u\fR,\fB--chap-user\fR \fIchap-user-name\fR] \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIinitiator_node_name\fR という名前のリモートイニシエータと関連付けられているパラメータを変更します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--chap-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR、\fB--chap-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+前述の \fBcreate-target\fR サブコマンドで説明したとおりです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR、\fB--chap-user\fR \fIchap-user-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+CHAP 認証で使用するイニシエータの CHAP ユーザー名を指定します。値が指定されていない場合、イニシエータのノード名がユーザー名として使用されます。
+.RE
+
+.SS "\fBitadm delete-initiator\fR"
+.sp
+.in +2
+.nf
+itadm delete-initiator \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIinitiator_node_name\fR という名前のリモートイニシエータと関連付けられているパラメータを削除します。このサブコマンドにオプションはありません。
+.SS "\fBitadm list-initiator\fR"
+.sp
+.in +2
+.nf
+\fBitadm\fR list-initiator [\fB-v\fR,\fB--verbose\fR] \fIinitiator_node_name\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fIinitiator_node_name\fR という名前のイニシエータと関連付けられているパラメータを一覧表示します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR、\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+冗長モード。
+.RE
+
+.SS "\fBitadm modify-defaults\fR"
+.sp
+.in +2
+.nf
+itadm modify-defaults [\fB-a\fR,\fB--auth-method\fR radius | chap | none]
+     [\fB-r\fR,\fB--radius-server\fR \fIIP-address\fR[:\fIport\fR]] [\fB-d\fR,\fB--radius-secret\fR]
+     [\fB-D\fR,\fB--radius-secret-file\fR \fIpath\fR][\fB-i\fR,\fB--isns\fR enable | disable]
+     [\fB-I\fR,\fB--isns-server\fR \fIIP-address\fR[:\fIport\fR][,\fIIP-address\fR[:\fIport\fR]]]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+デフォルトのパラメータを変更します。オプションは、次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR、\fB--auth-method\fR \fBradius | chap | none\fR\fR
+.ad
+.sp .6
+.RS 4n
+すべてのターゲットで使用するデフォルトの認証方法を指定します。有効な値は、\fBradius\fR、\fBchap\fR、および \fBnone\fR です。\fBchap\fR は、このターゲットに接続するイニシエータをチャレンジハンドシェーク認証プロトコル (CHAP) を使用して認証する必要があることを示します。\fBradius\fR は、イニシエータが CHAP によっても認証されるが、必須の認証パラメータは中央の RADIUS サーバーから取得されることを示します(\fB--radius-server\fR および \fB--radius-secret\fR オプションを参照)。 \fB none\fR は、ターゲットへの接続に認証が不要であることを示します。\fBcreate-target\fR および \fBmodify-target\fR サブコマンドの \fB-a\fR オプションを使用すると、このグローバル設定をターゲットごとに上書きできます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR、\fB--radius-secret\fR\fR
+.ad
+.sp .6
+.RS 4n
+集中管理される CHAP 認証の RADIUS 共有シークレット。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR、\fB--radius-secret-file\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-d\fR オプションで指定された CHAP シークレットを含む一時ファイルへのパス。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB--sns\fR \fBenable | disable\fR\fR
+.ad
+.sp .6
+.RS 4n
+定義済み iSNS (iSCSI Name Service) サーバーのセットにターゲットを登録するかどうかを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR、\fB--isns-server\fR \fIIP-address\fR[:\fIport\fR][,\fIIP-address\fR[:\fIport\fR],...]\fR
+.ad
+.sp .6
+.RS 4n
+個別のターゲットと関連付けられた \fBisns\fR オプションが設定されている場合に、iSCSI ターゲットノードを登録する iSNS サーバーのリストを定義します。最大 8 台の iSNS サーバーを指定できます。すべての iSNS サーバーを削除するには、\fB-I\fR \fBnone\fR を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR、\fB--radius-server\fR \fIIP-address\fR[:\fIport\fR]\fR
+.ad
+.sp .6
+.RS 4n
+集中管理される CHAP 認証で使用する RADIUS サーバーの IP アドレスを指定します。
+.RE
+
+.SS "\fBitadm list-defaults\fR"
+.sp
+.in +2
+.nf
+itadm list-defaults
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+デフォルトプロパティーの情報を一覧表示します。このサブコマンドにオプションはありません。
+.SH 使用例
+.LP
+\fB例 1 \fRターゲットを作成する
+.sp
+.LP
+次のコマンドは、ターゲットを作成します。
+
+.sp
+.in +2
+.nf
+# \fBitadm create-target\fR
+Target iqn.1986-03.com.sun:02:72e1b181-7bce-c0e6-851e-ec0d8cf14b7a
+successfully created
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR指定した名前のターゲットを作成する
+.sp
+.LP
+次のコマンドは、特定の IQN を使ってターゲットを作成します。
+
+.sp
+.in +2
+.nf
+# \fBitadm create-target -n eui.20387ab8943ef7548\fR
+or:
+# \fBitadm create-target \e
+-n iqn.1986-03.com.sun:02:a9a366f8-cc2b-f291-840948c7f29e\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR名前を変更する
+.sp
+.LP
+次のコマンドは、既存のターゲットの IQN を変更します。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-target -n eui.20387ab8943ef7548 \e
+iqn.1986-03.com.sun:02:a9a366f8-909b-cc2b-f291-840948c7f29e\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRCHAP 認証を設定する
+.sp
+.LP
+次のコマンドは、デフォルトの CHAP ユーザー名を使用してターゲットの CHAP 認証を設定します。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-initiator -s iqn.1986-03.com.sun:01:e00000000000.47d55444\fR
+\fBEnter CHAP secret:\fR *********
+\fBRe-enter secret:\fR *********
+
+# \fBitadm modify-target -a chap eui.20387ab8943ef7548\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRターゲットポータルグループを作成する
+.sp
+.LP
+次のコマンドは、TPG 2 のアドレスにポート 8000 を使用して、2 つのターゲットポータルグループ \fBA\fR および \fBB\fR を作成します。
+
+.sp
+.in +2
+.nf
+# \fBitadm create-tpg A 192.168.0.1 192.168.0.2\fR
+# \fBitadm create-tpg B 192.168.0.2:8000 192.168.0.2:8000\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRTPG の使用に合わせてターゲットを構成する
+.sp
+.LP
+次のコマンドは、TPG A および B の使用に合わせてターゲットを構成します。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-target -t A,B eui.20387ab8943ef7548\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR特定のターゲット用の RADIUS 認証を設定する
+.sp
+.LP
+次のコマンドは、特定のターゲット用の RADIUS 認証を設定します。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-defaults -r 192.168.10.1 -d\fR
+\fBEnter RADIUS secret:\fR *********
+\fBRe-enter secret:\fR *********
+
+# \fBitadm modify-target -a radius eui.20387ab8943ef7548\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRすべてのターゲット用の RADIUS 認証を設定する
+.sp
+.LP
+次のコマンドは、すべてのターゲット用の RADIUS 認証を設定します。
+
+.sp
+.in +2
+.nf
+# \fBitadm modify-defaults -d -r 192.168.10.1 -a radius\fR
+\fBEnter RADIUS secret:\fR *********
+\fBRe-enter secret:\fR *********
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このコマンドは、すべてのターゲットが \fB-a\fR \fBdefault\fR を使って作成されたことを前提としています。
+
+.LP
+\fB例 9 \fRデフォルトプロパティーを一覧表示する
+.sp
+.LP
+次のコマンドは、デフォルトプロパティーを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-defaults\fR
+iSCSI Target Default Properties:
+
+alias:          \fInone\fR
+auth:           \fInone\fR
+radiusserver:   \fInone\fR
+radiussecret:   unset
+isns:           disabled
+isnsserver:     2.3.4.5,4.5.6.7
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fRターゲットを一覧表示する
+.sp
+.LP
+次のコマンドは、ターゲットを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-target\fR
+TARGET NAME                                           STATE    SESSIONS
+iqn.1986-03.com.sun:02:72e1b181-7bce-c0e6-851e-ec0d8cf14b7a  online   0
+iqn.1986-03.com.sun:02:2cb0c526-c05a-e279-e396-a367006f4227  online   0
+iqn.1986-03.com.sun:02:d14125bb-1c9d-c28d-97b0-f89259b642f3  online   0
+iqn.1986-03.com.sun:02:03ff9fc5-794a-e9b4-a081-bb82917c292a  online   0
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRターゲットを一覧表示する (冗長)
+.sp
+.LP
+次のコマンドは、冗長オプションを指定してターゲットを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-target -v\fR
+TARGET NAME                                           STATE    SESSIONS
+iqn.1986-03.com.sun:02:d23e68d8-2d79-c988-98e7-a6361689d33c  online   0
+       alias:                  -
+       auth:                   none (defaults)
+       targetchapuser:         -
+       targetchapsecret:       unset
+       tpg-tags:               default
+iqn.1986-03.com.sun:02:94ec46d4-c8e1-6993-ef03-ffc1dcd66606  online   1
+       alias:                  -
+       auth:                   chap
+       targetchapuser:         -
+       targetchapsecret:       unset
+       tpg-tags:               nge1_ipv4 = 3
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 12 \fR特定のターゲットを一覧表示する
+.sp
+.LP
+次のコマンドは、冗長オプションを指定してターゲットを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBitadm list-target -v \e
+iqn.1986-03.com.sun:02:2cb0c526-c05a-e279-e396-a367006f4227\fR
+TARGET NAME                                           STATE    SESSIONS
+iqn.1986-03.com.sun:02:2cb0c526-c05a-e279-e396-a367006f4227  online   1
+        alias:                  -
+        auth:                   chap
+        targetchapuser:         -
+        targetchapsecret:       unset
+        tpg-tags:               nge1_ipv4 = 3
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/storage/iscsi/iscsi-target
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBiscsiadm\fR(1M), \fBstmfadm\fR(1M), \fBlibstmf\fR(3LIB), \fBattributes\fR(5)

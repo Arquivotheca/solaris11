@@ -1,0 +1,536 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH useradd 1M "2011 年 7 月 24 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+useradd \- システムでの新しいユーザーログインの管理
+.SH 形式
+.LP
+.nf
+\fBuseradd\fR [\fB-A\fR \fIauthorization\fR [,\fIauthorization...\fR]] 
+     [\fB-b\fR \fIbase_dir\fR] [\fB-c\fR \fIcomment\fR] [\fB-d\fR \fIdir\fR] [\fB-e\fR \fIexpire\fR] 
+     [\fB-f\fR \fIinactive\fR] [\fB-g\fR \fIgroup\fR] [\fB-G\fR \fIgroup\fR [,\fIgroup\fR]...] 
+     [\fB-K\fR \fIkey=value\fR] [\fB-m\fR [\fB-k\fR \fIskel_dir\fR]] [\fB-p\fR \fIprojname\fR] 
+     [\fB-P\fR \fIprofile\fR [,\fIprofile...\fR]] [\fB-R\fR \fIrole\fR [,\fIrole...\fR]] 
+     [\fB-s\fR \fIshell\fR] [\fB-S\fR \fIrepository\fR] [\fB-u\fR \fIuid\fR [\fB-o\fR]] \fIlogin\fR
+.fi
+
+.LP
+.nf
+\fBuseradd\fR \fB-D\fR [\fB-A\fR \fIauthorization\fR [,\fIauthorization...\fR]] 
+     [\fB-b\fR \fIbase_dir\fR] [\fB-s\fR \fIshell\fR [\fB-k\fR \fIskel_dir\fR]] [\fB-e\fR \fIexpire\fR] 
+     [\fB-f\fR \fIinactive\fR] [\fB-g\fR \fIgroup\fR] [\fB-K\fR \fIkey=value\fR] [\fB-p\fR \fIprojname\fR] 
+     [\fB-P\fR \fIprofile\fR [,\fIprofile...\fR]] [\fB-R\fR \fIrole\fR [,\fIrole...\fR]]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBuseradd\fR は、\fBfiles\fR および \fBldap\fR リポジトリの \fBpasswd\fR、\fBshadow\fR、および \fBuser_attr\fR データベースに新しいユーザーを追加します。\fB-A\fR および \fB-P\fR オプションは、それぞれ承認とプロファイルをユーザーに割り当てます。\fB-R\fR オプションはユーザーに役割を割り当てます。\fB-p\fR オプションはユーザーにプロジェクトを関連付けます。\fB-K\fR オプションは、ユーザーの \fBuser_attr\fR エントリに \fIkey=value\fR ペアを追加します。\fB-K\fR オプションを複数使用して、複数の \fIkey=value\fR ペアを追加できます。
+.sp
+.LP
+また、\fBuseradd\fR では必要に応じて、ユーザーの補助グループメンバーシップを作成したり (\fB-G\fR オプション)、ユーザーのホームディレクトリを作成したり (\fB-m\fR オプション) できます。新しいログインは、\fBpasswd\fR(1) コマンドが実行されるまで、ロックされたままになります。
+.sp
+.LP
+\fBuseradd\fR \fB-D\fR に \fB-s\fR、\fB-k\fR、\fB-g\fR、\fB-b\fR、\fB-f\fR、\fB-e\fR、\fB-A\fR、\fB-P\fR、\fB-p\fR、\fB-R\fR、または \fB-K\fR オプション (またはこれらのオプションを任意に組み合わせたもの) を指定すると、それぞれ対応するフィールドのデフォルト値を設定できます。下記の \fB-D\fR オプションを参照してください。そのあとで \fBuseradd\fR コマンドを \fB-D\fR オプションなしで実行すると、これらの引数が使用されます。
+.sp
+.LP
+このコマンドで作成されるシステムファイルエントリには、1 行あたり 2048 文字の制限があります。複数のオプションに長い引数を指定する場合は、この制限を超える可能性があります。
+.sp
+.LP
+\fBuseradd\fR で設定するユーザー名は、\fBpasswd\fR(4) で説明されている形式でなければなりません。これらの要件が満たされていない場合は、警告メッセージが表示されます。ユーザー名の要件については、\fBpasswd\fR(4) を参照してください。
+.sp
+.LP
+新しいユーザーを作成するには、管理者に User Management プロファイルが付与されている必要があります。\fBpasswd\fR、\fBshadow\fR、および \fBuser_attr\fR の各種フィールドの設定に必要な承認については、\fBpasswd\fR(4)、\fBshadow\fR(4)、および \fBuser_attr\fR(4) を参照してください。グループおよびプロジェクトの割り当てに必要な承認については、\fBgroup\fR(4) および \fBproject\fR(4) を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR \fIauthorization\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBauth_attr\fR(4) で定義されている、1 つまたは複数のコンマ区切りの承認。承認の \fBgrant\fR 権を持っているユーザーまたは役割だけが、その承認をアカウントに割り当てることができます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIbase_dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいログインホームディレクトリのベースディレクトリ (\fB-d\fR オプションを参照)。新しいユーザーアカウントを作成する場合、\fB-m\fR オプションまたは \fB-d\fR オプションを同時に指定するときを除き、\fIbase_dir\fR はすでに存在している必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIcomment\fR\fR
+.ad
+.sp .6
+.RS 4n
+任意のテキスト文字列を指定できます。一般にはログインの簡単な説明文ですが、現在はユーザーのフルネームを表すフィールドとして使用されています。この情報は、ユーザーの \fBpasswd\fR エントリに保存されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいユーザーの \fBauto_home\fR エントリを指定します。パス \fB/home/\fR\fIusername\fR は \fB/etc/passwd\fR に入ります。ユーザーが続けて \fB/home/\fR\fIusername\fR を参照すると、オートマウンタはここに指定されているディレクトリを \fB/home/\fR\fIusername\fR にマウントします。
+.sp
+\fB-d\fR オプションの引数は \fIserver\fR:\fIdir\fR として指定できます。ここで、\fIserver\fR はホームディレクトリがあるマシンのホスト名、\fIdir\fR はユーザーのホームディレクトリへのパスです。サーバーがリモートホストの場合、ユーザーのログイン時にシステムがホームディレクトリをマウントするために、リモートホストにホームディレクトリを作成する必要があります。\fB-m\fR オプションが指定されていて、サーバー名が指定されていない場合、ホームディレクトリはコマンドが実行されたホストに作成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBgroup\fR、\fBbase_dir\fR、\fBskel_dir\fR、\fBshell\fR、\fBinactive\fR、\fBexpire\fR、\fBproj\fR、\fBprojname\fR、および \fBkey=value\fR ペアのデフォルト値を表示します。\fB-g\fR、\fB-b\fR、\fB-f\fR、\fB-e\fR、\fB-A\fR、\fB-P\fR、\fB-p\fR、\fB-R\fR、または \fB-K\fR とともに \fB-D\fR オプションを使用すると、指定したフィールドのデフォルト値を設定できます。デフォルト値は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fBgroup\fR
+.ad
+.sp .6
+.RS 4n
+\fBother\fR (\fBGID\fR は 1)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBbase_dir\fR
+.ad
+.sp .6
+.RS 4n
+\fB/export/home\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBskel_dir\fR
+.ad
+.sp .6
+.RS 4n
+\fB/etc/skel\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBshell\fR
+.ad
+.sp .6
+.RS 4n
+\fB/usr/bin/bash\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBinactive\fR
+.ad
+.sp .6
+.RS 4n
+\fB0\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBexpire\fR
+.ad
+.sp .6
+.RS 4n
+NULL 文字列
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBauths\fR
+.ad
+.sp .6
+.RS 4n
+NULL 文字列
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBprofiles\fR
+.ad
+.sp .6
+.RS 4n
+NULL 文字列
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBproj\fR
+.ad
+.sp .6
+.RS 4n
+\fB3\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBprojname\fR
+.ad
+.sp .6
+.RS 4n
+\fBdefault\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBkey=value (\fBuser_attr\fR(4) に定義されているペア)\fR
+.ad
+.sp .6
+.RS 4n
+存在しない
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBroles\fR
+.ad
+.sp .6
+.RS 4n
+NULL 文字列
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIexpire\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログインの有効期限を指定します。この日付を過ぎると、どのユーザーもこのログインにアクセスできなくなります。expire オプション引数の日付は、テンプレートファイル \fB/etc/datemsk\fR に含まれている日付形式のいずれかを使用して入力します。\fBgetdate\fR(3C) を参照してください。
+.sp
+選択した日付形式にスペースが含まれている場合は、引用符で囲む必要があります。たとえば、\fB10/6/90\fR または \fBOctober 6, 1990\fR と入力できます。NULL 値 (\fB" "\fR) を指定すると、期限切れのステータスは無効になります。このオプションは一時的なログインを作成する場合に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIinactive\fR\fR
+.ad
+.sp .6
+.RS 4n
+ログイン \fBID\fR が最後に使用された日から無効と宣言されるまでの、最大日数を指定します。通常は正の整数です。値 \fB0\fR を指定すると、このステータスは無効になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存グループのグループ \fBID\fR (整数) または名前 (文字列) を指定します。\fB-D\fR オプションが指定されていない場合、新しいユーザーの一次グループメンバーシップを定義します。デフォルトでは、デフォルトグループになります。このデフォルト値は、\fBuseradd\fR \fB-D\fR \fB-g\fR \fIgroup\fR を呼び出すことで再設定できます。0 から 99 の GID は、Solaris オペレーティングシステムによる割り当て用として予約されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+既存グループのグループ \fBID\fR (整数) または名前 (文字列) を指定します。新しいユーザーの補助グループメンバーシップを定義します。\fIgroup\fR が \fB-g\fR オプションと \fB-G\fR オプションで重複して指定されている場合、その項目は無視されます。指定できるグループの数は \fBNGROUPS_MAX\fR 以下です。0 から 99 の GID は、Solaris オペレーティングシステムによる割り当て用として予約されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR \fIkey=value\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーの属性に追加する \fIkey=value\fR ペアを指定します。\fB-K\fR オプションを複数使用して、複数の \fIkey=value\fR ペアを追加できます。暗黙に指定される特定のキーオプション (\fB-A\fR、\fB-P\fR、\fB-R\fR、\fB-p\fR) の代わりに、汎用の \fB-K\fR オプションと適切なキーを使用できます。使用可能な \fIkey=value\fR ペアのリストについては、\fBuser_attr\fR(4) を参照してください。type キーは、このオプションに有効なキーではありません。キーを重複して指定することはできません。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fIskel_dir\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいユーザーのログインのホームディレクトリにコピーできるスケルトン情報 (\fB\&.profile\fR など) を格納しているディレクトリを指定します。このディレクトリはすでに存在している必要があります。システムには、この目的のために使用できるスケルトンディレクトリとして \fB/etc/skel\fR が用意されています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいユーザーのホームディレクトリが存在していない場合は、新たに作成します。ホームディレクトリがすでに存在している場合、そのディレクトリには \fIgroup\fR (ユーザーの一次グループ) による読み取り権、書き込み権、および実行権が設定されている必要があります。\fI\fR\fB-d\fR オプションに指定されたサーバー名がリモートホストの場合、システムはホームディレクトリの作成を試みません。
+.sp
+ディレクトリがまだ存在しない場合は、新しい ZFS データセットが作成されます。大域ゾーンにデータセットが \fBrpool/export/home/\fR\fIusername\fR として作成されます。大域ゾーン以外の場合、データセットは \fIROOT-dataset\fR\fB/export/home/\fR\fIusername\fR として作成されます。ZFS データセットのマウントポイントは、デフォルトでは \fB/export/home/\fR\fIusername\fR です。\fB-d\fR \fIpath\fR が指定され、それがローカルマシン上のパスである場合、データセットは指定された場所にマウントされます。ZFS スナップショットを作成してそれをプロモートするためのアクセス権がユーザーに委任されます。新しく作成されるデータセットは、その親から暗号化設定を継承します。暗号化されている場合は、そのラップ鍵を変更するためのアクセス権がユーザーに委任されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR\fR
+.ad
+.sp .6
+.RS 4n
+重複した (一意でない) \fBUID\fR を許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIprofile\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBprof_attr\fR(4) で定義されている実行プロファイルを 1 つ以上、コンマで区切って指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIprojname\fR\fR
+.ad
+.sp .6
+.RS 4n
+追加するユーザーに関連付けるプロジェクトの名前を指定します。\fBproject\fR(4) で定義されている \fIprojname\fR フィールドを参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIrole\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBuser_attr\fR(4) で定義されている実行プロファイルを 1 つ以上、コンマで区切って指定します。役割をほかの役割に割り当てることはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIshell\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザーのログインシェルとして使用するプログラムのフルパス名を指定します。指定しない場合は、以前に \fB-D\fR \fB-s\fR オプションで構成された値にデフォルトが設定されます。\fB-D\fR \fB-s\fR でデフォルトが設定されていない場合は、\fB/usr/bin/bash\fR が使用されます。 \fIshell\fR の値は有効な実行可能ファイルでなければなりません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIrepository\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効なリポジトリは、\fBfiles\fR と \fBldap\fR です。リポジトリは、更新するネームサービスを指定します。デフォルトのリポジトリは \fBfiles\fR です。リポジトリが \fBfiles\fR の場合、承認、プロファイル、および役割が、別のネームサービスリポジトリに存在していても、\fBfiles\fR リポジトリ内のユーザーに割り当てることができます。リポジトリが \fBldap\fR の場合、割り当て可能な属性はすべて \fBldap\fR リポジトリに存在している必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuid\fR\fR
+.ad
+.sp .6
+.RS 4n
+新しいユーザーの \fBUID\fR を指定します。この \fBUID\fR は、\fB<sys/param.h>\fR ヘッダーファイルで定義された \fBMAXUID\fR より小さく、かつ負でない 10 進整数でなければなりません。\fBUID\fR のデフォルトは、現在割り当てられている最大の値の次に大きい使用可能な (一意の) 値です。たとえば、\fBUID\fR 100、105、および 200 が割り当て済みの場合、次のデフォルトの \fBUID\fR 番号は 201 になります。\fB0\fR から \fB99\fR の \fBUID\fR は、Solaris オペレーティングシステムによる割り当て用として予約されています。
+.RE
+
+.SH ファイル
+.sp
+.LP
+\fB/etc/datemsk\fR
+.sp
+.LP
+\fB/etc/passwd\fR
+.sp
+.LP
+\fB/etc/shadow\fR
+.sp
+.LP
+\fB/etc/group\fR
+.sp
+.LP
+\fB/etc/skel\fR
+.sp
+.LP
+\fB/usr/include/limits.h\fR
+.sp
+.LP
+\fB/etc/user_attr\fR
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBpasswd\fR(1), \fBprofiles\fR(1), \fBroles\fR(1), \fBusers\fR(1B), \fBgroupadd\fR(1M), \fBgroupdel\fR(1M), \fBgroupmod\fR(1M), \fBgrpck\fR(1M), \fBlogins\fR(1M), \fBpwck\fR(1M), \fBuserdel\fR(1M), \fBusermod\fR(1M), \fBgetdate\fR(3C), \fBauth_attr\fR(4), \fBgroup\fR(4), \fBpasswd\fR(4), \fBprof_attr\fR(4), \fBproject\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5)
+.SH 診断
+.sp
+.LP
+エラーが発生した場合、\fBuseradd\fR はエラーメッセージを表示し、ゼロ以外のステータスで終了します。
+.sp
+.LP
+次のメッセージは、指定された \fBlogin\fR がすでに使用されていることを示します。
+.sp
+.in +2
+.nf
+UX: useradd: ERROR: login is already in use. Choose another.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、\fB-u\fR オプションで指定された \fIuid\fR が一意でないことを示します。
+.sp
+.in +2
+.nf
+UX: useradd: ERROR: uid \fIuid\fR is already in use. Choose another. 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、\fB-g\fR オプションで指定された \fIgroup\fR がまだ作成されていないことを示します。
+.sp
+.in +2
+.nf
+UX: useradd: ERROR: group \fIgroup\fR does not exist. Choose another. 
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、\fB-u\fR オプションで指定された \fIuid\fR が予約済み \fBUID\fR の範囲 (\fB0\fR から \fB99\fR) に含まれていることを示します。
+.sp
+.in +2
+.nf
+UX: useradd: WARNING: uid \fIuid\fR is reserved.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、\fB-u\fR オプションで指定された \fIuid\fR が \fB<sys/param.h>\fR で定義された \fBMAXUID\fR を超えていることを示します。
+.sp
+.in +2
+.nf
+UX: useradd: ERROR: uid \fIuid\fR is too big. Choose another.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、\fB/etc/passwd\fR または \fB/etc/shadow\fR ファイルが存在しないことを示します。
+.sp
+.in +2
+.nf
+UX: useradd: ERROR: Cannot update system files - login cannot be created.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、コマンドを実行したユーザーに、この操作を実行するための十分な承認がないことを示します。
+.sp
+.in +2
+.nf
+UX: roleadd: ERROR: Permission denied.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のメッセージは、\fBuseradd\fR コマンドで無効なディレクトリが指定されたことを示します。
+.sp
+.in +2
+.nf
+UX: \fIinvalid_directory\fR is not a valid directory. Choose another.
+.fi
+.in -2
+.sp
+
+.SH 注意事項
+.sp
+.LP
+\fBuseradd\fR ユーティリティーは、デフォルトの有効範囲または指定された有効範囲内にある \fBpasswd\fR、\fBshadow\fR、\fBgroup\fR、\fBproject\fR、および \fBuser_attr\fR データベースに定義を追加します。このユーティリティーは、ユーザー名 (または役割) およびユーザー ID が一意であることと、指定されたグループ名が存在することを、外部のネームサービスと照合して確認します。

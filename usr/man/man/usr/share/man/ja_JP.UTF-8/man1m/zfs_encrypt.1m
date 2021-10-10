@@ -1,0 +1,854 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zfs_encrypt 1M "2011 年 7 月 15 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+zfs_encrypt \- ZFS ファイルシステムを暗号化する
+.SH 形式
+.LP
+.nf
+\fBzfs\fR [\fB-?\fR]
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBhelp\fR \fIsubcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBcreate\fR \fB-o encryption=on\fR  [\fB-o keysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fIprompt\fR | \fIfile://\fR\fB|pkcs11:|https://\fR] ... \fIdataset\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBclone\fR [\fB-p\fR] [\fB-K\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIsnapshot\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR [\fB-r\fR|\fB-d\fR \fIdepth\fR][\fB-Hp\fR][\fB-o\fR all | \fIfield\fR[,...]] [\fB-s\fR \fIsource\fR[,...]]
+     all | \fIproperty\fR[,...] \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR\fB-l\fR | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-u\fR [\fB-f\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-c\fR [\fB-o\fR \fIkeysource\fR=\fIvalue\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-K\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBmount\fR 
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBmount\fR [\fB-vO\fR] [\fB-o \fIoptions\fR\fR] \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunmount\fR [\fB-f\fR] \fB-a\fR | \fIfilesystem\fR|\fImountpoint\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBzpool\fR(1M) で説明されているように、\fBzfs create -o encryption\fR コマンドは、\fBZFS\fR ストレージプール内で新しく作成された \fBZFS\fR データセットを暗号化します。 
+.SS "暗号化"
+.sp
+.LP
+暗号化とは機密保護のためにデータをエンコードするプロセスで、エンコードされたデータにデータ所有者がアクセスするには鍵が必要になります。暗号化ポリシーは ZFS データセットの作成時に設定できますが、ポリシーの変更はできません。詳細については、「ネイティブプロパティー」の節の \fBencryption\fR および \fBkeysource\fR プロパティーの説明を参照してください。
+.sp
+.LP
+データセットの暗号化は恒久的に継承され、データセットのクローン作成中に削除することはできません。複製されたデータセットストリームを受信したときに、暗号化が必要な場合は、宛先データセットで暗号化が有効になっている必要があります。そうでない場合、データは平文で格納されます。暗号化データセットの完全に複製されたストリームにより、新しく生成された鍵の下での暗号化データセットが生じますが、ストリーム自体は暗号化されません。
+.SS "ネイティブな ZFS 暗号化プロパティー"
+.sp
+.LP
+ZFS 暗号化に関連する次のネイティブなプロパティーは、データセットに関する読み取り専用の統計情報で構成されています。これらのプロパティーは、設定も継承もできません。ネイティブプロパティーは、特に注記がないかぎり、すべてのデータセットタイプに適用されます。ZFS ネイティブプロパティーの完全な説明およびリストは、\fBzfs\fR(1M) を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeystatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+データセットの暗号化鍵のステータスを識別します。データセットの鍵を利用できるかどうかは、\fBavailable\fR または \fBunavailable\fR のステータスで示されます。暗号化が有効になっていないデータセットの場合、\fBnone\fR が表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmounted\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムの場合は、ファイルシステムが現在マウントされているかどうかを示します。このプロパティーは、\fByes\fR または \fBno\fR になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrekeydate\fR\fR
+.ad
+.sp .6
+.RS 4n
+このデータセットに対する \fBzfs key\fR \fB-K\fR または \fBzfs clone\fR \fB-K\fR 操作によりデータ暗号化鍵を最後に変更した日付。鍵の変更操作が実行されていない場合、\fBrekeydate\fR は \fBcreation\fR と同じ日付になります。
+.RE
+
+.sp
+.LP
+次のプロパティーは、ファイルシステムの作成後には変更できないため、ファイルシステムの作成時に設定するようにしてください。\fBzfs create\fR または \fBzpool create\fR コマンドで設定されていない場合、これらのプロパティーは親データセットから継承されます。これらの機能がサポートされる前に親データセットが作成されたため、親データセットにこれらのプロパティーが存在しない場合、新しいファイルシステムではこれらのプロパティーにデフォルト値が設定されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencryption\fR=\fBoff\fR | \fBon\fR | \fBaes-128-ccm\fR | \fBaes-192-ccm\fR | \fBaes-256-ccm\fR | \fBaes-128-gcm\fR | \fBaes-192-gcm\fR | \fBaes-256-gcm\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化されたデータセットに使用する暗号化アルゴリズムと鍵長を定義します。\fBon\fR の値は \fBaes-128-ccm\fR と同じです。デフォルト値は \fBoff\fR です。encryption が \fBoff\fR 以外の値に設定されている場合、\fBchecksum\fR プロパティーは \fBsha256+mac\fR に設定され、\fBreadonly\fR になります。
+.RE
+
+.sp
+.LP
+次のプロパティーは、作成時に指定する必要があり、特殊コマンドを使用すると変更できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fIprompt\fR | \fIfile://\fR\fB|pkcs11:|https://\fR\fR
+.ad
+.sp .6
+.RS 4n
+データセットの鍵をラップする鍵の形式と場所を定義します。\fBzfs key\fR \fB-l\fR コマンドを使用してデータセットを作成、マウント、または読み込むときに、この鍵が必要になります。
+.sp
+\fBkeysource\fR プロパティーには、鍵の表示方法を指定する \fBformat\fR と、鍵の取得先を特定する \fBlocator\fR の 2 つの値を指定できます。
+.sp
+\fBformat\fR には次の 3 つの値を指定できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIraw\fR: 生の鍵バイト
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIhex\fR: 16 進数の鍵文字列
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIpassphrase\fR: 鍵を生成する文字列
+.RE
+\fBlocator\fR には次の 2 つの値を指定できます。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBprompt\fR: データセットの作成またはマウント時に鍵の入力を要求
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBfile:///\fR\fIfilename\fR: ファイルシステム内の鍵ファイルの場所
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBpkcs11\fR: PKCS#11 トークンでの鍵の場所を記述した URI
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBhttps://\fR\fIlocation\fR: 安全なサーバー上の鍵ファイルの場所
+.RE
+\fBhttps://\fR のロケータを使用して鍵を作成する例については、「使用例」を参照してください。
+.sp
+ラップ鍵の値または鍵を変更するには、\fBzfs key\fR \fB-c\fR コマンドを実行する必要があります。鍵の場所のみを変更する (たとえば、ファイル名を変更する) 必要がある場合は、\fBzfs set\fR コマンドを \fBkeysource\fR プロパティーとともに使用します。\fBzfs set\fR コマンドで鍵の場所だけが変更された場合、新しい場所は有効なラップ鍵を持っているかどうかなどの ZFS によるチェックは行われません。
+.sp
+\fBkeysource\fR が指定も継承もされていない場合、デフォルトの \fBkeysource\fR は、暗号化が有効なデータセットでは \fBpassphrase\fR,\fBprompt\fR に、暗号化が無効なデータセットでは \fBnone\fR に設定されます。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+状態を変更するサブコマンドはすべて、元の形式でプールに永続的に記録されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘルプメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBzfs\fR コマンドの使用法情報を表示します。特定のコマンド、プロパティー、または委任アクセス権のヘルプを表示できます。特定のコマンドまたはプロパティーのヘルプを表示した場合、コマンド構文またはプロパティー値が表示されます。引数を何も付けずに \fBzfs help\fR を使用すると、\fBzfs\fR コマンドの完全なリストが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-p\fR] [\fB-o\fR \fIencryption\fR=\fIon\fR] [\fB-o keysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fI prompt\fR | \fIfile://\fR\fB|pkcs11:|https://\fR] ... \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBaes-128-ccm\fR を使用する、暗号化が有効になった新しい \fBZFS\fR ファイルシステムを作成します。サポートされている暗号化アルゴリズムのリストについては、暗号化プロパティーの説明を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.sp .6
+.RS 4n
+存在しない親データセットをすべて作成します。この方法で作成されたデータセットは、それぞれの親から継承した \fBmountpoint\fR プロパティーに従って自動的にマウントされます。コマンド行で \fB-o\fR オプションを使用して指定したプロパティーはすべて無視されます。ターゲットのファイルシステムがすでに存在する場合、処理は正常に完了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIencryption\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+暗号化プロパティーを \fIvalue\fR に設定します。複数の \fB-o\fR オプションを指定できます。複数の \fB-o\fR オプション内で同じプロパティーを指定した場合は、エラーが発生します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs clone\fR [\fB-p\fR] [\fB-K\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIsnapshot\fR \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したスナップショットのクローンを作成します。詳細は、「クローン」の節を参照してください。ターゲットのデータセットは、\fBZFS\fR 階層内の任意の場所に配置できます。作成されたデータセットは元のデータセットと同タイプになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fR
+.ad
+.sp .6
+.RS 4n
+存在しない親データセットをすべて作成します。この方法で作成されたデータセットは、それぞれの親から継承した \fBmountpoint\fR プロパティーに従って自動的にマウントされます。ターゲットのファイルシステムまたはボリュームがすでに存在する場合、処理は正常に完了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロパティーを設定します。詳細は、\fBzfs create\fR を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+このデータセットの鍵チェーンに新しいデータ暗号化鍵を作成します。クローンに書き込まれたデータは、新しいデータ暗号化鍵を使用します。これは元のスナップショットとは異なる鍵です。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set\fR \fBkeysource=\fR\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR| ...\fR
+.ad
+.sp .6
+.RS 4n
+\fBkeysource\fR プロパティーを、各データセット用に指定した値に設定します。\fBkeysource\fR の場所のみを変更できます。ラップ鍵の値を変更する場合は、\fBzfs key\fR \fB-c\fR コマンドを使用します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+子データセットのサブツリー全体に対して、設定の有効な値を再帰的に適用します。有効な値は、プロパティーに応じて設定または継承できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs get\fR encryption | keysource | keystatus | rekeydate \fIfilesystem\fR|\fIvolume\fR| ...\fR
+.ad
+.sp .6
+.RS 4n
+指定したデータセットのプロパティーを表示します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+任意の子のプロパティーを再帰的に表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdepth\fR\fR
+.ad
+.sp .6
+.RS 4n
+データセットのすべての子を再帰的に表示しますが、再帰の深さは \fIdepth\fR に制限されます。深さ \fB1\fR の場合は、データセットとその直接の子だけが表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fR
+.ad
+.sp .6
+.RS 4n
+スクリプトによる解析がより容易な形式で、出力を表示します。ヘッダーがすべて省略され、フィールドが任意の数のスペースではなく、タブ 1 つで明示的に区切られます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-l\fR | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+1 つのデータセットと、その鍵を継承するすべてのデータセットのための暗号化鍵を読み込みます。このコマンドで指定される鍵は、データセットの暗号化に使用される実際の鍵ではありません。データセットのデータ暗号化鍵のセットのためのラップ鍵です。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fR
+.ad
+.sp .6
+.RS 4n
+暗号化されたデータセットとその鍵を継承するデータセットをロック解除するラップ鍵を読み込みます。このコマンドは、データセットの \fBkeysource\fR プロパティーで定義された内容に基づいて鍵を読み込みます。
+.sp
+プールのインポート中、鍵の読み込み操作は、データセットのマウント時に実行されます。起動中、ラップ鍵が使用可能で、\fBkeysource\fR が \fBprompt\fR に設定されていない場合に、鍵読み込み操作は実行されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム上のすべてのプール内のすべてのデータセットに適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムまたはボリュームの下にあるすべてのデータセットに再帰的に操作を適用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-u\fR [\fB-f\fR] | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+1 つのデータセットとその鍵を継承するすべてのデータセットのための暗号化鍵を読み込み解除します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+データセットをマウント解除してから、1 つの暗号化されたデータセットとその鍵を継承するデータセットのためのラップ鍵の読み込み解除を試みます。成功した場合、データセットは、アクセスができなくなり、マウントが解除されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+鍵の読み込み解除を試みる前に、データセットを強制的にマウント解除しようとします。指定しない場合、通常のマウント解除が試みられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム上のすべてのプール内のすべてのデータセットに適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムまたはボリュームの下にあるすべてのデータセットに再帰的に操作を適用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-c\fR [\fB-o\fR \fBkeysource=\fR\fIvalue\fR] | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+ラップ鍵を変更します。新しい鍵の形式またはロケータが異なる場合、\fBkeysource\fR プロパティーをコマンドの一部に含める必要があります。\fBzfs key\fR \fB-c\fR コマンドの一部として変更できるのは \fBkeysource\fR プロパティーだけです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+1 つの暗号化されたデータセットの鍵とそれを継承するデータセットのためのラップ鍵を変更します。鍵の変更操作を行う前に、既存の鍵がすでに読み込まれている必要があります。ZFS は、既存のパスフレーズの入力を要求しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty=value\fR\fR
+.ad
+.sp .6
+.RS 4n
+鍵変更操作の一部として変更するプロパティー。\fBkeysource\fR プロパティーは、鍵変更操作の一部として変更できる唯一のオプションです。
+.sp
+\fBkeysource\fR プロパティーを変更する権限が必要になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム上のすべてのプール内のすべてのデータセットに適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムまたはボリュームの下にあるすべてのデータセットに再帰的に操作を適用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBkey\fR\fB-K\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+新しいデータ暗号化鍵を作成します。新しいデータ暗号化鍵は、このデータセットのすべての既存データ暗号化鍵と同じラップ鍵でラップされます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+このデータセットの新しいデータ暗号化鍵を作成します。この操作後に書き込まれたデータは、新しいデータ暗号化鍵を使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム上のすべてのプール内のすべてのデータセットに適用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムまたはボリュームの下にあるすべてのデータセットに再帰的に操作を適用します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs mount\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs mount\fR [\fB-vO\fR] [\fB-o\fR \fIoptions\fR] \fB-a\fR | \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBZFS\fR ファイルシステムをマウントします。これは、ブートプロセスの一部として自動的に呼び出されます。\fBzfs mount\fR の構文についての完全な説明は、\fBzfs\fR(1M) を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムをマウントします。
+.sp
+暗号化されたデータセットの \fBzfs mount\fR 操作では、\fBkeysource\fR プロパティー値によっては鍵の入力が求められる場合があります。これは、たとえば \fBkeysource\fR ロケータが \fBprompt\fR に設定されている場合に起こることがあります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unmount\fR [\fB-f\fR] \fB-a\fR | \fIfilesystem\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在マウントされている \fBZFS\fR ファイルシステムをマウント解除します。これは、シャットダウンプロセスの一部として自動的に呼び出されます。\fBzfs unmount\fR の構文についての完全な説明は、\fBzfs\fR(1M) を参照してください。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイルシステムをマウント解除します。このコマンドには、システム上の \fBZFS\fR ファイルシステムのマウントポイントのパスを指定することもできます。
+.sp
+暗号化されたデータセットの場合、ファイルシステムがマウント解除されているときには、鍵の読み込みは解除されません。鍵を読み込み解除するには、\fBzfs key\fR を参照してください。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR暗号化されたデータセットを作成する
+.sp
+.LP
+次の例は、\fBkeysource\fR プロパティーのデフォルト値である \fBpassphrase\fR プロンプトを使用して、暗号化されたデータセットを作成する方法を示しています。この例では、\fBtank/home\fR データセットは暗号化されていないものとします。
+
+.sp
+.in +2
+.nf
+# \fBzfs create -o encryption=on tank/home/bob\fR
+Enter passphrase for 'tank/home/bob/': \fB**********\fR
+Enter again: \fB**********\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例では、\fBpktool\fR(1) コマンドを使用して生の鍵をファイルに生成しています。次に、\fBaes-256-ccm\fR アルゴリズムと、\fBpktool\fR で生成された生の鍵のファイルを使用して、暗号化されたデータセット (\fBtank/home/anne\fR) を作成しています。
+
+.sp
+.in +2
+.nf
+# \fBpktool genkey keystore=file outkey=/media/stick/mykey \e\fR
+\fBkeytype=aes keylen=256\fR
+# \fBzfs create encryption=aes-256-ccm \e
+-o keysource=raw,file:///rmdisk/stick/mykey tank/home/anne\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、\fBhttp\fR の場所に格納されている鍵を要求する、暗号化された ZFS ファイルシステムを作成する方法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBzfs create -o encryption=on \e\fR
+\fB-o keysource=passphrase,https://keys.example.com/keys/42 tank/home/fs1\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、PKCS#11 トークン内で生の鍵を生成する方法を示しています。次に、\fBpktool\fR から生成された生の PKCS#11 鍵を使用して、暗号化されたデータセットを作成します。
+
+.sp
+.in +2
+.nf
+# \fBpktool genkey keystore=pkcs11 keytype=aes keylen=128 label=fs2\fR
+Enter PIN for Sun Software PKCS#11 softtoken: \fBxxxxx\fR
+# \fBzfs create -o encryption=on -o keysource=raw,pkcs11:object=fs2 \e\fR
+\fBtank/home/fs2\fR
+Enter PKCS#11 token PIN for 'tank/home/fs2': \fBxxxxx\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、KMS トークン内で生の鍵を生成する方法を示しています。次に、\fBpktool\fR から生成された生の KMS 鍵を使用して、暗号化されたデータセットを作成します。
+
+.sp
+.in +2
+.nf
+# \fBpktool genkey keystore=pkcs11 keytype=aes keylen=256 token=KMS \e\fR
+\fBlabel=fs3\fR
+Enter PIN for KMS: \fBxxxxx\fR
+# \fBzfs create -o encryption=aes-256-ccm \e\fR
+\fB-o keysource="raw,pkcs11:token=KMS;object=fs3" tank/home/fs3\fR
+Enter 'KMS' PKCS#11 token PIN for 'tank/home/fs3': \fBxxxxx\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR別の暗号化アルゴリズムを使用して、暗号化されたデータセットを作成する
+.sp
+.LP
+この例では、すべての \fBtank/home\fR データセットが \fBkeysource\fR プロパティーを継承しますが、\fBtank/home/bob\fR データセットは別の暗号化アルゴリズムを使用して作成されます。
+
+.sp
+.in +2
+.nf
+# \fBzpool create tank ....\fR
+# \fBzfs create -o encryption=on tank/home\fR
+# \fBzfs get keystatus tank/home\fR
+NAME       PROPERTY   VALUE        SOURCE
+tank/home  keystatus  available    -
+
+# \fBzfs create -o encryption=aes-256-ccm tank/home/bob\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRencryption プロパティーおよび keysource プロパティーを継承する
+.sp
+.LP
+この例では、すべての \fBtank/home\fR データセットが、\fBencryption\fR プロパティーおよび \fBkeysource\fR プロパティーを継承します。
+
+.sp
+.in +2
+.nf
+# \fBzpool create -o encryption=on -o keysource=raw,file:///... tank ...\fR
+# \fBzfs create tank/home\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR暗号化されたデータセットのラップ鍵および鍵ソースを変更する
+.sp
+.LP
+次の例は、データセットのラップ鍵を、そのデータセットの \fBkeysource\fR プロパティーで定義された新しい鍵に変更する方法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBzfs get keysource tank/home/bob\fR
+NAME  PROPERTY         VALUE                    SOURCE
+tank  keysource        raw,file:///etc/keyfile  default
+
+# \fBzfs key -c -o keysource=passphrase,prompt  tank/home/bob\fR
+Enter passphrase for 'tank/home/bob/': \fB**********\fR
+Enter again: \fB**********\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例は、データセットのラップ鍵の \fBhttp\fR の場所を変更する方法を示しています。
+
+.sp
+.in +2
+.nf
+# \fBzfs get keysource tank/home/bob\fR
+NAME           PROPERTY   VALUE              SOURCE
+tank/home/bob  keysource  passphrase,prompt  local
+
+# \fBzfs set keysource=passphrase,https://internal.example.com/keys/bob/zfs \\fR
+\fBtank/home/bob\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBkeysource\fR プロパティーを変更するには、委任された \fBkey\fR アクセス権および \fBkeychange\fR アクセス権が必要です。
+
+.LP
+\fB例 5 \fRデータセットの暗号化鍵を変更する
+.sp
+.LP
+次の例は、ユーザーおよび管理者が表示も管理もできないデータセットの暗号化鍵を変更する方法を示しています。データセットの暗号化鍵は、\fBkeysource\fR プロパティーで指定された鍵でラップ (暗号化) されています。
+
+.sp
+.in +2
+.nf
+# \fBzfs key -K tank/project42\fR
+# \fBzfs get rekeydate,creation tank/project42\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+鍵変更操作を実行するには、委任された \fBkeychange\fR アクセス権が必要です。
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラーが発生した。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR \fR
+.ad
+.sp .6
+.RS 4n
+無効なコマンド行オプションが指定された。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/zfs
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBchmod\fR(1), \fBchown\fR(1), \fBpktool\fR(1), \fBssh\fR(1), \fBmount\fR(1M), \fBzfs\fR(1M), \fBzpool\fR(1M), \fBchmod\fR(2), \fBchown\fR(2), \fBstat\fR(2), \fBwrite\fR(2), \fBattributes\fR(5)
+.sp
+.LP
+その他の \fBZFS\fR 機能の詳細は、\fBzfs_allow\fR(1M)、\fBzfs_share\fR(1M)、\fBzfs\fR(1M)、および\fI『『Oracle Solaris ZFS 管理ガイド』』\fRを参照してください。

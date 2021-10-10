@@ -1,0 +1,505 @@
+'\" te
+.\"  Copyright 1989 AT&T Copyright (c) 1992, X/Open Company Limited All Rights Reserved Portions Copyright (c) 1995, Sun Microsystems, Inc. All Rights Reserved
+.\"  Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH tput 1 "1995 年 2 月 1 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+tput \- 端末の初期化または terminfo データべースの照会
+.SH 形式
+.LP
+.nf
+\fBtput\fR [\fB-T\fR \fItype\fR] \fIcapname\fR [\fIparm\fR]...
+.fi
+
+.LP
+.nf
+\fBtput\fR \fB-S\fR <<
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBtput\fR は、 \fBterminfo\fR データべースを使って、 端末に依存した機能やシェルに渡される情報 (\fBsh\fR(1) を参照) の値を決定するか、 端末をクリア、初期化、またはリセットするか、 または要求された端末タイプの長い名前 (正式な名前) を返します。\fIcapname\fR 引数で指定された機能属性が文字列型であれば、 \fBtput\fR は文字列を出力します。同様に、属性が整数型であれば整数を出力します。属性がブール型であれば、\fBtput\fR は単に終了ステータスを設定するだけで何も出力しません。この場合の終了ステータスの値は、端末がその機能を持っていれば真を示す \fB0\fR であり、持っていなければ偽を示す \fB1\fR となります。\fB\fR\fB\fR標準出力に返された値を使用する前に、 必ず終了ステータス (\fB$?\fR、\fBsh\fR(1) を参照) の値が \fB0\fR であることを確認してください。詳細については後述の「終了ステータス」 の項を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fItype\fR \fR
+.ad
+.RS 11n
+.rt  
+端末の種類を \fItype\fR  引数で指定します。通常は、デフォルトの種類が \fBTERM\fR 環境変数から得られるので、このオプションは必要ありません。\fB-T\fR オプションを指定すると、シェル変数の \fBLINES\fR と \fBCOLUMNS\fR、およびレイヤーサイズは参照されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fR
+.ad
+.RS 11n
+.rt  
+1 回の \fBtput\fR の呼び出しで複数の機能指定を可能にするオプションです。この場合、対象となる機能はコマンド行からではなく 標準入力から \fBtput\fR に渡すことになります。 「使用例」の項にある例を参照してください。1 行には 1 つの \fIcapname\fR しか指定できません。なお、 \fB-S\fR オプションを指定した場合、 ブール型および文字列型の終了ステータス \fB0\fR と \fB1\fR の意味が変わります。 詳しくは「終了ステータス」の項を参照してください。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIcapname\fR \fR
+.ad
+.RS 12n
+.rt  
+\fBterminfo\fR データベースから得られる、機能属性を表します。機能とそれに対応する \fIcapname\fR の一覧については、\fBterminfo\fR(4) を参照してください。
+.sp
+C ロケールを使ったシステムでは、以下の文字列が オペランドとしてサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear\fR \fR
+.ad
+.RS 13n
+.rt  
+クリアスクリーンのシーケンスを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinit\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBterminfo\fR データべースが存在し、 ユーザーの端末用のエントリが存在していれば (前述の \fB-T\fR\fItype\fR の説明を参照)、以下のすべての処理が実行されます。 
+.RS +4
+.TP
+1.
+端末の初期化文字列が存在すれば、それが出力される(\fBis1\fR、\fBis2\fR、\fBis3\fR、\fBif\fR、\fBiprog\fR)
+.RE
+.RS +4
+.TP
+2.
+エントリ中の遅延指定 (たとえば復帰改行) が、 tty ドライバに設定される
+.RE
+.RS +4
+.TP
+3.
+エントリ中の指定に従い、 タブの展開指定を有効または無効にする
+.RE
+.RS +4
+.TP
+4.
+タブを展開しない場合、 標準タブ (8 文字ごと) が設定される。これら 4 つの処理を行うための情報がエントリ中に存在しなければ、 その該当処理はスキップされますが、 それを表すメッセージは出力されません。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreset\fR \fR
+.ad
+.RS 13n
+.rt  
+初期化文字列を出力する代わりに、 端末のリセット文字列が存在すればそれを出力します (\fBrs1\fR、\fBrs2\fR、\fBrs3\fR、\fBrf\fR)。リセット文字列が存在せず、初期化文字列が存在している場合には、 その初期化文字列が出力されます。それ以外の場合には、 \fBreset\fR の動作は \fBinit\fR と同一です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlongname\fR \fR
+.ad
+.RS 13n
+.rt  
+\fBterminfo\fR データべースが存在し、ユーザーの端末用のエントリが存在していれば (前述の \fB-T\fR\fItype\fR の説明を参照)、端末の長い名前が出力されます。ここでいう長い名前とは、\fBterminfo\fR データべース中の当該端末の記述における、先頭行の最後に書かれている名前です (\fBterm\fR(5) を参照)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIparm\fR \fR
+.ad
+.RS 12n
+.rt  
+前述の \fIcapname\fR で指定した属性がパラメータを伴う文字列の場合、この parm で指定する値が文字列に代入されます。数字で表された引数は、すべて数値として属性に渡されます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRTERM に従った端末の初期化
+.sp
+.LP
+最初の例は、環境変数 \fBTERM\fR が示す端末タイプに従って端末を初期化する処理です。なお、\fBprofile\fR(4) マニュアルページで説明されているように、このコマンドは (環境変数 \fBTERM\fR をエクスポートしたあと) どのユーザーの .profile にも入れておくべきコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput init\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR端末の初期化
+.sp
+.LP
+次の例は、 AT&T 5620 端末を初期化して、 環境変数 \fBTERM\fR が示す端末タイプを置き換えるコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput -T5620 reset\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRカーソルの移動
+.sp
+.LP
+次の例は、画面上の行番号 \fB0\fR 列番号 \fB0\fR、つまり左上角 (通常ホームポジションと呼ばれている位置) にカーソルを移動するためのシーケンスを送るコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput cup 0 0\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例は、カーソルを \fB23\fR 行 \fB4\fR 列に移動させるシーケンスを送信するコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput cup 23 4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR画面をクリアするシーケンスのエコー
+.sp
+.LP
+次の例は、使用している端末の画面をクリアするシーケンスをエコーさせるコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput clear\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR列の数の表示
+.sp
+.LP
+次の例は、使用している端末の列の数を表示するコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput cols\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次の例は、 450 型端末の列の数を表示するコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput -T450 cols\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fRシェル変数の設定
+.sp
+.LP
+次の例は、使用している端末を、シェル変数 \fBbold\fR を強調モード・シーケンスを開始する値に設定し、 \fBoffbold\fR を強調モード・シーケンスを 終了する値に設定するコマンドです。このコマンドを実行すると、 以下のプロンプトが出力されることがあります。
+
+.sp
+.in +2
+.nf
+\fBecho "${bold}Please type in your name: ${offbold}\ec"\fR 
+example% \fBbold='tput smso'\fR
+example% \fBoffbold='tput rmso'\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR終了ステータスの設定
+.sp
+.LP
+次の例は、使用している端末がハードコピー端末であるかどうかを 示す終了ステータスを設定するコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput hc\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRterminfo からの長い名前の表示
+.sp
+.LP
+次の例は、環境変数 \fBTERM\fR が示す端末タイプに対応した長い名前を \fBterminfo\fR データべースから検索して表示するコマンドです。
+
+.sp
+.in +2
+.nf
+example% \fBtput longname\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR1 回の呼び出しでの複数機能の処理
+.sp
+.LP
+最後の例は、 1 回の呼び出しで複数の機能を処理する \fBtput\fR コマンドです。この例では、画面をクリアーし、カーソルを \fB10\fR 行 \fB10\fR 列の位置に移動させ、ボールド (超高輝度) モードをオンに設定するという一連の処理を実行しています。\fB\fR処理の記述の終わりは、感嘆符 (\fB!\fR) だけの行で表します。
+
+.sp
+.in +2
+.nf
+example% \fBtput -S <<! 
+> clear 
+> cup 10 10
+> bold 
+> !\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBtput\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。 \fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、および \fBNLSPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTERM\fR \fR
+.ad
+.RS 9n
+.rt  
+端末のタイプを決定します。この変数が設定されていないかあるいは NULL に設定されていて、 \fB-T\fR オプションが省略された場合、デフォルトの端末タイプ (予測できない) が用いられます。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIcapname\fR がブール型で \fB-S\fR オプションが省略された場合、真を表す。\fB\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIcapname\fR が文字列型で \fB-S\fR オプションが省略された場合、\fIcapname\fR がこの端末タイプに対して定義されていることを表す。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIcapname\fR がブール型または文字列型で \fB-S\fR が指定された場合、すべての行が正常に処理されたことを表す。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIcapname\fR が整数型であることを表す。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+要求された文字列が正しく書き込まれたことを表す。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR \fR
+.ad
+.RS 7n
+.rt  
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIcapname\fR がブール型で \fB-S\fR オプションが省略された場合、偽を表す。\fB\fR
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIcapname\fR が文字列型で \fB-S\fR が省略された場合、\fIcapname\fR がこの端末タイプに対して定義されていないことを表す。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR \fR
+.ad
+.RS 7n
+.rt  
+使用方法のエラー。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR \fR
+.ad
+.RS 7n
+.rt  
+指定された端末タイプに関して、情報が何も存在しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB4\fR \fR
+.ad
+.RS 7n
+.rt  
+不正なオペランドが指定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>4\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-1\fR\fR
+.ad
+.RS 7n
+.rt  
+\fIcapname\fR は \fBterminfo\fR データベースに指定された数値ではなかった。たとえば \fBtput\fR \fB-T450\fR lines や \fBtput\fR \fB-T2621\fR xmc などが指定されました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/curses.h\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBcurses\fR(3CURSES) ヘッダー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/term.h\fR \fR
+.ad
+.sp .6
+.RS 4n
+\fBterminfo\fR ヘッダー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/tabset/*\fR \fR
+.ad
+.sp .6
+.RS 4n
+ある端末用のタブ設定を、 その端末に出力する上で適切な形式 (マージンとタブを設定するエスケープシーケンス) で指定。詳細については \fBterminfo\fR(4) の説明中の「タブと初期化」の項を参照
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/share/lib/terminfo/?/*\fR \fR
+.ad
+.sp .6
+.RS 4n
+コンパイルされた端末記述データべース
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBclear\fR(1), \fBsh\fR(1), \fBstty\fR(1), \fBtabs\fR(1), \fBcurses\fR(3CURSES), \fBprofile\fR(4), \fBterminfo\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5), \fBterm\fR(5)

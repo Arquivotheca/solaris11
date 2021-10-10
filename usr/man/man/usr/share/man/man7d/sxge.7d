@@ -1,0 +1,157 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH sxge 7D "13 Jun 1011" "SunOS 5.11" "Devices"
+.SH NAME
+sxge \- Sun Blade 40/10Gigabit Ethernet network driver
+.SH DESCRIPTION
+.sp
+.LP
+The \fBsxge\fR 40/10Gb Ethernet driver is a multi-threaded, loadable, clonable, GLD-based STREAMS driver supporting the Data Link Provider Interface, \fBdlpi\fR(7P), on the Sun Blade Shared 40/10Gb Ethernet Interface.
+.sp
+.LP
+The Shared PCI-Express Gen-2 40/10Gb networking interface provides network I/O consolidation for up to ten Constellation blades, with each blade seeing its own portion of the network interface.
+.sp
+.LP
+The \fBsxge\fR driver functions include chip initialization, frame transmit and receive, flow classification, multicast and promiscuous support and error recovery and reporting in the blade domain.
+.SS "APPLICATION PROGRAMMING INTERFACE"
+.sp
+.LP
+The cloning character-special device, \fB/dev/sxge\fR, is used to access Sun Blade Shared 40/10Gb Ethernet Interface devices installed within the system. 
+.sp
+.LP
+The \fBsxge\fR driver is managed by the \fBdladm\fR(1M) command line utility, which allows VLANs to be defined on top of \fBsxge\fR instances and for \fBsxge\fR instances to be aggregated. See \fBdladm\fR(1M) for more details. 
+.sp
+.LP
+You must send an explicit \fBDL_ATTACH_REQ\fR message to associate the opened stream with a particular device (\fBPPA\fR). The \fBPPA ID\fR is interpreted as an unsigned integer data type  and indicates the corresponding device instance (unit) number. The driver returns an error (\fBDL_ERROR_ACK\fR) if the \fBPPA\fR field value does not correspond to a valid device instance number for the system. The device is initialized on first attach and de-initialized (stopped) at last detach.
+.sp
+.LP
+The values returned by the driver in the \fBDL_INFO_ACK\fR primitive in response to a \fBDL_INFO_REQ\fR are:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Maximum \fBSDU\fR is \fB1500\fR (\fBETHERMTU\fR, defined in \fB<sys/ethernet.h>\fR).
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Minimum \fBSDU\fR is \fB0\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBDLSAP\fR address length is \fB8\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBMAC\fR type is \fBDL_ETHER\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBSAP\fR length value is \fB-2\fR, meaning the physical address component is followed immediately by a 2-byte SAP component within the \fBDLSAP\fR address.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+Broadcast address value is the Ethernet/IEEE broadcast address (\fIFF:FF:FF:FF:FF:FF\fR).
+.sp
+In the transmit case for streams that have been put in raw mode using the \fBDLIOCRAW\fR ioctl, the \fBdlpi\fR application must prepend the 20 byte  IPoIB destination address to the data it wants to transmit over-the-wire. In the receive case, applications receive the IP/ARP datagram along with the IETF defined 4 byte header.
+.RE
+.sp
+.LP
+Once in the \fBDL_ATTACHED\fR state, you must send a \fBDL_BIND_REQ\fR to associate a particular Service Access Point (SAP) with the stream.
+.SS "Configuration"
+.sp
+.LP
+The link speed and mode are fixed at 10 Gbps full-duplex.
+.sp
+.LP
+The default \fBMTU\fR is \fB1500\fR. To enable jumbo frame support, you configure the \fBsxge\fR driver by defining the accept-jumbo property to \fB1\fR in the \fBsxge.conf\fR file. The largest jumbo size is \fB9194\fR bytes.
+.sp
+.LP
+The \fBsxge\fR driver supports the self-healing functionality of the Oracle Solaris OS. It is configured to \fBDDI_FM_EREPORT_CAPABLE | DDI_FM_ERRCB_CAPABLE\fR by default. You configure the \fBsxge\fR driver by defining the \fBfm-capable\fR property in \fBsxge.conf\fR to other capabilities or to \fB0x0\fR to disable it entirely.
+.sp
+.LP
+The \fBsxge\fR driver can be configured using the standard \fBifconfig\fR(1M) command.
+.sp
+.LP
+The \fBsxge\fR driver also reports various hardware and software statistics data. You can view these statistics using the \fBkstat\fR(1M) command.
+.SH FILES
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/dev/sxge*\fR\fR
+.ad
+.RS 28n
+.rt  
+Special character device
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sparcv9/sxge\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit device driver (SPARC)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/amd64/sxge\fR\fR
+.ad
+.RS 28n
+.rt  
+64-bit device driver (x86)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/kernel/drv/sxge.conf\fR\fR
+.ad
+.RS 28n
+.rt  
+Configuration file
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+lw(2.75i) |lw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+ArchitectureSPARC, x86
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBdladm\fR(1M), \fBifconfig\fR(1M), \fBkstat\fR(1M), \fBndd\fR(1M), \fBnetstat\fR(1M), \fBdriver.conf\fR(4), \fBattributes\fR(5), \fBdlpi\fR(7P), \fBstreamio\fR(7I)
+.sp
+.LP
+\fIWriting Device Drivers\fR
+.sp
+.LP
+\fISTREAMS Programming Guide\fR

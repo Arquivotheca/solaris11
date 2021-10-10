@@ -1,0 +1,231 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pam_zfs_key 5 "22 Feb 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+pam_zfs_key \- PAM user credential module for ZFS
+.SH SYNOPSIS
+.LP
+.nf
+\fBpam_zfs_key.so.1 [create] [homes=]\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpam_zfs_key\fR module implements \fBpam_sm_setcred\fR(3PAM) and \fBpam_sm_chauthtok\fR(3PAM). 
+.sp
+.LP
+The \fBpam_zfs_key\fR module provides functions that allow loading and changing of the ZFS encryption passphrase for encrypted file systems that are mounted at the users home directory location. Authentication service modules must implement both \fBpam_sm_authenticate()\fR and \fBpam_sm_setcred()\fR. 
+.sp
+.LP
+\fBpam_sm_authenticate()\fR in this module always returns \fBPAM_IGNORE\fR. If they are located at a different location then the module option, \fBhomes=\fR can be used to specify that. It is the ZFS dataset name, not the mountpoint, which would usually be \fB/export/home/\fR. 
+.sp
+.LP
+The last component of the ZFS dataset name must match the value of \fBPAM_USER\fR, that is, the users login name. If the users home directory is a local ZFS filesystem with encryption enabled and the ZFS keysource property is set to \fBpassphrase,prompt\fR, on \fBpam_sm_setcred()\fR this module manages the keys as follows: 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_DELETE_CRED\fR\fR
+.ad
+.RS 22n
+.rt  
+Attempts to \fBumount\fR the filesystem and unload the key. This often fails because there are still processes with the user's home directory as the current working directory. A \fBforce\fR module option is provided to attempt a forced unmount first.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_ESTABLISH_CRED\fR\fR
+.ad
+.RS 22n
+.rt  
+Attempts to use the value of \fBPAM_AUTHTOK\fR to load the key for the ZFS dataset and mount it.
+.sp
+If \fBPAM_AUTHTOK\fR is not the correct passphrase, the user is prompted once for an alternate. This value is never stored in \fBPAM_AUTHTOK\fR, even if it is the correct passphrase for the ZFS dataset that is the users home directory. This is equivalent to:
+.sp
+.in +2
+.nf
+zfs key -l rpool/export/home/$USER
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.LP
+If no ZFS file system exists for the user and the \fBcreate\fR module option is provided, a new one is created. The ZFS encryption property defaults to \fBon\fR in this case unless the \fBencryption=\fR property is set for the module to override it.
+.sp
+.LP
+If the \fBcreate\fR module option is not provided and no ZFS file system exists for the user, the module returns \fBPAM_IGNORE\fR. 
+.sp
+.LP
+The newly created ZFS file system has the following ZFS delegations specified for the user for which it is created: \fBkey,keychange,mount\fR. In these cases \fBkeysource\fR is always set to \fBpassphrase,prompt\fR.
+.sp
+.LP
+When \fBpam_sm_chauthtok\fR(3PAM) is called, for example, on password change, this module attempts to change the passphrase for the ZFS dataset to match the value in \fBPAM_AUTHTOK\fR. This is equivalent to running:
+.sp
+.in +2
+.nf
+zfs key -c rpool/export/home/$USER
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+This requires that the user have the \fBkeychange\fR delegation, as password change usually runs as the user.
+.sp
+.LP
+The following mount options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreate\fR\fR
+.ad
+.RS 14n
+.rt  
+Create new ZFS datasets
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencryption\fR\fR
+.ad
+.RS 14n
+.rt  
+Set the ZFS encryption property for \fBcreate\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBforce\fR\fR
+.ad
+.RS 14n
+.rt  
+Attempt a \fBumount2\fR(2) with a \fBMS_FORCE\fR of the dataset when doing \fBPAM_DELETE_CRED\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhomes=\fR\fR
+.ad
+.RS 14n
+.rt  
+Alternate location of ZFS datasets for user home directories. The default is \fBrpool/export/home\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnowarn\fR\fR
+.ad
+.RS 14n
+.rt  
+Do not provide any error messages or warnings.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRUsing \fBpam_zfs_key\fR in Default Mode
+.sp
+.LP
+The following example uses \fBpam_zfs_key\fR in default mode.
+
+.sp
+.in +2
+.nf
+gdm     auth requisite          pam_authtok_get.so.1
+gdm     auth required           pam_dhkeys.so.1
+gdm     auth required           pam_unix_cred.so.1
+gdm     auth required           pam_unix_auth.so.1
+gdm     auth optional           pam_zfs_key.so.1
+
+other   password required       pam_dhkeys.so.1
+other   password requisite      pam_authtok_get.so.1
+other   password requisite      pam_authtok_check.so.1
+other   password required       pam_authtok_store.so.1
+other   password optional       pam_zfs_key.so.1
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRSpecifying an Alternate ZFS Dataset
+.sp
+.LP
+The following example specifies an alternate ZFS dataset location for the home directory file systems. New entries should be created if they are not present using \fBaes-256-gcm\fR as the ZFS encryption property setting.
+
+.sp
+.in +2
+.nf
+gdm auth requisite  pam_authtok_get.so.1
+gdm auth required   pam_dhkeys.so.1
+gdm auth required   pam_unix_cred.so.1
+gdm auth required   pam_unix_auth.so.1
+gdm auth optional   pam_zfs_key.so.1 homes=tank/users \
+create encryption=aes-256-gcm
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRMaking it Mandatory for the ZFS Dataset to Mount
+.sp
+.LP
+The following example makes it mandatory for the ZFS dataset to mount and ensures the passphrase always stays in sync with the login password.
+
+.sp
+.in +2
+.nf
+gdm     auth requisite          pam_authtok_get.so.1
+gdm     auth required           pam_dhkeys.so.1
+gdm     auth required           pam_unix_cred.so.1
+gdm     auth required           pam_unix_auth.so.1
+gdm     auth required           pam_zfs_key.so.1
+
+other   password required       pam_dhkeys.so.1
+other   password requisite      pam_authtok_get.so.1
+other   password requisite      pam_authtok_check.so.1
+other   password requisite      pam_zfs_key.so.1
+other   password required       pam_authtok_store.so.1
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe with exceptions. See below.
+.TE
+
+.sp
+.LP
+The interfaces in \fBlibpam\fR(3LIB) are  MT-Safe only if each thread within the multi-threaded application uses its own PAM handle.
+.SH SEE ALSO
+.sp
+.LP
+\fBzfs\fR(1M), \fBumount2\fR(2), \fBpam.conf\fR(4), \fBlibpam\fR(3LIB), \fBpam\fR(3PAM), \fBpam_sm_chauthtok\fR(3PAM), \fBpam_sm_setcred\fR(3PAM), \fBattributes\fR(5)

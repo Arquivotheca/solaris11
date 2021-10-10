@@ -1,0 +1,653 @@
+'\" te
+.\" Copyright (c) 1992, X/Open Company Limited. All Rights Reserved.
+.\" Copyright 1989 AT&T
+.\" Portions Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material. 
+.TH at 1 "2011 年 7 月 12 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+at, batch \- 指定した時刻にコマンドを実行
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/at\fR [\fB-c\fR | \fB-k\fR | \fB-s\fR] [\fB-m\fR] [\fB-f\fR \fIfile\fR] [\fB-p\fR \fIproject\fR] 
+     [\fB-q\fR \fIqueuename\fR] \fB-t\fR \fItime\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/at\fR [\fB-c\fR | \fB-k\fR | \fB-s\fR] [\fB-m\fR] [\fB-f\fR \fIfile\fR] [\fB-p\fR \fIproject\fR] 
+     [\fB-q\fR \fIqueuename\fR] \fItimespec\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/bin/at\fR \fB-l\fR [\fB-p\fR \fIproject\fR] [\fB-q\fR \fIqueuename\fR] [\fIat_job_id.\fR \fI\&..\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/bin/at\fR \fB-r\fR \fIat_job_id.\fR \fI\&..\fR
+.fi
+
+.LP
+.nf
+\fB/usr/bin/batch\fR [\fB-p\fR \fIproject\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/at\fR [\fB-c\fR | \fB-k\fR | \fB-s\fR] [\fB-m\fR] [\fB-f\fR \fIfile\fR] [\fB-p\fR \fIproject\fR] 
+     [\fB-q\fR \fIqueuename\fR] \fB-t\fR \fItime\fR
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/at\fR [\fB-c\fR | \fB-k\fR | \fB-s\fR] [\fB-m\fR] [\fB-f\fR \fIfile\fR] [\fB-p\fR \fIproject\fR] 
+     [\fB-q\fR \fIqueuename\fR] \fItimespec\fR...
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/at\fR \fB-l\fR [\fB-p\fR \fIproject\fR] [\fB-q\fR \fIqueuename\fR] 
+     [\fIat_job_id.\fR \fI\&..\fR]
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/at\fR \fB-r\fR \fIat_job_id.\fR \fI\&..\fR
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/batch\fR [\fB-p\fR \fIproject\fR]
+.fi
+
+.SH 機能説明
+.SS "at"
+.sp
+.LP
+\fBat\fR ユーティリティーは、一群のコマンドを標準入力から読み込み、それを 1 つの \fIat-job\fR として統合し、指定された時刻に実行します。
+.sp
+.LP
+この at-job は、あとでシェルを別途呼び出して実行します。このシェルは、別のプロセスグループで、制御端末なしで動作しているものです。ただし、環境変数、現作業用ディレクトリ、ファイル作成マスク (\fBumask\fR(1) を参照)、システムリソースの限界 (\fBsh\fR および \fBksh88\fR だけに適用。詳しくは \fBulimit\fR(1) を参照) については、\fBat\fR ユーティリティーを実行した時点のものが保持されて、at-job 実行時に使用されます。
+.sp
+.LP
+at-job が投入されると、\fIat_job_id\fR と実行開始予定時刻が標準エラー出力に書き込まれます。\fIat_job_id\fR は、at-job の識別子で、英数字とピリオドだけで構成される文字列です。投入時点で、そのジョブが一意に識別できるような名前を \fIat_job_id\fR としてシステムが割り当てます。
+.sp
+.LP
+ユーザーへの通知やジョブの標準出力および標準エラー出力の処理方法に関しては、\fB-m\fR オプションの項で説明します。
+.sp
+.LP
+\fBat\fR や \fBbatch\fR (後述) を使用できるのは、ファイル \fB/usr/lib/cron/at.allow\fR 中に名前が登録されているユーザーだけです。このファイルが存在していない場合は、ファイル \fB/usr/lib/cron/at.deny\fR を確認して、そのユーザーの \fBat\fR 使用を拒否すべきかどうかを決定します。どちらのファイルも存在しないときは、\fBsolaris.jobs.user\fR の承認を受けたユーザーだけがジョブを投入できます。\fBat.deny\fR だけが存在しその内容が空の場合には、どのユーザーもジョブを投入できます。\fBat.allow\fR と \fBat.deny \fR の両ファイルは、どちらも 1 行に 1 つのユーザー名という形式です。
+.sp
+.LP
+ユーザーのアカウントがロックされていると、\fBcron\fR ジョブおよび \fBat\fR ジョブは実行されません。\fBshadow\fR(4) で定義されているように、ロックされていないアカウントだけが、ジョブまたはプロセスを実行します。
+.SS "batch"
+.sp
+.LP
+\fBbatch\fR ユーティリティは、あとで実行すべきコマンド群を読み込みます。 
+.sp
+.LP
+次のコマンドの形式を見てください。 
+.sp
+.in +2
+.nf
+/usr/bin/batch [-p project]
+/usr/xpg4/bin/batch [-p project]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+前述のコマンドの形式は、それぞれ次のコマンドの形式と同等の意味を持ちます。
+.sp
+.in +2
+.nf
+/usr/bin/at -q b [-p project] now
+/usr/xpg4/bin/at -q b -m [-p project] now
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このうち \fBb\fR は \fBat\fR の特殊な待ち行列で、バッチジョブ専用に使用します。バッチジョブは、バッチ待ち行列に投入されるとただちに実行されます。同時並行での実行が許されているジョブ数の制限によって、投入されたジョブの実行が遅れることがあります。\fBqueuedefs\fR(4) を参照してください。
+.SH オプション
+.sp
+.LP
+シェルの種類を指定するオプション \fB-c\fR、\fB-k\fR、\fB-s\fR がすべて省略された場合、デフォルトとして \fBSHELL\fR 環境変数によりシェルが決定されます。
+.sp
+.LP
+\fB/usr/xpg4/bin/at\fR および \fB/usr/xpg4/bin/batch\fR では、\fBSHELL\fR が設定されていないか \fBNULL\fR の場合、\fB/usr/xpg4/bin/sh\fR が使用されます。
+.sp
+.LP
+\fBusr/bin/at\fR および \fB/usr/bin/batch\fR では、\fBSHELL\fR が設定されていないか \fBNULL\fR の場合、\fB/bin/sh\fR が使用されます。
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fR
+.ad
+.RS 17n
+.rt  
+C シェル。\fBcsh\fR(1) を使って at-job を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-k\fR \fR
+.ad
+.RS 17n
+.rt  
+Korn シェル。\fBksh88\fR(1) を使って at-job を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fR
+.ad
+.RS 17n
+.rt  
+Bourne シェル。\fBsh\fR(1) を使って at-job を実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIfile\fR \fR
+.ad
+.RS 17n
+.rt  
+at-job の元になるファイルとして標準入力以外のファイルを使用するとき、そのファイルのパスを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR \fR
+.ad
+.RS 17n
+.rt  
+(小文字のエル) \fIat_job_id\fR が指定されなかったときは、コマンドを呼び出したユーザー用にスケジュールしたジョブをすべて報告します。\fIat_job_id\fR が指定されていれば、そのジョブに関する情報だけを報告します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fR
+.ad
+.RS 17n
+.rt  
+at-job の実行が終了したら、その旨をメールで当該ユーザーに通知します。at-job が生成した標準出力と標準エラー出力の内容も、他の出力先が指定されない限り、ユーザーにメールで送られます。なおメールは、ジョブが何の出力も生成しなかった場合でも送付されます。
+.sp
+\fB-m\fR を省略すると、ジョブの標準出力と標準エラー出力の内容は、他の出力先が指定されない限り、メールで当該ユーザーに通知されます。そのような出力が生成されなければ、ジョブの終了は通知されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproject\fR\fR
+.ad
+.RS 17n
+.rt  
+どのプロジェクトで \fBat\fR ジョブまたは \fBbatch\fR ジョブを実行するかを指定します。\fB-l\fR オプションと共に使用すると、指定した特定のプロジェクトだけを検索します。\fIproject\fR の値全体が数値である場合は、まずプロジェクト名として解釈され、次にプロジェクト \fBID\fR として解釈されます。デフォルトでは、ユーザーの現在のプロジェクトが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR \fIqueuename\fR \fR
+.ad
+.RS 17n
+.rt  
+queuename で示す待ち行列にジョブをスケジュールします。\fB-l\fR オプションも一緒に指定すると、その待ち行列だけが検索の対象となります。\fIqueuename\fR として指定できるのは、\fBa\fR から \fBz\fR までの英小文字です。デフォルトでは、at-job は待ち行列 \fBa\fR にスケジュールされています。また待ち行列 \fBb\fR はバッチジョブ用に予約されています。待ち行列 \fBc\fR は cron ジョブ用に予約されているので、\fB-q\fR オプションの引数として使うことはできません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIat_job_id\fR \fR
+.ad
+.RS 17n
+.rt  
+以前の \fBat\fR ユーティリティでスケジュールされたジョブのうち、\fIat_job_id\fR で示す識別子を持ったジョブを削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItime\fR \fR
+.ad
+.RS 17n
+.rt  
+\fItime\fR 引数が示す時刻に、ジョブを投入します。引数の形式は、\fBtouch\fR(1) ユーティリティが規定する形式と同一です。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIat_job_id\fR \fR
+.ad
+.RS 14n
+.rt  
+以前の \fBat\fR ユーティリティによりジョブがスケジュールされたときに報告された名前。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fItimespec\fR \fR
+.ad
+.RS 14n
+.rt  
+ジョブを投入し実行する日時を指定します。すべての \fItimespec\fR の値は、スペース文字で区切られて連結されていると見なされます。日付と時刻の値は、そのユーザーのタイムゾーン (\fBTZ\fR 変数が決定) で表されていると見なされます。ただし後述する \fItime\fR オペランドでタイムゾーン名を指定した場合を除きます。
+.sp
+C ロケールの場合、日時を指定する文字列は次に述べる 3 つの 部分で構成されます。C ロケールの \fBLC_TIME\fR カテゴリから得られる値は大文字と小文字の区別はありません。
+.sp
+.ne 2
+.mk
+.na
+\fB\fItime\fR \fR
+.ad
+.RS 14n
+.rt  
+\fItime\fR は、1、2、または 4 桁の数で指定します。1 桁または 2 桁の場合は「何時」を示す値として、4 桁の場合は「何時何分」を示す値として解釈されます。2 つの数をコロンで区切り、\fIhour\fR\fB:\fR\fIminute\fR の形式で「何時何分」を指定することもできます。時刻指定の直後に AM または PM  (\fBLC_TIME\fR ロケールカテゴリの \fBam_pm\fR キーワードから得られる値) 表示を付加することもできます。そうしない場合は、24 時間制で記述された時刻と見なされます。\fBGMT\fR、\fBUCT\fR、または \fBZULU \fR(大文字小文字の区別なし) のタイムゾーン名を、ユニバーサル時間を調整する時間の指定に続けることもできます。その他のタイムゾーンは \fBTZ\fR 環境変数を使用して指定できます。また、\fItime\fR の部分に、C ロケールの次のトークンのいずれかを記述することも可能です。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmidnight\fR \fR
+.ad
+.RS 13n
+.rt  
+12:00 am (真夜中) を表します (00:00)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnoon\fR \fR
+.ad
+.RS 13n
+.rt  
+12:00 pm (正午) を表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnow\fR \fR
+.ad
+.RS 13n
+.rt  
+現在の日時を表します。つまり \fBat\fR \fBnow\fR という指定は、ただちに at-job を投入するという意味ですが、すぐに実行されるかどうかはその時点でのジョブのスケジューリング状況に依存します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdate\fR \fR
+.ad
+.RS 14n
+.rt  
+日付を示す \fIdate\fR の指定は任意で、「月」の名前 (\fBLC_TIME\fR ロケールカテゴリの \fBmon\fR または \fBabmon\fR キーワードから得られる値) の後に「日」を表す数値を記述する (さらにその後にコンマと「年」を表す数値があってもよい) 方法と、曜日 (\fBLC_TIME\fR ロケールカテゴリの \fBday\fR または \fBabday\fR キーワードから得られる値) を記述する方法があります。さらに C ロケールでは次の 2 つの特殊な日付が認識されます。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtoday\fR \fR
+.ad
+.RS 13n
+.rt  
+現在の日付が示す日、つまり当日を表します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtomorrow\fR \fR
+.ad
+.RS 13n
+.rt  
+現在の日付が示す日の次の日、つまり翌日を表します。
+.RE
+
+\fIdate\fR を省略すると、指定された時刻が現時刻より後であれば\fB当日\fR、現時刻より前であれば\fB翌日\fRとみなされます。指定した月の値が当月よりも前で「年」を省略した場合は、翌年とみなされます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIincrement\fR \fR
+.ad
+.RS 14n
+.rt  
+\fIincrement\fR は任意指定で、正の符号 (\fB+\fR) 数値のあとに次のいずれかの文字列を付加したものです。\fBminutes\fR、\fBhours\fR、\fBdays\fR、\fBweeks\fR、\fBmonths\fR、または \fByears\fR。複数形を示す s は省略できます。また \fB+ 1\fR と同等の意味を持つキーワード \fBnext\fR も使用できます。たとえば次のコマンドは同等です。 
+.sp
+.in +2
+.nf
+\fBat 2pm + 1 week
+at 2pm next week\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.RE
+
+.SH 使用法
+.sp
+.LP
+ここに示す \fBat\fR コマンド行の形式は、C ロケールに対してだけ保証されています。その他のロケールでは、\fBmidnight\fR、\fBnoon\fR、\fBnow\fR、\fBmon\fR、\fBabmon\fR、\fBday\fR、\fBabday\fR、\fBtoday\fR、\fBtomorrow\fR、\fBminutes\fR、\fBhours\fR、\fBdays\fR、\fBweeks\fR、\fBmonths\fR、\fByears\fR、\fBnext\fR の各指定はサポートされていません。
+.sp
+.LP
+コマンドの実行は、別のプロセスグループで制御端末なしで動作しているシェルを別途呼び出して行うので、コマンドを呼び出した環境でのオープンファイル記述子やトラップ、優先順位などは失われてしまいます。
+.SH 使用例
+.SS "at"
+.LP
+\fB例 1 \fR端末での指定例
+.sp
+.LP
+端末でのコマンドシーケンスの例を示します。 
+
+.sp
+.in +2
+.nf
+$ at \(mim 0730 tomorrow
+sort < file >outfile
+<EOT>
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR出力先のリダイレクト
+.sp
+.LP
+次のシーケンスは、出力先を標準エラー出力からパイプに変更するもので、コマンドプロシージャの中で使用すると便利です。なお、出力先変更指定の記述順序は重要なので注意してください。
+
+.sp
+.in +2
+.nf
+$ at now + 1 hour <<!
+diff file1 file2 2>&1 >outfile | mailx mygroup
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRジョブによる再スケジュール
+.sp
+.LP
+ジョブ自身に再スケジュールさせるため、at-job の中から \fBat\fR を呼び出すことができます。次の例では、\fBmy.daily\fR という名の日常業務用スクリプトは毎日実行されます。ただし、そうした業務では \fBcrontab\fR を使う方法のほうが一般的です。 
+
+.sp
+.in +2
+.nf
+# my.daily runs every day
+at now tomorrow < my.daily
+daily-processing
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR時刻、オペランド指定
+.sp
+.LP
+C ロケールの \fItimespec\fR の 3 つの部分は、明示的に記述してあれば高い自由度で使用できます。時間やオペランド指定の例を次に示します。 
+
+.sp
+.in +2
+.nf
+at 0815am Jan 24
+at 8 :15amjan24
+at now "+ 1day"
+at 5 pm FRIday
+at '17
+	utc+
+	30minutes'
+.fi
+.in -2
+.sp
+
+.SS "batch"
+.LP
+\fB例 5 \fR端末での指定例
+.sp
+.LP
+端末でのコマンドシーケンスの例を示します。 
+
+.sp
+.in +2
+.nf
+$ batch
+sort <file >outfile
+<EOT>
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR出力先のリダイレクト
+.sp
+.LP
+次のシーケンスは、出力先を標準エラー出力からパイプに変更するもので、コマンドプロシージャの中で使用すると便利です。なお、出力先変更指定の記述順序は重要なので注意してください。 
+
+.sp
+.in +2
+.nf
+$ batch <<!
+diff file1 file2 2>&1 >outfile | mailx mygroup
+!
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBat\fR と \fBbatch\fR の実行に影響を与える次の環境変数の詳細については、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBNLSPATH\fR、および \fBLC_TIME\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBDATEMSK\fR \fR
+.ad
+.RS 12n
+.rt  
+環境変数 \fBDATEMSK\fR が設定されていれば、\fBat\fR はその値を、書式文字列を含むテンプレートファイルの完全パス名として使用します。この文字列は書式記述子とテキスト文字から構成され、環境変数 \fBLANG\fR または \fBLC_TIME\fR を適切に設定することによって、異なる言語で許容される日付表示形式をより豊富に提供するために使用します。利用可能な書式記述子の一覧については、\fBgetdate\fR(3C) のマニュアルページを参照してください。なお「\fBオペランド\fR」の項で説明している \fItime\fR および \fIdate\fR 引数、特殊名の \fBnoon\fR、\fBmidnight\fR、\fBnow\fR、\fBnext\fR、\fBtoday\fR、\fBtomorrow\fR、および \fIincrement\fR 引数の書式は、\fBDATEMSK\fR が設定されている場合には認識されません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSHELL\fR \fR
+.ad
+.RS 12n
+.rt  
+at-job の呼び出しに使用するコマンドインタプリタの名前を指定します。この変数が設定されていないか値が \fINULL\fR の場合には、\fBsh\fR が使用されます。\fBsh\fR 以外の値に設定されていれば、そのシェルを使用します。このとき、どのシェルを使うかを表す警告メッセージが出力されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTZ\fR \fR
+.ad
+.RS 12n
+.rt  
+タイムゾーンを指定します。ジョブは、\fItimespec\fR または \fB-t\fR \fItime\fR が示す時刻に実行するために投入されますが、この時刻は \fBTZ\fR 変数が示すタイムゾーンに対応した値です。\fItimespec\fR にタイムゾーン指定が含まれていれば、\fBTZ\fR が示すゾーンに代わってそちらが使用されます。\fItimespec\fR にタイムゾーン指定が含まれておらず、\fBTZ\fR も未設定か \fINULL\fR の場合、デフォルトのタイムゾーンが使用されます。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+\fBat\fR ユーティリティによるジョブの投入、削除、または一覧表示が正常終了しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>0\fR \fR
+.ad
+.RS 7n
+.rt  
+エラーが発生したため、ジョブはスケジュールされません。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cron/at.allow\fR \fR
+.ad
+.RS 27n
+.rt  
+\fBat\fR と \fBbatch\fR の両ユーティリティへのアクセス権を持つユーザーの一覧。1 行に 1 ユーザー名の形式
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/cron/at.deny\fR \fR
+.ad
+.RS 27n
+.rt  
+\fBat\fR と \fBbatch\fR の両ユーティリティへのアクセスを拒否するユーザーの一覧。1 行に 1 ユーザー名の形式
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/at"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI未対応
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SS "/usr/xpg4/bin/at"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+_
+CSI未対応
+_
+インタフェースの安定性標準
+.TE
+
+.SS "/usr/bin/batch"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI有効
+_
+インタフェースの安定性標準
+.TE
+
+.SS "/usr/xpg4/bin/batch"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+_
+CSI有効
+_
+インタフェースの安定性標準
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBauths\fR(1), \fBcrontab\fR(1), \fBcsh\fR(1), \fBdate\fR(1), \fBksh88\fR(1), \fBsh\fR(1), \fBtouch\fR(1), \fBulimit\fR(1), \fBumask\fR(1), \fBcron\fR(1M), \fBgetdate\fR(3C), \fBauth_attr\fR(4), \fBshadow\fR(4), \fBqueuedefs\fR(4), \fBattributes\fR(5), \fBenviron\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+待ち行列を使用しているかどうかにかかわらず、\fBcron\fR(1M) の実行は 100 ジョブに限られています。
+.sp
+.LP
+\fBcron\fR ではジョブの実行に遅れの出る場合があります。これらの遅れによって \fBcron\fR ジョブの処理がハングしたように見えることがあります。すべてのジョブは最後には実行されますが、極端に遅れが生じた場合には、\fBcron\fR を終了してから再起動することが唯一の回避策です。

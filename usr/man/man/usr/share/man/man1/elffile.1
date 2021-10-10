@@ -1,0 +1,263 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH elffile 1 "8 Jun 2011" "SunOS 5.11" "User Commands"
+.SH NAME
+elffile \- identify \fBELF\fR file type
+.SH SYNOPSIS
+.LP
+.nf
+\fBelffile\fR [\fB-s\fR \fBbasic\fR | \fBdetail\fR | \fBsummary\fR] \fIfilename\fR...
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBelffile\fR utility is a specialized variant of the \fBfile\fR command that is intended for use with \fBELF\fR objects and related file types. \fBelffile\fR can identify files of the following types:
+.sp
+.ne 2
+.mk
+.na
+\fBArchives\fR
+.ad
+.sp .6
+.RS 4n
+In addition to the information provided by \fBfile\fR, \fBelffile\fR identifies the types of the archive members.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBELF Objects / Runtime Linker Configuration files\fR
+.ad
+.sp .6
+.RS 4n
+\fBelffile\fR provides the same output as \fBfile\fR
+.RE
+
+.sp
+.LP
+Files of any other type are reported as non-\fBELF\fR. No attempt to further classify such files is made. The \fBfile\fR utility is recommended for general purpose file identification.
+.SH OPTIONS
+.sp
+.LP
+The following options are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fBbasic\fR | \fBdetail\fR | \fBsummary\fR\fR
+.ad
+.sp .6
+.RS 4n
+Specify the style of output to be provided
+.sp
+.ne 2
+.mk
+.na
+\fBbasic\fR
+.ad
+.sp .6
+.RS 4n
+Produce a one-line description in the same format used by \fBfile\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBdetail\fR
+.ad
+.sp .6
+.RS 4n
+For non-archives, \fBsummary\fR output is the same as \fBbasic\fR. When processing archives, the basic output line is followed by one line of output for each archive member.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBsummary\fR
+.ad
+.sp .6
+.RS 4n
+For non-archives, \fBsummary\fR output is the same as \fBbasic\fR. When processing archives, a summary description of the archive contents is added to the end of the basic output. If the \fB-s\fR option is not specified, \fBelffile\fR uses the \fBsummary\fR style by default.
+.RE
+
+.RE
+
+.SH NOTES
+.sp
+.LP
+The output produced for archives when using the summary style depends on the contents of the archive. If the archive contains a homogeneous collection of objects for the same platform, the platform details are shown in the same format used for a single object. Otherwise, a summary description is produced. The detail style can be used to obtain more specific information about individual archive members.
+.sp
+.LP
+The summary and detail styles require examination of every member of an archive. Speed of execution is proportional to the number of archive members, and can be slow for extremely large archives.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRDisplaying Summary Output for Archives
+.sp
+.LP
+The following example displays the summary output from \fBelffile\fR for archives with differing content. The following archives are used.
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsame_elf.a\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBELF\fR objects for a single platform.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmixed_elf.a\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBELF\fR objects for more than one platform.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmixed.a\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBELF\fR objects and non-\fBELF\fR files.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnot_elf.a\fR\fR
+.ad
+.sp .6
+.RS 4n
+Non-\fBELF\fR files.
+.RE
+
+.sp
+.LP
+The summary output for archives depends on the types of the archive members.
+
+.sp
+.in +2
+.nf
+example% \fBelffile same_elf.a mixed_elf.a mixed.a not_elf.a\fR
+same_elf.a: current ar archive, 32-bit symbol table, 
+            ELF 64-bit LSB relocatable AMD64 Version 1
+mixed_elf.a: current ar archive, 32-bit symbol table, 
+             mixed ELF content
+mixed.a: current ar archive, 32-bit symbol table, 
+         mixed ELF and non-ELF content
+not_elf.a: current ar archive, non-ELF content
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRFiltering Detailed Output for Archives
+.sp
+.LP
+The detailed output from \fBelffile\fR produces one line of output for the archive, followed by one line of output per archive member. This output can be easily filtered in order to present the information in various forms. The following example demonstrates this using the archive, \fBlibCstd.a\fR which contains relocatable objects for a 64-bit \fBx86\fR system. The unfiltered detailed \fBelffile\fR output for this archive is as follows.
+
+.sp
+.in +2
+.nf
+example% \fBelffile -s detail libCstd.a\fR
+libCstd.a: current ar archive, 32-bit symbol table
+libCstd.a(bitset.o): ELF 64-bit LSB relocatable AMD64 Version 1 [CMOV]
+libCstd.a(complex.o): ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 SSE CMOV 
+FPU]
+libCstd.a(limits.o): ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 SSE FPU]
+libCstd.a(limitsinit.o): ELF 64-bit LSB relocatable AMD64 Version 1
+libCstd.a(stdexcept.o): ELF 64-bit LSB relocatable AMD64 Version 1 [SSE CMOV]
+\&...
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+This output shows that each object is tagged with the hardware capabilities it requires to run. These capability tags vary depending on the code found in each object. The following command filters the output from \fBelffile\fR to identify each unique capability mask, and to count the number of objects containing each mask within the archive. The \fBsed\fR command is used to remove the archive member name from the output, with the result that the output for every archive member with the same capability mask will be identical. The \fBsort\fR command is used to group these identical lines together, and the \fBuniq\fR command is used to replace each unique group with a single line from the group, preceded with a count of how many times that line occurred within the group.
+.sp
+.in +2
+.nf
+example% \fBelffile -s detail libCstd.a | sed 's,(.*),,' | sort -f | uniq -c\fR
+   1 libCstd.a: current ar archive, 32-bit symbol table
+ 777 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1
+   1 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [CMOV FPU]
+ 126 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [CMOV]
+  12 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [FPU]
+  69 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE CMOV]
+   2 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 CMOV]
+   3 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 SSE CMOV FPU]
+   3 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 SSE CMOV]
+   1 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 SSE FPU]
+   2 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2 SSE]
+  20 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE2]
+   4 libCstd.a: ELF 64-bit LSB relocatable AMD64 Version 1 [SSE]
+.fi
+.in -2
+.sp
+
+.SH EXIT STATUS
+.sp
+.LP
+The following exit values are returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 6n
+.rt  
+Successful completion
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB>0\fR
+.ad
+.RS 6n
+.rt  
+An error occurred
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/linker
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBar\fR(1), \fBdump\fR(1), \fBelfdump\fR(1), \fBfile\fR(1)
+.sp
+.LP
+\fILinker and Libraries Guide\fR

@@ -1,0 +1,187 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH smtp-notify 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+smtp-notify \- ソフトウェアイベントの電子メール通知デーモン
+.SH 形式
+.LP
+.nf
+\fB/usr/lib/fm/notify/smtp-notify\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsmtp-notify\fR は、ソフトウェアイベントや障害管理ライフサイクルイベントに登録するデーモンで、SMF サービス構成リポジトリに格納されている一連の通知設定に基づいて電子メール通知を生成します。
+.sp
+.LP
+電子メール通知設定は、\fBsvccfg\fR(1M) を使用して設定されます。
+.sp
+.LP
+\fBsmtp-notify\fR は、サービス FMRI の下でサービス管理機能 \fBsmf\fR(5) によって管理されます。
+.sp
+.in +2
+.nf
+svc:/system/fm/smtp-notify:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.SS "プロパティー"
+.sp
+.LP
+次のサービスプロパティーを設定できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconfig/rootdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+これは \fBastring\fR プロパティーで、デフォルトは \fB/\fR です。設定されている場合は、指定されたルートディレクトリが、\fBsmtp-notify\fR によって評価されるすべてのパス名に使用されます。
+.RE
+
+.sp
+.LP
+デフォルトでは、電子メールイベント通知の本文は、Oracle Solaris オペレーティングシステムとともに提供される一連のローカライズされたメッセージテンプレートに基づいて作成されます。\fBsmtp-notify\fR は (イベントクラスに基づいて) 適切なテンプレートを検索し、イベントペイロードから要素を使用してそのテンプレートに入力します。
+.sp
+.LP
+\fBmsg_template\fR 通知設定を指定すると、ユーザーが指定したメッセージ本文テンプレートに置き換えることができます。サービスまたはイベントクラスごとの通知設定の詳細については、\fBsvccfg\fR(1M) を参照してください。
+.sp
+.LP
+メッセージ本文テンプレートには、次に示す展開マクロを含めることができます。これらのマクロは、メッセージの送信前に \fBsmtp-notify\fR によって展開されます。
+.sp
+.in +2
+.nf
+Macro          Description
+-----          -----------
+%%              expands to a literal % character
+%<HOSTNAME>     expands to the hostname on which the event
+                occurred
+%<URL>          expands to the URL of the knowledge article
+                associated with this event
+%<CLASS>        expands to the event class
+%<UUID>         expands to the UUID of the event
+%<CODE>         expands to the knowledge article message ID
+%<SEVERITY>     expands to the severity of the event
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SMF サービス状態遷移イベントの場合は、メッセージテンプレート内に次の追加のマクロを指定できます。
+.sp
+.in +2
+.nf
+%<FMRI>          expands to FMRI of the affected service
+%<FROM-STATE>    expands to the previous state of the service
+%<TO-STATE>      expands to the new state of the service
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+電子メールのフィルタ処理を容易にするために、\fBsmtp-notify\fR は、すべてのイベントクラスに対するイベントペイロードの次のコンポーネントのための X ヘッダーを作成します。
+.sp
+.in +2
+.nf
+Header name             Value
+-----------             -----
+X-FMEV-HOSTNAME         the name of the host on which the
+                        event occurred
+X-FMEV-CLASS            the event class
+X-FMEV-CODE             the Knowledge article message ID
+X-FMEV-SEVERITY         the severity of the event
+X-FMEV-UUID             the UUID of the event
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+SMF サービス状態遷移イベントにはまた、次の追加の X ヘッダーも含まれます。
+.sp
+.in +2
+.nf
+Header name             Value
+-----------             -----
+X-FMEV-FMRI             the FMRI of the affected SMF service
+X-FMEV-FROM-STATE       the previous state of the service
+X-FMEV-TO-STATE         the new state of the service
+.fi
+.in -2
+.sp
+
+.SH 使用例
+.LP
+\fB例 1 \fR通知設定の構成
+.sp
+.LP
+次のコマンドは、SMF サービス状態遷移イベントの通知設定を構成します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg -s svc:/system/svc/global:default setnotify -g \e\fR
+\fBfrom-online,to-maintenance mailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR電子メール通知の有効化
+.sp
+.LP
+次のコマンドは、障害管理問題診断イベントの電子メール通知を有効にします。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg setnotify problem-diagnosed mailto:admin@somehost.com\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR通知設定の一覧表示
+.sp
+.LP
+次のコマンドは、障害管理問題診断イベントのすべての通知設定を一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBsvccfg listnotify problem-diagnosed\fR
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/fault-management/smtp-notify
+_
+インタフェースの安定性変更の可能性あり
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBsvcs\fR(1), \fBsvcadm\fR(1M), \fBsvccfg\fR(1M), \fBsyslogd\fR(1M), \fBattributes\fR(5), \fBsmf\fR(5)

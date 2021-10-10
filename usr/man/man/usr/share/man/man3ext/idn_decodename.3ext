@@ -1,0 +1,824 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH idn_decodename 3EXT "15 Aug 2003" "SunOS 5.11" "Extended Library Functions"
+.SH NAME
+idn_decodename, idn_decodename2, idn_enable, idn_encodename, idn_nameinit \- IDN (Internationalized Domain Name) conversion functions
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR\&.\|.\|. ] \fIfile\fR\&.\|.\|. \fB-lidnkit\fR [ \fIlibrary\fR\&.\|.\|. ] 
+#include <idn/api.h>
+
+\fBidn_result_t\fR \fBidn_decodename\fR(\fBint\fR \fIactions\fR, \fBconst char *\fR\fIfrom\fR, \fBchar *\fR\fIto\fR,
+     \fBsize_t\fR \fItolen\fR);
+.fi
+
+.LP
+.nf
+\fBidn_result_t\fR \fBidn_decodename2\fR(\fBint\fR \fIactions\fR, \fBconst char *\fR\fIfrom\fR, \fBchar *\fR\fIto\fR,
+     \fBsize_t\fR \fItolen\fR, \fBconst char *\fR\fIauxencoding\fR);
+.fi
+
+.LP
+.nf
+\fBidn_result_t\fR \fBidn_encodename\fR(\fBint\fR \fIactions\fR, \fBconst char *\fR\fIfrom\fR, \fBchar *\fR\fIto\fR,
+     \fBsize_t\fR \fItolen\fR);
+.fi
+
+.LP
+.nf
+\fBvoid\fR \fBidn_enable\fR(\fBint\fR \fIon_off\fR);
+.fi
+
+.LP
+.nf
+\fBidn_result_t\fR \fBidn_nameinit\fR(\fBint\fR \fIload_file\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBidn_nameinit()\fR function initializes the library. It also sets default configuration if load_file is 0, otherwise it tries to read a configuration file. If \fBidn_nameinit()\fR is called more than once, the library initialization will take place only at the first call while the actual configuration procedure will occur at every call.
+.sp
+.LP
+If there are no errors, \fBidn_nameinit()\fR returns \fBidn_success\fR. Otherwise, the returned value indicates the cause of the error. See the section RETURN VALUES below for the error codes.
+.sp
+.LP
+It is usually not necessary to call this function explicitly because it is implicitly called when \fBidn_encodename()\fR, \fBidn_decodename()\fR, or \fBidn_decodename2()\fR is first called without prior calling of \fBidn_nameinit()\fR.
+.sp
+.LP
+The \fBidn_encodename()\fR function performs name preparation and encoding conversion on the internationalized domain name specified by \fIfrom\fR, and stores the result to \fIto\fR, whose length is specified by \fItolen\fR. The \fIactions\fR argument is a bitwise-OR of the following macros, specifying which subprocesses in the encoding process are to be employed.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_LOCALCONV\fR\fR
+.ad
+.RS 17n
+.rt  
+Local encoding to UTF-8 conversion
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_DELIMMAP\fR\fR
+.ad
+.RS 17n
+.rt  
+Delimiter mapping
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_LOCALMAP\fR\fR
+.ad
+.RS 17n
+.rt  
+Local mapping
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_NAMEPREP\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBNAMEPREP\fR mapping, normalization, prohibited character check, and bidirectional string check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_UNASCHECK\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBNAMEPREP\fR unassigned codepoint check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_ASCCHECK\fR\fR
+.ad
+.RS 17n
+.rt  
+ASCII range character check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_IDNCONV\fR\fR
+.ad
+.RS 17n
+.rt  
+UTF-8 to IDN encoding conversion
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_LENCHECK\fR\fR
+.ad
+.RS 17n
+.rt  
+Label length check
+.RE
+
+.sp
+.LP
+Details of this encoding process can be found in the section Name Encoding
+.sp
+.LP
+For convenience, also \fBIDN_ENCODE_QUERY\fR, \fBIDN_ENCODE_APP\fR, and \fBIDN_ENCODE_STORED\fR macros are provided. \fBIDN_ENCODE_QUERY\fR is used to encode a ``query string'' (see the IDNA specification). It is equal to:
+.sp
+.in +2
+.nf
+(IDN_LOCALCONV | IDN_DELIMMAP | IDN_LOCALMAP | IDN_NAMEPREP |
+         IDN_IDNCONV | IDN_LENCHECK)
+.fi
+.in -2
+
+.sp
+.LP
+\fBIDN_ENCODE_APP\fR is used for ordinary application to encode a domain name. It performs \fBIDN_ASCCHECK\fR in addition with \fBIDN_ENCODE_QUERY\fR. \fBIDN_ENCODE_STORED\fR is used to encode a ``stored string'' (see the IDNA specification). It performs \fBIDN_ENCODE_APP\fR plus \fBIDN_UNASCHECK\fR.
+.sp
+.LP
+The \fBidn_decodename()\fR function performs the reverse of \fBidn_encodename()\fR. It converts the internationalized domain name given by \fIfrom\fR, which is represented in a special encoding called ACE (ASCII Compatible Encoding), to the application's local codeset and stores in \fIto\fR, whose length is specified by \fItolen\fR. As in \fBidn_encodename()\fR, \fIactions\fR is a bitwise-OR of the following macros.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_DELIMMAP\fR\fR
+.ad
+.RS 17n
+.rt  
+Delimiter mapping
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_NAMEPREP\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBNAMEPREP\fR mapping, normalization, prohibited character check and bidirectional string check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_UNASCHECK\fR\fR
+.ad
+.RS 17n
+.rt  
+\fBNAMEPREP\fR unassigned codepoint check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_IDNCONV\fR\fR
+.ad
+.RS 17n
+.rt  
+UTF-8 to IDN encoding conversion
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_RTCHECK\fR\fR
+.ad
+.RS 17n
+.rt  
+Round trip check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_ASCCHECK\fR\fR
+.ad
+.RS 17n
+.rt  
+ASCII range character check
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDN_LOCALCONV\fR\fR
+.ad
+.RS 17n
+.rt  
+Local encoding to UTF-8 conversion
+.RE
+
+.sp
+.LP
+Details of this decoding process can be found in the section Name Decoding.
+.sp
+.LP
+For convenience, \fBIDN_DECODE_QUERY\fR, \fBIDN_DECODE_APP\fR, and \fBIDN_DECODE_STORED\fR macros are also provided. \fBIDN_DECODE_QUERY\fR is used to decode a ``query string'' (see the IDNA specification). It is equal to
+.sp
+.in +2
+.nf
+(IDN_DELIMMAP | IDN_NAMEPREP | IDN_IDNCONV | IDN_RTCHECK | IDN_LOCALCONV)
+.fi
+.in -2
+
+.sp
+.LP
+\fBIDN_DECODE_APP\fR is used for ordinary application to decode a domain name. It performs \fBIDN_ASCCHECK\fR in addition to \fBIDN_DECODE_QUERY\fR. \fBIDN_DECODE_STORED\fR is used to decode a ``stored string'' (see the IDNA specification). It performs \fBIDN_DECODE_APP\fR plus \fBIDN_UNASCHECK\fR.
+.sp
+.LP
+The \fBidn_decodename2()\fR function provides the same functionality as \fBidn_decodename()\fR except that character encoding of \fIfrom\fR is supposed to be auxencoding. If IDN encoding is Punycode and auxencoding is ISO8859-2, for example, it is assumed that the Punycode string stored in \fIfrom\fR is written in ISO8859-2.
+.sp
+.LP
+In the IDN decode procedure, \fBIDN_NAMEPREP\fR is done before \fBIDN_IDNCONV\fR, and some non-ASCII characters are converted to ASCII characters as the result of \fBIDN_NAMEPREP\fR. Therefore, ACE string specified by \fIfrom\fR might contains those non-ASCII characters. That is the reason \fBdocode_name2()\fR exists.
+.sp
+.LP
+All of thsee functions return an error value of type \fBidn_result_t\fR. All values other than \fBidn_success\fR indicates some kind of failure.
+.SS "Name Encoding"
+.sp
+.LP
+Name encoding is a process that transforms the specified internationalized domain name to a certain string suitable for name resolution. For each label in a given domain name, the encoding processor performs:
+.RS +4
+.TP
+1.
+Convert to UTF-8 (\fBIDN_LOCALCONV\fR)
+.sp
+Convert the encoding of the given domain name from application's local encoding (for example, ISO8859-1) to UTF-8.
+.RE
+.RS +4
+.TP
+2.
+Delimiter mapping (\fBIDN_DELIMMAP\fR)
+.sp
+Map domain name delimiters to `.' (U+002E). The reco- ginzed delimiters are: U+3002 (ideographic full stop), U+FF0E (fullwidth full stop), U+FF61 (halfwidth ideographic full stop).
+.RE
+.RS +4
+.TP
+3.
+Local mapping (\fBIDN_LOCALMAP\fR)
+.sp
+Apply character mapping whose rule is determined by the top-level domain name.
+.RE
+.RS +4
+.TP
+4.
+\fBNAMEPREP\fR (\fBIDN_NAMEPREP\fR, \fBIDN_UNASCHECK\fR)
+.sp
+Perform name preparation (\fBNAMEPREP\fR), which is a standard process for name canonicalizaion of internationalized domain names.
+.sp
+\fBNAMEPREP\fR consists of 5 steps: mapping, normalization, prohibited character check, bidirectional text check, and unassigned codepoint check. The first four steps are done by \fBIDN_NAMEPREP\fR, and the last step is done by \fBIDN_UNASCHECK\fR.
+.RE
+.RS +4
+.TP
+5.
+ASCII range character check (\fBIDN_ASCCHECK\fR)
+.sp
+Checks if the domain name contains non-LDH ASCII characters (not letter, digit, or hyphen characters), or it begins or end with hyphen.
+.RE
+.RS +4
+.TP
+6.
+Convert to ACE (\fBIDN_IDNCONV\fR)
+.sp
+Convert the \fBNAMEPREP\fRed name to a special encoding designed for representing internationalized domain names.
+.sp
+The encoding is known as ACE (ASCII Compatible Encoding) since a string in the encoding is just like a traditional ASCII domain name consisting of only letters, digits and hyphens.
+.RE
+.RS +4
+.TP
+7.
+Label length check (\fBIDN_LENCHECK\fR)
+.sp
+For each label, check the number of characters in it. It must be in the range of 1 to 63.
+.RE
+.SS "Name Decoding"
+.sp
+.LP
+Name decoding is a reverse process of the name encoding. It transforms the specified internationalized domain name in a special encoding suitable for name resolution to the normal name string in the application's current codeset. However, name encoding and name decoding are not symmetric.
+.sp
+.LP
+For each label in a given domain name, the decoding processor performs:
+.RS +4
+.TP
+1.
+Delimiter mapping (\fBIDN_DELIMMAP\fR)
+.sp
+Map domain name delimiters to `.' (U+002E). The recoginzed delimiters are: U+3002 (ideographic full stop), U+FF0E (fullwidth full stop), U+FF61 (halfwidth ideographic full stop).
+.RE
+.RS +4
+.TP
+2.
+\fBNAMEPREP\fR (\fBIDN_NAMEPREP\fR, \fBIDN_UNASCHECK\fR)
+.sp
+Perform name preparation (\fBNAMEPREP\fR), which is a standard process for name canonicalizaion of internationalized domain names.
+.RE
+.RS +4
+.TP
+3.
+Convert to UTF-8 (\fBIDN_IDNCONV\fR)
+.sp
+Convert the encoding of the given domain name from ACE to UTF-8.
+.RE
+.RS +4
+.TP
+4.
+Round trip check (\fBIDN_RTCHECK\fR)
+.sp
+Encode the result of (3) using the Name  Encoding scheme, and then compare it with the result of the step (2). If they are different, the check is failed. If \fBIDN_UNASCHECK\fR, \fBIDN_ASCCHECK\fR or both are specified, they are also done in the encoding processes.
+.RE
+.RS +4
+.TP
+5.
+Convert to local encoding
+.sp
+Convert the result of (3) from UTF-8 to the application's local encoding (for example, ISO8859-1).
+.RE
+.sp
+.LP
+If prohibited character check, unassigned codepoint check or bidirectional text check at step (2) failed, or if round trip check at step (4) failed, the original input label is returned.
+.SS "Disabling IDN"
+.sp
+.LP
+If your application should always disable internationalized domain name support for some reason, call
+.sp
+.in +2
+.nf
+(void) idn_enable(0);
+.fi
+.in -2
+
+.sp
+.LP
+before performing encoding/decoding. Afterward, you can enable the support by calling
+.sp
+.in +2
+.nf
+(void) idn_enable(1);
+.fi
+.in -2
+
+.SH RETURN VALUES
+.sp
+.LP
+These functions return values of type \fBidn_result_t\fR to indicate the status of the call. The following is a complete list of the status codes.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_success\fR\fR
+.ad
+.RS 25n
+.rt  
+Not an error. The call succeeded.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_notfound\fR\fR
+.ad
+.RS 25n
+.rt  
+Specified information does not exist.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_encoding\fR\fR
+.ad
+.RS 25n
+.rt  
+The encoding of the specified string is invalid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_syntax\fR\fR
+.ad
+.RS 25n
+.rt  
+There is a syntax error in internal configuration file(s).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_name\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified name is not valid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_message\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified message is not valid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_action\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified action contains invalid flags.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_codepoint\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified Unicode code point value is not valid.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_invalid_length\fR\fR
+.ad
+.RS 25n
+.rt  
+The number of characters in an ACE label is not in the range of 1 to 63.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_buffer_overflow\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified buffer is too small to hold the result.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_noentry\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified key does not exist in the hash table.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_nomemory\fR\fR
+.ad
+.RS 25n
+.rt  
+Memory allocation using malloc failed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_nofile\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified file could not be opened.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_nomapping\fR\fR
+.ad
+.RS 25n
+.rt  
+Some characters do not have the mapping to the target character set.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_context_required\fR\fR
+.ad
+.RS 25n
+.rt  
+Context information is required.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_prohibited\fR\fR
+.ad
+.RS 25n
+.rt  
+The specified string contains some prohibited characters.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidn_failure\fR\fR
+.ad
+.RS 25n
+.rt  
+Generic error which is not covered by the above codes.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRGet the address of an internationalized domain name.
+.sp
+.LP
+To get the address of an internationalized domain name in the application's local codeset, use \fBidn_encodename()\fR to convert the name to the format suitable for passing to resolver functions.
+
+.sp
+.in +2
+.nf
+#include <idn/api.h>
+#include <sys/socket.h>
+#include <netdb.h>
+ 
+\&...
+ 
+idn_result_t r;
+char ace_name[256];
+struct hostent *hp;
+int error_num;
+ 
+\&...
+ 
+r = idn_encodename(IDN_ENCODE_APP, name, ace_name,
+                   sizeof(ace_name));
+if (r != idn_success) {
+    fprintf(stderr, gettext("idn_encodename failed.\en"));
+    exit(1);
+}
+ 
+hp = getipnodebyname(ace_name, AF_INET6, AI_DEFAULT, &error_num);
+ 
+\&...
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRDecode the internationalized domain name.
+.sp
+.LP
+To decode the internationalized domain name returned from a resolver function, use \fBidn_decodename()\fR.
+
+.sp
+.in +2
+.nf
+#include <idn/api.h>
+#include <sys/socket.h>
+#include <netdb.h>
+ 
+\&...
+ 
+idn_result_t r;
+char local_name[256];
+struct hostent *hp;
+int error_num;
+ 
+\&...
+ 
+hp = getipnodebyname(name, AF_INET, AI_DEFAULT, &error_num);
+if (hp != (struct hostent *)NULL) {
+     r = idn_decodename(IDN_DECODE_APP, hp->h_name, local_name,
+                   sizeof(local_name));
+     if (r != idn_success) {
+          fprintf(stderr, gettext("idn_decodename failed.\en"));
+          exit(1);
+     }
+     printf(gettext("name: %s\en"), local_name);
+}
+ 
+\&...
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+AvailabilityT{
+library/idnkit, library/idnkit/header-idnkit
+T}
+_
+CSIEnabled
+_
+Interface StabilityCommitted
+_
+MT-LevelUnsafe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBIntro\fR(3), \fBlibidnkit\fR(3LIB), \fBsetlocale\fR(3C), \fBhosts\fR(4), \fBattributes\fR(5), \fBenviron\fR(5)
+.sp
+.ne 2
+.mk
+.na
+\fBRFC 3490\fR
+.ad
+.RS 19n
+.rt  
+Internationalizing Domain Names in Applications (IDNA)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRFC 3491\fR
+.ad
+.RS 19n
+.rt  
+Nameprep: A Stringprep Profile for Internationalized Domain Names (IDN)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRFC 3492\fR
+.ad
+.RS 19n
+.rt  
+Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRFC 3454\fR
+.ad
+.RS 19n
+.rt  
+Preparation of Internationalized Strings ("stringprep")
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRFC 952\fR
+.ad
+.RS 19n
+.rt  
+DoD Internet Host Table Specification
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBRFC 921\fR
+.ad
+.RS 19n
+.rt  
+Domain Name System Implementation Schedule - Revised
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSTD 3, RFC 1122\fR
+.ad
+.RS 19n
+.rt  
+Requirements for Internet Hosts -- Communication Layers
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBSTD 3, RFC 1123\fR
+.ad
+.RS 19n
+.rt  
+Requirements for Internet Hosts -- Applications and Support
+.RE
+
+.sp
+.LP
+Unicode Standard Annex #15: Unicode Normalization Forms, Version 3.2.0. http://www.unicode.org
+.sp
+.LP
+International Language Environments Guide (for this version of Solaris)
+.SH COPYRIGHT AND LICENSE
+.sp
+.LP
+Copyright (c) 2000-2002 Japan Network Information Center.  All rights reserved.
+.sp
+.LP
+By using this file, you agree to the terms and conditions set forth bellow.
+.sp
+.LP
+LICENSE TERMS AND CONDITIONS
+.sp
+.LP
+The following License Terms and Conditions apply, unless a different license is obtained from Japan Network Information Center ("JPNIC"), a Japanese association, Kokusai-Kougyou-Kanda Bldg 6F, 2-3-4 Uchi-Kanda, Chiyoda-ku, Tokyo 101-0047, Japan.
+.RS +4
+.TP
+1.
+Use, Modification and Redistribution (including distribution of any modified or derived work) in source and/or binary forms is permitted under this License Terms and Conditions.
+.RE
+.RS +4
+.TP
+2.
+Redistribution of source code must retain the copyright notices as they appear in each source code file, this License Terms and Conditions.
+.RE
+.RS +4
+.TP
+3.
+Redistribution in binary form must reproduce the Copyright Notice, this License Terms and Conditions, in the documentation and/or other materials provided with the distribution. For the purposes of binary distribution the "Copyright Notice" refers to the following language: "Copyright (c) 2000-2002 Japan Network Information Center. All rights reserved."
+.RE
+.RS +4
+.TP
+4.
+The name of JPNIC may not be used to endorse or promote products derived from this Software without specific prior written approval of JPNIC.
+.RE
+.RS +4
+.TP
+5.
+Disclaimer/Limitation of Liability: THIS SOFTWARE IS PROVIDED BY JPNIC "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL JPNIC BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+.RE
+.SH NOTES
+.sp
+.LP
+The \fBidn_nameinit()\fR function checks internal system configuration files such as \fB/etc/idn/idn.conf\fR and \fB/etc/idn/idnalias.conf\fR if they are in the proper access mode and owership. If they are not in the proper access mode or ownership, the function will not read and use the configurations defined in the files but use default values. In this case the function will also issue a warning message such as:
+.sp
+.in +2
+.nf
+idn_nameinit: warning: config file (/etc/idn/idn.conf) not in proper 
+                       access mode or ownership - the file ignored.
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The proper access mode and the ownership are described in the package prototype file of SUNWidnl. It is also recommended not to change the system configuration files.

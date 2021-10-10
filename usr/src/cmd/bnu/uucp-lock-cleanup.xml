@@ -1,0 +1,99 @@
+<?xml version='1.0'?>
+<!DOCTYPE service_bundle SYSTEM '/usr/share/lib/xml/dtd/service_bundle.dtd.1'>
+<!--
+
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+
+	Service manifest for uucp-lock-cleanup.  This replaces a legacy
+	rc script which clears out /var/spool/locks at boot time.
+-->
+
+<service_bundle type='manifest' name='SUNWcs:uucp-lock-cleanup'>
+
+<service
+	name='network/uucp-lock-cleanup'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance/>
+
+	<dependency
+		name='fs-local'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/system/filesystem/local' />
+	</dependency>
+
+	<dependent
+		name='uucp-lock-cleanup_multi-user'
+		grouping='require_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/multi-user' />
+	</dependent>
+
+        <dependent
+                name='uucp-lock-cleanup_self-assembly-complete'
+                grouping='optional_all'
+                restart_on='none'>
+                <service_fmri value='svc:/milestone/self-assembly-complete' />
+        </dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/usr/bin/rm -fr /var/spool/locks/*'
+		timeout_seconds='120' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='60' />
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring' value='transient' />
+	</property_group>
+
+	<stability value='Evolving' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+				UUCP lock cleanup (of /var/spool/locks)
+			</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='in.uucpd' section='1M'
+			    manpath='/usr/share/man' />
+		</documentation>
+	</template>
+</service>
+
+</service_bundle>

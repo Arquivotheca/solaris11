@@ -1,0 +1,253 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved.
+.TH HBA_SendCTPassThru 3HBAAPI "1 Sep 2003" "SunOS 5.11" "Common Fibre Channel HBA Information Library Functions"
+.SH NAME
+HBA_SendCTPassThru, HBA_SendCTPassThruV2 \- end a Fibre Channel Common Transport request to a Fabric
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR\&.\|.\|. ] \fIfile\fR\&.\|.\|. \fB-lHBAAPI\fR [ \fIlibrary\fR\&.\|.\|. ]
+#include <hbaapi.h>
+
+\fBHBA_STATUS\fR \fBHBA_SendCTPassThru\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBvoid *\fR\fIpReqBuffer\fR, \fBHBA_UINT32\fR \fIReqBufferSize\fR,
+     \fBvoid *\fR\fIpRspBuffer\fR, \fBHBA_UINT32\fR \fIRspBufferSize\fR);
+.fi
+
+.LP
+.nf
+\fBHBA_STATUS\fR \fBHBA_SendCTPassThruV2\fR(\fBHBA_HANDLE\fR \fIhandle\fR,
+     \fBHBA_WWN\fR \fIhbaPortWWN\fR, \fBvoid *\fR\fIpReqBuffer\fR,
+     \fBHBA_UINT32\fR \fIReqBufferSize\fR, \fBvoid *\fR\fIpRspBuffer\fR,
+     \fBHBA_UINT32 *\fR\fIRspBufferSize\fR);
+.fi
+
+.SH PARAMETERS
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhandle\fR\fR
+.ad
+.RS 17n
+.rt  
+an open handle returned from \fBHBA_OpenAdapter\fR(3HBAAPI)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhbaPortWWN\fR\fR
+.ad
+.RS 17n
+.rt  
+the Port Name of the local HBA Port through which the caller is issuing the CT request
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpReqBuffer\fR\fR
+.ad
+.RS 17n
+.rt  
+a pointer to a CT_IU request. The contents of the buffer must be in big-endian byte order
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIReqBufferSize\fR\fR
+.ad
+.RS 17n
+.rt  
+the length of the CT_IU request buffer \fIpReqBuffer\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpRspBuffer\fR\fR
+.ad
+.RS 17n
+.rt  
+a pointer to a CT_IU response buffer. The response received from the fabric is copied into this buffer in big-endian byte order. Success of the function need not imply success of the command. The CT_IU Command/Response field should be checked for the Accept Response code.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIRspBufferSize\fR\fR
+.ad
+.RS 17n
+.rt  
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_SendCTPassThru()\fR\fR
+.ad
+.RS 26n
+.rt  
+the length of the CT_IU accept response buffer \fIpRspBuffer\fR. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_SendCTPassThruV2()\fR\fR
+.ad
+.RS 26n
+.rt  
+a Pointer to the length of the CT_IU accept response buffer \fIpRspBuffer\fR. 
+.RE
+
+.RE
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBHBA_SendCTPassThru()\fR and \fBHBA_SendCTPassThruV2()\fR functions provide access to the standard in-band fabric management interface. The \fIpReqBuffer\fR argument is interpreted as a CT_IU request, as defined by the T11 specification FC-GS-3, and is routed in the fabric based on the GS_TYPE field.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful transport and receipt of a CT_IU response, \fBHBA_SendCTPassThru()\fR returns \fBHBA_STATUS_OK\fR. The CT_IU payload indicates whether the command was accepted by the fabric based on the Command/Response code returned.  Otherwise, an error value is returned from the underlying VSL and the values in \fIpRspBuffer\fR are undefined.
+.sp
+.LP
+Upon successful transport and receipt of a CT_IU response, \fBHBA_SendCTPassThruV2()\fR returns \fBHBA_STATUS_OK\fR. The CT_IU payload indicates whether the command was accepted by the fabric based on the Command/Response code returned.   Otherwise, an error code is returned from the underlying VSL, and the values in \fIpRspBuffer\fR are undefined. The \fBHBA_SendCTPassThruV2()\fR function returns the following values:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR_ILLEGAL_WWN\fR\fR
+.ad
+.sp .6
+.RS 4n
+The value of \fIhbaPortWWN\fR is not a valid port WWN on the specified HBA. 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHBA_STATUS_ERROR\fR\fR
+.ad
+.sp .6
+.RS 4n
+An error occurred.
+.RE
+
+.SH ERRORS
+.sp
+.LP
+See \fBlibhbaapi\fR(3LIB) for general error status values.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRData structures for the GIEL command.
+.sp
+.in +2
+.nf
+struct ct_iu_preamble {
+    uint32_t  ct_rev        : 8,
+              ct_inid       : 24;
+    uint32_t  ct_fcstype    : 8,
+              ct_fcssubtype : 8,
+              ct_options    : 8,
+              ct_reserved1  : 8;
+    uint32_t  ct_cmdrsp     : 16,
+              ct_aiusize    : 16;
+    uint32_t  ct_reserved2  : 8,
+              ct_reason     : 8,
+              ct_expln      : 8,
+              ct_vendor     : 8;
+};
+struct gs_ms_ic_elem {
+    uchar_t   elem_name[8];
+    uint32_t  reserved1   : 24,
+              elem_type   : 8;
+};
+struct gs_ms_giel_rsp {
+    struct ct_iu_preamble  ct_header;
+    uint32_t               num_elems;
+struct gs_ms_ic_elem   elem_list[1];
+};
+#define MAX_PAYLOAD_LEN 65536 /* 64K */
+.fi
+.in -2
+
+.LP
+\fBExample 2 \fRSend an GIEL Management Service command through the given HBA handle.
+.sp
+.LP
+The following example sends an GIEL Management Service command through the given HBA handle.
+
+.sp
+.in +2
+.nf
+req.ct_rev        = 0x01;
+req.ct_fcstype    = 0xFA;   /* Management Service */
+req.ct_fcssubtype = 0x01;   /* Config server */
+req.ct_cmdrsp     = 0x0101; /* GIEL command */
+req.ct_aiusize    = MAX_PAYLOAD_LEN / 4 -
+         sizeof (struct ct_iu_preamble) / 4;
+if ((status = HBA_SendCTPassThru(handle, &req, sizeof (req),
+        rsp, MAX_PAYLOAD_LEN)) != HBA_STATUS_OK) {
+    fprintf(stderr, "Unable to issue CT command on \"%s\""
+        " for reason %d\n", adaptername, status);
+} else {
+    giel = (struct gs_ms_giel_rsp *)rsp;
+    if (giel->ct_header.ct_cmdrsp != 0x8002) {
+        fprintf(stderr, "CT command rejected on HBA "
+            "\"%s\"\n", adaptername);
+    } else {
+        for (cntr = 0; cntr < giel->num_elems; cntr++) {
+        memcpy(&wwn, giel->elem_list[cntr].elem_name, 8);
+        printf(" Fabric element name: %016llx\n", wwn);
+        }
+    }
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+T{
+Standard: FC-HBA Version 4 (API version 2)
+T}
+_
+MT-LevelSafe
+_
+StandardFC-MI 1.92 (API version 1)
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBHBA_OpenAdapter\fR(3HBAAPI), \fBlibhbaapi\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+T11 FC-MI Specification
+.SH BUGS
+.sp
+.LP
+The \fBHBA_SendCTPassThru()\fR function does not take a \fIportindex\fR to define through which port of a multi-ported HBA to send the command. The behavior on multi-ported HBAs is vendor specific, and can result in the command always being sent on port 0 of the HBA.  SNIA version 2 defines \fBHBA_SendCTPassThruV2()\fR which takes a Port WWN as an argument.  This fixes the bug with multi-ported HBAs in \fBHBA_SendCTPassThru()\fR.

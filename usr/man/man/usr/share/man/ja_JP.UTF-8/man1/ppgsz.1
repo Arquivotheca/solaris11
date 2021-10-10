@@ -1,0 +1,238 @@
+'\" te
+.\" Copyright (c) 2003, Sun Microsystems, Inc. All Rights Reserved
+.TH ppgsz 1 "2003 年 1 月 23 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+ppgsz \- スタック、ヒープ、およびその他の匿名セグメントの優先ページサイズの設定
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/ppgsz\fR [\fB-F\fR] \fB-o\fR \fIoption\fR[,\fIoption\fR] \fIcmd\fR | \fB-p\fR \fIpid\fR...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBppgsz\fR ユーティリティーは、ターゲットプロセス (起動された \fIcmd\fR またはプロセス ID リストにあるプロセス) のスタック、ヒープ、およびその他の匿名セグメントの優先ページサイズを設定します。\fBppgsz\fR は、ページサイズを変更する間、ターゲットプロセスを停止します。\fBmemcntl\fR(2) を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.RS 22n
+.rt  
+強制実行。別のプロセスによって制御されている場合でも、ターゲットプロセスに優先ページサイズオプションを設定します。\fB-F\fR フラグを使用するときは注意してください。\fBproc\fR(1) を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoption\fR[,\fIoption\fR]\fR
+.ad
+.RS 22n
+.rt  
+\fIoption\fR は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheap\fR=\fIsize\fR\fR
+.ad
+.RS 14n
+.rt  
+このオプションは、ターゲットプロセスのヒープの優先ページサイズを指定します。\fBheap\fR は、bss (初期化されていないデータ) と bss の直後に続く brk 領域として定義されます (\fBbrk\fR(2) を参照)。ヒープの優先ページサイズは、既存のヒープと将来割り当てられる追加ヒープメモリーに設定されます。「注意事項」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstack\fR=\fIsize\fR\fR
+.ad
+.RS 14n
+.rt  
+このオプションは、ターゲットプロセスのスタックの優先ページサイズを指定します。スタックの優先ページサイズは、既存のスタック、および拡張されて新しく割り当てられるスタックの部分に設定されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanon\fR=\fIsize\fR\fR
+.ad
+.RS 14n
+.rt  
+このオプションは、ターゲットプロセスの既存のすべての \fBMAP_PRIVATE\fR 匿名セグメントの優先ページサイズを指定します。これらは、\fBheap\fR および \fBstack\fR 以外のセグメントであり、指定されたサイズの割り当てられた 1 ページに少なくとも適合する十分な大きさがあります。十分に大きいセグメントの場合、優先ページサイズは、セグメント内のサイズに合わせた最初のアドレスから始まるように設定されます。\fBanon\fR 優先ページサイズは、将来作成される \fBMAP_PRIVATE\fR 匿名セグメントには適用されません。\fBmmap\fR(2) の \fBMAP_ANON\fR を参照してください。
+.sp
+匿名メモリーとは、ファイルシステムでファイルと直接関連付けられない \fBMAP_PRIVATE\fR ページのことを指しています。\fBppgsz\fR コマンドは、\fBmemcntl\fR(2) を使用して、匿名セグメントの優先ページサイズを設定します。\fBmemcntl\fR(2) の \fBMC_HAT_ADVISE\fR を参照してください。
+.RE
+
+上記のオプションを少なくとも 1 つ指定する必要があります。
+.sp
+\fIsize\fR には、サポートされるページサイズ (\fBpagesize\fR(1) を参照) または \fB0\fR を指定する必要があります。0 を指定すると、適切なページサイズがシステムによって選択されます。\fBmemcntl\fR(2) を参照してください。
+.sp
+デフォルトでは \fIsize\fR はバイトであり、8 進数 (\fB0\fR)、10 進数、または 16 進数 (\fB0x\fR) で指定できます。数値は、\fBK\fR、\fBM\fR、\fBG\fR、または \fBT\fR を付けると、それぞれキロバイト、メガバイト、ギガバイト、またはテラバイトで指定できます。\fB4194304\fR、\fB0x400000\fR、\fB4096K\fR、\fB0x1000K\fR、および \fB4M\fR は、異なる方法で 4M バイトを指定しています。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.RS 22n
+.rt  
+\fB-p\fR オプションの後ろのプロセス ID (\fIpid\fR) リストにあるターゲットプロセスに優先ページサイズオプションを設定します。pid リストは、\fB/proc\fR ディレクトリ内の名前で構成することもできます。ページサイズを設定できるのは、プロセスの所有者またはスーパーユーザーのみです。
+.sp
+\fB-p\fR が指定されていない場合は、\fIcmd\fR が解釈されます。\fBppgsz\fR は、\fIcmd\fR を起動して、新しいプロセスにページサイズオプションを適用します。
+.sp
+ヒープおよびスタックの優先ページサイズは継承されます。\fBppgsz\fR が完了したあとに、起動されたプロセスまたは pid リストにあるターゲットプロセスから作成された子プロセス (\fBfork\fR(2) を参照) は、ヒープおよびスタックの優先ページサイズを継承します。\fBexec\fR(2) を使用すると、すべてのセグメントの優先ページサイズがデフォルトのシステムページサイズに再設定されます (\fBgetpagesize\fR(3C) を参照)。その他のすべての匿名セグメントの優先ページサイズは、起動されたプロセスまたはターゲットプロセスの子には継承されません。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRヒープおよびスタックの優先ページサイズの設定
+.sp
+.LP
+次の例では、\fBora\fR で始まるコマンドを実行している \fBora\fR 所有のすべてのプロセスのヒープの優先ページサイズを \fB4M\fR に、スタックの優先ページサイズを \fB512K\fR に設定します。
+
+.sp
+.in +2
+.nf
+example% \fBppgsz -o heap=4M,stack=512K -p `pgrep -u ora '^ora'`\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR匿名セグメントの優先ページサイズを設定する
+.sp
+.LP
+次の例では、プロセス ID \fB953\fR の既存の該当する匿名セグメントの優先ページサイズを \fB512K\fR に設定します。
+
+.sp
+.in +2
+.nf
+example% \fBppgsz -o anon=512k -p 953\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+\fIcmd\fR が指定されて正常に呼び出された (\fBexec\fR(2) を参照) 場合、\fBppgsz\fR の終了ステータスは \fIcmd\fR の終了ステータスになります。それ以外の場合は、\fBppgsz\fR は次のいずれかの値で終了します。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR \fR
+.ad
+.RS 7n
+.rt  
+プロセス ID リストにあるプロセスに優先ページサイズを正常に設定されました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB125\fR\fR
+.ad
+.RS 7n
+.rt  
+\fBppgsz\fR でエラーが発生しました。エラーには、無効な引数、無効なページサイズの指定、プロセス ID リストまたは \fIcmd\fR の 1 つ以上のプロセスに対する優先ページサイズの設定の失敗などが含まれます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB126\fR\fR
+.ad
+.RS 7n
+.rt  
+\fIcmd\fR が見つかりましたが、呼び出せませんでした。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB127\fR\fR
+.ad
+.RS 7n
+.rt  
+\fIcmd\fR が見つかりませんでした。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/proc/*\fR\fR
+.ad
+.RS 29n
+.rt  
+プロセスファイル。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/lib/ld/map.bssalign\fR \fR
+.ad
+.RS 29n
+.rt  
+bss 整列用のテンプレートリンカーマップファイル (「注意事項」を参照)。\fB\fR
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件T{
+system/extended-system-utilities (32 ビット)
+T}
+SUNWesxu (64 ビット)
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBld\fR(1), \fBmpss.so.1\fR(1), \fBpagesize\fR(1), \fBpgrep\fR(1), \fBpmap\fR(1), \fBproc\fR(1), \fBbrk\fR(2), \fBexec\fR(2), \fBfork\fR(2), \fBmemcntl\fR(2), \fBmmap\fR(2), \fBsbrk\fR(2), \fBgetpagesize\fR(3C), \fBproc\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fI『Linker and Libraries Guide』\fR
+.SH 注意事項
+.sp
+.LP
+リソースの制約があるため、優先ページサイズを設定しても、ターゲットプロセスは必ずしも優先ページサイズを取得すると保証されるわけではありません。ターゲットプロセスの\fB実際の\fRヒープおよびスタックのページサイズを表示するには、\fBpmap\fR(1) を使用します (\fBpmap\fR \fB-s\fR オプションを参照)。
+.sp
+.LP
+大きいページは、大きいページサイズの倍数のアドレスにマップする必要があります。通常、ヒープは大きいページに割り当てられないため、(最初に大きいページが割り当てられるアドレスより前の) ヒープの開始位置は、システムメモリーのページサイズでマップされます。\fBgetpagesize\fR(3C) を参照してください。
+.sp
+.LP
+大きいページサイズでマップされるヒープを指定するには、\fBbss\fR セグメント宣言の指令を含むリンカー (\fBld\fR(1)) の \fBmapfile\fR を使用してアプリケーションを作成します。この指令、および \fB/usr/lib/ld/map.bssalign\fR に指定するテンプレート \fBmapfile\fR の詳細は、\fI『Linker and Libraries Guide』\fR の「Mapfile のオプション」の節を参照してください。割り当ての指定はマシンによって異なることがあり、異なるハードウェアプラットフォームでは利点が損なわれる場合があるため、注意してください。将来のリリースでは、基本となる最適なページサイズをより柔軟に要求する方法が進展する可能性があります。
+.sp
+.LP
+事前ロード可能な共有オブジェクト \fBmpss.so.1\fR(1) も、スタックおよびヒープの優先ページサイズを設定するために使用できます。

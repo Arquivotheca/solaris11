@@ -1,0 +1,171 @@
+'\" te
+.\" Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+.TH updatehome 1 "2010 年 10 月 15 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+updatehome \- 現在のラベル用のホームディレクトリのコピーファイルとリンクファイルの更新
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/updatehome\fR [\fB-cirs\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBupdatehome\fR は、ユーザーの最下位ラベルのコピーおよびリンク制御ファイル (\fB\&.copy_files\fR と \fB\&.link_files\fR) を読み込みます。これらのファイルには、コピーするファイルの一覧、およびユーザーの最下位ラベルのホームディレクトリから現在のラベルのホームディレクトリへシンボリックリンクするファイルの一覧が含まれます。
+.sp
+.LP
+デフォルトでは、最下位ユーザーラベルは \fBlabel_encodings\fR(4) に指定され、\fBuser_attr\fR(4) に明示的に指定できます。\fBtxzonemgr\fR(1M) を使用して作成した場合、public ゾーンはデフォルトの最下位ラベルに割り当てられ、マルチレベル NFS サーバーとして構成されます。public ゾーンの承認された管理者は \fBshare\fR(1M) コマンドを使用すると、より高レベルのゾーンによって読み取り専用モードでマウントできるようにホームディレクトリをエクスポートできます。\fBtxzonemgr\fR(1M) を使用して作成された追加のゾーンは、\fB/zone/public/home\fR にある public ゾーンのホームディレクトリをマウントする \fBautomount\fR(1M) エントリを使用して構成されます。
+.sp
+.LP
+この方法でユーザーの最下位ホームディレクトリが共有されている場合、ユーザーは \fBupdatehome\fR コマンドを手動または起動ファイルで実行すると、より高レベルのゾーンで実行できます。たとえば、たいていの場合、ユーザーは \fB\&.profile\fR、\fB\&.login\fR、\fB\&.cshrc\fR、\fB\&.exrc\fR、\fB\&.mailrc\fR、および \fB~/bin\fR などのファイルへのシンボリックリンクを必要とします。\fBupdatehome\fR は、このシンボリックリンクを実現する便利なメカニズムを提供します。ユーザーは、コピーするファイルのリスト (\fB\&.copy_files\fR) およびシンボリックリンクを設定するファイルのリスト (\fB\&.link_files\fR) にファイルを追加できます。
+.SH オプション
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.RS 6n
+.rt  
+現在のラベルを持つ既存のホームディレクトリのコピーを置換します。デフォルトでは、既存のコピーの置換は実行しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.RS 6n
+.rt  
+エラーが発生しても無視します。デフォルトでは、エラー発生時は異常終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.RS 6n
+.rt  
+現在のラベルを持つ既存のホームディレクトリのコピーまたはシンボリックリンクを置換します。このオプションは、\fB-c\fR および \fB-s\fR オプションを合わせた意味を持ちます。デフォルトでは、既存のコピーやシンボリックリンクの置換は実行しません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.RS 6n
+.rt  
+現在のラベルを持つ既存のホームディレクトリのシンボリックリンクを置換します。デフォルトでは、既存のシンボリックリンクの置換は実行しません。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+正常終了時に、\fBupdatehome\fR は \fB0\fR を返します。エラー終了時には、\fBupdatehome\fR は \fB1\fR を返して、診断メッセージを標準エラー出力に書き込みます。
+.SH 使用例
+.LP
+\fB例 1 \fR\fB\&.copy_files\fR ファイルの例
+.sp
+.LP
+\fB\&.copy_files\fR に記述されているファイルは、すべてのユーザーラベルで変更できます。
+
+.sp
+.in +2
+.nf
+\&.cshrc 
+\&.mailrc 
+\&.mozilla/bookmarks.html
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR\fB\&.link_files\fR ファイルの例
+.sp
+.LP
+\fB\&.link_files\fR に記述されているファイルは、最下位のラベルで変更できます。変更は、ユーザーが利用可能なほかのラベルに伝達されます。
+
+.sp
+.in +2
+.nf
+~/bin
+\&.mozilla/preferences
+\&.xrc
+\&.rhosts
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRリンクファイルとコピーファイルを更新する
+.sp
+.LP
+\fB\&.copy_files\fR および \fB\&.link_files\fR は、ユーザーにより最下位のラベルで更新されました。ユーザーは、より高位のラベルでコピーおよびリンクを更新します。このコマンドを実行するのに特権は不要です。
+
+.sp
+.in +2
+.nf
+% \fBupdatehome -r\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.copy_files\fR\fR
+.ad
+.RS 21n
+.rt  
+コピーするファイルのリスト
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB$HOME/.link_files\fR\fR
+.ad
+.RS 21n
+.rt  
+シンボリックリンクを作成するファイルのリスト
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/trusted
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBautomount\fR(1M), \fBshare\fR(1M), \fBtxzonemgr\fR(1M), \fBlabel_encodings\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5)
+.sp
+.LP
+\fI「.copy_files and .link_files Files」\fR in \fI『Oracle Solaris Trusted Extensions Configuration and Administration』\fR
+.SH 注意事項
+.sp
+.LP
+このマニュアルページに記載されている機能を利用できるのは、システムが Trusted Extensions を使用して構成されている場合だけです。

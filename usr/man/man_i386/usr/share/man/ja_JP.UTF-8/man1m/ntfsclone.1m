@@ -1,0 +1,399 @@
+'\" te
+.\" Portions Copyright (c)  2009, Sun Microsystems, Inc. All Rights Reserved
+.\" Copyright (c) 2002-2006 Szabolcs Szakacsits
+.\" Copyright (c) 2002-2005 Anton Altaparmakov
+.\" Copyright (c) 2002-2003 Richard Russon
+.\" Copyright (c) 2007 Yura Pakhuchiy
+.\" This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program (in the main directory of the Linux-NTFS distribution in the file COPYING); if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH ntfsclone 1M "2011 年 5 月 24 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+ntfsclone \- NTFS のクローン作成、イメージ作成、復元、またはレスキュー
+.SH 形式
+.LP
+.nf
+\fBntfsclone\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.LP
+.nf
+\fBntfsclone\fR \fB--save-image\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.LP
+.nf
+\fBntfsclone\fR \fB--resotore-image\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.LP
+.nf
+\fBntfsclone\fR \fB--metadata\fR [\fIoptions\fR] \fIsource\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBntfsclone\fR ユーティリティーは効率的に、疎ファイル、イメージ、デバイス (パーティション)、または標準出力に、NTFS ファイルシステムのクローンを作成したり (コピー、保存、バックアップ、復元操作を含む)、NTFS ファイルシステムをレスキューしたりします。ディスクセクターレベルで機能し、書き込まれたデータだけ (つまり、空の領域以外) をコピーします。未使用のディスク領域は、0 になるか (疎ファイルにクローンを作成する場合)、制御コードで符号化されるか (特殊イメージ形式で保存する場合)、変更されずに残されるか (ディスク/パーティションにクローンを作成する場合)、または 0 で埋められます (標準出力にクローンを作成する場合)。
+.sp
+.LP
+\fBntfsclone\fR は、バックアップを作成 (NTFS ファイルシステムの正確なスナップショットを取得) して、あとから復元する場合に役立ちます。また、NTFS 読み取り/書き込み機能をテストする場合にも使用できます。問題の解決にクローンを使用すれば、元のファイルシステムを破壊する心配がありません。
+.sp
+.LP
+特殊イメージ形式 (後述の同名の節を参照) を使用しない場合、クローンは、元の NTFS ファイルシステムをセクターレベルで正確にコピーしたものになります。したがって、元の NTFS ファイルシステムとまったく同様にマウントすることもできます。たとえば、ファイルにクローンを作成し、カーネルがループバックデバイスおよび NTFS をサポートしている場合、そのファイルは、次のコマンドを使用してマウントできます。
+.sp
+.in +2
+.nf
+# \fBmount -t ntfs -o loop ntfsclone.img\fR
+.fi
+.in -2
+.sp
+
+.SS "Windows のクローン作成"
+.sp
+.LP
+システムまたは起動パーティションを、別のコンピュータまたは異なるディスクやパーティションに (たとえば \fB/dev/dsk/c0d0p1\fR から \fB/dev/dsk/c0d0p2\fR へ、\fB/dev/dsk/c0d0p1\fR から \fB/dev/dsk/c0d1p1\fR へ、または別のディスクセクターオフセットへ)、コピー、移動、または復元する場合は、十分に注意する必要があります。
+.sp
+.LP
+ほとんどの環境では、Windows を起動するために、次の特性が元のパーティションおよびディスクと同じであるパーティションに、NTFS をコピー、移動、または復元する必要があります。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+開始セクターが同じ
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+ディスクのタイプが同じ
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+BIOS レガシーシリンダ設定が同じ
+.RE
+.sp
+.LP
+\fBntfsclone\fR ユーティリティーは、NTFS の正確なコピーを保証しますが、起動の問題には対処しません。これは仕様です。\fBntfsclone\fR はシステムユーティリティーではなくファイルシステムユーティリティーです。NTFS のクローン作成だけを目的としており、Windows のクローン作成は目的としていません。このため、\fBntfsclone\fR は、Windows のクローン作成用の非常に高速で信頼性の高い基本要素として使用できますが、完璧な解決策にはなりません。http://wiki.linux-ntfs.org の NTFS Web サイトで、NTFS のクローン作成に役立つヒントを見つけることができます。
+.SS "疎ファイル"
+.sp
+.LP
+未割り当てブロック (穴) が含まれるファイルは「疎ファイル」と呼ばれます。このようなファイルは常に、報告されるサイズが、実際に消費しているディスク容量よりも大きくなります。\fBdu\fR(1) コマンドは、疎ファイルが使用する実際のディスク容量を報告します。穴は常に 0 として読み取られます。\fBext2\fR、\fBext3\fR、\fBreiserfs\fR、\fBReiser4\fR、JFS、XFS などの主要な Linux ファイルシステムはすべて、疎ファイルをサポートしています。ただし、ISO 9600 CD-ROM ファイルシステムなど、サポートしていないものもあります。
+.SS "特殊イメージ形式"
+.sp
+.LP
+NTFS ファイルシステムは、特殊イメージ形式で保存することをお勧めします。未割り当てブロックは穴として表されず、制御コードを使用して符号化されます。したがって、疎ファイルをサポートしていなくても、イメージに領域が保存されます。このイメージ形式は、ファイルシステムイメージをネットワークでストリーミングする場合に最適です。特殊イメージ形式のデメリットは、イメージを直接マウントできないという点です。最初に復元しておく必要があります。
+.sp
+.LP
+特殊イメージ形式を使用してイメージを保存するには、\fB-s\fR または \fB--save-image\fR オプションを使用します。イメージを復元するには、\fB-r\fR または \fB--restore-image\fR オプションを使用します。ソースファイルとしてハイフン (\fB-\fR) を使用すると、標準入力からイメージを復元できます。
+.SS "メタデータのみのクローン作成"
+.sp
+.LP
+\fB-m\fR または \fB--metadata\fR オプションを使用すると、\fBntfsclone\fR は NTFS メタデータのみを保存することができ、クローンを引き続きマウントできます。この使用法では、メタデータ以外のファイル内容がすべて失われ、データを読み戻すと、すべてが 0 になります。
+.sp
+.LP
+メタデータのみのイメージは高い圧縮率で圧縮できます。通常、1 - 8M バイトの範囲のサイズに圧縮されます。このことは、このようなイメージを調査やトラブルシューティングのために転送する場合に役立ちます。
+.sp
+.LP
+メタデータのみのモードでは、\fBntfsclone\fR は、メタデータに埋め込まれた常駐ユーザーデータなど、一切のユーザーデータを保存しません。すべて 0 で埋められます。さらに、すべてのファイルタイムスタンプと、メタデータ内の削除済み領域および未使用領域が、0 で埋められます。したがってこのモードは、フォレンジック分析などには適していません。
+.sp
+.LP
+ファイル名は削除されません。ファイル名には機密情報が含まれる場合があるので、メタデータのみのイメージを送信する前に、セキュリティーまたはプライバシーの侵害の可能性を考慮してください。
+.SH オプション
+.sp
+.LP
+サポートされているオプションを次に示します。ほとんどのオプションには、単一文字と完全名の両方の形式があります。引数を取らない単一文字オプションは複数を組み合わせることができます。たとえば、\fB-fv\fR は \fB-f\fR \fB-v\fR と同等です。完全名のオプションは、その名前の一意の接頭辞に短縮できます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+整合性検査によりファイルシステムに「ダーティー」のマークが付けられている場合でも、\fBntfsclone\fR を強制的に続行させます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR、\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+それぞれの簡単な説明が付いたオプションのリストを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR、\fB--ignore-fs-check\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムの整合性検査の結果を無視します。このオプションは、\fB--meta-data\fR オプションとのみ一緒に使用できます。不一致の原因となるすべてのクラスタが保存されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR、\fB--metadata\fR\fR
+.ad
+.sp .6
+.RS 4n
+メタデータのみのクローンを作成します。このオプションを指定する場合、ファイルにのみクローンを作成する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR、\fB--output\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+存在しない \fIfile\fR に NTFS のクローンを作成します。\fIfile\fR がハイフン (\fB-\fR) の場合は、クローンは標準出力に作成されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR、\fB--overwrite\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+NTFS のクローンを \fIfile\fR に作成します。\fIfile\fR がすでに存在する場合はこれを上書きします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--rescue\fR\fR
+.ad
+.sp .6
+.RS 4n
+ディスク読み取りエラーを無視します。不良セクターが含まれるディスク (障害の発生したディスクなど) を、ディスクへの影響を最小限に抑えてレスキューできるようになります。このモードでは、\fBntfsclone\fR は、より多くのデータをレスキューできるように最低のセクターレベルで動作します。読み取り不可能なセクターの内容は疑問符 (\fB?\fR) 文字で埋められます。このようなセクターの先頭には、\fBBadSector\fR という文字列のマークが付けられます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR、\fB--restore-image\fR \fIsource\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIsource\fR で指定された特殊イメージ形式から復元します。\fIsource\fR がハイフン (\fB-\fR) の場合は、イメージは標準入力から読み取られます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--save-image\fR\fR
+.ad
+.sp .6
+.RS 4n
+特殊イメージ形式で保存します。イメージを標準出力に作成する場合、領域の使用率および速度の点で、このオプションがもっとも効率的です。このオプションは、イメージの圧縮、暗号化、またはネットワークでのストリーミングに役立ちます。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fR上書きオプションを使用してクローンを作成する
+.sp
+.LP
+次のコマンドは、\fB--overwrite\fR オプションを使用してクローンを作成します。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --overwrite /dev/dsk/c0d2p1 /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR特殊イメージ形式で保存する
+.sp
+.LP
+次のコマンドは、元のパーティションに特殊イメージ形式でクローンを作成します。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --save-image --output backup.img /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR特殊イメージファイルから復元する
+.sp
+.LP
+次のコマンドは、特殊イメージファイルから NTFS を復元します。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 backup.img\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fR圧縮イメージに保存する
+.sp
+.LP
+次のコマンドは、圧縮イメージファイルに NTFS を保存します。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --save-image -o - /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fR圧縮イメージから復元する
+.sp
+.LP
+次のコマンドは、圧縮イメージファイルから NTFS ボリュームを復元します。
+
+.sp
+.in +2
+.nf
+# \fBgunzip -c backup.img.gz | \e\fR
+\fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 -\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR\fBssh\fR を使用して遠隔ホストにバックアップを作成する
+.sp
+.LP
+次のコマンドは、\fBssh\fR(1) を使用して遠隔ホストにバックアップを作成します。\fBssh\fR にはパスワードが必要な場合があります。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --save-image --output - /dev/dsk/c0d0p1 | \e\fR
+\fBgzip -c | ssh host `cat > backup.img.gz`\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR\fBssh\fR を使用して遠隔ホストから復元する
+.sp
+.LP
+次のコマンドは、\fBssh\fR(1) を使用して遠隔ホストから復元します。\fBssh\fR にはパスワードが必要な場合があります。
+
+.sp
+.in +2
+.nf
+# \fBssh host `cat backup.img.gz` | gunzip -c  | \e\fR
+\fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 -\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRWeb サーバーからイメージファイルをストリーミングする
+.sp
+.LP
+次のコマンドは、Web サーバーからイメージファイルをストリーミングして、パーティションに復元します。
+
+.sp
+.in +2
+.nf
+# \fBwget -qO - http://server/backup.img | \e\fR
+\fBntfsclone --restore-image --overwrite /dev/dsk/c0d0p1 -\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR新しいファイルにクローンを作成する
+.sp
+.LP
+次のコマンドは、存在しないファイルに NTFS ボリュームのクローンを作成します。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --output ntfs-clone.img /dev/dsk/c0d0p1\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 10 \fRNTFS メタデータを圧縮する
+.sp
+.LP
+次のコマンドは、NTFS メタデータをイメージファイルに圧縮します。\fBbzip2\fR は \fBgzip\fR よりも時間がかかりますが、圧縮後のアーカイブのサイズは gzip に比べて最高で 10 分の 1 になります。
+
+.sp
+.in +2
+.nf
+# \fBntfsclone --metadata --output ntfsmeta.img /dev/dsk/c0d0p1\fR
+\fBbzip2 ntfsmeta.img\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 11 \fRNTFS メタデータを展開する
+.sp
+.LP
+次のコマンドは、NTFS メタデータを疎ファイルに展開します。
+
+.sp
+.in +2
+.nf
+# \fBbunzip2 -c ntfsmeta.img.bz2 | \e\fR
+\fBcp --sparse=always /proc/self/fd/0 ntfsmeta.img\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+リターンコードは成功した場合は 0 に、失敗した場合は 0 以外になります。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/ntfsprogs
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBdu\fR(1), \fBssh\fR(1), \fBntfsresize\fR(1M), \fBntfsundelete\fR(1M), \fBparted\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 著者
+.sp
+.LP
+\fBntfsclone\fR は、Per Olofsson (特殊イメージ形式のサポート) と Anton Altaparmakov の協力の下、Szabolcs Szakacsits が作成しました。

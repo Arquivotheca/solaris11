@@ -1,0 +1,601 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH pgstat 1M "2010 年 8 月 17 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+pgstat \- プロセッサグループの使用状況統計の報告
+.SH 形式
+.LP
+.nf
+\fBpgstat\fR [\fB-A\fR] [\fB-C\fR] [\fB-p\fR] [\fB-s\fR \fIkey\fR | \fB-S\fR \fIkey\fR] [\fB-t\fR \fInumber\fR] [\fB-T\fR u | d] [\fB-v\fR]
+[\fB-r\fR \fIstring\fR] [\fB-R\fR \fIstring\fR] [\fB-P\fR \fIpg\fR ...] [\fB-c\fR \fIprocessor_id\fR... ]
+[\fIinterval\fR [\fIcount\fR]]
+.fi
+
+.LP
+.nf
+\fBpgstat\fR \fB-h\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBpgstat\fR はプロセッサグループ (PG) に関する使用状況統計を表示します。PG とは、共通の特性でひとまとめにした CPU のセットです。
+.sp
+.LP
+PG は、オペレーティングシステムで、実行パイプラインやキャッシュなど、パフォーマンスに関連したハードウェアを共有する CPU を表すために使用されます。これらの PG は、マシンのプロセッサトポロジをモデル化した階層に編成されます。この階層では、それぞれの CPU (ストランド) に、その CPU ともっとも多くのハードウェアを共有している CPU を表すリーフ PG が割り当てられます。ルート PG に到達するまでリーフ PG を上位にさかのぼっていくにつれ、その CPU と共有するハードウェアの数は少なくなっていきます。ルート PG は、システム内のすべての CPU を含み、相互に共有するハードウェアがもっとも少ない CPU のグループを表します (PG 階層の例については、後述の「使用例」を参照してください)。
+.sp
+.LP
+マシンに、パフォーマンス関連のハードウェアの共有関係がない場合、\fBpgstat\fR は、システム内のすべての CPU を含むルート PG のみを表示します。
+.sp
+.LP
+デフォルトで、\fBpgstat\fR は次の操作を行います。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+1 秒間の間隔にわたって、PG 階層内の全 PG のハードウェア使用状況およびソフトウェア使用状況を測定します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+PG の使用状況を深さ優先順で表示し、PG がどのように相互に関連しているかをインデントを使用してわかりやすく示します。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+一定間隔の時間が経過するごとに、それぞれの PG について、ID、共有関係、ハードウェア負荷、ソフトウェア負荷、およびオンラインの CPU を表示します。
+.RE
+.sp
+.LP
+間隔および回数を引数として与えることにより、サンプリング間隔の秒数と、指定した PG の使用状況を測定および表示する回数を指定できます。
+.sp
+.LP
+オプションを指定することで、出力をさらに調整し、特定の方法で出力を整理し、関心のある PG を指定できます (詳細は、後述の「オプション」を参照)。
+.sp
+.LP
+指定した PG の使用状況がサポートされていない場合にはハイフン (「\fB-\fR」) が表示され、使用状況を利用できない場合には疑問符 (\fB?\fR) が表示されます。ハードウェア使用状況の測定に CPU ハードウェアパフォーマンスカウンタが必要なシステムでは、\fBcpustat\fR(1M)、\fBcputrack\fR(1)、\fBdtrace\fR(1M) のほか、\fBlibcpc\fR(3LIB) を使用するほかのアプリケーションなど、\fBcpc\fR(3CPC) コンシューマによってカウンタが使用されているために使用状況を利用できない場合があります。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+複数の間隔にわたって \fBpgstat\fR を実行している場合に、使用状況データの要約を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIprocessor_id\fR... \fR
+.ad
+.sp .6
+.RS 4n
+指定した CPU を含む PG に関する使用状況を表示します。CPU は、CPU ID のコンマ区切りのリストとして指定できます。ハイフン (「-」) を使用すると、連続した範囲の CPU ID を指定できます (たとえば \fB0-3\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR\fR
+.ad
+.sp .6
+.RS 4n
+各 PG 内の CPU ごとの使用状況を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+簡単なヘルプメッセージを表示し、終了ステータス 0 で終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG に対応する物理的関係を表示します。PG に、システム全体、プロセッサコア、またはチップと同じ CPU がある場合、それぞれ \fBsystem\fR、\fBcore\fR、または \fBchip\fR が、PG の共有関係のあとに角括弧 (「\fB[]\fR」) で囲まれて表示されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIpg\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+指定した PG の使用状況を表示します。複数の PG は、PG ID のコンマ区切りのリストとして指定できます。ハイフン(「-」) を使用すると、連続した範囲の PG ID を指定できます (たとえば \fB0-3\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIstring1\fR,\fI string2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+指定された文字列のいずれかに一致した共有関係名を持つ PG に関する使用状況のみを表示します。文字列は、完全な関係名でも、1 つ以上の関係名の一部でも構いません。文字列の照合では大文字と小文字は区別されません。
+.sp
+複数の \fB-r\fR オプションを入力できますが、この場合、指定された文字列のいずれかが含まれる関係名を持つすべての PG に一致することになります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIstring1\fR,\fI string2\fR,...\fR
+.ad
+.sp .6
+.RS 4n
+指定された名前\fB以外\fRの共有関係名を持つ PG に関する情報のみを表示します。
+.sp
+文字列の照合は、前述の \fB-r\fR オプションの説明と同じです。複数の \fB-R\fR オプションを入力できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIkey\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたキーで、出力行を降順にソートします。指定されたキーは、次のいずれかになります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpg\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG ID の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhwload\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェア使用状況の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBswload\fR\fR
+.ad
+.sp .6
+.RS 4n
+ソフトウェア使用状況の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+ユーザー時間の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsys\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム時間の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBidle\fR \fR
+.ad
+.sp .6
+.RS 4n
+アイドル時間の順にソートします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdepth\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG ツリーをルートからリーフに下っていく順番で、深さ優先でソートします (デフォルト)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBbreadth\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG ツリーをルートからリーフに下っていく順番で、幅優先でソートします。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIkey\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたキーで、出力行を昇順にソートします。使用可能なキー値は、\fB-s\fR オプションの場合と同じです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fInumber\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された整数値に対応する PG の最上位番号を表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fBu\fR | \fBd\fR\fR
+.ad
+.sp .6
+.RS 4n
+サンプリング間隔ごとのタイムスタンプを、UNIX 時間 (\fBtime \fR(2) を参照) で表示するか、\fBdate\fR(1) で使用される標準の日付形式で表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+ハードウェアの使用状況および容量、ソフトウェアのユーザー時間、システム時間、アイドル時間など、各 PG に関する追加情報を表示します。
+.RE
+
+.SH 出力の見出し
+.sp
+.LP
+pgstat は、次に示す列の見出しをその意味と一緒に表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPG\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセッサグループ ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRELATIONSHIP\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG の共有関係。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBHW\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーセント単位でのハードウェア負荷 (間隔あたりの \fBUTIL\fR/\fBCAP\fR として計算)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUTIL\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG の共有ハードウェアコンポーネントの、時間間隔あたりのハードウェア使用状況。これは大きな数値になる可能性があるので、\fBK\fR、\fBM\fR、\fBB\fR、および \fBT\fR が、それぞれ 1000、100 万、10 億、1 兆を示すために使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCAP\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG の共有ハードウェアコンポーネントの、時間間隔あたりのおおよその最大使用状況見込み。これは大きな数値になる可能性があるので、\fBK\fR、\fBM\fR、\fBB\fR、および \fBT\fR が、それぞれ 1000、100 万、10 億、1 兆を示すために使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSW\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーセント単位でのソフトウェア負荷 ((\fBUSR\fR + \fBSYS\fR) / (\fBUSR\fR + \fBSYS\fR + \fBIDLE\fR) で計算)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBUSR\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG 内の CPU でソフトウェアスレッドがユーザーモードで実行していた時間の、時間間隔に対するパーセント。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSYS\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG 内の CPU でソフトウェアスレッドがシステムモードで実行していた時間の、時間間隔に対するパーセント。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBIDLE\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG 内の CPU でソフトウェアスレッドが実行していなかった時間の、時間間隔に対するパーセント。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBCPUS\fR\fR
+.ad
+.sp .6
+.RS 4n
+PG 内の CPU の CPU ID。
+.RE
+
+.SH 使用例
+.sp
+.LP
+次の例では、システムには、8 つのコアと 32 のストランドを備えた 1 つの UltraSPARC T1 プロセッサチップが搭載されています。
+.LP
+\fB例 1 \fR指定した期間での使用状況を表示する
+.sp
+.LP
+次のコマンドは、直前の 2 秒間にわたるすべての PG の使用状況を表示します。
+
+.sp
+.in +2
+.nf
+$ \fBpgstat 1 2\fR
+PG  RELATIONSHIP            HW    SW  CPUS
+ 0  System                   -  0.4%  0-31
+ 3   Data_Pipe_to_memory     -  0.4%  0-31
+ 2    Floating_Point_Unit   0%  0.4%  0-31
+ 1     Integer_Pipeline     0%    0%  0-3
+ 4     Integer_Pipeline     0%    0%  4-7
+ 5     Integer_Pipeline     0%    0%  8-11
+ 6     Integer_Pipeline     0%  0.2%  12-15
+ 7     Integer_Pipeline     0%    0%  16-19
+ 8     Integer_Pipeline   2.8%  2.7%  20-23
+ 9     Integer_Pipeline   0.1%  0.2%  24-27
+10     Integer_Pipeline     0%    0%  28-31
+PG  RELATIONSHIP            HW    SW  CPUS
+ 0  System                   -  0.4%  0-31
+ 3   Data_Pipe_to_memory     -  0.4%  0-31
+ 2    Floating_Point_Unit   0%  0.4%  0-31
+ 1     Integer_Pipeline     0%  0.2%  0-3
+ 4     Integer_Pipeline     0%    0%  4-7
+ 5     Integer_Pipeline     0%    0%  8-11
+ 6     Integer_Pipeline     0%    0%  12-15
+ 7     Integer_Pipeline     0%    0%  16-19
+ 8     Integer_Pipeline   3.1%  2.5%  20-23
+ 9     Integer_Pipeline     0%    0%  24-27
+10     Integer_Pipeline     0%  0.2%  28-31
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR整数パイプラインに関する情報を表示する
+.sp
+.LP
+次のコマンドは、直前の 2 秒間にわたりもっとも頻繁に使用された 2 つの整数パイプラインに関する詳細を表示します。
+
+.sp
+.in +2
+.nf
+$ \fBpgstat -v -t 2 -r 'Integer_Pipeline' 1 2\fR
+PG  RELATIONSHIP         HW UTIL  CAP     SW    USR    SYS   IDLE CPUS
+ 1  Integer_Pipeline   0.2% 2.2M 1.4B   0.2%   0.0%   0.2%  99.8% 0-3
+ 4  Integer_Pipeline  13.1% 181M 1.4B  14.9%   0.0%  14.9%  85.1% 4-7
+PG  RELATIONSHIP         HW UTIL  CAP     SW    USR    SYS   IDLE CPUS
+ 1  Integer_Pipeline   0.2% 1.9M 1.2B   0.2%   0.0%   0.2%  99.8% 0-3
+ 4  Integer_Pipeline  13.1% 163M 1.2B  14.9%   0.0%  14.9%  85.1% 4-7
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR指定した期間でのコアの使用状況を表示する
+.sp
+.LP
+次のコマンドは、直前の 2 秒間にわたるコアの使用状況に関する情報を表示します。
+
+.sp
+.in +2
+.nf
+$ \fBpgstat -A 60 2\fR
+PG  RELATIONSHIP              HW      SW  CPUS
+ 0  System                     -   56.9%  0-31
+ 3   Data_Pipe_to_memory       -   56.9%  0-31
+ 2    Floating_Point_Unit   0.0%   56.9%  0-31
+ 1     Integer_Pipeline    36.7%   58.7%  0-3
+ 4     Integer_Pipeline    41.9%   58.3%  4-7
+ 5     Integer_Pipeline    31.0%   58.0%  8-11
+ 6     Integer_Pipeline    30.7%   57.9%  12-15
+ 7     Integer_Pipeline    30.1%   55.8%  16-19
+ 8     Integer_Pipeline    40.2%   54.8%  20-23
+ 9     Integer_Pipeline    35.0%   56.0%  24-27
+10     Integer_Pipeline    40.3%   55.8%  28-31
+PG  RELATIONSHIP              HW      SW  CPUS
+ 0  System                     -   10.7%  0-31
+ 3   Data_Pipe_to_memory       -   10.7%  0-31
+ 2    Floating_Point_Unit   0.0%   10.7%  0-31
+ 1     Integer_Pipeline     9.0%   10.7%  0-3
+ 4     Integer_Pipeline     9.6%   10.8%  4-7
+ 5     Integer_Pipeline     8.6%    9.9%  8-11
+ 6     Integer_Pipeline    10.5%   11.9%  12-15
+ 7     Integer_Pipeline     9.1%   10.4%  16-19
+ 8     Integer_Pipeline     9.6%   10.9%  20-23
+ 9     Integer_Pipeline     8.9%   10.0%  24-27
+10     Integer_Pipeline     9.5%   10.7%  28-31
+
+       SUMMARY: UTILIZATION OVER 120 SECONDS
+
+                             ------HARDWARE------ ------SOFTWARE------
+PG  RELATIONSHIP             MIN    AVG    MAX    MIN    AVG    MAX CPUS
+ 0  System                     -      -      -  10.7%  10.7%  56.9% 0-31
+ 3   Data_Pipe_to_memory       -      -      -  10.7%  10.7%  56.9% 0-31
+ 2    Floating_Point_Unit   0.0%   0.0%   0.0%  10.7%  10.7%  56.9% 0-31
+ 1     Integer_Pipeline     9.0%   8.5%  36.7%  10.7%  10.7%  58.7% 0-3
+ 4     Integer_Pipeline     9.6%   9.1%  41.9%  10.8%  10.8%  58.3% 4-7
+ 5     Integer_Pipeline     8.6%   8.1%  31.0%   9.9%   9.9%  58.0% 8-11
+ 6     Integer_Pipeline    10.5%  10.0%  30.7%  11.9%  11.9%  57.9% 12-15
+ 7     Integer_Pipeline     9.1%   8.6%  30.1%  10.4%  10.4%  55.8% 16-19
+ 8     Integer_Pipeline     9.6%   9.1%  40.2%  10.9%  10.9%  54.8% 20-23
+ 9     Integer_Pipeline     8.9%   8.4%  35.0%  10.0%  10.0%  56.0% 24-27
+10     Integer_Pipeline     9.5%   8.9%  40.3%  10.7%  10.7%  55.8% 28-31
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムから PG 情報を取得できません。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定された間隔、回数、またはすべての CPU、PG、および共有関係が無効です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+構文が正しくない。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性不確実
+.TE
+
+.sp
+.LP
+コマンド行オプションおよび出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBcputrack\fR(1), \fBcpustat\fR(1M), \fBdtrace\fR(1M), \fBpginfo\fR(1M), \fBcpc\fR(3CPC ), \fBlibcpc\fR(3LIB), \fBattributes\fR(5)

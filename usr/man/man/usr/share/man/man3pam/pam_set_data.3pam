@@ -1,0 +1,81 @@
+'\" te
+.\"  Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pam_set_data 3PAM "16 Jun 2011" "SunOS 5.11" "PAM Library Functions"
+.SH NAME
+pam_set_data, pam_get_data \- PAM routines to maintain module specific state
+.SH SYNOPSIS
+.LP
+.nf
+\fBcc\fR [ \fIflag\fR ... ] \fIfile\fR ... \fB-lpam\fR [ \fIlibrary\fR ... ]
+#include <security/pam_appl.h>
+
+\fBint\fR \fBpam_set_data\fR(\fBpam_handle_t *\fR\fIpamh\fR, 
+     \fBconst char *\fR\fImodule_data_name\fR, \fBvoid *\fR\fIdata\fR,
+     \fBvoid  (*\fR\fIcleanup\fR) (pam_handle_t *\fIpamh\fR, \fBvoid *\fR\fIdata\fR,
+     \fBint\fR \fIpam_end_status\fR));
+.fi
+
+.LP
+.nf
+\fBint\fR \fBpam_get_data\fR(\fBconst pam_handle_t *\fR\fIpamh\fR,
+     \fBconst char *\fR\fImodule_data_name\fR, \fBconst void **\fR\fIdata\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpam_set_data()\fR and \fBpam_get_data()\fR functions allow \fBPAM\fR service modules to access and update module specific information as needed. These functions should not be used by applications.
+.sp
+.LP
+The \fBpam_set_data()\fR function stores module specific data within the  \fBPAM\fR handle \fIpamh\fR. The \fImodule_data_name\fR argument uniquely identifies the data, and the \fIdata\fR argument represents the actual data. The \fImodule_data_name\fR argument should be unique across all services.
+.sp
+.LP
+The \fBpam_set_data()\fR function may register a cleanup function to be called during \fBpam_end\fR(3PAM) processing. The cleanup function should do whatever is appropriate based on \fIpam_end_status\fR, the status passed to \fBpam_end()\fR by the application. Any allocated memory for the \fImodule_data_name\fR must be freed.
+.sp
+.LP
+If \fBpam_set_data()\fR is called and module data already exists  from a prior call to  \fBpam_set_data()\fR under the same \fImodule_data_name\fR, the existing cleanup function is called with a \fIpam_end_status\fR of \fBPAM_SUCCESS\fR, the existing \fIdata\fR is replaced by the new \fIdata\fR, and the existing \fIcleanup\fR function is replaced by the new \fIcleanup\fR function.
+.sp
+.LP
+The \fBpam_get_data()\fR function retrieves module-specific data stored in the  \fBPAM\fR handle, \fIpamh\fR, identified by the unique name, \fImodule_data_name\fR. The \fIdata\fR argument is assigned the address of the requested data. The  \fIdata\fR retrieved by \fBpam_get_data()\fR should not be modified or freed.  The \fIdata\fR will be released by \fBpam_end()\fR.
+.SH RETURN VALUES
+.sp
+.LP
+In addition to the return values listed in \fBpam\fR(3PAM), the following value may also be returned:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBPAM_NO_MODULE_DATA\fR\fR
+.ad
+.RS 22n
+.rt  
+No module specific data is present.
+.RE
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe with exceptions
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBpam\fR(3PAM), \fBpam_end\fR(3PAM), \fBlibpam\fR(3LIB), \fBattributes\fR(5)
+.SH NOTES
+.sp
+.LP
+The interfaces in  \fBlibpam\fR are MT-Safe only if each thread within the multithreaded application uses its own  \fBPAM\fR handle.

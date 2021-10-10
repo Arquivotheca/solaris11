@@ -1,0 +1,669 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.TH coreadm 1M "2008 年 9 月 30 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+coreadm \- コアファイルの管理
+.SH 形式
+.LP
+.nf
+\fBcoreadm\fR [\fB-g\fR \fIpattern\fR] [\fB-G\fR \fIcontent\fR] [\fB-i\fR \fIpattern\fR] [\fB-I\fR \fIcontent\fR] 
+     [\fB-d\fR \fIoption\fR]... [\fB-e\fR \fIoption\fR]...
+.fi
+
+.LP
+.nf
+\fBcoreadm\fR [\fB-p\fR \fIpattern\fR] [\fB-P\fR \fIcontent\fR] [\fIpid\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcoreadm\fR コマンドを使用して、異常終了するプロセスにより生成されるコアファイルの名前と場所を指定できます。\fBcore\fR(4) を参照してください。 
+.sp
+.LP
+「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、「形式」の最初の形式を実行できます。\fB\fRこの形式では、大域的なコアファイル名のパターンおよび \fBinit\fR(1M) プロセスのコアファイル名のパターンを含む、システム全体のコアファイルオプションを構成します。すべての設定が恒久的に保存され、ブート時に適用されます。
+.sp
+.LP
+非特権ユーザーは、「形式」の 2 番目の形式を実行できます。\fB\fRこの形式では、オペレーティングシステムがプロセスごとのコアファイルを生成するときに使用する、ファイル名のパターンとコアファイルのコンテンツを指定します。
+.sp
+.LP
+コアファイル名のパターンは、\fB%\fR から始まる文字で指定される組み込み変数を含んだ、通常のファイルシステムのパス名です。この変数は、オペレーティングシステムがコアファイルを生成するときに有効な値から展開されます。使用可能な組み込み変数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%d\fR\fR
+.ad
+.sp .6
+.RS 4n
+実行ファイルのディレクトリ名。最大文字数は \fBMAXPATHLEN\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%f\fR\fR
+.ad
+.sp .6
+.RS 4n
+実行ファイルの名前。最大文字数は \fBMAXCOMLEN\fR 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%g\fR\fR
+.ad
+.sp .6
+.RS 4n
+実効グループ \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%m\fR\fR
+.ad
+.sp .6
+.RS 4n
+マシン名 (\fBuname\fR \fB-m\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%n\fR\fR
+.ad
+.sp .6
+.RS 4n
+システムノード名 (\fBuname\fR \fB-n\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%p\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセス \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%t\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBtime\fR(2) の 10 進数の値 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%u\fR\fR
+.ad
+.sp .6
+.RS 4n
+実効ユーザー \fBID\fR
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%z\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセスが実行されているゾーン名 (\fBzonename\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB%%\fR\fR
+.ad
+.sp .6
+.RS 4n
+リテラル \fB%\fR
+.RE
+
+.sp
+.LP
+たとえば、コマンドが foo でプロセス ID が 1234 の場合、コアファイル名のパターン \fB/var/cores/core.%f.%p\fR\fB\fR\fB\fR\fB\fR は \fB/var/cores/core.foo.1234\fR になります。
+.sp
+.LP
+コアファイルコンテンツの記述は、プロセスのバイナリイメージを識別する一連のトークンを使用して指定されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanon\fR\fR
+.ad
+.sp .6
+.RS 4n
+メインスレッドスタックではないスレッドスタックを含む、匿名プライベートマッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBctf\fR\fR
+.ad
+.sp .6
+.RS 4n
+ロードされたオブジェクトファイルの CTF タイプ情報セクション
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdata\fR\fR
+.ad
+.sp .6
+.RS 4n
+書き込み可能プライベートファイルマッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdism\fR\fR
+.ad
+.sp .6
+.RS 4n
+DISM マッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBheap\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセスヒープ
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBism\fR\fR
+.ad
+.sp .6
+.RS 4n
+ISM マッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrodata\fR\fR
+.ad
+.sp .6
+.RS 4n
+読み取り専用プライベートファイルマッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshanon\fR\fR
+.ad
+.sp .6
+.RS 4n
+匿名共有マッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルによってバックアップされる共有マッピング
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshm\fR\fR
+.ad
+.sp .6
+.RS 4n
+System V 共有メモリー
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstack\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセススタック
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsymtab\fR\fR
+.ad
+.sp .6
+.RS 4n
+ロードされたオブジェクトファイルのシンボルテーブルセクション
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtext\fR\fR
+.ad
+.sp .6
+.RS 4n
+読み取り可能および実行可能なプライベートファイルマッピング
+.RE
+
+.sp
+.LP
+また、トークン \fBall\fR を使用すると、コアファイルにプロセスのバイナリイメージのすべての部分を含めるよう指定できます。トークン \fBnone\fR を使用すると、マッピングをまったく含めないよう指定できます。\fBdefault\fR トークンを使用すると、システムのデフォルトコンテンツ (\fBstack+heap+shm+ism+dism+text+data+rodata+anon+shanon+ctf+symtab\fR) を含めるよう指定できます。\fB/proc\fR ファイルシステムデータ構造は、マッピングコンテンツに関係なく、常にコアファイル内に存在します。
+.sp
+.LP
+\fB+\fR および \fB-\fR を使用して、トークンを連結できます。たとえば、コアファイルコンテンツ \fBdefault-ism\fR は、詳細共有メモリーマッピングを除くマッピングのデフォルトセットを使用してコアファイルを生成します。
+.sp
+.LP
+引数なしの \fBcoreadm\fR コマンドは、現在のシステム構成を報告します。たとえば、次のようになります。
+.sp
+.in +2
+.nf
+$ coreadm
+    global core file pattern: /var/cores/core.%f.%p
+    global core file content: all
+      init core file pattern: core
+      init core file content: default
+           global core dumps: enabled
+      per-process core dumps: enabled
+     global setid core dumps: enabled
+per-process setid core dumps: disabled
+    global core dump logging: disabled
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+プロセス \fBID\fR のリストのみを指定した \fBcoreadm\fR コマンドは、各プロセスにおけるプロセスごとのコアファイル名のパターンを報告します。たとえば、次のようになります。 
+.sp
+.in +2
+.nf
+$ coreadm 278 5678
+  278:   core.%f.%p default
+  5678:  /home/george/cores/%f.%p.%t all-ism
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+プロセスの所有者または \fBproc_owner\fR 特権を持つユーザーのみがこの方法でプロセスを調べることができます。
+.sp
+.LP
+プロセスがコアをダンプしているとき、次のように最大で 3 つのコアファイルを生成できます。1 つはプロセスごとの場所、1 つはシステム全体の大域的な場所、さらに、プロセスが局所 (非大域) ゾーンで実行されていた場合は、1 つをそのプロセスが実行されていたゾーンの大域的な場所に生成できます。各コアファイルは、対応する場所に有効なオプションに従って生成されます。
+.sp
+.LP
+生成時に、大域コアファイルはモード \fB600\fR で作成され、スーパーユーザーによって所有されます。非特権ユーザーはそのようなファイルを調べることができません。
+.sp
+.LP
+通常のプロセスごとのコアファイルは、プロセスの資格に基づいてモード \fB600\fR で作成されます。プロセスの所有者はそのようなファイルを調べることができます。
+.sp
+.LP
+\fBsetuid\fR か \fBsetgid\fR であるプロセス、またはこのプロセスの最後の \fBexec\fR(2) 以降に setuid か setgid だったことのあるプロセスには、コアのダンプに関連するセキュリティーの問題が存在します。同様に、最初にスーパーユーザー特権を持っていて、\fBsetuid\fR(2) によってそれらの特権を失ったプロセスにも、コアのダンプに関連するセキュリティーの問題が存在します。どちらのタイプのプロセスにも、そのアドレス空間の中に、現在の非特権プロセス所有者がアクセスできるべきではない機密情報が含まれている可能性があります。\fBsetid\fR コアファイルが有効な場合、それらはモード \fB600\fR で作成され、スーパーユーザーによって所有されます。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIoption\fR...\fR
+.ad
+.sp .6
+.RS 4n
+指定したコアファイルオプションを使用不可にします。指定可能なオプションについては、\fB-e\fR \fIoption\fR を参照してください。
+.sp
+複数の \fB-e\fR および \fB-d\fR オプションをコマンド行で指定できます。「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、このオプションを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR \fIoption\fR...\fR
+.ad
+.sp .6
+.RS 4n
+指定したコアファイルオプションを使用可能にします。\fIoption\fR には次のいずれかを指定します。
+.sp
+.ne 2
+.mk
+.na
+\fB大域 (global)\fR
+.ad
+.sp .6
+.RS 4n
+大域コアパターンを使用するコアダンプを許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBglobal-setid\fR
+.ad
+.sp .6
+.RS 4n
+大域コアパターンを使用する set-id コアダンプを許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBlog\fR
+.ad
+.sp .6
+.RS 4n
+大域コアファイルの生成が試行されるときに \fBsyslog\fR(3C) メッセージを生成します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBprocess\fR
+.ad
+.sp .6
+.RS 4n
+プロセスごとのコアパターンを使用するコアダンプを許可します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBproc-setid\fR
+.ad
+.sp .6
+.RS 4n
+プロセスごとのコアパターンを使用する set-id コアダンプを許可します。
+.sp
+複数の \fB-e\fR および \fB-d\fR オプションをコマンド行で指定できます。「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、このオプションを使用できます。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-g\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+大域コアファイル名のパターンを \fIpattern\fR に設定します。パターンは \fB/\fR から始める必要があり、「機能説明」で説明されている特殊な \fB%\fR 変数のいずれも含めることができます。\fB\fR 
+.sp
+「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、このオプションを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-G\fR \fIcontent\fR\fR
+.ad
+.sp .6
+.RS 4n
+大域コアファイルコンテンツを content に設定します。コンテンツは、「機能説明」で説明されているトークンを使用して指定する必要があります。\fB\fR
+.sp
+「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、このオプションを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのプロセスごとのコアファイル名を \fIpattern\fR に設定します。プロセスごとのパターンがまだデフォルトに設定されているプロセスは、これによってプロセスごとのパターンが変更されます。プロセスごとのパターンが設定されているプロセス、またはプロセスごとのパターンが設定されているプロセスの子孫のプロセス (\fB-p\fR オプションを使用) は、影響を受けません。このデフォルトは、リブート後も持続します。
+.sp
+「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、このオプションを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIcontent\fR\fR
+.ad
+.sp .6
+.RS 4n
+デフォルトのプロセスごとのコアファイルコンテンツを \fIcontent\fR に設定します。プロセスごとのコンテンツがまだデフォルトに設定されているプロセスは、これによってプロセスごとのコンテンツが変更されます。プロセスごとのコンテンツが設定されているプロセス、またはプロセスごとのコンテンツが設定されているプロセスの子孫のプロセス (\fB-P\fR オプションを使用) は、影響を受けません。このデフォルトは、リブート後も持続します。
+.sp
+「Maintenance and Repair」RBAC プロファイルに属しているユーザーおよび役割だけが、このオプションを使用できます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpattern\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した各プロセス \fBID\fR の、プロセスごとのコアファイル名のパターンを \fIpattern\fR に設定します。パターンには、「機能説明」で説明されている特殊な \fB%\fR 変数を含めることができます。\fB/\fR から始める必要はありません。\fB\fRパターンが \fB/\fR から始まっていない場合は、プロセスがコアファイルを生成したときのカレントディレクトリから相対的に判断されます。 
+.sp
+非特権ユーザーは、そのユーザーが所有するプロセスにのみ \fB-p\fR オプションを適用できます。\fBproc_owner\fR 特権を持つユーザーは、任意のプロセスにこのオプションを適用できます。プロセスごとのコアファイル名のパターンは、影響を受けるプロセスの将来の子プロセスに継承されます。\fBfork\fR(2) を参照してください。 
+.sp
+プロセス \fBID\fR が指定されていない場合、\fB-p\fR オプションは、親プロセス (通常、\fBcoreadm\fR を実行したシェル) についてプロセスごとのコアファイル名のパターンを \fIpattern\fR に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-P\fR \fIcontent\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定した各プロセス ID のプロセスごとのコアファイルコンテンツを \fIcontent\fR に設定します。コンテンツは、「機能説明」で説明されているトークンを使用して指定する必要があります。\fB\fR 
+.sp
+非特権ユーザーは、そのユーザーが所有するプロセスにのみ \fB-p\fR オプションを適用できます。\fBproc_owner\fR 特権を持つユーザーは、任意のプロセスにこのオプションを適用できます。プロセスごとのコアファイル名のパターンは、影響を受けるプロセスの将来の子プロセスに継承されます。\fBfork\fR(2) を参照してください。
+.sp
+プロセス \fBID\fR が指定されていない場合、\fB-P\fR オプションは、親プロセス (通常、\fBcoreadm\fR を実行したシェル) についてプロセスごとのファイルコンテンツを \fIcontent\fR に設定します。
+.RE
+
+.SH オペランド
+.sp
+.LP
+次のオペランドがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIpid\fR\fR
+.ad
+.sp .6
+.RS 4n
+プロセス \fBID\fR
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRコアファイル名パターンの設定
+.sp
+.LP
+ユーザーの \fB$HOME/.profile\fR または \fB$HOME/.login\fR から実行した場合、次のコマンドはログインセッション中に実行されるすべてのプロセスのコアファイル名のパターンを設定します。
+
+.sp
+.in +2
+.nf
+example$  coreadm -p core.%f.%p
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+プロセス \fBID\fR が省略されているため、現在実行されているシェルでプロセスごとのコアファイル名パターンが設定され、それがすべての子プロセスに継承されます。 
+
+.LP
+\fB例 2 \fRサブディレクトリへのユーザーのファイルのダンプ
+.sp
+.LP
+次のコマンドでは、ユーザーのすべてのコアダンプを、システムノード名によって判別される、ホームディレクトリの \fBcorefiles\fR サブディレクトリにダンプします。このコマンドは、多くの異なるマシンを使用し、共有ホームディレクトリを持つユーザーに役立ちます。
+
+.sp
+.in +2
+.nf
+example$  coreadm -p $HOME/corefiles/%n.%f.%p 1234
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR大域コアファイルリポジトリの選別
+.sp
+.LP
+次のコマンドでは、実行可能ファイルが \fB/usr/bin\fR または \fB/usr/sbin\fR から実行された場合にのみ大域リポジトリにコアファイルを生成するようにシステムを設定します。
+
+.sp
+.in +2
+.nf
+example# mkdir -p /var/cores/usr/bin
+example# mkdir -p /var/cores/usr/sbin
+example# coreadm -G all -g /var/cores/%d/%f.%p.%n
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/var/cores\fR\fR
+.ad
+.sp .6
+.RS 4n
+大域コアファイルの格納用に提供されているディレクトリです。
+.RE
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB0\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB1\fR
+.ad
+.sp .6
+.RS 4n
+システムコアファイル構成の取得または変更中に致命的エラーが発生しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB2\fR
+.ad
+.sp .6
+.RS 4n
+無効なコマンド行オプションが指定されました。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBgcore\fR(1), \fBpfexec\fR(1), \fBsvcs\fR(1), \fBinit\fR(1M), \fBsvcadm\fR(1M), \fBexec\fR(2), \fBfork\fR(2), \fBsetuid\fR(2), \fBtime\fR(2), \fBsyslog\fR(3C), \fBcore\fR(4), \fBprof_attr\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5), \fBsmf\fR(5)
+.SH 注意事項
+.sp
+.LP
+局所 (非大域) ゾーンでは、大域設定はそのゾーン内で実行中のプロセスに適用されます。また、大域ゾーンはすべてのゾーンで実行されるプロセスに適用されます。
+.sp
+.LP
+大域設定とは、システムまたはゾーン全体に適用される設定のことで、必ずしも大域ゾーンで有効になる設定を意味するものではありません。\fB\fR
+.sp
+.LP
+\fBcoreadm\fR サービスはサービス管理機能 \fBsmf\fR(5) により次のサービス識別子の下で管理されます。
+.sp
+.in +2
+.nf
+svc:/system/coreadm:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+\fB-g\fR、\fB-G\fR、\fB-i\fR、\fB-I\fR、\fB-e\fR、および \fB-d\fR の各オプションは、\fBsolaris.smf.manage.coreadm\fR および \fBsolaris.smf.value.coreadm\fR の両方の承認が付与されているユーザー、役割、またはプロファイルも使用できます。

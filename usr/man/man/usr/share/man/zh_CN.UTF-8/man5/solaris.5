@@ -1,0 +1,424 @@
+'\" te
+.\"  Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH solaris 5 "2011 年 8 月 9 日" "SunOS 5.11" "标准、环境和宏"
+.SH 名称
+solaris, ipkg \- Solaris 标记区域
+.SH 描述
+.sp
+.LP
+\fBsolaris\fR 标记使用标记区域框架（如 \fBbrands\fR(5) 中所述）运行与安装在全局区域中的同一软件一起安装的区域。使用 \fBsolaris\fR 标记时，系统软件必须始终与全局区域保持同步。区域中的系统软件包使用映像包管理系统进行管理。请参见 \fBpkg(5)\fR。
+.SS "配置与管理"
+.sp
+.LP
+\fBsolaris\fR 标记支持完全根非全局区域模型。所有必需的系统软件及任何其他软件包都安装在区域的专用文件系统中。区域只能位于其自己的 \fBzfs\fR(1M) 数据集中并且仅支持 ZFS。在安装或连接区域时，将自动创建 ZFS 数据集。如果无法创建 ZFS 数据集，区域也无法安装或连接。
+.SH 子命令
+.sp
+.LP
+以下 \fBsolaris\fR 标记特定的子命令选项受 \fBzoneadm\fR(1M) 支持。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattach\fR [\fB-a\fR \fIarchive\fR | \fB-d\fR \fIpath\fR | \fB-z\fR \fIZBE\fR] [\fB-u\fR] [\fB-c\fR \fIconfig_profile\fR\fB\&.xml \fR | \fIdir\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将指定的 \fBsolaris\fR 标记区域映像连接到区域。如果 \fB-a\fR 和 \fB-d\fR 均未指定，则假定区域的区域路径已经与区域文件一起正确安装。\fBzoneadm\fR 会在计算机上检查区域要连接到的包级别。如果区域通过全局区域所依赖的包（具有不同的版本号）不同于源计算机上的相关包，\fBzoneadm\fR 将报告这些冲突并且不执行连接。 
+.sp
+如果目标系统只有比源系统更新的相关软件包（修订版本号较高)，则可以使用 \fB-u\fR 或 \fB-U\fR 选项更新相关软件包以匹配位于新系统上的软件包修订版。
+.sp
+连接区域时，可能会存在多个区域引导环境 (zone boot environment, \fBZBE\fR)，\fBattach\fR 子命令必须确定要连接其中哪一个。选择条件如下所示，并使用第一个匹配项。
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果使用 \fB-z\fR 选项来指定 \fBZBE\fR，则选择它。 
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果只有一个 \fBZBE\fR，则选择它。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果只有一个 \fBZBE\fR 与该全局区域引导环境关联，则选择它。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果只有一个活动的 \fBZBE\fR 与该全局区域引导环境关联，则选择它。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果只有一个活动的 \fBZBE\fR，则选择它。 
+.RE
+如果选定的 \fBZBE\fR 与其他全局区域引导环境关联，则 \fBZBE\fR 将被克隆，并且连接选定 \fBZBE\fR 的克隆。有关引导环境的更多信息，请参见 \fBbeadm\fR(1M)。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarchive\fR\fR
+.ad
+.sp .6
+.RS 4n
+到已安装 Oracle Solaris 标记区域的 \fBcpio\fR(1) 或 \fBpax\fR(1) \fBxustar\fR 或 \fBzfs\fR(1M) 归档文件的路径。
+.sp
+\fBcpio\fR 和 \fBpax\fR 归档文件必须采用区域路径或区域根路径，并且不得包含绝对路径（路径不得以 \fB/\fR 开头）。ZFS 归档文件可以是 \fBzonepath dataset\fR、\fBzone rpool dataset\fR 或单独区域引导环境。 
+.sp
+如果 ZFS 归档文件包含多个 \fBZBE\fR，则连接可能失败，并显示一条消息，指示必须使用 -z 选项连接特定的 \fBZBE\fR。在这种情况下，仍然提取归档文件中的 \fBZBE\fR，并且该区域将无法使用 -a 和 -d 选项，直到使用 -z 选项连接提取的一个 \fBZBE\fR。如果不希望连接提取的一个 \fBZBE\fR，而是删除 \fBZBE\fR，则使用 \fBzoneadm -z <zone> mark incomplete\fR，后跟 \fBzoneadm -z <zone> uninstall\fR。
+.sp
+\fBcpio\fR 和 ZFS 归档文件可以使用 \fBgzip\fR 或 \fBbzip2\fR 进行压缩。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供从系统信息库安装后将应用的配置文件或配置文件的目录。
+.sp
+所有配置文件必须具有 \fB\&.xml\fR 扩展名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域路径目录的路径，该目录属于 \fBipkg\fR 标记区域的区域路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+更新区域中的最少数量的软件包，以允许区域的软件包与在全局区域中安装的软件包兼容。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR\fR
+.ad
+.sp .6
+.RS 4n
+将区域中的所有软件包更新为与安装在全局区域中的软件包兼容的最新版本。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIZBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+连接指定的现有区域引导环境。如果指定的区域引导环境与其他全局区域关联，则指定的 \fBZBE\fR 将被克隆，并连接 \fBZBE\fR 的克隆。 
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclone\fR [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供从系统信息库安装后将应用的配置文件或配置文件的目录。
+.sp
+所有配置文件必须具有 \fB\&.xml\fR 扩展名。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall\fR [\fB-m\fR \fImanifest.xml\fR] [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR]\fR
+.ad
+.br
+.na
+\fB\fBinstall\fR [\fB-a\fR \fIarchive \fR | \fB-d\fR \fIpath\fR | \fB-z\fR \fIZBE\fR] [\fB-p\fR] [\fB-s\fR] [\fB-u\fR] [\fB-v\fR] [\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fI dir\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBsolaris\fR 标记安装程序支持从软件信息库或从运行同一发行版的已安装系统映像安装区域。此映像可以是 \fBcpio\fR(1)、\fBpax\fR(1) \fBxustar\fR 或 ZFS 归档文件。\fBcpio\fR 或 ZFS 归档文件可以使用 \fBgzip\fR 或 \fBbzip2\fR 进行压缩。该映像也可以是到系统根目录树顶级的路径，或者是预存在的区域路径。 
+.sp
+如果 \fB-a\fR、\fB-d\fR 或 \fB-z\fR 选项都未指定，则从系统信息库安装区域。要在区域中安装其他软件包，可以复制并编辑缺省区域清单 \fB/usr/share/auto_install/manifest/zone_default.xml\fR 以包含所需的软件包。应使用 \fB-m\fR 选项指定安装该修改的清单。
+.sp
+要从系统映像安装区域，需要使用 \fB-a\fR、\fB-d\fR、\fB-z\fR 选项之一。在此例中还需要使用 \fB-u\fR 或 \fB-p\fR 选项。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR \fIarchive\fR\fR
+.ad
+.sp .6
+.RS 4n
+到已安装系统的 \fBcpio\fR(1) 或 \fBpax\fR(1) \fBxustar\fR 或 ZFS 归档文件的路径。
+.sp
+如果 ZFS 归档文件包含多个引导环境，则安装了活动的引导环境。如果安装无法确定哪个引导环境是活动的引导环境，安装程序将提供提取的引导环境列表，并建议一个使用 \fB-z\fR 选项的连接命令来连接特定的引导环境。
+.sp
+\fBcpio\fR 和 ZFS 归档文件可以使用 \fBgzip\fR 或 \fBbzip2\fR 进行压缩。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIconfig_profile\fR\fB\&.xml\fR | \fIdir\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供从系统信息库安装后将应用的配置文件或配置文件的目录。
+.sp
+所有配置文件必须具有 \fB\&.xml\fR 扩展名。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域路径目录的路径，该目录属于 \fBipkg\fR 标记区域的区域路径。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fImanifest.xml\fR\fR
+.ad
+.sp .6
+.RS 4n
+将指定给自动化安装程序的清单文件。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+从归档文件或路径安装区域后，保留系统配置。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+无提示安装
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+安装后取消配置系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+安装过程的详细输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIZBE\fR\fR
+.ad
+.sp .6
+.RS 4n
+连接指定的现有区域引导环境。如果指定的区域引导环境与其他全局区域关联，则指定的 \fBZBE\fR 将被克隆，并连接 \fBZBE\fR 的克隆。 
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建 ZFS 归档文件进行安装
+.sp
+.LP
+以下示例显示如何创建归档文件，以便进行物理到虚拟 (\fBP2V\fR) 迁移。这将在未配置、安装或运行非全局区域的系统的全局区域中执行。它假设根池名为 \fBrpool\fR。
+
+.sp
+.LP
+首先，创建整个根池的快照。
+
+.sp
+.in +2
+.nf
+# zfs snapshot -r rpool@p2v
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+然后，销毁与交换设备和转储设备关联的快照，因为在目标系统上不需要它们。
+
+.sp
+.in +2
+.nf
+# zfs destroy rpool/swap@p2v
+# zfs destroy rpool/dump@p2v
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+最后，生成使用 \fBgzip\fR 压缩的 ZFS 复制流归档文件。在本示例中，它存储在远程 NFS 服务器上。
+
+.sp
+.in +2
+.nf
+# zfs send -R rpool@p2v | gzip > /net/somehost/p2v/p2v.zfs.gz
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 ZFS 归档文件安装区域
+.sp
+.LP
+以下示例使用示例 1 中的归档文件安装区域。
+
+.sp
+.in +2
+.nf
+# zoneadm -z p2vzone install -a /net/somehost/p2v/p2v.zfs.gz -p
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR创建 ZFS 归档文件进行连接
+.sp
+.LP
+以下示例显示如何创建归档文件，以便进行虚拟到虚拟 (\fBV2V\fR) 迁移。它假设该区域的 \fBzonepath\fR 为 \fB/zones/v2vzone\fR。
+
+.sp
+.LP
+首先，确定 \fBzonepath\fR 数据集的名称。
+
+.sp
+.in +2
+.nf
+# dataset=$(zfs list -H -o name /zones/v2vzone)
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+然后，创建区域数据集的快照。
+
+.sp
+.in +2
+.nf
+# zfs snapshot -r $dataset@v2v
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+最后，生成使用 \fBbzip2\fR 压缩的 ZFS 自包含递归流。
+
+.sp
+.in +2
+.nf
+# zfs send -rc $dataset@v2v | bzip2 > /net/somehost/v2v/v2v.zfs.bz2
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR使用 ZFS 归档文件连接区域
+.sp
+.LP
+以下示例使用 ZFS 归档文件连接区域。
+
+.sp
+.in +2
+.nf
+# zoneadm -z v2vzone attach -a /net/somehost/v2v/v2v.zfs.bz2
+.fi
+.in -2
+.sp
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/zones
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBcpio\fR(1)、\fBpax\fR(1)、\fBbeadm\fR(1M)、\fBsysconfig\fR(1M)、\fBzfs\fR(1M)、\fBzlogin\fR(1)、\fBzonename\fR(1)、\fBzoneadm\fR(1M)、\fBzonecfg\fR(1M)、\fBattributes\fR(5)、\fBbrands\fR(5)、\fBprivileges\fR(5)、\fBzones\fR(5)
+.sp
+.LP
+\fBpkg(5)\fR，在 IPS 整合中提供

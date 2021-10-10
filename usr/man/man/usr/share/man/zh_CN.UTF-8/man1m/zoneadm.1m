@@ -1,0 +1,696 @@
+'\" te
+.\" Copyright (c) 2006, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH zoneadm 1M "2011 年 8 月 10 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+zoneadm \- 管理区域
+.SH 用法概要
+.LP
+.nf
+\fBzoneadm\fR \fB-z\fR \fIzonename\fR [\fB-u\fR \fIuuid-match\fR] \fIsubcommand\fR 
+     [\fIsubcommand_options\fR]
+.fi
+
+.LP
+.nf
+\fBzoneadm\fR [\fB-R\fR \fIroot\fR] [\fB-z\fR \fIzonename\fR] [\fB-u\fR \fIuuid-match\fR] list 
+     [\fIlist_options\fR]
+.fi
+
+.LP
+.nf
+\fBzoneadm\fR [\fB-R\fR \fIroot\fR] \fB-z\fR \fIzonename\fR [\fB-u\fR \fIuuid-match\fR] mark incomplete
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzoneadm\fR 实用程序可用于管理系统区域。区域是指由操作系统运行时维护的应用程序容器。
+.SH 安全
+.sp
+.LP
+一旦将进程放入 \fB0\fR 区域之外的区域，此进程或其任何子进程便不能更改区域。
+.SH 安全
+.sp
+.LP
+除了简单的列表和帮助功能，\fBzoneadm\fR 只能由在全局系统区域中进行操作的用户使用，且必须使用有效的根目录用户 ID 来执行。此外，用户要执行特定的子命令还必须经过授权。
+.sp
+.LP
+\fBzoneadm\fR 会检查授权字符串，这些字符串可能会选择性地包括用作后缀的指定 \fIzonename\fR，以及用作前缀的斜杠字符。如果省略区域名称，用户将有权进入任何区域。
+.sp
+.LP
+只提供信息的子命令（例如 \fBhelp\fR 或 \fBlist\fR）不需任何授权。所有其他子命令都需要授权 \fBsolaris.zone.manage/\fR\fIzonename\fR。
+.sp
+.LP
+一旦将进程放入 0 区域之外的区域，该进程或其任何子进程便不能更改区域。
+.SH 选项
+.sp
+.LP
+所支持的选项如下： 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR \fIroot\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定备用根（引导环境）。此选项只能与 \fBlist\fR 和 \fBmark\fR 子命令配合使用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR \fIuuid-match\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的唯一标识符，由 \fBlibuuid\fR(3LIB) 分配。如果该选项存在且参数为非空字符串，则会选择与 \fBUUID\fR 相匹配的区域（如果存在这样的区域），而非 \fB-z\fR 选项指定的区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIzonename\fR\fR
+.ad
+.sp .6
+.RS 4n
+区域的字符串标识符。 
+.RE
+
+.SH 子命令
+.sp
+.LP
+会导致破坏性操作或丢失工作的子命令有一个强制执行操作的 \fB-F\fR 标志。如果输入来自某个终端设备，则当此类命令不带 \fB-F\fR 标志时，系统会提示用户；否则，如果此类命令不带 \fB-F\fR 标志，则系统将禁止操作，并将诊断消息写入标准错误中。如果区域安装或卸载中断，该区域将处于未完成状态。使用 uninstall 可将此类区域重置为已配置状态。
+.sp
+.LP
+支持以下子命令：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBattach\fR [\fB-u\fR] [\fB-F\fR] [\fB-n\fR \fIpath\fR] [\fIbrand-specific options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fBattach\fR 子命令获取从某个系统分离的区域，然后将该区域连接到新的系统。因此，我们建议（而非要求）您在进行"连接"操作之前，先运行 \fBdetach\fR 子命令。将新区域设置为已配置状态后，可使用 \fBattach\fR 子命令来设置区域根目录，不必以新区域的形式来安装该区域。
+.sp
+可使用 \fB-F\fR 选项在未经验证的情况下将区域强行设置为 "installed"（已安装）状态。此选项应慎用，因为在将区域从源系统移至无法正常托管该区域的目标系统时，使用此选项会令区域处于不受支持的状态。\fB-n\fR 选项可用于执行 \fBattach\fR 子命令的"预运行"。此选项将 \fBdetach\fR \fB-n\fR 子命令的输出用作输入，可用于确认是否存在冲突问题（如网络设备不兼容），以及主机能否支持该区域。路径可以是 \fB-\fR，用于读取来自标准输入设备的输入。
+.sp
+区域的标记可能包括其他用于管理区域连接方式的选项。具体标记信息请参见 \fBbrands\fR(5)。
+.sp
+要连接的区域必须首先使用 \fBzonecfg\fR（请参见 \fBzonecfg\fR(1M)）命令进行配置。运行 \fBattach\fR \fB-n\fR 时，上述规定不适用。
+.sp
+请使用以下命令来连接区域：
+.sp
+.in +2
+.nf
+# \fBzoneadm -z my-zone attach\fR
+.fi
+.in -2
+.sp
+
+请使用以下命令来连接和更新区域：
+.sp
+.in +2
+.nf
+# \fBzoneadm -z my-zone attach -u\fR
+.fi
+.in -2
+.sp
+
+缺少 \fB-n\fR 选项时（如上所示），必须先停止源区域，然后才能使用该子命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR \fIpath\fR\fR
+.ad
+.sp .6
+.RS 4n
+读取区域清单并在不实际执行连接操作的情况下，验证目标机器是否拥有托管该区域所需的正确配置。在执行试验性附加之前，不必在新主机上配置目标系统中的区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+更新连接的区域。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBboot\fR [\fB-w\fR|\fB-W\fR] [\fB--\fR \fIboot_options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+引导（或激活）指定区域。
+.sp
+\fBboot\fR 子命令具有以下互斥选项：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-w\fR\fR
+.ad
+.sp .6
+.RS 4n
+引导包含可写根的区域，有效地覆盖区域配置中的 \fBfile-mac-profile\fR 设置。此选项仅对本次引导周期有效：后续重新引导将引导区域，使 \fBfile-mac-profile\fR 再次有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-W\fR\fR
+.ad
+.sp .6
+.RS 4n
+以瞬态读取/写入模式引导区域；当区域完成自组合时，该区域将以只读模式重新引导。对非只读根区域没有任何影响。
+.RE
+
+支持以下 \fIboot_options\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIaltinit\fR\fR
+.ad
+.sp .6
+.RS 4n
+选择一个备用可执行文件作为初始进程。\fIaltinit\fR 是指向可执行文件的有效路径。缺省的初始进程为 \fBinit\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIsmf_options\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIsmf_options\fR 包括两类控制服务管理工具引导行为的选项：恢复选项和消息选项。
+.sp
+消息选项决定了 \fBsmf\fR(5) 在引导过程中显示的消息的类型和数量。服务选项决定了用于引导系统的服务。有关 \fB-m\fR 子选项的列表，请参见 \fBkernel\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅引导至里程碑 \fBsvc:/milestone/single-user:default\fR。此里程碑相当于 init 级别 \fBs\fR。请参见 \fBsvc.startd\fR(1M) 和 \fBinit\fR(1M).
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclone\fR [\fB-m\fR \fIcopy\fR] [\fB-s\fR \fIzfs_snapshot\fR] [\fIbrand-specific options\fR] \fIsource_zone\fR\fR
+.ad
+.sp .6
+.RS 4n
+安装某个区域时，可直接复制现有的已安装区域。该子命令是一种备选的区域安装方法。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIcopy\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制克隆成为副本，即使可以进行"\fBZFS\fR clone"也是如此。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIzfs_snapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定用作克隆源的 \fBZFS\fR 快照的名称。此处的 \fIsnapshot\fR 必须是从之前的 \fBzoneadm\fR clone 安装获取的源区域的 \fIsnapshot\fR。
+.RE
+
+必须先停止源区域，然后才能使用该子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdetach\fR [\fB-F\fR | \fB-n\fR]\fR
+.ad
+.sp .6
+.RS 4n
+分离指定的区域。将区域从一个系统移至另一个系统时，第一步是分离该区域。区域迁移的完整过程如下：分离区域，将 \fIzonepath\fR 目录移至新主机，然后再将该区域连接到新主机。区域分离后，将一直处于已配置状态。如果尝试安装某个已分离的配置区域或者要克隆到该区域，您将接收到一条错误消息，且 \fBinstall\fR 或 \fBclone\fR 子命令无法继续。\fB-n\fR 选项可用于执行 \fBdetach\fR 子命令的"预运行"。在这一过程中，会生成运行 \fBattach\fR \fB-n\fR 子命令所需的信息，该信息可用于确认是否存在冲突问题（如网络设备不兼容）或主机能否支持该区域。该信息将发送至标准输出，并可保存到文件中或传输至 \fBattach\fR \fB-n\fR 子命令。\fB-F\fR 选项可用于强制分离区域，而无需对现有的 \fIzonepath\fR 执行验证检查。
+.sp
+请使用以下命令来分离区域： 
+.sp
+.in +2
+.nf
+# \fBzoneadm -z my-zone detach\fR
+.fi
+.in -2
+.sp
+
+除非使用 \fB-n\fR 选项，否则必须停止源区域，然后才能使用该子命令。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制分离区域而无需对区域的存储执行验证检查。如果该主机无法再访问 \fIzonepath\fR 的存储，则通常使用该选项。当区域的存储已故障转移到备用主机（手动执行或作为群集的一部分）时，通常出现此情况。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+在不实际分离某区域的情况下，生成关于该运行区域的区域清单。源系统中区域的状态不会改变。区域清单会被发送到 \fBstdout\fR。全局管理员可以将此输出定向到某一文件，或将此输出传输到远程命令以便立即在目标主机上进行验证。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhalt\fR\fR
+.ad
+.sp .6
+.RS 4n
+停止指定的区域。\fBhalt\fR 跳过在区域内运行关闭脚本这一步骤，并删除区域的运行时资源。
+.sp
+另请参见下面的 \fBshutdown\fR 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR [\fIsubcommand\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示一般帮助。如果您指定 \fIsubcommand\fR，则会显示有关 \fIsubcommand\fR 的帮助。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinstall\fR [\fIbrand-specific options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将指定区域安装到系统中。该子命令会自动首先尝试进行验证。如果验证步骤失败，则会拒绝安装。请参见 \fBverify\fR 子命令。
+.sp
+区域的标记可能包括其他用于管理区域中软件安装方式的选项。具体标记信息请参见 \fBbrands\fR(5)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fIlist_options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示当前区域或指定区域（如果指定）的名称。 
+.sp
+缺省情况下，列出所有运行区域。与 \fBzoneadm\fR \fB-z\fR \fIzonename\fR 选项结合使用时，此子命令只列出指定区域（不管其状态如何）。这种情况下，将禁用 \fB-i\fR 和 \fB-c\fR 选项。
+.sp
+如果既未给出 \fB-i\fR 选项，也未给出 \fB-c\fR 选项，则会列出所有运行区域。 
+.sp
+支持以下 \fIlist_options\fR：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示所有已配置区域。此选项将覆盖 \fB-i\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+将显示扩展到所有已安装区域。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+请求可供机器解析的输出。输出格式是一系列行，每个区域一行，其中包含以冒号分隔的字段。这些字段包括：
+.sp
+.in +2
+.nf
+zoneid:zonename:state:zonepath:uuid:brand:ip-type:\e
+r/w:file-mac-profile
+.fi
+.in -2
+.sp
+
+如果 \fIzonepath\fR 包含嵌入的冒号，则可通过反斜杠"\:"对这些冒号进行转义，并可通过使用 shell 函数 \fBread\fR(1) 及环境变量 \fBIFS\fR 来解析该反斜杠。\fIuuid\fR 值是在安装区域时由 \fBlibuuid\fR(3LIB) 分配的，可用于标识存在于备用引导环境中或已在该环境中重命名的同一区域。任何可解析 \fBzoneadm list -p\fR 命令输出的软件都必须能够处理将来可能会添加的任何字段。
+.sp
+\fB-a\fR 和 \fB-d\fR 选项相互排斥。如果 \fB-v\fR 和 \fB-p\fR 均未使用，则只列出区域名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示详细信息，包括区域名称、ID、当前状态、根目录、标记类型、ip-type 和选项。
+.sp
+\fB-a\fR 和 \fB-d\fR 选项相互排斥。如果 \fB-v\fR 和 \fB-p\fR 均未使用，则只列出区域名称。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmark incomplete\fR\fR
+.ad
+.sp .6
+.RS 4n
+将某个已安装区域的状态更改为 "incomplete"（不完整）。对系统的管理性更改导致区域不可用或不一致时，此命令可能会很有用。此更改无法撤消（除非采用卸载整个区域的方式）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmove\fR \fInew_zonepath\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIzonepath\fR 移至 \fInew_zonepath\fR。必须先停止区域，然后才能使用该子命令。\fInew_zonepath\fR 必须是本地文件系统，适用针对 \fIzonepath\fR 的一般限制。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBready\fR\fR
+.ad
+.sp .6
+.RS 4n
+让区域做好运行应用程序的准备，但不在区域中启动任何用户进程。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreboot\fR [\fB-\(em\fR \fIboot_options\fR]\fR
+.ad
+.sp .6
+.RS 4n
+重新启动区域。这等效于 \fBhalt\fR\fBboot\fR 序列（关机脚本未运行）。
+.sp
+有关支持的引导选项，请参见 \fBboot\fR 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshutdown\fR [\fB-r\fR [\fB-\(em\fR \fIboot_options\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+完全关闭区域（等效于在区域中运行 \fB/usr/sbin/init 0\fR）。\fBshutdown\fR 子命令会一直等到区域成功关闭；如果关机过程需要很长时间，可以使用 \fBzoneadm\fR\fBhalt\fR 强制停止该区域。
+.sp
+如果指定了 \fB-r\fR，则重新引导区域。有关支持的引导选项，请参见 \fBboot\fR 子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninstall [\fR\fB-F\fR\fB]\fR\fR
+.ad
+.sp .6
+.RS 4n
+从系统中卸载指定区域。请慎用此子命令。它会删除指定区域的 \fIzonepath\fR 下的所有文件。您可以使用 \fB-F\fR 标志强制执行操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBverify\fR\fR
+.ad
+.sp .6
+.RS 4n
+检查确认指定区域的配置可以安全地安装在计算机上。下面是按 \fBresource/property\fR（资源/属性）类型分类的检查：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIzonepath\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIzonepath\fR 及其父目录均存在，并属于相应模式的根目录。相应模式是指当 \fIzonepath\fR 为 \fB700\fR 时，其父目录既不是 \fBgroup\fR，也不是 \fBworld-writable\fR 之类的目录。\fIzonepath\fR 不通过 NFS 挂载。不存在名为 root 的 \fIzonepath\fR 子目录。
+.sp
+如果 \fIzonepath\fR 不存在，\fBverify\fR 子命令不会失败，而只会警告用户：后续安装会尝试创建该目录并设置相应的权限。如果出现错误，后续的 \fBverify\fR 子命令可能会失败。
+.sp
+\fIzonepath\fR 不能是符号链接。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+任何 \fBfs\fR 资源都会对其 \fItype\fR 值进行检查。如果值是 \fBproc\fR、\fBmntfs\fR、\fBautofs\fR 或 \fBnfs\fR 中的一个，或者文件系统在 \fB/usr/lib/fs/\fI<fstype>\fR/mount\fR 下没有关联的挂载二进制数据，则会报告一个错误。
+.sp
+这是一种将 \fIdirectory\fR 设置为相对路径时会出现的错误。
+.sp
+这是一种将 \fBraw\fR 所指定的路径设置为相对路径或者在 \fB/usr/lib/fs/\fI<fstype>\fR/fsck\fR 下没有给定文件系统类型的 \fBfsck\fR 二进制数据时会出现的错误。如果存在相应的 \fBfsck \fR 二进制数据但未指定 \fBraw\fR 路径，则也会出现这种错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnet\fR\fR
+.ad
+.sp .6
+.RS 4n
+所有物理网络接口都存在。所有网络地址资源都属于下面某种类型：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有效的 IPv4 地址，可以后接 \fB/\fR 和前缀长度；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+有效的 IPv6 地址，必须后接 \fB/\fR 和前缀长度；
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+可解析为 IPv4 地址的主机名。
+.RE
+请注意，不支持解析为 IPv6 地址的主机名。
+.sp
+物理接口名称即网络接口名称。
+.sp
+可将区域配置为专用 IP 区域或共享 IP 区域。共享 IP 区域必须同时设置物理属性和地址属性。专用 IP 区域必须设置物理属性，不能设置地址属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBanet\fR\fR
+.ad
+.sp .6
+.RS 4n
+它验证用来自动创建 VNIC 的下游链路 (lower-link) 是否存在。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrctl\fR\fR
+.ad
+.sp .6
+.RS 4n
+它也可以用于验证任何定义的资源控制值在当前计算机上是否有效。这意味着特权级别为 \fBprivileged\fR（特权），限制低于当前定义的系统值，且定义的操作与给定资源控制的有效操作一致。 
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR使用 \fB-m\fR 选项
+.sp
+.LP
+以下命令说明了如何使用 \fB-m\fR 选项。
+
+.sp
+.in +2
+.nf
+# \fBzoneadm boot -- -m verbose\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR使用 \fB-i\fR 选项
+.sp
+.LP
+以下命令说明了如何使用 \fB-i\fR 选项。
+
+.sp
+.in +2
+.nf
+# \fBzoneadm boot -- -i /usr/sbin/init\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用 \fB-s\fR 选项
+.sp
+.LP
+以下命令说明了如何使用 \fB-s\fR 选项。
+
+.sp
+.in +2
+.nf
+# \fBzoneadm boot -- -s\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+用法无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/zones
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBread\fR(1)、\fBsvcs\fR(1)、\fBzlogin\fR(1)、\fBzonename\fR(1)、\fBinit\fR(1M)、\fBkernel\fR(1M)、\fBsvcadm\fR(1M)、\fBsvc.startd\fR(1M)、\fBsvc.startd\fR(1M)、\fBzonecfg\fR(1M)、\fBlibuuid\fR(3LIB)、\fBattributes\fR(5)、\fBbrands\fR(5)、\fBMWAC\fR(5)、\fBsmf\fR(5)、\fBzones\fR(5)
+.SH 附注
+.sp
+.LP
+\fBzones\fR(5) 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/system/zones:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcadm\fR(1M) 来执行对此服务的管理操作（如启用、禁用或请求重新启动）。可以使用 \fBsvcs\fR(1) 命令来查询服务的状态。
+.sp
+.LP
+在安装或升级只读区域之后进行第一次引导，或以 \fB-w\fR/\fB-W\fR 模式引导区域时，将禁用只写保护。请注意在其他方面对该区域进行保护。

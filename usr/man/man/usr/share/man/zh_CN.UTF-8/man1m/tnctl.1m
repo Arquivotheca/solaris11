@@ -1,0 +1,251 @@
+'\" te
+.\" Copyright (c) 2008, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH tnctl 1M "2011 年 6 月 30 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+tnctl \- 配置 Trusted Extensions 网络参数
+.SH 用法概要
+.LP
+.nf
+\fB/usr/sbin/tnctl\fR [\fB-dfv\fR] [\fB-h\fR \fIhost\fR [/\fIprefix\fR] [:\fItemplate\fR]]
+     [\fB-m\fR \fIzone\fR:\fImlp\fR:\fIshared-mlp\fR][\fB-t\fR \fItemplate\fR [:\fIkey=val\fR [;\fIkey=val\fR]]] 
+     [\fB-HTz\fR] \fIfile\fR]
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBtnctl\fR 提供了一个接口来处理 Solaris 内核中的可信网络参数。
+.sp
+.LP
+作为 Solaris Trusted Extensions 初始化的一部分，在系统引导期间，\fBtnctl\fR 通过 \fBsmf\fR(5) 脚本在全局区域中运行。\fBtnctl\fR 命令不是计划在常规系统管理过程中使用的。相反，如果本地可信网络数据库文件已修改，则管理员首先发出 \fBtnchkdb\fR(1M ) 来检查语法，然后使用以下命令刷新内核副本：
+.sp
+.in +2
+.nf
+# \fBsvcadm restart svc:/network/tnctl\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有关在正在运行的系统上更改远程主机和模板信息的风险，请参见\fB\fR"警告"部分。
+.SH 选项
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+从内核中删除匹配的条目。缺省行为是添加新条目。
+.sp
+在删除 MLP 时，MLP 范围必须完全匹配。MLP 指定为以下格式：
+.sp
+.in +2
+.nf
+\fIport\fR[-\fIport\fR]/\fIprotocol\fR
+.fi
+.in -2
+.sp
+
+其中 \fIport\fR 可以是 1 到 65535 之间的数字。或任何已知服务（请参见 \fBservices\fR(4)），protocol 可以是 1 到 255 之间的数字，或任何已知协议（请参见 \fBprotocols\fR(4)）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+在加载命令行上指定的条目之前刷新所有内核条目。除非至少一个条目解析成功，否则不进行刷新。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+打开详细模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost\fR[/\fIprefix\fR][:\fItemplate\fR]\fR
+.ad
+.sp .6
+.RS 4n
+为指定的 \fIhost\fR 更新本地主机上的内核远程主机高速缓存，或者，如果给定了模板名称，则更改内核的高速缓存以使用指定的 \fItemplate\fR。如果没有指定 \fIprefix\fR，则根据用于解释 \fBtnrhdb\fR 的规则确定隐式前缀长度。如果指定了 \fB-d\fR，则不能指定模板名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR \fIzone\fR:\fImlp\fR:\fIshared-mlp\fR\fR
+.ad
+.sp .6
+.RS 4n
+为指定的 \fIzone\fR 修改内核的多级别端口 (multilevel port, MLP) 配置高速缓存。\fIzone\fR 指定要更新的区域。\fImlp\fR 和 \fIshared-mlp\fR 为特定于区域的 IP 地址和共享的 IP 地址指定 MLP。\fIshared-mlp\fR 字段仅在全局区域中有效。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItemplate\fR[\fIkey=val\fR[;\fIkey=val\fR]]\fR
+.ad
+.sp .6
+.RS 4n
+为 \fItemplate\fR 更新内核模板高速缓存，或者，如果给定了 \fIkey=val\fR 对的列表，则更改内核的高速缓存以使用指定的条目。如果指定了 \fB-d\fR，则不能指定 \fIkey=val\fR 对。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIfile\fR 中的所有模板条目加载到内核高速缓存中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 \fIfile\fR 中的所有远程主机条目加载到内核高速缓存中。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅将 \fIfile\fR 中的全局区域的 MLP 加载到内核高速缓存中。要为非全局区域重新加载 MLP，请重新引导区域：
+.sp
+.in +2
+.nf
+# \fBzoneadm -z\fR \fInon-global zone\fR \fBreboot\fR
+.fi
+.in -2
+.sp
+
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/trusted
+_
+接口稳定性Uncommitted（未确定）
+.TE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信网络远程主机数据库
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnrhtp\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信网络远程主机模板
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/security/tsol/tnzonecfg\fR\fR
+.ad
+.sp .6
+.RS 4n
+可信区域配置数据库
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/nsswitch.conf\fR\fR
+.ad
+.sp .6
+.RS 4n
+名称服务转换器的配置文件
+.RE
+
+.SH 另请参见
+.sp
+.LP
+\fBsvcs\fR(1)、\fBsvcadm\fR(1M)、\fBtninfo\fR(1M)、\fBtnd\fR(1M)、\fBtnchkdb\fR(1M)、\fBzoneadm\fR(1M)、\fBnsswitch.conf\fR(4)、\fBprotocols\fR(4)、\fBservices\fR(4)、\fBattributes\fR(5)、\fBsmf\fR(5)
+.sp
+.LP
+\fISolaris Trusted Extensions Administrator\&'s Procedures\fR
+.SH 警告
+.sp
+.LP
+当网络处于运行状态时更改模板可能会改变某些主机（数量不定）的安全视图。
+.SH 附注
+.sp
+.LP
+仅当系统配置有 Trusted Extensions 时，本手册页中介绍的功能才可用。
+.sp
+.LP
+\fBtnctl\fR 服务由服务管理工具 \fBsmf\fR(5) 管理，其服务标识符为：
+.sp
+.in +2
+.nf
+svc:/network/tnctl
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+可以使用 \fBsvcs\fR(1) 查询该服务的状态。可以使用 \fBsvcadm\fR(1M) 对该服务执行管理操作（如刷新内核高速缓存），如下所示：
+.sp
+.in +2
+.nf
+svcadm restart svc:/network/tnctl
+.fi
+.in -2
+.sp
+

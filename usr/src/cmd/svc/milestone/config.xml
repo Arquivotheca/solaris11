@@ -1,0 +1,251 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+
+ NOTE:  This service manifest is not editable; its contents will
+ be overwritten by package or patch operations, including
+ operating system upgrade.  Make customizations in a different
+ file.
+-->
+<service_bundle type='manifest' name='system:milestone-config'>
+
+<service
+	name='milestone/config'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true'/>
+
+	<single_instance/>
+
+	<!-- milestone/config has to depend upon system/filesystem/minimal,
+	     since it works with following assumptions which in general
+	     are not guaranteed until system/filesystem/minimal comes online:
+	      - writable root filesystem
+	      - mounted /usr filesystem
+	      - mounted /var filesystem (can be created as a separate
+                filesystem in ROZR type of zone)
+        -->
+	<dependency name='fs-minimal'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/system/filesystem/minimal:default' />
+	</dependency>
+
+	<!-- system/device/local takes care of populating device tree
+	     during first post-install boot of global zone. This is one
+	     of prerequisites which dladm(1m) depends on (in global zone only)
+	     in order to work correctly. dladm(1m) is consumed by System
+	     Configuration Interactive tool for obtaining information about
+	     network interfaces. -->
+	<dependency name='device-local'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/system/device/local:default' />
+	</dependency>
+
+	<!-- Dependency on network/datalink-management guarantees that network
+             interfaces eligible for configuration can be discovered by System
+             Configuration Interactive tool. -->
+	<dependency name='datalink-management'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/network/datalink-management' />
+	</dependency>
+
+	<!-- Make sure that unconfiguration step is finished before
+	     configuration one is initiated. -->
+	<dependency name='milestoneconfig_milestone_unconfig'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/milestone/unconfig:default' />
+	</dependency>
+
+	<!-- manifest-import is expected to
+	     * apply System Configuration profiles residing
+	       in /etc/svc/profile/site/ directory.
+	     * clean up configuration of this service (as related smf profile
+	       was removed. -->
+	<dependent name='milestoneconfig_manifest_import'
+	    grouping='require_all'
+	    restart_on='none'>
+		<service_fmri
+		    value='svc:/system/manifest-import:default' />
+	</dependent>
+
+        <dependent
+                name='milestoneconfig_self-assembly-complete'
+                grouping='optional_all'
+                restart_on='none'>
+                <service_fmri value='svc:/milestone/self-assembly-complete' />
+        </dependent>
+
+	<dependent
+	    name='milestoneconfig_singleuser'
+            grouping='require_all'
+            restart_on='none'>
+            <service_fmri value='svc:/milestone/single-user' />
+	</dependent>
+
+	<!-- Following services can be configured by System Configuration
+	     Interactive (SCI) tool invoked from this (milestone/config) smf
+	     service. Thus make sure those services are not started before
+	     SCI tool finishes its job. -->
+	<dependent
+	    name='milestoneconfig_system_config-user'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/system/config-user' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_network_install'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/network/install' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_network_physical_default'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/network/physical:default' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_name_service_switch'
+	    grouping='optional_all'
+	    restart_on='none'>
+	    <service_fmri value='svc:/system/name-service/switch:default' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_network_dns_client'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/network/dns/client' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_network_ldap_client'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/network/ldap/client' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_network_nis_client'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/network/nis/client' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_network_nis_domain'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/network/nis/domain' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_system_identity_node'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/system/identity:node' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_system_keymap'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/system/keymap' />
+	</dependent>
+
+	<dependent
+	    name='milestoneconfig_console_login'
+            grouping='optional_all'
+            restart_on='none'>
+            <service_fmri value='svc:/system/console-login' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/milestone-config start'
+		timeout_seconds='0' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':true'
+		timeout_seconds='0' />
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec=':true'
+		timeout_seconds='0' />
+
+	<property_group name='startd' type='framework'>
+		<propval name='duration' type='astring'
+			value='transient' />
+	</property_group>
+
+	<property_group name='sysconfig' type='application'>
+		<stability value='Evolving' />
+		<propval name='configure' type='boolean' value='false' />
+		<propval name='interactive_config' type='boolean'
+		    value='false' />
+		<propval name='config_groups' type='astring' value='system' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+system configuration milestone
+			</loctext>
+		</common_name>
+		<description>
+			<loctext xml:lang='C'>
+Provides the framework for the process of system configuration
+			</loctext>
+		</description>
+		<documentation>
+			<manpage
+				title='sysconfig'
+				section='1M'
+			manpath='/usr/share/man' />
+		</documentation>
+	</template>
+</service>
+</service_bundle>

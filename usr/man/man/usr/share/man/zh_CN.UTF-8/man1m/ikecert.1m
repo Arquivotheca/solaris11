@@ -1,0 +1,927 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates.保留所有权利。
+.TH ikecert 1M "2009 年 6 月 10 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+ikecert \- 处理计算机文件系统上的公钥证书数据库
+.SH 用法概要
+.LP
+.nf
+\fBikecert\fR certlocal 
+     [\fB-a\fR | \fB-e\fR | \fB-h\fR | \fB-k\fR | \fB-l\fR | \fB-r\fR | \fB-U\fR | \fB-C\fR | \fB-L\fR] 
+     [[\fB-p\fR] \fB-T\fR \fIPKCS#11 token identifier\fR] 
+     [\fIoption_specific_arguments\fR]...
+.fi
+
+.LP
+.nf
+\fBikecert\fR certdb [\fB-a\fR | \fB-e\fR | \fB-h\fR | \fB-l\fR | \fB-r\fR | \fB-U\fR | \fB-C\fR | \fB-L\fR] 
+     [[\fB-p\fR] \fB-T\fR \fIPKCS#11 token identifier\fR] 
+     [\fIoption_specific_arguments\fR]...
+.fi
+
+.LP
+.nf
+\fBikecert\fR certrldb [\fB-a\fR | \fB-e\fR | \fB-h\fR | \fB-l\fR | \fB-r\fR] 
+     [\fIoption_specific_arguments\fR]...
+.fi
+
+.LP
+.nf
+\fBikecert\fR tokens
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBikecert\fR 命令处理计算机文件系统上的公钥证书数据库。请参见下面的"文件"部分。
+.sp
+.LP
+\fBikecert\fR 有三个子命令分别对应于三个主要系统信息库，还有一个子命令用于列出可用硬件令牌：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcertlocal\fR，用于处理私钥系统信息库
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcertdb\fR，用于处理公钥系统信息库
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBcertrldb\fR，用于处理证书撤销列表 (certificate revocation list, \fBCRL\fR) 系统信息库。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fBtokens\fR，用于显示给定 PKCS#11 库的可用 PKCS#11 令牌。
+.RE
+.sp
+.LP
+支持的唯一 PKCS#11 库和硬件是 Sun Cryptographic Accelerator 4000。
+.SH 选项
+.sp
+.LP
+除 \fBtokens\fR 以外，每个子命令都需要一个选项，后面可能跟有一个或多个特定于选项的参数。
+.sp
+.LP
+\fBtokens\fR 子命令列出 \fB/etc/inet/ike/config\fR 中指定的 PKCS#11 库中的所有可用令牌。
+.sp
+.LP
+所支持的选项如下：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项将私钥安装（添加）到 Internet 密钥交换 (Internet Key Exchange, \fBIKE\fR) 本地 \fBID\fR 数据库中。密钥数据从标准输入读取，并且采用仅限 Solaris 的格式或未加密的 PKCS#8 DER 格式。自动检测密钥格式。无法识别 PEM 格式的 PKCS#8 密钥文件和受口令保护的加密格式的文件，但可以使用 OpenSSL 中提供的工具对这些文件进行相应转换。
+.sp
+当对应的公共证书已不在 \fBIKE\fR 数据库中时，此选项不能用于 PKCS#11 硬件对象。当同时导入公共证书和私钥时，必须首先使用 \fBcertdb\fR 子命令导入公共证书。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertdb\fR 子命令一起指定时，此选项从标准输入读取证书，并将其添加到 \fBIKE\fR 证书数据库。该证书必须是采用 \fBPEM Base64\fR 或 \fBASN.1 BER\fR 编码的 \fBX.509\fR 证书。证书采用其标识名称。
+.sp
+此选项可采用下列两种方法之一将证书导入到 PKCS#11 硬件密钥存储：使用 \fBcertlocal\fR \fB-kc\fR 选项创建匹配的公钥对象\fB和\fR现有私钥对象，或者如果明确指定了 PKCS#11 令牌，则使用 \fB-T\fR 选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertrldb\fR 子命令一起指定时，此选项将 \fBCRL\fR 安装（添加）到 \fBIKE\fR 数据库中。\fBCRL\fR 从标准输入读取。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR [\fB-f\fR pkcs8] \fIslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项从 \fBIKE\fR 本地 \fBID\fR 数据库中提取私钥。密钥数据写入到标准输出。插槽指定要提取的私钥。私钥仅以二进制/ber 格式提取。
+.sp
+\fB使用此选项时应格外小心。\fR请参见下面的"安全"部分。
+.sp
+此选项不适用于 PKCS#11 硬件对象。
+.sp
+当与 \fB-f\fR \fBpkcs8\fR 结合使用时，将以未加密的 PKCS#8 格式提取私钥。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR [\fB-f\fR \fIoutput-format\fR] \fBcertspec\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertdb\fR 子命令一起指定时，此选项从与 certspec 匹配的 IKE 证书数据库中提取证书，并将其写入到标准输出。\fIoutput-format\fR 选项指定编码格式。有效选项包括 \fBPEM\fR 和 \fBBER\fR。它会提取第一个匹配的标识。缺省输出格式为 \fBPEM\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertrldb\fR 子命令一起指定时，此选项从 IKE 数据库提取 \fBCRL\fR。密钥数据写入到标准输出。\fBcertspec\fR 指定提取的 CRL。将提取数据库中的第一个匹配 CRL。有关 \fBcertspec\fR 模式的详细信息，请参见下面的\fB\fR"说明"。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-kc\fR \fB-m\fR \fIkeysize\fR \fB-t\fR \fIkeytype\fR \fB-D\fR \fIdname\fR \fB-A\fR \fIaltname\fR[ ... ]\fR
+.ad
+.br
+.na
+\fB[\fB-S\fR \fI validity start_time\fR][\fB-F\fR \fIvalidity end_time\fR]\fR
+.ad
+.br
+.na
+\fB[\fB-T\fR \fIPKCS#11 token identifier\fR]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项生成一个 IKE 公钥/私钥对，并将其添加到本地 ID 数据库。此外，它还会生成证书请求，并将其发送到标准输出。有关上述选项的详细信息，请参见以获取有关 \fIdname\fR 参数的详细信息，并参见"替代名称"了解有关此命令的 \fIaltname\fR 参数的详细信息。
+.sp
+如果指定了 \fB-T\fR，硬件令牌将生成密钥对。
+.sp
+如果与 \fB-T\fR 一起指定了 \fB-p\fR，则会将 PKCS#11 令牌个人识别码存储在明确磁盘上，并具有受 root 保护的文件权限。如果未指定，用户必须在运行 \fBin.iked\fR(1M) 时使用 \fBikeadm\fR(1M) 解除令牌的锁定。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-ks\fR \fB-m\fR \fIkeysize\fR \fB-t\fR \fIkeytype\fR \fB-D\fR \fIdname\fR \fB-A\fR \fIaltname\fR[ ... ]\fR
+.ad
+.br
+.na
+\fB[\fB-S\fR \fI validity start_time\fR][\fB-F\fR \fIvalidity end_time\fR]\fR
+.ad
+.br
+.na
+\fB[\fB-f\fR \fIoutput-format\fR][[\fB-p\fR] \fB-T\fR \fIPKCS#11 token identifier\fR]\fR
+.ad
+.br
+.na
+\fB\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项生成一个公钥/私钥对，并将其添加到本地 ID 数据库。此外，此选项还会生成一个自签名证书，并将其安装到证书数据库。有关此命令的 \fIdname\fR 和 \fIaltname\fR 参数的详细信息，请参见下面的\fB\fR"说明"部分。
+.sp
+如果指定了 \fB-T\fR，硬件令牌将生成密钥对，并将自签名证书存储到此硬件中。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fB-v\fR] [\fIslot\fR]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertrldb\fR 子命令一起指定时，此选项列出本地 ID 数据库中的私钥。\fB-v\fR 选项将输出切换到详细模式，在此模式下将输出完整证书。
+.sp
+\fB使用\fR \fB-v\fR\fB 选项时应格外小心。\fR请参见下面的"安全"部分。\fB-v\fR 选项不适用于 PKCS#11 硬件对象。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR [\fB-v\fR] [certspec]\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertdb\fR 子命令一起指定时，此选项列出 IKE 证书数据库中与 certspec 匹配的的证书（如果指定了任何模式）。此列表显示证书的标识字符串以及私钥（如果位于密钥数据库中）。\fB-v\fR 将输出切换到详细模式，在此模式下将输出完整证书。
+.sp
+如果匹配的证书位于硬件令牌上，则还会列出令牌 ID。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertrldb\fR 子命令一起指定时，此选项列出 IKE 数据库中的 CRL 以及位于此数据库中且与颁发机构名称匹配的所有证书。\fBcertspec\fR 可用于指定列出特定 CRL。\fB-v\fR 选项将输出切换到详细模式，在此模式下将输出完整证书。有关 \fBcertspec\fR 模式的详细信息，请参见下文的\fB\fR"附注"部分。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR \fIslot\fR\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项删除指定插槽中的本地 ID。如果存在对应的公钥，则不会删除此 ID。如果此插槽被视为"已损坏"或无法识别，则也会删除此 ID。
+.sp
+如果对 PKCS#11 硬件对象调用了此选项，则还会删除 PKCS#11 公钥和私钥对象。如果已使用 \fBcertdb\fR \fB-r\fR 删除公钥对象，则不会导致问题。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR certspec\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+从 IKE 证书数据库删除证书。会删除与指定证书模式匹配的证书。不会删除 \fBcertlocal\fR 数据库中与这些证书对应的任何私钥。这会删除第一个匹配的标识。
+.sp
+如果模式指定了一个插槽，并且此插槽被视为"已损坏"或无法识别，则也会删除该插槽。
+.sp
+如果对 PKCS#11 硬件对象调用了此选项，则还会删除证书和 PKCS#11 公钥对象。如果已使用 \fBcertlocal\fR \fB-r\fR 删除公钥对象，则不会导致问题。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertrldb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertrldb\fR 子命令一起指定时，此选项删除具有给定 \fBcertspec\fR 的 CRL。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-U\fR slot\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcertlocal\fR\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令和 \fB-T\fR 标志一起指定时，此选项会解除 PKCS#11 私钥对象与 IKE 数据库之间的链接。系统不会尝试访问硬件 Keystore 或者验证或删除令牌上的私钥对象，而仅仅取消此对象与 IKE 数据库之间的关联。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcertdb\fR\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertdb\fR 子命令和 \fB-T\fR 标志一起指定时，此选项会解除 PKCS#11 证书对象与 IKE 数据库之间的链接。系统不会尝试访问硬件 Keystore 或者验证或删除令牌上的证书或公钥对象，而仅仅取消这些对象与 IKE 数据库之间的关联。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR certspec\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项从磁盘上的 Keystore 将私钥（及其相应证书）和公钥复制到其 PKCS#11 令牌指定的硬件 Keystore。此子命令尝试创建其中每个组件，即使某个组件创建失败也是如此。在所有情况下，仍会保留磁盘上的原始私钥和公共证书，因此必须单独删除它们。某些硬件 Keystore（例如，符合 FIPS-140 的设备）可能不支持以此种方式迁移私钥对象。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertdb\fR 子命令一起指定时，此选项将与给定 \fBcertspec\fR 匹配的证书及相应公钥从磁盘上的 Keystore 复制到其 PKCS#11 令牌指定的硬件 Keystore。系统仍会保留原始公共证书，因此必须根据需要单独删除这些证书。
+.sp
+如果指定了 \fB-p\fR，则会将 PKCS#11 令牌个人识别码存储在明确磁盘上，并具有受 root 保护的文件权限。如果未指定，用户必须在运行 \fBin.iked\fR(1M) 时使用 \fBikeadm\fR(1M) 解除令牌的锁定。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR pattern\fR
+.ad
+.sp .6
+.RS 4n
+.sp
+.ne 2
+.mk
+.na
+\fBcertlocal\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertlocal\fR 子命令一起指定时，此选项将现有令牌上的私钥对象链接到 \fBIKE\fR 数据库。此对象本身保留在令牌中。此选项只是让 \fBIKE\fR 基础结构了解对象是否存在，就像最初使用 Solaris \fBIKE\fR 实用程序在令牌上创建了此对象一样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBcertdb\fR
+.ad
+.sp .6
+.RS 4n
+当随 \fBcertdb\fR 子命令一起指定时，此选项将现有令牌上的证书对象链接到 \fBIKE\fR 数据库。此对象本身保留在令牌中。此选项只是让 \fBIKE\fR 基础结构了解对象是否存在，就像最初使用 Solaris \fBIKE\fR 实用程序在令牌上创建了此对象一样。
+.sp
+如果指定了 \fB-p\fR，则会将 PKCS#11 令牌个人识别码存储在明确磁盘上，并具有受 root 保护的文件权限。如果未指定，用户必须在运行 \fBin.iked\fR(1M) 时使用 \fBikeadm\fR(1M) 解除令牌的锁定。
+.RE
+
+.RE
+
+.SH 参数
+.sp
+.LP
+支持的参数如下：
+.sp
+.ne 2
+.mk
+.na
+\fBcertspec\fR
+.ad
+.sp .6
+.RS 4n
+指定与证书规范匹配的模式。有效 \fBcertspec\fR 包括"主题名称"、"颁发机构名称"和"主题替代名称"。
+.sp
+上述各项可指定与给定 \fBcertspec\fR 值匹配且不与其他 \fBcertspec\fR 值匹配的证书。要指定不应存在于证书中的 \fBcertspec\fR 值，请在该标记前加 \fB!\fR。
+.sp
+有效 \fBcertspec\fR 包括：
+.sp
+.in +2
+.nf
+<Subject Names>
+SUBJECT=<Subject Names>
+ISSUER=<Issuer Names>
+SLOT=<Slot Number in the certificate database>
+
+Example:"ISSUER=C=US, O=SUN" IP=1.2.3.4 !DNS=example.com
+Example:"C=US,   O=CALIFORNIA" IP=5.4.2.1 DNS=example.com 
+.fi
+.in -2
+.sp
+
+替代名称的有效参数如下：
+.sp
+.in +2
+.nf
+IP=<IPv4 address>
+DNS=<Domain Name Server address>
+EMAIL=<email (RFC 822) address>
+URI=<Uniform Resource Indicator value>
+DN=<LDAP Directory Name value>
+RID=<Registered Identifier value>
+.fi
+.in -2
+.sp
+
+可以指定不带关键字标记的有效插槽编号。也可以发布具有关键字标记的替代名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-A\fR\fR
+.ad
+.sp .6
+.RS 4n
+证书的主体替代名称。\fB-A\fR 选项后的参数应采用\fI标记\fR=\fI值\fR格式。有效标记包括 \fBIP\fR、\fBDNS\fR、\fBEMAIL\fR、\fBURI\fR、\fBDN\fR 和 \fBRID\fR（请参见下面的示例）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+证书主题的 \fBX.509\fR 标识名。它通常具有以下格式：\fBC\fR=country，\fBO\fR=organization，\fBOU\fR=organizational unit，\fBCN\fR=common name。有效标记包括：\fBC\fR、\fBO\fR、\fBOU\fR 和 \fBCN\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+编码输出格式，包括 \fBpem\fR（表示 \fBPEM Base64\fR）或 \fBber\fR（表示 \fBASN.1 BER\fR）。如果未指定 \fB-f\fR，则采用 \fBpem\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR \fIvalidity end_time\fR\fR
+.ad
+.sp .6
+.RS 4n
+证书有效期结束时间。如果未指定 \fB-F\fR 标志，有效期结束时间则为自有效期开始时间起的四年后。有关有效日期和时间语法的说明，请参见\fB\fR"说明"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-m\fR\fR
+.ad
+.sp .6
+.RS 4n
+密钥大小。此大小可以为 \fB512\fR、\fB1024\fR、\fB2048\fR、\fB3072\fR 或 \fB4096\fR。使用下面的命令可确定 Solaris 加密框架支持的密钥大小：
+.sp
+.in +2
+.nf
+% \fBcryptoadm list -vm\fR
+.fi
+.in -2
+.sp
+
+\fBpkcs11_softtoken\fR(5) 中介绍了上面的命令所显示的机制。如果您的系统具有硬件加速，该硬件支持的机制将在各提供器的单独部分中列出。机制可以是下列机制之一：
+.sp
+.in +2
+.nf
+CKM_RSA_PKCS_KEY_PAIR_GEN
+CKM_DSA_KEY_PAIR_GEN
+CKM_DH_PKCS_KEY_PAIR_GEN
+.fi
+.in -2
+.sp
+
+.LP
+注 - 
+.sp
+.RS 2
+某些硬件仅支持某些密钥大小。例如，Sun Cryptographic Accelerator 4000 的 Keystore（当使用下面的 \fB-T\fR 选项时）最多仅对 RSA 支持 2048 位密钥，并对 DSA 支持 1024 位密钥。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIvalidity start_time\fR\fR
+.ad
+.sp .6
+.RS 4n
+证书有效期开始时间。如果未指定 \fB-S\fR 标志，则将当前日期和时间用作有效期开始时间。有关有效日期和时间语法的说明，请参见下面的\fB\fR"说明"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.sp .6
+.RS 4n
+密钥类型。密钥类型可以是 \fBrsa-sha1\fR、\fBrsa-md5\fR 或 \fBdsa-sha1\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR\fR
+.ad
+.sp .6
+.RS 4n
+硬件密钥存储的 PKCS#11 令牌标识符。此选项指定符合 PKCS#11 标准的硬件设备实例。PKCS#11 库必须在 \fB/etc/inet/ike/config\fR 中指定。（请参见 \fBike.config\fR(4)。）
+.sp
+令牌标识符是包含 32 个字符的由空格补充的字符串。如果给定令牌的长度小 32 个字符，则会使用空格自动填充此令牌。
+.sp
+如果系统中存在多个 PKCS#11 库，请记住一次只能在 \fB/etc/inet/ike/config\fR 中指定一个 PKCS#11 库。一个 PKCS#11 库实例可能对应多个令牌（每个令牌具有单独的密钥存储）。
+.RE
+
+.SH 安全
+.sp
+.LP
+此命令可将公钥-密钥对的私钥保存到文件中。如果恶意方通过某种方式获取了私钥，以任何途径泄露私钥都可能会导致攻击。
+.sp
+.LP
+PKCS#11 硬件对象功能可克服磁盘上私钥的某些缺点。由于 IKE 是系统设备，因此不需要在引导时进行用户介入。但是，仍需要令牌的个人识别码。因此，PKCS#11 令牌的个人识别码存储在磁盘上的加密密钥通常所在的位置。通过使用硬件密钥存储，仍然无法\fB拥有\fR密钥，只有在主机面临安全风险时\fB使用\fR密钥才会导致问题，因此此设计决策可被接受。若不使用个人识别码，\fBikecert\fR 安全性会降低为 PKCS#11 实现的安全性。因此，还应当仔细检查 PKCS#11 实现。
+.sp
+.LP
+有关其他信息，请参见由 Matt Blaze 撰写的后文（摘自 Bruce Schneier 编著的\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR）。
+.SH 示例
+.LP
+\fB示例 1 \fR生成自签名证书
+.sp
+.LP
+下面是自签名证书的示例：
+
+.sp
+.in +2
+.nf
+example# \fBikecert certlocal -ks -m 512 -t rsa-md5 -D "C=US, O=SUN" -A\fR
+IP=1.2.3.4
+Generating, please wait...
+Certificate generated.
+Certificate added to database.
+-----BEGIN X509 CERTIFICATE-----
+MIIBRDCB76ADAgECAgEBMA0GCSqGSIb3DQEBBAUAMBsxCzAJBgNVBAYTAlVTMQww
+CgYDVQQKEwNTVU4wHhcNMDEwMzE0MDEzMDM1WhcNMDUwMzE0MDEzMDM1WjAbMQsw
+CQYDVQQGEwJVUzEMMAoGA1UEChMDU1VOMFowDQYJKoZIhvcNAQEBBQADSQAwRgJB
+APDhqpKgjgRoRUr6twTMTtSuNsReEnFoReVer!ztpXpQK6ybYlRH18JIqU/uCV/r
+26R/cVXTy5qc5NbMwA40KzcCASOjIDAeMAsGA1UdDwQEAwIFoDAPBgNVHREECDAG
+hwQBAgMEMA0GCSqGSIb3DQEBBAUAA0EApTRD23KzN95GMvPD71hwwClukslKLVg8
+f1xm9ZsHLPJLRxHFwsqqjAad4j4wwwriiUmGAHLTGB0lJMl8xsgxag==
+-----END X509 CERTIFICATE-----
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR生成 CA 请求
+.sp
+.LP
+生成 \fBCA\fR 请求的语法与生成自签名证书的基本相同。二者之间的唯一区别在于使用选项 \fB-c\fR 而非 \fB-s\fR，并且证书数据为 \fBCA\fR 请求。
+
+.sp
+.in +2
+.nf
+example# \fBikecert certlocal -kc -m 512 -t rsa-md5 \e
+   -D "C=US, O=SUN" -A IP=1.2.3.4\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR使用硬件密钥存储的 CA 请求
+.sp
+.LP
+下面的示例展示如何使用 \fB-T\fR 选项指定令牌。
+
+.sp
+.in +2
+.nf
+example# \fB# ikecert certlocal -kc -m 1024 -t rsa-md5 -T vca0-keystore \e
+  -D "C=US, O=SUN" -A IP=1.2.3.4\fR
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回下列退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB非零\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。在标准错误中写入相应错误消息。
+.RE
+
+.SH 文件
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/secret/ike.privatekeys/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+私钥。私钥\fB必须\fR在 \fB/etc/inet/ike/publickeys/\fR 中具有匹配的同名公钥证书。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/ike/publickeys/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+公钥证书。这些名称仅对匹配私钥名称至关重要。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/ike/crls/*\fR\fR
+.ad
+.sp .6
+.RS 4n
+公钥证书撤销列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/inet/ike/config\fR\fR
+.ad
+.sp .6
+.RS 4n
+参考此文件以获取 PKCS#11 库的路径名。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/core-os
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBikeadm\fR(1M)、\fBin.iked\fR(1M)、\fBgetdate\fR(3C)、\fBike.config\fR(4)、\fBattributes\fR(5)、\fBpkcs11_softtoken\fR(5)
+.sp
+.LP
+由 Bruce Schneier 编著的\fIApplied Cryptography: Protocols, Algorithms, and Source Code in C\fR第 2 版。John Wiley & Sons 出版。纽约。1996 年。
+.sp
+.LP
+由 RSA Labs 编著，PKCS#11 v2.11：\fICryptographic Token Interface Standards\fR，2001 年 11 月。
+.SH 附注
+.sp
+.LP
+下面提供了使用 \fB-F\fR 或 \fB-S\fR 标志时的有效日期和时间语法。
+.sp
+.LP
+对于相对日期，此语法如下所示：
+.sp
+.in +2
+.nf
+{+,-}[Ns][Nm][Nh][Nd][Nw][NM][Ny]
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中：
+.sp
+.ne 2
+.mk
+.na
+\fBN\fR
+.ad
+.sp .6
+.RS 4n
+表示整数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBs\fR
+.ad
+.sp .6
+.RS 4n
+表示秒
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBm\fR
+.ad
+.sp .6
+.RS 4n
+表示分钟
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBh\fR
+.ad
+.sp .6
+.RS 4n
+表示小时
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBd\fR
+.ad
+.sp .6
+.RS 4n
+表示天
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBw\fR
+.ad
+.sp .6
+.RS 4n
+表示星期
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBM\fR
+.ad
+.sp .6
+.RS 4n
+表示月
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fBy\fR
+.ad
+.sp .6
+.RS 4n
+表示年
+.RE
+
+.sp
+.LP
+这些参数可按任意顺序指定。例如，"+3d12h"表示从现在开始的三天半后的时间，"-3y2M"表示三年两个月以前。
+.sp
+.LP
+所有具有固定值的参数都可以以绝对秒数的形式相加。具有可变秒数的月和年使用日历时间计算。长度不固定的月和年定义为，加一年或一个月表示下一年或下个月的同一天。例如，如果现在为 2005 年 1 月 26 日，并且证书应在从今天起的 3 年零 1 个月后过期，那么到期日期（有效期结束时间）将为 2008 年 2 月 26 日。系统会相应地处理溢出。例如，从 2005 年 1 月 31 日起一个月后的时间为 2005 年 3 月 3 日，这是因为 2 月仅包含 28 天。
+.sp
+.LP
+对于绝对日期，接受文件 \fB/etc/datemsk\fR 中包含的日期格式的语法（有关详细信息，请参见 \fBgetdate\fR(3C)）。前面带有"+"或"-"的任何日期字符串均被视为相对于当前时间的时间，而其他字符串则视为绝对日期。此外，系统还会执行合理性检查，确保有效期结束日期大于有效期开始日期。例如，下面的命令将创建一个证书，使其开始日期为 1 天零 2 小时以前，结束日期为当地时间 2007 年 1 月 22 日 12:00:00。
+.sp
+.in +2
+.nf
+# ikecert certlocal -ks -t rsa-sha1 -m 1024 \e
+    -D "CN=mycert, O=Sun, C=US" \e 
+    -S -1d2h -F "01/22/2007 12:00:00"
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+由于 \fBin.iked\fR(1M) 只能在全局区域和专用 IP 区域中运行，因此该命令在共享 IP 区域中不起作用。

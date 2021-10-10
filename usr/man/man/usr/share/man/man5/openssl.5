@@ -1,0 +1,198 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH openssl 5 "24 Aug 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+openssl \- OpenSSL cryptographic and Secure Sockets Layer toolkit
+.SH DESCRIPTION
+.sp
+.LP
+OpenSSL is a cryptography toolkit that implements the Secure Sockets Layer (SSLv2/v3) and Transport Layer Security (TLS v1) network protocols.
+.sp
+.LP
+The following features are omitted  from  the  binaries  for issues  including but not limited to patents, trademark, and US export restrictions: ECC, IDEA, MDC2, RC3,  RC5, 4758_CCA Engine, AEP Engine, Atalla Engine, CHIL  Engine,  CSWIFT  Engine,  GMP  Engine,  NURON  Engine, PadLock Engine, Sureware Engine, and UBSEC Engine.
+.SS "The PKCS#11 Engine"
+.sp
+.LP
+A new PKCS#11 engine has been included with ENGINE name \fBpkcs11\fR. The engine was developed in Sun and is not integrated in the OpenSSL project.
+.sp
+.LP
+The PKCS#11 engine is configured to use the Oracle Solaris Cryptographic Framework. See \fBcryptoadm\fR(1M) for configuration information.
+.sp
+.LP
+The PKCS#11 engine can support the following set of mechanisms: \fBCKM_AES_CBC\fR, \fBCKM_AES_ECB\fR, \fBCKM_BLOWFISH_CBC\fR, \fBCKM_DES_CBC\fR, \fBCKM_DES_ECB\fR, \fBCKM_DES3_CBC\fR, \fBCKM_DES3_ECB\fR, \fBCKM_DSA\fR, \fBCKM_MD5\fR, \fBCKM_RC4\fR, \fBCKM_RSA_PKCS\fR, \fBCKM_RSA_X_509\fR, \fBCKM_SHA_1\fR, \fBCKM_SHA224\fR, \fBCKM_SHA256\fR, \fBCKM_SHA384\fR, and \fBCKM_SHA512\fR.
+.sp
+.LP
+The set of mechanisms available depends on installed Crypto Framework providers. To see what mechanisms can be offloaded to the Cryptographic Framework through the PKCS#11 engine on a given machine, run the following command:
+.sp
+.in +2
+.nf
+/usr/sfw/bin/openssl engine pkcs11 -vvv -t -c
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+Due to requirements of the PKCS#11 standard regarding \fBfork\fR(2) behavior, some applications that use the OpenSSL EVP interfaces and \fBfork()\fR with active \fBcrypto\fR contexts might experience unexpected behavior.
+.SS "The Dynamic Engine Support"
+.sp
+.LP
+The dynamic engine support has been enabled, which allows an external engine, in the form of a shared library, to be dynamically bound and used by an OpenSSL-based application. 
+.sp
+.LP
+Run the following command to see if the dynamic engine is supported:
+.sp
+.in +2
+.nf
+$openssl engine dynamic
+(dynamic) Dynamic engine loading support
+.fi
+.in -2
+.sp
+
+.SS "The \fBdevcrypto\fR Engine"
+.sp
+.LP
+This engine is implemented as a separate shared library, and it can be used by an OpenSSL application through the OpenSSL dynamic engine support.  This engine was developed in Sun and is not integrated in the OpenSSL project.
+.sp
+.LP
+Files for the \fBdevcrypto\fR engine library are: 
+.sp
+.in +2
+.nf
+/lib/openssl/engines/libdevcrypto.so 
+/lib/openssl/engines/64/libdevcrypto.so
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The \fBdevcrypto\fR engine accesses only the kernel hardware providers from the Oracle Solaris Cryptographic Framework. To see the hardware provider information on a system, use the \fBcryptoadm\fR(1M) command.
+.sp
+.LP
+The \fBdevcrypto\fR engine supports the following set of mechanisms: \fBCKM_AES_CBC\fR, \fBCKM_AES_CTR\fR, \fBCKM_AES_ECB\fR, \fBCKM_BLOWFISH_CBC\fR, \fBCKM_DES_CBC\fR, \fBCKM_DES_ECB\fR, \fBCKM_DES3_CBC\fR, \fBCKM_DES3_ECB\fR, and \fBCKM_RC4\fR.
+.sp
+.LP
+The set of mechanisms available depends on hardware providers installed and enabled in the Cryptographic Framework. To see what mechanisms are supported by the \fBdevcrypto\fR engine on a particular machine, run the following command: 
+.sp
+.in +2
+.nf
+$openssl engine dynamic -pre SO_PATH:/lib/openssl/engines/libdevcrypto.so\e
+-pre LOAD -t -c
+.fi
+.in -2
+.sp
+
+.SS "Using FIPS Mode"
+.sp
+.LP
+Currently a FIPS-140 certified mode is not available in Oracle Solaris.
+.SS "Building an OpenSSL Application"
+.sp
+.LP
+To build an OpenSSL application, use the following \fBcc\fR command line options:
+.sp
+.in +2
+.nf
+cc [ \fIflag\fR... ] \fIfile\fR... -lcrypto -lssl [ \fIlibrary\fR... ]
+.fi
+.in -2
+
+.SS "Accessing RSA Keys in PKCS#11 Keystores"
+.sp
+.LP
+OpenSSL can access RSA keys in PKCS#11 keystores using the following functions of the ENGINE API: 
+.sp
+.in +2
+.nf
+EVP_PKEY *ENGINE_load_private_key(ENGINE *e,
+ const char *key_id, UI_METHOD *ui_method,
+ void *callback_data)
+
+EVP_PKEY *ENGINE_load_public_key(ENGINE *e,
+ const char *key_id, UI_METHOD *ui_method,
+ void *callback_data)
+.fi
+.in -2
+
+.sp
+.LP
+\fBkey_id\fR, formerly for filenames only, can be now also set to a \fBPKCS#11 URI\fR. The \fBEVP_PKEY\fR structure is newly allocated and caller is responsible to free the structure later. To avoid clashes with existing filenames, \fBfile://\fR prefix for filenames is now also accepted but only when the PKCS#11 engine is in use. The PKCS#11 URI specification follows:
+.sp
+.in +2
+.nf
+pkcs11:[token=<label>][:manuf=<label>][;serial=<label>]
+   [;model=<label>][;object=<label>]
+   [;objecttype=(public|private|cert)]
+   [;passphrasedialog=(builtin|exec:<file>)]
+.fi
+.in -2
+
+.sp
+.LP
+The ordering of keywords is not significant. The PKCS#11 engine uses the keystore for the slot chosen for public key operations, which is \fBmetaslot\fR on a standard configured machine. Currently, the PKCS#11 engine ignores the \fBobjecttype\fR keyword. The only mandatory keyword is \fBobject\fR which is the key object label. For information on how to use a different, possibly hardware, keystore with \fBmetaslot\fR, see\fBlibpkcs11\fR(3LIB).
+.sp
+.LP
+The token PIN is provided by way of the \fBpassphrasedialog\fR keyword and is either read from the terminal (\fBbuiltin\fR) or from the output of an external command (\fBexec:<file>\fR). The PIN is used to log into the token and by default is deleted from the memory then. The keyword \fBpin\fR is intentionally not provided due to inherent security problems of possible use of a password in the process arguments.
+.sp
+.LP
+Due to fork safety issues the application must re-login if the child continues to use the PKCS#11 engine. It is done inside of the engine automatically if fork is detected and in that case, \fBexec:<file>\fR option of the \fBpassphrasedialog\fR keyword can be used. Alternatively, an environment variable \fBOPENSSL_PKCS11_PIN_CACHING_POLICY\fR can be used to allow the PIN to be cached in memory and reused in the child. It can be set to \fBnone\fR which is the default, \fBmemory\fR to store the PIN in memory, and \fBmlocked-memory\fR to keep the PIN in a locked page using \fBmlock\fR(3C). \fBPRIV_PROC_LOCK_MEMORY\fR privilege is required in that case.
+.sp
+.LP
+Sensitive parts of private keys are never read from the token to the process memory no matter whether the key is tagged with sensitive flag or not. The PKCS#11 engine uses the public components as a search key to get a PKCS#11 object handle to the private key.
+.sp
+.LP
+To use the RSA keys by reference, high level API functions such as \fBRSA_public_decrypt()\fR, \fBEVP_PKEY_set1_RSA()\fR, or \fBEVP_SignInit()\fR must be used. Low level functions might go around the engine and fail to make use of the feature.
+.SS "Additional Documentation"
+.sp
+.LP
+Extensive additional documentation for OpenSSL modules is available in the \fB/usr/share/man/man1openssl\fR, \fB/usr/share/man/man3openssl\fR, \fB/usr/share/man/man5openssl\fR, and \fB/usr/share/man/man7openssl\fR directories.
+.sp
+.LP
+To view the license terms, attribution, and copyright for OpenSSL, run \fBpkg info --license library/security/openssl\fR.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRGenerating and Printing a Public Key
+.sp
+.LP
+The following example generates and prints a public key stored in an already initilized PKCS#11 keystore. Notice the use of \fB-engine pkcs11\fR and \fB-inform e\fR.
+
+.sp
+.in +2
+.nf
+$ pktool gencert keystore=pkcs11 label=mykey \e
+   subject="CN=test" keytype=rsa keylen=1024 serial=01
+$ openssl rsa -in "pkcs11:object=mykey;passphrasedialog=builtin"\e
+   -pubout -text -engine pkcs11 -inform e
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+AvailabilityT{
+library/security/openssl, library/security/openssl
+T}
+_
+Interface StabilityVolatile
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBcrle\fR(1), \fBcryptoadm\fR(1M), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5), \fBprivileges\fR(5)
+.sp
+.LP
+\fB/usr/share/man/man1openssl/openssl.1openssl\fR, \fB/usr/share/man/man1openssl/CRYPTO_num_locks.3openssl\fR, \fB/usr/share/man/man3openssl/engine.3\fR, \fB/usr/share/man/man3openssl/evp.3\fR

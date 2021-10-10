@@ -1,0 +1,208 @@
+'\" te
+.\" Copyright 1987, 1989 by the Student Information Processing Board of the Massachusetts Institute of Technology. For copying and distribution information, please see the file kerberosv5/mit-sipb-copyright.h.
+.\" Portions Copyright (c) 2006, Sun Microsystems, Inc. All Rights Reserved
+.TH ktutil 1 "2006 年 11 月 16 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+ktutil \- Kerberos keytab 保守ユーティリティー
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/ktutil\fR 
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBktutil\fR コマンドは、keytab ファイルで鍵リストを管理するための対話型のコマンド行インタフェースユーティリティーです。管理するには、その前に keytab の鍵リストを読み込んでおく必要があります。また、\fBktutil\fR コマンドを実行するユーザーには、keytab の読み取り/書き込み権が必要です。たとえば、keytab をルートユーザーが所有している場合 (一般的な場合)、\fBktutil\fR は、適切なアクセス権が得られるように、ルートユーザーが実行する必要があります。
+.SH コマンド
+.sp
+.ne 2
+.mk
+.na
+\fB\fBclear_list\fR\fR
+.ad
+.br
+.na
+\fB\fBclear\fR\fR
+.ad
+.RS 23n
+.rt  
+現在の鍵リストをクリアします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBread_kt\fR \fIfile\fR\fR
+.ad
+.br
+.na
+\fB\fBrkt\fR \fIfile\fR\fR
+.ad
+.RS 23n
+.rt  
+keytab を現在の鍵リストに読み込みます。読み込む keytab ファイル (\fIfile\fR) を指定する必要があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBwrite_kt\fR \fIfile\fR\fR
+.ad
+.br
+.na
+\fB\fBwkt\fR \fIfile\fR\fR
+.ad
+.RS 23n
+.rt  
+現在の鍵リストを keytab ファイル (\fIfile\fR) に書き込みます。書き込む keytab ファイルを指定する必要があります。keytab ファイルがすでに存在する場合は、現在の鍵リストが既存の keytab ファイルに付加されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBadd_entry\fR \fInumber\fR\fR
+.ad
+.br
+.na
+\fB\fBaddent\fR \fInumber\fR\fR
+.ad
+.RS 23n
+.rt  
+現在の鍵リストにエントリを追加します。鍵リストのスロット番号でエントリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdelete_entry\fR \fInumber\fR\fR
+.ad
+.br
+.na
+\fB\fBdelent\fR \fInumber\fR\fR
+.ad
+.RS 23n
+.rt  
+現在の鍵リストからエントリを削除します。鍵リストのスロット番号でエントリを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR\fR
+.ad
+.br
+.na
+\fB\fBl\fR\fR
+.ad
+.RS 23n
+.rt  
+現在の鍵リストを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist_request\fR\fR
+.ad
+.br
+.na
+\fB\fBlr\fR\fR
+.ad
+.RS 23n
+.rt  
+使用できる要求 (コマンド) を一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquit\fR\fR
+.ad
+.br
+.na
+\fB\fBexit\fR\fR
+.ad
+.br
+.na
+\fB\fBq\fR\fR
+.ad
+.RS 23n
+.rt  
+ユーティリティーを終了します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRファイルからの主体の削除
+.sp
+.LP
+次の例では、\fBhost/denver@ACME.com\fR 主体を \fB/etc/krb5/krb5.keytab\fR ファイルから削除します。既存の keytab からエントリを削除する場合は、最初に鍵リストを一時 keytab に書き込み、次に既存の keytab をその一時 keytab で上書きする必要があることに注意してください。これは、\fBwkt\fR コマンドが実際には現在の鍵リストを既存の keytab に付加してしまうので、これを使用して keytab を上書きできないためです。
+
+.sp
+.in +2
+.nf
+example# \fB/usr/krb5/bin/ktutil\fR
+    ktutil: rkt /etc/krb5/krb5.keytab
+    ktutil: list
+slot KVNO Principal
+---- ---- ---------------------------------------
+   1    8 host/vail@ACME.COM
+   2    5 host/denver@ACME.COM
+    ktutil:delent 2
+    ktutil:l
+slot KVNO Principal
+---- ---- --------------------------------------
+   1    8 host/vail@ACME.COM
+    ktutil:wkt /tmp/krb5.keytab
+    ktutil:q
+example# \fBmv /tmp/krb5.keytab /etc/krb5/krb5.keytab\fR
+.fi
+.in -2
+.sp
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/etc/krb5/krb5.keytab\fR\fR
+.ad
+.RS 25n
+.rt  
+Kerberos クライアントの keytab ファイル
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件service/security/kerberos-5
+_
+インタフェースの安定性下記を参照。
+.TE
+
+.sp
+.LP
+コマンド引数は「確実」です。コマンド出力は「不確実」です。
+.SH 関連項目
+.sp
+.LP
+\fBkadmin\fR(1M), \fBk5srvutil\fR(1M), \fBattributes\fR(5), \fBkerberos\fR(5) 

@@ -1,0 +1,358 @@
+'\" te
+.\" Copyright (c) 2004, Sun Microsystems, Inc.
+.TH cputrack 1 "4 月 19 日 2004 年" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+cputrack \- CPU パフォーマンスカウンタによるプロセスと LWP 動作の監視
+.SH 形式
+.LP
+.nf
+\fBcputrack\fR \fB-c\fR \fIeventspec\fR [\fB-c\fR \fIeventspec\fR]... [\fB-efntvD\fR] 
+     [\fB-N\fR \fIcount\fR] [\fB-o\fR \fIpathname\fR] [\fB-T\fR \fIinterval\fR] \fIcommand\fR [\fIargs\fR]
+.fi
+
+.LP
+.nf
+\fBcputrack\fR \fB-c\fR \fIeventspec\fR [\fB-c\fR \fIeventspec\fR]... \fB-p\fR \fIpid\fR [\fB-efntvD\fR] 
+     [\fB-N\fR \fIcount\fR] [\fB-o\fR \fIpathname\fR] [\fB-T\fR \fIinterval\fR]
+.fi
+
+.LP
+.nf
+\fBcputrack\fR \fB-h\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBcputrack\fR ユーティリティーを使用すると、システムで実行中のプロセスまたはプロセスファミリの動作を \fBCPU\fR パフォーマンスカウンタで監視できます。\fIinterval\fR に \fB-T\fR オプションが指定されている場合、\fBcputrack\fR は \fIinterval\fR 秒間隔でアクティビティーをサンプリングする処理を永久に繰り返します。\fIcount\fR に \fB-N\fR オプションが指定されている場合、追跡するプロセスごとに、統計が \fIcount\fR 回繰り返されます。どちらも指定されていない場合、間隔は 1 秒になります。\fIcommand\fR およびオプションの \fIargs\fR が指定されている場合、\fBcputrack\fR は指定された \fBCPU\fR パフォーマンスイベントの監視中に設定された引数を使用してコマンドを実行します。あるいは、\fB-p\fR オプションを使用すると、既存のプロセスのプロセス \fBID\fR を指定できます。
+.sp
+.LP
+\fBcputrack\fR は非特権プログラムであるため、\fBtruss\fR(1) と同様の制限に従います。たとえば、\fBsetuid\fR(2) 実行可能ファイルは追跡できません。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR \fIeventspec\fR\fR
+.ad
+.RS 16n
+.rt  
+監視する \fBCPU\fR パフォーマンスカウンタ用のイベントセットを指定します。これらのイベント指示子の構文を次に示します。
+.sp
+.in +2
+.nf
+[picn=]\fIeventn\fR[,attr[\fIn\fR][=\fIval\fR]][,[picn=]\fIeventn\fR
+     [,attr[n][=\fIval\fR]],...,]
+.fi
+.in -2
+.sp
+
+\fB-h\fR オプションを使用すると、使用可能なイベントと属性の一覧を取得できます。これにより、使用法に関するメッセージが表示されます。明示的なカウンタの割り当ては省略できます。その場合、\fBcpustat\fR は有効なカウンタの選択を自動的に試みます。 
+.sp
+属性値は、\fBstrtoll\fR(3C) に適した形式 (16 進数、8 進数、または 10 進数) で表記できます。イベント指示子の属性に明示的な値が指定されていない場合、デフォルト値の \fB1\fR が使用されます。対応するカウンタ番号のない属性は、指示子内のすべてのカウンタに適用されます。
+.sp
+これらのイベント指示子のセマンティクスを確認するには、\fBCPU\fR の製造元のドキュメントでイベントに関する記述を参照してください。 
+.sp
+\fB-c\fR オプションは複数指定できます。その場合、\fBcputrack\fR はサンプルごとに異なるイベント設定に切り替えます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.RS 16n
+.rt  
+デバッグモードを有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.RS 16n
+.rt  
+すべての \fBexec\fR(2)、または \fBexecve\fR(2) システムコールを追跡します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBfork\fR(2)、\fBfork1\fR(2)、または \fBvfork\fR(2) システムコールにより作成されたすべての子を追跡します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.RS 16n
+.rt  
+ユーティリティーの使用方法、プロセッサに依存するカウンタのプログラミング方法、および詳細情報の参照先に関する拡張ヘルプメッセージを出力します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.RS 16n
+.rt  
+すべてのヘッダー出力を省略します (\fBcputrack\fR がパイプラインの先頭である場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-N\fR \fIcount\fR \fR
+.ad
+.RS 16n
+.rt  
+終了前に取得する \fBCPU\fR パフォーマンスカウンタのサンプルの最大数を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoutfile\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBcputrack\fR の出力に使用するファイルを指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIpid\fR\fR
+.ad
+.RS 16n
+.rt  
+引数を、プロセスカウンタのコンテキストを追加して監視しなければならない既存プロセスのプロセス \fBID\fR として解釈します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR\fR
+.ad
+.RS 16n
+.rt  
+出力にプロセッサのサイクル数の列を追加します (現在のアーキテクチャーで可能な場合)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR \fIinterval\fR\fR
+.ad
+.RS 16n
+.rt  
+\fBCPU\fR パフォーマンスカウンタのサンプリング間隔を秒単位で指定します。間隔が短すぎると、一部のサンプリングがスキップされることがあります。「警告」を参照してください。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.RS 16n
+.rt  
+詳細情報の出力を有効にします。
+.RE
+
+.SH 使用法
+.sp
+.LP
+オペレーティングシステムは、プロセスの追跡に一定の制限を課します。具体的には、ユーザーは、自身が読み取りできないオブジェクトファイルを持つコマンドを追跡することはできません。set-uid と set-gid を持つコマンドは、特権ユーザー以外は追跡できません。特権ユーザーが実行する場合を除き、\fBcputrack\fR は set-id または読み取り不可能なオブジェクトファイルの \fBexec()\fR を実行するプロセスを制御できません。このようなプロセスは、\fB cputrack\fR からは独立して、\fBexec()\fR ポイントで通常どおり処理を継続します。
+.sp
+.LP
+\fB-f\fR オプションを使用した場合、システムがユーザーごとのプロセススロットを使い果たしてしまう場合があります。これは、\fBcputrack\fR が、追跡するプロセスごとに 1 つの制御プロセスを実行するためです。
+.sp
+.LP
+\fBcputrack\fR が出力する時間は、ハードウェアカウンタが実際にサンプリングされた時間に対応します。この時間は、\fBgethrtime\fR(3C) と同じタイムベースから決定されます。
+.sp
+.LP
+\fBcputrack\fR ユーティリティーは、パフォーマンスカウンタのコンテキストを検査対象の各プロセスに追加します。このコンテキストが存在する場合、パフォーマンスカウンタをシステム上のさまざまなプロセス間で多重化できます。ただし、\fBcpustat\fR(1M) ユーティリティーと同時には使用できません。
+.sp
+.LP
+\fBcpustat\fR ユーティリティーのインスタンスが実行されると、\fBcpustat\fR のインスタンスをすべて終了しないかぎり、\fBcputrack\fR をさらに実行しようとしても失敗します。
+.sp
+.LP
+場合によっては、\fBcputrack\fR の柔軟性が非常に高く、多くの統計情報が出力されるために、監視コードが必要以上にアプリケーションに追加されることがあります。ただし、より厳密な制御をした方が望ましい場合があります。アプリケーション自体、および \fBcputrack\fR によりアプリケーション内に注入されるエージェント LWP が同じパフォーマンスカウンタのコンテキストを使用するため、アプリケーションでカウンタコンテキストを対話的に処理して、興味深い機能を実現できます。\fBcpc_enable\fR(3CPC) を参照してください。
+.sp
+.LP
+\fB-t\fR オプションで有効されたプロセッサのサイクル数は、パフォーマンスカウンタのレジスタに適用された設定に関係なく、常にユーザーモードとシステムモードの両方に適用されます。
+.sp
+.LP
+\fBcputrack\fR の出力は \fBnawk\fR(1) や \fBperl\fR(1) を使用すると簡単に解析できるように設計されているため、\fBcputrack\fR をスクリプトに埋め込むことによってパフォーマンスツールを作成できます。あるいは、\fBcputrack\fR が構築された同じ \fBAPI\fR (\fBlibcpc\fR(3LIB) や \fBlibpctx\fR(3LIB) の機能) を使用すると、ツールを直接構築できます。\fBcpc\fR(3CPC) を参照してください。
+.sp
+.LP
+\fBcputrack\fR はパフォーマンスカウンタのコンテキストを使用して LWP ごとに個別のパフォーマンスカウンタを管理しますが、カウント可能なイベントの一部は、特に (キャッシュ失敗率) のようにプロセス間で共有されるリソースが限定されている場合、システムで発生するほかのアクティビティーの影響を必ず受けます。このようなイベントでは、\fBcpustat\fR(1M) を使用してシステムの動作全体を監視してみるのもよいでしょう。
+.sp
+.LP
+\fB-T\fR \fIinterval\fR オプションでは、\fIinterval\fR をゼロに指定すると定期的なサンプリングは実行されません。パフォーマンスカウンタがサンプリングされるのは、プロセスが \fBLWP\fR を作成または破棄したり、\fBfork\fR(2)、\fBexec\fR(2)、または \fBexit\fR(2) を呼び出したりする場合だけです。
+.SH 使用例
+.SS "SPARC"
+.LP
+\fB例 1 \fRパフォーマンスカウンタを使用してクロックサイクルをカウントする
+.sp
+.LP
+この例では、UltraSPARC-III+ プロセッサを搭載したマシンでユーティリティーを使用しています。カウンタは、\fBsleep\fR(1) コマンドの実行中に、プロセッサのクロックサイクルおよびユーザーモードで送信された命令をカウントするように設定されています。
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -c pic0=Cycle_cnt,pic1=Instr_cnt sleep 10\fR
+   
+
+  time lwp      event      pic0      pic1
+ 1.007   1       tick    765308    219233
+ 2.007   1       tick         0         0
+ 4.017   1       tick         0         0
+ 6.007   1       tick         0         0
+ 8.007   1       tick         0         0
+10.007   1       tick         0         0
+10.017   1       exit    844703    228058
+  
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fR外部キャッシュの参照と失敗をカウントする
+.sp
+.LP
+この例では、UltraSPARC マシンで単純なシェルスクリプトの \fBfork()\fR および \fBexec()\fR を追跡しながら、より詳細な情報を出力します。カウンタは、外部キャッシュの参照と失敗の数を測定します。\fBpic0\fR および \fBpic1\fR の名前は、混同される可能性がなければ明示的に指定する必要はありません。
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -fev -c EC_ref,EC_hit /bin/ulimit -c\fR
+   
+
+time    pid lwp      event      pic0      pic1
+0.007 101142   1   init_lwp    805286     20023 
+0.023 101142   1       fork                     # 101143
+0.026 101143   1   init_lwp   1015382     24461 
+0.029 101143   1   fini_lwp   1025546     25074 
+0.029 101143   1       exec   1025546     25074 
+0.000 101143   1       exec                     \e
+                                      # '/usr/bin/sh /usr/bin/basename\e 
+                                         /bin/ulimit'
+0.039 101143   1   init_lwp   1025546     25074 
+0.050 101143   1   fini_lwp   1140482     27806 
+0.050 101143   1       exec   1140482     27806 
+0.000 101143   1       exec                     # '/usr/bin/expr \e
+   //bin/ulimit : \(.*[^/]\)/*$ : .*/\(..*\) : \(.*\)$ | //bin/ulimi'
+0.059 101143   1   init_lwp   1140482     27806 
+0.075 101143   1   fini_lwp   1237647     30207 
+0.075 101143   1       exit   1237647     30207 
+unlimited
+0.081 101142   1   fini_lwp    953383     23814 
+0.081 101142   1       exit    953383     23814 
+.fi
+.in -2
+.sp
+
+.SS "x86"
+.LP
+\fB例 3 \fR命令をカウントする
+.sp
+.LP
+この例では、Pentium III マシンで日付を出力するためにアプリケーションおよびカーネルで実行された命令の数を表示します。
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -c inst_retired,inst_retired,nouser1,sys1 date\fR
+   
+
+   time lwp      event      pic0      pic1
+Fri Aug 20 20:03:08 PDT 1999
+  0.072   1       exit    246725    339666
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRTLB のヒット回数をカウントする
+.sp
+.LP
+この例では、Pentium 4 マシンでプロセッサ固有の属性を使用して TLB のヒット回数をカウントする方法を示します。
+
+.sp
+.in +2
+.nf
+example% \fBcputrack -c ITLB_reference,emask=1 date\fR
+   
+
+    time lwp      event      pic0
+      Fri Aug 20 20:03:08 PDT 1999
+   0.072   1       exit    246725
+.fi
+.in -2
+.sp
+
+.SH 警告
+.sp
+.LP
+\fBcpustat\fR(1M) ユーティリティーのインスタンスを実行すると、既存のすべてのパフォーマンスカウンタのコンテキストがマシン全体で強制的に無効にされます。その結果、\fBcputrack\fR コマンドのすべての呼び出しが不特定なエラーで途中終了する可能性があります。
+.sp
+.LP
+\fBcpustat\fR が、Solaris でサポートされていない \fBCPU\fR パフォーマンスカウンタの存在するシステムで呼び出されると、次のメッセージが表示されます。
+.sp
+.in +2
+.nf
+cputrack: cannot access performance counters - Operation not applicable
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+このエラーメッセージは、\fBcpc_open()\fR が失敗したことを意味し、\fBcpc_open\fR(3CPC) に記述されています。この問題および実行可能な解決方法については、このドキュメントを参照してください。
+.sp
+.LP
+短い間隔を要求した場合、\fBcputrack\fR が目的のサンプルレートに追従できないことがあります。この場合は、サンプルの一部が省略されることがあります。
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件diagnostic/cpu-counters
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBnawk\fR(1), \fBperl\fR(1), \fBproc\fR(1), \fBtruss\fR(1), \fBprstat\fR(1M), \fBcpustat\fR(1M), \fBexec\fR(2), \fBexit\fR(2), \fBfork\fR(2), \fBsetuid\fR(2), \fBvfork\fR(2), \fBgethrtime\fR(3C), \fBstrtoll\fR(3C), \fBcpc\fR(3CPC), \fBcpc_bind_pctx\fR(3CPC), \fBcpc_enable\fR(3CPC), \fBcpc_open\fR(3CPC), \fBlibcpc\fR(3LIB), \fBlibpctx\fR(3LIB), \fBproc\fR(4), \fBattributes\fR(5) 

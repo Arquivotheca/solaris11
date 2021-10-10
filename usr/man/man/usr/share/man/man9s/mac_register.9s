@@ -1,0 +1,216 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH mac_register 9S "24 Jul 2010" "SunOS 5.11" "Data Structures for Drivers"
+.SH NAME
+mac_register \- MAC device driver registration data structure
+.SH SYNOPSIS
+.LP
+.nf
+#include <sys/mac_provider.h>
+#include <sys/mac_ether.h>
+.fi
+
+.SH INTERFACE LEVEL
+.sp
+.LP
+Solaris architecture specific (Solaris DDI)
+.SH DESCRIPTION
+.sp
+.LP
+The \fBmac_register\fR data structure is passed by device drivers to the MAC layer when registering using \fBmac_register\fR(9F).
+.SH STRUCTURE MEMBERS
+.sp
+.in +2
+.nf
+uint_t          m_version;              /* set by framework */
+const char      *m_type_ident;
+void            *m_driver;
+dev_info_t      *m_dip;
+uint_t          m_instance;
+uint8_t         *m_src_addr;
+uint8_t         *m_dst_addr;
+mac_callbacks_t *m_callbacks;
+uint_t          m_min_sdu;
+uint_t          m_max_sdu;
+void            *m_pdata;
+size_t          m_pdata_size;
+mac_priv_prop_t *m_priv_props;
+uint32_t	      m_margin;
+.fi
+.in -2
+
+.sp
+.LP
+The following fields of \fBmac_register_t\fR must be set by the device driver before invoking the \fBmac_register()\fRentry point:
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_version\fR\fR
+.ad
+.RS 16n
+.rt  
+Set by \fBmac_alloc\fR(9F), device drivers should not modify this field.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_type_ident\fR\fR
+.ad
+.RS 16n
+.rt  
+Must be set to one of the following depending on the type of device being registered.
+.sp
+.ne 2
+.mk
+.na
+\fB\fBMAC_PLUGIN_IDENT_ETHER\fR\fR
+.ad
+.RS 26n
+.rt  
+Ethernet driver
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_driver\fR\fR
+.ad
+.RS 16n
+.rt  
+Driver handle, opaque to the framework, usually points to a per-driver instance data structure. Passed back as argument to driver's entry points invoked by the framework.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_dip\fR\fR
+.ad
+.RS 16n
+.rt  
+Pointer to the driver instance \fBdev_info\fR structure, see \fBattach\fR(9E).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_instance\fR\fR
+.ad
+.RS 16n
+.rt  
+Used by the driver to specify the instance number to be associated with the MAC being registered.  This value should always specified by 0.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_src_addr\fR\fR
+.ad
+.RS 16n
+.rt  
+Pointer to the primary MAC address value of the MAC instance.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_dst_addr\fR\fR
+.ad
+.RS 16n
+.rt  
+Pointer to the destination MAC address value of a fixed destination MAC address. This field is optional and should be set to \fINULL\fR for regular device drivers.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_callbacks\fR\fR
+.ad
+.RS 16n
+.rt  
+Pointer to an instance of the \fBmac_callbacks\fR(9S) structure.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_min_sdu\fR\fR
+.ad
+.RS 16n
+.rt  
+Minimum Service Data Unit size, the minimum packet size, not including the MAC header, that the device can transmit. This can be zero if the device driver can handle any required padding.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_max_sdu\fR\fR
+.ad
+.RS 16n
+.rt  
+Maximum Service Data Unit size, the maximum packet size, not including the MAC header, that can be transmitted by the device. For Ethernet, this number is commonly referred to as the MTU (maximum transmission unit.)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_priv_props\fR\fR
+.ad
+.RS 16n
+.rt  
+Array of driver-private property names, terminated by a null pointer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIm_margin\fR\fR
+.ad
+.RS 16n
+.rt  
+Drivers set this value to the amount of data in bytes that the device can transmit beyond \fBm_max_sdu\fR. For example, if an Ethernet device can handle packets whose payload section is no greater than 1522 bytes and \fBm_max_sdu\fR is set to 1500 (as is typical for Ethernet), then \fBm_margin\fR is set to 22.
+.RE
+
+.sp
+.LP
+See \fBmac_register\fR(9F) for more information about the use of these fields.
+.sp
+.LP
+The driver is responsible for allocating the memory pointed to by the fields \fIm_priv_props\fR, \fIm_src_addr\fR, and \fIm_dst_addr\fR. The driver can free this memory after the call to \fBmac_register()\fR returns.
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/header
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBattributes\fR(5), \fBattach\fR(9E), \fBmac_register\fR(9F), \fBmac_callbacks\fR(9S)

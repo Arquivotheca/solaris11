@@ -1,0 +1,285 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH zs_usage 3ZONESTAT "19 May 2011" "SunOS 5.11" "Zones Statistics Library Functions"
+.SH NAME
+zs_usage, zs_usage_read, zs_usage_diff, zs_usage_free \- read system configuration and utilization
+.SH SYNOPSIS
+.LP
+.nf
+cc [ \fIflag\fR ... ] \fIfile\fR... -lzonestat [ \fIlibary\fR ... ]
+#include <zonestat.h>
+
+zs_usage_t zs_usage_read(zs_ctl_t \fIzsctl\fR);
+.fi
+
+.LP
+.nf
+zs_usage_t zs_usage_diff(zs_usage_t \fIu1\fR, zs_usage_t \fIu2\fR);
+.fi
+
+.LP
+.nf
+void zs_usage_free(zs_usage_t \fIzsctl\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBzs_usage_read()\fR function reads the system configuration and utilization with respect to zones, memory, and CPU.
+.sp
+.LP
+Each \fBzs_usage_read()\fR will return a \fBzs_usage_t\fR object, which includes the following information:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The current system resources and their utilization.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The currently running zones. All properties reflect the current running state of each zone.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The usage of each resource by each zone.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The usage by each zone of its configured limits.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The currently existing processor sets. All properties and usages reflect the current running state of each processor set.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The usage of each processor set by each zone utilizing it.
+.RE
+.sp
+.LP
+Increasing utilization values are described \fBlibzonestat\fR(3LIB). Increasing values continually increase, starting at zero from the point at which \fBzs_open\fR(3ZONESTAT) was first called.
+.sp
+.LP
+For all other utilization values, utilization information will be the usage at the point in time at which \fBzs_usage_read()\fR is called.
+.sp
+.LP
+For zones and processors sets that were booted or created after \fBzs_open()\fR was called, the increasing usage values will be usage since the most recent boot or creation before the call to \fBzs_usage_read()\fR.
+.sp
+.LP
+The \fBzs_usage_diff()\fR function computes and returns the utilization differences between two \fBzs_usage_t\fR objects returned by \fBzs_usage_read()\fR. Both \fIu1\fR and \fIu2\fR must be read from the same \fIzsctl\fR object. \fIu2\fR must be read after \fIu1\fR.
+.sp
+.LP
+The purpose of \fBzs_usage_diff()\fR is to simplify the comparison of \fBzs_usage_read()\fR calls made at a interval.
+.sp
+.LP
+The returned \fBzs_usage_t\fR object will contain:
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The current system resources, as they exist in \fIu2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+The zones and processor sets that exist in \fIu2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+For increasing utilization values, the value of (\fIu2\fR - \fIu1\fR). If a specific value does not exist in \fIu1\fR (such as the CPU utilization for a zone in \fIu2\fR which does not exist in \fIu1\fR), the value will be the value from \fIu2\fR.
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+For non-increasing utilization values, the value of \fIu2\fR.
+.RE
+.sp
+.LP
+The \fBzs_usage_free()\fR function frees the memory associated with a \fBzs_usage_t\fR object returned by \fBzs_usage_read()\fR or \fBzs_usage_diff()\fR.
+.SH RETURN VALUES
+.sp
+.LP
+On success, \fBzs_usage_free()\fR and \fBzs_usage_diff()\fR return a pointer to a zonestat usage object. On failure, \fBzs_open()\fR returns \fINULL\fR.
+.SH ERRORS
+.sp
+.LP
+The \fBzs_usage_diff()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEAGAIN\fR\fR
+.ad
+.RS 10n
+.rt  
+Insufficient resources are available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 10n
+.rt  
+Insufficient memory is available.
+.RE
+
+.sp
+.LP
+The \fBzs_usage_read()\fR function will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEAGAIN\fR\fR
+.ad
+.RS 10n
+.rt  
+Insufficient resources are available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINTR\fR\fR
+.ad
+.RS 10n
+.rt  
+A signal was caught.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 10n
+.rt  
+Insufficient memory is available.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBESRCH\fR\fR
+.ad
+.RS 10n
+.rt  
+Unable to connect to the zones monitoring service. See Notes.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRRead zone CPU utilization.
+.sp
+.LP
+The following example uses \fBzs_usage_read()\fR to read each zones CPU utilization at a regular interval.
+
+.sp
+.in +2
+.nf
+#include <zonestat.h>
+\&...
+extern int time_to_quit; /* hypothetical quit notification */
+\&...
+
+zs_ctl_t ctl;
+zs_usage_t last;
+zs_usage_t next;
+zs_usage_t diff;
+zs_zone_t zone;
+timestruct_t time;
+uint64_t cpus;
+
+ctl = zs_usage_open();  /* Open zone statistics */
+last = zs_usage_read(); /* Read initial usage */
+for (;;) {
+
+        sleep(10);
+        next = zs_usage_read();
+        diff = zs_usage_diff(last, next);
+
+        /* Walk zones in usage data */
+        for (zone = zs_zone_first(diff); zone != NULL ;
+            zone = zs_zone_next(diff, zone)) {
+
+                /*
+                 * fetch cpu time used by zone over interval in terms of
+                 * seconds and nanoseconds
+                 */
+                zs_resource_used_zone_time(zone, ZS_RESOURCE_CPU,
+                    &time);
+
+                /*
+                 * fetch cpu time used by zone over interval in terms of
+                 * cpu used.  100 equals one cpu.  For example, a
+                 * value of 250 means the zone used 2.5 cpus worth of
+                 * time between last and next.
+                 */
+                zs_resource_used_zone_uint64(zone, ZS_RESOURCE_CPU,
+                    &cpus;
+
+        }
+        zs_usage_free(diff);
+        zs_usage_free(last);
+        last = next;
+
+        if (time_to_quit)
+                break;
+}
+zs_usage_free(last)
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelSee below.
+.TE
+
+.sp
+.LP
+The \fBzs_usage_*()\fR functions are MT-safe, with the exception that only one thread may actively use a \fBzs_ctl_t\fR * object at any time. Synchronization is left to the application.
+.SH SEE ALSO
+.sp
+.LP
+\fBzonestat\fR(1), \fBpooladm\fR(1M), \fBpsrset\fR(1M), \fBrcapadm\fR(1M), \fBswap\fR(1M), \fBzoneadm\fR(1M), \fBzonestatd\fR(1M), \fBlibpool\fR(3LIB), \fBlibzonestat\fR(3LIB), \fBzs_open\fR(3ZONESTAT), \fBzs_pset\fR(3ZONESTAT), \fBzs_property\fR(3ZONESTAT), \fBzs_pset_zone\fR(3ZONESTAT), \fBzs_resource\fR(3ZONESTAT), \fBzs_zone\fR(3ZONESTAT), \fBattributes\fR(5), \fBresource_controls\fR(5)
+.SH NOTES
+.sp
+.LP
+The service \fBsvc:/system/zones-monitoring:default\fR must be enabled in the global zone in order for \fBzs_usage_read()\fR to succeed. This requirement exists for use of \fBlibzonestat\fR(3LIB) in both the global zone and non-global zones.
+.sp
+.LP
+If the zones-monitoring service goes off line, \fBESRCH\fR will be returned. At this point the \fIzsctl\fR object is no longer usable. Use \fBzs_close\fR(\fIzsctl\fR) and use \fBzs_open\fR(3ZONESTAT) to reconnect.

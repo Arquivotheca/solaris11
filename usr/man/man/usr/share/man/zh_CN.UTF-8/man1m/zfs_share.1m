@@ -1,0 +1,630 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH zfs_share 1M "2011 年 8 月 23 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+zfs_share \- 共享和取消共享 ZFS 文件系统
+.SH 用法概要
+.LP
+.nf
+zfs [-?]
+.fi
+
+.LP
+.nf
+\fBzfs help\fR \fIsubcommand\fR | help | \fIproperty property-name\fR | \fIpermission\fR
+.fi
+
+.LP
+.nf
+\fBzfs create\fR [-p] [-o sharenfs=on | sharesmb=on] [-o \fIproperty\fR ... \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+zfs set share=\fIname=sharename\fR,path=\fIpathname\fR,[desc=\fIdescription\fR],
+prot=smb | nfs[,\fIproperty=value\fR[,...]] \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBset\fR [\fB-r\fR] sharenfs=on | off \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBset\fR [\fB-r\fR] sharesmb=on | off \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+zfs set -c share=\fIname=sharename\fR \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR [\fB-r\fR] sharenfs \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBget\fR [\fB-r\fR] sharesmb \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR  \fBget\fR  [\fB-r\fR] \fBshare\fR \fIfilesystem\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBshare\fR \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunshare\fR \fB-a\fR \fIfilesystem\fR|\fImountpoint\fR
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzfs set share\fR 命令用于在 \fBZFS\fR 存储池中创建 NFS 或 SMB 共享，如 \fBzpool\fR(1M) 中所述。将 \fBsharenfs\fR 或 \fBsharesmb\fR 属性设置为 on 可发布共享。您也可以通过使用 \fBzfs share\fR 命令发布 ZFS 数据集的 NFS 共享，通过使用 \fBzfs unshare\fR 命令撤销发布 ZFS 数据集的 NFS 共享。 
+.SS "本机共享文件系统属性"
+.sp
+.LP
+文件系统属性分为两种类型：本机属性和用户定义的（或"用户"）属性。本机属性用于显示信息或控制 ZFS 行为。此外，本机属性分为可编辑属性和只读属性。
+.sp
+.LP
+属性继承自父项，但子项所覆盖的除外。有些属性仅适用于某些类型的数据集（文件系统、卷或快照）。
+.sp
+.LP
+以下本机属性可用于更改 ZFS 文件系统的行为，共享某个文件系统时通常会使用这些本机属性。
+.sp
+.LP
+使用以下本机 NFS 和 SMB 属性可以更改 \fBZFS\fR 共享的行为。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnbmand\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否应该用 \fBnbmand\fR（非分块强制性锁定）挂载文件系统。此选项用于 \fBSMB\fR 客户机。对此属性所做的更改只有在卸载文件系统并重新挂载后才有效。有关 \fBnbmand\fR 挂载的更多信息，请参见 \fBmount\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreadonly\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否可以修改此数据集。缺省值为 \fBoff\fR（关闭）。
+.sp
+该属性也可通过其简短列名 \fBrdonly\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharenfs\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否作为 NFS 共享发布 ZFS 数据集。您也可以通过使用 \fBzfs share\fR 命令发布 ZFS 数据集的 NFS 共享，通过使用 \fBzfs unshare\fR 命令撤销发布 ZFS 数据集的 NFS 共享。两种发布 NFS 共享的方法均需要事先设置 NFS 共享属性。有关设置 NFS 共享属性的方法，请参见 \fBzfs set share\fR 命令。
+.sp
+在更改 \fBsharenfs\fR 属性时，只有在此属性以前设置为 \fBoff\fR 或在更改此属性前已发布共享的情况下，才会使用已通过 \fBzfs set share\fR 命令设置的任何新选项重新发布文件系统共享及继承此属性的任何子项。如果新属性值是 \fBoff\fR，则撤销发布文件系统共享。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharesmb\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否作为 SMB 共享发布 ZFS 数据集。您也可以通过使用 \fBzfs share\fR 命令发布 ZFS 数据集的 SMB 共享，通过使用 \fBzfs unshare\fR 命令撤销发布 ZFS 数据集的 SMB 共享。两种发布 SMB 共享的方法均需要事先设置 SMB 共享属性。有关设置 SMB 共享属性的信息，请参见 \fBzfs set share\fR 命令。
+.sp
+由于 \fBSMB\fR 共享需要资源名称，因此根据数据集名称构建唯一的资源名称。构建的名称是数据集名称的一个副本，区别在于资源名称中不合法的数据集名称字符被替换为下划线字符 (\fB_\fR)。此外，还支持伪属性 "name"，以便您用指定的名称替换数据集名称。然后使用指定的名称替换继承情况下的数据集前缀。例如，如果将数据集 \fBdata/home/john\fR 设置为 \fBname=john\fR，则 \fBdata/home/john\fR 的资源名称是 \fBjohn\fR。如果 \fBjohn\fR 具有一个子数据集 \fBdata/home/john/backups\fR，则其资源名称是 \fBjohn_backups\fR。
+.sp
+在创建 SMB 共享时，以 \fB\&.zfs/shares\fR 目录中的条目显示 SMB 共享名称。您可以使用 \fBls\fR 或 \fBchmod\fR 命令在此目录的条目上显示共享级别的 ACL。
+.sp
+在更改 \fBsharesmb\fR 属性时，如果此属性以前设置为 \fBoff\fR 或在更改此属性前已发布共享，则会使用已通过 \fBzfs set share\fR 命令设置的任何新选项重新发布数据集共享及继承此属性的任何子项。如果新属性值是 \fBoff\fR，则撤销发布数据集共享。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscan\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制打开和关闭常规文件时是否应为其扫描病毒。除了启用此属性以外，为了进行病毒扫描也必须启用病毒扫描服务。缺省值为 \fBoff\fR（关闭）。
+.RE
+
+.sp
+.LP
+在创建文件系统后无法更改以下属性，因此在创建文件系统时应设置这些属性。如果未使用 \fBzfs create\fR 或 \fBzpool create\fR 命令设置属性，则从父数据集继承这些属性。如果在这些功能获得支持以前已创建的父数据集缺少这些属性，则新文件系统将为这些属性采用缺省值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcasesensitivity\fR=\fBsensitive\fR | \fBinsensitive\fR | \fBmixed\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示文件系统使用的文件名匹配算法是否应区分大小写、不区分大小写或允许混用大小写的组合匹配方式。\fBcasesensitivity\fR 属性的缺省值为 \fBmixed\fR。传统上，UNIX 和 POSIX 文件系统的文件名区分大小写。
+.sp
+\fBcasesensitivity\fR 属性的值 \fBmixed\fR 指示文件系统对区分大小写和不区分大小写的匹配行为要求均可支持。当前，在支持混合行为的文件系统上，不区分大小写的匹配行为仅限于 Solaris SMB 服务器产品。有关 \fBmixed\fR 值的行为的更多信息，请参见\fI《Solaris ZFS Administration Guide》\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnormalization\fR = \fBnone\fR | \fBformC\fR | \fBformD\fR | \fBformKC\fR | \fBformKD\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示每当比较两个文件名时，文件系统是否应为文件名执行 \fBunicode\fR 标准化，以及应使用哪种标准化算法。文件名在存储时始终保持未修改状态，并将其标准化作为任何比较进程的一部分。如果将此属性设置为 \fBnone\fR 以外的合法值，并且不指定 \fButf8only\fR 属性，则 \fButf8only\fR 属性自动设置为 \fBon\fR。\fBnormalization\fR 属性的缺省值为 \fBnone\fR。在创建文件系统后无法更改此属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fButf8only\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示在文件名含有 \fBUTF-8\fR 字符代码集中不存在的字符情况下，文件系统是否应拒绝此类文件名。如果已将此属性显式设置为 \fBoff\fR，则不允许将规范化属性显式设置或常规设置为 \fBnone\fR。\fButf8only\fR 属性的缺省值为 \fBoff\fR。在创建文件系统后无法更改此属性。
+.RE
+
+.SH 子命令
+.sp
+.LP
+修改状态的所有子命令将以原始形式永久记录到池中。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示帮助消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBzfs\fR 命令的用法信息。可以显示特定命令、属性或委托权限的帮助。如果显示特定命令或属性的帮助，将显示命令语法或属性值。在不带任何参数的情况下使用 \fBzfs help\fR 将显示完整的 \fBzfs\fR 命令列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-p\fR] [\fB-o\fR \fBsharenfs=on | sharesmb=on\fR \fB-o\fR\fIproperty\fR=\fIvalue\fR] ... \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建新的 \fBZFS\fR 文件系统。该文件系统会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+与在创建数据集时调用命令 \fBzfs set\fR \fIproperty\fR=\fIvalue\fR 一样设置指定的属性。在创建时也可设置任何可编辑的 \fBZFS\fR 属性。可以指定多个 \fB-o\fR 选项。如果在多个 \fB-o\fR 选项中指定了相同的属性，则会导致错误。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs get [-r] share\fR [\fIfilesystem\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示所有定义的共享，或显示指定文件系统或后代文件系统的定义共享。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set share\fR=\fIname\fR=\fIsharename\fR,\fBpath\fR=\fIpathname\fR,[\fBdesc\fR=\fIdescription\fR],\fBprot\fR=\fBsmb\fR | \fB nfs\fR[,\fIproperty\fR=\fIvalue\fR[,...]] \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+定义 ZFS 数据集的 NFS 或 SMB 文件共享属性。建立 NFS 或 SMB 文件共享属性后，可以通过将 \fBsharenfs\fR 或 \fBsharesmb\fR 属性设置为 \fBon\fR 来发布 ZFS 文件系统的 NFS 或 SMB 共享。
+.sp
+需要以下共享属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshare\fR=\fIname\fR=\fIsharename\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识 NFS 或 SMB 共享名称。共享名称的最大长度为 80 个字符。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBpath\fR=\fIpathname\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识要共享的数据集的物理路径或要共享的数据集中的子目录。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprot\fR=\fBsmb\fR | \fBnfs\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识 NFS 或 SMB 文件共享协议。
+.RE
+
+以下共享属性是可选的：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdesc\fR=\fIdescription\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识用于描述共享资源的文本字符串。描述中的空格或逗号必须括在引号中 (\fB"\fR \fB"\fR)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBro\fR= | \fBrw\fR=\fR
+.ad
+.sp .6
+.RS 4n
+标识共享将以读/写还是只读形式提供给所有客户机。您也可以指定包含主机名、IP 地址或网络组的逗号分隔列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBroot\fR=\fR
+.ad
+.sp .6
+.RS 4n
+标识指定主机的超级用户或拥有根访问权限的主机列表。缺省情况下，没有主机拥有根访问权限。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsec\fR=\fR
+.ad
+.sp .6
+.RS 4n
+标识 NFS 服务器安全模式，例如 \fBsys\fR、\fBdh\fR、\fBkrb5\fR 等。有关支持的安全模式信息，请参见 \fBnfssec\fR(5)。
+.RE
+
+必须在 \fBprot=nfs\fR 之后但在任何 \fBsec\fR 属性之前指定以下可选的 NFS 属性。
+.sp
+.in +2
+.nf
+anon=TYPE_USER
+nosub=[true|false]
+nosuid=[true|false]
+aclok=[true|false]
+public=[true|false]
+index=filename
+log=TYPE_LOGTAG
+cksum=TYPE_STRINGSET
+.fi
+.in -2
+.sp
+
+必须在 \fBprot=smb\fR 之后指定以下可选的 SMB 属性：
+.sp
+.in +2
+.nf
+ad-container=string
+abe=[true|false]
+csc=[disabled|manual|auto|vdo]
+catia=[true|false]
+guestok=[true|false]
+ro=access-list
+rw=access-list
+none=access-list
+.fi
+.in -2
+.sp
+
+有关 NFS 和 SMB 共享属性的详细说明，请参见 \fBshare_nfs\fR(1M) 和 \fBshare_smb(1M)\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set\fR [\fB-r\fR] \fIproperty\fR=\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+对每个数据集将该属性设置为给定值。只能编辑某些属性。有关可设置哪些属性和可接受的值的更多信息，请参见"属性"一节。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+在子数据集的整个子树中递归应用设置的有效值。根据属性，可以设置或继承有效值。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBset\fR \fB-c\fR share=\fIname\fR=\fIsharename\fR \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+删除文件系统共享。\fB-c\fR 选项将此子命令与上面介绍的 \fBzfs set share\fR 命令区别开来。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs share\fR \fB-a\fR | \fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据共享属性值并且如果已设置 \fBsharenfs\fR 或 \fBsharesmb\fR 属性，发布 ZFS 数据集的 NFS 或 SMB 共享。
+.sp
+通过 NFS 或 SMB 协议共享数据集意味着，数据集数据将在网络上可用。设置了 \fBsharenfs\fR 或 \fBsharesmb\fR 属性的 ZFS 数据集将在引导系统时自动共享。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据共享属性值以及 \fBsharenfs\fR 和 \fBsharesmb\fR 属性的设置，共享所有 ZFS 数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+根据共享属性值以及 \fBsharenfs\fR 和 \fBsharesmb\fR 属性的设置，共享指定的数据集。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unshare\fR \fB-a\fR | \fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消共享设置了 \fBsharenfs\fR 或 \fBsharesmb\fR 属性的所有 ZFS 数据集。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消共享所有共享的 ZFS 数据集。自动在引导过程中调用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+取消共享指定的数据集。也可以为该命令指定系统上共享的 \fBZFS\fR 数据集的路径。
+.RE
+
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建 ZFS 文件系统的 NFS 或 SMB 共享
+.sp
+.LP
+创建 ZFS 文件系统的 NFS 或 SMB 共享的过程包含以下两个步骤：
+
+.RS +4
+.TP
+1.
+使用 \fBzfs set share\fR 命令创建共享以识别 NFS 或 SMB 共享属性。
+.sp
+要创建 NFS 共享，请执行以下命令：
+.sp
+.in +2
+.nf
+# \fBzfs create -o mountpoint=/data tank/data\fR
+# \fBzfs set share=name=data,path=/data,prot=nfs tank/data\fR
+.fi
+.in -2
+.sp
+
+要创建 SMB 共享，请执行以下命令：
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=fs,path=/fs,prot=smb,ro=@10-132-60-234 \e\fR
+\fBtank/fs\fR
+.fi
+.in -2
+.sp
+
+.RE
+.RS +4
+.TP
+2.
+通过设置 \fBsharenfs\fR 或 \fBsharesmb\fR 属性发布共享。使用诸如以下的命令：
+.sp
+.in +2
+.nf
+# \fBzfs set sharenfs=on tank/data\fR
+# \fBzfs set sharesmb=on tank/fs\fR
+.fi
+.in -2
+.sp
+
+.RE
+.LP
+\fB示例 2 \fR显示 NFS 或 SMB 共享信息
+.sp
+.LP
+显示 NFS 或 SMB 共享信息：
+
+.sp
+.in +2
+.nf
+# \fBzfs get share\fR
+NAME                      PROPERTY  VALUE  SOURCE
+tank/data                 share     name=data,path=/data,prot=nfs  local
+tank/fs                   share     name=fs,path=/fs,prot=smb,ro... local
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR添加或更改 ZFS 文件系统上的共享属性
+.sp
+.LP
+如下所示，通过添加新选项（如 \fBhostA\fR 的只读）更改共享：
+
+.sp
+.in +2
+.nf
+# \fBzfs set share=name=data,prot=nfs,ro=hostA tank/data\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR删除 ZFS 文件系统的 NFS 或 SMB 共享
+.sp
+.LP
+使用 \fBzfs set\fR \fB-c\fR 命令删除共享：
+
+.sp
+.in +2
+.nf
+# \fBzfs set -c share=name=fs tank/fs\fR
+share 'fs' was removed.
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的命令行选项无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/zfs
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBchmod\fR(1)、\fBchown\fR(1)、\fBpktool\fR(1)、\fBssh\fR(1)、\fBmount\fR(1M)、\fBshadowd\fR(1M)、\fBshare\fR(1M)、\fBshare_nfs\fR(1M)、\fBshare_smb\fR(1M)、\fBunshare\fR(1M)、\fBzfs\fR(1M)、\fBzfs_allow\fR(1M)、\fBzfs_encrypt\fR(1M)、\fBzonecfg\fR(1M)、\fBzpool\fR(1M)、\fBchmod\fR(2)、\fBchown\fR(2)、\fBstat\fR(2)、\fBwrite\fR(2)、\fBfsync\fR(3C)、\fBdfstab\fR(4)、\fBvfstab\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+请参见 \fBgzip\fR(1) 手册页，该页不属于 SunOS 手册页集合。
+.sp
+.LP
+有关使用其他 \fBZFS\fR 功能的信息，请参见\fI《Solaris ZFS Administration Guide》\fR。

@@ -1,0 +1,405 @@
+'\" te
+.\" Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+.TH netadm 1M "30 Jun 2011" "SunOS 5.11" "System Administration Commands"
+.SH NAME
+netadm \- administer network configuration profiles
+.SH SYNOPSIS
+.LP
+.nf
+\fBnetadm enable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR
+.fi
+
+.LP
+.nf
+\fBnetadm disable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR
+.fi
+
+.LP
+.nf
+\fBnetadm list\fR [ \fB-x\fR ] [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ]
+     [ \fIprofile-name\fR ]
+.fi
+
+.LP
+.nf
+\fBnetadm show-events\fR
+.fi
+
+.LP
+.nf
+\fBnetadm scan-wifi\fR \fIlinkname\fR
+.fi
+
+.LP
+.nf
+\fBnetadm select-wifi\fR \fIlinkname\fR
+.fi
+
+.LP
+.nf
+\fBnetadm help\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBnetadm\fR utility is used to administer network profiles and interact with the NWAM daemon.
+.sp
+.LP
+There are three types of network profiles: Network Configuration Profiles (NCPs), Locations, and External Network Modifiers (ENMs).
+.sp
+.LP
+At any given time, there is one active NCP and one active Location on a system. Enabling a different NCP or Location (with activation-mode \fBmanual\fR) will implicitly disable the current active NCP or Location. The current Location (if its activation-mode is \fBmanual\fR) can also be disabled, though the effect of this will be to "turn off" some aspects of the system's networking capabilities, such as name services. Explicitly disabling an NCP is not permitted, as that would effectively shut down the basic network connectivity of the system. An NCP is only disabled implicitly when a different NCP is enabled.
+.sp
+.LP
+Conversely, there can be zero or more active ENMs at any given time. Thus enabling or disabling one ENM has no effect on other active ENMs.
+.sp
+.LP
+Enabling and disabling of individual NCUs is also allowed; the specified NCU must be part of the currently active NCP, and must have its activation mode set to \fBmanual\fR. If an NCU class is not specified, all NCUs (one link and/or one interface) with the given name will be enabled or disabled.
+.sp
+.LP
+Enabling and disabling of objects is performed asynchronously. Thus, the request to enable or disable can succeed, while the action itself fails. A failure of this sort will be reflected in the object state; \fBmaintenance\fR state indicates that the last action taken failed.
+.SH SUB-COMMANDS
+.sp
+.LP
+The following subcommands are supported:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Enable the specified profile. If the profile name is not unique, the profile type must be specified to identify the profile to be enabled. If the profile type is NCU and the name is not unique (that is, there is both a link and interface NCU with the same name), both NCUs will be enabled, unless the \fB-c\fR option is used to specify the NCU class. Profile type must be one of \fBncp\fR, \fBncu\fR, \fBloc\fR, or \fBenm\fR; NCU class must be one of \fBphys\fR or \fBip\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable\fR [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] \fIprofile-name\fR\fR
+.ad
+.sp .6
+.RS 4n
+Disable the specified profile. If the profile name is not unique, the profile type must be specified to identify the profile to be disabled. If the profile type is NCU and the name is not unique (that is, there is both a link and interface NCU with the same name), both NCUs will be disabled, unless the \fB-c\fR option is used to specify the NCU class. Profile type must be one of \fBncu\fR, \fBloc\fR, or \fBenm\fR; NCU class must be one of \fBphys\fR or \fBip\fR.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [ \fB-x\fR ] [ \fB-p\fR \fIprofile-type\fR ] [ \fB-c\fR \fIncu-class\fR ] [ \fIprofile-name\fR ]\fR
+.ad
+.sp .6
+.RS 4n
+List all available profiles and their current state. If a particular profile is specified by name, list only the current state of that profile. If the profile name is not unique, all profiles with the given name will be listed; or the profile type and/or NCU class can be included to identify a specific profile. If only a type is provided, list all profiles of that type. Listing the active NCP will include the NCUs that make up that NCP.
+.sp
+The \fB-x\fR option causes the \fBlist\fR subcommand to display a fourth column of output, headed \fBAUXILIARY STATE\fR, after the first three column headings in the default display, \fBTYPE\fR, \fBPROFILE\fR, and \fBSTATE\fR. The \fBAUXILIARY STATE\fR column shows why a profile is in a given state.
+.sp
+Possible \fBSTATE\fR values are:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+A manually-activated profile that has not been activated.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoffline\fR\fR
+.ad
+.sp .6
+.RS 4n
+A conditionally- or system-activated profile that has not been activated. It might not be active because its conditions have not been satisfied; or it might be that another profile has more specific conditions that are met and has been activated instead (in the case of profile types that must be activated one at a time, such as Locations).
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBonline\fR\fR
+.ad
+.sp .6
+.RS 4n
+A conditionally- or system-activated profile whose conditions have been met and that has been successfully activated; or a manually-activated profile that has been successfully activated at the request of the user.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmaintenance\fR\fR
+.ad
+.sp .6
+.RS 4n
+Activation of the profile was attempted, but failed.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBinitialized\fR\fR
+.ad
+.sp .6
+.RS 4n
+The profile represents a valid configuration object for which no action has yet been taken.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuninitialized\fR\fR
+.ad
+.sp .6
+.RS 4n
+The profile represents a configuration object not present in the system; for example, an NCU corresponding to a physical link that has been removed.
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshow-events\fR\fR
+.ad
+.sp .6
+.RS 4n
+Listen for stream of events from the NWAM daemon and display them.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBscan-wifi\fR \fIlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Initiate a wireless scan on link linkname.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBselect-wifi\fR \fIlinkname\fR\fR
+.ad
+.sp .6
+.RS 4n
+Select a wireless network to connect to from scan results on link linkname. Prompts for selection, WiFi key, and so forth, if necessary.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBhelp\fR\fR
+.ad
+.sp .6
+.RS 4n
+Display a usage message with short descriptions for each subcommand.
+.RE
+
+.SH EXAMPLES
+.LP
+\fBExample 1 \fREnabling a User-Specified Location
+.sp
+.LP
+The following command enables a user-specified location.
+
+.sp
+.in +2
+.nf
+# \fBnetadm enable -p loc office\fR
+Disabled loc 'home'.
+Enabled loc 'office'
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fRDisabling an ENM
+.sp
+.LP
+The following command disables an ENM.
+
+.sp
+.in +2
+.nf
+# \fBnetadm disable -p enm myvpn\fR
+Disabled enm 'myvpn'.
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRListing All NCPs
+.sp
+.LP
+The following command lists all NCPs.
+
+.sp
+.in +2
+.nf
+# \fBnetadm list -xp ncp\fR
+TYPE         PROFILE        STATE          AUXILIARY STATE
+ncp          Automatic      disabled       disabled by administrator
+ncp          User           online         active
+ncu:phys     nge0           online         interface/link is up
+ncu:ip       nge0           online         interface/link is up
+ncu:phys     nge1           offline        interface/link is down
+ncu:ip       nge1           offline        conditions for activation are
+                                           unmet
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 4 \fRListing NCUs in Active NCP
+.sp
+.LP
+The following command lists all \fBip\fR NCUs in the active NCP.
+
+.sp
+.in +2
+.nf
+# \fBnetadm list -c ip\fR
+TYPE        PROFILE        STATE
+ncu:ip      bge0           online
+ncu:ip      bge1           disabled
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 5 \fRForcing a Scan
+.sp
+.LP
+The following command forces a scan on the wireless interface \fBwpi0\fR.
+
+.sp
+.in +2
+.nf
+# \fBnetadm scan-wifi wpi0\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 6 \fRSelecting a WiFi Network
+.sp
+.LP
+The following command selects a WiFi network that is broadcasting its ESSID.
+
+.sp
+.in +2
+.nf
+# \fBnetadm select-wifi wpi0\fR
+1: ESSID testing BSSID 0:40:96:29:e9:d8
+2: ESSID sunwifi BSSID 0:b:e:9f:b5:80
+3: ESSID sunwifi BSSID 0:b:e:85:26:c0
+4: ESSID sunwifi BSSID 0:b:e:49:2f:80
+5: Other
+
+Choose WLAN to connect to [1-5]: \fB2\fR
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 7 \fRSelecting a WiFi Network (Alternative)
+.sp
+.LP
+The following command selects a WiFi network that is not broadcasting its ESSID.
+
+.sp
+.in +2
+.nf
+# \fBnetadm select-wifi wpi0\fR
+1: ESSID testing BSSID 0:40:96:29:e9:d8
+2: ESSID sunwifi BSSID 0:b:e:85:26:c0
+3: ESSID sunwifi BSSID 0:b:e:9f:b5:80
+4: ESSID sunwifi BSSID 0:b:e:49:2f:80
+5: ESSID sunwifi BSSID 0:b:e:49:62:c0
+6: Other
+
+Choose WLAN to connect to [1-6]: \fB6\fR
+
+Enter WLAN name: \fBoraclewifi\fR
+1: None
+2: WEP
+3: WPA
+Enter security mode: \fB2\fR
+
+Enter WLAN key for ESSID oraclewifi: \fB123456\fR
+
+Enter key slot [1-4]: \fB1\fR
+#
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 8 \fRMonitoring \fBnwamd\fR
+.sp
+.LP
+The following command monitors \fBnwamd\fR(1M) when switching locations.
+
+.sp
+.in +2
+.nf
+# \fBnetadm show-events\fR
+EVENT           DESCRIPTION
+OBJECT_ACTION   loc Automatic -> action refresh
+OBJECT_STATE    loc Automatic -> state offline*, method/service executi
+OBJECT_STATE    loc Automatic -> state online, active
+OBJECT_ACTION   loc home -> action refresh
+OBJECT_ACTION   loc NoNet -> action refresh
+OBJECT_ACTION   loc User -> action refresh
+OBJECT_ACTION   loc home -> action enable
+OBJECT_STATE    loc home -> state offline*, method/service executing
+OBJECT_STATE    loc Automatic -> state offline, conditions for activati
+OBJECT_STATE    loc home -> state online, active
+\fB^C\fR
+#
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Availabilitysystem/core-os
+_
+Interface StabilityCommitted
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBnetcfgd\fR(1M), \fBnetcfg\fR(1M), \fBnwamd\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+See also \fBnwam-manager(1M)\fR, available in the JDS/GNOME man page collection.

@@ -1,0 +1,607 @@
+'\" te
+.\" Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH wusbadm 1M "2011 年 8 月 16 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+wusbadm \- ワイヤレス USB ホストおよびデバイスの管理
+.SH 形式
+.LP
+.nf
+\fBwusbadm\fR list [\fB-h\fR | \fB-d\fR] [\fB-o\fR \fIfield\fR[,...]]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR associate [\fB-h\fR \fIhost-id\fR] [[\fB-c\fR [\fB-f\fR]] | \fB-n\fR] [\fB-o\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR remove-dev [[\fB-d\fR \fIdev-id\fR] | [\fB-h\fR \fIhost-id\fR]] [\fB-f\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR remove-host [\fB-h\fR \fIhost-id\fR] [\fB-f\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR enable-host [\fB-h\fR \fIhost-id\fR]
+.fi
+
+.LP
+.nf
+\fBwusbadm\fR disable-host [\fB-h\fR \fIhost-id\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBwusbadm\fR コマンドは、ホストとデバイスの情報の一覧表示、ホストとデバイスの関連付け、ホストまたはデバイスの情報のシステムからの削除、ホストの有効化または無効化など、ワイヤレス USB ホストおよびデバイスの管理作業を行うためのコマンド行インタフェースを提供します。
+.sp
+.LP
+ワイヤレス USB デバイスをホストにはじめて接続する前に、wusbadm の associate サブコマンドを実行してそれらの間の関連付け情報を設定する必要があります。その後、デバイスの無線を単純にオン/オフすることでデバイスの接続/切断を行えます。メーカーによって、デバイスにボタンが付いている場合があります。デバイスの無線のオン/オフは、有線 USB デバイスのホットプラグに似ています。
+.sp
+.LP
+\fBassociate\fR サブコマンドによって作成された関連付け情報は、デバイスとホストの非揮発性メモリー内に保持されます。\fBremove-dev\fR または \fBremove-host\fR サブコマンドを使用すると、ホストからこの情報を削除できます。デバイス上の情報は、別の関連付けで上書きできます。複数のホストに関連付けられたデバイスで複数の関連付けレコードの優先順位を決定したりそれらのレコードを更新したりする方法は、メーカーごとに異なります。
+.sp
+.LP
+各 \fBwusbadm\fR サブコマンドは、次のいずれかのオブジェクトに対して動作します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+システム上のワイヤレス USB ホストを一意に識別する 2 桁の数字 (01 から 99 の範囲)。この数字は、\fBwusb\fR サービス (「\fB注意事項\fR」節を参照) が正常に有効化され、このサービスがホストインスタンスをはじめて検出したときに生成されます。この数字は、\fBremove-host\fR サブコマンドで削除されるまで維持されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIdev-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+ワイヤレス USB ホストに関連付けられたワイヤレス USB デバイスを一意に識別する 5 桁の数字。先頭の 2 桁は、デバイスが関連付けられたワイヤレス USB ホストのホスト ID です。末尾の 3 桁の数字 (001 から 999 の範囲) は、同じホストに関連付けられたデバイスを区別するために使用されます。この 5 桁の数字の先頭 2 桁と末尾 3 桁はドットで区切られます。
+.sp
+\fIdev-id\fR は、デバイス関連付け処理中に生成されます。この値は、\fBremove-dev\fR サブコマンドによって削除されるか、同じホストとデバイスの間の別の関連付けによって更新されるまで、デバイスに対して維持されます。
+.RE
+
+.SH サブコマンド
+.sp
+.LP
+次のサブコマンドがサポートされています。\fBlist\fR 以外のすべてのサブコマンドは、実行時にオプションやオペランドが指定されなかった場合に、サブコマンド固有の使用法に関する情報を表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlist\fR [\fB-h\fR | \fB-d\fR] [\fB-o\fR \fIfield\fR[,...]]\fR
+.ad
+.sp .6
+.RS 4n
+システム上のワイヤレス USB のホストとデバイスを一覧表示し、すべてのホストとデバイスについて ID、状態、およびタイプを表示します。\fBlist\fR はデフォルトで、すべてのホストとデバイス、およびすべてのフィールドを一覧表示します。各ホストとそのデバイスが 1 つのグループとして表示されます。このサブコマンドは、次のオプションをサポートします。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]、\fB--output\fR=\fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+表示する出力フィールドのコンマ区切りのリスト (大文字と小文字は区別されません)。フィールド名は、次に示すフィールドのいずれか、またはすべてのフィールドを表示するための特殊な値 \fBall\fR にする必要があります。デフォルトでは (\fB-o\fR の指定なし)、\fBlist\fR はすべてのフィールドを表示します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBID\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIhost-id\fR または \fIdev-id\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBTYPE\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBhost\fR タイプまたは \fBdevice\fR タイプ。
+.sp
+\fBhost\fR のタイプとしては、\fBwhci\fR (オンボードのホスト) と \fBhwa\fR (ホットプラグ対応ホスト) があります。
+.sp
+\fBdevice\fR のタイプとしては、\fBkbd\fR、\fBmouse\fR、\fBstorage\fR、\fBprinter\fR、\fBdwa\fR (ワイヤレス USB ハブ)、\fBaudio\fR、\fBvideo\fR などがあります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBSTATE\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストには次の状態が存在します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストは、関連付けの実行、デバイスの接続、データ通信の実行などの処理を行う準備が整っているか、またはすでに処理中です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストはデバイスを処理する準備が整っておらず、ホストに接続されているデバイスは存在しません。\fBdisable-host\fR サブコマンドによってホストが停止された可能性があります。または、ホストが物理的に取り外されたかドライバが切り離されたためにホストが使用不可能になった可能性があります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+ホストがシステムに接続されていません。\fBhwa\fR デバイスは、システム上の USB ポートから取り外されると、この状態になります。
+.RE
+
+デバイスには次の状態が存在します。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスは、ホストに接続されていて開かれる準備ができているか、またはすでに開かれていて動作中です。デフォルトでは、デバイスの関連付けが完了してその無線がオンになると、デバイスはこの状態に遷移しようとします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisconnected\fR\fR
+.ad
+.sp .6
+.RS 4n
+デバイスは、まだホストに接続されていないか、または開かれていません。デバイスがこの状態になった理由としては、無線が範囲外になった、電源が切れている、ハードウェアの問題が発生した、などが考えられます。
+.RE
+
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR、\fB--host\fR\fR
+.ad
+.sp .6
+.RS 4n
+ワイヤレス USB ホストのみを一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR、\fB--device\fR\fR
+.ad
+.sp .6
+.RS 4n
+ワイヤレス USB デバイスのみを一覧表示します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBassociate\fR [\fB-h\fR \fIhost-id\fR] [[\fB-c\fR [\fB-f\fR]] | \fB-n\fR] [\fB-o\fR]\fR
+.ad
+.sp .6
+.RS 4n
+関連付け処理を開始するホストを指定します。関連付けは、ワイヤレス USB デバイスとワイヤレス USB ホストとの接続が可能になるための最初の手順です。
+.sp
+関連付けには次の 2 つのモデルが存在します。
+.sp
+.ne 2
+.mk
+.na
+\fBケーブルによる関連付け\fR
+.ad
+.sp .6
+.RS 4n
+まずデバイスとホストを USB ケーブルで接続し、その後、このサブコマンドを実行することで、ホストはデバイスとの関連付け情報を設定します。関連付けが有効になると、同じホストとデバイスとの間の以降の接続でケーブルが不要になります。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB数字による関連付け\fR
+.ad
+.sp .6
+.RS 4n
+デバイスの無線をオンにしたあと、このサブコマンドを実行してホストにデバイスの通信先を指定します。その後、ホストとデバイスの両方で短い数字が表示されます。数字の値を比較し、ホストとデバイスの両方で確認します。
+.RE
+
+関連付けが成功したら、関連付けられた USB ホストと USB デバイスのワイヤレス接続処理に進むことができます。デフォルトでは、関連付け情報は、削除または上書きされるまでホストとデバイスの両方で保持されます。
+.sp
+関連付けの対象となるデバイスが複数存在する場合、このサブコマンドはそのすべてを一覧表示し、ユーザーがそれらの中から選択できるようにします。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR、\fB--host\fR \fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+関連付けの対象となるホストを指定します。このオプションが指定されなかった場合、このサブコマンドは、選択可能な有効化されたホストをすべて一覧表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR、\fB--cable\fR\fR
+.ad
+.sp .6
+.RS 4n
+ケーブルによる関連付け処理を開始します。ワイヤレス USB デバイスをホストに接続したあと、このオプションを指定して associate サブコマンドを実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR、\fB--numeric\fR\fR
+.ad
+.sp .6
+.RS 4n
+数字による関連付け処理を開始します。このサブコマンドは、ホスト上とデバイス上に表示された数字を比較するようユーザーに求めます。
+.RE
+
+前述の 2 つの関連付けモデルオプション (\fB-n\fR または \fB-c\fR) のどちらも指定されなかった場合、このサブコマンドは、いずれかの関連付けモデルオプションを指定するようユーザーに求めます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+ケーブルによる関連付け処理を開始します。ワイヤレス USB デバイスをホストに接続したあと、このオプションを指定して associate サブコマンドを実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR、\fB--onetime\fR\fR
+.ad
+.sp .6
+.RS 4n
+この関連付けが 1 回かぎりの接続用であることを示します。つまり、関連付けの実行後、このデバイスが接続されたあと切断されると、その関連付け情報がホストシステムから削除されます。次回接続時には関連付けを再度実行する必要があります。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-dev\fR [[\fB-d\fR \fIdev-id\fR] | [\fB-h\fR \fIhost-id\fR]][\fB-f\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ワイヤレス USB デバイスの関連付け情報をシステムから削除します。削除後は、そのホストとデバイスに対して \fBassociate\fR サブコマンドが再度実行されるまで、そのデバイスとホストは接続できません。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR、\fB--device\fR=\fIdev-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIdev-id\fR で指定されたワイヤレス USB デバイスの関連付け情報を削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR、\fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIhost-id\fR で指定されたホストに関連付けられたすべてのワイヤレス USB デバイスの関連付け情報を削除します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+確認プロンプトを表示せずに削除を実行します。デバイスがホストに接続されていた場合、このサブコマンドはその接続を強制的に切断します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBremove-host\fR [\fB-h\fR \fIhost-id\fR] [\fB-f\fR]\fR
+.ad
+.sp .6
+.RS 4n
+\fIhost-id\fR やこのホストに関連付けられたすべてのデバイスの関連付け情報などのホスト情報を、システムから削除します。このサブコマンドは通常、\fBhwa\fR ドングルのような、一時的に使用されるホットプラグ対応ワイヤレス USB ホストを削除するために使用されます。このホストを再度使用可能な状態にするには、\fBhwa\fR ドングルの物理的なホットプラグを行うなどして、このホストが再度列挙されるようにします。その後、ホスト ID が更新されます。ただし、デバイスの関連付け情報は回復しません。オンボードのホストを削除することはお勧めしません。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR、\fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+削除する \fIhost-id\fR を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+確認プロンプトを表示せずに削除を実行します。このホストに接続されているデバイスが 1 つ以上存在する場合には、それらの接続を強制的に切断します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBenable-host\fR [\fB-h\fR \fIhost-id\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ホストを有効状態に遷移させます。ホストはデフォルトで有効状態になります。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR、\fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+有効化する \fIhost-id\fR を指定します。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisable-host\fR [\fB-h\fR \fIhost-id\fR] [\fB-f\fR]\fR
+.ad
+.sp .6
+.RS 4n
+ホストを無効状態に遷移させます。\fIhost-id\fR とこのホストのすべての関連付け情報が維持されます。\fBenable-host\fR サブコマンドを発行すると、このホストは有効状態に戻ります。このサブコマンドには、次のオプションがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR \fIhost-id\fR、\fB--host\fR=\fIhost-id\fR\fR
+.ad
+.sp .6
+.RS 4n
+無効化する \fIhost-id\fR を指定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+確認プロンプトを表示せずに無効化処理を実行します。このホストに接続されているデバイスが 1 つ以上存在する場合、このオプションはそれらの接続を強制的に切断します。
+.RE
+
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRすべてのホストとデバイスの一覧表示
+.sp
+.LP
+次のコマンドは、ワイヤレス USB のすべてのホストとデバイスを一覧表示します。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm list\fR
+01      enabled         hwa
+01.001  connected       mouse
+01.002  connected       kbd
+02      enabled         whci
+02.001  connected       printer
+02.002  disconnected    storage
+03      disabled        hwa
+03.001  disconnected    storage
+03.002  disconnected    dwa
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRケーブルによるデバイスへの関連付け
+.sp
+.LP
+次のコマンドは、ケーブルによる関連付けのアプローチを使用して、特定のホスト (ホスト ID \fB01\fR) にデバイスを関連付けます。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm associate -h 01 -c\fR
+Associate a device with host (01) via cable.
+Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRデバイスの関連付けの削除
+.sp
+.LP
+次のコマンドは、デバイスの関連付け情報をホストシステムから削除します。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm remove-dev -d 01.002\fR
+Remove the information of device (01.002) from system.
+This device can not be connected with the host until it is associated
+again. Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRすべてのデバイスの関連付けの削除
+.sp
+.LP
+次のコマンドは、特定のホストに関連付けられたすべてのデバイスの関連付け情報を削除します。
+
+.sp
+.in +2
+.nf
+# \fBwusbadm remove-dev -h 02\fR
+Remove the information of all the devices associated with host (02)
+from the system.
+All the devices associated with the host cannot be connected with it
+until they are associated again. Continue (yes/no)?
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.LP
+次の終了値が返されます。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+エラー。処理が失敗しました。たとえば、デバイスとホストの関連付けが失敗しました。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用方法のエラー。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+.LP
+\fB/usr/sbin\fR
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/io/usb
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBattributes\fR(5), \fBhwahc\fR(7D), \fBusba\fR(7D)
+.SH 注意事項
+.sp
+.LP
+\fBwusb\fR (ワイヤレス USB の管理) サービスは、サービス管理機能 \fBsmf\fR(5) によって、次のサービス識別子として管理されます。
+.sp
+.in +2
+.nf
+svc:/system/wusb:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+有効化、無効化、または再起動要求など、このサービスに関する管理操作は、\fBsvcadm\fR(1M) を使用して実行できます。サービスのステータスを照会するには、\fBsvcs\fR(1) コマンドを使用します。
+.sp
+.LP
+\fBwusb\fR サービスは、非公開インタフェースの \fBwusbd\fR デーモンによって実装されています。このデーモンは \fBwusb\fR サービスと同様に、SMF によって起動されます。このデーモンを指定するには、次のサービスインスタンスを使用します。
+.sp
+.in +2
+.nf
+svc:/system/wusbd:default
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+\fBwusbd\fR デーモンを直接呼び出さないようにしてください。

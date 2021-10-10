@@ -1,0 +1,47 @@
+#!/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+#
+. /lib/svc/share/smf_include.sh
+
+smf_is_globalzone || exit $SMF_EXIT_OK 
+
+
+/usr/sbin/vbiosd -g >/dev/msglog 2>&1
+rc=$?
+if [ $rc -ne 0 ]; then
+	echo "WARNING: unable to reset console to text mode"
+fi
+
+#
+# This sleep gives gdm time to start the X server (if it is going to).
+#
+sleep 30
+
+# Catch situations where gdm is online but there is no local X server
+# running. The kernel will deal with ignoring the request if a reset is not
+# necessary.
+
+/usr/sbin/vbiosd -F -g
+
+exit $SMF_EXIT_OK
+

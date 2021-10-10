@@ -1,0 +1,205 @@
+'\" te
+.\" Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH pkcs11_kms 5 "11 May 2011" "SunOS 5.11" "Standards, Environments, and Macros"
+.SH NAME
+pkcs11_kms \- RSA PKCS#11 provider for the Oracle Key Manager
+.SH SYNOPSIS
+.LP
+.nf
+\fB/usr/lib/security/pkcs11_kms.so\fR
+.fi
+
+.LP
+.nf
+\fB/usr/lib/security/64/pkcs11_kms.so\fR
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBpkcs11_kms.so\fR object implements the RSA Security Inc. PKCS#11 Cryptographic Token Interface (Cryptoki), v2.20, specification using the Oracle Key Manager (OKM) KMS agent protocol to talk to an Oracle Key Manager appliance (KMA). This provider implements the PKCS#11 specification and communicates to a remote OKM using the (private) KMS client protocol.
+.sp
+.LP
+The following PKCS#11 mechanisms are supported in this provider: \fBCKM_AES_KEY_GEN\fR, \fBCKM_AES_CBC_PAD\fR, and \fBCKM_AES_CBC\fR. 
+.sp
+.LP
+The following PKCS#11 interfaces are supported by this provider: 
+.sp
+.in +2
+.nf
+C_Initialize
+C_Finalize
+C_GetInfo
+C_GetAttributeValue
+C_SetAttributeValue
+C_GetFunctionList
+C_GetSlotList
+C_GetSlotInfo
+C_GetTokenInfo
+C_GetMechanismList
+C_GetMechanismInfo
+C_InitToken
+C_SetPIN
+C_Login
+C_Logout
+C_FindObjectsInit/C_FindObjects/C_FindObjectsFinal
+C_GenerateKey
+C_EncryptInit/C_Encrypt/C_EncryptFinal
+C_DecryptInit/C_Decrypt/C_DecryptFinal
+C_DestroyObject
+C_OpenSession
+C_CloseSession
+C_CloseAllSessions
+C_GetSessionInfo
+C_CreateObject
+C_CopyObject
+C_GetObjectSize
+C_EncryptUpdate
+C_DecryptUpdate
+.fi
+.in -2
+
+.sp
+.LP
+All other functions return \fBCKR_FUNCTION_NOT_SUPPORTED\fR when called.
+.SS "Prerequisites"
+.sp
+.LP
+The \fBpkcs11_kms\fR provider can only be used on a system that has access to an OKM. The OKM administrator must configure a an agent ID for each user (or application) that is accessing the OKM. This is done through the OKM utilities that are part of the OKM administrative tools and are not bundled in Oracle Solaris.
+.sp
+.LP
+Once the OKM administrator has configured the KMA for use and communicated the parameters to the client, that is, an Oracle Solaris user or application, the Oracle Solaris PKCS#11 KMS provider can be initialized for use.
+.sp
+.LP
+Initializing the KMS provider is done through the use of the \fBkmscfg\fR(1M) utility. At a minimum, \fBkmscfg\fR requires the user to enter the name of a profile, the OKM Agent ID, the initial password used to secure the profile, and the IP address of the KMA in order to initialize the local provider configuration files for further use. See the \fBkmscfg\fR(1M) manual page for details.
+.sp
+.LP
+Once \fBkmscfg\fR has been run and the local token namespace has been configured, the user can then initialize the token for use. Initializing the token is done using the \fBpktool\fR(1) command as follows:
+.sp
+.in +2
+.nf
+$ pktool inittoken currlabel=KMS
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The user has to supply the default SO (security officer) PIN before being able to initialize the KMS provider for use. The default SO PIN is whatever was used by the OKM administrator when initially setting up the OKM Agent. The user initializing the token must know this passphrase in order to initialize the provider.
+.sp
+.LP
+Once the provider is initialized, the user PIN can be changed from the default values. Again, \fBpktool\fR(1) is used to change the PIN value.
+.sp
+.LP
+Use the following command to change the local PIN:
+.sp
+.in +2
+.nf
+$ pktool setpin token=KMS
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+The PIN provided for the \fBpktool setpin\fR operation or by calling \fBC_Login()\fR and \fBC_SetPIN()\fR functions can be any string of characters with a length between 1 and 256 and no embedded nulls.
+.sp
+.LP
+Accessing the Token
+.sp
+.LP
+After a user initializes their token, they can begin using it with \fBpktool\fR(1), \fBdecrypt\fR(1), \fBencrypt\fR(1), or by writing PKCS11 applications and specifying the KMS token.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRCreating a Key on an Oracle Key Manager
+.sp
+.LP
+The following command creates a key on an Oracle Key Manager:
+
+.sp
+.in +2
+.nf
+$ pktool genkey token=KMS label=mykey1 keytype=aes keylen=256
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 2 \fREncrypting a File Using a Key from an Oracle Key Manager
+.sp
+.LP
+The following command encrypts a file using a key from an Oracle Key Manager:
+
+.sp
+.in +2
+.nf
+$ encrypt -a aes -K mykey1 -T KMS -i input.txt -o output.enc
+.fi
+.in -2
+.sp
+
+.LP
+\fBExample 3 \fRDecrypting a File Using a Key From an Oracle Key Manager
+.sp
+.LP
+The following command decrypts a file using a key from an Oracle Key Manger:
+
+.sp
+.in +2
+.nf
+$ decrypt -a aes -K mykey1 -T KMS -i output.enc -o output.txt
+.fi
+.in -2
+.sp
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for a description of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+AvailabilityT{
+/system/library/security/crypto/pkcs11_kms
+T}
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe with Exceptions. See below.
+_
+StandardPKCS#11 v2.20 
+.TE
+
+.sp
+.LP
+Exceptions to MT-Safe attribute are documented in section 6.6.2 of RSA PKCS#11 v2.20.
+.SH SEE ALSO
+.sp
+.LP
+\fBdecrypt\fR(1), \fBencrypt\fR(1), \fBpktool\fR(1), \fBcryptoadm\fR(1M), \fBkmscfg\fR(1M), \fBlibpkcs11\fR(3LIB), \fBattributes\fR(5)
+.sp
+.LP
+\fIKMS 2.2: Administration Guide\fR
+.sp
+.LP
+\fIOracle Key Manager (OKM) Administration Guide\fR
+.SH NOTES
+.sp
+.LP
+\fBpkcs11_kms.so\fR uses a private directory for holding configuration files and other data needed to initialize the connection to a KMA. The private directory is local to the host on which it was first created. By default, the KMS token directory space is in \fB/var/user/kms/$USERNAME\fR. The default KMS directory can be overridden by setting the \fBKMSTOKEN_DIR\fR environment variable prior to using the \fBkmscfg\fR(1M), \fBdecrypt\fR(1), \fBencrypt\fR(1), and \fBpktool\fR(1) commands.
+.sp
+.LP
+PKCS#11 clients require that Oracle Key Manager Software Version 2.4 be installed. 
+.sp
+.LP
+If PKCS#11 clients use the same Agent ID from multiple systems, that agent should be created without the \fBOne Time Passphrase\fR flag set. This option is not be available in OKM clusters with some members running versions of the OKM software prior to 2.4. Refer to the\fIOracle Key Manager (OKM) Administration Guide\fR for assistance in creating Agents.
+.sp
+.LP
+OKM Agents must have a \fBDefault Key Group\fR assigned prior to being used to create keys with a PKCS#11 client. If a Default Key Group is not assigned to the Agent, operations fail with a \fBCKR_PIN_INCORRECT\fR error. Refer to the\fIOracle Key Manager (OKM) Administration Guide\fR for assistance in assigning key groups to agents.

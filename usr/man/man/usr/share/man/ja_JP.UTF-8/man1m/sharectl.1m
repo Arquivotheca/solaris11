@@ -1,0 +1,270 @@
+'\" te
+.\" Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+.TH sharectl 1M "2011 年 4 月 23 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+sharectl \- ファイル共有サービスの構成および管理
+.SH 形式
+.LP
+.nf
+\fBsharectl\fR [\fB-h\fR]
+.fi
+
+.LP
+.nf
+\fBsharectl\fR status [\fB-h\fR] [\fIprotocol\fR]
+.fi
+
+.LP
+.nf
+\fBsharectl\fR get [\fB-h\fR] [\fB-p\fR \fIproperty\fR]... \fIprotocol\fR
+.fi
+
+.LP
+.nf
+\fBsharectl\fR set [\fB-h\fR] [\fB-p\fR \fIproperty\fR=\fIvalue\fR]... \fIprotocol\fR
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBsharectl\fR コマンドは、NFS や SMB などのファイル共有プロトコルに対して処理を実行します。このコマンドは、クライアントおよびサーバー操作プロパティーを設定し、構成スナップショットを取得および復元し、プロトコルサービスのステータスを取得します。
+.sp
+.LP
+\fBget\fR および \fBset\fR サブコマンド (下記参照) では、root 特権を持っているか、またはユーザーが Primary Administrator 役割を引き受けていることが必要です。承認ユーザーは、\fBsharectl\fR を使用すると、Solaris サーバー管理機能で NFS および SMB プロパティーのグローバル値を設定できます。\fBnfs\fR(4) および \fBsmb\fR(4) を参照してください。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。 
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用方法に関するメッセージを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR \fIproperty\fR[=\fI value\fR]\fR
+.ad
+.sp .6
+.RS 4n
+プロパティーを指定します。後述の「サブコマンド」を参照してください。
+.RE
+
+.SS "サブコマンド"
+.sp
+.LP
+\fBsharectl\fR は、次のサブコマンドをサポートします。\fBsharectl\fR コマンドの形式は次のとおりです。
+.sp
+.in +2
+.nf
+# \fBsharectl \fIsubcommand\fR [\fIoption\fR]\fR
+.fi
+.in -2
+.sp
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBget\fR [\fB-p\fR\ \fI property\fR] \fIprotocol\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロトコルのプロパティー値を取得します。\fB-p\fR オプションが指定されていない場合、指定されたプロトコルのすべてのプロパティーを取得します。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBset\fR [\fB-p\fR\ \fI property\fR=\fIvalue\fR]... \fIprotocol \fR\fR
+.ad
+.sp .6
+.RS 4n
+指定されたファイル共有プロトコルのプロパティーを設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstatus\fR [\fIprotocol\fR] \fR
+.ad
+.sp .6
+.RS 4n
+指定されたプロトコルのステータスを表示します。プロトコルが指定されていない場合は、すべてのファイル共有プロトコルのステータスを表示します。
+.RE
+
+.SH 使用例
+.LP
+\fB例 1 \fRプロパティーを取得する
+.sp
+.LP
+次のコマンドは、NFS プロトコルのプロパティーを取得します。
+
+.sp
+.in +2
+.nf
+% \fBsharectl get nfs\fR
+lockd_listen_backlog=32
+lockd_servers=20
+lockd_retransmit_timeout=5
+grace_period=90
+nfsmapid_domain=sun.com
+servers=16
+server_versmin=2
+server_versmax=4
+max_connections=-1
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+次のコマンドは、NFS プロトコルの grace_period プロパティーの値を取得します。
+
+.sp
+.in +2
+.nf
+% \fBsharectl get -p grace_period nfs\fR
+grace_period=90
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRプロパティーを設定する
+.sp
+.LP
+前述の例では、サーバー NFS プロトコル (\fBserver_versmin\fR) の最小バージョンが、\fB2\fR に設定されています。次のコマンドは、最低バージョン番号をバージョン 3 に設定します。
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p server_versmin=3 nfs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fRステータスを取得する
+.sp
+.LP
+次のコマンドは、システムでのすべてのファイル共有プロトコルのステータスを取得します。
+
+.sp
+.in +2
+.nf
+% \fBsharectl status\fR
+nfs      enabled
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 4 \fRSMB サーバーのプロパティーを設定する
+.sp
+.LP
+次のコマンドは、SMB プロトコルの \fBserver_signing_required\fR プロパティー値を設定します。
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p server_signing_required=true smb\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRSMB クライアントのプロパティーを設定する
+.sp
+.LP
+次のコマンドは、SMB プロトコルの \fBclient_signing_required\fR プロパティー値を設定します。
+
+.sp
+.in +2
+.nf
+% \fBsharectl set -p client_signing_required=true smb\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR\fBautofs\fR の RPC 呼び出しのトレースを設定する
+.sp
+.LP
+次のコマンドは、各 RPC 呼び出しを \fBautofs\fR に展開し、\fBautomountd\fR(1M) でそのサービスに対して指定された場所に記録します。
+
+.sp
+.in +2
+.nf
+# \fBsharectl set trace=1 autofs\fR
+.fi
+.in -2
+.sp
+
+.SH 終了ステータス
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.RS 12n
+.rt  
+正常終了。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fI0 以外\fR\fR
+.ad
+.RS 12n
+.rt  
+コマンドが失敗しました。
+.RE
+
+.SH ファイル
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/usr/include/libshare.h\fR\fR
+.ad
+.RS 27n
+.rt  
+終了ステータスに使用されるエラーコード。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+インタフェースの安定性確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBautomount\fR(1M), \fBautomountd\fR(1M), \fBlockd\fR(1M), \fBmountd\fR(1M), \fBnfsd\fR(1M), \fBnfsmapid\fR(1M), \fBnfs\fR(4), \fBsmb\fR(4), \fBuser_attr\fR(4), \fBattributes\fR(5), \fBrbac\fR(5), \fBsmf\fR(5), \fBstandards\fR(5)

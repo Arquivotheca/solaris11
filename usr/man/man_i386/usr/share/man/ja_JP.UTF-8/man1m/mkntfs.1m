@@ -1,0 +1,293 @@
+'\" te
+.\" Portions Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
+.\" Copyright (c) 2002-2006 Szabolcs Szakacsits
+.\" Copyright (c) 2002-2005 Anton Altaparmakov
+.\" Copyright (c) 2002-2003 Richard Russon
+.\" Copyright (c) 2007 Yura Pakhuchiy
+.\" This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation ; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program (in the main directory of the Linux-NTFS distribution in the file COPYING); if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 11-1307 USA
+.TH mkntfs 1M "2009 年 5 月 27 日" "SunOS 5.11" "システム管理コマンド"
+.SH 名前
+mkntfs \- NTFS ファイルシステムの作成
+.SH 形式
+.LP
+.nf
+\fBmkntfs\fR [\fIoptions\fR] \fIdevice\fR [\fInumber_of_sectors\fR]
+.fi
+
+.LP
+.nf
+\fBmkntfs\fR [\fB-C\fR] [\fB-c\fR \fIcluster-size\fR] [\fB-F\fR] [\fB-f\fR] [\fB-H\fR \fIheads\fR] [\fB-h\fR] [\fB-I\fR]
+     [\fB-L\fR \fIvolume-label\fR] [\fB-l\fR] [\fB-n\fR] [\fB-p\fR \fIpart-start-sect\fR] [\fB-Q\fR] [\fB-q\fR]
+     [\fB-S\fR \fIsectors-per-track\fR] [\fB-s\fR \fIsector-size\fR] [\fB-T\fR] [\fB-V\fR] [\fB-v\fR]
+     [\fB-z\fR \fImft-zone-multiplier\fR] [\fB--debug\fR] \fIdevice\fR [\fInumber-of-sectors\fR]
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fBmkntfs\fR ユーティリティーは、デバイス (通常はディスクパーティション)、またはファイルに NTFS ファイルシステムを作成するのに使用します。\fIdevice\fR オペランドは、デバイスに対応する特殊ファイルです (例: \fB/dev/dsk/c0d0p0\fR)。\fInumber-of-sectors \fR オペランドは、デバイス上のブロック数です。これを省略すると、\fBmkntfs\fR はファイルシステムのサイズを自動的に計算します。
+.SH オプション
+.sp
+.LP
+サポートされているオプションを次に示します。ほとんどのオプションには、単一文字と完全名の両方の形式があります。引数を取らない単一文字オプションは複数を組み合わせることができます。たとえば、\fB-fv\fR は \fB-f\fR \fB-v\fR と同等です。完全名のオプションは、その名前の一意の接頭辞に短縮できます。
+.sp
+.LP
+次に示すように、オプションは基本、詳細、出力、およびヘルプに分類されます。
+.SS "基本オプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-C\fR、\fB--enable-compression\fR\fR
+.ad
+.sp .6
+.RS 4n
+ボリューム上で圧縮を有効にします。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR、\fB--fast\fR または \fB-q\fR, \fB--quick\fR\fR
+.ad
+.sp .6
+.RS 4n
+簡易 (高速) フォーマットを実行します。このオプションを指定すると、ボリュームのゼロ初期化および不良セクターの検査が省略されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-L\fR、\fB--label\fR \fIstring\fR\fR
+.ad
+.sp .6
+.RS 4n
+ファイルシステムのボリュームラベルを \fIstring\fR に設定します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR、\fB--no-action\fR\fR
+.ad
+.sp .6
+.RS 4n
+実際にファイルシステムを作成することなく、ファイルシステムを作成する場合に実行される内容を表示します。\fB\fRデバイスへの実際の書き込みを除く、すべてのフォーマット処理が実行されます。
+.RE
+
+.SS "詳細オプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR、\fB--cluster-size\fR \fIbytes\fR\fR
+.ad
+.sp .6
+.RS 4n
+クラスタのサイズをバイト単位で指定します。有効なクラスタサイズ値は 2 の累乗で、クラスタごとに 256 バイト以上 65536 バイト以下です。省略すると、デフォルトのクラスタサイズとして 4096 バイトが使用されます。\fB\fR
+.sp
+クラスタをセクターより小さくすることはできないため、デフォルトのクラスタサイズはセクターサイズと等しいか、それより大きい値に設定してください。また、値を 4096 より大きくすると、ボリューム上で圧縮が無効になるという副作用もあります。これは、Windows で使用される NTFS 圧縮アルゴリズムの制限のためです。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR、\fB--force\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定したデバイスがブロック型特殊デバイスでなかったり、マウントされていると表示されている場合でも、\fBmkntfs\fR を強制的に実行します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR、\fB--heads\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+ヘッド数を指定します。最大値は 65535 (0xffff) です。省略すると、\fBmkntfs\fR が自動的にヘッド数を決定しようとします。それに失敗すると、デフォルトの 0 が使用されます。\fInum\fR の指定は、作成したボリュームから Windows をブートするために必須です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR、\fB--no-indexing\fR\fR
+.ad
+.sp .6
+.RS 4n
+ボリューム上でのコンテンツのインデックス作成を無効にします。このオプションは、Windows 2000 以降でのみ有効です。Windows NT 4.0 以前ではコンテンツのインデックス作成は実装されていないため、これは無視されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR、\fB--partition-start\fR \fIsector\fR\fR
+.ad
+.sp .6
+.RS 4n
+パーティションの開始セクターを指定します。最大値は 4294967295 (2^32-1) です。省略すると、\fBmkntfs\fR が自動的に \fIsector\fR を決定しようとします。それに失敗すると、デフォルトの 0 が使用されます。\fIsector\fR の指定は、作成したボリュームから Windows をブートするために必須です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR、\fB--sectors-per-track\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+トラックあたりのセクター数を指定します。最大値は 65535 (0xffff) です。省略すると、mkntfs が自動的に sectors-per-track 数を決定しようとし、それに失敗するとデフォルトの 0 が使用されます。sectors-per-track の指定は、作成したボリュームから Windows をブートするために必須です。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR、\fB--sector-size\fR \fIbytes\fR\fR
+.ad
+.sp .6
+.RS 4n
+セクターのサイズをバイト単位で指定します。有効なセクターサイズ値は 256、512、1024、2048、および 4096 です。省略すると、\fBmkntfs\fR が自動的に sector-size を決定しようとします。それに失敗すると、デフォルトのセクターあたり 512 バイトが使用されます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-T\fR、\fB--zero-time\fR\fR
+.ad
+.sp .6
+.RS 4n
+現在のシステム時間ではなく、1970 年 1 月 1 日の 00:00:00 UTC であるように見せかけます。これは、デバッグ時に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-z\fR、\fB--mft-zone-multiplier\fR \fInum\fR\fR
+.ad
+.sp .6
+.RS 4n
+マスターファイルテーブル (MFT) ゾーンの乗数を設定します。これにより、ボリュームで使用する MFT ゾーンのサイズが決定されます。MFT ゾーンは、MFT 用に予約されているボリュームの先頭領域で、オンディスク i ノード (MFT レコード) を格納します。小さなファイルはその全体が i ノード内に格納されます。このため、非常に小さなファイルを大量にボリュームに格納する場合は、ゾーンの乗数を大きな値に設定することをお勧めします。NTFS ドライバの処理時に、MFT ゾーンのサイズは必要に応じてただちに変更されるため、オプションの値を選択することで断片化を抑えられます。有効な値は、\fB1\fR、\fB2\fR、\fB3\fR、および \fB4\fR です。各値は次の意味を持ちます。
+.sp
+.in +2
+.nf
+MFT zone        MFT zone size
+multiplier      (% of volume size)
+1       12.5% (default)
+2       25.0%
+3       37.5%
+4       50.0%
+.fi
+.in -2
+.sp
+
+.RE
+
+.SS "出力オプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB--debug\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fB-v\fR オプションによる詳細出力、および \fBmkntfs\fR のデバッグに役立つ追加の出力を含めます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-q\fR、\fB--quiet\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細実行。エラーは標準エラー出力に書き込まれ、標準出力へは一切出力されません。これは、スクリプト内で \fBmkntfs\fR を実行する場合に役立ちます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR、\fB--verbose\fR\fR
+.ad
+.sp .6
+.RS 4n
+詳細実行。
+.RE
+
+.SS "ヘルプオプション"
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR、\fB--help\fR\fR
+.ad
+.sp .6
+.RS 4n
+それぞれの簡単な説明が付いたオプションのリストを表示します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-l\fR、\fB--license\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmkntfs\fR のライセンス情報を表示して終了します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-V\fR、\fB--version\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmkntfs\fR のバージョン番号を表示して終了します。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/file-system/ntfsprogs
+_
+インタフェースの安定性不確実
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBntfsprogs\fR(1M), \fBntfsresize\fR(1M), \fBntfsundelete\fR(1M), \fBattributes\fR(5)
+.sp
+.LP
+http://wiki.linux-ntfs.org
+.SH 著者
+.sp
+.LP
+\fBmkntfs\fR は、Anton Altaparmakov、Richard Russon、Erik Sornes、および Szabolcs Szakacsits が作成しました。

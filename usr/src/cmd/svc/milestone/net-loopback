@@ -1,0 +1,137 @@
+#!/usr/sbin/sh
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+#
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+. /lib/svc/share/net_upgrade_include.sh
+
+#
+# In a shared-IP zone we need this service to be up, but all of the work
+# it tries to do is irrelevant (and will actually lead to the service 
+# failing if we try to do it), so just bail out. 
+# In the global zone and exclusive-IP zones we proceed.
+#
+smf_configure_ip || exit $SMF_EXIT_OK
+
+#
+# Function called during upgrade to convert /etc/hostname*.lo0 file
+# contents to their equivalent ipadm persistent configuration.
+#
+upgrade_loopback ()
+{
+	typeset v4_exists=0
+	typeset v6_exists=0
+
+	[[ -f /etc/hostname.lo0 ]] && v4_exists=1
+	[[ -f /etc/hostname6.lo0 ]] && v6_exists=1
+	[[ $v4_exists -eq 0 ]] && [[ $v6_exists -eq 0 ]] && return
+	#
+	# It is possible that both legacy and ipadm persistent loopback
+	# configurations exist. In that case, the legacy configuration is
+	# the one that should be persisted after upgrade. Delete any
+	# pre-existing ipadm configuration in these cases.
+	#
+	ipadm show-if lo0 >/dev/null 2>&1
+	if [[ $? -eq 0 ]]; then
+		ifconfig -P lo0 unplumb
+		ifconfig -P lo0 inet6 unplumb
+		ipadm show-if lo0 >/dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			if [ $v4_exists -eq 1 ]; then
+				nu_rename_upgraded_file \
+				    hostname.lo0 1 "hostname.<lo0>"
+			fi
+			if [ $v6_exists -eq 1 ]; then
+				nu_rename_upgraded_file \
+				    hostname6.lo0 1 "hostname6.<lo0>"
+			fi
+			return
+		fi
+		echo "Deleted ipadm configuration for lo0 "\
+		    "during the upgrade" > /dev/msglog
+	fi
+	if [ $v4_exists -eq 1 ]; then
+		/usr/sbin/ipadm create-addr -T static -a 127.0.0.1/8 lo0/v4
+		/usr/bin/ls -1 /etc/hostname.lo0:[0-9]* /etc/hostname.lo0 \
+		    2>/dev/null | sort -r | while IFS='/' read p1 p2 hfile; do
+			ifname=`echo $hfile | cut -f2- -d'.'`
+			nu_upgrade_if $ifname inet $hfile "hostname.<lo0>"
+		done
+	fi
+	if [ $v6_exists -eq 1 ]; then
+		/usr/sbin/ipadm create-addr -T static -a ::1/128 lo0/v6
+		/usr/bin/ls /etc/hostname6.lo0:[0-9]* /etc/hostname6.lo0 \
+		    2>/dev/null | sort -r | while IFS='/' read p1 p2 hfile; do
+			ifname=`echo $hfile | cut -f2- -d'.'`
+			nu_upgrade_if $ifname inet6 $hfile "hostname6.<lo0>"
+		done
+	fi
+}
+
+case "$1" in
+start)
+	# Deal with /etc/hostname[6].lo0 upgrades first.
+	if nu_etc_files_need_upgrading $SMF_FMRI; then
+		upgrade_loopback
+		nu_finalize_etc_upgrade $SMF_FMRI
+	fi
+
+	state=`/usr/sbin/ipadm show-if -p -o state lo0 2>/dev/null`
+	res=$?
+	if [[ "$state" = "disabled" ]]; then
+		/usr/sbin/ipadm enable-if -t lo0
+	elif [[ $res -ne 0 ]]; then
+		#
+		# If the loopback interface does not exist, we need to create
+		# the interface and the IPv4 and IPv6 loopback addresses.
+		#
+
+		# IPv4 loopback
+		/usr/sbin/ipadm create-addr -T static -a 127.0.0.1/8 lo0/v4
+
+		# IPv6 loopback
+		/usr/sbin/ipadm create-addr -T static -a ::1/128 lo0/v6
+	fi
+
+	# Trusted Extensions shares the loopback interface.
+	# The all-zones prop is non-persistent so that a TX system
+	# can be easily configured back to a standard Solaris system.
+	if (smf_is_system_labeled); then
+		if smf_is_globalzone; then
+			/usr/sbin/ipadm set-addrprop -t \
+			    -p zone=all-zones lo0/v4
+			/usr/sbin/ipadm set-addrprop -t \
+			    -p zone=all-zones lo0/v6
+		fi
+	fi
+	;;
+
+*)
+	echo "Usage: $0 { start }"
+	exit 1
+	;;
+esac
+
+exit $SMF_EXIT_OK

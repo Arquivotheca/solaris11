@@ -1,0 +1,587 @@
+'\" te
+.\" Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright 1989 AT&T
+.\" Portions Copyright (c) 1992, X/Open Company Limited. All Rights Reserved.
+.\" Sun Microsystems, Inc. gratefully acknowledges The Open Group for permission to reproduce portions of its copyrighted documentation. Original documentation from The Open Group can be obtained online at http://www.opengroup.org/bookstore/.
+.\" The Institute of Electrical and Electronics Engineers and The Open Group, have given us permission to reprint portions of their documentation. In the following statement, the phrase "this text" refers to portions of the system documentation. Portions of this text are reprinted and reproduced in electronic form in the Sun OS Reference Manual, from IEEE Std 1003.1, 2004 Edition, Standard for Information Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 6, Copyright (C) 2001-2004 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group. In the event of any discrepancy between these versions and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Standard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html. This notice shall appear on any product containing this material.
+.TH awk 1 "2010 年 7 月 9 日" "SunOS 5.11" "ユーザーコマンド"
+.SH 名前
+awk \- パターン走査およびパターン処理の言語
+.SH 形式
+.LP
+.nf
+\fB/usr/bin/awk\fR [\fB-f\fR \fIprogfile\fR] [\fB-F\fIc\fR\fR] [' \fIprog\fR '] [\fIparameters\fR] 
+     [\fIfilename\fR]...
+.fi
+
+.LP
+.nf
+\fB/usr/xpg4/bin/awk\fR [\fB-F\fR\fIcERE\fR] [\fB-v\fR \fIassignment\fR]... \fI\&'program'\fR \fB-f\fR \fIprogfile\fR... 
+     [\fIargument\fR]...
+.fi
+
+.SH 機能説明
+.sp
+.LP
+\fB/usr/xpg4/bin/awk\fR ユーティリティについては \fBnawk\fR(1) のマニュアルページで説明しています。
+.sp
+.LP
+\fB/usr/bin/awk\fR ユーティリティは、\fIfilename\fR で指定したファイルを走査し、\fIprog\fR で指定したパターンのいずれかと一致する行を探します。\fIprog\fR 文字列は、シェルと区別できるように単一引用符 (\fB a\'\fR) で囲みます。\fIprog\fR で示される各パターンとともに、\fIfilename\fR 内に一致する行が見つかったときに実行されるアクションを記述することができます。一連のパターン-アクション文は \fIprog\fR に直接書いても良く、\fB-f\fR\fI progfile\fR オプションで示されるファイル内に指定してもかまいません。ファイルは順番に読み込まれます。ファイルが指定されないときは、標準入力が使用されます。ファイル名 \fB\&'\(mi'\fR は標準入力を意味します。
+.SH オプション
+.sp
+.LP
+次のオプションがサポートされています。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR \fIprogfile\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBawk\fR は \fIprogfile\fR から読み込んだ一連のパターンを使用します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fIc\fR\fR
+.ad
+.RS 15n
+.rt  
+フィールドセパレータ (FS) として \fIc\fR を使用します。下記の \fBFS\fR の説明を参照してください。
+.RE
+
+.SH 使用法
+.SS "入力行"
+.sp
+.LP
+各行は、各パターン-アクション文のパターン部分と比較されます。一致すると、関連するアクションが実行されます。\fIvar=value\fR の形式の \fIfilename\fR はファイル名ではなく変数の割り当てとみなされ、その場合には、そのファイルがオープンされるであろう時点で行われます。\fI\fRこの方法によって割り当てられた変数は \fBBEGIN\fR ルール内では使用できず、以前に指定されたファイルがすべて読み込まれた後で割り当てられます。
+.sp
+.LP
+入力行は通常、スペースで区切られたフィールドで構成されています。(このデフォルト値は \fBFS\fR 組み込み変数または \fB-F\fR\fIc\fR オプションを使用して変更できます)。デフォルトでは先行する空白文字を無視し、空白文字またはタブ、あるいはその両方でフィールドを区切るようになっています。ただし、変数 \fBFS\fR にスペースを含まない値が代入されていると、先行スペースを無視しません。フィールドは \fB$1\fR、\fB$2\fR、\fB のように表されます。\|.\|.\fR\|; \fB$0\fR は全行を意味します。
+.SS "パターン-アクション文"
+.sp
+.LP
+パターン-アクション文は次の形式をとります。
+.sp
+.in +2
+.nf
+\fIpattern\fR \fB{\fR \fIaction\fR \fB}\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+パターンかアクションのどちらかを省略することができます。アクションが指定されていないときは、一致した行を印刷します。パターンが指定されていないときは、全行に対してアクションが実行されます。パターン-アクション文は復帰改行またはセミコロンで区切られます。
+.sp
+.LP
+パターンは、正規表現および関係式を任意の論理演算子 (\fB!\fR、||、\fB&&\fR、および括弧) によって組み合わせたものです。関係式は、次のいずれかです。
+.sp
+.in +2
+.nf
+\fIexpression relop expression\fR
+\fIexpression matchop regular_expression\fR
+.fi
+.in -2
+
+.sp
+.LP
+ここで、\fIrelop\fR とは C 言語の 6 つの関係演算子のうちのどれかで、\fImatchop\fR とは \fB~\fR (含む) または \fB!~\fR (含まない) のいずれかを示します。\fIexpression\fR は、数値演算式、関係演算式、特殊式、
+.sp
+.in +2
+.nf
+\fIvar\fR in \fIarray\fR
+.fi
+.in -2
+
+.sp
+.LP
+またはこれらを論理演算で組み合わせたものです。
+.sp
+.LP
+\fBegrep\fR(1) と同様、正規表現はスラッシュで囲まれていなければなりません。パターン内の独立した正規表現はその行すべてに適用されます。正規表現は関係式の中にも現われます。パターンは、コンマで区切られた 2 つのパターンからなることもあります。この場合、関連するアクションは、最初のパターンが一致した行と 2 番目のパターンが一致した行の間にあるすべての行に対して実行されます。
+.sp
+.LP
+\fBBEGIN\fR と \fBEND\fR は特殊なパターンで、最初の入力行を読む前と最後の入力行を読んだ後に制御を確保するのに使用します。この 2 つの特殊パターンは他のパターンと組み合わせて使うことはできません。
+.SS "組み込み変数"
+.sp
+.LP
+組み込み変数には次のものがあります。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFILENAME\fR\fR
+.ad
+.RS 12n
+.rt  
+現入力ファイル名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBFS\fR\fR
+.ad
+.RS 12n
+.rt  
+入力フィールドセパレータの正規表現 (デフォルトは空白文字とタブ)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNF\fR\fR
+.ad
+.RS 12n
+.rt  
+現レコード中のフィールド数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBNR\fR\fR
+.ad
+.RS 12n
+.rt  
+現レコード番号
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFMT\fR\fR
+.ad
+.RS 12n
+.rt  
+数値の出力形式 (デフォルトは \fB%.6g\fR)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBOFS\fR\fR
+.ad
+.RS 12n
+.rt  
+出力フィールドセパレータ (デフォルトは空白文字)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBORS\fR\fR
+.ad
+.RS 12n
+.rt  
+出力レコードセパレータ (デフォルトは復帰改行文字)
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBRS\fR\fR
+.ad
+.RS 12n
+.rt  
+入力レコードセパレータ (デフォルトは復帰改行文字)
+.RE
+
+.sp
+.LP
+アクションは一連の文です。使用できる文は次のうちのいずれかです。
+.sp
+.in +2
+.nf
+if ( \fIexpression\fR ) \fIstatement\fR [ else \fIstatement\fR ]
+while ( \fIexpression\fR ) \fIstatement\fR 
+do \fIstatement\fR while ( \fIexpression\fR )
+for ( \fIexpression\fR ; \fIexpression\fR ; \fIexpression\fR ) \fIstatement\fR
+for ( \fIvar\fR in \fIarray\fR ) \fIstatement\fR 
+break
+continue
+{ [ \fIstatement\fR ] .\|.\|. }
+\fIexpression\fR      # commonly variable = expression
+print [ \fIexpression-list\fR ] [ >\fIexpression\fR ]
+printf format [ ,\fIexpression-list\fR ] [ >\fIexpression\fR ]
+next            # skip remaining patterns on this input line
+exit [expr]     # skip the rest of the input; exit status is expr
+.fi
+.in -2
+
+.sp
+.LP
+文は、セミコロン、復帰改行、右括弧のうちのいずれかで終了します。式のリストが空の場合は入力行全体を意味します。式は、文字列または数字と \fB+\fR、\fB\(mi\fR、\fB*\fR、\fB/\fR、\fB%\fR、\fB^\fR、および連結 (空白文字で示される) の各演算子で構成されます。演算子 \fB++\fR、\fB\(mi\(mi\fR、\fB+=\fR、\fB\(mi=\fR、\fB*=\fR、\fB/=\fR、\fB%=\fR、\fB ^=\fR、\fB>\fR、\fB>=\fR、\fB<\fR、\fB<=\fR、\fB==\fR、\fB!=\fR、\fB?:\fR も式の中に記述できます。変数は、スカラー、配列要素 (x[i] で表される) またはフィールドです。変数は NULL 文字列またはゼロで初期化されます。配列の添字は、必ずしも数字である必要はなく、文字列でもかまいません。これによって、ある種の連想記憶形式を使用できます。文字列定数は、二重引用符 (\fB""\fR) で囲みます。C のエスケープ文字はエスケープとして認識します。
+.sp
+.LP
+\fBprint\fR 文はその引数を標準出力に出力します。\fB>\fR\fIexpression\fR が指定されたときはファイルへ、\fB|\fR\fIcmd\fR が指定されたときはパイプへ出力します。出力は、現在の出力フィールドセパレータで区切られた各引数を持つ、出力レコードセパレータで終了します。\fBprintf\fR 文は、その書式に従って式のリストの書式を定めます (\fBprintf\fR(3C) 参照)。
+.SS "組み込み関数"
+.sp
+.LP
+演算関数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcos\fR(\fIx\fR)\fR
+.ad
+.RS 11n
+.rt  
+\fIx\fR をラジアン単位とし、\fIx\fR の余弦を返します。(\fB/usr/xpg4/bin/awk\fR のみ。\fBnawk\fR(1) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsin\fR(\fIx\fR)\fR
+.ad
+.RS 11n
+.rt  
+\fIx\fR をラジアン単位とし、\fIx\fR の正弦を返します。(\fB/usr/xpg4/bin/awk\fR のみ。\fBnawk\fR(1) を参照)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexp\fR(\fIx\fR)\fR
+.ad
+.RS 11n
+.rt  
+\fIx\fR の指数関数を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlog\fR(\fIx\fR)\fR
+.ad
+.RS 11n
+.rt  
+\fIx\fR の自然対数を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsqrt\fR(\fIx\fR)\fR
+.ad
+.RS 11n
+.rt  
+\fIx\fR の平方根を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint\fR(\fIx\fR)\fR
+.ad
+.RS 11n
+.rt  
+引数を切り捨てて、整数にします。つまり \fIx\fR が\fB 0\fR よりも大きい場合は、\fB0\fR に向かって切り捨てます。
+.RE
+
+.sp
+.LP
+文字列関数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBindex(\fR\fIs\fR \fB,\fR \fIt\fR\fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR の中で 文字列 \fIt\fR が最初に出現する位置を返します。出現しなければ \fB0\fR を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBint(\fR\fIs\fR\fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+整数値になるよう、\fIs\fR を切り捨てます。\fIs\fR が指定されていなければ、$0 が使われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlength(\fR\fIs\fR\fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+引数を文字列として解釈しその長さを返します。引数がない場合は行全体の長さを返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsplit(\fR\fIs\fR, \fIa\fR, \fIfs\fR\fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR を \fIa\fR[\fI1\fR]、\fI a\fR[\fI2\fR]、\|.\|.\|. \fIa\fR[\fIn\fR] の配列要素に分割し、値 \fIn\fR を返します。この分割は、正規表現 \fIfs\fR によって行われ、\fIfs\fR が指定されていない場合はフィールドセパレータ \fB FS\fR によって行われます。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsprintf(\fR\fIfmt\fR, \fIexpr\fR, \fIexpr\fR,\|.\|.\|.\|\fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fIfmt\fR で指定した \fBprintf\fR(3C) 形式に従って式の書式を定め、その結果得られた文字列を返します。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsubstr(\fR\fIs\fR, \fIm\fR, \fIn\fR\fB)\fR\fR
+.ad
+.sp .6
+.RS 4n
+文字列 \fIs\fR 内の \fIm\fR 番目から始まる長さ \fIn\fR の部分文字列を返します。
+.RE
+
+.sp
+.LP
+出入力用の関数は次のとおりです。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgetline\fR\fR
+.ad
+.RS 11n
+.rt  
+\fB$0\fR に、現入力ファイルの次の入力レコードを設定します。\fBgetline\fR は正常終了時には \fB1\fR を、ファイルの終わりに達すると \fB0\fR を、またエラー発生時には \fB \(mi1\fR を返します。
+.RE
+
+.SS "大規模ファイルの動作"
+.sp
+.LP
+ファイルが 2G バイト(2^31 バイト) 以上ある場合の \fBawk\fR の動作については、\fBlargefile\fR(5) を参照してください。
+.SH 使用例
+.LP
+\fB例 1 \fR72 文字以上の行の出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、72 文字を超える行を出力します。
+
+.sp
+.in +2
+.nf
+\fBlength > 72\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 2 \fRフィールドの逆順出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、最初の 2 フィールドを逆順に出力します。
+
+.sp
+.in +2
+.nf
+\fB{ print $2, $1 }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 3 \fR入力フィールドを区切った、フィールドの逆順出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、最初の 2 つの入力フィールドをコンマ、空白文字、またはタブで区切って逆順出力します。 
+
+.sp
+.in +2
+.nf
+\fBBEGIN { FS = ",[ \et]*|[ \et]+" }
+      { print $2, $1 }\fR
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+この例は、\fB/usr/xpg4/bin/awk\fR でのみ有効です。
+
+.LP
+\fB例 4 \fR最初のカラムを合計して、合計値と平均値の出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、最初のカラムを合計して、合計値と平均値を出力します。 
+
+.sp
+.in +2
+.nf
+\fB{ s += $1 }
+END  { print "sum is", s, " average is", s/NR }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 5 \fRフィールドの逆順出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、フィールドを逆順に出力します。
+
+.sp
+.in +2
+.nf
+\fB{ for (i = NF; i > 0; \(mi\(mii) print $i }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 6 \fR\fBstart/stop\fR の間にあるすべての行の出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、start/stop の間にあるすべての行を出力します。
+
+.sp
+.in +2
+.nf
+\fB/start/, /stop/\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 7 \fR最初のフィールドが前行と異なるすべての行の出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、最初のフィールドが前行と異なるすべての行を出力します。
+
+.sp
+.in +2
+.nf
+\fB$1 != prev { print; prev = $1 }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 8 \fRページ番号付きでのファイルの出力
+.sp
+.LP
+次の例は、\fBawk -f examplescript\fR の形式のコマンドで実行可能な \fBawk\fR スクリプトです。このスクリプトは、ページ番号付きで 5 ページからファイルを出力します。
+
+.sp
+.in +2
+.nf
+\fB/Page/	{ $2 = n++; }
+     	   { print }\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB例 9 \fR指定した数値から始まるページ番号でファイルを出力
+.sp
+.LP
+このプログラムが \fBprog\fR のファイルに記録されている場合、次のコマンドは \fB5\fR ページから始まるページ番号で \fBinput\fR ファイルを出力します。
+
+.sp
+.in +2
+.nf
+example% \fBawk -f prog n=5 input\fR
+.fi
+.in -2
+.sp
+
+.SH 環境
+.sp
+.LP
+\fBawk\fR の実行に影響を与える次の環境変数についての詳細は、\fBenviron\fR(5) を参照してください。\fBLANG\fR、\fBLC_ALL \fR、\fBLC_COLLATE\fR、\fBLC_CTYPE\fR、\fBLC_MESSAGES\fR、\fBNLSPATH\fR、および \fBPATH\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBLC_NUMERIC\fR\fR
+.ad
+.RS 14n
+.rt  
+数値入力の解釈、数値と文字列との変換、数値出力のフォーマットに用いる、小数点文字を決定します。\fBawk\fR プログラム (コマンド行引数で指定される代入も含む) の処理で認識される小数点文字は、ロケールに関係なくピリオド (POSIX ロケールの小数点文字) です。
+.RE
+
+.SH 属性
+.sp
+.LP
+属性についての詳細は、\fBattributes\fR(5) を参照してください。
+.SS "/usr/bin/awk"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/core-os
+_
+CSI未対応
+.TE
+
+.SS "/usr/xpg4/bin/awk"
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性タイプ属性値
+_
+使用条件system/xopen/xcu4
+_
+CSI有効
+_
+インタフェースの安定性確実
+_
+標準T{
+\fBstandards\fR(5) を参照してください。
+T}
+.TE
+
+.SH 関連項目
+.sp
+.LP
+\fBegrep\fR(1), \fBgrep\fR(1), \fBnawk\fR(1), \fBsed\fR(1), \fBprintf\fR(3C), \fBattributes\fR(5), \fBenviron\fR(5), \fBlargefile\fR(5), \fBstandards\fR(5)
+.SH 注意事項
+.sp
+.LP
+入力行にスペースが含まれる場合、出力時に保証されません。
+.sp
+.LP
+数値と文字の間の明示的な変換は行われません。式を数値として扱いたい場合は \fB0\fR を加え、文字として扱いたい場合は NULL 文字列 (\fB""\fR) を連結してください。

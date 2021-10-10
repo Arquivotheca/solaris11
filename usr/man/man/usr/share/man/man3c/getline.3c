@@ -1,0 +1,132 @@
+'\" te
+.\" Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+.TH getline 3C "11 Oct 2010" "SunOS 5.11" "Standard C Library Functions"
+.SH NAME
+getline, getdelim \- delimited string input
+.SH SYNOPSIS
+.LP
+.nf
+#include <stdio.h>
+
+ssize_t getline(char **restrict \fIlineptr\fR, size_t *restrict \fIn\fR,
+FILE *restrict \fIstream\fR);
+.fi
+
+.LP
+.nf
+ssize_t getdelim(char **restrict \fIlineptr\fR, size_t *restrict \fIn\fR,
+int \fIdelimiter\fR, FILE *restrict \fIstream\fR);
+.fi
+
+.SH DESCRIPTION
+.sp
+.LP
+The \fBgetline()\fR function reads an entire line from \fIstream\fR, storing the address of the buffer containing the line in *\fIlineptr\fR. The buffer is null-terminated and includes the NEWLINE character if one was found.
+.sp
+.LP
+If *\fIlineptr\fR is a null pointer, \fBgetline()\fR allocates a buffer for storing the line. Alternatively, before the call to \fBgetline()\fR, *\fIlineptr\fR can contain a pointer to a buffer allocated by \fBmalloc\fR(3C) whose size is *\fIn\fR bytes. If the buffer is not large enough to store the line, \fBgetline()\fR resizes the buffer with \fBrealloc\fR(3C). In either case, a successful call to \fBgetline()\fR updates *\fIlineptr\fR and *\fIn\fR to reflect the buffer address and size, respectively. The buffer should be freed with a call to \fBfree\fR(3C).
+.sp
+.LP
+The \fBgetdelim()\fR function is identical to \fBgetline()\fR, except a line delimiter other than NEWLINE can be specified as the \fIdelimiter\fR argument. As with \fBgetline()\fR, a delimiter character is not added if one was not present in \fIstream\fR before end-of-file was reached.
+.SH RETURN VALUES
+.sp
+.LP
+Upon successful completion, the \fBgetline()\fR and \fBgetdelim()\fR functions return the number of characters written into the buffer, including the delimiter character but excluding the terminating null character. Upon failure to read a line (including end of file condition), these function return \(mi1 and set \fIerrno\fR to indicate the error.
+.SH ERRORS
+.sp
+.LP
+The \fBgetline()\fR and \fBgetdelim()\fR functions will fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEINVAL\fR\fR
+.ad
+.RS 10n
+.rt  
+Either \fIlineptr\fR or \fIn\fR is a null pointer.
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBENOMEM\fR\fR
+.ad
+.RS 10n
+.rt  
+Insufficient memory is available.
+.RE
+
+.sp
+.LP
+The \fBgetline()\fR and \fBgetdelim()\fR functions may fail if:
+.sp
+.ne 2
+.mk
+.na
+\fB\fBEOVERFLOW\fR\fR
+.ad
+.RS 13n
+.rt  
+More than {\fBSSIZE_MAX\fR} characters were read without encountering the delimiter character.
+.RE
+
+.sp
+.LP
+See \fBfgetc\fR(3C) for other conditions under which these functions will and may fail.
+.SH EXAMPLES
+.LP
+\fBExample 1 \fRRetrieve a line length.
+.sp
+.in +2
+.nf
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void)
+{
+    FILE *fp;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    fp = fopen("/etc/motd", "r");
+    if (fp == NULL)
+        exit(1);
+    while ((read = getline(&line, &len, fp)) != -1) {
+        printf("Retrieved line of length %zu :\n", read);
+        printf("%s", line);
+    }
+    if (ferror(fp)) {
+        /* handle error */
+    }
+    free(line);
+    fclose(fp);
+    return 0;
+}
+.fi
+.in -2
+
+.SH ATTRIBUTES
+.sp
+.LP
+See \fBattributes\fR(5) for descriptions of the following attributes:
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+ATTRIBUTE TYPEATTRIBUTE VALUE
+_
+Interface StabilityCommitted
+_
+MT-LevelMT-Safe
+.TE
+
+.SH SEE ALSO
+.sp
+.LP
+\fBfgetc\fR(3C), \fBfgets\fR(3C), \fBfree\fR(3C), \fBmalloc\fR(3C), \fBrealloc\fR(3C), \fBattributes\fR(5)

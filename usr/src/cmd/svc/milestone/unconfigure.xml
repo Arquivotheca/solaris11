@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+        NOTE:  This service manifest is not editable; its contents will
+        be overwritten by package or patch operations, including
+        operating system upgrade.  Make customizations in a different
+        file.
+-->
+
+<service_bundle type='manifest' name='SUNWcsr:unconfigure'>
+
+<service
+        name='milestone/unconfig'
+        type='service'
+        version='1'>
+
+        <create_default_instance enabled='true' />
+
+        <single_instance />
+
+	<!-- milestone/unconfig has to depend upon system/filesystem/minimal,
+	     since it works with following assumptions which in general
+	     are not guaranteed until system/filesystem/minimal comes online:
+	      - writable root filesystem
+	      - mounted /usr filesystem
+	      - mounted /var filesystem (can be created as a separate
+                filesystem in ROZR type of zone)
+        -->
+	<dependency name='fs-minimal'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/system/filesystem/minimal:default' />
+	</dependency>
+
+	<!-- A dependency on utmp is needed so that system/config-user can
+	     terminate any sessions under the initial user account and have
+	     them cleaned out of utmpx so that userdel will agree to remove
+	     the account
+	-->
+	<dependency name='utmp'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/system/utmp:default' />
+	</dependency>
+	
+	<!-- A dependency on svc:/network/ip-interface-management:default
+	     is needed so that svc:/network/physical:default can use ipadm
+	     which depends on ipmgmtd.
+	-->
+	<dependency name='ip-interface-management'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/network/ip-interface-management:default' />
+	</dependency>
+
+	<!-- A dependency on svc:/network/netcfg:default is needed so that
+	     svc:/network/physical:nwam can use nwamcfg which depends on
+	     netcfgd.
+	-->
+	<dependency name='netcfg'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri
+		    value='svc:/network/netcfg:default' />
+	</dependency>
+
+	<!-- milestone/unconfig populates /etc/svc/profile/site/ directory
+	     with System Configuration profiles. Let system/manifest-import
+	     * apply those profiles after milestone/unconfig finishes its job,
+	     * clean up configuration of this service (as related smf profile
+	       was removed).
+	-->
+	<dependent
+          name='unconfig_manifest_import'
+          grouping='optional_all'
+          restart_on='none'>
+                <service_fmri
+                        value='svc:/system/manifest-import:default'/>
+	</dependent>
+
+	<!-- milestone/unconfig has to be enabled in single user mode. -->
+	<dependent
+          name='unconfig_single'
+          grouping='require_all'
+          restart_on='none'>
+                <service_fmri
+                        value='svc:/milestone/single-user'/>
+        </dependent>
+
+        <exec_method
+                type='method'
+                name='start'
+                exec='/lib/svc/method/milestone-unconfig start'
+                timeout_seconds='300' />
+
+        <exec_method
+                type='method'
+                name='stop'
+                exec=':true'
+                timeout_seconds='0' />
+
+        <property_group name='startd' type='framework'>
+                <propval name='duration' type='astring'
+                        value='transient' />
+        </property_group>
+
+        <property_group name='sysconfig' type='application'>
+                <propval name='shutdown' type='boolean' value='false' />
+                <propval name='unconfig_groups' type='astring' value='system' />
+		<propval name='unconfigure' type='boolean' value='false' />
+		<propval name='destructive_unconfig' type='boolean' value='false' />
+		<propval name='valid_groups' type='astring' value='system' />
+	</property_group>
+
+
+	<stability value='Evolving' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+system unconfiguration milestone
+			</loctext>
+		</common_name>
+
+		<description>
+			<loctext xml:lang='C'>
+Provides the framework for the process of system unconfiguration
+			</loctext>
+		</description>
+		<documentation>
+			<manpage
+				title='sysconfig'
+				section='1M'
+			manpath='/usr/share/man' />
+		</documentation>
+	</template>
+</service>
+
+</service_bundle>

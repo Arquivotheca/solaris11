@@ -1,0 +1,3502 @@
+'\" te
+.\" Copyright (c) 2005, 2011, Oracle and/or its affiliates. 保留所有权利。
+.TH zfs 1M "2011 年 8 月 24 日" "SunOS 5.11" "系统管理命令"
+.SH 名称
+zfs \- 配置 ZFS 文件系统
+.SH 用法概要
+.LP
+.nf
+\fBzfs\fR [\fB-?\fR]
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBhelp\fR \fIsubcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBcreate\fR [\fB-p\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBcreate\fR [\fB-ps\fR] [\fB-b\fR \fIblocksize\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fB-V\fR \fIsize\fR \fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBdestroy\fR [\fB-rRf\fR] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBdestroy\fR [\fB-rRd\fR] \fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBsnapshot\fR [\fB-r\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR]... 
+      \fIfilesystem@snapname\fR|\fIvolume@snapname\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBrollback\fR [\fB-rRf\fR] \fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBclone\fR [\fB-p\fR] [\fB-K\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIsnapshot\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBpromote\fR \fIclone-filesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBrename\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR 
+     \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBrename\fR [\fB-p\fR] \fIfilesystem\fR|\fIvolume\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBrename\fR \fB-r\fR \fIsnapshot\fR \fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBlist\fR [\fB-rH\fR|\fB-d\fR \fIdepth\fR][\fB-o\fR \fIproperty\fR[,...]] [\fB-t\fR \fItype\fR[,...]]
+     [\fB-s\fR \fIproperty\fR] ... [\fB-S\fR \fIproperty\fR] ...
+     [\fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR|\fIpath\fR] ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBset\fR [\fB-r\fR] \fIproperty\fR=\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR [\fB-rHp\fR|\fB-d\fR \fIdepth\fR][\fB-o\fR all | \fIfield\fR[,...]] [\fB-s\fR \fIsource\fR[,...]]
+     all | \fIproperty\fR[,...] \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBset\fR share=\fIname\fR=\fIsharename\fR,path=\fIpathname\fR,[desc=\fIdescription\fR],
+     prot=\fIsmb\fR | nfs[,\fIproperty\fR=\fIvalue\fR[,...]] \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBset\fR \fB-c\fR share=\fIname\fR=\fIsharename\fR \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBget\fR share [\fIfilesystem\fR]
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBinherit\fR [\fB-rS\fR] \fIproperty\fR \fIfilesystem\fR|\fIvolume|snapshot\fR ...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBupgrade\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBupgrade\fR [\fB-v\fR]
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBupgrade\fR [\fB-r\fR] [\fB-V\fR \fIversion\fR] \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBuserspace\fR [\fB-hniHp\fR] [\fB-o\fR \fIfield\fR[,...]] [\fB-sS\fR \fIfield\fR] ...
+     [\fB-t\fR \fItype\fR [,...]] \fIfilesystem\fR|\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBgroupspace\fR [\fB-hniHpU\fR] [\fB-o\fR \fIfield\fR[,...]] [\fB-sS\fR \fIfield\fR] ...
+     [\fB-t\fR \fItype\fR [,...]] \fIfilesystem\fR|\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBmount\fR 
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBmount\fR [\fB-vOS\fR] [\fB-o \fIoptions\fR\fR] \fB-a\fR | \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunmount\fR [\fB-f\fR] \fB-a\fR | \fIfilesystem\fR|\fImountpoint\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBshare\fR \fB-a\fR | \fIdataset\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunshare\fR \fB-a\fR \fIdataset\fR|\fImountpoint\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBsend\fR [\fB-DvRbp\fR] [\fB-\fR[\fBiI\fR] \fIsnapshot\fR] \fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBsend\fR \fB-r\fR [\fB-Dvbcp\fR] [\fB-i\fR \fIsnapshot\fR] \fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBreceive\fR [\fB-vnFu\fR] [[\fB-o\fR \fIproperty\fR=\fIvalue\fR] | [\fB-x\fR \fIproperty\fR]] ...
+     \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBreceive\fR [\fB-vnFu\fR] [[\fB-o\fR \fIproperty\fR=\fIvalue\fR] | [\fB-x\fR \fIproperty\fR]] ...
+     [\fB-d\fR | \fB-e\fR] \fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR [\fB-ldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] \fIperm\fR|\fI@setname\fR[,...] 
+     \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR [\fB-ld\fR] \fB-e\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fB-c\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBallow\fR \fB-s\fR @\fIsetname\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-rldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] [\fIperm\fR|@\fIsetname\fR[,... ]] 
+     \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-rld\fR] \fB-e\fR [\fIperm\fR|@\fIsetname\fR[,... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-r\fR] \fB-c\fR [\fIperm\fR|@\fIsetname\fR[ ... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBunallow\fR [\fB-r\fR] \fB-s\fR @\fIsetname\fR [\fIperm\fR|@\fIsetname\fR[,... ]] \fIfilesystem\fR|\fIvolume\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBhold\fR [\fB-r\fR] \fItag\fR \fIsnapshot\fR...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBholds\fR [\fB-r\fR] \fIsnapshot\fR...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBrelease\fR [\fB-r\fR] \fItag\fR \fIsnapshot\fR...
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBdiff\fR [\fB-FHte\fR] [\fB-o\fR \fIfield\fR] ... \fIsnapshot\fR [\fIsnapshot\fR|\fIfilesystem\fR]
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBdiff\fR \fB-E\fR [\fB-FHt\fR] [\fB-o\fR \fIfield\fR] ... \fIsnapshot\fR|\fIfilesystem\fR
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-l\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-u\fR [\fB-f\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-c\fR [\fB-o\fR \fIkeysource\fR=\fIvalue\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.LP
+.nf
+\fBzfs\fR \fBkey\fR \fB-K\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}
+.fi
+
+.SH 描述
+.sp
+.LP
+\fBzfs\fR 命令按照 \fBzpool\fR(1M) 中描述的方式配置 \fBZFS\fR 存储池中的 \fBZFS\fR 数据集。数据集由 \fBZFS\fR 名称空间中的唯一路径进行标识。例如：
+.sp
+.in +2
+.nf
+pool/{\fIfilesystem\fR,\fIvolume\fR,\fIsnapshot\fR}
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+其中，数据集名称的最大长度为 \fBMAXNAMELEN\fR（256 字节）。
+.sp
+.LP
+数据集可以为下列类型之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfile system\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBfilesystem\fR 类型的 \fBZFS\fR 数据集可以挂载在标准系统名称空间中，并且行为与其他文件系统相似。虽然 \fBZFS\fR 文件系统旨在符合 \fBPOSIX\fR 标准，但是在某些情况下仍然存在一些已知的妨碍符合性的问题。依赖于标准符合性的应用程序可能会在检查文件系统可用空间时由于非标准行为而失败。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+作为原始设备或块设备导出的逻辑卷。此类型的数据集只应在特殊情况下使用。文件系统通常适用于大多数环境。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+文件系统或卷在给定时间点的只读版本。它被指定为 \fIfilesystem@name\fR 或 \fIvolume@name\fR。
+.RE
+
+.SS "ZFS 文件系统分层结构"
+.sp
+.LP
+\fBZFS\fR 存储池是为数据集提供空间的设备的逻辑集合。存储池也是 \fBZFS\fR 文件系统分层结构的根。
+.sp
+.LP
+存储池的根可作为文件系统进行访问，例如挂载和卸载、创建快照以及设置属性。但是，物理存储特征由 \fBzpool\fR(1M) 命令管理。
+.sp
+.LP
+有关创建和管理存储池的更多信息，请参见 \fBzpool\fR(1M)。
+.SS "快照"
+.sp
+.LP
+快照是文件系统或卷的只读副本。快照可以非常快速地创建，而且最初不占用池中的其他空间。当活动数据集中的数据发生变化时，快照占用的数据多于按其他方式与活动数据集共享的数据。
+.sp
+.LP
+快照可以具有任意名称。卷的快照可进行克隆或回滚，但是不能单独访问。
+.sp
+.LP
+可从文件系统根目录中的 \fB\&.zfs/snapshot\fR 目录下访问文件系统快照。快照会自动根据需要进行挂载，并可以按固定的间隔卸载。\fB\&.zfs\fR 目录的可见性可由 \fBsnapdir\fR 属性控制。
+.SS "克隆"
+.sp
+.LP
+克隆是可写的卷或文件系统，其初始内容与其他数据集相同。与快照一样，创建克隆也几乎是即时的，而且最初不占用其他空间。
+.sp
+.LP
+克隆只能从快照创建。在克隆快照时，会在父项与子项之间创建隐式相关性。即使克隆是在数据集分层结构中的某个其他位置创建的，但只要存在克隆，就无法销毁原始快照。\fBorigin\fR 属性显示此相关性，而 \fB destroy\fR 命令会列出任何此类相关性（如果存在）。
+.sp
+.LP
+使用 \fBpromote\fR 子命令，可以颠倒克隆父项-子项相关性关系。这将导致"原始"文件系统成为所指定文件系统的克隆，从而可能销毁创建克隆时所基于的文件系统。
+.SS "挂载点"
+.sp
+.LP
+创建 \fBZFS\fR 文件系统是一项简单的操作，因此每个系统可能有多个文件系统。为处理这种情况，\fBZFS\fR 自动管理文件系统的挂载和卸载，而不需要编辑 \fB/etc/vfstab\fR 文件。所有自动管理的文件系统均由 \fBZFS\fR 在引导时挂载。
+.sp
+.LP
+缺省情况下，文件系统挂载在 \fB/\fIpath\fR\fR 下，其中 \fIpath\fR 是 \fBZFS\fR 名称空间中文件系统的名称。可根据需要创建和销毁目录。
+.sp
+.LP
+文件系统也可以在 \fBmountpoint\fR 属性中设置挂载点。此目录会根据需要进行创建；在调用 \fBzfs mount -a\fR 命令时，\fBZFS\fR 将自动挂载文件系统（无需编辑 \fB/etc/vfstab\fR）。\fBmountpoint\fR 属性可以继承，因此如果 \fBpool/home\fR 有一个挂载点 \fB/export/stuff\fR，则 \fBpool/home/user\fR 会自动继承挂载点 \fB/export/stuff/user\fR。
+.sp
+.LP
+通过为 \fBzfs mount\fR 命令指定 \fB-o\fR \fBmountpoint=\fR\fIvalue\fR 选项，可以在文件系统的持久性挂载点以外的位置临时挂载文件系统。仅允许对具有非先前挂载点的文件系统执行此操作。
+.sp
+.LP
+文件系统的 \fBmountpoint\fR 属性 \fBnone\fR 可防止挂载此文件系统。
+.sp
+.LP
+如果需要，也可以用传统工具（\fBmount\fR、\fBumount\fR、\fB/etc/vfstab\fR）来管理 \fBZFS\fR 文件系统。如果将文件系统的挂载点设置为 \fBlegacy\fR，则 \fBZFS\fR 不会尝试管理文件系统，并且管理员将负责挂载和卸载文件系统。
+.SS "区域"
+.sp
+.LP
+添加的文件系统的物理属性由全局管理员控制。但是，区域管理员可以根据添加的文件系统的挂载方式，在该文件系统中创建、修改或销毁文件。
+.sp
+.LP
+使用 \fBzonecfg\fR \fBadd dataset\fR 子命令也可以将数据集委托给非全局区域。您不能将数据集委托给一个区域，也不能将同一数据集的子项委托给另一个区域。区域管理员可以更改数据集或其任何子项的属性。但是，\fBquota\fR 属性由全局管理员控制。
+.sp
+.LP
+通过 \fBzonecfg\fR \fBadd device\fR 子命令，可以将 \fBZFS\fR 卷作为一个设备添加到非全局区域。但是，只有全局管理员才可修改其物理属性。
+.sp
+.LP
+有关 \fBzonecfg\fR 语法的更多信息，请参见 \fBzonecfg\fR(1M)。
+.sp
+.LP
+将数据集委托给非全局区域后，将自动设置 \fBzoned\fR 属性。在全局区域中，只能通过使用临时的 \fBmountpoint\fR 属性（参见"临时挂载点属性"）挂载区域文件系统。
+.sp
+.LP
+全局管理员可强制清除 \fBzoned\fR 属性，但是完成此操作应非常谨慎。全局管理员应在清除该属性前确认所有挂载点是可接受的。
+.SS "重复数据删除"
+.sp
+.LP
+重复数据删除是在块级别删除冗余数据以减少存储的总数据量的过程。重复数据删除面向存储池范围；每个数据集都可以使用自己的 \fBdedup\fR 属性增减内容。如果文件系统启用了 \fBdedup\fR 属性，则在写入时将同步删除重复数据块。因此，在存储池已启用 \fBdedup\fR 的所有数据集中只会存储唯一的数据，并且会在这些数据集的文件中共享公共组件。
+.SS "加密"
+.sp
+.LP
+有关 ZFS 加密和 ZFS 加密语法的完整描述，请参见 \fBzfs_encrypt\fR(1M)。
+.SS "本机属性"
+.sp
+.LP
+属性分为两种类型：本机属性和用户定义的（或"用户"）属性。本机属性用于提供内部统计信息或控制 \fBZFS\fR 行为。此外，本机属性分为可编辑属性和只读属性。用户属性对 \fBZFS\fR 行为没有影响，但可通过用户环境中有意义的方式来注释数据集。有关用户属性的更多信息，请参见下文的"用户属性"一节。
+.sp
+.LP
+每个数据集都有一组属性，用于提供有关数据集的统计信息并控制各种行为。属性继承自父项，但子项所覆盖的除外。有些属性仅适用于某些类型的数据集（文件系统、卷或快照）。
+.sp
+.LP
+数值属性的值可使用便于阅读的后缀（例如 \fBk\fR、\fBKB\fR、\fBM\fR、\fBGb\fR 等，直到表示泽字节的 \fBZ\fR）来指定。下面都是有效（且等效）的指定： 
+.sp
+.in +2
+.nf
+1536M, 1.5g, 1.50GB
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+非数值属性的值区分大小写，并且必须为小写形式，\fBmountpoint\fR 属性除外。
+.sp
+.LP
+以下本机属性包含数据集的相关只读统计信息。既不能设置这些属性，也不能继承这些属性。除非另有说明，否则本机属性适用于所有数据集类型。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBavailable\fR\fR
+.ad
+.sp .6
+.RS 4n
+数据集及其所有子项的可用空间的数量（假定池中没有其他活动）。由于池中会共享空间，因此可用空间会受到许多因素的限制，包括物理池大小、配额、预留空间或池中的其他数据集。
+.sp
+此属性也可通过其简短列名 \fBavail\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcompressratio\fR\fR
+.ad
+.sp .6
+.RS 4n
+为此数据集实现的压缩率，以倍数形式表示。通过运行 \fBzfs set compression=on\fI dataset\fR\fR 可以启用压缩。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcreation\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建此数据集的时间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdefer_destroy\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果已使用 \fBzfs destroy\fR \fB-d\fR 命令将快照标记为延期销毁，则此属性为 \fBon\fR。否则，此属性为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeystatus\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_encrypt\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmounted\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于文件系统，指示当前是否已挂载文件系统。此属性可以是 \fByes\fR 或 \fBno\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBorigin\fR\fR
+.ad
+.sp .6
+.RS 4n
+对于克隆的文件系统或卷，指示创建克隆时所基于的快照。只要克隆存在，便不能销毁克隆源（即使使用 \fB-r\fR 或 \fB-f\fR 选项也是如此）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreferenced\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集可访问的数据量，这些数据可以与池中其他数据集共享，也可以不与其他数据集共享。创建快照或克隆时，首先会引用与创建时所基于的文件系统或快照相同的空间量，因为其内容相同。 
+.sp
+该属性也可通过其简短列名 \fBrefer\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrekeydate\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_encrypt\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBtype\fR\fR
+.ad
+.sp .6
+.RS 4n
+数据集类型：\fBfilesystem\fR、\fBvolume\fR 或 \fBsnapshot\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBused\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集及其所有后代占用的空间量。这是根据此数据集的配额和预留空间进行检查的值。使用的空间不包括此数据集的预留空间，但是会考虑 \fBrefreservation\fR（通过 \fBusedbyrefreservation\fR）以及任何后代数据集的预留空间（通过 \fBusedbychildren\fR）。数据集占用其父项的空间量以及以递归方式销毁此数据集时所释放的空间量，应为其使用空间和预留空间的较大者。
+.sp
+创建快照时（参见"快照"一节），其空间最初将在快照与文件系统之间共享，也可能与以前的快照共享。随着文件系统的变化，以前共享的空间将供快照专用，并会计算在快照的使用空间内。此外，删除快照可增加其他快照专用（和使用）的空间量。
+.sp
+使用的空间量、可用的空间量或引用的空间量不会考虑暂挂更改。通常，暂挂更改仅占用几秒钟的时间。使用 \fBfsync\fR(3c) 或 \fBO_SYNC\fR 提交对磁盘的更改，不一定可以保证空间使用情况信息会立即更新。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusedby*\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBusedby*\fR 属性将 \fBused\fR 属性分解为使用该空间的各种原因。具体而言，\fBused\fR = \fBusedbychildren\fR + \fBusedbydataset\fR + \fBusedbyrefreservation\fR + \fBusedbysnapshots\fR。这些属性只能用于在"版本 13"或更高版本的池上创建的数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusedbychildren\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集的子项使用的空间量，如果销毁此数据集的所有子项，将释放该空间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusedbydataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集本身使用的空间量，如果销毁此数据集，将释放该空间（首次删除任何 \fBrefreservation\fR 并销毁任何必需的快照或后代之后）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusedbyrefreservation\fR\fR
+.ad
+.sp .6
+.RS 4n
+针对此数据集设置的 \fBrefreservation\fR 占用的空间量，如果删除 \fBrefreservation\fR，将释放该空间。
+.sp
+此属性所占用的空间表示未来写操作可能消耗的空间，预留以防此数据集出现写分配故障。这可能包括未写入的数据、当前与快照共享的空间，以及卷的压缩节省空间（当用更少的可压缩数据替换时可能丢失）。当为后续写操作分配空间增加 \fBusedbydataset\fR 或 \fBusedbysnapshots\fR 时，将相应减少 \fBusedbyrefreservation\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBusedbysnapshots\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集的快照占用的空间量。特别地，此空间量是销毁此数据集的所有快照后将释放的空间量。请注意，此空间量不是快照的 \fBused\fR 属性的简单总和，因为空间可被多个快照共享。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuserused@\fR\fIuser\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集中指定的用户占用的空间量。空间由每个文件的所有者占用，如 \fBls\fR \fB-l\fR 显示的内容所示。占用的空间量由 \fBdu\fR 和 \fBls\fR \fB-s\fR 显示。有关更多信息，请参见 \fBzfs userspace\fR 子命令。
+.sp
+未授权的用户只能访问各自的空间使用情况。root 用户或已用 \fBzfs allow\fR 授予 \fBuserused\fR 特权的用户，可以访问每个人的空间使用情况。
+.sp
+\fBzfs get all\fR 不会显示 \fBuserused@\fR... 属性。必须使用以下形式之一在 \fB@\fR 符号后加上用户名：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIPOSIX name\fR（例如 \fBjoe\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIPOSIX numeric ID\fR（例如 \fB789\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fISID name\fR（例如 \fBjoe.smith@mydomain\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fISID numeric ID\fR（例如 \fBS-1-123-456-789\fR）
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuserrefs\fR\fR
+.ad
+.sp .6
+.RS 4n
+为此快照上的用户保留量可设置此属性。通过使用 \fBzfs hold\fR 命令可设置用户保留量。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroupused@\fR\fIgroup\fR\fR
+.ad
+.sp .6
+.RS 4n
+此数据集中指定的组占用的空间量。空间由每个文件的组所占用，如 \fBls\fR \fB-l\fR 显示的内容所示。有关更多信息，请参见 \fBuserused@\fR\fIuser\fR 属性。
+.sp
+未授权的用户只能访问各自的组的空间使用情况。root 用户或已用 \fBzfs allow\fR 授予 \fBgroupused\fR 特权的用户，可以访问所有组的空间使用情况。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvolblocksize\fR=\fIblocksize\fR\fR
+.ad
+.sp .6
+.RS 4n
+可为卷指定卷的块大小。在写入卷后无法更改 \fBblocksize\fR，因此应在创建卷时设置该值。卷的缺省 \fBblocksize\fR 是 8 KB。范围位于 512 字节到 1 MB 之间的 2 的任意次幂都有效。
+.sp
+该属性也可通过其简短列名 \fBvolblock\fR 来引用。
+.RE
+
+.sp
+.LP
+使用以下本机属性可以更改 \fBZFS\fR 数据集的行为。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaclmode\fR=\fBdiscard\fR | \fBmask\fR | \fBpassthrough\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制 \fBchmod\fR(2) 执行期间如何修改 ACL。带有 \fBaclmode\fR 属性 \fBdiscard\fR（缺省值）的文件系统删除不表示文件模式的所有 ACL 条目。\fBaclmode\fR 属性 \fBmask\fR 减少用户或组的权限。除非用户项与文件或目录的属主具有相同的 UID，否则将减少权限，以使其不会大于组权限位。在这种情况下，减少 ACL 权限，以使其不会大于属主权限位。\fBmask\fR 还跨模式更改保留 ACL（两次模式更改之间没有进行显式 ACL 设置 [通过 \fBchmod\fR(1)]）。带有 \fBaclmode\fR 属性 \fBpassthrough\fR 的文件系统指示除了生成必要的 ACL 条目来表示文件或目录的新模式以外，不会对 ACL 进行其他更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBaclinherit\fR=\fBdiscard\fR | \fBnoallow\fR | \fBrestricted\fR | \fBpassthrough\fR | \fBpassthrough-x\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制创建文件和目录时继承 \fBACL\fR 项的方法。\fBaclinherit\fR 属性为 \fBdiscard\fR 的文件系统不继承任何 \fBACL\fR 项。\fBaclinherit\fR 属性值为 \fBnoallow\fR 的文件系统仅继承指定了"拒绝"权限的可继承 \fBACL\fR 项。在继承 \fBACL\fR 项时，属性值 \fBrestricted\fR（缺省值）会删除 \fBwrite_acl\fR 和 \fBwrite_owner\fR 权限。如果文件系统的 \fBaclinherit\fR 属性值为 \fBpassthrough\fR，则会继承所有可继承的 \fBACL\fR 项，并且继承 \fBACL\fR 项时不会对其进行任何修改。如果文件系统的 \fBaclinherit\fR 属性值为 \fBpassthrough-x\fR，则与 \fBpassthrough\fR 具有同样的意义，区别在于仅当文件创建模式也需要执行位时，所有 \fBACE\fR 均继承执行权限。
+.sp
+当属性值设置为 \fBpassthrough\fR 时，由可继承的 \fBACE\fR 确定的模式来创建文件。如果不存在会影响模式的可继承的 \fBACE\fR，则按照应用程序要求的模式来设置模式。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBatime\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制文件被读取后是否更新该文件的访问时间。禁用该属性可避免在读取文件时产生写入流量，因此可显著提高性能，但可能会使邮件程序与其他相似的实用程序感到困惑。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcanmount\fR=\fBon\fR | \fBoff\fR | \fBnoauto\fR\fR
+.ad
+.sp .6
+.RS 4n
+如果此属性设置为 \fBoff\fR，则无法挂载文件系统，并且 \fBzfs mount -a\fR 将忽略此文件系统。将此属性设置为 \fBoff\fR 与将 \fBmountpoint\fR 属性设置为 \fBnone\fR 的效果相似，区别在于数据集仍有一个可继承的正常 \fBmountpoint\fR 属性。通过将此属性设置为 \fBoff\fR，可以将数据集单独用作一种继承属性的机制。例如，设置 \fBcanmount=\fR\fBoff\fR 将使两个数据集具有相同的 \fBmountpoint\fR，因此两个数据集的子项会出现在同一个目录中，但是可能具有不同的继承特征。
+.sp
+设置 \fBnoauto\fR 选项时，只能显式挂载和取消挂载数据集。数据集不会在创建或导入时自动挂载，也不能通过 \fBzfs mount -a\fR 命令挂载或通过 \fBzfs unmount -a\fR 命令取消挂载。
+.sp
+不会继承此属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBchecksum\fR=\fBon\fR | \fBoff\fR | \fBfletcher2,\fR| \fBfletcher4\fR | \fBsha256\fR | \fBsha256+mac\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制用于验证数据完整性的校验和。缺省值是 \fBon\fR，它将自动选择正确的算法（当前为 \fBfletcher4\fR，但是在将来的版本中可能改变）。值为 \fBoff\fR 将禁止对用户数据进行完整性检查。实际操作中建议\fB不\fR要禁用校验和。
+.sp
+更改此属性只会影响新写入的数据。
+.sp
+只有在启用加密时，值 \fBsha256+mac\fR 才可用。在启用加密时，校验和属性变为 \fBreadonly\fR，然后始终将其设置为 \fBsha256+mac\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcompression\fR=\fBon\fR | \fBoff\fR | \fBlzjb\fR | \fBgzip\fR | \fBgzip-\fR\fIN\fR | \fBzle\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制用于此数据集的压缩算法。在提供适当的数据压缩时，将为 \fBlzjb\fR 压缩算法优化性能。将压缩设置为 \fBon\fR 会使用 \fBlzjb\fR 压缩算法。\fBgzip\fR 压缩算法使用与 \fBgzip\fR(1) 命令相同的压缩。通过使用值 \fBgzip-\fR\fIN\fR 可以指定 \fBgzip\fR 级别，其中 \fIN\fR 是一个从 1（最快）至 9（最佳压缩率）的整数。当前，\fBgzip\fR 等效于 \fBgzip-6\fR（这也是 \fBgzip\fR(1) 的缺省值）。
+.sp
+该属性也可通过其简短列名 \fBcompress\fR 来引用。更改此属性只会影响新写入的数据。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcopies\fR=\fB1\fR | \fB2\fR | \fB3\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制为此数据集存储的数据副本数量。除了作为池提供的任何冗余，这些副本还可作为镜像或 RAID-Z。如果可能，这些副本会存储在不同磁盘上。多个副本使用的空间由相关联的文件和数据集占用，按照配额和预留空间更改 \fBused\fR 属性和计算方式。
+.sp
+更改此属性只会影响新写入的数据。因此，在创建文件系统时通过使用 \fB-o\fR \fBcopies=\fR\fIN\fR 选项设置此属性。
+.sp
+在数据集上启用加密时，可设置的最大副本数量是 \fB2\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdedup\fR=\fBon\fR | \fBoff\fR | \fBverify\fR | \fBsha256\fR[,\fBverify\fR]\fR
+.ad
+.sp .6
+.RS 4n
+控制重复数据删除对数据集是否有效。缺省值为 \fBoff\fR。用于重复数据删除的缺省校验和是 \fBsha256\fR（可能会更改）。在启用 \fBdedup\fR 时，\fBdedup\fR 校验和算法会覆盖 \fBchecksum\fR 属性。将值设置为 \fBverify\fR 等效于指定 \fBsha256,verify\fR。
+.sp
+如果将属性设置为 \fBverify\fR，则只要两个块具有相同的签名，ZFS 都会与现有块进行逐字节比较，以确保内容完全相同。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdevices\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否可在此文件系统中打开设备节点。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBexec\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否可从此文件系统中执行进程。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlogbias\fR = \fBlatency\fR | \fBthroughput\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制 ZFS 如何为此数据集优化同步请求。如果 \fBlogbias\fR 设置为 \fBlatency\fR，ZFS 将使用池的不同日志设备（如有）低延迟地处理请求。如果 \fBlogbias\fR 设置为 \fBthroughput\fR，ZFS 将不使用池的不同日志设备。相反，ZFS 将优化同步操作，以提高池的全局吞吐量并有效使用资源。缺省值为 \fBlatency\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmlslabel\fR=\fIlabel\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+\fBmlslabel\fR 属性是一个敏感标签，用于确定能否在启用了 Trusted Extensions 的系统的区域中挂载数据集。如果有标签的数据集与有标签的区域相符，则可以从有标签的区域挂载和访问数据集。
+.sp
+如果未设置 \fBmlslabel\fR 属性，缺省值将为 \fBnone\fR。将 \fBmlslabel\fR 属性设置为 \fBnone\fR 等效于删除该属性。
+.sp
+只有在启用了 Trusted Extensions 并且具有相应的特权时，才能修改 \fBmlslabel\fR 属性。不可委托用于修改此属性的权限。将标签更改为较高级别标签或设置初始数据集标签时，需要 \fB{PRIV_FILE_UPGRADE_SL}\fR 特权。将标签更改为较低级别标签或缺省标签 (\fBnone\fR) 时，需要 \fB{PRIV_FILE_DOWNGRADE_SL}\fR 特权。只有在未挂载数据集时，才能将数据集更改为缺省值以外的标签。将具有缺省标签的数据集挂载到有标签区域时，挂载操作会自动将 \fBmlslabel\fR 属性设置为该区域的标签。
+.sp
+如果\fB未\fR启用 Trusted Extensions，则只能挂载具有缺省标签 (\fBnone\fR) 的数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmountpoint\fR=\fIpath\fR | \fBnone\fR | \fBlegacy\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制用于此文件系统的挂载点。有关如何使用此属性的更多信息，请参见"挂载点"一节。 
+.sp
+当文件系统的 \fBmountpoint\fR 属性发生更改时，将取消挂载该文件系统以及继承挂载点的任何子项。如果新值为 \fBlegacy\fR，则该文件系统和子项将保持取消挂载状态。否则，如果属性以前为 \fBlegacy\fR 或 \fBnone\fR，或者该文件系统和子项在属性发生更改之前处于挂载状态，则会自动在新位置重新挂载它们。此外，任何共享文件系统都将取消共享，并在新位置进行共享。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnbmand\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBprimarycache\fR=\fBall\fR | \fBnone\fR | \fBmetadata\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制在主高速缓冲存储器 (ARC) 中缓存的内容。如果将此属性设置为 \fBall\fR，则会高速缓存用户数据和元数据。如果将此属性设置为 \fBnone\fR，则不会高速缓存用户数据和元数据。如果将此属性设置为 \fBmetadata\fR，则只会高速缓存元数据。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBquota\fR=\fIsize\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+限制数据集及其后代可占用的空间量。此属性对使用的空间量强制实施硬限制。这包括后代（含文件系统和快照）占用的所有空间。对已有配额的数据集的后代设置配额不会覆盖祖先的配额，但会施加额外的限制。
+.sp
+不能对卷设置配额，因为 \fBvolsize\fR 属性可用作隐式配额。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsync=standard\fR | \fBalways\fR | \fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+确定文件系统事务的同步程度。在创建数据集时可设置此属性，也可动态设置此属性，并且属性将会立即生效。此属性可能具有以下设置之一：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBstandard\fR\fR
+.ad
+.sp .6
+.RS 4n
+缺省选项。将同步文件系统事务写入到意图日志，然后刷新写入的所有设备，以确保数据稳定（即设备控制器未进行高速缓存）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBalways\fR\fR
+.ad
+.sp .6
+.RS 4n
+将每个文件系统事务写入到稳定的存储器中并刷新。此值对性能具有重大不利影响，但是适合为同步文件系统事务排除故障。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBdisabled\fR\fR
+.ad
+.sp .6
+.RS 4n
+禁用同步请求。仅当下一次提交 DMU 事务组时，文具系统事务才会提交至稳定的存储器，这可能会延迟好几秒钟。此设置提供最高性能。但是，这是非常危险的，因为 ZFS 会忽略应用程序的同步事务要求，例如数据库或 NFS。而且，当此设置对当前活动的根或 \fB/var\fR 文件系统生效时，可能导致行为不合规范、应用程序数据丢失以及增加反复攻击的漏洞。管理员只应在了解这些风险时才使用此选项。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuserquota@\fR\fIuser\fR=\fIsize\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+限制指定的用户占用的空间量。与 \fBrefquota\fR 属性相似，计算 \fBuserquota\fR 空间不包括后代数据集（例如快照和克隆）使用的空间。用户空间占用由 \fBuserspace@\fR\fIuser\fR 属性标识。
+.sp
+用户配额的实施可能会延迟几秒钟。这种延迟意味着在系统注意到用户超出配额前，用户可以超出其配额。系统然后会开始拒绝额外的写入内容，并提示 \fBEDQUOT\fR 错误消息。有关更多信息，请参见 \fBzfs userspace\fR 子命令。
+.sp
+未授权的用户只能访问各自的组的空间使用情况。root 用户或已用 \fBzfs allow\fR 授予 \fBuserquota\fR 特权的用户，可以获取和设置每个人的配额。
+.sp
+对于卷、第 4 版以前的文件系统或第 15 版以前的池，此属性均不可用。\fBzfs get all\fR 不会显示 \fBuserquota@\fR... 属性。必须使用以下形式之一在 \fB@\fR 符号后加上用户名：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIPOSIX name\fR（例如 \fBjoe\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fIPOSIX numeric ID\fR（例如 \fB789\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fISID name\fR（例如 \fBjoe.smith@mydomain\fR）
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+\fISID numeric ID\fR（例如 \fBS-1-123-456-789\fR）
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroupquota@\fR\fIgroup\fR=\fIsize\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+限制指定的组占用的空间量。组空间占用由 \fBuserspace@\fR\fIuser\fR 属性标识。
+.sp
+未授权的用户只能访问各自的组的空间使用情况。root 用户或已用 \fBzfs allow\fR 授予 \fBgroupquota\fR 特权的用户，可以获取和设置所有组的配额。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreadonly\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否可以修改此数据集。缺省值为 \fBoff\fR。
+.sp
+该属性也可通过其简短列名 \fBrdonly\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrecordsize\fR=\fIsize\fR\fR
+.ad
+.sp .6
+.RS 4n
+为文件系统中的文件指定建议的块大小。该属性专门设计用于对大小固定的记录中的文件进行访问的数据库工作负荷。\fBZFS\fR 会根据为典型的访问模式优化的内部算法来自动调整块大小。 
+.sp
+对于创建很大的文件但访问较小的随机块中的文件的数据库而言，这些算法可能不是最优的。将 \fBrecordsize\fR 指定为大于或等于数据库的记录大小的值可以显著提高性能。强烈建议不要将该属性用于一般用途的文件系统，否则可能会对性能产生不利影响。
+.sp
+确实记录大小是 128 KB。指定的大小必须是 2 的若干次幂，并且必须大于或等于 512 字节同时小于或等于 1 MB。
+.sp
+更改文件系统的 \fBrecordsize\fR 只影响以后创建的文件，现有文件和接收的数据不受影响。
+.sp
+该属性也可通过其简短列名 \fBrecsize\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefquota\fR=\fIsize\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+限制数据集可以占用的空间量。此属性对使用的空间量强制实施硬限制。这种硬限制不包括后代以及文件系统和快照使用的空间。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrefreservation\fR=\fIsize\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+为数据集（不含其后代）预留的最小空间量。如果 \fBusedbydataset\fR 空间低于此值，则认为数据集正在使用 \fBrefreservation\fR 指定的空间量。\fBusedbyrefreservation\fR 数字表示该额外空间，并添加到数据集占用的总 \fBused\fR 空间，继而占用父数据集的用量、配额和预留空间。这将通过确保提前预留用于未来写操作的空间，防止数据集过度承载池资源。
+.sp
+与快照共享的空间此后将被新数据替换，快照表示承诺保留两份副本。如果设置了 \fBrefreservation\fR，则必须考虑此承诺将 \fBusedbyrefreservation\fR 增加到拍摄新快照时 \fBrefreservation\fR 的最大空间。如果对此增量没有足够空间可用于数据集，则将拒绝创建快照。
+.sp
+该属性也可通过其简短列名 \fBrefreserv\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBreservation\fR=\fIsize\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+为数据集及其后代预留的最小空间量。如果使用的空间量低于该值，则认为数据集正在占用其预留空间指定的空间量。父数据集的使用空间中会包含预留空间，并会针对父数据集的配额和预留空间对其进行计数。
+.sp
+该属性也可通过其简短列名 \fBreserv\fR 来引用。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBrstchown\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+指示文件系统是否通过 \fBchown\fR(1) 或 \fBchown\fR(2) 系统调用来限制用户放弃其文件。缺省值是限制 \fBchown\fR。如果 \fBrstchown\fR 为 \fBoff\fR，则 \fBchown\fR 的行为将如同用户具有 \fBPRIV_FILE_CHOWN_SELF\fR 特权一样。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsecondarycache\fR=\fBall\fR | \fBnone\fR | \fBmetadata\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制在二级高速缓存 (L2ARC) 中缓存的内容。如果将此属性设置为 \fBall\fR，则会高速缓存用户数据和元数据。如果将此属性设置为 \fBnone\fR，则不会高速缓存用户数据和元数据。如果将此属性设置为 \fBmetadata\fR，则只会高速缓存元数据。缺省值为 \fBall\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsetuid\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制文件系统是否遵照 set-\fBUID\fR 位。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBshadow\fR=\fIURI\fR | \fBnone\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 ZFS 文件系统标识为 \fIURI\fR 所描述的文件系统的"影子"。设置该属性时，数据从 \fIURI\fR 标识的文件系统迁移到影子文件系统。将迁移的文件系统必须为只读才能进行完整迁移。
+.sp
+对影子文件系统中尚未迁移的目录的访问会被阻止，直到迁移了整个目录。对影子文件系统中尚未迁移的文件进行访问将导致只迁移被访问文件的一部分。多个进程可以同时迁移一个文件的不同部分。
+.sp
+接受两种格式的 URI，一种用于将本地文件系统迁移到同一物理系统上的其他文件系统，另一个用于从 NFS 服务器远程迁移文件系统。这两种格式为：
+.sp
+.in +2
+.nf
+file:///\fIpath\fR
+nfs://\fIhost\fR/\fIpath\fR
+.fi
+.in -2
+.sp
+
+如果迁移完成时 \fBshadowd\fR(1M) 仍在运行，则文件系统将自动重新挂载（影子属性设置为 \fBnone\fR）。或者，迁移完成时，您可以手动将影子属性设置为 \fBnone\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharenfs\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsharesmb\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsnapdir\fR=\fBhidden\fR | \fBvisible\fR\fR
+.ad
+.sp .6
+.RS 4n
+按照"快照"一节的讨论，控制在文件系统的根中是否隐藏或显示 \fB\&.zfs\fR 目录。缺省值为 \fBhidden\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBversion\fR=\fB1\fR | \fB2\fR | \fBcurrent\fR\fR
+.ad
+.sp .6
+.RS 4n
+此文件系统的盘上版本，与池版本无关。只可以为后续支持的版本设置此属性。设置 \fBzfs upgrade\fR 命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvolsize\fR=\fIsize\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定卷的逻辑大小。缺省情况下，创建卷将建立稍大于实际逻辑卷大小的 \fBrefreservation\fR，以用于 ZFS 源数据开销。对 \fBvolsize\fR 的任何更改都会反映为对 \fBrefreservation\fR 的等效更改。\fBvolsize\fR 只可以设置为多个 \fBvolblocksize\fR，并且不能为零。
+.sp
+在卷上设置 \fBrefreservation\fR，以防止使用者的意外行为。如果没有预留空间，则卷可能用完空间，导致不明确的行为或数据损坏，具体取决于卷的使用方式。如果在卷的使用过程中（特别是在缩减大小时）更改卷大小，也会出现上述影响。调整卷大小时，需要格外小心。
+.sp
+可以通过指定 \fBzfs create -V\fR 命令的 \fB-s\fR 选项来创建"稀疏卷"（也称为"瘦置备"），但并不建议这样做。"稀疏卷"是预留空间小于卷大小的卷。因此，当池空间不足时，对稀疏卷的写操作可能因 \fBENOSPC\fR 而失败。对于稀疏卷，预留空间中不会反映对 \fBvolsize\fR 的更改。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBvscan\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBxattr\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否为此文件系统启用扩展属性。缺省值为 \fBon\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzoned\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+控制是否从非全局区域管理数据集。有关更多信息，请参见"区域"一节。缺省值为 \fBoff\fR。
+.RE
+
+.sp
+.LP
+在创建文件系统后无法更改以下属性，因此在创建文件系统时应设置这些属性。如果未使用 \fBzfs create\fR 或 \fBzpool create\fR 命令设置属性，则从父数据集继承这些属性。如果在这些功能获得支持以前已创建的父数据集缺少这些属性，则新文件系统将为这些属性采用缺省值。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcasesensitivity\fR=\fBsensitive\fR | \fBinsensitive\fR | \fBmixed\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBnormalization\fR = \fBnone\fR | \fBformC\fR | \fBformD\fR | \fBformKC\fR | \fBformKD\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fButf8only\fR=\fBon\fR | \fBoff\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBencryption\fR=\fBoff\fR | \fBon\fR | \fBaes-128-ccm\fR | \fBaes-192-ccm\fR | \fBaes-256-ccm\fR | \fBaes-128-gcm\fR | \fBaes-192-gcm\fR | \fBaes-256-gcm\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_encrypt\fR(1M)。
+.RE
+
+.sp
+.LP
+在创建时必须指定以下属性，并可以使用特殊命令修改该属性：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBkeysource\fR=\fIraw\fR | \fIhex\fR | \fIpassphrase\fR,\fIprompt\fR | \fIfile\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关更多信息，请参见 \fBzfs_encrypt\fR(1M)。
+.RE
+
+.SS "临时挂载点属性"
+.sp
+.LP
+通过传统 \fBmount\fR(1M) 命令或 \fBzfs mount\fR 命令挂载文件系统时，将会根据其属性设置其挂载选项。属性与挂载选项之间的相互关系如下：
+.sp
+.in +2
+.nf
+    PROPERTY                MOUNT OPTION
+     devices                 devices/nodevices
+     exec                    exec/noexec
+     readonly                ro/rw
+     setuid                  setuid/nosetuid
+     xattr                   xattr/noxattr
+     rstchown                rstchown/norstchown
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+此外，可以使用 \fB-o\fR 选项在每次挂载基础上设置这些选项，而不影响磁盘上存储的属性。命令行上指定的值会覆盖数据集中存储的值。\fB-nosuid\fR 选项是 \fBnodevices,nosetuid\fR 的别名。\fBzfs get\fR 命令将这些属性作为"临时"属性进行报告。对于 \fBmountpoint\fR 以外的属性，如果在挂载数据集时更改属性，则新设置会覆盖任何临时设置。在临时挂载点属性生效时（即在临时位置挂载数据集时），无法更改 \fBmountpoint\fR 属性。
+.SS "用户属性"
+.sp
+.LP
+除了标准的本机属性外，\fBZFS\fR 还支持任意用户属性。用户属性对 \fBZFS\fR 行为没有影响，但是应用程序或管理员可以使用这些属性来注释数据集（文件系统、卷和快照）。
+.sp
+.LP
+用户属性名称必须含有一个冒号 (\fB:\fR) 字符，以便与本机属性区分。这些名称可包含小写字母、数字和以下标点符号：冒号 (\fB:\fR)、破折号 (\fB-\fR)、句号 (\fB\&.\fR) 和下划线 (\fB_\fR)。预期约定是将属性名称分为两部分，例如 \fImodule\fR\fB:\fR\fIproperty\fR，但是 \fBZFS\fR 并不强制执行这种名称空间。用户属性名称最多可有 256 个字符，不能以破折号 (\fB-\fR) 开头。
+.sp
+.LP
+在程序中使用用户属性时，强烈建议对属性名的 \fImodule\fR 部分使用反向 \fBDNS\fR 域名，以尽量避免两个独立开发的软件包将同一属性名用于不同用途。在 Oracle Solaris 发行版中，为 \fBbeadm\fR 命令和库保留了 \fBcom.oracle\fR 用户属性。
+.sp
+.LP
+用户属性的值是任意字符串，始终会继承但是从不会验证这些值。对属性执行操作的所有命令（如 \fBzfs list\fR、\fBzfs get\fR、\fBzfs set\fR 等）都可用来处理本机属性和用户属性。使用 \fBzfs inherit\fR 命令可清除用户属性。如果任意父数据集中均未定义该属性，则会将其完全删除。属性值仅限于 1024 个字符。
+.SS "ZFS 卷作为交换设备或转储设备"
+.sp
+.LP
+初始安装期间，将会在 \fBZFS\fR 根池的 \fBZFS\fR 卷上创建交换设备和转储设备。必须将单独的 \fBZFS\fR 卷用于交换区域和转储设备。在 \fBZFS\fR 文件系统中，不要交换到文件。不支持 \fBZFS\fR 交换文件配置。
+.sp
+.LP
+通过为该设备指定 \fBencryption\fR 属性，以及在 \fBvfstab\fR(4) 中指定 \fBencrypted\fR 选项，可以对用作交换设备的 ZFS 卷进行加密。有关加密属性的更多信息，请参见 zfs_encrypt.1m。
+.sp
+.LP
+如果您需要在安装或升级系统后更改交换区域或转储设备，请使用 \fBswap\fR(1M) 和 \fBdumpadm \fR(1M) 命令。如果需要更改交换区域或转储设备的大小，请参见\fI《Solaris ZFS Administration Guide》\fR。
+.SH 子命令
+.sp
+.LP
+修改状态的所有子命令将以原始形式永久记录到池中。
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs ?\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示帮助消息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs help\fR \fIcommand\fR | help | \fIproperty\fR \fIproperty-name\fR | \fIpermission\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示 \fBzfs\fR 命令的用法信息。可以显示特定命令、属性或委托权限的帮助。如果显示特定命令或属性的帮助，将显示命令语法或属性值。在不带任何参数的情况下使用 \fBzfs help\fR 将显示完整的 \fBzfs\fR 命令列表。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-p\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建新的 \fBZFS\fR 文件系统。该文件系统会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建所有非现有的父数据集。以这种方式创建的数据集会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。在命令行上使用 \fB-o\fR 选项指定的任何属性将被忽略。如果目标文件系统已经存在，则会成功完成此操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+与在创建数据集时调用命令 \fBzfs set\fR \fIproperty\fR=\fIvalue\fR 一样设置指定的属性。在创建时也可设置任何可编辑的 \fBZFS\fR 属性。可以指定多个 \fB-o\fR 选项。如果在多个 \fB-o\fR 选项中指定了相同的属性，则会导致错误。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs create\fR [\fB-ps\fR] [\fB-b\fR \fIblocksize\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fB-V\fR \fIsize\fR \fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个给定大小的卷。该卷作为 \fB/dev/zvol/{dsk,rdsk}/\fR\fIpath\fR 中的一个块设备导出，其中 \fIpath\fR 是 \fBZFS\fR 名称空间中卷的名称。size 表示设备导出的逻辑大小。缺省情况下，创建一个同等大小的预留空间。
+.sp
+\fIsize\fR 自动舍入到最接近的 128 KB，确保无论 \fIblocksize\fR 有多大，卷具有的块数量均为整数。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建所有非现有的父数据集。以这种方式创建的数据集会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。在命令行上使用 \fB-o\fR 选项指定的任何属性将被忽略。如果目标文件系统已经存在，则会成功完成此操作。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个不带预留空间的稀疏卷。有关稀疏卷的更多信息，请参见"本机属性"一节中的 \fBvolsize\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+与在创建数据集时调用 \fBzfs set\fR \fIproperty\fR=\fIvalue\fR 命令一样设置指定的属性。在创建时也可设置任何可编辑的 \fBZFS\fR 属性。可以指定多个 \fB-o\fR 选项。如果在多个 \fB-o\fR 选项中指定了相同的属性，则会导致错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR \fIblocksize\fR\fR
+.ad
+.sp .6
+.RS 4n
+相当于 \fB-o\fR \fBvolblocksize\fR=\fIblocksize\fR。如果结合 \fB-o\fR \fBvolblocksize\fR 指定此选项，则产生的行为不确定。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs destroy\fR [\fB-rRf\fR] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+销毁给定的数据集。缺省情况下，此命令会取消共享当前已共享的任何文件系统，卸载当前已挂载的任何文件系统，并拒绝销毁具有活动相关项（子项或克隆）的数据集。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+以递归方式销毁所有子项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+以递归方式销毁所有相关项，包括在目标分层结构以外克隆的文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制使用 \fBunmount -f\fR 命令卸载任何文件系统。此选项对非文件系统或已卸载的文件系统没有影响。
+.RE
+
+在应用 \fB-r\fR 或 \fB-f\fR 选项时应非常谨慎，因为这些选项可以销毁大部分池，并导致正在使用的挂载文件系统出现意外行为。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs destroy\fR [\fB-rRd\fR] \fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+当且仅当不带 \fB-d\fR 选项的 \fBzfs destroy\fR 命令会销毁快照时，才会立即销毁给定的快照。例如快照没有克隆和用户启动的引用计数为零的情况下，会发生此类立即销毁。
+.sp
+如果快照不符合立即销毁的资格，则将其标记为延期删除。在此状态下，此快照作为可用的可见快照存在，直到满足上述两个先决条件时将其删除。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+延迟快照删除。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+销毁后代文件系统中具有此名称的所有快照（或标记为延期删除）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+以递归方式销毁所有相关项。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs snapshot\fR [\fB-r\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIfilesystem@snapname\fR|\fIvolume@snapname\fR\fR
+.ad
+.sp .6
+.RS 4n
+以给定的名称创建快照。通过成功的系统调用对文件系统进行的所有以前的修改都是快照的一部分。\fBzfs snap\fR 可以用作 \fBzfs snapshot\fR 的别名。有关详细信息，请参见"快照"一节。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+以递归方式创建所有后代数据集的快照。以原子方式创建快照，以便所有递归快照与创建快照的时刻相对应。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定的属性；有关详细信息，请参见 \fBzfs create\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs rollback\fR [\fB-rRf\fR] \fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+将给定的数据集回滚到以前的快照。在回滚数据集时，将放弃自创建快照以来更改的所有数据，而且数据集会返回到创建快照时的状态。缺省情况下，该命令无法回滚到除最新快照以外的快照。为了执行此操作，必须通过指定 \fB-r\fR 选项销毁所有中间快照。
+.sp
+\fB-rR\fR 选项不以递归方式销毁递归快照的子快照。 这其中的任一选项仅销毁顶层递归快照。要完全回滚递归快照，必须回滚各个子快照。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归销毁比指定的快照更新的快照。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归销毁任何最新快照以及这些快照的任何克隆。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+与 \fB-R\fR 选项配合使用以强制卸载要销毁的任何克隆文件系统。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs clone\fR [\fB-p\fR] [\fB-K\fR] [\fB-o\fR \fIproperty\fR=\fIvalue\fR] ... \fIsnapshot\fR \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建给定快照的克隆。有关详细信息，请参见"克隆"一节。目标数据集可以位于 \fBZFS\fR 分层结构中的任意位置，并且创建为与原始数据集相同的数据类型。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建所有非现有的父数据集。以这种方式创建的数据集会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。如果目标文件系统或卷已存在，则操作将成功完成。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定的属性；有关详细信息，请参见 \fBzfs create\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-K\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关信息，请参见 \fBzfs_encrypt\fR(1M)。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs promote\fR \fIclone-filesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+将克隆文件系统提升为不再依赖于其"原始"快照。这使得可以销毁创建克隆所基于的文件系统。克隆父项-子项相关性关系将被颠倒，以便原始文件系统变为指定文件系统的克隆。 
+.sp
+所克隆的快照和此快照之前的任何快照现在都归提升的克隆所有。这些快照使用的空间将从原始文件系统转移至提升的克隆，因此必须提供足够的空间容纳这些快照。此操作不占用任何新空间，但会调整空间记帐。提升的克隆不能有与其自身的名称冲突的任何快照名称。\fBrename\fR 子命令可用于重命名任何冲突的快照。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs rename\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs rename\fR [\fB-p\fR] \fIfilesystem\fR|\fIvolume\fR \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+重命名给定的数据集。新目标可以位于 \fBZFS\fR 分层结构中的任意位置（快照除外）。只能在父文件系统或卷中重命名快照。重命名快照时，无需将快照的父文件系统指定为第二个参数的一部分。重命名的文件系统可以继承新挂载点，在这种情况下，将卸载这些文件系统并在新挂载点重新挂载。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建所有不存在的父数据集。以这种方式创建的数据集会根据从父项继承的 \fBmountpoint\fR 属性自动挂载。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs rename\fR \fB-r\fR \fIsnapshot\fR \fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归重命名所有后代数据集的快照。快照是唯一可以递归重命名的数据集。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs\fR \fBlist\fR [\fB-rH\fR|\fB-d\fR \fIdepth\fR] [\fB-o\fR \fIproperty\fR[,\fI\&...\fR]] [ \fB-t\fR \fItype\fR[,\fI ...\fR]] [ \fB-s\fR \fIproperty\fR ] ... [ \fB-S\fR \fIproperty\fR ] ... [\fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR|\fIpath\fR] ...\fR
+.ad
+.sp .6
+.RS 4n
+以表格格式列出给定数据集的属性信息。如果已指定，可以通过绝对路径名或相对路径名列出属性信息。缺省情况下，将显示所有文件系统和卷。如果 \fBlistsnaps\fR 属性为 \fBon\fR（缺省值为 \fBoff\fR），将显示快照。将显示以下字段：\fBname\fR、\fBused\fR、\fBavailable\fR、\fBreferenced\fR、\fBmountpoint\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+用于脚本模式。不输出标题并通过单个制表符而不是任意空格分隔各个字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+在命令行上递归显示数据集的任何子项。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdepth\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归显示数据集的任何子项，并将递归限制为最大 \fIdepth\fR。深度为 \fB1\fR 时将仅显示数据集及其直接子项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR\fR
+.ad
+.sp .6
+.RS 4n
+要显示的属性的逗号分隔列表。属性必须为：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+"本机属性"一节中介绍的属性之一
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+用户属性
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+值 \fBname\fR，将显示数据集名称
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+值 \fBspace\fR，将显示文件系统和卷上的空间使用情况属性。这是指定 \fB-o name,avail,used,usedsnap,usedds,usedrefreserv,usedchild\fR \fB-t filesystem,volume\fR 语法的快捷方式。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIproperty\fR\fR
+.ad
+.sp .6
+.RS 4n
+基于属性的值按列的升序对输出排序的属性。该属性必须为"属性"一节中介绍的属性之一，或者为按数据集名称排序的特殊值 \fBname\fR。可以使用多个 \fB-s\fR 属性选项一次指定多个属性。多个 \fB-s\fR 选项按重要性降序从左至右进行计算。
+.sp
+下面列出了排序条件：
+.RS +4
+.TP
+.ie t \(bu
+.el o
+数字类型按数字顺序排序。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+字符串类型按字母顺序排序。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+不适合某行的类型会将该行排序到字面值底部，而不管指定的排序方式为何。
+.RE
+.RS +4
+.TP
+.ie t \(bu
+.el o
+如果未指定任何排序选项，将保留 \fBzfs list\fR 的现有行为。
+.RE
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIproperty\fR\fR
+.ad
+.sp .6
+.RS 4n
+与 \fB-s\fR 选项相同，但按属性的降序排序。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItype\fR\fR
+.ad
+.sp .6
+.RS 4n
+将显示逗号分隔的类型列表，其中 \fItype\fR 是 \fBfilesystem\fR、\fBsnapshot\fR、\fBvolume\fR 或 \fBall\fR 之一。例如，指定 \fB-t snapshot\fR 时将仅显示快照。以下别名可用于替换类型说明符：\fBfs\fR（文件系统）、\fBsnap\fR（快照）和 \fBvol\fR（卷）。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set\fR [\fB-r\fR] \fIproperty\fR=\fIvalue\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+对每个数据集将该属性设置为给定值。只能编辑某些属性。有关可设置哪些属性和可接受的值的更多信息，请参见"属性"一节。指定数值作为确切值，或者使用后缀 \fBB\fR、\fBK\fR、\fBM\fR、\fBG\fR、\fBT\fR、\fBP\fR、\fBE\fR、\fBZ\fR （分别代表字节、KB、MB、GB、TB、PB、EB 和 ZB）以可读的格式指定数值。可以对快照设置用户属性。有关更多信息，请参见"用户属性"一节。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+在子数据集的整个子树中递归应用设置的有效值。根据属性，可以设置或继承有效值。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs get\fR [\fB-rHp\fR|\fB-d\fR \fIdepth\fR] [\fB-o\fR \fBall\fR | \fIfield\fR[,...] [\fB-s\fR \fIsource\fR[,...]] \fBall\fR | \fI property\fR[,...] \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+显示给定数据集的属性。如果未指定任何数据集，则该命令将显示系统中所有数据集的属性。对于每个属性，将显示以下列：
+.sp
+.in +2
+.nf
+     name      Dataset name
+     property  Property name
+     value     Property value
+     source    Property source. Can either be local, default,
+               temporary, inherited, or none (-).
+.fi
+.in -2
+.sp
+
+缺省情况下，将显示除 \fBRECEIVED\fR 列之外的所有列；使用 \fB-o\fR 选项指定特定列或所有列。此命令接受"本机属性"和"用户属性"一节中介绍的逗号分隔的属性列表。
+.sp
+特殊值 \fBall\fR 可用于显示应用于给定数据集的类型（文件系统、卷或快照）的所有属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归显示任何子项的属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR \fIdepth\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归显示数据集的任何子项，并将递归限制为 \fIdepth\fR。深度为 \fB1\fR 时将仅显示数据集及其直接子项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+以更容易被脚本解析的格式显示输出。将省略所有标题，并通过单个制表符而不是任意数量的空格显式分隔各个字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+将显示字段集。包括一个或多个：
+.sp
+.in +2
+.nf
+name,property,value,received,source
+.fi
+.in -2
+.sp
+
+以逗号分隔的列表形式显示多个字段。缺省值为:
+.sp
+.in +2
+.nf
+name,property,value,source
+.fi
+.in -2
+.sp
+
+关键字 \fBall\fR 指定所有资源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIsource\fR\fR
+.ad
+.sp .6
+.RS 4n
+将显示逗号分隔的源列表。将忽略来自此列表中的源之外的某个源的属性。每个源必须是以下源之一：
+.sp
+.in +2
+.nf
+local,default,inherited,temporary,received,none
+.fi
+.in -2
+.sp
+
+缺省值是所有源。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示可解析（确切）值中的数字。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs set share\fR=\fIname\fR=\fIsharename\fR,\fBpath\fR=\fIpathname\fR,[\fBdesc\fR=\fIdescription\fR],\fBprot\fR=\fBsmb\fR | \fB nfs\fR[,\fIproperty\fR=\fIvalue\fR[,...]] \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关 \fBzfs set share\fR 语法的完整描述，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs inherit\fR [\fB-rS\fR] \fIproperty\fR \fIfilesystem\fR|\fIvolume\fR|\fIsnapshot\fR ...\fR
+.ad
+.sp .6
+.RS 4n
+清除指定的属性，以使从祖先继承该属性。如果没有祖先设置该属性，则将使用缺省值。有关缺省值的列表和可以继承的属性的详细信息，请参见"属性"一节。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+递归继承所有子项的给定属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR\fR
+.ad
+.sp .6
+.RS 4n
+恢复为接收的属性值（如果有）。如果属性没有接收值，则 \fBzfs inherit\fR \fB-S\fR 的行为与不带 \fB-S\fR 的 \fBzfs inherit\fR 相同。如果属性有接收值，则 \fBzfs inherit\fR 会用继承的值覆盖接收的值，直到 \fBzfs inherit\fR \fB-S\fR 恢复为接收的值。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs upgrade\fR\fR
+.ad
+.sp .6
+.RS 4n
+标识文件系统版本，这将确定当前运行的软件发行版中可用的文件系统功能。您可以继续使用旧文件系统版本，但某些功能可能不可用。文件系统可以使用 \fBzfs upgrade\fR \fB- a\fR 命令进行升级。无法在运行早期软件版本的系统上访问更高版本的文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs upgrade\fR [\fB-v\fR]\fR
+.ad
+.sp .6
+.RS 4n
+显示当前软件支持的 ZFS 文件系统版本。将显示当前 ZFS 文件系统版本和所有先前支持的版本，同时显示每一版本所提供功能的说明。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs upgrade\fR [\fB-r\fR] [\fB-V\fR \fIversion\fR] [\fB-a\fR | \fIfilesystem\fR]\fR
+.ad
+.sp .6
+.RS 4n
+将文件系统升级到新的盘上版本。如果升级文件系统，则意味着在运行旧软件版本的系统上将不再可以访问该文件系统。无法在运行旧软件版本的系统上访问从新文件系统快照生成的 \fBzfs send\fR 流。
+.sp
+通常，文件系统版本与池版本无关。有关 \fBzpool upgrade\fR 命令的信息，请参见 \fBzpool\fR(1M)。 
+.sp
+在某些情况下，文件系统版本和池版本是相互关联的，在升级文件系统版本之前，必须升级池版本。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+升级所有已导入池中的所有文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+升级指定的文件系统。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+升级指定的文件系统和所有后代文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR \fIversion\fR\fR
+.ad
+.sp .6
+.RS 4n
+升级到指定的 \fIversion\fR。如果未指定 \fB-V\fR 标志， 此命令将升级到最新版本。此选项只能用于增加版本号，最高只能增加到此软件支持的最新版本。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs userspace\fR [\fB-hniHp\fR] [\fB-o\fR \fIfield\fR[,...]] [\fB-sS\fR \fIfield\fR]... [\fB-t\fR \fItype\fR [,...]] \fIfilesystem\fR | \fI snapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示指定文件系统或快照中每个用户占用的空间和每个用户的配额。这对应于 \fBuserused@\fR\fIuser\fR 和 \fBuserquota@\fR\fIuser\fR 属性。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-h\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示语法帮助消息并退出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出数字 ID 而不是用户/组名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-H\fR\fR
+.ad
+.sp .6
+.RS 4n
+不输出标题，使用制表符分隔的输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用确切的（可解析的）数字输出。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIfield\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+仅显示以下集中的指定字段：\fBtype,name,used,quota\fR。缺省设置是显示所有字段。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-s\fR \fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+按此字段对输出排序。可以多次指定 \fIs\fR 和 \fIS\fR 标志，以先按一个字段排序，然后按另一个字段排序。缺省值为 \fB-s type\fR \fB-s name\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-S\fR \fIfield\fR\fR
+.ad
+.sp .6
+.RS 4n
+按此字段的相反顺序排序。请参见 \fB-s\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-t\fR \fItype\fR[,...]\fR
+.ad
+.sp .6
+.RS 4n
+仅输出以下集中的指定类型：\fBall,posixuser,smbuser,posixgroup,smbgroup\fR。
+.sp
+缺省值为 \fB-t posixuser,smbuser\fR
+.sp
+缺省值可以更改为包含组类型。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR\fR
+.ad
+.sp .6
+.RS 4n
+将 SID 转换为 POSIX ID。如果不存在映射，POSIX ID 可能是临时的。一般 POSIX 接口（例如，\fBstat\fR(2)、\fBls\fR \fB- l\fR）执行此转换，因此通过 \fB-i\fR 选项，可以将 \fBzfs userspace\fR 的输出直接与这些实用程序进行比较。但是，如果在建立 SMB 至 POSIX 名称映射之前，SMB 用户已创建了某些文件，\fB-i\fR 可能会引起混淆。在这种情况下，一些文件归 SMB 实体所有，一些归 POSIX 实体所有。但是，\fB-i\fR 选项将报告，POSIX 实体具有这两种实体的总计使用量和配额。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs groupspace\fR [\fB-hniHp\fR] [\fB-o\fR \fIfield\fR[,...]] [\fB-sS\fR \fIfield\fR]... [\fB-t\fR \fItype\fR [,...]] \fIfilesystem\fR | \fI snapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示指定文件系统或快照中每个组占用的空间和每个组的配额。此子命令等同于 \fBzfs userspace\fR，但不同的是将显示的缺省类型为 \fB-t posixgroup,smbgroup\fR。
+.sp
+.in +2
+.nf
+-
+.fi
+.in -2
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs mount\fR\fR
+.ad
+.sp .6
+.RS 4n
+显示当前挂载的所有 \fBZFS\fR 文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs mount\fR [\fB-vOS\fR] [\fB-o\fR \fIoptions\fR] \fB-a\fR | \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载 \fBZFS\fR 文件系统。自动在引导过程中调用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIoptions\fR\fR
+.ad
+.sp .6
+.RS 4n
+将临时在挂载的持续时间中使用的可选、逗号分隔的挂载选项列表。有关详细信息，请参见"临时挂载点属性"一节。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-O\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行覆盖挂载。有关更多信息，请参见 \fBmount\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+报告挂载进度。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载所有可用的 \fBZFS\fR 文件系统。自动在引导过程中调用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+挂载指定的文件系统。
+.sp
+针对已加密数据集的 \fBzfs mount\fR 操作可能会提示您输入密钥，具体取决于 \fBkeysource\fR 属性值。例如，如果 \fBkeysource\fR 定位器设置为 \fBprompt\fR，可能会发生这种情况。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unmount\fR [\fB-f\fR] \fB-a\fR | \fIfilesystem\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载当前挂载的 \fBZFS\fR 文件系统。自动在关闭过程中调用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-f\fR\fR
+.ad
+.sp .6
+.RS 4n
+强制卸载文件系统，即使当前正在使用该文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-a\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载所有可用的 \fBZFS\fR 文件系统。自动在引导过程中调用。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fIfilesystem\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+卸载指定的文件系统。也可以为该命令指定系统上 \fBZFS\fR 文件系统挂载点的路径。
+.RE
+
+对于已加密的数据集，卸载文件系统时，不会卸载密钥。要卸载密钥，请参见 \fBzfs key\fR。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs share\fR \fB-a\fR | \fIdataset\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关 \fBzfs share\fR 语法和示例的完整描述，请参见 \fBzfs_share\fR(1M)。
+.sp
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unshare\fR \fB-a\fR | \fIdataset\fR|\fImountpoint\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关 \fBzfs unshare\fR 语法和示例的完整描述，请参见 \fBzfs_share\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs send\fR [\fB-DvRbp\fR] [\fB-\fR[\fBiI\fR] \fIsnapshot\fR] \fIsnapshot\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs send\fR \fB-r\fR [\fB-Dvbcp\fR] [\fB-i\fR \fI snapshot\fR] \fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建第二个 \fIsnapshot\fR 的流表示，该快照将写入标准输出。输出可以重定向到文件或不同的系统（例如，使用 \fBssh\fR(1)）。缺省情况下，生成完整的流。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-b\fR\fR
+.ad
+.sp .6
+.RS 4n
+仅发送接收的属性值，无论这些值是否将被本地设置覆盖，但仅当已接收到数据集时才发送。当希望 \fBzfs receive\fR 恢复在所发送数据集中备份的接收属性，并避免发送可能与源数据集没有任何关系的本地设置，但仅通过备份数据的方式时，可使用此选项。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-c\fR\fR
+.ad
+.sp .6
+.RS 4n
+创建自包含流。自包含流不依赖于任何不包含在流软件包中的数据集。仅在与 \fB-r\fR 选项一起使用时有效。如果与 \fB-i\fR 选项一起使用，则流将依赖于指定为该选项的参数的快照。
+.sp
+有关详细信息，请参见《\fISolaris ZFS 管理指南\fR》中的"ZFS 流"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-D\fR\fR
+.ad
+.sp .6
+.RS 4n
+对流执行 \fBdedup\fR 处理。在不支持流重复数据删除功能的系统上，无法接收重复数据删除流。
+.sp
+要了解复制流软件包与递归流软件包的不同之处，请参见《\fISolaris ZFS 管理指南\fR》中的"ZFS 流"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-i\fR \fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+从第一个 \fIsnapshot\fR 到第二个 \fIsnapshot\fR 执行增量流。增量源（第一个 \fIsnapshot\fR）可以指定为快照名称的最后一部分（例如，\fB@\fR 之后的部分），假设其来自于与第二个 \fIsnapshot\fR 相同的文件系统。
+.sp
+如果目标是克隆，则源可以是原始快照，必须完整指定该快照（例如 \fBpool/fs@origin\fR，而不仅是 \fB@origin\fR）。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-I\fR \fIsnapshot\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成流软件包，该软件包将第一个快照中的所有中间快照发送到第二个快照。例如，\fB-I @a fs@d\fR 类似于 \fB-i @a fs@b; -i @b fs@c; -i @c fs@d\fR。可以与 \fB-i\fR 选项一样指定增量源快照。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-R\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成复制流软件包，这将复制指定的文件系统、所有后代文件系统以及命名快照。接收时，所有属性、快照、后代文件系统和克隆都将被保留。
+.sp
+如果将 \fB-i\fR 或 \fB-I\fR 标志与 \fB-R\fR 标志结合使用，则会生成增量复制流。属性的当前值、当前快照和文件系统名称是在接收流时设置的。如果接收该流时指定了\fB -F\fR 标志，则会销毁发送端不存在的快照和文件系统。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+生成递归流软件包。递归流软件包包含一系列完整流和/或增量流。接收后，将保留所有属性和后代文件系统。不同于使用 \fB-R\fR 标识生成的复制流软件包，中间快照不被保留，除非中间快照是包含在流中的克隆的原始版本。
+.sp
+如果 \fB-i\fR 选项与 \fB-r\fR 选项结合使用，则生成增量式递归流。属性的当前值、当前快照以及文件系统名称是在接收流时设置的。如果接收该流时指定了 \fB-F\fR 选项，则会销毁发送端不存在的快照和文件系统。\fB-I\fR 选项不能与 \fB-r\fR 选项一起使用。
+.sp
+与 \fB-c\fR 选项结合时，将创建自包含递归流软件包。如果同时使用 \fB-c\fR 和 \fB-i\fR 选项，则不具有使用 \fB-i\fR 选项指定的快照的文件系统和卷将作为自包含流发送。
+.sp
+要了解递归流软件包与复制流软件包的不同之处，请参见《\fISolaris ZFS 管理指南\fR》中的"ZFS 流"部分。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-p\fR\fR
+.ad
+.sp .6
+.RS 4n
+发送属性。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出有关所生成流软件包的详细信息。
+.RE
+
+将提交流的格式。您将接收到有关将来版本的 \fBZFS\fR 的流。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs receive\fR [\fB-vnFu\fR] [[\fB-o\fR \fIproperty\fR=\fIvalue\fR] | [\fB-x\fR \fIproperty\fR]] ... \fIfilesystem\fR|\fIvolume\fR|\fI snapshot\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs receive\fR [\fB-vnFu\fR] [[\fB-o\fR \fIproperty\fR=\fIvalue\fR] | [\fB-x\fR \fIproperty\fR]] ... [\fB-d\fR | \fB-e\fR] \fIfilesystem \fR\fR
+.ad
+.sp .6
+.RS 4n
+创建一个快照，其内容与在标准输入中提供的流中指定的内容相同。如果接收了完整的流，那么同时会创建一个新文件系统。流使用 \fBzfs send\fR 子命令创建，缺省情况下通过该命令将创建完整的流。\fB zfs recv\fR 可以用作 \fBzfs receive\fR 的别名。
+.sp
+如果接收增量流，则目标文件系统必须已存在，并且其最新快照必须与增量流的源匹配。对于 ZFS 卷，将销毁并重新创建目标设备链接，这意味着在 \fBreceive\fR 操作期间无法访问该卷。
+.sp
+当接收使用 \fBzfs send\fR \fB-R\fR 命令生成的快照复制软件包流时，将使用 \fBzfs destroy\fR \fB-d\fR 命令销毁发送位置中不存在的任何快照。如果指定了 \fB- o\fR \fIproperty\fR=\fIvalue\fR 或 \fB-x\fR 属性，则其将应用于复制数据集的整个子树中属性的有效值。可以设置或继承有效属性值，具体取决于属性以及数据集是否位于复制子树中的最顶层。接收的属性尽管将被覆盖仍会保留，可以使用 \fBzfs inherit\fR \fB-rS\fR 或 \fBzfs send\fR \fB-Rb\fR 恢复。
+.sp
+此子命令创建的快照的名称（和文件系统，如果接收完整的流）取决于参数类型和 \fB-d\fR 或 \fB-e\fR 选项。
+.sp
+如果参数为快照名称，则将创建指定的 \fIsnapshot\fR。如果参数为文件系统或卷名称，则会在指定的 \fIfilesystem\fR 或\fIvolume\fR 中创建与发送的快照名称相同的快照。如果指定了 \fB-d\fR 或 \fB-e\fR 选项，则快照的名称通过将所发送快照的名称附加到指定的文件系统来确定。如果指定了 \fB-d\fR 选项，则将附加除所发送快照路径的池名称之外的所有内容（例如，附加的 \fBb/c@1 \fR来自所发送的快照 \fBa/b/c@1\fR），如果指定了 \fB-e\fR 选项，则仅附加所发送快照路径的尾部（例如，附加的 \fBc@1\fR 来自所发送的快照 \fBa/b/c@1\fR）。在使用 \fB-d\fR 的情况下，将在指定的文件系统中创建复制所发送快照的路径需要的所有文件系统。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-d\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用除所发送快照路径的第一个元素之外的任何元素（除池名称之外的所有内容）确定上述段落中介绍的新快照的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-e\fR\fR
+.ad
+.sp .6
+.RS 4n
+使用所发送快照路径的最后一个元素确定上述段落中介绍的新快照的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-F\fR\fR
+.ad
+.sp .6
+.RS 4n
+执行接收操作之前，将文件系统强制回滚到最新快照。如果接收增量复制流（例如，\fBzfs send -R -[iI]\fR 生成的流），则将销毁发送端不存在的快照和文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-n\fR\fR
+.ad
+.sp .6
+.RS 4n
+不实际接收该流。此选项可与 \fB-v\fR 选项结合使用来验证接收操作将使用的名称。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-o\fR \fIproperty\fR=\fIvalue\fR\fR
+.ad
+.sp .6
+.RS 4n
+设置指定的属性，就好像在调用命令 \fBzfs set\fR \fIproperty\fR=\fIvalue\fR 的同时，从非增量 \fBsend\fR 流创建了接收的数据集，或从增量 \fBsend\fR 流更新了接收的数据集。也可以在接收时设置任何可编辑的 ZFS 属性。绑定到接收数据的一次性设置属性（例如 \fBnormalization\fR 和 \fBcasesensitivity\fR）无法在接收时编辑，甚至当通过 \fBzfs receive\fR 新创建数据集时也是如此。可以指定多个 \fB-o\fR 选项。如果在多个 \fB-o\fR 或 \fB-x\fR 选项中指定相同的属性，则会发生错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-u\fR\fR
+.ad
+.sp .6
+.RS 4n
+未挂载与接收流关联的文件系统。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-v\fR\fR
+.ad
+.sp .6
+.RS 4n
+输出有关执行接收操作所需的流和时间的详细信息。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-x\fR \fIproperty\fR\fR
+.ad
+.sp .6
+.RS 4n
+确保 \fBreceive\fR 后的指定属性的有效值不受 \fBsend\fR 流（如果有）中该属性的值的影响，就好像属性已从 \fBsend\fR 流中排除一样。如果指定的属性在 \fBsend\fR 流中不存在，则此选项不起作用。如果需要覆盖接收的属性，则可以设置或继承有效值，具体取决于属性。在使用增量更新的情况下，\fB-x\fR 会保持任何现有的本地设置或显式继承不变（因为已覆盖接收属性）。所有 \fB-o\fR 限制同样适用于 \fB-x\fR。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs allow\fR \fIfilesystem\fR | \fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs allow\fR [\fB-ldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] \fIperm \fR|@\fIsetname\fR[,...] \fIfilesystem\fR| \fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs allow\fR [\fB-ld\fR] \fB-e\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem \fR | \fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs allow\fR \fB-c\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs allow\fR \fB- s\fR @\fIsetname\fR \fIperm\fR|@\fIsetname\fR[,...] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关 \fBzfs allow\fR 语法和示例的完整描述，请参见 \fBzfs_allow\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs unallow\fR [\fB-rldug\fR] \fBeveryone\fR|\fIuser\fR|\fIgroup\fR[,...] [\fIperm\fR|@\fIsetname\fR[, ...]] \fIfilesystem\fR|\fI volume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB-rld\fR] \fB-e\fR [\fIperm\fR|@\fIsetname\fR [,...]] \fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB- r\fR] \fB-c\fR [\fIperm\fR|@\fIsetname\fR[,...]]\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs unallow\fR [\fB-r\fR] \fB-s\fR @\fIsetname\fR [\fI perm\fR|@\fIsetname\fR[,...]]\fR
+.ad
+.br
+.na
+\fB\fIfilesystem\fR|\fIvolume\fR\fR
+.ad
+.sp .6
+.RS 4n
+有关 \fBzfs unallow\fR 语法和示例的完整描述，请参见 \fBzfs_allow\fR(1M)。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs hold\fR [\fB-r\fR] \fItag\fR \fIsnapshot\fR...\fR
+.ad
+.sp .6
+.RS 4n
+向指定快照中添加通过 \fItag\fR 参数命名的单个引用。每个快照都有其自己的标志名称空间，标志在该空间内必须是唯一的。
+.sp
+如果一个快照上存在一个保持，尝试使用 \fBzfs destroy\fR 命令销毁该快照将返回 \fBEBUSY\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定将具有特定标志的保持递归应用于所有后代文件系统的快照。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs holds\fR [\fB-r\fR] \fIsnapshot\fR...\fR
+.ad
+.sp .6
+.RS 4n
+列出指定快照的所有现有用户引用。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+除了列出命名快照上的保持外，还列出在命名后代快照上设置的保持。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs release\fR [\fB-r\fR] \fItag\fR \fIsnapshot\fR...\fR
+.ad
+.sp .6
+.RS 4n
+从指定快照中删除通过 \fItag\fR 参数命名的单个引用。每个快照的标志必须已经存在。
+.sp
+如果一个快照上存在一个保持，尝试使用 \fBzfs destroy\fR 命令销毁该快照将返回 \fBEBUSY\fR。
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-r\fR\fR
+.ad
+.sp .6
+.RS 4n
+在所有后代文件系统的快照上递归释放具有特定标志的保持。
+.RE
+
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs diff\fR [\fB-FHte\fR] [\fB-o\fR \fIfield\fR] ... \fIsnapshot\fR [\fIsnapshot\fR | \fIfilesystem\fR]\fR
+.ad
+.br
+.na
+\fB\fBzfs diff\fR \fB-E\fR [\fB- FHt\fR] [\fB-o\fR \fIfield\fR] ... \fIsnapshot\fR | \fIfilesystem\fR\fR
+.ad
+.sp .6
+.RS 4n
+提供快照与后代数据集之间的区别的高级说明。后代可以是数据集的快照或当前数据集。
+.sp
+如果指定单个快照，将提供该快照和当前数据集之间的区别。
+.sp
+对于已执行原始快照与后代之间的更改的每个文件，将与文件名一起说明更改的类型。如果重命名，旧名称和新名称都显示。对于在文件名中找到的空格字符、反斜杠字符及其他无法输出或非 7 位的 ASCII 字符，都显示为三位八进制表示的字节值前面的反斜杠字符。
+.sp
+如果已指定 \fB-t\fR 选项，该命令的第一列输出是文件的 \fBst_ctim\fR 值。对于已删除的文件，这是以前快照中的最终 \fBst_ctim\fR。
+.sp
+更改类型遵循显示的任何时间戳并通过单字符说明：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB+\fR\fR
+.ad
+.RS 5n
+.rt  
+指明文件是在后来的数据集内添加的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB-\fR\fR
+.ad
+.RS 5n
+.rt  
+指明文件是在后来的数据集内删除的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBM\fR\fR
+.ad
+.RS 5n
+.rt  
+指明文件是在后来的数据集内修改的。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBR\fR\fR
+.ad
+.RS 5n
+.rt  
+指明文件是在后来的数据集内重命名的。
+.RE
+
+如果已指定 \fB-F\fR 选项，下一列输出将是说明文件类型的单字符。这些映射为：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBF\fR\fR
+.ad
+.RS 5n
+.rt  
+正规文件
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB/\fR\fR
+.ad
+.RS 5n
+.rt  
+目录
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBB\fR\fR
+.ad
+.RS 5n
+.rt  
+块设备
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB>\fR\fR
+.ad
+.RS 5n
+.rt  
+门
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB|\fR\fR
+.ad
+.RS 5n
+.rt  
+FIFO
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB@\fR\fR
+.ad
+.RS 5n
+.rt  
+符号链接
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBP\fR\fR
+.ad
+.RS 5n
+.rt  
+事件门户
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB=\fR\fR
+.ad
+.RS 5n
+.rt  
+套接字
+.RE
+
+如果修改涉及非目录文件的链接计数中的更改，该更改将表示为修改行中的圆扩号内的增量。如果重命名该文件，则会使用字符串 "\fB->\fR" 将旧名称与新名称隔开。
+.sp
+如果选择 \fB-H\fR 选项，将生成更易于解析的输出。字段用单个制表符隔开，重命名的旧名称与新名称之间不放置箭头字符串 (\fB->\fR)。不能保证非 \fB-H\fR 输出的字段之间存在间距。
+.sp
+如果选中 \fB-e\fR 选项，则将逐一列出两个快照之间添加或修改的所有文件，不会显示删除的文件。无论修改是何种类型，更改类型将始终报告为 "\fB+\fR"。
+.sp
+如果选中 \fB-E\fR 选项，则提供的区别与空的快照和指定快照或数据集之间的区别一样。
+.sp
+如果选中 \fB-o\fR 字段选项，则只显示选中字段。每行以通过 \fB-F\fR 和 \fB-t\fR 选项请求的标准字段开始，后跟后续 \fB-o\fR 选项中请求的字段。与 \fB-H\fR 选项一样，所有字段都以单个制表符分隔。允许的字段名称包括：
+.sp
+.ne 2
+.mk
+.na
+\fB\fBobject\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBls\fR\fB-i\fR 输出的文件编号
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBparent\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBls\fR\fB-i\fR 输出的文件所在目录的编号
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBsize\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBls\fR\fB-s\fR 显示的文件大小
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinks\fR\fR
+.ad
+.RS 15n
+.rt  
+指向文件的链接数
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBlinkschange\fR\fR
+.ad
+.RS 15n
+.rt  
+指向文件的链接数的更改
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBname\fR\fR
+.ad
+.RS 15n
+.rt  
+文件名称
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBoldname\fR\fR
+.ad
+.RS 15n
+.rt  
+重命名之前文件的名称，或者 \fB\(em\fR（连字符）（如果文件未重命名）
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBuser\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBls\fR 显示的文件属主的用户名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBgroup\fR\fR
+.ad
+.RS 15n
+.rt  
+\fBls\fR 显示的文件的组名
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBctime\fR\fR
+.ad
+.RS 15n
+.rt  
+上一次修改文件元数据的时间戳
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBmtime\fR\fR
+.ad
+.RS 15n
+.rt  
+上一次修改文件的时间戳
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBatime\fR\fR
+.ad
+.RS 15n
+.rt  
+上一次访问文件的时间戳
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBcrtime\fR\fR
+.ad
+.RS 15n
+.rt  
+创建文件的时间戳
+.RE
+
+除非用户已具有 \fB{PRIV_SYS_CONFIG}\fR 或 \fB{PRIV_SYS_MOUNT}\fR 特权，否则必须通过 \fBzfs allow\fR 向他们授予 \fBdiff\fR 权限才能使用该子命令。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fBzfs key\fR \fB-l\fR | {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.br
+.na
+\fB\fBzfs key\fR \fB-u\fR [\fB-f\fR] | {\fB-a\fR | [\fB-r\fR] \fI filesystem\fR|\fIvolume\fR\fR
+.ad
+.br
+.na
+\fB\fBzfs key\fR \fB-c\fR [\fB-o\fR \fIkeysource\fR=\fIvalue\fR] {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fI volume\fR}\fR
+.ad
+.br
+.na
+\fB\fBzfs key\fR \fB-K\fR {\fB-a\fR | [\fB-r\fR] \fIfilesystem\fR|\fIvolume\fR}\fR
+.ad
+.sp .6
+.RS 4n
+有关 \fBzfs key\fR 语法和示例的完整描述，请参见 \fBzfs_encrypt\fR(1M)。
+.RE
+
+.SH 示例
+.LP
+\fB示例 1 \fR创建 ZFS 文件系统分层结构
+.sp
+.LP
+以下命令创建名为 \fBpool/home\fR 的文件系统和名为 \fBpool/home/bob\fR 的文件系统。对父文件系统设置挂载点 \fB/export/home\fR，子文件系统将自动继承该挂载点。
+
+.sp
+.in +2
+.nf
+# \fBzfs create pool/home\fR
+# \fBzfs set mountpoint=/export/home pool/home\fR
+# \fBzfs create pool/home/bob\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 2 \fR创建 ZFS 快照
+.sp
+.LP
+以下命令创建名为 \fByesterday\fR 的快照。该快照按要求挂载在 \fBpool/home/bob\fR 文件系统根目录中的 \fB\&.zfs/snapshot\fR 目录下。
+
+.sp
+.in +2
+.nf
+# \fBzfs snapshot pool/home/bob@yesterday\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 3 \fR创建和销毁多个快照
+.sp
+.LP
+以下命令为 \fBpool/home\fR 及其所有后代文件系统创建名为 \fByesterday\fR 的快照。每个快照都按要求挂载在其文件系统根目录中的 \fB\&.zfs/snapshot\fR 目录下。第二个命令销毁新建的快照。
+
+.sp
+.in +2
+.nf
+# \fBzfs snapshot -r pool/home@yesterday\fR
+# \fBzfs destroy -r pool/home@yesterday\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 4 \fR禁用和启用文件系统压缩
+.sp
+.LP
+以下命令禁用 \fBpool/home\fR 下的所有文件系统的 \fBcompression\fR 属性。下一个命令显式启用 \fBpool/home/anne\fR 的 \fBcompression\fR。
+
+.sp
+.in +2
+.nf
+# \fBzfs set compression=off pool/home\fR
+# \fBzfs set compression=on pool/home/anne\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 5 \fR列出 ZFS 数据集
+.sp
+.LP
+以下命令列出所有的活动文件系统和系统中的卷。如果 \fBlistsnaps\fR 属性为 \fBon\fR，将显示快照。缺省值为 \fBoff\fR。有关池属性的更多信息，请参见 \fBzpool \fR(1M)。
+
+.sp
+.in +2
+.nf
+# \fBzfs list\fR
+   NAME                      USED  AVAIL  REFER  MOUNTPOINT
+   pool                      450K   457G    18K  /pool
+   pool/home                 315K   457G    21K  /export/home
+   pool/home/anne             18K   457G    18K  /export/home/anne
+   pool/home/bob             276K   457G   276K  /export/home/bob
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 6 \fR在 ZFS 文件系统上设置配额
+.sp
+.LP
+以下命令将 \fBpool/home/bob\fR 的配额设置为 30 GB。
+
+.sp
+.in +2
+.nf
+# \fBzfs set quota=30G pool/home/bob\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 7 \fR列出 ZFS 属性
+.sp
+.LP
+以下命令列出 \fBpool/home/bob\fR 的所有属性。
+
+.sp
+.in +2
+.nf
+# \fBzfs get all pool/home/bob\fR
+NAME           PROPERTY              VALUE                  SOURCE
+pool/home/bob  type                  filesystem             -
+pool/home/bob  creation              Fri Jul 15 11:53 2011  -
+pool/home/bob  used                  31K                    -
+pool/home/bob  available             30.0G                  -
+pool/home/bob  referenced            31K                    -
+pool/home/bob  compressratio         1.00x                  -
+pool/home/bob  mounted               yes                    -
+pool/home/bob  quota                 30G                    local
+pool/home/bob  reservation           none                   default
+pool/home/bob  recordsize            128K                   default
+pool/home/bob  mountpoint            /pool/home/bob         default
+pool/home/bob  sharenfs              off                    default
+pool/home/bob  checksum              on                     default
+pool/home/bob  compression           on                     default
+pool/home/bob  atime                 on                     default
+pool/home/bob  devices               on                     default
+pool/home/bob  exec                  on                     default
+pool/home/bob  setuid                on                     default
+pool/home/bob  readonly              off                    default
+pool/home/bob  zoned                 off                    default
+pool/home/bob  snapdir               hidden                 default
+pool/home/bob  aclmode               discard                default
+pool/home/bob  aclinherit            restricted             default
+pool/home/bob  canmount              on                     default
+pool/home/bob  xattr                 on                     default
+pool/home/bob  copies                1                      default
+pool/home/bob  version               5                      -
+pool/home/bob  utf8only              off                    -
+pool/home/bob  normalization         none                   -
+pool/home/bob  casesensitivity       mixed                  -
+pool/home/bob  vscan                 off                    default
+pool/home/bob  nbmand                off                    default
+pool/home/bob  sharesmb              off                    default
+pool/home/bob  refquota              none                   default
+pool/home/bob  refreservation        none                   default
+pool/home/bob  primarycache          all                    default
+pool/home/bob  secondarycache        all                    default
+pool/home/bob  usedbysnapshots       0                      -
+pool/home/bob  usedbydataset         31K                    -
+pool/home/bob  usedbychildren        0                      -
+pool/home/bob  usedbyrefreservation  0                      -
+pool/home/bob  logbias               latency                default
+pool/home/bob  dedup                 off                    default
+pool/home/bob  mlslabel              none                   default
+pool/home/bob  sync                  standard               default
+pool/home/bob  encryption            off                    -
+pool/home/bob  keysource             none                   default
+pool/home/bob  keystatus             none                   -
+pool/home/bob  rekeydate             -                      default
+pool/home/bob  rstchown              on                     default
+pool/home/bob  shadow                none                   -
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令获取单个属性值。
+
+.sp
+.in +2
+.nf
+# \fBzfs get -H -o value compression pool/home/bob\fR
+on
+.fi
+.in -2
+.sp
+
+.sp
+.LP
+以下命令列出具有 \fBpool/home/bob\fR 的本地设置的所有属性。
+
+.sp
+.in +2
+.nf
+# \fBzfs get -r -s local -o name,property,value all pool/home/bob\fR
+NAME           PROPERTY              VALUE
+pool/home/bob  quota                 30G
+pool/home/bob  compression           on
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 8 \fR回滚 ZFS 文件系统
+.sp
+.LP
+以下命令将 \fBpool/home/anne\fR 的内容恢复为名为 \fByesterday\fR 的快照，并删除所有中间快照。
+
+.sp
+.in +2
+.nf
+# \fBzfs rollback -r pool/home/anne@yesterday\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 9 \fR创建 ZFS 克隆
+.sp
+.LP
+以下命令创建初始内容与 \fBpool/home/bob@yesterday\fR 相同的可写文件系统。
+
+.sp
+.in +2
+.nf
+# \fBzfs clone pool/home/bob@yesterday pool/clone\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 10 \fR提升 ZFS 克隆
+.sp
+.LP
+以下命令说明如何使用克隆、克隆提升及重命名检验文件系统的更改，然后将原始文件系统替换为更改的文件系统。
+
+.sp
+.in +2
+.nf
+# \fBzfs create pool/project/production\fR
+  populate /pool/project/production with data
+# \fBzfs snapshot pool/project/production@today\fR
+# \fBzfs clone pool/project/production@today pool/project/beta\fR
+make changes to /pool/project/beta and test them
+# \fBzfs promote pool/project/beta\fR
+# \fBzfs rename pool/project/production pool/project/legacy\fR
+# \fBzfs rename pool/project/beta pool/project/production\fR
+once the legacy version is no longer needed, it can be destroyed
+# \fBzfs destroy pool/project/legacy\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 11 \fR继承 ZFS 属性
+.sp
+.LP
+以下命令使 \fBpool/home/bob\fR 和 \fBpool/home/anne\fR 继承其父项的 \fBchecksum\fR 属性。
+
+.sp
+.in +2
+.nf
+# \fBzfs inherit checksum pool/home/bob pool/home/anne\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 12 \fR远程复制 ZFS 数据
+.sp
+.LP
+以下命令将完整流和增量流依次发送到远程计算机中，以将它们分别恢复到 \fBpoolB/received/fs@a\fR 和 \fBpoolB/received/fs@b\fR 中。\fBpoolB\fR 必须包含文件系统 \fBpoolB/received\fR，最初不能包含 \fBpoolB/received/fs\fR。
+
+.sp
+.in +2
+.nf
+# \fBzfs send pool/fs@a | \e\fR
+   \fBssh host zfs receive poolB/received/fs@a\fR
+# \fBzfs send -i a pool/fs@b | ssh host \e\fR
+   \fBzfs receive poolB/received/fs\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 13 \fR使用 \fBzfs receive\fR \fB-d\fR 选项
+.sp
+.LP
+以下命令将 \fBpoolA/fsA/fsB@snap\fR 的完整流发送到远程计算机中，以将其接收到 \fBpoolB/received/fsA/fsB@snap\fR 中。已接收快照的名称中的 \fBfsA/fsB@snap\fR 部分是基于发送快照的名称决定的。\fBpoolB\fR 必须包含文件系统 \fBpoolB/received\fR。如果 \fBpoolB/received/fsA\fR 不存在，将其作为空文件系统创建。
+
+.sp
+.in +2
+.nf
+# \fBzfs send poolA/fsA/fsB@snap | \e
+   ssh host zfs receive -d poolB/received\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 14 \fR设置用户属性
+.sp
+.LP
+以下示例可以为数据集设置用户定义的 \fBcom.example:department\fR 属性。
+
+.sp
+.in +2
+.nf
+# \fBzfs set com.example:department=12345 tank/accounting\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 15 \fR执行滚动快照
+.sp
+.LP
+以下示例显示如何通过一致的命名方案维护快照的历史信息。为保留一周的快照，用户销毁最早的快照，重命名剩余的快照，然后创建新快照，如下所示：
+
+.sp
+.in +2
+.nf
+# \fBzfs destroy -r pool/users@7daysago\fR
+# \fBzfs rename -r pool/users@6daysago @7daysago\fR
+# \fBzfs rename -r pool/users@5daysago @6daysago\fR
+# \fBzfs rename -r pool/users@4daysago @5daysago\fR
+# \fBzfs rename -r pool/users@3daysago @4daysago\fR
+# \fBzfs rename -r pool/users@2daysago @3daysago\fR
+# \fBzfs rename -r pool/users@yesterday @2daysago\fR
+# \fBzfs rename -r pool/users@today @yesterday\fR
+# \fBzfs snapshot -r pool/users@today\fR
+.fi
+.in -2
+.sp
+
+.LP
+\fB示例 16 \fR显示 ZFS 快照的差别
+.sp
+.LP
+以下示例是指定的 \fBzfs diff\fR \fB-F\fR 和 \fB-t\fR 选项的输出：
+
+.sp
+.in +2
+.nf
+# \fBzfs diff -Ft myfiles@snap1\fR
+1269962501.206726811   M   /   /myfiles/
+1269962444.207369955   M   F   /myfiles/link_to_me      (+1)
+1269962499.207519034   R       /myfiles/rename_me -> /myfiles/renamed
+1269962431.813566720   -   F   /myfiles/delete_me
+1269962518.666905544   +   F   /myfiles/new_file
+1269962501.393099817   +   |   /myfiles/new_pipe
+.fi
+.in -2
+.sp
+
+.SH 退出状态
+.sp
+.LP
+将返回以下退出值：
+.sp
+.ne 2
+.mk
+.na
+\fB\fB0\fR\fR
+.ad
+.sp .6
+.RS 4n
+成功完成。 
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB1\fR\fR
+.ad
+.sp .6
+.RS 4n
+出现错误。
+.RE
+
+.sp
+.ne 2
+.mk
+.na
+\fB\fB2\fR\fR
+.ad
+.sp .6
+.RS 4n
+指定的命令行选项无效。
+.RE
+
+.SH 属性
+.sp
+.LP
+有关以下属性的说明，请参见 \fBattributes\fR(5)：
+.sp
+
+.sp
+.TS
+tab() box;
+cw(2.75i) |cw(2.75i) 
+lw(2.75i) |lw(2.75i) 
+.
+属性类型属性值
+_
+可用性system/file-system/zfs
+_
+接口稳定性Committed（已确定）
+.TE
+
+.SH 另请参见
+.sp
+.LP
+\fBchmod\fR(1)、\fBchown\fR(1)、\fBpktool\fR(1)、\fBssh\fR(1)、\fBmount\fR(1M)、\fBshadowd\fR(1M)、\fBshare\fR(1M)、\fBshare_nfs\fR(1M)、\fBshare_smb\fR(1M)、\fBunshare\fR(1M)、\fBzonecfg\fR(1M)、\fBzpool\fR(1M)、\fBchmod\fR(2)、\fBchown\fR(2)、\fBstat\fR(2)、\fBwrite\fR(2)、\fBfsync\fR(3C)、\fBdfstab\fR(4)、\fBvfstab\fR(4)、\fBattributes\fR(5)
+.sp
+.LP
+请参见 \fBgzip\fR(1) 手册页，该页不属于 SunOS 手册页集合。
+.sp
+.LP
+有关其他 \fBZFS\fR 功能的信息，请参见 \fBzfs_allow\fR(1M)、\fBzfs_encrypt\fR(1M)、\fBzfs_share\fR(1M) 和\fI《Solaris ZFS Administration Guide》\fR。
+.SH 附注
+.sp
+.LP
+如通过 \fBdiff\fR 子命令修改中所述的文件可能已通过多种方式进行了修改。使 \fBst_ctim\fR（请参见 \fBstat\fR(2)）中发生更改的任何操作都是报告修改的基础。

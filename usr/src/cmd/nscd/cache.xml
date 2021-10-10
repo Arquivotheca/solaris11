@@ -1,0 +1,1776 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ CDDL HEADER START
+
+ The contents of this file are subject to the terms of the
+ Common Development and Distribution License (the "License").
+ You may not use this file except in compliance with the License.
+
+ You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ or http://www.opensolaris.org/os/licensing.
+ See the License for the specific language governing permissions
+ and limitations under the License.
+
+ When distributing Covered Code, include this CDDL HEADER in each
+ file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ If applicable, add the following below this CDDL HEADER, with the
+ fields enclosed by brackets "[]" replaced with your own identifying
+ information: Portions Copyright [yyyy] [name of copyright owner]
+
+ CDDL HEADER END
+
+ Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+
+	NOTE:  This service manifest is not editable; its contents will
+	be overwritten by package or patch operations, including
+	operating system upgrade.  Make customizations in a different
+	file.
+-->
+
+<service_bundle type='manifest' name='SUNWcsr:ns-cache'>
+
+<service
+	name='system/name-service/cache'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance />
+
+	<!-- svc:/system/name-service-cache is the obsolete 
+	     S10/S11 pre-SMF service that probably still has
+	     external references in scripts. -->
+	<dependency
+		name='obsolete_service'
+		grouping='optional_all'
+		restart_on='refresh'
+		type='service'>
+		<service_fmri value='svc:/system/name-service-cache' />
+	</dependency>
+
+	<dependency
+		name='config_data'
+		grouping='require_all'
+		restart_on='refresh'
+		type='service'>
+		<service_fmri value='svc:/system/name-service/switch' />
+	</dependency>
+
+	<dependency
+	    name='unconfig_milestone'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+	    <service_fmri value='svc:/milestone/unconfig' />
+	</dependency>
+
+	<dependent
+		name='name-service-cache_self-assembly-complete'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/self-assembly-complete' />
+	</dependent>
+
+	<dependent
+		name='name-service-cache_milestone-multi-user'
+		grouping='optional_all'
+		restart_on='none'>
+		<service_fmri value='svc:/milestone/multi-user' />
+	</dependent>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/lib/svc/method/svc-nscd %m'
+		timeout_seconds='60' />
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec='/lib/svc/method/svc-nscd %m'
+		timeout_seconds='60' />
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':kill'
+		timeout_seconds='60' />
+
+	<exec_method
+		type='method'
+		name='unconfigure'
+		exec='/lib/svc/method/svc-nscd unconfigure'
+		timeout_seconds='60' >
+	</exec_method>
+
+	<property_group name='general' type='framework'>
+		<!-- to start stop nscd -->
+		<propval name='action_authorization' type='astring'
+			value='solaris.smf.manage.name-service.cache' />
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.manage.name-service.cache' />
+	</property_group>
+
+	<property_group name='config' type='application' >
+	    <!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.value.name-service.cache' />
+	</property_group>
+	<property_group name='default' type='application' >
+		<!-- to manage properties of the service -->
+		<propval name='value_authorization' type='astring'
+			value='solaris.smf.value.name-service.cache' />
+		<propval name='enable_cache'
+			type='boolean'
+			value='true' />
+		<propval name='positive_time_to_live'
+			type='integer'
+			value='3600' />
+		<propval name='negative_time_to_live'
+			type='integer'
+			value='5' />
+		<propval name='keep_hot_count'
+			type='integer'
+			value='20' />
+		<propval name='check_files'
+			type='boolean'
+			value='true' />
+		<propval name='check_file_interval'
+			type='integer'
+			value='0' />
+	</property_group>
+
+	<property_group name='sysconfig' type='application'>
+	    <propval name='group' type='astring' value='naming_services' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+			name service cache
+			</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='nscd' section='1M' manpath='/usr/share/man' />
+		</documentation>
+		<pg_pattern name='config' type='application'
+		    target='this' required='true'>
+			<description> <loctext xml:lang='C'>
+Common name service and name service cache configuration data
+as described in nscd.conf(4).
+			 </loctext> </description>
+			<prop_pattern name='enable_per_user_lookup'
+			    type='boolean' required='false'>
+				<description> <loctext xml:lang='C'>
+				    Enable per-user lookups
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='per_user_nscd_time_to_live'
+			    type='integer' required='false'>
+				<description> <loctext xml:lang='C'>
+				    Per user nscd (idle) time to live
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='logfile' type='astring'
+			    required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Log file location
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='debug_level' type='astring'
+			    required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Debugging/Log level flags (or'd together)
+                                    </loctext> </description>
+                                <cardinality min='1' max='9'/>
+				<constraints>
+				    <value name='all'>
+				      <description> <loctext xml:lang='C'>
+				      All Error Levels combined
+				      </loctext> </description>
+				    </value>
+				    <value name='cant_find'>
+				      <description> <loctext xml:lang='C'>
+				      Can't find
+				      </loctext> </description>
+				    </value>
+				    <value name='debug'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Debug
+				      </loctext> </description>
+				    </value>
+				    <value name='error'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Error
+				      </loctext> </description>
+				    </value>
+				    <value name='warning'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Warning
+				      </loctext> </description>
+				    </value>
+				    <value name='info'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Info
+				      </loctext> </description>
+				    </value>
+				    <value name='notice'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Notice
+				      </loctext> </description>
+				    </value>
+				    <value name='alert'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Alert
+				      </loctext> </description>
+				    </value>
+				    <value name='crit'>
+				      <description> <loctext xml:lang='C'>
+				      Log Level Critical
+				      </loctext> </description>
+				    </value>
+				    <value name='0'></value>
+				    <value name='1'></value>
+				    <value name='2'></value>
+				    <value name='3'></value>
+				    <value name='4'></value>
+				    <value name='5'></value>
+				    <value name='6'></value>
+				    <value name='7'></value>
+				    <value name='8'></value>
+				    <value name='9'></value>
+				    <value name='10'></value>
+				</constraints>
+				<choices>
+				    <value name='all'/>
+				    <value name='cant_find'/>
+				    <value name='debug'/>
+				    <value name='error'/>
+				    <value name='warning'/>
+				    <value name='info'/>
+				    <value name='notice'/>
+				    <value name='alert'/>
+				    <value name='crit'/>
+				    <value name='0'/>
+				    <value name='1'/>
+				    <value name='2'/>
+				    <value name='3'/>
+				    <value name='4'/>
+				    <value name='5'/>
+				    <value name='6'/>
+				    <value name='7'/>
+				    <value name='8'/>
+				    <value name='9'/>
+				    <value name='10'/>
+				</choices>
+                        </prop_pattern>
+			<prop_pattern name='debug_components' type='astring'
+			    required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Components to debug (or'd)
+                                    </loctext> </description>
+                                <cardinality min='1' max='12'/>
+				<constraints>
+				    <value name='all'>
+				      <description> <loctext xml:lang='C'>
+				      All Subsystems
+				      </loctext> </description>
+				    </value>
+				    <value name='cache'>
+				      <description> <loctext xml:lang='C'>
+				      Cache Component
+				      </loctext> </description>
+				    </value>
+				    <value name='switch'>
+				      <description> <loctext xml:lang='C'>
+				      Switch Engine
+				      </loctext> </description>
+				    </value>
+				    <value name='frontend'>
+				      <description> <loctext xml:lang='C'>
+				      Nscd to Library Frontend
+				      </loctext> </description>
+				    </value>
+				    <value name='self_cred'>
+				      <description> <loctext xml:lang='C'>
+				      Self Credentials engine
+				      </loctext> </description>
+				    </value>
+				    <value name='admin'>
+				      <description> <loctext xml:lang='C'>
+				      Admin component
+				      </loctext> </description>
+				    </value>
+				    <value name='config'>
+				      <description> <loctext xml:lang='C'>
+				      Switch configuration code
+				      </loctext> </description>
+				    </value>
+				    <value name='smf_monitor'>
+				      <description> <loctext xml:lang='C'>
+				      SMF state monitor
+				      </loctext> </description>
+				    </value>
+				    <value name='nsw_state'>
+				      <description> <loctext xml:lang='C'>
+				      NSS state monitor
+				      </loctext> </description>
+				    </value>
+				    <value name='getent'>
+				      <description> <loctext xml:lang='C'>
+				      Getent contexts
+				      </loctext> </description>
+				    </value>
+				    <value name='access'>
+				      <description> <loctext xml:lang='C'>
+				      Access (locking) Subsystem
+				      </loctext> </description>
+				    </value>
+				    <value name='int_addr'>
+				      <description> <loctext xml:lang='C'>
+				      int_addr pool
+				      </loctext> </description>
+				    </value>
+				</constraints>
+				<choices>
+				    <value name='all'/>
+				    <value name='cache'/>
+				    <value name='switch'/>
+				    <value name='frontend'/>
+				    <value name='self_cred'/>
+				    <value name='admin'/>
+				    <value name='config'/>
+				    <value name='smf_monitor'/>
+				    <value name='nsw_state'/>
+				    <value name='getent'/>
+				    <value name='access'/>
+				    <value name='int_addr'/>
+				</choices>
+                        </prop_pattern>
+			<prop_pattern name='global_check_smf_state_interval'
+			    type='integer' required='false'>
+			    	<description> <loctext xml:lang='C'>
+			    	    Dependent SMF service status check interval
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='default' type='application'
+		    target='this' required='true'>
+			<description> <loctext xml:lang='C'>
+			    Default cache configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+			<prop_pattern name='enable_cache' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Enable caching for (default) database(s)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive time to live
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative time to live
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Database - Check for local files changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database 
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='host' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    host cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for host database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='password' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    password cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for password database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='group' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    group cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for group database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='network' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    network cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for network database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='protocol' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    protocol cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for protocol database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='rpc' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    rpc cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for rpc database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='ether' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    ether cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for ether database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='netmask' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    netmask cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for netmask database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='bootparam' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    bootparam cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for bootparam database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='netgroup' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    netgroup cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for netgroup database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='service' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    service cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for service database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='printer' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    printer cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for printer database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='project' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    project cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for project database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='auth_attr' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    auth_attr cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for auth_attr database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='exec_attr' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    exec_attr cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for exec_attr database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='prof_attr' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    prof_attr cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for prof_attr database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='user_attr' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    user_attr cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for user_attr database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='tnrhtp' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    tnrhtp cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for tnrhtp database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+		<pg_pattern name='tnrhdb' type='application'
+		    target='this' required='false'>
+			<description> <loctext xml:lang='C'>
+			    tnrhdb cache specific configuration data as described in nscd.conf(4).
+			 </loctext> </description>
+                        <prop_pattern name='enable_cache' type='boolean'
+                            required='false'>
+                                <description> <loctext xml:lang='C'>
+                                    Enable caching for tnrhdb database
+                                    </loctext> </description>
+                                <cardinality min='1' max='1'/>
+                        </prop_pattern>
+			<prop_pattern name='positive_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - positive (hit) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='negative_time_to_live' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - negative (miss) time to live (in seconds)
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='keep_hot_count' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Cache item - keep hot count
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='check_files' type='boolean'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Check local files database for changes
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+			</prop_pattern>
+			<prop_pattern name='check_file_interval' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Interval (in seconds) to check local files database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+			<prop_pattern name='maximum_entries_allowed' type='integer'
+			    required='false'>
+				<description> <loctext xml:lang='C'>
+				    Maximum number of cache entries for this database
+				</loctext> </description>
+				<cardinality min='1' max='1'/>
+				<constraints>
+				    <range min='0' max='2147483647'/>
+				</constraints>
+			</prop_pattern>
+		</pg_pattern>
+	</template>
+
+</service>
+
+</service_bundle>
